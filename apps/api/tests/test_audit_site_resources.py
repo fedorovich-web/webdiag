@@ -23,7 +23,7 @@ def streaming_response(
     )
 
 
-def test_collect_site_resources_fetches_same_origin_robots_and_sitemap() -> None:
+def test_collect_site_resources_fetches_same_origin_robots_and_default_sitemap() -> None:
     seen_paths: list[str] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -56,7 +56,80 @@ def test_collect_site_resources_fetches_same_origin_robots_and_sitemap() -> None
 
     assert seen_paths == ["/robots.txt", "/sitemap.xml"]
     assert report.robots.available is True
+    assert report.sitemap.sitemap_url == "https://example.com/sitemap.xml"
     assert report.sitemap.contains_target is True
+
+
+def test_collect_site_resources_uses_sitemap_declared_in_robots_txt() -> None:
+    seen_paths: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen_paths.append(request.url.path)
+        if request.url.path == "/robots.txt":
+            return streaming_response(
+                200,
+                content=b"User-agent: *\nAllow: /\nSitemap: https://example.com/custom-sitemap.xml",
+                request=request,
+            )
+        if request.url.path == "/custom-sitemap.xml":
+            return streaming_response(
+                200,
+                content=b"<urlset><url><loc>https://example.com/final</loc></url></urlset>",
+                request=request,
+            )
+        raise AssertionError(f"unexpected path: {request.url.path}")
+
+    fetcher = SafeHttpFetcher(
+        resolver=lambda _hostname, _port: [SAFE_IP],
+        peer_address_provider=lambda _response: [SAFE_IP],
+        transport=httpx.MockTransport(handler),
+    )
+
+    report = collect_site_resources(
+        fetcher=fetcher,
+        target_url="https://example.com/final",
+        final_url="https://example.com/final",
+    )
+
+    assert seen_paths == ["/robots.txt", "/custom-sitemap.xml"]
+    assert report.robots.sitemap_urls == ("https://example.com/custom-sitemap.xml",)
+    assert report.sitemap.sitemap_url == "https://example.com/custom-sitemap.xml"
+    assert report.sitemap.contains_target is True
+
+
+def test_collect_site_resources_resolves_relative_sitemap_declared_in_robots_txt() -> None:
+    seen_paths: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen_paths.append(request.url.path)
+        if request.url.path == "/robots.txt":
+            return streaming_response(
+                200,
+                content=b"User-agent: *\nSitemap: /feeds/sitemap.xml",
+                request=request,
+            )
+        if request.url.path == "/feeds/sitemap.xml":
+            return streaming_response(
+                200,
+                content=b"<urlset><url><loc>https://example.com/final</loc></url></urlset>",
+                request=request,
+            )
+        raise AssertionError(f"unexpected path: {request.url.path}")
+
+    fetcher = SafeHttpFetcher(
+        resolver=lambda _hostname, _port: [SAFE_IP],
+        peer_address_provider=lambda _response: [SAFE_IP],
+        transport=httpx.MockTransport(handler),
+    )
+
+    report = collect_site_resources(
+        fetcher=fetcher,
+        target_url="https://example.com/final",
+        final_url="https://example.com/final",
+    )
+
+    assert seen_paths == ["/robots.txt", "/feeds/sitemap.xml"]
+    assert report.sitemap.sitemap_url == "https://example.com/feeds/sitemap.xml"
 
 
 def test_collect_site_resources_does_not_convert_policy_failure_to_missing_resource() -> None:

@@ -1,31 +1,26 @@
 # Verification — WebDiag
 
-Date: 2026-07-20
+Date: 2026-07-21
 Package version: `0.5.11`
-Patch scope: A7.1 audit execution safety hardening. No commit or push was performed.
+Patch scope: A7.2 audit resource correctness. No commit or push was performed by the assistant.
 
 ## Scope
 
-This verification record covers the clean A0–A7 baseline plus the A7.1 backend safety patch.
+This verification record covers the clean A0–A7 baseline plus A7.1 backend safety and A7.2 resource-correctness changes.
 
-A7.1 changes:
+A7.2 changes:
 
-- resolves and validates every candidate address before a request;
-- pins each connection to a validated IP instead of allowing the HTTP client to resolve the hostname again;
-- preserves the original hostname in the HTTP `Host` header and TLS SNI;
-- disables environment proxy inheritance with `trust_env=False`;
-- disables keep-alive reuse between pinned targets and verifies the connected peer address;
-- re-runs URL and resolved-address policy checks for every redirect target;
-- streams response bodies instead of reading `response.content`;
-- rejects oversized declared bodies before reading the stream;
-- enforces hard limits for unknown-length/chunked bodies, compressed wire data, and decoded gzip/deflate data;
-- normalizes HTTP timeout, transport, body-limit, decoding, peer, and URL-policy execution failures;
-- persists a failed job and failed run for expected execution failures;
-- persists failed state before re-raising unexpected execution exceptions;
-- treats an unsafe robots/sitemap redirect as an audit execution failure instead of reporting the resource as merely missing;
-- adds regression tests for IP pinning, Host/SNI preservation, peer verification, redirect SSRF blocking, streaming limits, gzip decoding, decompression limits, and failed-state persistence.
+- implements robots.txt `Allow`/`Disallow` precedence with longest-match behavior;
+- makes equally specific `Allow` override `Disallow`;
+- supports grouped `User-agent` records, multiple user agents in one group, `*` fallback, wildcard `*`, and end-anchor `$` matching;
+- preserves sitemap URLs declared in robots.txt and resolves relative `Sitemap:` values against the robots URL;
+- fetches the first valid HTTP(S) sitemap declared in robots.txt before falling back to the default `/sitemap.xml`;
+- normalizes sitemap target comparison for scheme/host case, default ports, trailing slash, and fragment removal;
+- resolves relative canonical URLs against the final fetched URL before comparing canonical and final URL;
+- normalizes canonical comparison for scheme/host case, default ports, trailing slash, query preservation, and fragment removal;
+- adds regression tests for robots precedence, robots user-agent groups, wildcard/end-anchor rules, declared sitemap discovery, relative sitemap declarations, sitemap URL normalization, and relative canonical handling.
 
-No frontend redesign, database, crawler, worker integration, persistence migration, robots semantics rewrite, canonical normalization, registry refactor, commit, or push is included.
+No frontend redesign, database, crawler, worker integration, persistence migration, registry refactor, per-check duration timing, Python lock refactor, commit, or push is included.
 
 ## Confirmed gates in this environment
 
@@ -38,46 +33,38 @@ No frontend redesign, database, crawler, worker integration, persistence migrati
 | `npm run typecheck` | passed |
 | `npm run build` | passed |
 | `npm run verify:built-site` | passed, 34 public routes / 32 localized HTML routes |
-| `npm run test:python` | passed, 70/70 |
+| `npm run test:python` | passed, 79/79 |
 | `npm run lint:python` | passed |
 | `npm run test:browser` | not verified in this sandbox; local navigation is blocked by environment policy |
 
 ## Browser boundary
 
-The production server and system Chromium both started. The browser was then unable to navigate to the local Playwright server:
+The production server and system Chromium both started. The browser was unable to navigate to the local Playwright server:
 
 ```text
 page.goto: net::ERR_BLOCKED_BY_ADMINISTRATOR
 http://127.0.0.1:4173/
 ```
 
-A bounded diagnostic run stopped after the first failure:
+This is the same environment navigation restriction observed before A7.2. Browser behavior, accessibility, responsive reflow, hydration, and visual rendering are therefore not claimed as passed or failed by this verification.
 
-```text
-1 failed
-36 did not run
-```
+## Security and correctness boundary after A7.2
 
-This is an environment navigation restriction. Browser behavior, accessibility, responsive reflow, hydration, and visual rendering are therefore not claimed as passed or failed by this verification.
+A7.1 hardened audit execution safety: DNS targets are pinned to validated IPs, the connected peer is verified, environment proxies are disabled, redirects are re-checked, and HTTP response bodies are bounded during streaming and decoding.
 
-## Security boundary after A7.1
-
-The fetch path no longer has the previous DNS validation/request-resolution TOCTOU design: the selected public IP is used as the actual connection target, while hostname identity is preserved for HTTP and TLS. The response peer is checked against the pinned address, and environment proxies are disabled.
-
-The body limit is now a transport-processing gate rather than a post-download slice. Declared oversized responses are rejected before iteration; unknown-length and compressed responses are bounded while streaming and decoding.
+A7.2 improves report correctness for origin resources and canonical comparison. A robots.txt `Allow` rule can now correctly override a broader `Disallow`, declared sitemap locations are used before the default sitemap endpoint, and relative canonical hrefs no longer create false final-URL mismatch issues when they resolve to the fetched final URL.
 
 ## Remaining known scope
 
-The following findings remain outside A7.1 and require separate minimal patches:
+The following findings remain outside A7.2 and require separate minimal patches:
 
-- robots.txt `Allow`/`Disallow` precedence, wildcard, end-anchor, and user-agent group semantics;
-- relative canonical URL resolution before final-URL comparison;
-- fetching sitemap URLs declared through `Sitemap:` directives;
 - real per-check timing instead of placeholder `duration_ms=0`;
 - Python dependency lock/install reproducibility;
 - byte/semantic equality gate for the duplicated frontend/backend registry JSON;
-- production persistence, queueing, crawler limits, retry policy, and observability.
+- richer sitemap-index expansion and bounded multi-sitemap collection;
+- production persistence, queueing, crawler limits, retry policy, and observability;
+- frontend result UI extraction from the Hero into a dedicated compact result section.
 
 ## Repository boundary
 
-The supplied context archive excludes `.git`. Git status and diff cannot be recomputed from the audit copy. Source changes were made only in the agreed files, and no GitHub write, commit, or push was performed.
+The supplied context archive excludes `.git`. Git status and diff cannot be recomputed from the audit copy. Source changes were made only in the A7.2 files, and no GitHub write, commit, or push was performed by the assistant.

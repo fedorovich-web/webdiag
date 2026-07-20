@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from urllib.parse import urljoin, urlsplit, urlunsplit
 from uuid import UUID
 
 from webdiag_api.audit.fetcher import SafeFetchResult
@@ -549,9 +550,10 @@ def _collect_issues(
                 affected_urls=affected,
             )
         )
-    elif _normalize_url_for_comparison(metadata.canonical_url) != _normalize_url_for_comparison(
-        fetched.final_url
-    ):
+    elif _normalize_url_for_comparison(
+        metadata.canonical_url,
+        base_url=fetched.final_url,
+    ) != _normalize_url_for_comparison(fetched.final_url):
         issues.append(
             _issue(
                 issue_id="metadata.canonical.final_url_mismatch",
@@ -843,8 +845,24 @@ def _collect_site_resource_issues(
     return issues
 
 
-def _normalize_url_for_comparison(raw_url: str) -> str:
-    return raw_url.strip().rstrip("/")
+def _normalize_url_for_comparison(raw_url: str, *, base_url: str | None = None) -> str:
+    normalized_url = urljoin(base_url, raw_url.strip()) if base_url else raw_url.strip()
+    parsed = urlsplit(normalized_url)
+    scheme = parsed.scheme.lower()
+    hostname = parsed.hostname.lower() if parsed.hostname else ""
+    if not scheme or not hostname:
+        return normalized_url.rstrip("/")
+
+    port = parsed.port
+    default_port = (scheme == "http" and port == 80) or (scheme == "https" and port == 443)
+    authority = hostname
+    if port is not None and not default_port:
+        authority = f"{hostname}:{port}"
+
+    path = parsed.path.rstrip("/") or "/"
+    if path == "/":
+        path = ""
+    return urlunsplit((scheme, authority, path, parsed.query, ""))
 
 
 def _check(

@@ -31,3 +31,18 @@ def test_parse_sitemap_xml_reports_invalid_xml() -> None:
     assert summary.available is True
     assert summary.valid_xml is False
     assert summary.parse_error is not None
+
+
+def test_parse_sitemap_xml_normalizes_trailing_slash_case_and_default_ports() -> None:
+    summary = parse_sitemap_xml(
+        """
+        <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+          <url><loc>https://EXAMPLE.com:443/about/</loc></url>
+        </urlset>
+        """,
+        sitemap_url="https://example.com/sitemap.xml",
+        target_url="https://example.com/about",
+        status_code=200,
+    )
+
+    assert summary.contains_target is True

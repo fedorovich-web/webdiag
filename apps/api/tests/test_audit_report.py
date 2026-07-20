@@ -178,3 +178,35 @@ def test_assemble_single_page_report_flags_incomplete_open_graph_and_invalid_jso
         "metadata.open_graph",
         "structured_data.json_ld",
     }
+
+
+def test_assemble_single_page_report_resolves_relative_canonical_against_final_url() -> None:
+    target = build_audit_target("https://example.com/page", resolved_addresses=["93.184.216.34"])
+    fetched = SafeFetchResult(
+        requested_url="https://example.com/page",
+        final_url="https://example.com/page",
+        status_code=200,
+        headers={
+            "content-type": "text/html",
+            "strict-transport-security": "max-age=31536000",
+            "content-security-policy": "default-src 'self'",
+            "x-content-type-options": "nosniff",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "permissions-policy": "geolocation=()",
+            "x-frame-options": "DENY",
+        },
+        body_text="""
+        <html><head>
+          <title>Technical SEO audit page</title>
+          <meta name="description" content="Technical audit report for a website.">
+          <link rel="canonical" href="/page">
+        </head><body><h1>Website audit</h1></body></html>
+        """,
+        content_type="text/html",
+        redirect_chain=(),
+    )
+
+    report = assemble_single_page_report(job_id=UUID(int=6), target=target, fetched=fetched)
+    issue_ids = {issue.issue_id for issue in report.issues}
+
+    assert "metadata.canonical.final_url_mismatch" not in issue_ids
