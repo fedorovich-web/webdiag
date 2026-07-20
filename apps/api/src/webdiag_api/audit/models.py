@@ -132,17 +132,21 @@ class AuditTarget(WebDiagModel):
 
 class AuditCheck(WebDiagModel):
     check_id: str = Field(min_length=1, max_length=120)
+    taxonomy_version: str = Field(default="webdiag.audit.taxonomy.v1", min_length=1, max_length=80)
     name: str = Field(min_length=1, max_length=160)
     category: IssueCategory
     status: CheckStatus = CheckStatus.PENDING
     started_at: datetime | None = None
     completed_at: datetime | None = None
+    duration_ms: int | None = Field(default=None, ge=0)
     evidence: tuple[Evidence, ...] = Field(default_factory=tuple)
     issue_ids: tuple[str, ...] = Field(default_factory=tuple)
 
 
 class AuditIssue(WebDiagModel):
     issue_id: str = Field(min_length=1, max_length=120)
+    check_id: str | None = Field(default=None, min_length=1, max_length=120)
+    taxonomy_version: str = Field(default="webdiag.audit.taxonomy.v1", min_length=1, max_length=80)
     category: IssueCategory
     severity: Severity
     priority: Priority
@@ -152,6 +156,18 @@ class AuditIssue(WebDiagModel):
     evidence: tuple[Evidence, ...] = Field(default_factory=tuple)
     recommendation: Recommendation
     tool_mappings: tuple[ToolMapping, ...] = Field(default_factory=tuple)
+
+
+class AuditRunSummary(WebDiagModel):
+    status: AuditJobStatus
+    score: int | None = Field(default=None, ge=0, le=100)
+    check_count: int = Field(ge=0)
+    issue_count: int = Field(ge=0)
+    checks_by_status: dict[str, int] = Field(default_factory=dict)
+    issues_by_severity: dict[str, int] = Field(default_factory=dict)
+    issues_by_priority: dict[str, int] = Field(default_factory=dict)
+    highest_severity: Severity | None = None
+    top_priority: Priority | None = None
 
 
 class AuditJob(WebDiagModel):

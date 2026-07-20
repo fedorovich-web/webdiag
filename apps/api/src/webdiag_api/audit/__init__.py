@@ -20,6 +20,7 @@ from webdiag_api.audit.models import (
     AuditJob,
     AuditJobStatus,
     AuditRun,
+    AuditRunSummary,
     AuditTarget,
     AuditTargetScope,
     CheckStatus,
@@ -56,6 +57,17 @@ from webdiag_api.audit.structured_data import (
     StructuredDataReport,
     analyze_json_ld_scripts,
 )
+from webdiag_api.audit.summary import summarize_audit_run
+from webdiag_api.audit.taxonomy import (
+    CHECK_DEFINITIONS,
+    ISSUE_DEFINITIONS,
+    TAXONOMY_VERSION,
+    CheckDefinition,
+    IssueDefinition,
+    get_check_definition,
+    get_issue_definition,
+    validate_taxonomy,
+)
 
 __all__ = [
     "AffectedUrl",
@@ -69,6 +81,7 @@ __all__ = [
     "AuditJob",
     "AuditJobStatus",
     "AuditRun",
+    "AuditRunSummary",
     "AuditTarget",
     "AuditTargetScope",
     "CheckStatus",
@@ -105,5 +118,14 @@ __all__ = [
     "build_audit_target",
     "parse_html_metadata",
     "validate_tool_mappings",
+    "validate_taxonomy",
+    "summarize_audit_run",
+    "get_issue_definition",
+    "get_check_definition",
+    "TAXONOMY_VERSION",
+    "IssueDefinition",
+    "ISSUE_DEFINITIONS",
+    "CheckDefinition",
+    "CHECK_DEFINITIONS",
     "analyze_json_ld_scripts",
 ]
