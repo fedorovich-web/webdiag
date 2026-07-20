@@ -35,6 +35,7 @@ def test_assemble_single_page_report_passes_core_metadata_checks() -> None:
     report = assemble_single_page_report(job_id=UUID(int=1), target=target, fetched=fetched)
 
     assert report.status is AuditJobStatus.SUCCEEDED
+    assert all(check.taxonomy_version == "webdiag.audit.taxonomy.v1" for check in report.checks)
     assert report.score == 100
     assert report.issues == ()
     assert {check.check_id for check in report.checks} >= {
@@ -79,6 +80,8 @@ def test_assemble_single_page_report_creates_prioritized_issues() -> None:
     noindex = next(
         issue for issue in report.issues if issue.issue_id == "indexability.robots_meta.noindex"
     )
+    assert noindex.check_id == "indexability.robots_meta"
+    assert noindex.taxonomy_version == "webdiag.audit.taxonomy.v1"
     assert noindex.severity is Severity.HIGH
     assert noindex.priority is Priority.P0
     assert noindex.tool_mappings[0].issue_category is IssueCategory.INDEXABILITY
@@ -135,6 +138,7 @@ def test_assemble_single_page_report_sets_check_timestamps() -> None:
 
     assert all(check.started_at is not None for check in report.checks)
     assert all(check.completed_at is not None for check in report.checks)
+    assert all(check.duration_ms is not None for check in report.checks)
 
 
 def test_assemble_single_page_report_flags_incomplete_open_graph_and_invalid_json_ld() -> None:

@@ -27,6 +27,11 @@ from webdiag_api.audit.structured_data import (
     StructuredDataReport,
     analyze_json_ld_scripts,
 )
+from webdiag_api.audit.taxonomy import (
+    TAXONOMY_VERSION,
+    get_check_definition,
+    get_issue_definition,
+)
 
 SEVERITY_WEIGHTS: dict[Severity, int] = {
     Severity.INFO: 0,
@@ -851,14 +856,20 @@ def _check(
     evidence: tuple[Evidence, ...],
     issue_ids: list[str],
 ) -> AuditCheck:
+    definition = get_check_definition(check_id)
+    if definition.name != name or definition.category is not category:
+        raise ValueError(f"Check {check_id} does not match the audit taxonomy definition.")
+
     completed_at = datetime.now(UTC)
     return AuditCheck(
         check_id=check_id,
-        name=name,
-        category=category,
+        taxonomy_version=TAXONOMY_VERSION,
+        name=definition.name,
+        category=definition.category,
         status=CheckStatus.WARNING if failed_when else CheckStatus.PASSED,
         started_at=completed_at,
         completed_at=completed_at,
+        duration_ms=0,
         evidence=evidence,
         issue_ids=tuple(issue_ids),
     )
@@ -961,8 +972,19 @@ def _issue(
     recommendation: Recommendation,
     affected_urls: tuple[AffectedUrl, ...],
 ) -> AuditIssue:
+    definition = get_issue_definition(issue_id)
+    if (
+        definition.category is not category
+        or definition.severity is not severity
+        or definition.priority is not priority
+        or definition.title != title
+    ):
+        raise ValueError(f"Issue {issue_id} does not match the audit taxonomy definition.")
+
     return AuditIssue(
         issue_id=issue_id,
+        check_id=definition.check_id,
+        taxonomy_version=TAXONOMY_VERSION,
         category=category,
         severity=severity,
         priority=priority,

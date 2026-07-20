@@ -115,8 +115,11 @@ def test_start_audit_runs_single_url_check_and_returns_snapshot() -> None:
     payload = response.json()
     assert payload["contract_version"] == "webdiag.audit.snapshot.v1"
     assert payload["summary"]["status"] == "succeeded"
-    assert payload["summary"]["score"] == 100
-    assert payload["summary"]["issue_count"] == 0
+    assert payload["summary"]["run"]["score"] == 100
+    assert payload["summary"]["run"]["issue_count"] == 0
+    assert payload["summary"]["run"]["checks_by_status"] == {
+        "passed": len(payload["run"]["checks"])
+    }
     assert payload["job"]["status"] == "succeeded"
     assert payload["run"]["status"] == "succeeded"
     assert payload["run"]["score"] == 100
@@ -146,6 +149,7 @@ def test_get_audit_returns_stored_snapshot() -> None:
     assert payload["job"]["job_id"] == job_id
     assert payload["run"]["job_id"] == job_id
     assert payload["summary"]["job_id"] == job_id
+    assert payload["summary"]["run"]["status"] == "succeeded"
 
 
 def test_start_audit_rejects_disallowed_url_before_fetch() -> None:

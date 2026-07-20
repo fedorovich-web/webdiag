@@ -7,13 +7,14 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
 
-from webdiag_api.audit.models import AuditJob, AuditJobStatus, AuditRun, Priority, Severity
+from webdiag_api.audit.models import AuditJob, AuditJobStatus, AuditRun, AuditRunSummary
 from webdiag_api.audit.service import (
     AuditExecutionError,
     AuditExecutionService,
     AuditRequestError,
     AuditSnapshot,
 )
+from webdiag_api.audit.summary import summarize_audit_run
 
 router = APIRouter(prefix="/v1/audits", tags=["audits"])
 _default_audit_service = AuditExecutionService()
@@ -30,11 +31,7 @@ class AuditSnapshotSummary(BaseModel):
 
     job_id: UUID
     status: AuditJobStatus
-    score: int | None = Field(default=None, ge=0, le=100)
-    check_count: int = Field(ge=0)
-    issue_count: int = Field(ge=0)
-    highest_severity: Severity | None = None
-    top_priority: Priority | None = None
+    run: AuditRunSummary | None = None
 
 
 class AuditSnapshotResponse(BaseModel):
@@ -98,32 +95,8 @@ def _to_response(snapshot: AuditSnapshot) -> AuditSnapshotResponse:
         summary=AuditSnapshotSummary(
             job_id=snapshot.job.job_id,
             status=snapshot.job.status,
-            score=run.score if run else None,
-            check_count=len(run.checks) if run else 0,
-            issue_count=len(run.issues) if run else 0,
-            highest_severity=_highest_severity(run) if run else None,
-            top_priority=_top_priority(run) if run else None,
+            run=summarize_audit_run(run) if run else None,
         ),
         job=snapshot.job,
         run=run,
     )
-
-
-def _highest_severity(run: AuditRun) -> Severity | None:
-    if not run.issues:
-        return None
-    order = {
-        Severity.INFO: 0,
-        Severity.LOW: 1,
-        Severity.MEDIUM: 2,
-        Severity.HIGH: 3,
-        Severity.CRITICAL: 4,
-    }
-    return max((issue.severity for issue in run.issues), key=lambda item: order[item])
-
-
-def _top_priority(run: AuditRun) -> Priority | None:
-    if not run.issues:
-        return None
-    order = {Priority.P0: 0, Priority.P1: 1, Priority.P2: 2, Priority.P3: 3}
-    return min((issue.priority for issue in run.issues), key=lambda item: order[item])
