@@ -2,53 +2,82 @@
 
 Date: 2026-07-20
 Package version: `0.5.11`
-Patch scope: A0 gate hygiene + A1 backend audit-engine foundation. No commit or push performed in this handoff.
+Patch scope: A7.1 audit execution safety hardening. No commit or push was performed.
 
 ## Scope
 
-- removed obsolete prototype-era `audit-v*` CSS layers from `apps/web/app/globals.css` without changing the current `home-v11.css` page architecture;
-- replaced the rejected direct pricing label size with the existing `--wd-text-sm` token;
-- normalized remaining high direct `font-weight` values in `globals.css` to the approved shipped Manrope range;
-- added immutable audit-domain Pydantic models for targets, jobs, runs, checks, issues, affected URLs, evidence, recommendations and tool mappings;
-- added deterministic URL intake that reuses the existing URL policy and SSRF resolved-address guard;
-- added explicit issue-category to ready-tool binding state without exposing internal SEO-audit tools as public routes;
-- added Python unit tests for audit models, URL intake and registry mappings;
-- refreshed source `BUILD-MANIFEST.json` and root `SHA256SUMS.txt` for the patched source tree.
+This verification record covers the clean A0–A7 baseline plus the A7.1 backend safety patch.
 
-No crawler, external HTTP fetcher, persistence layer, frontend report UI, scheduler, DB integration, commit or push is included.
+A7.1 changes:
+
+- resolves and validates every candidate address before a request;
+- pins each connection to a validated IP instead of allowing the HTTP client to resolve the hostname again;
+- preserves the original hostname in the HTTP `Host` header and TLS SNI;
+- disables environment proxy inheritance with `trust_env=False`;
+- disables keep-alive reuse between pinned targets and verifies the connected peer address;
+- re-runs URL and resolved-address policy checks for every redirect target;
+- streams response bodies instead of reading `response.content`;
+- rejects oversized declared bodies before reading the stream;
+- enforces hard limits for unknown-length/chunked bodies, compressed wire data, and decoded gzip/deflate data;
+- normalizes HTTP timeout, transport, body-limit, decoding, peer, and URL-policy execution failures;
+- persists a failed job and failed run for expected execution failures;
+- persists failed state before re-raising unexpected execution exceptions;
+- treats an unsafe robots/sitemap redirect as an audit execution failure instead of reporting the resource as merely missing;
+- adds regression tests for IP pinning, Host/SNI preservation, peer verification, redirect SSRF blocking, streaming limits, gzip decoding, decompression limits, and failed-state persistence.
+
+No frontend redesign, database, crawler, worker integration, persistence migration, robots semantics rewrite, canonical normalization, registry refactor, commit, or push is included.
 
 ## Confirmed gates in this environment
 
 | Gate | Result |
 |---|---:|
-| `npm ci --ignore-scripts --no-audit --no-fund --prefer-offline` | passed, 401 packages installed |
 | `npm run test:workspace` | passed, 26/26 |
-| `npm test` | passed, 74/74 JavaScript/TypeScript tests |
+| `npm test` | passed, 78/78 JavaScript/TypeScript tests |
 | `npm run verify:registry` | passed, 110 unique tools |
 | `npm run lint` | passed |
 | `npm run typecheck` | passed |
 | `npm run build` | passed |
-| `npm run verify:built-site` | passed, 34 public routes / 32 HTML routes |
-| `npm run python:where` | passed, project `.venv` interpreter used |
-| `npm run python:install` | passed |
-| `npm run test:python` | passed, 26/26 |
+| `npm run verify:built-site` | passed, 34 public routes / 32 localized HTML routes |
+| `npm run test:python` | passed, 70/70 |
 | `npm run lint:python` | passed |
-| `npm run test:browser` | not passed in this sandbox; Playwright Chromium executable is missing |
+| `npm run test:browser` | not verified in this sandbox; local navigation is blocked by environment policy |
 
 ## Browser boundary
 
-`npm run test:browser` was executed but did not verify browser behavior in this sandbox because Playwright could not find Chromium at:
+The production server and system Chromium both started. The browser was then unable to navigate to the local Playwright server:
 
 ```text
-/home/oai/.cache/ms-playwright/chromium_headless_shell-1228/chrome-headless-shell-linux64/chrome-headless-shell
+page.goto: net::ERR_BLOCKED_BY_ADMINISTRATOR
+http://127.0.0.1:4173/
 ```
 
-The resulting 37 browser failures are environment failures caused by the missing executable. They are not claimed as visual, responsive, accessibility or hydration regressions. Run locally after installing the Playwright browser or configuring `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`.
+A bounded diagnostic run stopped after the first failure:
 
-## Registry boundary
+```text
+1 failed
+36 did not run
+```
 
-The registry remains 110 total definitions and 14 ready public tools. A1 adds backend-side mappings only where a ready helper tool already exists. SEO-audit categories whose dedicated tools are still internal are represented as explicit non-public bindings, so no public route is promised for unimplemented audit capabilities.
+This is an environment navigation restriction. Browser behavior, accessibility, responsive reflow, hydration, and visual rendering are therefore not claimed as passed or failed by this verification.
 
-## Backend boundary
+## Security boundary after A7.1
 
-A1 establishes the domain contract and unit-tested intake/mapping layer. It does not perform network crawling or live site diagnostics yet. The next safe backend step is a separate fetcher/parser patch for timeouts, redirects, response-size limits, HTTP status, title, meta description, canonical, H1, robots meta, robots.txt and sitemap discovery.
+The fetch path no longer has the previous DNS validation/request-resolution TOCTOU design: the selected public IP is used as the actual connection target, while hostname identity is preserved for HTTP and TLS. The response peer is checked against the pinned address, and environment proxies are disabled.
+
+The body limit is now a transport-processing gate rather than a post-download slice. Declared oversized responses are rejected before iteration; unknown-length and compressed responses are bounded while streaming and decoding.
+
+## Remaining known scope
+
+The following findings remain outside A7.1 and require separate minimal patches:
+
+- robots.txt `Allow`/`Disallow` precedence, wildcard, end-anchor, and user-agent group semantics;
+- relative canonical URL resolution before final-URL comparison;
+- fetching sitemap URLs declared through `Sitemap:` directives;
+- real per-check timing instead of placeholder `duration_ms=0`;
+- Python dependency lock/install reproducibility;
+- byte/semantic equality gate for the duplicated frontend/backend registry JSON;
+- production persistence, queueing, crawler limits, retry policy, and observability.
+
+## Repository boundary
+
+The supplied context archive excludes `.git`. Git status and diff cannot be recomputed from the audit copy. Source changes were made only in the agreed files, and no GitHub write, commit, or push was performed.
