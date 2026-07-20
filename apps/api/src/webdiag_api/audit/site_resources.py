@@ -44,11 +44,9 @@ def collect_site_resources(
     """
     origin = _origin_from_url(final_url)
     robots_url = urljoin(origin, "/robots.txt")
-    sitemap_url = urljoin(origin, "/sitemap.xml")
+    default_sitemap_url = urljoin(origin, "/sitemap.xml")
 
     robots_fetch = _try_fetch(fetcher=fetcher, url=robots_url)
-    sitemap_fetch = _try_fetch(fetcher=fetcher, url=sitemap_url)
-
     robots = analyze_robots_txt(
         robots_fetch.body_text,
         robots_url=robots_url,
@@ -56,6 +54,12 @@ def collect_site_resources(
         status_code=robots_fetch.status_code,
         fetch_error=robots_fetch.fetch_error,
     )
+
+    sitemap_url = _select_sitemap_url(
+        declared_sitemap_urls=robots.sitemap_urls,
+        default_sitemap_url=default_sitemap_url,
+    )
+    sitemap_fetch = _try_fetch(fetcher=fetcher, url=sitemap_url)
     sitemap = parse_sitemap_xml(
         sitemap_fetch.body_text,
         sitemap_url=sitemap_url,
@@ -88,3 +92,15 @@ def _try_fetch(*, fetcher: SafeHttpFetcher, url: str) -> SiteResourceFetch:
 def _origin_from_url(raw_url: str) -> str:
     parsed = urlsplit(raw_url)
     return urlunsplit((parsed.scheme, parsed.netloc, "/", "", ""))
+
+
+def _select_sitemap_url(
+    *,
+    declared_sitemap_urls: tuple[str, ...],
+    default_sitemap_url: str,
+) -> str:
+    for sitemap_url in declared_sitemap_urls:
+        parsed = urlsplit(sitemap_url)
+        if parsed.scheme in {"http", "https"} and parsed.netloc:
+            return sitemap_url
+    return default_sitemap_url

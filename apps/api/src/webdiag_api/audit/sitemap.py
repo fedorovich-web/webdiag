@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from urllib.parse import urlsplit, urlunsplit
 from xml.etree import ElementTree
 
 
@@ -76,4 +77,19 @@ def _iter_loc_text(root: ElementTree.Element) -> list[str]:
 
 
 def _normalize_url_for_comparison(raw_url: str) -> str:
-    return raw_url.strip().rstrip("/")
+    parsed = urlsplit(raw_url.strip())
+    scheme = parsed.scheme.lower()
+    hostname = parsed.hostname.lower() if parsed.hostname else ""
+    if not scheme or not hostname:
+        return raw_url.strip().rstrip("/")
+
+    port = parsed.port
+    default_port = (scheme == "http" and port == 80) or (scheme == "https" and port == 443)
+    authority = hostname
+    if port is not None and not default_port:
+        authority = f"{hostname}:{port}"
+
+    path = parsed.path.rstrip("/") or "/"
+    if path == "/":
+        path = ""
+    return urlunsplit((scheme, authority, path, parsed.query, ""))
