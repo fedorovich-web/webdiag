@@ -103,3 +103,74 @@ def test_assemble_single_page_report_handles_http_errors() -> None:
     assert issue.category is IssueCategory.HTTP
     assert issue.priority is Priority.P0
     assert issue.affected_urls[0].status_code == 404
+
+
+def test_assemble_single_page_report_sets_check_timestamps() -> None:
+    target = build_audit_target("https://example.com", resolved_addresses=["93.184.216.34"])
+    fetched = SafeFetchResult(
+        requested_url="https://example.com/",
+        final_url="https://example.com/",
+        status_code=200,
+        headers={
+            "content-type": "text/html",
+            "strict-transport-security": "max-age=31536000",
+            "content-security-policy": "default-src 'self'",
+            "x-content-type-options": "nosniff",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "permissions-policy": "geolocation=()",
+            "x-frame-options": "DENY",
+        },
+        body_text="""
+        <html><head>
+          <title>Technical SEO audit page</title>
+          <meta name="description" content="Technical audit report for a website.">
+          <link rel="canonical" href="https://example.com/">
+        </head><body><h1>Website audit</h1></body></html>
+        """,
+        content_type="text/html",
+        redirect_chain=(),
+    )
+
+    report = assemble_single_page_report(job_id=UUID(int=4), target=target, fetched=fetched)
+
+    assert all(check.started_at is not None for check in report.checks)
+    assert all(check.completed_at is not None for check in report.checks)
+
+
+def test_assemble_single_page_report_flags_incomplete_open_graph_and_invalid_json_ld() -> None:
+    target = build_audit_target("https://example.com", resolved_addresses=["93.184.216.34"])
+    fetched = SafeFetchResult(
+        requested_url="https://example.com/",
+        final_url="https://example.com/",
+        status_code=200,
+        headers={
+            "content-type": "text/html",
+            "strict-transport-security": "max-age=31536000",
+            "content-security-policy": "default-src 'self'",
+            "x-content-type-options": "nosniff",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "permissions-policy": "geolocation=()",
+            "x-frame-options": "DENY",
+        },
+        body_text="""
+        <html><head>
+          <title>Technical SEO audit page</title>
+          <meta name="description" content="Technical audit report for a website.">
+          <link rel="canonical" href="https://example.com/">
+          <meta property="og:title" content="Technical SEO audit page">
+          <script type="application/ld+json">{"@type":"WebPage"</script>
+        </head><body><h1>Website audit</h1></body></html>
+        """,
+        content_type="text/html",
+        redirect_chain=(),
+    )
+
+    report = assemble_single_page_report(job_id=UUID(int=5), target=target, fetched=fetched)
+    issue_ids = {issue.issue_id for issue in report.issues}
+
+    assert "metadata.open_graph.incomplete" in issue_ids
+    assert "structured_data.json_ld.invalid" in issue_ids
+    assert {check.check_id for check in report.checks} >= {
+        "metadata.open_graph",
+        "structured_data.json_ld",
+    }

@@ -113,6 +113,10 @@ def test_start_audit_runs_single_url_check_and_returns_snapshot() -> None:
 
     assert response.status_code == 201
     payload = response.json()
+    assert payload["contract_version"] == "webdiag.audit.snapshot.v1"
+    assert payload["summary"]["status"] == "succeeded"
+    assert payload["summary"]["score"] == 100
+    assert payload["summary"]["issue_count"] == 0
     assert payload["job"]["status"] == "succeeded"
     assert payload["run"]["status"] == "succeeded"
     assert payload["run"]["score"] == 100
@@ -138,8 +142,10 @@ def test_get_audit_returns_stored_snapshot() -> None:
         clear_overrides()
 
     assert fetched.status_code == 200
-    assert fetched.json()["job"]["job_id"] == job_id
-    assert fetched.json()["run"]["job_id"] == job_id
+    payload = fetched.json()
+    assert payload["job"]["job_id"] == job_id
+    assert payload["run"]["job_id"] == job_id
+    assert payload["summary"]["job_id"] == job_id
 
 
 def test_start_audit_rejects_disallowed_url_before_fetch() -> None:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from uuid import UUID
 
 from webdiag_api.audit.fetcher import SafeFetchResult
@@ -22,6 +23,10 @@ from webdiag_api.audit.models import (
 from webdiag_api.audit.registry_mapping import bindings_for_category
 from webdiag_api.audit.security_headers import BASELINE_SECURITY_HEADERS, evaluate_security_headers
 from webdiag_api.audit.site_resources import SiteResourceReport
+from webdiag_api.audit.structured_data import (
+    StructuredDataReport,
+    analyze_json_ld_scripts,
+)
 
 SEVERITY_WEIGHTS: dict[Severity, int] = {
     Severity.INFO: 0,
@@ -42,15 +47,18 @@ def assemble_single_page_report(
     site_resources: SiteResourceReport | None = None,
 ) -> AuditRun:
     metadata = parse_html_metadata(fetched.body_text)
+    structured_data = analyze_json_ld_scripts(metadata.json_ld_scripts)
     issues = _collect_issues(
         target=target,
         fetched=fetched,
         metadata=metadata,
+        structured_data=structured_data,
         site_resources=site_resources,
     )
     checks = _collect_checks(
         fetched=fetched,
         metadata=metadata,
+        structured_data=structured_data,
         issues=issues,
         site_resources=site_resources,
     )
@@ -69,6 +77,7 @@ def _collect_checks(
     *,
     fetched: SafeFetchResult,
     metadata: HtmlMetadata,
+    structured_data: StructuredDataReport,
     issues: list[AuditIssue],
     site_resources: SiteResourceReport | None,
 ) -> list[AuditCheck]:
@@ -202,6 +211,26 @@ def _collect_checks(
             issue_ids=issue_ids_by_check.get("indexability.robots_meta", []),
         ),
         _check(
+            check_id="metadata.open_graph",
+            name="Open Graph metadata",
+            category=IssueCategory.METADATA,
+            failed_when=bool(issue_ids_by_check.get("metadata.open_graph")),
+            evidence=_social_metadata_evidence(
+                source_prefix="meta[property]",
+                signals={signal.name: signal.content for signal in metadata.open_graph},
+                expected=("og:title", "og:description", "og:image"),
+            ),
+            issue_ids=issue_ids_by_check.get("metadata.open_graph", []),
+        ),
+        _check(
+            check_id="structured_data.json_ld",
+            name="JSON-LD structured data",
+            category=IssueCategory.STRUCTURED_DATA,
+            failed_when=bool(issue_ids_by_check.get("structured_data.json_ld")),
+            evidence=_structured_data_evidence(structured_data),
+            issue_ids=issue_ids_by_check.get("structured_data.json_ld", []),
+        ),
+        _check(
             check_id="security.headers",
             name="Security headers",
             category=IssueCategory.SECURITY,
@@ -290,6 +319,7 @@ def _collect_issues(
     target: AuditTarget,
     fetched: SafeFetchResult,
     metadata: HtmlMetadata,
+    structured_data: StructuredDataReport,
     site_resources: SiteResourceReport | None,
 ) -> list[AuditIssue]:
     affected = (
@@ -570,6 +600,75 @@ def _collect_issues(
             )
         )
 
+
+    missing_open_graph = _missing_social_signals(
+        {signal.name: signal.content for signal in metadata.open_graph},
+        required=("og:title", "og:description", "og:image"),
+    )
+    if metadata.open_graph and missing_open_graph:
+        issues.append(
+            _issue(
+                issue_id="metadata.open_graph.incomplete",
+                category=IssueCategory.METADATA,
+                severity=Severity.LOW,
+                priority=Priority.P3,
+                title="Open Graph metadata is incomplete",
+                description=(
+                    "The page exposes Open Graph metadata, but one or more baseline "
+                    "sharing signals are missing."
+                ),
+                evidence=Evidence(
+                    kind=EvidenceKind.HTML_ELEMENT,
+                    source="meta[property^=og]",
+                    value=", ".join(missing_open_graph),
+                    metadata={"missing": list(missing_open_graph)},
+                ),
+                recommendation=Recommendation(
+                    summary="Complete the Open Graph title, description and image signals.",
+                    steps=(
+                        "Set og:title to the same page-specific topic as the title tag.",
+                        "Set og:description to a concise page summary.",
+                        "Set og:image to a stable absolute preview image URL.",
+                    ),
+                    expected_impact="Improves link previews in social and messenger surfaces.",
+                ),
+                affected_urls=affected,
+            )
+        )
+
+    if structured_data.has_invalid_blocks:
+        issues.append(
+            _issue(
+                issue_id="structured_data.json_ld.invalid",
+                category=IssueCategory.STRUCTURED_DATA,
+                severity=Severity.MEDIUM,
+                priority=Priority.P2,
+                title="JSON-LD structured data is invalid",
+                description="One or more application/ld+json blocks could not be parsed as JSON.",
+                evidence=Evidence(
+                    kind=EvidenceKind.TOOL_OUTPUT,
+                    source="script[type=application/ld+json]",
+                    value=f"{structured_data.invalid_count} invalid block(s)",
+                    metadata={
+                        f"block_{block.index}": block.error
+                        for block in structured_data.blocks
+                        if not block.valid
+                    },
+                ),
+                recommendation=Recommendation(
+                    summary="Fix invalid JSON-LD before relying on rich-result signals.",
+                    steps=(
+                        "Validate every JSON-LD block as strict JSON.",
+                        "Keep schema types aligned with the visible page content.",
+                    ),
+                    expected_impact=(
+                        "Prevents structured-data parsers from discarding schema evidence."
+                    ),
+                ),
+                affected_urls=affected,
+            )
+        )
+
     security_findings = evaluate_security_headers(fetched.headers, final_url=fetched.final_url)
     actionable_security_findings = [
         finding
@@ -752,14 +851,74 @@ def _check(
     evidence: tuple[Evidence, ...],
     issue_ids: list[str],
 ) -> AuditCheck:
+    completed_at = datetime.now(UTC)
     return AuditCheck(
         check_id=check_id,
         name=name,
         category=category,
         status=CheckStatus.WARNING if failed_when else CheckStatus.PASSED,
+        started_at=completed_at,
+        completed_at=completed_at,
         evidence=evidence,
         issue_ids=tuple(issue_ids),
     )
+
+
+def _social_metadata_evidence(
+    *,
+    source_prefix: str,
+    signals: dict[str, str],
+    expected: tuple[str, ...],
+) -> tuple[Evidence, ...]:
+    if not signals:
+        return (
+            Evidence(
+                kind=EvidenceKind.HTML_ELEMENT,
+                source=source_prefix,
+                value="not set",
+                metadata={"expected": list(expected)},
+            ),
+        )
+    return tuple(
+        Evidence(
+            kind=EvidenceKind.HTML_ELEMENT,
+            source=name,
+            value=value,
+        )
+        for name, value in sorted(signals.items())
+    )
+
+
+def _structured_data_evidence(report: StructuredDataReport) -> tuple[Evidence, ...]:
+    if report.block_count == 0:
+        return (
+            Evidence(
+                kind=EvidenceKind.TOOL_OUTPUT,
+                source="script[type=application/ld+json]",
+                value="not set",
+            ),
+        )
+    return tuple(
+        Evidence(
+            kind=EvidenceKind.TOOL_OUTPUT,
+            source=f"script[type=application/ld+json]#{block.index}",
+            value="valid" if block.valid else "invalid",
+            metadata={
+                "types": list(block.types),
+                "node_count": block.node_count,
+                "error": block.error,
+            },
+        )
+        for block in report.blocks
+    )
+
+
+def _missing_social_signals(
+    signals: dict[str, str],
+    *,
+    required: tuple[str, ...],
+) -> tuple[str, ...]:
+    return tuple(name for name in required if not signals.get(name))
 
 
 def _metadata_issue(
