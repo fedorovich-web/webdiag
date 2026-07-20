@@ -34,3 +34,25 @@ def test_parse_html_metadata_handles_missing_signals() -> None:
     assert result.canonical_url is None
     assert result.h1 == ()
     assert result.robots == ()
+
+
+def test_parse_html_metadata_extracts_social_and_json_ld_signals() -> None:
+    html = """
+    <html><head>
+      <meta property="og:title" content=" Shared   title ">
+      <meta property="og:image" content="https://example.com/og.png">
+      <meta name="twitter:card" content="summary_large_image">
+      <script type="application/ld+json">
+        {"@context":"https://schema.org","@type":"WebPage","name":"Example"}
+      </script>
+    </head><body></body></html>
+    """
+
+    result = parse_html_metadata(html)
+
+    assert result.open_graph[0].name == "og:title"
+    assert result.open_graph[0].content == "Shared title"
+    assert {signal.name for signal in result.open_graph} == {"og:title", "og:image"}
+    assert result.twitter_cards[0].name == "twitter:card"
+    assert len(result.json_ld_scripts) == 1
+    assert "WebPage" in result.json_ld_scripts[0].content

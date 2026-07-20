@@ -5,7 +5,13 @@ from webdiag_api.audit.fetcher import (
     SafeFetchResult,
     SafeHttpFetcher,
 )
-from webdiag_api.audit.html_metadata import HtmlMetadata, RobotsDirective, parse_html_metadata
+from webdiag_api.audit.html_metadata import (
+    HtmlMetadata,
+    MetaSignal,
+    RobotsDirective,
+    ScriptBlock,
+    parse_html_metadata,
+)
 from webdiag_api.audit.intake import build_audit_target
 from webdiag_api.audit.models import (
     AffectedUrl,
@@ -45,6 +51,11 @@ from webdiag_api.audit.site_resources import (
     collect_site_resources,
 )
 from webdiag_api.audit.sitemap import SitemapXmlSummary, parse_sitemap_xml
+from webdiag_api.audit.structured_data import (
+    StructuredDataBlock,
+    StructuredDataReport,
+    analyze_json_ld_scripts,
+)
 
 __all__ = [
     "AffectedUrl",
@@ -64,11 +75,13 @@ __all__ = [
     "Evidence",
     "EvidenceKind",
     "HtmlMetadata",
+    "MetaSignal",
     "IssueCategory",
     "Priority",
     "Recommendation",
     "RedirectHop",
     "RobotsDirective",
+    "ScriptBlock",
     "SafeFetchConfig",
     "SafeFetchError",
     "SafeFetchResult",
@@ -78,6 +91,8 @@ __all__ = [
     "collect_site_resources",
     "analyze_robots_txt",
     "SitemapXmlSummary",
+    "StructuredDataBlock",
+    "StructuredDataReport",
     "SiteResourceReport",
     "SiteResourceFetch",
     "SecurityHeaderFinding",
@@ -90,4 +105,5 @@ __all__ = [
     "build_audit_target",
     "parse_html_metadata",
     "validate_tool_mappings",
+    "analyze_json_ld_scripts",
 ]
