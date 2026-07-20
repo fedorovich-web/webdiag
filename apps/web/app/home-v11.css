@@ -1818,3 +1818,27 @@ body[data-theme="dark"]{
 
 
 /* WebDiag v28: homepage CSS restored to stable v25 scale; no broad late h1/button overrides */
+
+/* WebDiag A7: live audit bridge result preview */
+.wd-url-check button:disabled{cursor:not-allowed;opacity:.72;transform:none;box-shadow:var(--wd-button-shadow)}
+.wd-url-check input:disabled{cursor:not-allowed;color:var(--wd-m)}
+.wd-url-check p[data-state=loading]{color:var(--wd-i)}
+.wd-live-audit-card{margin-top:14px;padding:16px;border:1px solid var(--wd-l);border-radius:20px;background:var(--wd-s);box-shadow:var(--wd-shs)}
+.wd-live-audit-card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.wd-live-audit-card-header span{display:block;color:var(--wd-ms);font-size:var(--wd-text-sm);font-weight:700}
+.wd-live-audit-card-header h2{margin:4px 0 0;font-size:18px;line-height:1.22}
+.wd-live-audit-card-header b{min-height:30px;display:inline-flex;align-items:center;justify-content:center;padding:0 10px;border-radius:999px;background:var(--wd-status-success-bg);color:var(--wd-status-success-text);font-size:var(--wd-text-sm);white-space:nowrap}
+.wd-live-audit-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:14px}
+.wd-live-audit-metrics article{min-height:74px;display:flex;flex-direction:column;justify-content:center;gap:5px;padding:12px;border:1px solid var(--wd-l2);border-radius:14px;background:var(--wd-soft)}
+.wd-live-audit-metrics span{color:var(--wd-ms);font-size:var(--wd-text-sm);font-weight:700}
+.wd-live-audit-metrics strong{font-size:20px;line-height:1.1;text-transform:lowercase}
+.wd-live-audit-issues{margin-top:14px;padding-top:14px;border-top:1px solid var(--wd-l2)}
+.wd-live-audit-issues>strong{display:block;font-size:14px}
+.wd-live-audit-issues ul{display:grid;gap:8px;margin:10px 0 0;padding:0;list-style:none}
+.wd-live-audit-issues li{display:grid;gap:3px;padding:10px 12px;border-radius:12px;background:var(--wd-soft)}
+.wd-live-audit-issues li span{color:var(--wd-i);font-size:var(--wd-text-sm);font-weight:800;text-transform:uppercase}
+.wd-live-audit-issues li b{font-size:14px;line-height:1.35}
+.wd-live-audit-issues p{margin:8px 0 0;color:var(--wd-ms)}
+.wd-live-audit-link{display:inline-flex;align-items:center;gap:7px;margin-top:14px;color:var(--wd-i);font-size:var(--wd-text-sm);font-weight:800;text-decoration:none}
+.wd-live-audit-link:hover{color:var(--wd-i2)}
+@media(max-width:760px){.wd-live-audit-card-header{display:grid}.wd-live-audit-card-header b{justify-self:start}.wd-live-audit-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
