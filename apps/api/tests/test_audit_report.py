@@ -17,6 +17,9 @@ def test_assemble_single_page_report_passes_core_metadata_checks() -> None:
             "strict-transport-security": "max-age=31536000",
             "content-security-policy": "default-src 'self'",
             "x-content-type-options": "nosniff",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "permissions-policy": "geolocation=()",
+            "x-frame-options": "DENY",
         },
         body_text="""
         <html><head>

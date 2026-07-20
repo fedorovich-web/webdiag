@@ -59,21 +59,51 @@ def healthy_html() -> bytes:
     """
 
 
-def test_start_audit_runs_single_url_check_and_returns_snapshot() -> None:
-    def handler(request: httpx.Request) -> httpx.Response:
+def healthy_sitemap() -> bytes:
+    return b"""
+    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+      <url><loc>https://example.com/</loc></url>
+    </urlset>
+    """
+
+
+def healthy_headers() -> dict[str, str]:
+    return {
+        "content-type": "text/html; charset=utf-8",
+        "strict-transport-security": "max-age=31536000",
+        "content-security-policy": "default-src 'self'",
+        "x-content-type-options": "nosniff",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": "geolocation=()",
+        "x-frame-options": "DENY",
+    }
+
+
+def healthy_resource_response(request: httpx.Request) -> httpx.Response:
+    if request.url.path == "/robots.txt":
         return httpx.Response(
             200,
-            headers={
-                "content-type": "text/html; charset=utf-8",
-                "strict-transport-security": "max-age=31536000",
-                "content-security-policy": "default-src 'self'",
-                "x-content-type-options": "nosniff",
-            },
-            content=healthy_html(),
+            headers={"content-type": "text/plain"},
+            content=b"User-agent: *\nAllow: /\nSitemap: https://example.com/sitemap.xml",
             request=request,
         )
+    if request.url.path == "/sitemap.xml":
+        return httpx.Response(
+            200,
+            headers={"content-type": "application/xml"},
+            content=healthy_sitemap(),
+            request=request,
+        )
+    return httpx.Response(
+        200,
+        headers=healthy_headers(),
+        content=healthy_html(),
+        request=request,
+    )
 
-    with_service(build_service(handler))
+
+def test_start_audit_runs_single_url_check_and_returns_snapshot() -> None:
+    with_service(build_service(healthy_resource_response))
     try:
         response = asyncio.run(
             request("POST", "/v1/audits", json={"url": "https://example.com/"})
@@ -88,19 +118,15 @@ def test_start_audit_runs_single_url_check_and_returns_snapshot() -> None:
     assert payload["run"]["score"] == 100
     assert payload["run"]["issues"] == []
     assert payload["run"]["target"]["hostname"] == "example.com"
-    assert len(payload["run"]["checks"]) >= 8
+    assert len(payload["run"]["checks"]) >= 10
+    assert {check["check_id"] for check in payload["run"]["checks"]} >= {
+        "crawlability.robots_txt",
+        "crawlability.sitemap_xml",
+    }
 
 
 def test_get_audit_returns_stored_snapshot() -> None:
-    def handler(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(
-            200,
-            headers={"content-type": "text/html"},
-            content=healthy_html(),
-            request=request,
-        )
-
-    service = build_service(handler)
+    service = build_service(healthy_resource_response)
     with_service(service)
     try:
         created = asyncio.run(

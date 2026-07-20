@@ -27,6 +27,11 @@ from webdiag_api.audit.models import (
 )
 from webdiag_api.audit.registry_mapping import bindings_for_category, validate_tool_mappings
 from webdiag_api.audit.report import assemble_single_page_report
+from webdiag_api.audit.robots import RobotsTxtRule, RobotsTxtSummary, analyze_robots_txt
+from webdiag_api.audit.security_headers import (
+    SecurityHeaderFinding,
+    evaluate_security_headers,
+)
 from webdiag_api.audit.service import (
     AuditExecutionError,
     AuditExecutionService,
@@ -34,6 +39,12 @@ from webdiag_api.audit.service import (
     AuditSnapshot,
     InMemoryAuditStore,
 )
+from webdiag_api.audit.site_resources import (
+    SiteResourceFetch,
+    SiteResourceReport,
+    collect_site_resources,
+)
+from webdiag_api.audit.sitemap import SitemapXmlSummary, parse_sitemap_xml
 
 __all__ = [
     "AffectedUrl",
@@ -62,6 +73,16 @@ __all__ = [
     "SafeFetchError",
     "SafeFetchResult",
     "SafeHttpFetcher",
+    "parse_sitemap_xml",
+    "evaluate_security_headers",
+    "collect_site_resources",
+    "analyze_robots_txt",
+    "SitemapXmlSummary",
+    "SiteResourceReport",
+    "SiteResourceFetch",
+    "SecurityHeaderFinding",
+    "RobotsTxtSummary",
+    "RobotsTxtRule",
     "Severity",
     "ToolMapping",
     "assemble_single_page_report",

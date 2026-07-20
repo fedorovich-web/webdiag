@@ -20,6 +20,8 @@ from webdiag_api.audit.models import (
     Severity,
 )
 from webdiag_api.audit.registry_mapping import bindings_for_category
+from webdiag_api.audit.security_headers import BASELINE_SECURITY_HEADERS, evaluate_security_headers
+from webdiag_api.audit.site_resources import SiteResourceReport
 
 SEVERITY_WEIGHTS: dict[Severity, int] = {
     Severity.INFO: 0,
@@ -29,11 +31,7 @@ SEVERITY_WEIGHTS: dict[Severity, int] = {
     Severity.CRITICAL: 28,
 }
 
-SECURITY_HEADERS = (
-    "strict-transport-security",
-    "content-security-policy",
-    "x-content-type-options",
-)
+SECURITY_HEADERS = BASELINE_SECURITY_HEADERS
 
 
 def assemble_single_page_report(
@@ -41,10 +39,21 @@ def assemble_single_page_report(
     job_id: UUID,
     target: AuditTarget,
     fetched: SafeFetchResult,
+    site_resources: SiteResourceReport | None = None,
 ) -> AuditRun:
     metadata = parse_html_metadata(fetched.body_text)
-    issues = _collect_issues(target=target, fetched=fetched, metadata=metadata)
-    checks = _collect_checks(fetched=fetched, metadata=metadata, issues=issues)
+    issues = _collect_issues(
+        target=target,
+        fetched=fetched,
+        metadata=metadata,
+        site_resources=site_resources,
+    )
+    checks = _collect_checks(
+        fetched=fetched,
+        metadata=metadata,
+        issues=issues,
+        site_resources=site_resources,
+    )
     score = _score(issues)
     return AuditRun(
         job_id=job_id,
@@ -61,13 +70,14 @@ def _collect_checks(
     fetched: SafeFetchResult,
     metadata: HtmlMetadata,
     issues: list[AuditIssue],
+    site_resources: SiteResourceReport | None,
 ) -> list[AuditCheck]:
     issue_ids_by_check: dict[str, list[str]] = {}
     for issue in issues:
         check_id = issue.issue_id.rsplit(".", maxsplit=1)[0]
         issue_ids_by_check.setdefault(check_id, []).append(issue.issue_id)
 
-    return [
+    checks = [
         _check(
             check_id="http.status",
             name="HTTP status",
@@ -164,6 +174,7 @@ def _collect_checks(
                     kind=EvidenceKind.HTML_ELEMENT,
                     source='link[rel="canonical"]',
                     value=metadata.canonical_url or "missing",
+                    metadata={"final_url": fetched.final_url},
                 ),
             ),
             issue_ids=issue_ids_by_check.get("metadata.canonical", []),
@@ -198,14 +209,80 @@ def _collect_checks(
             evidence=tuple(
                 Evidence(
                     kind=EvidenceKind.HTTP_HEADER,
-                    source=header,
-                    value=fetched.headers.get(header, "missing"),
+                    source=finding.header,
+                    value=finding.value,
+                    metadata={"status": finding.status, "message": finding.message},
                 )
-                for header in SECURITY_HEADERS
+                for finding in evaluate_security_headers(
+                    fetched.headers,
+                    final_url=fetched.final_url,
+                )
             ),
             issue_ids=issue_ids_by_check.get("security.headers", []),
         ),
     ]
+
+    if site_resources is not None:
+        checks.extend(
+            [
+                _check(
+                    check_id="crawlability.robots_txt",
+                    name="Robots.txt",
+                    category=IssueCategory.CRAWLABILITY,
+                    failed_when=bool(issue_ids_by_check.get("crawlability.robots_txt")),
+                    evidence=(
+                        Evidence(
+                            kind=EvidenceKind.ROBOTS_DIRECTIVE,
+                            source=site_resources.robots.robots_url,
+                            value=(
+                                "available"
+                                if site_resources.robots.available
+                                else (
+                                    "unavailable:"
+                                    f"{site_resources.robots.status_code or 'fetch_error'}"
+                                )
+                            ),
+                            metadata={
+                                "allows_target": site_resources.robots.allows_target,
+                                "sitemap_urls": list(site_resources.robots.sitemap_urls),
+                                "matched_disallow_rule": (
+                                    site_resources.robots.matched_disallow_rule
+                                ),
+                            },
+                        ),
+                    ),
+                    issue_ids=issue_ids_by_check.get("crawlability.robots_txt", []),
+                ),
+                _check(
+                    check_id="crawlability.sitemap_xml",
+                    name="Sitemap.xml discovery",
+                    category=IssueCategory.CRAWLABILITY,
+                    failed_when=bool(issue_ids_by_check.get("crawlability.sitemap_xml")),
+                    evidence=(
+                        Evidence(
+                            kind=EvidenceKind.SITEMAP_ENTRY,
+                            source=site_resources.sitemap.sitemap_url,
+                            value=(
+                                f"{site_resources.sitemap.url_count} urls"
+                                if site_resources.sitemap.available
+                                else (
+                                    "unavailable:"
+                                    f"{site_resources.sitemap.status_code or 'fetch_error'}"
+                                )
+                            ),
+                            metadata={
+                                "available": site_resources.sitemap.available,
+                                "valid_xml": site_resources.sitemap.valid_xml,
+                                "contains_target": site_resources.sitemap.contains_target,
+                            },
+                        ),
+                    ),
+                    issue_ids=issue_ids_by_check.get("crawlability.sitemap_xml", []),
+                ),
+            ]
+        )
+
+    return checks
 
 
 def _collect_issues(
@@ -213,6 +290,7 @@ def _collect_issues(
     target: AuditTarget,
     fetched: SafeFetchResult,
     metadata: HtmlMetadata,
+    site_resources: SiteResourceReport | None,
 ) -> list[AuditIssue]:
     affected = (
         AffectedUrl(
@@ -436,6 +514,36 @@ def _collect_issues(
                 affected_urls=affected,
             )
         )
+    elif _normalize_url_for_comparison(metadata.canonical_url) != _normalize_url_for_comparison(
+        fetched.final_url
+    ):
+        issues.append(
+            _issue(
+                issue_id="metadata.canonical.final_url_mismatch",
+                category=IssueCategory.INDEXABILITY,
+                severity=Severity.MEDIUM,
+                priority=Priority.P1,
+                title="Canonical does not match final URL",
+                description=(
+                    "The page canonical URL differs from the final URL reached after redirects."
+                ),
+                evidence=Evidence(
+                    kind=EvidenceKind.HTML_ELEMENT,
+                    source='link[rel="canonical"]',
+                    value=metadata.canonical_url,
+                    metadata={"final_url": fetched.final_url},
+                ),
+                recommendation=Recommendation(
+                    summary="Align canonical with the final indexable URL.",
+                    steps=(
+                        "Confirm the preferred URL for this page.",
+                        "Set the canonical href to the same stable final URL crawlers receive.",
+                    ),
+                    expected_impact="Reduces duplicate and canonicalization ambiguity.",
+                ),
+                affected_urls=affected,
+            )
+        )
 
     if metadata.has_noindex:
         issues.append(
@@ -462,22 +570,31 @@ def _collect_issues(
             )
         )
 
-    missing_security_headers = [
-        header for header in SECURITY_HEADERS if header not in fetched.headers
+    security_findings = evaluate_security_headers(fetched.headers, final_url=fetched.final_url)
+    actionable_security_findings = [
+        finding
+        for finding in security_findings
+        if finding.status in {"missing", "recommended_missing", "invalid", "weak"}
     ]
-    if missing_security_headers:
+    if actionable_security_findings:
         issues.append(
             _issue(
                 issue_id="security.headers.missing",
                 category=IssueCategory.SECURITY,
                 severity=Severity.LOW,
                 priority=Priority.P3,
-                title="Basic security headers are missing",
-                description="The response is missing one or more baseline security headers.",
+                title="Security headers need attention",
+                description=(
+                    "The response is missing or weakening one or more baseline security headers."
+                ),
                 evidence=Evidence(
                     kind=EvidenceKind.HTTP_HEADER,
                     source="security.headers",
-                    value=", ".join(missing_security_headers),
+                    value=", ".join(finding.header for finding in actionable_security_findings),
+                    metadata={
+                        finding.header: finding.status
+                        for finding in actionable_security_findings
+                    },
                 ),
                 recommendation=Recommendation(
                     summary=(
@@ -490,6 +607,7 @@ def _collect_issues(
                             "scripts and assets."
                         ),
                         "Use Strict-Transport-Security on HTTPS production hosts.",
+                        "Add Referrer-Policy and Permissions-Policy for tighter browser defaults.",
                     ),
                     expected_impact="Reduces avoidable browser-side security risk.",
                 ),
@@ -497,7 +615,132 @@ def _collect_issues(
             )
         )
 
+    if site_resources is not None:
+        issues.extend(
+            _collect_site_resource_issues(
+                target=target,
+                site_resources=site_resources,
+                affected_urls=affected,
+            )
+        )
+
     return issues
+
+
+def _collect_site_resource_issues(
+    *,
+    target: AuditTarget,
+    site_resources: SiteResourceReport,
+    affected_urls: tuple[AffectedUrl, ...],
+) -> list[AuditIssue]:
+    issues: list[AuditIssue] = []
+    if site_resources.robots.allows_target is False:
+        issues.append(
+            _issue(
+                issue_id="crawlability.robots_txt.disallows_target",
+                category=IssueCategory.CRAWLABILITY,
+                severity=Severity.HIGH,
+                priority=Priority.P0,
+                title="Robots.txt blocks the audited URL",
+                description=(
+                    "The origin robots.txt contains a Disallow rule matching the audited URL path."
+                ),
+                evidence=Evidence(
+                    kind=EvidenceKind.ROBOTS_DIRECTIVE,
+                    source=site_resources.robots.robots_url,
+                    value=site_resources.robots.matched_disallow_rule or "matched disallow",
+                    metadata={"target_url": str(target.normalized_url)},
+                ),
+                recommendation=Recommendation(
+                    summary="Allow the URL in robots.txt if it should be crawled and indexed.",
+                    steps=(
+                        "Review the matching Disallow rule.",
+                        "Narrow or remove the rule for indexable landing pages.",
+                    ),
+                    expected_impact="Restores crawler access when the page should be discoverable.",
+                ),
+                affected_urls=affected_urls,
+            )
+        )
+
+    if not site_resources.sitemap.available:
+        issues.append(
+            _issue(
+                issue_id="crawlability.sitemap_xml.missing",
+                category=IssueCategory.CRAWLABILITY,
+                severity=Severity.LOW,
+                priority=Priority.P3,
+                title="Sitemap.xml was not discovered",
+                description="The default /sitemap.xml endpoint is not available for this origin.",
+                evidence=Evidence(
+                    kind=EvidenceKind.SITEMAP_ENTRY,
+                    source=site_resources.sitemap.sitemap_url,
+                    value=str(
+                        site_resources.sitemap.status_code
+                        or site_resources.sitemap.fetch_error
+                    ),
+                ),
+                recommendation=Recommendation(
+                    summary="Expose a sitemap.xml or declare sitemap locations in robots.txt.",
+                    steps=(
+                        "Publish sitemap.xml at the site root when practical.",
+                        "Alternatively add Sitemap directives to robots.txt.",
+                    ),
+                    expected_impact="Improves URL discovery for search crawlers.",
+                ),
+                affected_urls=affected_urls,
+            )
+        )
+    elif not site_resources.sitemap.valid_xml:
+        issues.append(
+            _issue(
+                issue_id="crawlability.sitemap_xml.invalid",
+                category=IssueCategory.CRAWLABILITY,
+                severity=Severity.MEDIUM,
+                priority=Priority.P2,
+                title="Sitemap.xml is invalid",
+                description="The discovered sitemap.xml could not be parsed as valid XML.",
+                evidence=Evidence(
+                    kind=EvidenceKind.SITEMAP_ENTRY,
+                    source=site_resources.sitemap.sitemap_url,
+                    value=site_resources.sitemap.parse_error or "invalid XML",
+                ),
+                recommendation=Recommendation(
+                    summary="Fix sitemap XML syntax and regenerate the sitemap.",
+                    steps=("Validate sitemap.xml before publishing it.",),
+                    expected_impact="Allows crawlers to consume submitted URL lists reliably.",
+                ),
+                affected_urls=affected_urls,
+            )
+        )
+    elif site_resources.sitemap.url_count == 0:
+        issues.append(
+            _issue(
+                issue_id="crawlability.sitemap_xml.empty",
+                category=IssueCategory.CRAWLABILITY,
+                severity=Severity.LOW,
+                priority=Priority.P3,
+                title="Sitemap.xml contains no URLs",
+                description="The discovered sitemap.xml did not expose any loc entries.",
+                evidence=Evidence(
+                    kind=EvidenceKind.SITEMAP_ENTRY,
+                    source=site_resources.sitemap.sitemap_url,
+                    value="0 urls",
+                ),
+                recommendation=Recommendation(
+                    summary="Add important canonical URLs to the sitemap.",
+                    steps=("Regenerate sitemap.xml from the production route inventory.",),
+                    expected_impact="Improves search crawler discovery of important pages.",
+                ),
+                affected_urls=affected_urls,
+            )
+        )
+
+    return issues
+
+
+def _normalize_url_for_comparison(raw_url: str) -> str:
+    return raw_url.strip().rstrip("/")
 
 
 def _check(
