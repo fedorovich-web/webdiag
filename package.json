@@ -1,0 +1,41 @@
+{
+  "name": "webdiag",
+  "version": "0.5.11",
+  "private": true,
+  "packageManager": "npm@10.9.2",
+  "engines": {
+    "node": ">=22.0.0 <25"
+  },
+  "workspaces": [
+    "apps/web",
+    "packages/tool-core",
+    "packages/tool-registry"
+  ],
+  "scripts": {
+    "dev": "npm --workspace @webdiag/web run dev",
+    "build": "npm run verify:release && npm --workspace @webdiag/web run build && npm run verify:built-site",
+    "lint": "npm run lint:web",
+    "lint:web": "npm --workspace @webdiag/web run lint",
+    "test": "npm run test:workspace && npm run test:registry && npm run test:core && npm run test:web",
+    "test:web": "npm --workspace @webdiag/web run test",
+    "typecheck": "npm --workspace @webdiag/web run typecheck",
+    "verify:registry": "node scripts/verify-registry.mjs",
+    "verify:release": "node scripts/verify-release.mjs",
+    "test:registry": "npm --workspace @webdiag/tool-registry run test",
+    "test:core": "npm --workspace @webdiag/tool-core run test",
+    "python:install": "node scripts/run-python.mjs -m pip install -e \"./apps/api[dev]\" -e \"./apps/worker[dev]\"",
+    "test:python": "node scripts/run-python.mjs -m pytest apps/api/tests apps/worker/tests",
+    "lint:python": "node scripts/run-python.mjs -m ruff check apps/api apps/worker",
+    "verify:local": "npm run verify:registry && npm test && npm run lint && npm run typecheck && npm run build && npm run test:browser && npm run test:python && npm run lint:python",
+    "test:workspace": "node --test scripts/tests-workspace-integrity.test.mjs scripts/tests-python-runtime.test.mjs scripts/tests-ui-foundation.test.mjs",
+    "python:where": "node scripts/run-python.mjs -c \"import sys; print(sys.executable)\"",
+    "verify:built-site": "node scripts/verify-built-site.mjs",
+    "source:manifest": "node scripts/build-source-manifest.mjs",
+    "test:browser": "npm --workspace @webdiag/web run test:browser"
+  },
+  "overrides": {
+    "next": {
+      "postcss": "8.5.19"
+    }
+  }
+}

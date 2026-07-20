@@ -1,0 +1,1694 @@
+[
+  {
+    "id": "WD-001",
+    "slug": "single-page-audit",
+    "title": {
+      "ru": "Технический аудит страницы",
+      "en": "Single Page Technical Audit"
+    },
+    "category": "seo-audit",
+    "executorClass": "composite",
+    "riskTier": "R2",
+    "access": "optional",
+    "implementationWave": "W4",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-002",
+    "slug": "whole-site-audit",
+    "title": {
+      "ru": "Аудит сайта с обходом страниц",
+      "en": "Whole-Site Audit"
+    },
+    "category": "seo-audit",
+    "executorClass": "crawler",
+    "riskTier": "R3",
+    "access": "required",
+    "implementationWave": "W4",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-003",
+    "slug": "meta-tags-checker",
+    "title": {
+      "ru": "Проверка мета-тегов",
+      "en": "Meta Tags Checker"
+    },
+    "category": "seo-audit",
+    "executorClass": "safe_fetch",
+    "riskTier": "R1",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-004",
+    "slug": "serp-preview",
+    "title": {
+      "ru": "Предпросмотр поискового сниппета",
+      "en": "SERP Snippet Preview"
+    },
+    "category": "seo-audit",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-005",
+    "slug": "open-graph-preview",
+    "title": {
+      "ru": "Предпросмотр Open Graph",
+      "en": "Open Graph Preview"
+    },
+    "category": "seo-audit",
+    "executorClass": "safe_fetch",
+    "riskTier": "R1",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-006",
+    "slug": "twitter-card-preview",
+    "title": {
+      "ru": "Предпросмотр Twitter/X Card",
+      "en": "Twitter/X Card Preview"
+    },
+    "category": "seo-audit",
+    "executorClass": "safe_fetch",
+    "riskTier": "R1",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-007",
+    "slug": "canonical-checker",
+    "title": {
+      "ru": "Проверка canonical",
+      "en": "Canonical Checker"
+    },
+    "category": "seo-audit",
+    "executorClass": "safe_fetch",
+    "riskTier": "R1",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-008",
+    "slug": "hreflang-checker",
+    "title": {
+      "ru": "Проверка hreflang",
+      "en": "Hreflang Checker"
+    },
+    "category": "seo-audit",
+    "executorClass": "safe_fetch",
+    "riskTier": "R2",
+    "access": "none",
+    "implementationWave": "W3",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-009",
+    "slug": "robots-txt-tester",
+    "title": {
+      "ru": "Проверка robots.txt",
+      "en": "Robots.txt Tester"
+    },
+    "category": "seo-audit",
+    "executorClass": "safe_fetch",
+    "riskTier": "R1",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-010",
+    "slug": "robots-txt-generator",
+    "title": {
+      "ru": "Генератор robots.txt",
+      "en": "Robots.txt Generator"
+    },
+    "category": "seo-audit",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-011",
+    "slug": "sitemap-validator",
+    "title": {
+      "ru": "Проверка sitemap.xml",
+      "en": "Sitemap.xml Validator"
+    },
+    "category": "seo-audit",
+    "executorClass": "safe_fetch",
+    "riskTier": "R2",
+    "access": "none",
+    "implementationWave": "W3",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-012",
+    "slug": "sitemap-generator",
+    "title": {
+      "ru": "Генератор sitemap.xml из списка URL",
+      "en": "Sitemap.xml Generator from URL List"
+    },
+    "category": "seo-audit",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-013",
+    "slug": "redirect-chain-checker",
+    "title": {
+      "ru": "Проверка цепочки редиректов",
+      "en": "Redirect Chain Checker"
+    },
+    "category": "seo-audit",
+    "executorClass": "safe_fetch",
+    "riskTier": "R2",
+    "access": "none",
+    "implementationWave": "W3",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-014",
+    "slug": "bulk-http-status-checker",
+    "title": {
+      "ru": "Массовая проверка HTTP-статусов",
+      "en": "Bulk HTTP Status Checker"
+    },
+    "category": "seo-audit",
+    "executorClass": "safe_fetch",
+    "riskTier": "R2",
+    "access": "optional",
+    "implementationWave": "W3",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-015",
+    "slug": "broken-link-checker",
+    "title": {
+      "ru": "Поиск битых ссылок",
+      "en": "Broken Link Checker"
+    },
+    "category": "seo-audit",
+    "executorClass": "crawler",
+    "riskTier": "R3",
+    "access": "optional",
+    "implementationWave": "W4",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-016",
+    "slug": "broken-image-checker",
+    "title": {
+      "ru": "Поиск битых изображений",
+      "en": "Broken Image Checker"
+    },
+    "category": "seo-audit",
+    "executorClass": "crawler",
+    "riskTier": "R3",
+    "access": "optional",
+    "implementationWave": "W4",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-017",
+    "slug": "image-seo-audit",
+    "title": {
+      "ru": "SEO-аудит изображений",
+      "en": "Image SEO Audit"
+    },
+    "category": "seo-audit",
+    "executorClass": "safe_fetch",
+    "riskTier": "R2",
+    "access": "none",
+    "implementationWave": "W3",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-018",
+    "slug": "heading-structure-checker",
+    "title": {
+      "ru": "Проверка структуры заголовков",
+      "en": "Heading Structure Checker"
+    },
+    "category": "seo-audit",
+    "executorClass": "safe_fetch",
+    "riskTier": "R1",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-019",
+    "slug": "link-analyzer",
+    "title": {
+      "ru": "Анализ внутренних и внешних ссылок",
+      "en": "Internal and External Link Analyzer"
+    },
+    "category": "seo-audit",
+    "executorClass": "safe_fetch",
+    "riskTier": "R1",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-020",
+    "slug": "keyword-density-analyzer",
+    "title": {
+      "ru": "Анализ частоты слов и фраз",
+      "en": "Keyword and Phrase Frequency Analyzer"
+    },
+    "category": "seo-audit",
+    "executorClass": "composite",
+    "riskTier": "R1",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-021",
+    "slug": "readability-analyzer",
+    "title": {
+      "ru": "Анализ читабельности текста",
+      "en": "Readability Analyzer"
+    },
+    "category": "seo-audit",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-022",
+    "slug": "duplicate-meta-checker",
+    "title": {
+      "ru": "Поиск повторяющихся title и description",
+      "en": "Duplicate Title and Description Checker"
+    },
+    "category": "seo-audit",
+    "executorClass": "crawler",
+    "riskTier": "R3",
+    "access": "required",
+    "implementationWave": "W4",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-023",
+    "slug": "orphan-page-finder",
+    "title": {
+      "ru": "Поиск страниц-сирот",
+      "en": "Orphan Page Finder"
+    },
+    "category": "seo-audit",
+    "executorClass": "crawler",
+    "riskTier": "R3",
+    "access": "required",
+    "implementationWave": "W4",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-024",
+    "slug": "indexability-checker",
+    "title": {
+      "ru": "Проверка индексируемости страницы",
+      "en": "Page Indexability Checker"
+    },
+    "category": "seo-audit",
+    "executorClass": "safe_fetch",
+    "riskTier": "R1",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-025",
+    "slug": "pagination-seo-checker",
+    "title": {
+      "ru": "Проверка пагинации и URL-параметров",
+      "en": "Pagination and URL Parameter SEO Checker"
+    },
+    "category": "seo-audit",
+    "executorClass": "safe_fetch",
+    "riskTier": "R2",
+    "access": "none",
+    "implementationWave": "W3",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-026",
+    "slug": "structured-data-validator",
+    "title": {
+      "ru": "Проверка структурированных данных",
+      "en": "Structured Data Validator"
+    },
+    "category": "seo-audit",
+    "executorClass": "composite",
+    "riskTier": "R1",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-027",
+    "slug": "schema-markup-generator",
+    "title": {
+      "ru": "Генератор Schema.org JSON-LD",
+      "en": "Schema.org JSON-LD Generator"
+    },
+    "category": "seo-audit",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-028",
+    "slug": "technology-detector",
+    "title": {
+      "ru": "Определение технологий сайта",
+      "en": "Website Technology Detector"
+    },
+    "category": "seo-audit",
+    "executorClass": "composite",
+    "riskTier": "R2",
+    "access": "none",
+    "implementationWave": "W3",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-029",
+    "slug": "favicon-checker",
+    "title": {
+      "ru": "Проверка favicon и web app icons",
+      "en": "Favicon and Web App Icon Checker"
+    },
+    "category": "seo-audit",
+    "executorClass": "safe_fetch",
+    "riskTier": "R1",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-030",
+    "slug": "html-validator",
+    "title": {
+      "ru": "Проверка HTML-разметки",
+      "en": "HTML Markup Validator"
+    },
+    "category": "seo-audit",
+    "executorClass": "composite",
+    "riskTier": "R1",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-031",
+    "slug": "ssl-certificate-checker",
+    "title": {
+      "ru": "Проверка SSL-сертификата",
+      "en": "SSL Certificate Checker"
+    },
+    "category": "security-network",
+    "executorClass": "dns_tls",
+    "riskTier": "R1",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-032",
+    "slug": "tls-configuration-checker",
+    "title": {
+      "ru": "Проверка конфигурации TLS",
+      "en": "TLS Configuration Checker"
+    },
+    "category": "security-network",
+    "executorClass": "dns_tls",
+    "riskTier": "R2",
+    "access": "none",
+    "implementationWave": "W3",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-033",
+    "slug": "pem-certificate-viewer",
+    "title": {
+      "ru": "Просмотр PEM-сертификатов и CSR",
+      "en": "PEM Certificate and CSR Viewer"
+    },
+    "category": "security-network",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-034",
+    "slug": "security-headers-checker",
+    "title": {
+      "ru": "Проверка заголовков безопасности",
+      "en": "Security Headers Checker"
+    },
+    "category": "security-network",
+    "executorClass": "safe_fetch",
+    "riskTier": "R1",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-035",
+    "slug": "csp-analyzer",
+    "title": {
+      "ru": "Анализ Content Security Policy",
+      "en": "Content Security Policy Analyzer"
+    },
+    "category": "security-network",
+    "executorClass": "composite",
+    "riskTier": "R1",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-036",
+    "slug": "cors-checker",
+    "title": {
+      "ru": "Проверка CORS",
+      "en": "CORS Checker"
+    },
+    "category": "security-network",
+    "executorClass": "safe_fetch",
+    "riskTier": "R2",
+    "access": "none",
+    "implementationWave": "W3",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-037",
+    "slug": "cookie-security-analyzer",
+    "title": {
+      "ru": "Анализ безопасности cookie",
+      "en": "Cookie Security Analyzer"
+    },
+    "category": "security-network",
+    "executorClass": "safe_fetch",
+    "riskTier": "R1",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-038",
+    "slug": "http-headers-analyzer",
+    "title": {
+      "ru": "Анализ HTTP-заголовков",
+      "en": "HTTP Headers Analyzer"
+    },
+    "category": "security-network",
+    "executorClass": "safe_fetch",
+    "riskTier": "R1",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-039",
+    "slug": "http-compression-checker",
+    "title": {
+      "ru": "Проверка Brotli и Gzip",
+      "en": "Brotli and Gzip Compression Checker"
+    },
+    "category": "security-network",
+    "executorClass": "safe_fetch",
+    "riskTier": "R1",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-040",
+    "slug": "http-protocol-checker",
+    "title": {
+      "ru": "Проверка HTTP/2 и HTTP/3",
+      "en": "HTTP/2 and HTTP/3 Checker"
+    },
+    "category": "security-network",
+    "executorClass": "safe_fetch",
+    "riskTier": "R1",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-041",
+    "slug": "dns-lookup",
+    "title": {
+      "ru": "Проверка DNS-записей",
+      "en": "DNS Lookup"
+    },
+    "category": "security-network",
+    "executorClass": "dns_tls",
+    "riskTier": "R1",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-042",
+    "slug": "dns-propagation-checker",
+    "title": {
+      "ru": "Проверка распространения DNS",
+      "en": "DNS Propagation Checker"
+    },
+    "category": "security-network",
+    "executorClass": "dns_tls",
+    "riskTier": "R2",
+    "access": "none",
+    "implementationWave": "W3",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-043",
+    "slug": "dnssec-checker",
+    "title": {
+      "ru": "Проверка DNSSEC",
+      "en": "DNSSEC Checker"
+    },
+    "category": "security-network",
+    "executorClass": "dns_tls",
+    "riskTier": "R2",
+    "access": "none",
+    "implementationWave": "W3",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-044",
+    "slug": "spf-checker",
+    "title": {
+      "ru": "Проверка SPF",
+      "en": "SPF Checker"
+    },
+    "category": "security-network",
+    "executorClass": "dns_tls",
+    "riskTier": "R1",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-045",
+    "slug": "dkim-checker",
+    "title": {
+      "ru": "Проверка DKIM",
+      "en": "DKIM Checker"
+    },
+    "category": "security-network",
+    "executorClass": "dns_tls",
+    "riskTier": "R1",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-046",
+    "slug": "dmarc-checker",
+    "title": {
+      "ru": "Проверка DMARC",
+      "en": "DMARC Checker"
+    },
+    "category": "security-network",
+    "executorClass": "dns_tls",
+    "riskTier": "R1",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-047",
+    "slug": "mx-record-checker",
+    "title": {
+      "ru": "Проверка MX-записей",
+      "en": "MX Record Checker"
+    },
+    "category": "security-network",
+    "executorClass": "dns_tls",
+    "riskTier": "R1",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-048",
+    "slug": "whois-lookup",
+    "title": {
+      "ru": "WHOIS-проверка домена",
+      "en": "Domain WHOIS Lookup"
+    },
+    "category": "security-network",
+    "executorClass": "dns_tls",
+    "riskTier": "R2",
+    "access": "none",
+    "implementationWave": "W3",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-049",
+    "slug": "ip-information",
+    "title": {
+      "ru": "Информация об IP-адресе",
+      "en": "IP Address Information"
+    },
+    "category": "security-network",
+    "executorClass": "dns_tls",
+    "riskTier": "R1",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-050",
+    "slug": "mixed-content-checker",
+    "title": {
+      "ru": "Поиск смешанного HTTP/HTTPS-контента",
+      "en": "Mixed Content Checker"
+    },
+    "category": "security-network",
+    "executorClass": "chromium",
+    "riskTier": "R3",
+    "access": "optional",
+    "implementationWave": "W4",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-051",
+    "slug": "core-web-vitals-checker",
+    "title": {
+      "ru": "Проверка Core Web Vitals",
+      "en": "Core Web Vitals Checker"
+    },
+    "category": "performance",
+    "executorClass": "composite",
+    "riskTier": "R3",
+    "access": "optional",
+    "implementationWave": "W4",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-052",
+    "slug": "lighthouse-audit",
+    "title": {
+      "ru": "Lighthouse-аудит страницы",
+      "en": "Lighthouse Audit"
+    },
+    "category": "performance",
+    "executorClass": "chromium",
+    "riskTier": "R3",
+    "access": "optional",
+    "implementationWave": "W4",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-053",
+    "slug": "page-weight-analyzer",
+    "title": {
+      "ru": "Анализ веса страницы",
+      "en": "Page Weight Analyzer"
+    },
+    "category": "performance",
+    "executorClass": "chromium",
+    "riskTier": "R3",
+    "access": "optional",
+    "implementationWave": "W4",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-054",
+    "slug": "resource-waterfall-analyzer",
+    "title": {
+      "ru": "Анализ загрузки ресурсов",
+      "en": "Resource Waterfall Analyzer"
+    },
+    "category": "performance",
+    "executorClass": "chromium",
+    "riskTier": "R3",
+    "access": "optional",
+    "implementationWave": "W4",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-055",
+    "slug": "image-performance-checker",
+    "title": {
+      "ru": "Проверка производительности изображений",
+      "en": "Image Performance Checker"
+    },
+    "category": "performance",
+    "executorClass": "chromium",
+    "riskTier": "R3",
+    "access": "optional",
+    "implementationWave": "W4",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-056",
+    "slug": "font-performance-checker",
+    "title": {
+      "ru": "Проверка загрузки веб-шрифтов",
+      "en": "Web Font Performance Checker"
+    },
+    "category": "performance",
+    "executorClass": "chromium",
+    "riskTier": "R3",
+    "access": "optional",
+    "implementationWave": "W4",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-057",
+    "slug": "cache-policy-checker",
+    "title": {
+      "ru": "Проверка HTTP-кэширования",
+      "en": "HTTP Cache Policy Checker"
+    },
+    "category": "performance",
+    "executorClass": "safe_fetch",
+    "riskTier": "R2",
+    "access": "none",
+    "implementationWave": "W3",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-058",
+    "slug": "render-blocking-resources-checker",
+    "title": {
+      "ru": "Поиск блокирующих рендер ресурсов",
+      "en": "Render-Blocking Resources Checker"
+    },
+    "category": "performance",
+    "executorClass": "chromium",
+    "riskTier": "R3",
+    "access": "optional",
+    "implementationWave": "W4",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-059",
+    "slug": "mobile-viewport-checker",
+    "title": {
+      "ru": "Проверка мобильного viewport",
+      "en": "Mobile Viewport Checker"
+    },
+    "category": "performance",
+    "executorClass": "chromium",
+    "riskTier": "R2",
+    "access": "none",
+    "implementationWave": "W3",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-060",
+    "slug": "accessibility-quick-audit",
+    "title": {
+      "ru": "Быстрый аудит доступности",
+      "en": "Quick Accessibility Audit"
+    },
+    "category": "performance",
+    "executorClass": "chromium",
+    "riskTier": "R3",
+    "access": "optional",
+    "implementationWave": "W4",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-061",
+    "slug": "json-formatter-validator",
+    "title": {
+      "ru": "Форматирование и проверка JSON",
+      "en": "JSON Formatter and Validator"
+    },
+    "category": "development-data",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет синтаксис и превращает JSON в аккуратный читаемый вид.",
+      "en": "Checks syntax and turns JSON into a clean, readable format."
+    }
+  },
+  {
+    "id": "WD-062",
+    "slug": "json-schema-validator",
+    "title": {
+      "ru": "JSON Schema Validator",
+      "en": "JSON Schema Validator"
+    },
+    "category": "development-data",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-063",
+    "slug": "jsonpath-tester",
+    "title": {
+      "ru": "JSONPath Tester",
+      "en": "JSONPath Tester"
+    },
+    "category": "development-data",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-064",
+    "slug": "yaml-json-converter",
+    "title": {
+      "ru": "YAML ↔ JSON",
+      "en": "YAML ↔ JSON Converter"
+    },
+    "category": "development-data",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-065",
+    "slug": "toml-json-converter",
+    "title": {
+      "ru": "TOML ↔ JSON",
+      "en": "TOML ↔ JSON Converter"
+    },
+    "category": "development-data",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-066",
+    "slug": "xml-formatter-validator",
+    "title": {
+      "ru": "XML Formatter и Validator",
+      "en": "XML Formatter and Validator"
+    },
+    "category": "development-data",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-067",
+    "slug": "csv-validator",
+    "title": {
+      "ru": "CSV Validator",
+      "en": "CSV Validator"
+    },
+    "category": "development-data",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-068",
+    "slug": "csv-json-converter",
+    "title": {
+      "ru": "CSV ↔ JSON",
+      "en": "CSV ↔ JSON Converter"
+    },
+    "category": "development-data",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-069",
+    "slug": "sql-formatter",
+    "title": {
+      "ru": "SQL Formatter",
+      "en": "SQL Formatter"
+    },
+    "category": "development-data",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-070",
+    "slug": "graphql-formatter",
+    "title": {
+      "ru": "GraphQL Formatter",
+      "en": "GraphQL Formatter"
+    },
+    "category": "development-data",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-071",
+    "slug": "regex-tester",
+    "title": {
+      "ru": "Regex Tester",
+      "en": "Regular Expression Tester"
+    },
+    "category": "development-data",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-072",
+    "slug": "cron-generator",
+    "title": {
+      "ru": "Генератор cron-выражений",
+      "en": "Cron Expression Generator"
+    },
+    "category": "development-data",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-073",
+    "slug": "cron-parser",
+    "title": {
+      "ru": "Расшифровка cron-выражений",
+      "en": "Cron Expression Parser"
+    },
+    "category": "development-data",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-074",
+    "slug": "jwt-decoder",
+    "title": {
+      "ru": "JWT Decoder",
+      "en": "JWT Decoder"
+    },
+    "category": "development-data",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-075",
+    "slug": "url-parser",
+    "title": {
+      "ru": "URL Parser",
+      "en": "URL Parser"
+    },
+    "category": "development-data",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-076",
+    "slug": "url-encoder-decoder",
+    "title": {
+      "ru": "Кодирование и декодирование URL",
+      "en": "URL Encoder and Decoder"
+    },
+    "category": "development-data",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "ready",
+    "description": {
+      "ru": "Кодирует текст для URL и восстанавливает исходное значение.",
+      "en": "Encodes text for URLs and restores the original value."
+    }
+  },
+  {
+    "id": "WD-077",
+    "slug": "html-entities-converter",
+    "title": {
+      "ru": "HTML Entities Encoder / Decoder",
+      "en": "HTML Entities Encoder and Decoder"
+    },
+    "category": "development-data",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-078",
+    "slug": "base64-converter",
+    "title": {
+      "ru": "Кодирование и декодирование Base64",
+      "en": "Base64 Encoder and Decoder"
+    },
+    "category": "development-data",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "ready",
+    "description": {
+      "ru": "Преобразует UTF-8 текст в Base64 и обратно.",
+      "en": "Converts UTF-8 text to Base64 and back."
+    }
+  },
+  {
+    "id": "WD-079",
+    "slug": "diff-checker",
+    "title": {
+      "ru": "Сравнение текста и кода",
+      "en": "Text and Code Diff Checker"
+    },
+    "category": "development-data",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-080",
+    "slug": "hash-generator",
+    "title": {
+      "ru": "Генератор SHA-хешей",
+      "en": "SHA Hash Generator"
+    },
+    "category": "development-data",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "ready",
+    "description": {
+      "ru": "Создаёт SHA-256, SHA-384 или SHA-512 для введённого текста.",
+      "en": "Creates a SHA-256, SHA-384, or SHA-512 hash for entered text."
+    }
+  },
+  {
+    "id": "WD-081",
+    "slug": "color-converter",
+    "title": {
+      "ru": "Конвертер цветов",
+      "en": "Color Converter"
+    },
+    "category": "css-design",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-082",
+    "slug": "color-contrast-checker",
+    "title": {
+      "ru": "Проверка контраста цветов",
+      "en": "Color Contrast Checker"
+    },
+    "category": "css-design",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "ready",
+    "description": {
+      "ru": "Сравнивает два HEX-цвета и показывает, достаточно ли контраста для текста.",
+      "en": "Compares two HEX colors and shows whether text contrast is sufficient."
+    }
+  },
+  {
+    "id": "WD-083",
+    "slug": "color-palette-extractor",
+    "title": {
+      "ru": "Извлечение палитры из изображения",
+      "en": "Image Color Palette Extractor"
+    },
+    "category": "css-design",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-084",
+    "slug": "gradient-generator",
+    "title": {
+      "ru": "Генератор CSS-градиентов",
+      "en": "CSS Gradient Generator"
+    },
+    "category": "css-design",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-085",
+    "slug": "box-shadow-generator",
+    "title": {
+      "ru": "Генератор box-shadow",
+      "en": "Box Shadow Generator"
+    },
+    "category": "css-design",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-086",
+    "slug": "border-radius-generator",
+    "title": {
+      "ru": "Генератор border-radius",
+      "en": "Border Radius Generator"
+    },
+    "category": "css-design",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-087",
+    "slug": "clip-path-generator",
+    "title": {
+      "ru": "Генератор clip-path",
+      "en": "Clip Path Generator"
+    },
+    "category": "css-design",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-088",
+    "slug": "css-filter-playground",
+    "title": {
+      "ru": "CSS Filter Playground",
+      "en": "CSS Filter Playground"
+    },
+    "category": "css-design",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-089",
+    "slug": "css-specificity-calculator",
+    "title": {
+      "ru": "Калькулятор специфичности CSS",
+      "en": "CSS Specificity Calculator"
+    },
+    "category": "css-design",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-090",
+    "slug": "px-rem-converter",
+    "title": {
+      "ru": "Конвертер px ↔ rem",
+      "en": "px ↔ rem Converter"
+    },
+    "category": "css-design",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "ready",
+    "description": {
+      "ru": "Быстро переводит значения из пикселей в rem и обратно.",
+      "en": "Quickly converts values between pixels and rem."
+    }
+  },
+  {
+    "id": "WD-091",
+    "slug": "typography-scale-generator",
+    "title": {
+      "ru": "Генератор типографической шкалы",
+      "en": "Typography Scale Generator"
+    },
+    "category": "css-design",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-092",
+    "slug": "css-grid-generator",
+    "title": {
+      "ru": "CSS Grid Generator",
+      "en": "CSS Grid Generator"
+    },
+    "category": "css-design",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-093",
+    "slug": "flexbox-playground",
+    "title": {
+      "ru": "Flexbox Playground",
+      "en": "Flexbox Playground"
+    },
+    "category": "css-design",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-094",
+    "slug": "image-optimizer",
+    "title": {
+      "ru": "Сжатие изображений",
+      "en": "Image Compressor"
+    },
+    "category": "media-utilities",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "ready",
+    "description": {
+      "ru": "Уменьшает размер изображения с выбранным качеством и форматом.",
+      "en": "Reduces image file size using the selected quality and format."
+    }
+  },
+  {
+    "id": "WD-095",
+    "slug": "image-format-converter",
+    "title": {
+      "ru": "Конвертер PNG, JPEG и WebP",
+      "en": "PNG, JPEG and WebP Converter"
+    },
+    "category": "media-utilities",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "ready",
+    "description": {
+      "ru": "Преобразует изображение в PNG, JPEG или WebP прямо в браузере.",
+      "en": "Converts an image to PNG, JPEG, or WebP directly in the browser."
+    }
+  },
+  {
+    "id": "WD-096",
+    "slug": "image-resizer",
+    "title": {
+      "ru": "Изменение размера изображения",
+      "en": "Image Resizer"
+    },
+    "category": "media-utilities",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "ready",
+    "description": {
+      "ru": "Меняет ширину и высоту с сохранением пропорций или по точным размерам.",
+      "en": "Changes width and height while preserving proportions or using exact dimensions."
+    }
+  },
+  {
+    "id": "WD-097",
+    "slug": "image-cropper",
+    "title": {
+      "ru": "Обрезка изображения",
+      "en": "Image Cropper"
+    },
+    "category": "media-utilities",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "ready",
+    "description": {
+      "ru": "Обрезает нужную область изображения по указанным координатам и размерам.",
+      "en": "Crops the required image area using specified coordinates and dimensions."
+    }
+  },
+  {
+    "id": "WD-098",
+    "slug": "favicon-generator",
+    "title": {
+      "ru": "Генератор favicon",
+      "en": "Favicon Generator"
+    },
+    "category": "media-utilities",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-099",
+    "slug": "qr-code-generator",
+    "title": {
+      "ru": "Генератор QR-кодов",
+      "en": "QR Code Generator"
+    },
+    "category": "media-utilities",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-100",
+    "slug": "uuid-generator",
+    "title": {
+      "ru": "Генератор UUID v4",
+      "en": "UUID v4 Generator"
+    },
+    "category": "development-data",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "ready",
+    "description": {
+      "ru": "Создаёт новый UUID v4 одним нажатием.",
+      "en": "Creates a new UUID v4 in one click."
+    }
+  },
+  {
+    "id": "WD-101",
+    "slug": "qr-code-decoder",
+    "title": {
+      "ru": "Распознавание QR-кодов",
+      "en": "QR Code Decoder"
+    },
+    "category": "media-utilities",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-102",
+    "slug": "svg-optimizer",
+    "title": {
+      "ru": "Оптимизация SVG",
+      "en": "SVG Optimizer"
+    },
+    "category": "media-utilities",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-103",
+    "slug": "image-metadata-viewer",
+    "title": {
+      "ru": "Просмотр метаданных изображения",
+      "en": "Image Metadata Viewer"
+    },
+    "category": "media-utilities",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-104",
+    "slug": "image-metadata-remover",
+    "title": {
+      "ru": "Удаление метаданных изображения",
+      "en": "Image Metadata Remover"
+    },
+    "category": "media-utilities",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-105",
+    "slug": "responsive-image-srcset-generator",
+    "title": {
+      "ru": "Генератор srcset для адаптивных изображений",
+      "en": "Responsive Image Srcset Generator"
+    },
+    "category": "media-utilities",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-106",
+    "slug": "image-aspect-ratio-calculator",
+    "title": {
+      "ru": "Калькулятор пропорций изображения",
+      "en": "Image Aspect Ratio Calculator"
+    },
+    "category": "media-utilities",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "ready",
+    "description": {
+      "ru": "Сокращает соотношение сторон и рассчитывает недостающий размер.",
+      "en": "Reduces an aspect ratio and calculates the missing dimension."
+    }
+  },
+  {
+    "id": "WD-107",
+    "slug": "image-data-uri-converter",
+    "title": {
+      "ru": "Конвертер изображения в Data URI",
+      "en": "Image to Data URI Converter"
+    },
+    "category": "media-utilities",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-108",
+    "slug": "image-placeholder-generator",
+    "title": {
+      "ru": "Генератор плейсхолдеров изображений",
+      "en": "Image Placeholder Generator"
+    },
+    "category": "media-utilities",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "internal",
+    "description": null
+  },
+  {
+    "id": "WD-109",
+    "slug": "unix-timestamp-converter",
+    "title": {
+      "ru": "Конвертер Unix timestamp",
+      "en": "Unix Timestamp Converter"
+    },
+    "category": "development-data",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "ready",
+    "description": {
+      "ru": "Преобразует Unix timestamp в дату ISO 8601 и обратно.",
+      "en": "Converts a Unix timestamp to an ISO 8601 date and back."
+    }
+  },
+  {
+    "id": "WD-110",
+    "slug": "ulid-generator",
+    "title": {
+      "ru": "Генератор ULID",
+      "en": "ULID Generator"
+    },
+    "category": "development-data",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "ready",
+    "description": {
+      "ru": "Создаёт новый сортируемый ULID одним нажатием.",
+      "en": "Creates a new sortable ULID in one click."
+    }
+  }
+]

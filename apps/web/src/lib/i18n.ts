@@ -1,0 +1,36 @@
+import type { Locale } from "@webdiag/tool-registry";
+
+export const dictionary = {
+  ru: {
+    brandLabel: "Аудит сайта",
+    homeTitle: "Проверьте сайт на технические и SEO-ошибки",
+    homeDescription: "Проверьте индексацию, мета-теги, редиректы, скорость, безопасность и доступность.",
+    openTools: "Открыть инструменты",
+    toolsTitle: "Дополнительные инструменты",
+    toolsDescription: "Вспомогательные инструменты для исправления проблем, найденных во время аудита сайта.",
+    backToTools: "Все инструменты",
+    language: "English",
+    copy: "Копировать",
+    copied: "Скопировано",
+    clear: "Очистить",
+    result: "Результат",
+    input: "Исходные данные",
+    error: "Проверьте введённые данные.",
+  },
+  en: {
+    brandLabel: "Site audit",
+    homeTitle: "Check your website for technical and SEO issues",
+    homeDescription: "Check indexing, metadata, redirects, speed, security, and accessibility.",
+    openTools: "Open tools",
+    toolsTitle: "Supporting tools",
+    toolsDescription: "Supporting tools for fixing issues detected during a website audit.",
+    backToTools: "All tools",
+    language: "Русский",
+    copy: "Copy",
+    copied: "Copied",
+    clear: "Clear",
+    result: "Result",
+    input: "Input",
+    error: "Check the entered data.",
+  },
+} as const satisfies Record<Locale, Record<string, string>>;

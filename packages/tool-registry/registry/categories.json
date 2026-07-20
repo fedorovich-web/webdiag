@@ -1,0 +1,26 @@
+{
+  "seo-audit": {
+    "ru": "SEO и аудит",
+    "en": "SEO and auditing"
+  },
+  "security-network": {
+    "ru": "Безопасность и сеть",
+    "en": "Security and networking"
+  },
+  "performance": {
+    "ru": "Производительность",
+    "en": "Performance"
+  },
+  "development-data": {
+    "ru": "Текст и данные",
+    "en": "Text and data"
+  },
+  "css-design": {
+    "ru": "Интерфейсы и CSS",
+    "en": "Interfaces and CSS"
+  },
+  "media-utilities": {
+    "ru": "Изображения",
+    "en": "Images"
+  }
+}
