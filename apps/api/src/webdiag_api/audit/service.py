@@ -94,22 +94,24 @@ class AuditExecutionService:
                 target_url=str(target.normalized_url),
                 final_url=fetched.final_url,
             )
-        except SafeFetchError as exc:
-            failed = self._mark_job_failed(job)
-            failed_run = self._create_failed_run(job=failed, target=target)
+            run = assemble_single_page_report(
+                job_id=job.job_id,
+                target=target,
+                fetched=fetched,
+                site_resources=site_resources,
+            )
+            run = run.model_copy(update={"completed_at": _utc_now()})
+        except (SafeFetchError, UrlPolicyError) as exc:
+            failed, failed_run = self._record_failed_execution(job=job, target=target)
             raise AuditExecutionError(
                 str(exc),
                 job_id=failed.job_id,
                 run_id=failed_run.run_id,
             ) from exc
+        except Exception:
+            self._record_failed_execution(job=job, target=target)
+            raise
 
-        run = assemble_single_page_report(
-            job_id=job.job_id,
-            target=target,
-            fetched=fetched,
-            site_resources=site_resources,
-        )
-        run = run.model_copy(update={"completed_at": _utc_now()})
         job = self.store.save_job(
             job.model_copy(update={"status": AuditJobStatus.SUCCEEDED, "updated_at": _utc_now()})
         )
@@ -124,6 +126,16 @@ class AuditExecutionService:
             return build_audit_target(raw_url)
         except UrlPolicyError as exc:
             raise AuditRequestError(str(exc)) from exc
+
+    def _record_failed_execution(
+        self,
+        *,
+        job: AuditJob,
+        target: AuditTarget,
+    ) -> tuple[AuditJob, AuditRun]:
+        failed = self._mark_job_failed(job)
+        failed_run = self._create_failed_run(job=failed, target=target)
+        return failed, failed_run
 
     def _mark_job_failed(self, job: AuditJob) -> AuditJob:
         failed = job.model_copy(

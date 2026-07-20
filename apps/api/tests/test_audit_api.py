@@ -2,26 +2,52 @@ import asyncio
 from collections.abc import Callable
 
 import httpx
+import pytest
 
+from webdiag_api.audit import service as audit_service_module
 from webdiag_api.audit.api import get_audit_service
 from webdiag_api.audit.fetcher import SafeHttpFetcher
+from webdiag_api.audit.models import AuditJob, AuditJobStatus
 from webdiag_api.audit.service import AuditExecutionService, InMemoryAuditStore
 from webdiag_api.main import app
 
 SAFE_IP = "93.184.216.34"
+Resolver = Callable[[str, int], list[str]]
 
 
-def build_service(handler: Callable[[httpx.Request], httpx.Response]) -> AuditExecutionService:
+def streaming_response(
+    status_code: int,
+    *,
+    request: httpx.Request,
+    headers: dict[str, str] | None = None,
+    content: bytes = b"",
+) -> httpx.Response:
+    return httpx.Response(
+        status_code,
+        headers=headers,
+        stream=httpx.ByteStream(content),
+        request=request,
+    )
+
+
+def build_service(
+    handler: Callable[[httpx.Request], httpx.Response],
+    *,
+    resolver: Resolver | None = None,
+    store: InMemoryAuditStore | None = None,
+) -> AuditExecutionService:
     transport = httpx.MockTransport(handler)
+    effective_resolver = resolver or (lambda _hostname, _port: [SAFE_IP])
 
     def fetcher_factory() -> SafeHttpFetcher:
         return SafeHttpFetcher(
-            resolver=lambda _hostname, _port: [SAFE_IP],
+            resolver=effective_resolver,
+            peer_address_provider=lambda _response: [SAFE_IP],
             transport=transport,
         )
 
     return AuditExecutionService(
-        store=InMemoryAuditStore(),
+        store=store or InMemoryAuditStore(),
         fetcher_factory=fetcher_factory,
     )
 
@@ -81,20 +107,20 @@ def healthy_headers() -> dict[str, str]:
 
 def healthy_resource_response(request: httpx.Request) -> httpx.Response:
     if request.url.path == "/robots.txt":
-        return httpx.Response(
+        return streaming_response(
             200,
             headers={"content-type": "text/plain"},
             content=b"User-agent: *\nAllow: /\nSitemap: https://example.com/sitemap.xml",
             request=request,
         )
     if request.url.path == "/sitemap.xml":
-        return httpx.Response(
+        return streaming_response(
             200,
             headers={"content-type": "application/xml"},
             content=healthy_sitemap(),
             request=request,
         )
-    return httpx.Response(
+    return streaming_response(
         200,
         headers=healthy_headers(),
         content=healthy_html(),
@@ -153,7 +179,9 @@ def test_get_audit_returns_stored_snapshot() -> None:
 
 
 def test_start_audit_rejects_disallowed_url_before_fetch() -> None:
-    service = build_service(lambda request: httpx.Response(200, request=request))
+    service = build_service(
+        lambda request: streaming_response(200, request=request),
+    )
     with_service(service)
     try:
         response = asyncio.run(
@@ -187,6 +215,102 @@ def test_fetch_failure_returns_error_with_stored_failed_job() -> None:
     assert fetched.status_code == 200
     assert fetched.json()["job"]["status"] == "failed"
     assert fetched.json()["run"]["status"] == "failed"
+
+
+def test_resolved_url_policy_failure_returns_stored_failed_job() -> None:
+    requested_urls: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requested_urls.append(str(request.url))
+        return streaming_response(200, content=healthy_html(), request=request)
+
+    service = build_service(
+        handler,
+        resolver=lambda _hostname, _port: ["127.0.0.1"],
+    )
+    with_service(service)
+    try:
+        response = asyncio.run(
+            request("POST", "/v1/audits", json={"url": "https://example.com/"})
+        )
+        detail = response.json()["detail"]
+        fetched = asyncio.run(request("GET", f"/v1/audits/{detail['job_id']}"))
+    finally:
+        clear_overrides()
+
+    assert requested_urls == []
+    assert response.status_code == 502
+    assert detail["code"] == "audit_fetch_failed"
+    assert detail["run_id"] is not None
+    assert fetched.json()["job"]["status"] == "failed"
+    assert fetched.json()["run"]["status"] == "failed"
+
+
+def test_site_resource_policy_failure_fails_audit_instead_of_reporting_missing() -> None:
+    seen_paths: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen_paths.append(request.url.path)
+        if request.url.path == "/robots.txt":
+            return streaming_response(
+                302,
+                headers={"location": "http://127.0.0.1/robots.txt"},
+                request=request,
+            )
+        return streaming_response(
+            200,
+            headers=healthy_headers(),
+            content=healthy_html(),
+            request=request,
+        )
+
+    service = build_service(handler)
+    with_service(service)
+    try:
+        response = asyncio.run(
+            request("POST", "/v1/audits", json={"url": "https://example.com/"})
+        )
+        detail = response.json()["detail"]
+        fetched = asyncio.run(request("GET", f"/v1/audits/{detail['job_id']}"))
+    finally:
+        clear_overrides()
+
+    assert seen_paths == ["/", "/robots.txt"]
+    assert response.status_code == 502
+    assert fetched.json()["job"]["status"] == "failed"
+    assert fetched.json()["run"]["status"] == "failed"
+
+
+def test_unexpected_execution_failure_still_persists_failed_state(monkeypatch) -> None:
+    class RecordingStore(InMemoryAuditStore):
+        def __init__(self) -> None:
+            super().__init__()
+            self.saved_jobs: list[AuditJob] = []
+
+        def save_job(self, job: AuditJob) -> AuditJob:
+            self.saved_jobs.append(job)
+            return super().save_job(job)
+
+    store = RecordingStore()
+    service = build_service(healthy_resource_response, store=store)
+
+    def fail_report(**_kwargs):
+        raise RuntimeError("report assembly failed")
+
+    monkeypatch.setattr(audit_service_module, "assemble_single_page_report", fail_report)
+
+    with pytest.raises(RuntimeError, match="report assembly failed"):
+        service.start_single_url_audit("https://example.com/")
+
+    assert [job.status for job in store.saved_jobs] == [
+        AuditJobStatus.RUNNING,
+        AuditJobStatus.FAILED,
+    ]
+    snapshot = store.get_snapshot(store.saved_jobs[-1].job_id)
+    assert snapshot is not None
+    assert snapshot.job.status is AuditJobStatus.FAILED
+    assert snapshot.run is not None
+    assert snapshot.run.status is AuditJobStatus.FAILED
 
 
 def test_get_unknown_audit_returns_404() -> None:
