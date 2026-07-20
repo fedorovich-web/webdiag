@@ -10,6 +10,7 @@ from webdiag_api.audit.fetcher import SafeFetchError, SafeHttpFetcher
 from webdiag_api.audit.intake import build_audit_target
 from webdiag_api.audit.models import AuditJob, AuditJobStatus, AuditRun, AuditTarget
 from webdiag_api.audit.report import assemble_single_page_report
+from webdiag_api.audit.site_resources import collect_site_resources
 from webdiag_api.security.url_policy import UrlPolicyError
 
 
@@ -86,7 +87,13 @@ class AuditExecutionService:
         job = self.store.save_job(AuditJob(target=target, status=AuditJobStatus.RUNNING))
 
         try:
-            fetched = self._fetcher_factory().fetch(str(target.normalized_url))
+            fetcher = self._fetcher_factory()
+            fetched = fetcher.fetch(str(target.normalized_url))
+            site_resources = collect_site_resources(
+                fetcher=fetcher,
+                target_url=str(target.normalized_url),
+                final_url=fetched.final_url,
+            )
         except SafeFetchError as exc:
             failed = self._mark_job_failed(job)
             failed_run = self._create_failed_run(job=failed, target=target)
@@ -96,7 +103,12 @@ class AuditExecutionService:
                 run_id=failed_run.run_id,
             ) from exc
 
-        run = assemble_single_page_report(job_id=job.job_id, target=target, fetched=fetched)
+        run = assemble_single_page_report(
+            job_id=job.job_id,
+            target=target,
+            fetched=fetched,
+            site_resources=site_resources,
+        )
         run = run.model_copy(update={"completed_at": _utc_now()})
         job = self.store.save_job(
             job.model_copy(update={"status": AuditJobStatus.SUCCEEDED, "updated_at": _utc_now()})
