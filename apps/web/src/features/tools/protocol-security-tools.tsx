@@ -3,21 +3,27 @@
 import { useState, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import {
+  isCookiePolicyResponse,
   isCorsResponse,
   isHttpCompressionResponse,
   isHttpHeadersAnalyzerResponse,
   isHttpProtocolResponse,
+  isMixedContentResponse,
+  isServerTimingAnalyzerResponse,
   isSslCertificateResponse,
   isTlsConfigurationResponse,
   isToolErrorPayload,
   parseHostnameInput,
   parseHttpsUrlInput,
   parseOriginInput,
+  type CookiePolicyResponse,
   type CorsResponse,
   type HttpCompressionResponse,
   type HttpHeadersAnalyzerResponse,
   type HttpProtocolResponse,
+  type MixedContentResponse,
   type ProtocolSecurityToolResponse,
+  type ServerTimingAnalyzerResponse,
   type SslCertificateResponse,
   type TlsConfigurationResponse,
 } from "./protocol-security-tool-contract";
@@ -64,7 +70,10 @@ async function runProtocolSecurityTool(
     | "/api/tools/http-compression"
     | "/api/tools/http-headers"
     | "/api/tools/http-protocol"
-    | "/api/tools/cors",
+    | "/api/tools/cors"
+    | "/api/tools/server-timing"
+    | "/api/tools/cookie-policy"
+    | "/api/tools/mixed-content",
   payload: Record<string, string | number>,
 ): Promise<ProtocolSecurityToolResponse> {
   const response = await fetch(endpoint, {
@@ -85,6 +94,9 @@ async function runProtocolSecurityTool(
   if (endpoint === "/api/tools/http-headers" && isHttpHeadersAnalyzerResponse(data)) return data;
   if (endpoint === "/api/tools/http-protocol" && isHttpProtocolResponse(data)) return data;
   if (endpoint === "/api/tools/cors" && isCorsResponse(data)) return data;
+  if (endpoint === "/api/tools/server-timing" && isServerTimingAnalyzerResponse(data)) return data;
+  if (endpoint === "/api/tools/cookie-policy" && isCookiePolicyResponse(data)) return data;
+  if (endpoint === "/api/tools/mixed-content" && isMixedContentResponse(data)) return data;
   throw new ProtocolSecurityToolError("Tool API returned an invalid result.");
 }
 
@@ -291,6 +303,38 @@ export function corsResultText(result: CorsResponse): string {
   ].join("\n");
 }
 
+
+export function serverTimingResultText(result: ServerTimingAnalyzerResponse): string {
+  return [
+    `URL: ${result.final_url}`,
+    `Server-Timing: ${result.server_timing_present ? "present" : "missing"}`,
+    `Metrics: ${result.metric_count}`,
+    `Status: ${result.status}`,
+    `Recommendation: ${result.recommendation}`,
+  ].join("\n");
+}
+
+export function cookiePolicyResultText(result: CookiePolicyResponse): string {
+  return [
+    `URL: ${result.final_url}`,
+    `Set-Cookie: ${result.set_cookie_count}`,
+    `Issues: ${result.issue_count}`,
+    `Status: ${result.status}`,
+    `Recommendation: ${result.recommendation}`,
+  ].join("\n");
+}
+
+export function mixedContentResultText(result: MixedContentResponse): string {
+  return [
+    `URL: ${result.final_url}`,
+    `Mixed content: ${result.mixed_content_count}`,
+    `Active: ${result.active_mixed_content_count}`,
+    `Passive: ${result.passive_mixed_content_count}`,
+    `Status: ${result.status}`,
+    `Recommendation: ${result.recommendation}`,
+  ].join("\n");
+}
+
 function SslCertificateResult({ locale, result }: { locale: Locale; result: SslCertificateResponse }) {
   return <Panel title={dictionary[locale].result}>
     <div className="metric-grid">
@@ -393,12 +437,104 @@ function CorsResult({ locale, result }: { locale: Locale; result: CorsResponse }
 }
 
 
+function ServerTimingResult({
+  locale,
+  result,
+}: {
+  locale: Locale;
+  result: ServerTimingAnalyzerResponse;
+}) {
+  return <Panel title={dictionary[locale].result}>
+    <div className="metric-grid">
+      <div><span>Status</span><strong>{result.status_code}</strong></div>
+      <div><span>Metrics</span><strong>{result.metric_count}</strong></div>
+      <div><span>{dictionary[locale].status}</span><strong><StatusBadge value={result.status} /></strong></div>
+    </div>
+    <ul className="result-list">
+      <li><strong>Server-Timing</strong><span>{result.raw_header ?? "—"}</span></li>
+      {result.metrics.slice(0, 8).map((metric) => (
+        <li key={`${metric.name}-${metric.duration_ms ?? "none"}`}>
+          <strong>{metric.name}</strong>
+          <span>{metric.duration_ms ?? "—"} ms</span>
+        </li>
+      ))}
+    </ul>
+    <Recommendation locale={locale} value={result.recommendation} />
+  </Panel>;
+}
+
+function CookiePolicyResult({
+  locale,
+  result,
+}: {
+  locale: Locale;
+  result: CookiePolicyResponse;
+}) {
+  return <Panel title={dictionary[locale].result}>
+    <div className="metric-grid">
+      <div><span>Cookies</span><strong>{result.set_cookie_count}</strong></div>
+      <div><span>Issues</span><strong>{result.issue_count}</strong></div>
+      <div><span>{dictionary[locale].status}</span><strong><StatusBadge value={result.status} /></strong></div>
+    </div>
+    <ul className="result-list">
+      <li><strong>Secure</strong><span>{result.secure_count}</span></li>
+      <li><strong>HttpOnly</strong><span>{result.http_only_count}</span></li>
+      <li><strong>SameSite</strong><span>{result.same_site_count}</span></li>
+      {result.cookies.slice(0, 8).map((cookie) => (
+        <li key={cookie.name}>
+          <strong>{cookie.name}</strong>
+          <span>{cookie.issues.length ? cookie.issues.join(", ") : "ok"}</span>
+        </li>
+      ))}
+    </ul>
+    <Recommendation locale={locale} value={result.recommendation} />
+  </Panel>;
+}
+
+function MixedContentResult({
+  locale,
+  result,
+}: {
+  locale: Locale;
+  result: MixedContentResponse;
+}) {
+  return <Panel title={dictionary[locale].result}>
+    <div className="metric-grid">
+      <div><span>Mixed</span><strong>{result.mixed_content_count}</strong></div>
+      <div><span>Active</span><strong>{result.active_mixed_content_count}</strong></div>
+      <div><span>{dictionary[locale].status}</span><strong><StatusBadge value={result.status} /></strong></div>
+    </div>
+    <ul className="result-list">
+      <li><strong>Page scheme</strong><span>{result.page_scheme}</span></li>
+      <li><strong>Candidates</strong><span>{result.candidate_count}</span></li>
+      <li><strong>Passive</strong><span>{result.passive_mixed_content_count}</span></li>
+      {result.sample_items.slice(0, 8).map((item) => (
+        <li key={`${item.source}-${item.url}`}>
+          <strong>{item.source}</strong>
+          <span>{item.url}</span>
+        </li>
+      ))}
+    </ul>
+    <Recommendation locale={locale} value={result.recommendation} />
+  </Panel>;
+}
+
+
 function ProtocolSecurityTool({
   locale,
   kind,
 }: {
   locale: Locale;
-  kind: "ssl" | "tls" | "compression" | "headers" | "protocol" | "cors";
+  kind:
+    | "ssl"
+    | "tls"
+    | "compression"
+    | "headers"
+    | "protocol"
+    | "cors"
+    | "server-timing"
+    | "cookie-policy"
+    | "mixed-content";
 }) {
   const [result, setResult] = useState<ProtocolSecurityToolResponse | null>(null);
   const [error, setError] = useState("");
@@ -413,7 +549,13 @@ function ProtocolSecurityTool({
           ? "/api/tools/http-headers"
           : kind === "protocol"
             ? "/api/tools/http-protocol"
-            : "/api/tools/cors";
+            : kind === "cors"
+              ? "/api/tools/cors"
+              : kind === "server-timing"
+                ? "/api/tools/server-timing"
+                : kind === "cookie-policy"
+                  ? "/api/tools/cookie-policy"
+                  : "/api/tools/mixed-content";
 
   async function runHost(hostname: string, port: number) {
     setLoading(true);
@@ -457,7 +599,7 @@ function ProtocolSecurityTool({
   return <div className="tool-grid">
     {kind === "cors"
       ? <CorsForm locale={locale} onSubmit={runCors} loading={loading} />
-      : kind === "compression" || kind === "headers" || kind === "protocol"
+      : kind !== "ssl" && kind !== "tls"
         ? <UrlForm locale={locale} onSubmit={runUrl} loading={loading} />
         : <HostForm locale={locale} onSubmit={runHost} loading={loading} />}
     {error && <p className="form-error" role="alert">{error}</p>}
@@ -467,6 +609,9 @@ function ProtocolSecurityTool({
     {isHttpHeadersAnalyzerResponse(result) && <HeadersResult locale={locale} result={result} />}
     {isHttpProtocolResponse(result) && <HttpProtocolResult locale={locale} result={result} />}
     {isCorsResponse(result) && <CorsResult locale={locale} result={result} />}
+    {isServerTimingAnalyzerResponse(result) && <ServerTimingResult locale={locale} result={result} />}
+    {isCookiePolicyResponse(result) && <CookiePolicyResult locale={locale} result={result} />}
+    {isMixedContentResponse(result) && <MixedContentResult locale={locale} result={result} />}
   </div>;
 }
 
@@ -493,4 +638,17 @@ export function HttpProtocolCheckerTool({ locale }: { locale: Locale }) {
 
 export function CorsCheckerTool({ locale }: { locale: Locale }) {
   return <ProtocolSecurityTool locale={locale} kind="cors" />;
+}
+
+
+export function ServerTimingAnalyzerTool({ locale }: { locale: Locale }) {
+  return <ProtocolSecurityTool locale={locale} kind="server-timing" />;
+}
+
+export function CookiePolicyCheckerTool({ locale }: { locale: Locale }) {
+  return <ProtocolSecurityTool locale={locale} kind="cookie-policy" />;
+}
+
+export function MixedContentCheckerTool({ locale }: { locale: Locale }) {
+  return <ProtocolSecurityTool locale={locale} kind="mixed-content" />;
 }

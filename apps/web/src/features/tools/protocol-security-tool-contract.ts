@@ -123,13 +123,89 @@ export interface CorsResponse {
   readonly recommendation: string;
 }
 
+
+export interface ServerTimingMetricResult {
+  readonly name: string;
+  readonly duration_ms: number | null;
+  readonly description: string | null;
+}
+
+export interface ServerTimingAnalyzerResponse {
+  readonly contract_version: "webdiag.tool.server_timing_analyzer.v1";
+  readonly generated_at: string;
+  readonly requested_url: string;
+  readonly final_url: string;
+  readonly status_code: number;
+  readonly raw_header: string | null;
+  readonly server_timing_present: boolean;
+  readonly metric_count: number;
+  readonly metrics: readonly ServerTimingMetricResult[];
+  readonly redirect_count: number;
+  readonly status: "pass" | "warning" | "fail";
+  readonly recommendation: string;
+}
+
+export interface CookieItemResult {
+  readonly name: string;
+  readonly secure: boolean;
+  readonly http_only: boolean;
+  readonly same_site: string | null;
+  readonly domain: string | null;
+  readonly path: string | null;
+  readonly persistent: boolean;
+  readonly issues: readonly string[];
+}
+
+export interface CookiePolicyResponse {
+  readonly contract_version: "webdiag.tool.cookie_policy_checker.v1";
+  readonly generated_at: string;
+  readonly requested_url: string;
+  readonly final_url: string;
+  readonly status_code: number;
+  readonly set_cookie_count: number;
+  readonly secure_count: number;
+  readonly http_only_count: number;
+  readonly same_site_count: number;
+  readonly issue_count: number;
+  readonly cookies: readonly CookieItemResult[];
+  readonly redirect_count: number;
+  readonly status: "pass" | "warning" | "fail";
+  readonly recommendation: string;
+}
+
+export interface MixedContentItemResult {
+  readonly url: string;
+  readonly source: string;
+  readonly active: boolean;
+}
+
+export interface MixedContentResponse {
+  readonly contract_version: "webdiag.tool.mixed_content_checker.v1";
+  readonly generated_at: string;
+  readonly requested_url: string;
+  readonly final_url: string;
+  readonly status_code: number;
+  readonly page_scheme: "http" | "https";
+  readonly candidate_count: number;
+  readonly mixed_content_count: number;
+  readonly active_mixed_content_count: number;
+  readonly passive_mixed_content_count: number;
+  readonly sample_items: readonly MixedContentItemResult[];
+  readonly redirect_count: number;
+  readonly status: "pass" | "warning" | "fail";
+  readonly recommendation: string;
+}
+
 export type ProtocolSecurityToolResponse =
   | SslCertificateResponse
   | TlsConfigurationResponse
   | HttpCompressionResponse
   | HttpHeadersAnalyzerResponse
   | HttpProtocolResponse
-  | CorsResponse;
+  | CorsResponse
+  | ServerTimingAnalyzerResponse
+  | CookiePolicyResponse
+  | MixedContentResponse;
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
@@ -283,6 +359,90 @@ export function isCorsResponse(payload: unknown): payload is CorsResponse {
     typeof payload.vary_origin === "boolean" &&
     typeof payload.allows_tested_origin === "boolean" &&
     typeof payload.wildcard_with_credentials === "boolean" &&
+    typeof payload.redirect_count === "number" &&
+    isStatus(payload.status) &&
+    typeof payload.recommendation === "string"
+  );
+}
+
+
+export function isServerTimingAnalyzerResponse(
+  payload: unknown,
+): payload is ServerTimingAnalyzerResponse {
+  return (
+    isRecord(payload) &&
+    payload.contract_version === "webdiag.tool.server_timing_analyzer.v1" &&
+    typeof payload.generated_at === "string" &&
+    typeof payload.requested_url === "string" &&
+    typeof payload.final_url === "string" &&
+    typeof payload.status_code === "number" &&
+    (typeof payload.raw_header === "string" || payload.raw_header === null) &&
+    typeof payload.server_timing_present === "boolean" &&
+    typeof payload.metric_count === "number" &&
+    Array.isArray(payload.metrics) &&
+    payload.metrics.every(
+      (item) => isRecord(item) &&
+        typeof item.name === "string" &&
+        (typeof item.duration_ms === "number" || item.duration_ms === null) &&
+        (typeof item.description === "string" || item.description === null),
+    ) &&
+    typeof payload.redirect_count === "number" &&
+    isStatus(payload.status) &&
+    typeof payload.recommendation === "string"
+  );
+}
+
+export function isCookiePolicyResponse(payload: unknown): payload is CookiePolicyResponse {
+  return (
+    isRecord(payload) &&
+    payload.contract_version === "webdiag.tool.cookie_policy_checker.v1" &&
+    typeof payload.generated_at === "string" &&
+    typeof payload.requested_url === "string" &&
+    typeof payload.final_url === "string" &&
+    typeof payload.status_code === "number" &&
+    typeof payload.set_cookie_count === "number" &&
+    typeof payload.secure_count === "number" &&
+    typeof payload.http_only_count === "number" &&
+    typeof payload.same_site_count === "number" &&
+    typeof payload.issue_count === "number" &&
+    Array.isArray(payload.cookies) &&
+    payload.cookies.every(
+      (item) => isRecord(item) &&
+        typeof item.name === "string" &&
+        typeof item.secure === "boolean" &&
+        typeof item.http_only === "boolean" &&
+        (typeof item.same_site === "string" || item.same_site === null) &&
+        (typeof item.domain === "string" || item.domain === null) &&
+        (typeof item.path === "string" || item.path === null) &&
+        typeof item.persistent === "boolean" &&
+        Array.isArray(item.issues),
+    ) &&
+    typeof payload.redirect_count === "number" &&
+    isStatus(payload.status) &&
+    typeof payload.recommendation === "string"
+  );
+}
+
+export function isMixedContentResponse(payload: unknown): payload is MixedContentResponse {
+  return (
+    isRecord(payload) &&
+    payload.contract_version === "webdiag.tool.mixed_content_checker.v1" &&
+    typeof payload.generated_at === "string" &&
+    typeof payload.requested_url === "string" &&
+    typeof payload.final_url === "string" &&
+    typeof payload.status_code === "number" &&
+    (payload.page_scheme === "http" || payload.page_scheme === "https") &&
+    typeof payload.candidate_count === "number" &&
+    typeof payload.mixed_content_count === "number" &&
+    typeof payload.active_mixed_content_count === "number" &&
+    typeof payload.passive_mixed_content_count === "number" &&
+    Array.isArray(payload.sample_items) &&
+    payload.sample_items.every(
+      (item) => isRecord(item) &&
+        typeof item.url === "string" &&
+        typeof item.source === "string" &&
+        typeof item.active === "boolean",
+    ) &&
     typeof payload.redirect_count === "number" &&
     isStatus(payload.status) &&
     typeof payload.recommendation === "string"

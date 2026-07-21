@@ -140,11 +140,12 @@ def streaming_response(
     *,
     request: httpx.Request,
     headers: dict[str, str] | None = None,
+    content: bytes = b"",
 ) -> httpx.Response:
     return httpx.Response(
         status_code,
         headers=headers,
-        stream=httpx.ByteStream(b""),
+        stream=httpx.ByteStream(content),
         request=request,
     )
 
@@ -304,4 +305,92 @@ def test_cors_checker_sends_origin_and_flags_credentials_wildcard() -> None:
     assert seen_origin == ["https://example.com"]
     assert payload["contract_version"] == "webdiag.tool.cors_checker.v1"
     assert payload["wildcard_with_credentials"] is True
+    assert payload["status"] == "fail"
+
+
+def test_server_timing_analyzer_parses_metrics() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return streaming_response(
+            200,
+            request=request,
+            headers={
+                "server-timing": 'app;dur=42.5;desc="Application", db;dur=5',
+            },
+        )
+
+    app.dependency_overrides[get_compression_fetcher] = lambda: build_fetcher(
+        httpx.MockTransport(handler)
+    )
+    try:
+        response = asyncio.run(
+            post("/v1/tools/server-timing", {"url": "https://example.com/"})
+        )
+    finally:
+        clear_overrides()
+    payload = response.json()
+    assert response.status_code == 200
+    assert payload["contract_version"] == "webdiag.tool.server_timing_analyzer.v1"
+    assert payload["server_timing_present"] is True
+    assert payload["metric_count"] == 2
+    assert payload["metrics"][0]["duration_ms"] == 42.5
+    assert payload["status"] == "pass"
+
+
+def test_cookie_policy_checker_flags_missing_attributes() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return streaming_response(
+            200,
+            request=request,
+            headers={"set-cookie": "session=abc; Path=/; SameSite=None"},
+        )
+
+    app.dependency_overrides[get_compression_fetcher] = lambda: build_fetcher(
+        httpx.MockTransport(handler)
+    )
+    try:
+        response = asyncio.run(
+            post("/v1/tools/cookie-policy", {"url": "https://example.com/"})
+        )
+    finally:
+        clear_overrides()
+    payload = response.json()
+    assert response.status_code == 200
+    assert payload["contract_version"] == "webdiag.tool.cookie_policy_checker.v1"
+    assert payload["set_cookie_count"] == 1
+    assert payload["issue_count"] >= 2
+    assert payload["status"] == "warning"
+
+
+def test_mixed_content_checker_finds_static_http_subresources() -> None:
+    html = b'''<!doctype html><html><head>
+    <script src="http://cdn.example.test/app.js"></script>
+    <link rel="stylesheet" href="https://example.com/app.css">
+    </head><body>
+    <img src="http://cdn.example.test/hero.jpg" alt="">
+    <picture><source srcset="http://cdn.example.test/card.webp 1x"></picture>
+    </body></html>'''
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return streaming_response(
+            200,
+            request=request,
+            headers={"content-type": "text/html; charset=utf-8"},
+            content=html,
+        )
+
+    app.dependency_overrides[get_compression_fetcher] = lambda: build_fetcher(
+        httpx.MockTransport(handler)
+    )
+    try:
+        response = asyncio.run(
+            post("/v1/tools/mixed-content", {"url": "https://example.com/"})
+        )
+    finally:
+        clear_overrides()
+    payload = response.json()
+    assert response.status_code == 200
+    assert payload["contract_version"] == "webdiag.tool.mixed_content_checker.v1"
+    assert payload["mixed_content_count"] == 3
+    assert payload["active_mixed_content_count"] == 1
+    assert payload["passive_mixed_content_count"] == 2
     assert payload["status"] == "fail"

@@ -32,10 +32,13 @@ import { MetaTagsCheckerTool, SerpPreviewTool, SocialPreviewTool } from "./metad
 import { CachePolicyTool, CoreWebVitalsTool, PageWeightTool } from "./performance-tools";
 import { HtmlMarkupValidatorTool, SchemaMarkupGeneratorTool, StructuredDataValidatorTool } from "./markup-tools";
 import {
+  CookiePolicyCheckerTool,
   CorsCheckerTool,
   HttpCompressionCheckerTool,
   HttpHeadersAnalyzerTool,
   HttpProtocolCheckerTool,
+  MixedContentCheckerTool,
+  ServerTimingAnalyzerTool,
   SslCertificateCheckerTool,
   TlsConfigurationCheckerTool,
 } from "./protocol-security-tools";
@@ -250,6 +253,9 @@ export const SUPPORTED_TOOL_SLUGS = [
   "http-headers-analyzer",
   "http-protocol-checker",
   "cors-checker",
+  "server-timing-analyzer",
+  "cookie-policy-checker",
+  "mixed-content-checker",
 ] as const;
 
 export function ToolRenderer({ slug, locale }: ToolRendererProps) {
@@ -312,6 +318,9 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "http-headers-analyzer": return <HttpHeadersAnalyzerTool locale={locale} />;
     case "http-protocol-checker": return <HttpProtocolCheckerTool locale={locale} />;
     case "cors-checker": return <CorsCheckerTool locale={locale} />;
+    case "server-timing-analyzer": return <ServerTimingAnalyzerTool locale={locale} />;
+    case "cookie-policy-checker": return <CookiePolicyCheckerTool locale={locale} />;
+    case "mixed-content-checker": return <MixedContentCheckerTool locale={locale} />;
     default: return null;
   }
 }
