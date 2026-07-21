@@ -31,6 +31,11 @@ import { FaviconCheckerTool, ImagePerformanceCheckerTool, ImageSeoAuditTool } fr
 import { MetaTagsCheckerTool, SerpPreviewTool, SocialPreviewTool } from "./metadata-preview-tools";
 import { CachePolicyTool, CoreWebVitalsTool, PageWeightTool } from "./performance-tools";
 import { HtmlMarkupValidatorTool, SchemaMarkupGeneratorTool, StructuredDataValidatorTool } from "./markup-tools";
+import {
+  HttpCompressionCheckerTool,
+  SslCertificateCheckerTool,
+  TlsConfigurationCheckerTool,
+} from "./protocol-security-tools";
 import { RedirectChainTool } from "./redirect-chain-tool";
 import { RobotsTxtTool } from "./robots-txt-tool";
 import { SecurityHeadersTool } from "./security-headers-tool";
@@ -236,6 +241,9 @@ export const SUPPORTED_TOOL_SLUGS = [
   "dkim-checker",
   "dmarc-checker",
   "dnssec-checker",
+  "http-compression-checker",
+  "tls-configuration-checker",
+  "ssl-certificate-checker",
 ] as const;
 
 export function ToolRenderer({ slug, locale }: ToolRendererProps) {
@@ -292,6 +300,9 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "dkim-checker": return <DkimCheckerTool locale={locale} />;
     case "dmarc-checker": return <DmarcCheckerTool locale={locale} />;
     case "dnssec-checker": return <DnssecCheckerTool locale={locale} />;
+    case "ssl-certificate-checker": return <SslCertificateCheckerTool locale={locale} />;
+    case "tls-configuration-checker": return <TlsConfigurationCheckerTool locale={locale} />;
+    case "http-compression-checker": return <HttpCompressionCheckerTool locale={locale} />;
     default: return null;
   }
 }

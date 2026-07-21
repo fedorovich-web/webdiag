@@ -248,4 +248,128 @@ export const securityNetworkToolPages = [
     relatedToolSlugs: ["dns-lookup", "spf-checker", "security-headers-checker"],
     sourceUrls: ["https://www.rfc-editor.org/rfc/rfc4033"],
   }),
+
+  toolPage({
+    slug: "ssl-certificate-checker",
+    seoTitle: { ru: "Проверка SSL-сертификата сайта", en: "SSL Certificate Checker" },
+    metaDescription: { ru: "Проверьте срок действия SSL-сертификата, issuer, SAN и соответствие hostname без fake security score.", en: "Check SSL certificate validity, issuer, SAN coverage, and hostname match without a fake security score." },
+    h1: { ru: "Проверка SSL-сертификата", en: "SSL Certificate Checker" },
+    lead: { ru: "Введите hostname, чтобы проверить сертификат через одиночный TLS handshake и получить понятные сигналы продления.", en: "Enter a hostname to inspect the certificate through a single TLS handshake and get clear renewal signals." },
+    quickFacts: [
+      { ru: "expiry", en: "expiry" },
+      { ru: "SAN", en: "SAN" },
+      { ru: "hostname match", en: "hostname match" },
+    ],
+    howToSteps: [
+      { ru: "Введите hostname без https:// и пути.", en: "Enter a hostname without https:// or path." },
+      { ru: "Запустите SSL-проверку.", en: "Run the SSL check." },
+      { ru: "Проверьте срок, issuer, SAN и hostname match.", en: "Review expiry, issuer, SAN, and hostname match." },
+    ],
+    supportedFeatures: [
+      { ru: "Проверяет срок действия сертификата и days until expiry.", en: "Checks certificate validity and days until expiry." },
+      { ru: "Показывает issuer, subject CN и SAN coverage.", en: "Shows issuer, subject CN, and SAN coverage." },
+      { ru: "Отклоняет URL, IP literals и локальные/private targets.", en: "Rejects URLs, IP literals, and local/private targets." },
+    ],
+    limitations: [
+      { ru: "Это одиночный TLS handshake, не полный SSL Labs аудит.", en: "This is a single TLS handshake, not a full SSL Labs audit." },
+      { ru: "OCSP, CT logs и full chain linting идут в будущих расширениях.", en: "OCSP, CT logs, and full chain linting belong to future extensions." },
+    ],
+    useCases: [
+      { ru: "Проверить, не истекает ли сертификат сайта.", en: "Check whether a site certificate is close to expiry." },
+      { ru: "Найти hostname mismatch после CDN или reverse proxy настройки.", en: "Find hostname mismatch after CDN or reverse-proxy setup." },
+      { ru: "Подготовить домен к мониторингу SSL expiry.", en: "Prepare a domain for SSL-expiry monitoring." },
+    ],
+    technicalNotes: [
+      { ru: "Инструмент подключается к публичному hostname с SNI и не принимает IP literal.", en: "The tool connects to a public hostname with SNI and does not accept IP literals." },
+      { ru: "Результат не является юридической оценкой безопасности сайта.", en: "The result is not a legal security assessment of the site." },
+    ],
+    faq: [
+      { question: { ru: "Это заменяет SSL Labs?", en: "Does this replace SSL Labs?" }, answer: { ru: "Нет. Это быстрая встроенная проверка сертификата; глубокий TLS audit будет отдельным уровнем.", en: "No. This is a fast embedded certificate check; deep TLS audit is a separate layer." } },
+      { question: { ru: "Можно проверять localhost?", en: "Can I check localhost?" }, answer: { ru: "Нет. Публичный инструмент принимает только публичные hostname.", en: "No. The public tool accepts only public hostnames." } },
+    ],
+    relatedToolSlugs: ["tls-configuration-checker", "http-compression-checker", "security-headers-checker"],
+    sourceUrls: ["https://www.rfc-editor.org/rfc/rfc8446"],
+  }),
+  toolPage({
+    slug: "tls-configuration-checker",
+    seoTitle: { ru: "Проверка TLS-конфигурации", en: "TLS Configuration Checker" },
+    metaDescription: { ru: "Проверьте TLS version, cipher suite, ALPN/HTTP2 signal и certificate health через bounded handshake.", en: "Check TLS version, cipher suite, ALPN/HTTP2 signal, and certificate health through a bounded handshake." },
+    h1: { ru: "Проверка TLS-конфигурации", en: "TLS Configuration Checker" },
+    lead: { ru: "Введите hostname, чтобы проверить modern TLS handshake без ложных заявлений полного protocol audit.", en: "Enter a hostname to check a modern TLS handshake without claiming a full protocol audit." },
+    quickFacts: [
+      { ru: "TLS 1.2 / 1.3", en: "TLS 1.2 / 1.3" },
+      { ru: "cipher", en: "cipher" },
+      { ru: "ALPN", en: "ALPN" },
+    ],
+    howToSteps: [
+      { ru: "Введите hostname и порт.", en: "Enter hostname and port." },
+      { ru: "Запустите TLS-проверку.", en: "Run the TLS check." },
+      { ru: "Проверьте negotiated protocol, cipher и certificate signals.", en: "Review negotiated protocol, cipher, and certificate signals." },
+    ],
+    supportedFeatures: [
+      { ru: "Показывает negotiated TLS version и cipher suite.", en: "Shows negotiated TLS version and cipher suite." },
+      { ru: "Показывает ALPN negotiated protocol, включая h2 signal.", en: "Shows ALPN negotiated protocol, including h2 signal." },
+      { ru: "Связывает TLS-сигналы с базовым certificate health.", en: "Connects TLS signals with baseline certificate health." },
+    ],
+    limitations: [
+      { ru: "Не перебирает все cipher suites и legacy protocols.", en: "Does not enumerate all cipher suites and legacy protocols." },
+      { ru: "Не является полным vulnerability scanner.", en: "Is not a full vulnerability scanner." },
+    ],
+    useCases: [
+      { ru: "Понять, какой TLS реально negotiated для сайта.", en: "Understand which TLS version is actually negotiated for a site." },
+      { ru: "Найти отсутствие HTTP/2 ALPN signal.", en: "Find missing HTTP/2 ALPN signal." },
+      { ru: "Подготовить TLS health к production readiness аудиту.", en: "Prepare TLS health for production-readiness auditing." },
+    ],
+    technicalNotes: [
+      { ru: "Результат основан на одном handshake с современным клиентским context.", en: "The result is based on one handshake with a modern client context." },
+      { ru: "Для полного TLS matrix позже нужен отдельный scanner worker.", en: "A full TLS matrix later requires a separate scanner worker." },
+    ],
+    faq: [
+      { question: { ru: "Почему нет списка всех cipher?", en: "Why no full cipher list?" }, answer: { ru: "Это bounded tool. Полный перебор cipher suites будет отдельным security scanner, чтобы не делать тяжёлые проверки синхронно.", en: "This is a bounded tool. Full cipher enumeration belongs to a separate security scanner to avoid heavy synchronous checks." } },
+      { question: { ru: "HTTP/2 проверяется?", en: "Is HTTP/2 checked?" }, answer: { ru: "Инструмент показывает ALPN negotiated protocol, если сервер его отдаёт.", en: "The tool shows the ALPN negotiated protocol when the server returns it." } },
+    ],
+    relatedToolSlugs: ["ssl-certificate-checker", "http-compression-checker", "security-headers-checker"],
+    sourceUrls: ["https://www.rfc-editor.org/rfc/rfc8446"],
+  }),
+  toolPage({
+    slug: "http-compression-checker",
+    seoTitle: { ru: "Проверка HTTP-сжатия Brotli/Gzip", en: "HTTP Brotli/Gzip Compression Checker" },
+    metaDescription: { ru: "Проверьте Content-Encoding, Vary: Accept-Encoding и compressible content type для HTML/CSS/JS/JSON ответов.", en: "Check Content-Encoding, Vary: Accept-Encoding, and compressible content type for HTML/CSS/JS/JSON responses." },
+    h1: { ru: "Проверка HTTP-сжатия", en: "HTTP Compression Checker" },
+    lead: { ru: "Введите URL, чтобы проверить, включено ли gzip/Brotli/deflate сжатие и корректный Vary для cache safety.", en: "Enter a URL to check gzip/Brotli/deflate compression and cache-safe Vary behavior." },
+    quickFacts: [
+      { ru: "gzip / br", en: "gzip / br" },
+      { ru: "Vary", en: "Vary" },
+      { ru: "text assets", en: "text assets" },
+    ],
+    howToSteps: [
+      { ru: "Введите публичный http/https URL.", en: "Enter a public http/https URL." },
+      { ru: "Запустите проверку compression policy.", en: "Run the compression policy check." },
+      { ru: "Проверьте Content-Encoding, content type и Vary header.", en: "Review Content-Encoding, content type, and Vary header." },
+    ],
+    supportedFeatures: [
+      { ru: "Проверяет Content-Encoding и compressible candidate response.", en: "Checks Content-Encoding and compressible candidate response." },
+      { ru: "Проверяет Vary: Accept-Encoding для shared cache correctness.", en: "Checks Vary: Accept-Encoding for shared-cache correctness." },
+      { ru: "Работает через SafeHttpFetcher с SSRF защитой.", en: "Runs through SafeHttpFetcher with SSRF protection." },
+    ],
+    limitations: [
+      { ru: "Это single-response check, не полный waterfall аудит всех assets.", en: "This is a single-response check, not a full waterfall audit of all assets." },
+      { ru: "PageSpeed и browser waterfall используются отдельными performance tools.", en: "PageSpeed and browser waterfall belong to separate performance tools." },
+    ],
+    useCases: [
+      { ru: "Найти не сжатый HTML/CSS/JS ответ.", en: "Find an uncompressed HTML/CSS/JS response." },
+      { ru: "Проверить Vary перед CDN/cache настройкой.", en: "Check Vary before CDN/cache configuration." },
+      { ru: "Подготовить сайт к speed/Core Web Vitals оптимизации.", en: "Prepare a site for speed/Core Web Vitals optimization." },
+    ],
+    technicalNotes: [
+      { ru: "Инструмент не скачивает большой body и не строит network waterfall.", en: "The tool does not download a large body and does not build a network waterfall." },
+      { ru: "Для полной оценки веса страницы используйте Page Weight Analyzer и PageSpeed Checker.", en: "Use Page Weight Analyzer and PageSpeed Checker for full page-weight evaluation." },
+    ],
+    faq: [
+      { question: { ru: "Всегда нужен Brotli?", en: "Do I always need Brotli?" }, answer: { ru: "Для HTTPS text assets Brotli обычно предпочтителен, но gzip fallback остаётся нормальной практикой.", en: "Brotli is usually preferable for HTTPS text assets, but gzip fallback remains normal practice." } },
+      { question: { ru: "Почему изображения не считаются compressible?", en: "Why are images not compressible?" }, answer: { ru: "JPEG/WebP/AVIF/PNG уже сжаты своими форматами; их оптимизируют через image tools, а не HTTP gzip.", en: "JPEG/WebP/AVIF/PNG are already format-compressed; optimize them through image tools, not HTTP gzip." } },
+    ],
+    relatedToolSlugs: ["page-weight-analyzer", "core-web-vitals-checker", "cache-policy-checker"],
+    sourceUrls: ["https://www.rfc-editor.org/rfc/rfc9110"],
+  }),
 ] as const;
