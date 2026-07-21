@@ -13,7 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 router = APIRouter(tags=["tools"])
 
-RecordType = Literal["A", "AAAA", "CNAME", "MX", "NS", "TXT"]
+RecordType = Literal["A", "AAAA", "CNAME", "MX", "NS", "TXT", "DS", "DNSKEY"]
 DnsHealthStatus = Literal["pass", "warning", "fail"]
 
 _ALLOWED_RECORD_TYPES: tuple[RecordType, ...] = ("A", "AAAA", "CNAME", "MX", "NS", "TXT")
@@ -24,6 +24,8 @@ _RECORD_TYPE_CODES: dict[str, int] = {
     "MX": 15,
     "TXT": 16,
     "AAAA": 28,
+    "DS": 43,
+    "DNSKEY": 48,
 }
 _CODE_RECORD_TYPES = {value: key for key, value in _RECORD_TYPE_CODES.items()}
 _MAX_DOMAIN_LENGTH = 253
@@ -143,6 +145,92 @@ class SpfCheckerResponse(BaseModel):
     uses_include: bool
     uses_redirect: bool
     estimated_dns_lookup_mechanisms: int = Field(ge=0)
+    status: DnsHealthStatus
+    recommendation: str = Field(min_length=1, max_length=800)
+
+
+class DkimCheckerRequest(DomainRequest):
+    selector: str = Field(min_length=1, max_length=120)
+
+    @field_validator("selector")
+    @classmethod
+    def normalize_selector(cls, value: str) -> str:
+        selector = value.strip().rstrip(".").lower()
+        if not selector or len(selector) > 120:
+            raise ValueError("Selector is empty or too long.")
+        allowed = set("abcdefghijklmnopqrstuvwxyz0123456789._-")
+        if any(char not in allowed for char in selector):
+            raise ValueError("Selector contains invalid characters.")
+        if selector.startswith(".") or selector.endswith(".") or ".." in selector:
+            raise ValueError("Selector contains invalid dot syntax.")
+        return selector
+
+
+class MailPolicyTagResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=40)
+    value: str = Field(min_length=0, max_length=2_048)
+
+
+class DkimCheckerResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    contract_version: Literal["webdiag.tool.dkim_checker.v1"] = (
+        "webdiag.tool.dkim_checker.v1"
+    )
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    domain: str = Field(min_length=1, max_length=_MAX_DOMAIN_LENGTH)
+    selector: str = Field(min_length=1, max_length=120)
+    record_name: str = Field(min_length=1, max_length=300)
+    dkim_record_count: int = Field(ge=0)
+    dkim_record: str | None = Field(default=None, max_length=2_048)
+    tags: tuple[MailPolicyTagResponse, ...]
+    key_type: str | None = Field(default=None, max_length=40)
+    has_public_key: bool
+    public_key_length: int = Field(ge=0)
+    status: DnsHealthStatus
+    recommendation: str = Field(min_length=1, max_length=800)
+
+
+class DmarcCheckerResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    contract_version: Literal["webdiag.tool.dmarc_checker.v1"] = (
+        "webdiag.tool.dmarc_checker.v1"
+    )
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    domain: str = Field(min_length=1, max_length=_MAX_DOMAIN_LENGTH)
+    record_name: str = Field(min_length=1, max_length=300)
+    dmarc_record_count: int = Field(ge=0)
+    dmarc_record: str | None = Field(default=None, max_length=2_048)
+    tags: tuple[MailPolicyTagResponse, ...]
+    policy: str | None = Field(default=None, max_length=40)
+    subdomain_policy: str | None = Field(default=None, max_length=40)
+    percentage: int | None = Field(default=None, ge=0, le=100)
+    has_rua: bool
+    has_ruf: bool
+    alignment_dkim: str | None = Field(default=None, max_length=20)
+    alignment_spf: str | None = Field(default=None, max_length=20)
+    status: DnsHealthStatus
+    recommendation: str = Field(min_length=1, max_length=800)
+
+
+class DnssecCheckerResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    contract_version: Literal["webdiag.tool.dnssec_checker.v1"] = (
+        "webdiag.tool.dnssec_checker.v1"
+    )
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    domain: str = Field(min_length=1, max_length=_MAX_DOMAIN_LENGTH)
+    ds_record_count: int = Field(ge=0)
+    dnskey_record_count: int = Field(ge=0)
+    ds_records: tuple[DnsRecordResponse, ...]
+    dnskey_records: tuple[DnsRecordResponse, ...]
+    delegation_signed: bool
+    zone_dnskey_present: bool
+    algorithms: tuple[str, ...]
     status: DnsHealthStatus
     recommendation: str = Field(min_length=1, max_length=800)
 
@@ -306,6 +394,154 @@ def inspect_spf(
     )
 
 
+@router.post("/v1/tools/dkim", response_model=DkimCheckerResponse)
+def inspect_dkim(
+    payload: DkimCheckerRequest,
+    resolver: Annotated[DnsResolver, Depends(get_network_dns_resolver)],
+) -> DkimCheckerResponse:
+    record_name = f"{payload.selector}._domainkey.{payload.domain}"
+    try:
+        txt_records = tuple(
+            answer
+            for answer in resolver.query(record_name, "TXT")
+            if answer.record_type == "TXT"
+        )
+    except DnsResolverError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail={"code": "dns_query_failed", "message": str(exc)},
+        ) from exc
+
+    dkim_records = tuple(
+        record.value
+        for record in txt_records
+        if record.value.lower().startswith("v=dkim1")
+    )
+    selected = dkim_records[0] if len(dkim_records) == 1 else None
+    tags = _mail_policy_tags(selected) if selected else ()
+    tag_map = _tag_map(tags)
+    public_key = tag_map.get("p", "")
+    key_type = tag_map.get("k")
+    health = _dkim_status(
+        record_count=len(dkim_records),
+        public_key=public_key,
+        key_type=key_type,
+    )
+    return DkimCheckerResponse(
+        domain=payload.domain,
+        selector=payload.selector,
+        record_name=record_name,
+        dkim_record_count=len(dkim_records),
+        dkim_record=selected,
+        tags=tags,
+        key_type=key_type,
+        has_public_key=bool(public_key),
+        public_key_length=len(public_key),
+        status=health,
+        recommendation=_dkim_recommendation(
+            record_count=len(dkim_records),
+            public_key=public_key,
+            key_type=key_type,
+        ),
+    )
+
+
+@router.post("/v1/tools/dmarc", response_model=DmarcCheckerResponse)
+def inspect_dmarc(
+    payload: DomainRequest,
+    resolver: Annotated[DnsResolver, Depends(get_network_dns_resolver)],
+) -> DmarcCheckerResponse:
+    record_name = f"_dmarc.{payload.domain}"
+    try:
+        txt_records = tuple(
+            answer
+            for answer in resolver.query(record_name, "TXT")
+            if answer.record_type == "TXT"
+        )
+    except DnsResolverError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail={"code": "dns_query_failed", "message": str(exc)},
+        ) from exc
+
+    dmarc_records = tuple(
+        record.value
+        for record in txt_records
+        if record.value.lower().startswith("v=dmarc1")
+    )
+    selected = dmarc_records[0] if len(dmarc_records) == 1 else None
+    tags = _mail_policy_tags(selected) if selected else ()
+    tag_map = _tag_map(tags)
+    percentage = _parse_percentage(tag_map.get("pct"))
+    health = _dmarc_status(
+        record_count=len(dmarc_records),
+        policy=tag_map.get("p"),
+        percentage=percentage,
+    )
+    return DmarcCheckerResponse(
+        domain=payload.domain,
+        record_name=record_name,
+        dmarc_record_count=len(dmarc_records),
+        dmarc_record=selected,
+        tags=tags,
+        policy=tag_map.get("p"),
+        subdomain_policy=tag_map.get("sp"),
+        percentage=percentage,
+        has_rua=bool(tag_map.get("rua")),
+        has_ruf=bool(tag_map.get("ruf")),
+        alignment_dkim=tag_map.get("adkim"),
+        alignment_spf=tag_map.get("aspf"),
+        status=health,
+        recommendation=_dmarc_recommendation(
+            record_count=len(dmarc_records),
+            policy=tag_map.get("p"),
+            percentage=percentage,
+            has_rua=bool(tag_map.get("rua")),
+        ),
+    )
+
+
+@router.post("/v1/tools/dnssec", response_model=DnssecCheckerResponse)
+def inspect_dnssec(
+    payload: DomainRequest,
+    resolver: Annotated[DnsResolver, Depends(get_network_dns_resolver)],
+) -> DnssecCheckerResponse:
+    try:
+        ds_answers = tuple(
+            answer for answer in resolver.query(payload.domain, "DS") if answer.record_type == "DS"
+        )
+        dnskey_answers = tuple(
+            answer
+            for answer in resolver.query(payload.domain, "DNSKEY")
+            if answer.record_type == "DNSKEY"
+        )
+    except DnsResolverError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail={"code": "dns_query_failed", "message": str(exc)},
+        ) from exc
+
+    ds_records = tuple(_record_response(answer) for answer in ds_answers)
+    dnskey_records = tuple(_record_response(answer) for answer in dnskey_answers)
+    algorithms = tuple(sorted({_dnssec_algorithm(answer.value) for answer in dnskey_answers}))
+    health = _dnssec_status(ds_count=len(ds_records), dnskey_count=len(dnskey_records))
+    return DnssecCheckerResponse(
+        domain=payload.domain,
+        ds_record_count=len(ds_records),
+        dnskey_record_count=len(dnskey_records),
+        ds_records=ds_records,
+        dnskey_records=dnskey_records,
+        delegation_signed=bool(ds_records),
+        zone_dnskey_present=bool(dnskey_records),
+        algorithms=algorithms,
+        status=health,
+        recommendation=_dnssec_recommendation(
+            ds_count=len(ds_records),
+            dnskey_count=len(dnskey_records),
+        ),
+    )
+
+
 def _normalize_domain(value: str) -> str:
     raw = value.strip().rstrip(".").lower()
     if "://" in raw or "/" in raw or "?" in raw or "#" in raw:
@@ -452,6 +688,14 @@ def _parse_rdata(
             chunks.append(rdata[offset : offset + chunk_length].decode("utf-8", errors="replace"))
             offset += chunk_length
         return "".join(chunks), None
+    if record_type == "DS" and len(rdata) >= 4:
+        key_tag, algorithm, digest_type = struct.unpack("!HBB", rdata[:4])
+        digest = rdata[4:].hex().upper()
+        return f"{key_tag} {algorithm} {digest_type} {digest}", None
+    if record_type == "DNSKEY" and len(rdata) >= 4:
+        flags, protocol, algorithm = struct.unpack("!HBB", rdata[:4])
+        key_size = len(rdata[4:])
+        return f"flags={flags} protocol={protocol} algorithm={algorithm} key_bytes={key_size}", None
     return None
 
 
@@ -608,3 +852,144 @@ def _spf_recommendation(
         "SPF has a controlled final policy. Validate DKIM and DMARC alignment "
         "before tightening mail security."
     )
+
+
+def _mail_policy_tags(record: str | None) -> tuple[MailPolicyTagResponse, ...]:
+    if not record:
+        return ()
+    tags: list[MailPolicyTagResponse] = []
+    for chunk in record.split(";"):
+        if "=" not in chunk:
+            continue
+        name, value = chunk.split("=", 1)
+        name = name.strip().lower()
+        value = value.strip()
+        if name:
+            tags.append(MailPolicyTagResponse(name=name[:40], value=value[:2_048]))
+    return tuple(tags)
+
+
+def _tag_map(tags: tuple[MailPolicyTagResponse, ...]) -> dict[str, str]:
+    return {tag.name: tag.value for tag in tags}
+
+
+def _parse_percentage(value: str | None) -> int | None:
+    if value is None:
+        return None
+    try:
+        percentage = int(value)
+    except ValueError:
+        return None
+    if percentage < 0 or percentage > 100:
+        return None
+    return percentage
+
+
+def _dkim_status(
+    *,
+    record_count: int,
+    public_key: str,
+    key_type: str | None,
+) -> DnsHealthStatus:
+    if record_count != 1:
+        return "fail"
+    if not public_key:
+        return "fail"
+    if key_type and key_type.lower() not in {"rsa", "ed25519"}:
+        return "warning"
+    if len(public_key) < 80:
+        return "warning"
+    return "pass"
+
+
+def _dkim_recommendation(
+    *,
+    record_count: int,
+    public_key: str,
+    key_type: str | None,
+) -> str:
+    if record_count == 0:
+        return (
+            "No DKIM TXT record was found for this selector. Confirm the selector "
+            "from your mail provider and publish selector._domainkey TXT."
+        )
+    if record_count > 1:
+        return "Multiple DKIM records were found for one selector. Publish exactly one record."
+    if not public_key:
+        return "DKIM record has no public key value; publish a non-empty p= tag."
+    if key_type and key_type.lower() not in {"rsa", "ed25519"}:
+        return "DKIM key type is uncommon. Confirm that your mail provider supports it."
+    if len(public_key) < 80:
+        return "DKIM public key looks short. Verify that the full DNS TXT value is published."
+    return (
+        "DKIM selector publishes one record with a public key. "
+        "Validate signing alignment in DMARC."
+    )
+
+
+def _dmarc_status(
+    *,
+    record_count: int,
+    policy: str | None,
+    percentage: int | None,
+) -> DnsHealthStatus:
+    if record_count != 1:
+        return "fail"
+    if policy not in {"none", "quarantine", "reject"}:
+        return "fail"
+    if policy == "none" or percentage not in {None, 100}:
+        return "warning"
+    return "pass"
+
+
+def _dmarc_recommendation(
+    *,
+    record_count: int,
+    policy: str | None,
+    percentage: int | None,
+    has_rua: bool,
+) -> str:
+    if record_count == 0:
+        return "No DMARC record was found. Publish one TXT record at _dmarc.domain."
+    if record_count > 1:
+        return "Multiple DMARC records were found. Keep exactly one v=DMARC1 TXT record."
+    if policy not in {"none", "quarantine", "reject"}:
+        return "DMARC record is missing a valid p= policy: none, quarantine, or reject."
+    if policy == "none":
+        return "DMARC is monitoring-only. Move toward quarantine/reject after SPF and DKIM align."
+    if percentage is not None and percentage < 100:
+        return "DMARC policy is partially applied through pct=. Increase to 100 after validation."
+    if not has_rua:
+        return (
+            "DMARC enforcement is enabled. Add rua= aggregate reports "
+            "for operational visibility."
+        )
+    return "DMARC has an enforcement policy. Continue monitoring alignment and aggregate reports."
+
+
+def _dnssec_algorithm(value: str) -> str:
+    marker = "algorithm="
+    if marker not in value:
+        return "unknown"
+    return value.split(marker, 1)[1].split()[0]
+
+
+def _dnssec_status(*, ds_count: int, dnskey_count: int) -> DnsHealthStatus:
+    if ds_count and dnskey_count:
+        return "pass"
+    if ds_count or dnskey_count:
+        return "warning"
+    return "fail"
+
+
+def _dnssec_recommendation(*, ds_count: int, dnskey_count: int) -> str:
+    if ds_count and dnskey_count:
+        return (
+            "DS and DNSKEY records are visible. This is a DNSSEC publication check, "
+            "not a full validation-chain proof."
+        )
+    if ds_count and not dnskey_count:
+        return "DS exists but DNSKEY was not returned. Verify zone signing and resolver behavior."
+    if dnskey_count and not ds_count:
+        return "DNSKEY exists without DS at the parent. Complete delegation signing at registrar."
+    return "No DS or DNSKEY records were found. DNSSEC does not appear published for this domain."

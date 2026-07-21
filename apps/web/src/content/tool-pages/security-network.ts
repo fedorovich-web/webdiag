@@ -124,4 +124,128 @@ export const securityNetworkToolPages = [
     relatedToolSlugs: ["mx-record-checker", "dns-lookup", "security-headers-checker"],
     sourceUrls: ["https://www.rfc-editor.org/rfc/rfc7208"],
   }),
+
+  toolPage({
+    slug: "dkim-checker",
+    seoTitle: { ru: "Проверка DKIM-записи", en: "DKIM Record Checker" },
+    metaDescription: { ru: "Проверьте DKIM TXT запись по домену и selector без проверки реальных писем.", en: "Check a DKIM TXT record by domain and selector without validating real emails." },
+    h1: { ru: "Проверка DKIM-записи", en: "DKIM Record Checker" },
+    lead: { ru: "Введите домен и DKIM selector, чтобы проверить наличие DKIM TXT, key type и публичного ключа.", en: "Enter a domain and DKIM selector to check DKIM TXT presence, key type, and public-key publication." },
+    quickFacts: [
+      { ru: "selector._domainkey", en: "selector._domainkey" },
+      { ru: "k= / p=", en: "k= / p=" },
+      { ru: "DNS-only", en: "DNS-only" },
+    ],
+    howToSteps: [
+      { ru: "Введите домен отправителя без протокола.", en: "Enter the sender domain without protocol." },
+      { ru: "Введите DKIM selector из настроек почтового провайдера.", en: "Enter the DKIM selector from your mail provider settings." },
+      { ru: "Проверьте количество DKIM records, тип ключа и наличие p= public key.", en: "Review DKIM record count, key type, and p= public key presence." },
+    ],
+    supportedFeatures: [
+      { ru: "Проверяет TXT record по selector._domainkey.domain.", en: "Checks TXT record at selector._domainkey.domain." },
+      { ru: "Извлекает DKIM tags и фиксирует пустой p=.", en: "Extracts DKIM tags and flags an empty p= value." },
+      { ru: "Не делает fake-проверку подписи реальных писем.", en: "Does not fake validation of real email signatures." },
+    ],
+    limitations: [
+      { ru: "Нужен правильный selector; домен сам по себе DKIM не раскрывает.", en: "A correct selector is required; a domain alone does not reveal DKIM." },
+      { ru: "Не проверяет фактическое подписание исходящих сообщений.", en: "Does not check actual signing of outbound messages." },
+    ],
+    useCases: [
+      { ru: "Проверить публикацию DKIM после настройки почтового сервиса.", en: "Verify DKIM publication after mail-service setup." },
+      { ru: "Найти пустой или неполный DKIM key.", en: "Find an empty or incomplete DKIM key." },
+      { ru: "Подготовить домен к DMARC alignment.", en: "Prepare a domain for DMARC alignment." },
+    ],
+    technicalNotes: [
+      { ru: "Проверка ограничена DNS TXT уровнем и не анализирует SMTP headers.", en: "The check is limited to DNS TXT and does not analyze SMTP headers." },
+      { ru: "Статус показывает качество публикации записи, не итоговую доставляемость.", en: "Status reflects record-publication quality, not final deliverability." },
+    ],
+    faq: [
+      { question: { ru: "Где взять selector?", en: "Where do I find the selector?" }, answer: { ru: "В настройках почтового провайдера: Google Workspace, Яндекс 360, Mailgun, SendGrid и т.д.", en: "In your mail provider settings: Google Workspace, Mailgun, SendGrid, and similar services." } },
+      { question: { ru: "DKIM checker гарантирует доставку писем?", en: "Does DKIM guarantee delivery?" }, answer: { ru: "Нет. DKIM — только часть authentication stack вместе с SPF, DMARC и репутацией отправителя.", en: "No. DKIM is only one part of authentication alongside SPF, DMARC, and sender reputation." } },
+    ],
+    relatedToolSlugs: ["spf-checker", "dmarc-checker", "dns-lookup"],
+    sourceUrls: ["https://www.rfc-editor.org/rfc/rfc6376"],
+  }),
+  toolPage({
+    slug: "dmarc-checker",
+    seoTitle: { ru: "Проверка DMARC-записи", en: "DMARC Record Checker" },
+    metaDescription: { ru: "Проверьте DMARC TXT, p=/sp= policy, pct, rua/ruf и alignment-теги.", en: "Check DMARC TXT, p=/sp= policy, pct, rua/ruf, and alignment tags." },
+    h1: { ru: "Проверка DMARC-записи", en: "DMARC Record Checker" },
+    lead: { ru: "Введите домен, чтобы проверить _dmarc TXT без fake deliverability обещаний.", en: "Enter a domain to check _dmarc TXT without fake deliverability promises." },
+    quickFacts: [
+      { ru: "p=none/quarantine/reject", en: "p=none/quarantine/reject" },
+      { ru: "rua/ruf", en: "rua/ruf" },
+      { ru: "alignment", en: "alignment" },
+    ],
+    howToSteps: [
+      { ru: "Введите домен без протокола.", en: "Enter a domain without protocol." },
+      { ru: "Запустите проверку _dmarc TXT.", en: "Run the _dmarc TXT check." },
+      { ru: "Проверьте policy, pct, reporting и alignment tags.", en: "Review policy, pct, reporting, and alignment tags." },
+    ],
+    supportedFeatures: [
+      { ru: "Находит одну или несколько v=DMARC1 записей.", en: "Finds one or multiple v=DMARC1 records." },
+      { ru: "Проверяет p=, sp=, pct=, rua/ruf, adkim и aspf.", en: "Checks p=, sp=, pct=, rua/ruf, adkim, and aspf." },
+      { ru: "Отделяет monitoring-only p=none от enforcement policy.", en: "Separates monitoring-only p=none from enforcement policy." },
+    ],
+    limitations: [
+      { ru: "Не проверяет фактические отчёты rua/ruf и mailbox availability.", en: "Does not validate actual rua/ruf reports or mailbox availability." },
+      { ru: "Не обещает попадание писем во входящие.", en: "Does not promise inbox placement." },
+    ],
+    useCases: [
+      { ru: "Найти отсутствие DMARC или две DMARC записи.", en: "Find missing DMARC or duplicate DMARC records." },
+      { ru: "Проверить готовность к quarantine/reject.", en: "Check readiness for quarantine/reject." },
+      { ru: "Контролировать mail authentication hardening.", en: "Control mail authentication hardening." },
+    ],
+    technicalNotes: [
+      { ru: "Проверяется TXT запись _dmarc.domain на DNS уровне.", en: "The _dmarc.domain TXT record is checked at DNS level." },
+      { ru: "DMARC enforcement требует корректного SPF/DKIM alignment.", en: "DMARC enforcement requires correct SPF/DKIM alignment." },
+    ],
+    faq: [
+      { question: { ru: "p=none — это ошибка?", en: "Is p=none an error?" }, answer: { ru: "Нет, это monitoring mode. Но для защиты домена нужно двигаться к quarantine или reject после проверки SPF/DKIM.", en: "No, it is monitoring mode. For protection, move toward quarantine or reject after SPF/DKIM validation." } },
+      { question: { ru: "Нужен ли rua?", en: "Do I need rua?" }, answer: { ru: "Да, aggregate reports помогают контролировать alignment и безопасно ужесточать policy.", en: "Yes, aggregate reports help monitor alignment and safely tighten policy." } },
+    ],
+    relatedToolSlugs: ["spf-checker", "dkim-checker", "mx-record-checker"],
+    sourceUrls: ["https://www.rfc-editor.org/rfc/rfc7489"],
+  }),
+  toolPage({
+    slug: "dnssec-checker",
+    seoTitle: { ru: "Проверка DNSSEC домена", en: "DNSSEC Domain Checker" },
+    metaDescription: { ru: "Проверьте публикацию DS и DNSKEY записей домена без заявления полной validation-chain проверки.", en: "Check DS and DNSKEY publication without claiming full validation-chain validation." },
+    h1: { ru: "Проверка DNSSEC домена", en: "DNSSEC Domain Checker" },
+    lead: { ru: "Введите домен, чтобы проверить видимость DS и DNSKEY как DNSSEC publication check.", en: "Enter a domain to check DS and DNSKEY visibility as a DNSSEC publication check." },
+    quickFacts: [
+      { ru: "DS", en: "DS" },
+      { ru: "DNSKEY", en: "DNSKEY" },
+      { ru: "publication check", en: "publication check" },
+    ],
+    howToSteps: [
+      { ru: "Введите домен без протокола.", en: "Enter a domain without protocol." },
+      { ru: "Запустите проверку DS/DNSKEY.", en: "Run the DS/DNSKEY check." },
+      { ru: "Проверьте наличие делегирования и ключей зоны.", en: "Review delegation and zone-key visibility." },
+    ],
+    supportedFeatures: [
+      { ru: "Проверяет DS records домена.", en: "Checks domain DS records." },
+      { ru: "Проверяет DNSKEY records домена.", en: "Checks domain DNSKEY records." },
+      { ru: "Показывает algorithms из DNSKEY publication signal.", en: "Shows algorithms from DNSKEY publication signals." },
+    ],
+    limitations: [
+      { ru: "Это не полная криптографическая проверка цепочки доверия.", en: "This is not a full cryptographic chain-of-trust validation." },
+      { ru: "Результат зависит от resolver и текущего DNS cache/TTL состояния.", en: "The result depends on resolver behavior and current DNS cache/TTL state." },
+    ],
+    useCases: [
+      { ru: "Понять, опубликованы ли DNSSEC записи.", en: "Understand whether DNSSEC records are published." },
+      { ru: "Найти DNSKEY без DS или DS без DNSKEY.", en: "Find DNSKEY without DS or DS without DNSKEY." },
+      { ru: "Проверить базовую DNSSEC-гигиену домена.", en: "Check baseline DNSSEC hygiene for a domain." },
+    ],
+    technicalNotes: [
+      { ru: "Инструмент запрашивает DS и DNSKEY через DNS resolver.", en: "The tool queries DS and DNSKEY through a DNS resolver." },
+      { ru: "Для полной валидации позже нужен отдельный validating resolver layer.", en: "Full validation later requires a separate validating resolver layer." },
+    ],
+    faq: [
+      { question: { ru: "Это гарантирует, что DNSSEC работает?", en: "Does this guarantee DNSSEC works?" }, answer: { ru: "Нет. Это publication check. Полная проверка должна валидировать цепочку доверия.", en: "No. This is a publication check. Full validation must verify the chain of trust." } },
+      { question: { ru: "Почему DS есть, а DNSKEY нет?", en: "Why is DS present but DNSKEY missing?" }, answer: { ru: "Возможны проблемы зоны, resolver или временное состояние DNS cache. Нужно проверить у регистратора и authoritative DNS.", en: "Possible zone, resolver, or cache-state issues. Check registrar and authoritative DNS." } },
+    ],
+    relatedToolSlugs: ["dns-lookup", "spf-checker", "security-headers-checker"],
+    sourceUrls: ["https://www.rfc-editor.org/rfc/rfc4033"],
+  }),
 ] as const;

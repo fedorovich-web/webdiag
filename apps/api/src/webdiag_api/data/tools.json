@@ -734,8 +734,11 @@
     "riskTier": "R2",
     "access": "none",
     "implementationWave": "W3",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет публикацию DS и DNSKEY записей домена как DNSSEC publication check без обещания полной validation-chain проверки.",
+      "en": "Checks DS and DNSKEY publication for a domain as a DNSSEC publication check without claiming full validation-chain proof."
+    }
   },
   {
     "id": "WD-044",
@@ -767,8 +770,11 @@
     "riskTier": "R1",
     "access": "none",
     "implementationWave": "W2",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет DKIM TXT запись по домену и selector, извлекает теги k=/p= и оценивает наличие публичного ключа без проверки фактической подписи писем.",
+      "en": "Checks a DKIM TXT record by domain and selector, extracts k=/p= tags, and evaluates public-key presence without validating real email signatures."
+    }
   },
   {
     "id": "WD-046",
@@ -782,8 +788,11 @@
     "riskTier": "R1",
     "access": "none",
     "implementationWave": "W2",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет DMARC TXT запись _dmarc, policy p=/sp=, pct, rua/ruf и alignment-теги без обещания inbox deliverability.",
+      "en": "Checks the _dmarc TXT record, p=/sp= policy, pct, rua/ruf, and alignment tags without promising inbox deliverability."
+    }
   },
   {
     "id": "WD-047",
