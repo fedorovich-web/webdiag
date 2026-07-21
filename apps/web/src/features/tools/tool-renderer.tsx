@@ -24,6 +24,7 @@ import {
 import { CopyButton } from "../../components/copy-button";
 import { CanonicalCheckerTool } from "./canonical-checker-tool";
 import { ImageCropperTool, ImageFormatConverterTool, ImageOptimizerTool, ImageResizerTool } from "./image-tools";
+import { MetaTagsCheckerTool, SerpPreviewTool, SocialPreviewTool } from "./metadata-preview-tools";
 import { RedirectChainTool } from "./redirect-chain-tool";
 import { RobotsTxtTool } from "./robots-txt-tool";
 import { SecurityHeadersTool } from "./security-headers-tool";
@@ -186,6 +187,9 @@ export const SUPPORTED_TOOL_SLUGS = [
   "sitemap-validator",
   "canonical-checker",
   "security-headers-checker",
+  "meta-tags-checker",
+  "serp-preview",
+  "open-graph-preview",
 ] as const;
 
 export function ToolRenderer({ slug, locale }: ToolRendererProps) {
@@ -209,6 +213,9 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "sitemap-validator": return <SitemapValidatorTool locale={locale} />;
     case "canonical-checker": return <CanonicalCheckerTool locale={locale} />;
     case "security-headers-checker": return <SecurityHeadersTool locale={locale} />;
+    case "meta-tags-checker": return <MetaTagsCheckerTool locale={locale} />;
+    case "serp-preview": return <SerpPreviewTool locale={locale} />;
+    case "open-graph-preview": return <SocialPreviewTool locale={locale} />;
     default: return null;
   }
 }

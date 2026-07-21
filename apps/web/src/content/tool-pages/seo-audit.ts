@@ -1,6 +1,130 @@
 import { toolPage } from "./shared";
 
 export const seoAuditToolPages = [
+
+  toolPage({
+    slug: "meta-tags-checker",
+    seoTitle: { ru: "Проверка мета-тегов страницы онлайн", en: "Meta Tags Checker" },
+    metaDescription: { ru: "Проверьте title, description, robots, canonical, Open Graph, Twitter/X и JSON-LD summary для одной страницы.", en: "Check title, description, robots, canonical, Open Graph, Twitter/X, and JSON-LD summary for one page." },
+    h1: { ru: "Проверка мета-тегов", en: "Meta Tags Checker" },
+    lead: { ru: "Введите URL, чтобы получить сводную проверку SEO-метаданных страницы: title, description, robots, canonical, H1-сводку, social tags и JSON-LD coverage без нарезки на слабые микротулы.", en: "Enter a URL to get an aggregate SEO metadata review: title, description, robots, canonical, H1 summary, social tags, and JSON-LD coverage without weak microtool fragmentation." },
+    quickFacts: [
+      { ru: "Один URL", en: "Single URL" },
+      { ru: "SEO metadata", en: "SEO metadata" },
+      { ru: "Aggregate checks", en: "Aggregate checks" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте адрес страницы, которую нужно проверить.", en: "Paste the page address you need to check." },
+      { ru: "Запустите проверку и дождитесь ответа WebDiag API.", en: "Run the check and wait for the WebDiag API response." },
+      { ru: "Оцените title, description, robots, canonical, social metadata и JSON-LD summary.", en: "Review title, description, robots, canonical, social metadata, and JSON-LD summary." },
+    ],
+    supportedFeatures: [
+      { ru: "Проверяет метаданные как один цельный SEO-сценарий, а не отдельные слабые проверки title/H1/description.", en: "Checks metadata as one complete SEO scenario, not separate weak title/H1/description checks." },
+      { ru: "Показывает длину title/description, canonical summary, robots directives и coverage соцметаданных.", en: "Shows title/description length, canonical summary, robots directives, and social metadata coverage." },
+      { ru: "Использует backend SafeHttpFetcher с SSRF-защитой и лимитом размера HTML.", en: "Uses the backend SafeHttpFetcher with SSRF protection and HTML body size limits." },
+    ],
+    limitations: [
+      { ru: "Инструмент проверяет одну страницу и не ищет дубли метаданных по всему сайту.", en: "The tool checks one page and does not search for duplicate metadata across the site." },
+      { ru: "H1 здесь только сводный сигнал; полная иерархия заголовков должна идти в Heading Structure Checker.", en: "H1 is only a summary signal here; the full heading hierarchy belongs in Heading Structure Checker." },
+    ],
+    useCases: [
+      { ru: "Быстро проверить, готова ли посадочная страница к индексации и нормальному сниппету.", en: "Quickly check whether a landing page is ready for indexing and a sane snippet." },
+      { ru: "Перед релизом увидеть отсутствующие или слабые HTML metadata signals.", en: "Before release, see missing or weak HTML metadata signals." },
+      { ru: "Сравнить canonical, robots и social metadata после миграции или смены CMS.", en: "Compare canonical, robots, and social metadata after migration or CMS changes." },
+    ],
+    technicalNotes: [
+      { ru: "Инструмент извлекает HTML metadata из загруженной страницы и не выполняет JavaScript-рендеринг.", en: "The tool extracts HTML metadata from the fetched page and does not perform JavaScript rendering." },
+      { ru: "Canonical резолвится относительно финального URL после редиректов.", en: "Canonical is resolved relative to the final URL after redirects." },
+    ],
+    faq: [
+      { question: { ru: "Почему это не отдельные проверки title и H1?", en: "Why is this not separate title and H1 checks?" }, answer: { ru: "Потому что отдельные микропроверки дают слабую ценность. WebDiag показывает их как части цельного metadata-инструмента.", en: "Because separate microchecks have weak value. WebDiag shows them as parts of a complete metadata tool." } },
+      { question: { ru: "Это заменяет полный SEO-аудит?", en: "Does this replace a full SEO audit?" }, answer: { ru: "Нет. Это single-page metadata check. Полный аудит сайта требует crawl, истории и дополнительных проверок.", en: "No. This is a single-page metadata check. A full site audit needs crawl, history, and additional checks." } },
+    ],
+    relatedToolSlugs: ["serp-preview", "open-graph-preview", "canonical-checker"],
+    sourceUrls: ["https://developers.google.com/search/docs/appearance/title-link", "https://developers.google.com/search/docs/appearance/snippet"],
+  }),
+  toolPage({
+    slug: "serp-preview",
+    seoTitle: { ru: "Предпросмотр поискового сниппета", en: "SERP Snippet Preview" },
+    metaDescription: { ru: "Соберите preview поискового результата по реальному title и meta description страницы с предупреждениями по качеству snippet.", en: "Build a search result preview from the real page title and meta description with snippet quality warnings." },
+    h1: { ru: "Предпросмотр поискового сниппета", en: "SERP Snippet Preview" },
+    lead: { ru: "Введите URL, чтобы увидеть, как страница может выглядеть в поисковой выдаче: display URL, title, description, источники fallback и предупреждения по сниппету.", en: "Enter a URL to see how a page may appear in search results: display URL, title, description, fallback sources, and snippet warnings." },
+    quickFacts: [
+      { ru: "SERP preview", en: "SERP preview" },
+      { ru: "Title/description", en: "Title/description" },
+      { ru: "Snippet warnings", en: "Snippet warnings" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте URL страницы.", en: "Paste the page URL." },
+      { ru: "Запустите preview и проверьте, откуда взяты title и description.", en: "Run the preview and check where title and description came from." },
+      { ru: "Исправьте отсутствующие, слишком короткие или перегруженные сниппет-сигналы.", en: "Fix missing, too short, or bloated snippet signals." },
+    ],
+    supportedFeatures: [
+      { ru: "Строит search snippet preview по реальному HTML, а не по ручному вводу.", en: "Builds a search snippet preview from real HTML, not manual input." },
+      { ru: "Показывает fallback, если title или description отсутствуют.", en: "Shows fallback sources when title or description is missing." },
+      { ru: "Отдельно показывает предупреждение, если страница содержит noindex.", en: "Separately warns when the page contains noindex." },
+    ],
+    limitations: [
+      { ru: "Поисковые системы могут переписывать сниппеты; инструмент показывает контролируемые HTML-сигналы, а не гарантированный SERP.", en: "Search engines may rewrite snippets; the tool shows controllable HTML signals, not a guaranteed SERP." },
+      { ru: "Инструмент не анализирует реальные позиции и CTR.", en: "The tool does not analyze actual rankings or CTR." },
+    ],
+    useCases: [
+      { ru: "Проверить посадочную страницу перед запуском рекламы или SEO-релизом.", en: "Check a landing page before paid traffic or an SEO release." },
+      { ru: "Согласовать сниппет с клиентом без ручного копирования HTML.", en: "Review a snippet with a client without manually copying HTML." },
+      { ru: "Увидеть, не потерялся ли title или description после шаблонных правок.", en: "See whether title or description was lost after template changes." },
+    ],
+    technicalNotes: [
+      { ru: "Preview строится из title и meta description, извлечённых backend-проверкой HTML.", en: "The preview is built from title and meta description extracted by the backend HTML check." },
+      { ru: "Это не запрос к Google Search Console и не SERP scraping.", en: "This is not a Google Search Console request and not SERP scraping." },
+    ],
+    faq: [
+      { question: { ru: "Почему сниппет может отличаться от Google?", en: "Why can the snippet differ from Google?" }, answer: { ru: "Google может переписать title/description под запрос. Инструмент показывает базовые HTML-сигналы, которыми сайт управляет напрямую.", en: "Google can rewrite title/description for a query. The tool shows the base HTML signals the site controls directly." } },
+      { question: { ru: "Можно ли проверять Яндекс?", en: "Can this check Yandex?" }, answer: { ru: "Да как HTML-сигналы страницы, но не как реальный сниппет Яндекса. Для настоящей выдачи нужен отдельный SERP-модуль.", en: "Yes as page HTML signals, but not as the real Yandex snippet. A real SERP module is separate." } },
+    ],
+    relatedToolSlugs: ["meta-tags-checker", "open-graph-preview", "canonical-checker"],
+    sourceUrls: ["https://developers.google.com/search/docs/appearance/title-link", "https://developers.google.com/search/docs/appearance/snippet"],
+  }),
+  toolPage({
+    slug: "open-graph-preview",
+    seoTitle: { ru: "Предпросмотр Open Graph и Twitter/X Card", en: "Open Graph and Twitter/X Card Preview" },
+    metaDescription: { ru: "Проверьте rich preview страницы для соцсетей и мессенджеров: OG title, description, image, URL и Twitter/X Card.", en: "Check page rich previews for social networks and messengers: OG title, description, image, URL, and Twitter/X Card." },
+    h1: { ru: "Предпросмотр Open Graph и Twitter/X Card", en: "Open Graph and Twitter/X Card Preview" },
+    lead: { ru: "Введите URL, чтобы проверить карточки предпросмотра для соцсетей и мессенджеров: Open Graph, Twitter/X Card, fallback-данные, изображение и недостающие поля.", en: "Enter a URL to check social and messenger preview cards: Open Graph, Twitter/X Card, fallback data, image, and missing fields." },
+    quickFacts: [
+      { ru: "Open Graph", en: "Open Graph" },
+      { ru: "Twitter/X Card", en: "Twitter/X Card" },
+      { ru: "Rich preview", en: "Rich preview" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте URL страницы.", en: "Paste the page URL." },
+      { ru: "Запустите проверку и сравните Open Graph и Twitter/X preview.", en: "Run the check and compare Open Graph and Twitter/X preview." },
+      { ru: "Исправьте недостающие title, description, image или card type.", en: "Fix missing title, description, image, or card type." },
+    ],
+    supportedFeatures: [
+      { ru: "Извлекает og:title, og:description, og:image, og:url, og:type и twitter:* metadata.", en: "Extracts og:title, og:description, og:image, og:url, og:type, and twitter:* metadata." },
+      { ru: "Резолвит относительные изображения относительно финального URL после редиректов.", en: "Resolves relative images against the final URL after redirects." },
+      { ru: "Показывает fallback из обычных title/description, если соцметаданные частично отсутствуют.", en: "Shows fallback from normal title/description when social metadata is partially missing." },
+    ],
+    limitations: [
+      { ru: "Инструмент не скачивает и не валидирует фактический размер изображения в MVP.", en: "The MVP does not download or validate the actual image dimensions." },
+      { ru: "Разные соцсети могут кешировать preview, поэтому после исправлений может потребоваться очистка cache у платформы.", en: "Different platforms can cache previews, so platform cache refresh may be needed after fixes." },
+    ],
+    useCases: [
+      { ru: "Проверить preview страницы перед публикацией в Telegram, VK, X или мессенджерах.", en: "Check a page preview before sharing in Telegram, VK, X, or messengers." },
+      { ru: "Найти отсутствующее og:image после миграции шаблонов или CDN.", en: "Find missing og:image after template or CDN migration." },
+      { ru: "Согласовать rich preview с маркетингом до запуска кампании.", en: "Review rich preview with marketing before a campaign launch." },
+    ],
+    technicalNotes: [
+      { ru: "Twitter/X preview может использовать fallback из Open Graph, если собственные twitter:* поля отсутствуют.", en: "Twitter/X preview can use Open Graph fallback when explicit twitter:* fields are missing." },
+      { ru: "Это один полноценный social preview tool, а не два слабых дубликата OG и Twitter.", en: "This is one complete social preview tool, not two weak duplicated OG and Twitter tools." },
+    ],
+    faq: [
+      { question: { ru: "Почему Twitter/X не отдельный инструмент?", en: "Why is Twitter/X not a separate tool?" }, answer: { ru: "Потому что клиентский сценарий один: проверить rich preview страницы. Twitter/X вынесен внутрь полноценного social preview инструмента.", en: "Because the user scenario is one: check the page rich preview. Twitter/X belongs inside a complete social preview tool." } },
+      { question: { ru: "Проверяется ли размер og:image?", en: "Does it check og:image dimensions?" }, answer: { ru: "Пока нет. Для этого нужен отдельный image fetch/asset validation слой с лимитами, чтобы не ломать безопасность и скорость.", en: "Not yet. That needs a separate image fetch/asset validation layer with limits to preserve safety and speed." } },
+    ],
+    relatedToolSlugs: ["meta-tags-checker", "serp-preview", "security-headers-checker"],
+    sourceUrls: ["https://ogp.me/", "https://developer.x.com/en/docs/x-for-websites/cards/overview/abouts-cards"],
+  }),
   toolPage({
     slug: "security-headers-checker",
     seoTitle: { ru: "Проверка заголовков безопасности онлайн", en: "Security Headers Checker" },
