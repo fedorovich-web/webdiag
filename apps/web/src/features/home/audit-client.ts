@@ -54,6 +54,8 @@ export interface AuditSnapshotResponse {
   } | null;
 }
 
+const AUDIT_CONTRACT_VERSION = "webdiag.audit.snapshot.v1";
+
 export class AuditClientError extends Error {
   readonly status: number;
   readonly code: string;
@@ -87,6 +89,81 @@ export function parseAuditUrlInput(value: string): URL | null {
   } catch {
     return null;
   }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function isNumberRecord(value: unknown): value is Record<string, number> {
+  return isRecord(value) && Object.values(value).every((item) => typeof item === "number");
+}
+
+function isAuditRunSummary(payload: unknown): payload is AuditRunSummary {
+  if (!isRecord(payload)) return false;
+  return (
+    typeof payload.status === "string" &&
+    (typeof payload.score === "number" || payload.score === null) &&
+    typeof payload.check_count === "number" &&
+    typeof payload.issue_count === "number" &&
+    isNumberRecord(payload.checks_by_status) &&
+    isNumberRecord(payload.issues_by_severity) &&
+    isNumberRecord(payload.issues_by_priority) &&
+    (typeof payload.highest_severity === "string" || payload.highest_severity === null) &&
+    (typeof payload.top_priority === "string" || payload.top_priority === null)
+  );
+}
+
+function isAuditCheckPreview(payload: unknown): payload is AuditCheckPreview {
+  if (!isRecord(payload)) return false;
+  return (
+    typeof payload.check_id === "string" &&
+    typeof payload.name === "string" &&
+    typeof payload.category === "string" &&
+    typeof payload.status === "string"
+  );
+}
+
+function isAuditIssuePreview(payload: unknown): payload is AuditIssuePreview {
+  if (!isRecord(payload)) return false;
+  return (
+    typeof payload.issue_id === "string" &&
+    (typeof payload.check_id === "string" || payload.check_id === null || payload.check_id === undefined) &&
+    typeof payload.category === "string" &&
+    typeof payload.severity === "string" &&
+    typeof payload.priority === "string" &&
+    typeof payload.title === "string" &&
+    typeof payload.description === "string"
+  );
+}
+
+function isAuditSnapshotResponse(payload: unknown): payload is AuditSnapshotResponse {
+  if (!isRecord(payload)) return false;
+  if (payload.contract_version !== AUDIT_CONTRACT_VERSION || typeof payload.generated_at !== "string") return false;
+  if (!isRecord(payload.summary) || !isRecord(payload.job)) return false;
+  if (typeof payload.summary.job_id !== "string" || typeof payload.summary.status !== "string") return false;
+  if (payload.summary.run !== null && !isAuditRunSummary(payload.summary.run)) return false;
+  if (typeof payload.job.job_id !== "string" || typeof payload.job.status !== "string") return false;
+  if (!isRecord(payload.job.target)) return false;
+  if (
+    typeof payload.job.target.original_url !== "string" ||
+    typeof payload.job.target.normalized_url !== "string" ||
+    typeof payload.job.target.hostname !== "string" ||
+    typeof payload.job.target.scope !== "string"
+  ) {
+    return false;
+  }
+  if (payload.run === null) return true;
+  if (!isRecord(payload.run)) return false;
+  return (
+    typeof payload.run.run_id === "string" &&
+    typeof payload.run.status === "string" &&
+    (typeof payload.run.score === "number" || payload.run.score === null) &&
+    Array.isArray(payload.run.checks) &&
+    payload.run.checks.every(isAuditCheckPreview) &&
+    Array.isArray(payload.run.issues) &&
+    payload.run.issues.every(isAuditIssuePreview)
+  );
 }
 
 function extractErrorMessage(payload: unknown): { code?: string; message?: string } {
@@ -131,9 +208,9 @@ export async function startAuditSnapshot(
     });
   }
 
-  if (!payload || typeof payload !== "object") {
+  if (!isAuditSnapshotResponse(payload)) {
     throw new AuditClientError("Audit API returned an invalid response.", { status: response.status, code: "invalid_response" });
   }
 
-  return payload as AuditSnapshotResponse;
+  return payload;
 }
