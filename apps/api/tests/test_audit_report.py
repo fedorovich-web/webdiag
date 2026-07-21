@@ -138,7 +138,13 @@ def test_assemble_single_page_report_sets_check_timestamps() -> None:
 
     assert all(check.started_at is not None for check in report.checks)
     assert all(check.completed_at is not None for check in report.checks)
+    assert all(
+        check.completed_at >= check.started_at
+        for check in report.checks
+        if check.completed_at and check.started_at
+    )
     assert all(check.duration_ms is not None for check in report.checks)
+    assert all(check.duration_ms >= 1 for check in report.checks if check.duration_ms is not None)
 
 
 def test_assemble_single_page_report_flags_incomplete_open_graph_and_invalid_json_ld() -> None:
