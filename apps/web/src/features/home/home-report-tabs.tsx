@@ -5,21 +5,31 @@ import {
   CheckCircle2,
   Download,
   Files,
+  FileDown,
   Flag,
+  Focus,
   Gauge,
   Globe2,
+  History,
+  Image,
   Info,
   Keyboard,
+  LockKeyhole,
   LayoutGrid,
   Link2,
   ListFilter,
   Search,
+  Share2,
+  ShieldAlert,
   ShieldCheck,
+  Table2,
   Target,
+  TextCursorInput,
   TrendingUp,
   TriangleAlert,
   CircleAlert,
   ChevronRight,
+  Code2,
   type LucideIcon,
 } from "lucide-react";
 import type { Locale } from "@webdiag/tool-registry";
@@ -33,6 +43,7 @@ type TabDetail = {
   readonly urls: readonly string[];
   readonly note: string;
 };
+type TabLabels = { readonly signals: string; readonly actions: string; readonly urls: string; readonly note: string };
 
 const tabs: readonly { id: TabId; icon: LucideIcon; ru: string; en: string }[] = [
   { id: "summary", icon: LayoutGrid, ru: "Сводка", en: "Summary" },
@@ -44,6 +55,14 @@ const tabs: readonly { id: TabId; icon: LucideIcon; ru: string; en: string }[] =
   { id: "a11y", icon: Keyboard, ru: "Доступность", en: "Accessibility" },
   { id: "export", icon: Download, ru: "Экспорт", en: "Export" },
 ];
+
+const securitySignalIcons = [LockKeyhole, ShieldCheck, ShieldAlert, TriangleAlert] as const;
+const accessibilitySignalIcons = [Image, TextCursorInput, Focus, Code2] as const;
+const exportSignalIcons = [FileDown, Table2, Share2, History] as const;
+
+function metricIconAt(icons: readonly LucideIcon[], index: number): LucideIcon {
+  return icons[index] ?? Info;
+}
 
 const copy = {
   ru: {
@@ -296,35 +315,168 @@ function SummaryPanel({ locale, hidden }: { locale: Locale; hidden: boolean }) {
   );
 }
 
+function ReportPanelHeading({ title, text }: { title: string; text: string }) {
+  return <div className="wd-report-heading"><div><h3>{title}</h3><p>{text}</p></div></div>;
+}
+
+function SectionTitle({ children }: { children: ReactNode }) {
+  return <h4>{children}</h4>;
+}
+
+function UrlList({ label, urls }: { label: string; urls: readonly string[] }) {
+  return (
+    <aside className="wd-report-detail-side wd-report-url-list" aria-label={label}>
+      <SectionTitle>{label}</SectionTitle>
+      <ul>{urls.map((url) => <li key={url}><Link2 aria-hidden="true" />{url}</li>)}</ul>
+    </aside>
+  );
+}
+
+function NoteCard({ label, note }: { label: string; note: string }) {
+  return <aside className="wd-report-detail-side is-note" aria-label={label}><SectionTitle>{label}</SectionTitle><p>{note}</p></aside>;
+}
+
+function ActionList({ label, actions }: { label: string; actions: readonly string[] }) {
+  return (
+    <section className="wd-report-detail-main wd-report-action-card" aria-label={label}>
+      <SectionTitle>{label}</SectionTitle>
+      <ol className="wd-report-action-list">{actions.map((item) => <li key={item}>{item}</li>)}</ol>
+    </section>
+  );
+}
+
+function PriorityPanel({ labels, detail }: { labels: TabLabels; detail: TabDetail }) {
+  return (
+    <div className="wd-report-tab-layout is-priority">
+      <section className="wd-report-priority-board" aria-label={labels.signals}>
+        <SectionTitle>{labels.signals}</SectionTitle>
+        <div>{detail.metrics.slice(0, 3).map(([value, label], index) => <article className={`is-p${index}`} key={`${value}-${label}`}><b>{value}</b><span>{label}</span></article>)}</div>
+      </section>
+      <section className="wd-report-timeline-card" aria-label={labels.actions}>
+        <SectionTitle>{labels.actions}</SectionTitle>
+        <ol>{detail.actions.map((item, index) => <li key={item}><span>{index + 1}</span><p>{item}</p></li>)}</ol>
+      </section>
+      <UrlList label={labels.urls} urls={detail.urls} />
+      <NoteCard label={labels.note} note={detail.note} />
+    </div>
+  );
+}
+
+function IndexPanel({ labels, detail }: { labels: TabLabels; detail: TabDetail }) {
+  return (
+    <div className="wd-report-tab-layout is-index">
+      <section className="wd-report-index-flow" aria-label={labels.signals}>
+        <SectionTitle>{labels.signals}</SectionTitle>
+        <div>{detail.metrics.map(([value, label], index) => <article key={`${value}-${label}`}><span>{String(index + 1).padStart(2, "0")}</span><strong>{value}</strong><p>{label}</p></article>)}</div>
+      </section>
+      <ActionList label={labels.actions} actions={detail.actions} />
+      <UrlList label={labels.urls} urls={detail.urls} />
+      <NoteCard label={labels.note} note={detail.note} />
+    </div>
+  );
+}
+
+function SeoPanel({ labels, detail, locale }: { labels: TabLabels; detail: TabDetail; locale: Locale }) {
+  const [title, description, h1, preview] = detail.metrics;
+  return (
+    <div className="wd-report-tab-layout is-seo">
+      <section className="wd-report-search-card" aria-label={labels.signals}>
+        <SectionTitle>{labels.signals}</SectionTitle>
+        <div className="wd-report-search-preview">
+          <span>{locale === "ru" ? "site.ru › services" : "site.com › services"}</span>
+          <strong>{locale === "ru" ? "Технический SEO-аудит сайта" : "Technical SEO audit"}</strong>
+          <p>{locale === "ru" ? "Проверка title, description, H1, canonical и превью ссылок до потери клика в поиске." : "Title, description, H1, canonical, and link preview checks before search clicks are lost."}</p>
+        </div>
+        <div className="wd-report-seo-pairs">{[title, description, h1, preview].filter((metric): metric is DemoMetric => Boolean(metric)).map(([value, label]) => <span key={`${value}-${label}`}><b>{value}</b>{label}</span>)}</div>
+      </section>
+      <ActionList label={labels.actions} actions={detail.actions} />
+      <UrlList label={labels.urls} urls={detail.urls} />
+      <NoteCard label={labels.note} note={detail.note} />
+    </div>
+  );
+}
+
+function SpeedPanel({ labels, detail }: { labels: TabLabels; detail: TabDetail }) {
+  return (
+    <div className="wd-report-tab-layout is-speed">
+      <section className="wd-report-vitals" aria-label={labels.signals}>
+        <SectionTitle>{labels.signals}</SectionTitle>
+        <div>{detail.metrics.map(([value, label], index) => <article key={`${value}-${label}`}><strong>{value}</strong><span>{label}</span><i style={{ inlineSize: `${82 - index * 12}%` }} /></article>)}</div>
+      </section>
+      <ActionList label={labels.actions} actions={detail.actions} />
+      <UrlList label={labels.urls} urls={detail.urls} />
+      <NoteCard label={labels.note} note={detail.note} />
+    </div>
+  );
+}
+
+function SecurityPanel({ labels, detail }: { labels: TabLabels; detail: TabDetail }) {
+  return (
+    <div className="wd-report-tab-layout is-security">
+      <section className="wd-report-header-checks" aria-label={labels.signals}>
+        <SectionTitle>{labels.signals}</SectionTitle>
+        <div>{detail.metrics.map(([value, label], index) => {
+          const Icon = metricIconAt(securitySignalIcons, index);
+          return <article key={`${value}-${label}`}><Icon aria-hidden="true" /><strong>{value}</strong><span>{label}</span></article>;
+        })}</div>
+      </section>
+      <ActionList label={labels.actions} actions={detail.actions} />
+      <UrlList label={labels.urls} urls={detail.urls} />
+      <NoteCard label={labels.note} note={detail.note} />
+    </div>
+  );
+}
+
+function AccessibilityPanel({ labels, detail }: { labels: TabLabels; detail: TabDetail }) {
+  return (
+    <div className="wd-report-tab-layout is-a11y">
+      <section className="wd-report-a11y-path" aria-label={labels.signals}>
+        <SectionTitle>{labels.signals}</SectionTitle>
+        <div>{detail.metrics.map(([value, label], index) => {
+          const Icon = metricIconAt(accessibilitySignalIcons, index);
+          return <article key={`${value}-${label}`}><Icon aria-hidden="true" /><strong>{value}</strong><span>{label}</span></article>;
+        })}</div>
+      </section>
+      <ActionList label={labels.actions} actions={detail.actions} />
+      <UrlList label={labels.urls} urls={detail.urls} />
+      <NoteCard label={labels.note} note={detail.note} />
+    </div>
+  );
+}
+
+function ExportPanel({ labels, detail }: { labels: TabLabels; detail: TabDetail }) {
+  return (
+    <div className="wd-report-tab-layout is-export">
+      <section className="wd-report-export-pack" aria-label={labels.signals}>
+        <SectionTitle>{labels.signals}</SectionTitle>
+        <div>{detail.metrics.map(([value, label], index) => {
+          const Icon = metricIconAt(exportSignalIcons, index);
+          return <article key={`${value}-${label}`}><Icon aria-hidden="true" /><strong>{value}</strong><span>{label}</span></article>;
+        })}</div>
+      </section>
+      <ActionList label={labels.actions} actions={detail.actions} />
+      <UrlList label={labels.urls} urls={detail.urls} />
+      <NoteCard label={labels.note} note={detail.note} />
+    </div>
+  );
+}
+
 function DetailPanel({ locale, id, hidden, title, text, detail }: { locale: Locale; id: Exclude<TabId, "summary">; hidden: boolean; title: string; text: string; detail: TabDetail }) {
   const labels = copy[locale].tabLabels;
+  let body: ReactNode;
+
+  if (id === "priority") body = <PriorityPanel labels={labels} detail={detail} />;
+  else if (id === "index") body = <IndexPanel labels={labels} detail={detail} />;
+  else if (id === "seo") body = <SeoPanel labels={labels} detail={detail} locale={locale} />;
+  else if (id === "speed") body = <SpeedPanel labels={labels} detail={detail} />;
+  else if (id === "security") body = <SecurityPanel labels={labels} detail={detail} />;
+  else if (id === "a11y") body = <AccessibilityPanel labels={labels} detail={detail} />;
+  else body = <ExportPanel labels={labels} detail={detail} />;
+
   return (
     <div className="wd-report-panel" id={`wd-report-${id}`} role="tabpanel" aria-labelledby={`wd-report-tab-${id}`} tabIndex={0} hidden={hidden}>
-      <div className="wd-report-heading"><div><h3>{title}</h3><p>{text}</p></div></div>
-      <div className="wd-report-detail-grid">
-        <section className="wd-report-detail-main" aria-label={labels.signals}>
-          <h4>{labels.signals}</h4>
-          <div className="wd-report-signal-grid">
-            {detail.metrics.map(([value, label]) => <article key={`${value}-${label}`}><strong>{value}</strong><span>{label}</span></article>)}
-          </div>
-        </section>
-        <section className="wd-report-detail-main" aria-label={labels.actions}>
-          <h4>{labels.actions}</h4>
-          <ol className="wd-report-action-list">
-            {detail.actions.map((item) => <li key={item}>{item}</li>)}
-          </ol>
-        </section>
-        <aside className="wd-report-detail-side" aria-label={labels.urls}>
-          <h4>{labels.urls}</h4>
-          <ul>
-            {detail.urls.map((url) => <li key={url}><Link2 aria-hidden="true" />{url}</li>)}
-          </ul>
-        </aside>
-        <aside className="wd-report-detail-side is-note" aria-label={labels.note}>
-          <h4>{labels.note}</h4>
-          <p>{detail.note}</p>
-        </aside>
-      </div>
+      <ReportPanelHeading title={title} text={text} />
+      {body}
     </div>
   );
 }
@@ -405,7 +557,7 @@ export function HomeReportTabs({ locale }: { locale: Locale }) {
       <aside className="wd-report-rail">
         <article><Target /><h3>{t.sidePriority}</h3><p>{t.sidePriorityText}</p><PreviewAction>{t.previewOnly}</PreviewAction></article>
         <article><Link2 /><h3>{t.sideUrls}</h3><p>{t.sideUrlsText}</p><PreviewAction>{t.previewOnly}</PreviewAction></article>
-        <article><ListFilter /><h3>{t.sideGood}</h3><p>{t.sideGoodText}</p><ul><li><CheckCircle2 />SSL</li><li><CheckCircle2 />Sitemap.xml</li><li><CheckCircle2 />Canonical</li><li><CheckCircle2 />HTTP</li></ul></article>
+        <article><ListFilter /><h3>{t.sideGood}</h3><p>{t.sideGoodText}</p><ul><li><ShieldCheck />SSL</li><li><Files />Sitemap.xml</li><li><Link2 />Canonical</li><li><Globe2 />HTTP</li></ul></article>
       </aside>
     </div>
   );

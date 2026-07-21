@@ -2,27 +2,25 @@
 
 Date: 2026-07-21
 Package version: `0.5.11`
-Patch scope: A8.1 UI correction + Python lock verifier compatibility hotfix. No commit or push was performed by the assistant.
+Patch scope: A8.3 report tab icon semantics polish. No commit or push was performed by the assistant.
 
 ## Scope
 
-This verification record covers the clean A0–A7 baseline plus A7.1 backend safety, A7.2 resource correctness, A7.3 timing-contract changes, A7.4 Python lock reproducibility, A7.5 frontend audit API contract hardening, A8 compact live audit result UI extraction, and this A8.1 correction.
+This verification record covers the clean A0–A7 baseline plus A7.1 backend safety, A7.2 resource correctness, A7.3 timing-contract changes, A7.4 Python lock reproducibility, A7.5 frontend audit API contract hardening, A8 compact live audit result UI extraction, A8.1 UI correction / Python lock compatibility hotfix, A8.2 report tab design differentiation, and this A8.3 report tab icon semantics polish.
 
-A8.1 UI changes:
+A8.2/A8.3 UI changes:
 
-- tool category cards now use the requested vertical composition: icon at the top-left, then left-aligned title, description, and CTA link;
-- the report sidebar site card now aligns labels and values in a stable two-column row instead of visually broken stacked text;
-- the report tabs are no longer nearly empty outside Summary;
-- every non-summary tab now contains useful demo report information for clients, SEO, marketing, and implementation planning: signals, actions, example URLs, and usage notes;
-- tab content is explicitly tied to the demo report and existing product positioning, not to unimplemented crawler/persistence claims;
-- no Header, Footer, pricing, backend API, crawler, database, queue, registry, or production monitoring scope is changed.
-
-Python lock verifier compatibility hotfix:
-
-- `verify:python-lock` now accounts for Windows-only dependency resolution where `uvloop` is not installable and `colorama` may be installed by transitive dependencies;
-- `pika==1.4.1` is allowed as an installed optional project dependency when a developer environment already contains the worker RabbitMQ extra;
-- arbitrary unlocked packages still fail verification;
-- regression tests cover the Windows-specific case reported by the user and still reject unrelated extra packages.
+- non-summary report tabs no longer share one identical four-block composition;
+- Priority now uses a priority board plus step-by-step remediation timeline;
+- Indexing now uses a search-engine visibility flow from robots/sitemap/canonical/noindex signals;
+- SEO now uses a search-result preview composition plus title/description/H1/link-preview signals;
+- Performance now uses compact vital/resource rows with visual bars;
+- Security now uses a security-header checklist composition;
+- Accessibility now uses distinct media/label/focus/ARIA icons instead of four repeated keyboard icons;
+- Security now uses distinct SSL/header/CSP/mixed-content style icons instead of repeated shield icons;
+- Export now uses distinct PDF/CSV/share/history icons instead of repeated download icons;
+- wording remains demo/report-oriented and avoids claims about unimplemented persistence, crawler, production monitoring, or real measured data beyond the existing demo values;
+- no backend API, registry, lockfile, Header, Footer, pricing, crawler, database, or queue scope is changed.
 
 ## Confirmed gates in this environment
 
