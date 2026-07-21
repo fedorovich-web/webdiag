@@ -379,3 +379,53 @@ npm run test:python
 npm run lint:python
 npm run verify:python-lock
 ```
+
+---
+
+# A10.14 — content analysis tools
+
+A10.14 adds three aggregate content-analysis tools without creating weak single-field microtools.
+
+Changed behavior:
+
+- added `Heading Structure Checker` as the aggregate H1–H6 outline tool;
+- added `Keyword and Phrase Frequency Analyzer` for visible-text word, bigram, trigram, density, and overuse signals;
+- added `Readability Analyzer` using explicit `multilingual_heuristic` scoring rather than pretending to run an exact language-specific academic formula;
+- promoted `heading-structure-checker`, `keyword-density-analyzer`, and `readability-analyzer` from internal registry entries to ready public tools;
+- updated the no-microtool gate test so `heading-structure-checker` remains the approved aggregate replacement for a forbidden standalone `h1-checker`;
+- did not add `H1 Checker`, `Keyword Density Checker only`, or any one-field SEO microtool.
+
+Backend endpoints:
+
+- `POST /v1/tools/heading-structure`
+- `POST /v1/tools/keyword-density`
+- `POST /v1/tools/readability`
+
+Frontend routes:
+
+- `/tools/heading-structure-checker` and `/en/tools/heading-structure-checker`
+- `/tools/keyword-density-analyzer` and `/en/tools/keyword-density-analyzer`
+- `/tools/readability-analyzer` and `/en/tools/readability-analyzer`
+
+Observed gates:
+
+| Gate | Result |
+|---|---:|
+| `npm run test:workspace` | PASS — 37/37 |
+| `npm test` | PASS — 195 total Node/Vitest tests: workspace 37/37, registry 2/2, core 17/17, web 139/139 |
+| `npm run verify:registry` | PASS — 111 unique tools, 40 ready tools, no weak ready microtools |
+| `npm run lint` | PASS |
+| `npm run typecheck` | PASS |
+| `npm run build` | PASS — includes `verify:built-site` |
+| `npm run verify:built-site` | PASS via build — 86 public routes prerendered; 84 HTML routes have localized SEO metadata and JSON-LD |
+| `npm run test:python` | PASS — 125/125 |
+| `npm run lint:python` | PASS |
+| `npm run verify:python-lock` | PASS — 30 locked packages matched installed packages for linux |
+| `npm run test:browser` | NOT VERIFIED in this sandbox |
+
+Known limitations:
+
+- all three tools use bounded static HTML and do not execute JavaScript;
+- Heading Structure Checker is a page outline tool, not an accessibility audit;
+- Keyword/Phrase Frequency Analyzer is an evidence signal, not a ranking formula;
+- Readability Analyzer uses multilingual heuristics and does not claim exact Flesch-style scoring for every language.

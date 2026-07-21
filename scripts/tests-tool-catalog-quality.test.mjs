@@ -72,5 +72,6 @@ test("single-header microtools cannot be promoted as public tools", () => {
 test("aggregate heading structure checker remains the intended replacement for H1 microtools", () => {
   const headingStructure = tools.find((tool) => tool.slug === "heading-structure-checker");
   assert.equal(headingStructure?.title.ru, "Проверка структуры заголовков");
-  assert.equal(headingStructure?.state, "internal");
+  assert.notEqual(headingStructure?.slug, "h1-checker");
+  assert.equal(headingStructure?.state, "ready");
 });

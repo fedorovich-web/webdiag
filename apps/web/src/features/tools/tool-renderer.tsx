@@ -26,6 +26,7 @@ import { CanonicalCheckerTool } from "./canonical-checker-tool";
 import { AddWatermarkImageTool, ImageMetadataViewerTool, SvgOptimizerTool } from "./image-advanced-tools";
 import { ImageCropperTool, ImageFormatConverterTool, ImageOptimizerTool, ImageResizerTool } from "./image-tools";
 import { BrokenImageCheckerTool, BrokenLinkCheckerTool, LinkAnalyzerTool } from "./link-health-tools";
+import { HeadingStructureTool, KeywordFrequencyTool, ReadabilityAnalyzerTool } from "./content-analysis-tools";
 import { FaviconCheckerTool, ImagePerformanceCheckerTool, ImageSeoAuditTool } from "./image-audit-tools";
 import { MetaTagsCheckerTool, SerpPreviewTool, SocialPreviewTool } from "./metadata-preview-tools";
 import { CachePolicyTool, CoreWebVitalsTool, PageWeightTool } from "./performance-tools";
@@ -210,6 +211,9 @@ export const SUPPORTED_TOOL_SLUGS = [
   "link-analyzer",
   "broken-link-checker",
   "broken-image-checker",
+  "heading-structure-checker",
+  "keyword-density-analyzer",
+  "readability-analyzer",
 ] as const;
 
 export function ToolRenderer({ slug, locale }: ToolRendererProps) {
@@ -251,6 +255,9 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "link-analyzer": return <LinkAnalyzerTool locale={locale} />;
     case "broken-link-checker": return <BrokenLinkCheckerTool locale={locale} />;
     case "broken-image-checker": return <BrokenImageCheckerTool locale={locale} />;
+    case "heading-structure-checker": return <HeadingStructureTool locale={locale} />;
+    case "keyword-density-analyzer": return <KeywordFrequencyTool locale={locale} />;
+    case "readability-analyzer": return <ReadabilityAnalyzerTool locale={locale} />;
     default: return null;
   }
 }

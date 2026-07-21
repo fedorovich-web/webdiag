@@ -827,4 +827,128 @@ export const seoAuditToolPages = [
     relatedToolSlugs: ["url-encoder-decoder", "json-formatter-validator", "hash-generator"],
     sourceUrls: ["https://developer.mozilla.org/docs/Web/HTTP/Status", "https://developer.mozilla.org/docs/Web/HTTP/Redirections"],
   }),
+
+  toolPage({
+    slug: "heading-structure-checker",
+    seoTitle: { ru: "Проверка структуры заголовков H1–H6", en: "Heading Structure Checker" },
+    metaDescription: { ru: "Проверьте H1–H6 outline страницы: количество H1, пропуски уровней, пустые заголовки и рекомендации по семантической структуре.", en: "Check a page H1–H6 outline: H1 count, skipped levels, empty headings, and semantic structure recommendations." },
+    h1: { ru: "Проверка структуры заголовков", en: "Heading Structure Checker" },
+    lead: { ru: "Введите URL страницы, чтобы проверить всю структуру заголовков. H1 здесь является подпроверкой, а не отдельным слабым инструментом.", en: "Enter a page URL to check the full heading structure. H1 is treated as one subcheck, not as a weak standalone tool." },
+    quickFacts: [
+      { ru: "H1–H6 outline", en: "H1–H6 outline" },
+      { ru: "Пропуски уровней", en: "Skipped levels" },
+      { ru: "Static HTML", en: "Static HTML" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте публичный URL страницы.", en: "Paste a public page URL." },
+      { ru: "WebDiag загрузит HTML и извлечёт h1–h6 заголовки.", en: "WebDiag loads the HTML and extracts h1–h6 headings." },
+      { ru: "Проверьте H1, иерархию, пустые headings и рекомендации.", en: "Review H1, hierarchy, empty headings, and recommendations." },
+    ],
+    supportedFeatures: [
+      { ru: "Показывает общий outline страницы, а не только один H1.", en: "Shows the full page outline, not just one H1." },
+      { ru: "Фиксирует пропуски уровней: например, переход H1 → H3.", en: "Flags skipped levels such as H1 → H3." },
+      { ru: "Использует безопасную backend-загрузку с SSRF-защитой.", en: "Uses safe backend fetching with SSRF protection." },
+    ],
+    limitations: [
+      { ru: "Static HTML scan не видит заголовки, добавленные JavaScript после загрузки.", en: "Static HTML scan does not see headings inserted by JavaScript after load." },
+      { ru: "Инструмент не оценивает смысл текста как поисковый алгоритм.", en: "The tool does not judge text meaning as a search algorithm." },
+    ],
+    useCases: [
+      { ru: "Проверить SEO-структуру посадочной страницы перед релизом.", en: "Check landing-page SEO structure before release." },
+      { ru: "Найти пустые или перескакивающие заголовки в шаблоне CMS.", en: "Find empty or skipped headings in a CMS template." },
+      { ru: "Подготовить content fixes для UX, SEO и accessibility.", en: "Prepare content fixes for UX, SEO, and accessibility." },
+    ],
+    technicalNotes: [
+      { ru: "H1 не вынесен в отдельный микротул; это одна проверка внутри aggregate outline tool.", en: "H1 is not a separate microtool; it is one check inside an aggregate outline tool." },
+      { ru: "Результат ограничен одной страницей и static HTML.", en: "The result is limited to one page and static HTML." },
+    ],
+    faq: [
+      { question: { ru: "Почему нет отдельной проверки H1?", en: "Why is there no separate H1 checker?" }, answer: { ru: "Потому что H1 сам по себе слишком слабый инструмент. Он проверяется внутри полной структуры H1–H6.", en: "Because H1 alone is too thin for a standalone tool. It is checked inside the full H1–H6 structure." } },
+      { question: { ru: "Это accessibility audit?", en: "Is this an accessibility audit?" }, answer: { ru: "Нет. Это content/SEO outline tool. Accessibility-проверки заголовков позже должны идти в отдельном accessibility audit.", en: "No. This is a content/SEO outline tool. Accessibility heading checks should later be part of a dedicated accessibility audit." } },
+    ],
+    relatedToolSlugs: ["meta-tags-checker", "readability-analyzer", "keyword-density-analyzer"],
+    sourceUrls: ["https://developer.mozilla.org/docs/Web/HTML/Element/Heading_Elements"],
+  }),
+  toolPage({
+    slug: "keyword-density-analyzer",
+    seoTitle: { ru: "Анализ частоты слов и фраз", en: "Keyword and Phrase Frequency Analyzer" },
+    metaDescription: { ru: "Проанализируйте видимый текст страницы: частые слова, биграммы, триграммы, плотность терминов и возможный переспам.", en: "Analyze visible page text: frequent words, bigrams, trigrams, term density, and possible overuse." },
+    h1: { ru: "Анализ частоты слов и фраз", en: "Keyword and Phrase Frequency Analyzer" },
+    lead: { ru: "Введите URL страницы, чтобы увидеть распределение терминов. Инструмент не обещает магический SEO-рейтинг, а показывает evidence для редакторского аудита.", en: "Enter a page URL to see term distribution. The tool does not promise magic SEO ranking; it provides evidence for editorial review." },
+    quickFacts: [
+      { ru: "Words", en: "Words" },
+      { ru: "Bigrams/trigrams", en: "Bigrams/trigrams" },
+      { ru: "Overuse signals", en: "Overuse signals" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте публичный URL страницы.", en: "Paste a public page URL." },
+      { ru: "WebDiag извлечёт видимый текст без script/style блоков.", en: "WebDiag extracts visible text without script/style blocks." },
+      { ru: "Проверьте частые слова, фразы и возможный переспам.", en: "Review frequent words, phrases, and possible overuse." },
+    ],
+    supportedFeatures: [
+      { ru: "Считает частотность слов, биграмм и триграмм.", en: "Counts words, bigrams, and trigrams." },
+      { ru: "Использует базовые RU/EN stopword-фильтры.", en: "Uses basic RU/EN stopword filters." },
+      { ru: "Показывает плотность терминов без обещаний ранжирования.", en: "Shows term density without ranking promises." },
+    ],
+    limitations: [
+      { ru: "Не заменяет семантический анализ и не знает интент поисковой выдачи.", en: "Does not replace semantic analysis and does not know SERP intent." },
+      { ru: "JS-injected content не входит в static HTML scan.", en: "JS-injected content is not included in the static HTML scan." },
+    ],
+    useCases: [
+      { ru: "Найти переспам после SEO-правок текста.", en: "Find overuse after SEO copy edits." },
+      { ru: "Проверить, совпадает ли фактический текст с темой страницы.", en: "Check whether visible text matches the page topic." },
+      { ru: "Подготовить редакционные рекомендации для посадочной страницы.", en: "Prepare editorial recommendations for a landing page." },
+    ],
+    technicalNotes: [
+      { ru: "Density считается от общего количества слов в видимом тексте.", en: "Density is calculated against total visible-text word count." },
+      { ru: "Это content audit signal, а не ranking-factor simulator.", en: "This is a content audit signal, not a ranking-factor simulator." },
+    ],
+    faq: [
+      { question: { ru: "Это keyword stuffing checker?", en: "Is this a keyword stuffing checker?" }, answer: { ru: "Частично. Он показывает повторы и плотность, но финальное решение требует редакторской оценки контекста.", en: "Partly. It shows repetition and density, but final decisions require editorial context." } },
+      { question: { ru: "Можно ли доверять плотности как SEO-формуле?", en: "Can density be trusted as an SEO formula?" }, answer: { ru: "Нет. Плотность — диагностический сигнал, не формула ранжирования.", en: "No. Density is a diagnostic signal, not a ranking formula." } },
+    ],
+    relatedToolSlugs: ["heading-structure-checker", "readability-analyzer", "meta-tags-checker"],
+    sourceUrls: ["https://developers.google.com/search/docs/fundamentals/creating-helpful-content"],
+  }),
+  toolPage({
+    slug: "readability-analyzer",
+    seoTitle: { ru: "Анализ читабельности текста", en: "Readability Analyzer" },
+    metaDescription: { ru: "Проверьте объём текста, предложения, абзацы, длинные фразы, время чтения и мультиязычную эвристическую оценку читабельности.", en: "Check text volume, sentences, paragraphs, long phrases, reading time, and a multilingual heuristic readability score." },
+    h1: { ru: "Анализ читабельности", en: "Readability Analyzer" },
+    lead: { ru: "Введите URL страницы, чтобы оценить, насколько текст легко читать и сканировать. Инструмент честно использует мультиязычные эвристики, а не притворяется точной формулой для всех языков.", en: "Enter a page URL to estimate how easy the text is to read and scan. The tool honestly uses multilingual heuristics rather than pretending one exact formula fits every language." },
+    quickFacts: [
+      { ru: "Reading time", en: "Reading time" },
+      { ru: "Long sentences", en: "Long sentences" },
+      { ru: "Multilingual heuristic", en: "Multilingual heuristic" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте публичный URL страницы.", en: "Paste a public page URL." },
+      { ru: "WebDiag извлечёт видимый текст и разобьёт его на слова и предложения.", en: "WebDiag extracts visible text and splits it into words and sentences." },
+      { ru: "Проверьте score, длинные предложения, объём и рекомендации.", en: "Review score, long sentences, volume, and recommendations." },
+    ],
+    supportedFeatures: [
+      { ru: "Считает слова, предложения, абзацы и примерное время чтения.", en: "Counts words, sentences, paragraphs, and estimated reading time." },
+      { ru: "Фиксирует длинные предложения, мешающие сканированию.", en: "Flags long sentences that hurt scanning." },
+      { ru: "Показывает честный heuristic score 0–100.", en: "Shows an honest heuristic 0–100 score." },
+    ],
+    limitations: [
+      { ru: "Это не академическая формула для конкретного языка и не оценка смысла текста.", en: "This is not an academic formula for a specific language and not a meaning assessment." },
+      { ru: "Текст, добавленный JavaScript, не входит в static HTML scan.", en: "Text inserted by JavaScript is not included in the static HTML scan." },
+    ],
+    useCases: [
+      { ru: "Проверить коммерческий текст перед публикацией.", en: "Check commercial copy before publishing." },
+      { ru: "Найти слишком длинные фразы и плотные абзацы.", en: "Find overly long sentences and dense paragraphs." },
+      { ru: "Подготовить UX/copy recommendations для SEO-аудита.", en: "Prepare UX/copy recommendations for an SEO audit." },
+    ],
+    technicalNotes: [
+      { ru: "Score основан на длине предложений, длине слов и количестве длинных предложений.", en: "The score is based on sentence length, word length, and long-sentence count." },
+      { ru: "Формула помечена как multilingual heuristic, чтобы не выдавать её за точный Flesch-score.", en: "The formula is labeled as multilingual heuristic rather than a precise Flesch score." },
+    ],
+    faq: [
+      { question: { ru: "Это подходит для русского текста?", en: "Does this work for Russian text?" }, answer: { ru: "Да как эвристика: инструмент считает длину, структуру и перегруженность. Он не притворяется точной русскоязычной академической формулой.", en: "Yes as a heuristic: it measures length, structure, and density. It does not pretend to be an exact Russian academic formula." } },
+      { question: { ru: "Почему нет AI-оценки текста?", en: "Why is there no AI text scoring?" }, answer: { ru: "AI-анализ будет отдельным provider-based tool. Этот инструмент deterministic и проверяемый тестами.", en: "AI analysis will be a separate provider-based tool. This one is deterministic and testable." } },
+    ],
+    relatedToolSlugs: ["keyword-density-analyzer", "heading-structure-checker", "meta-tags-checker"],
+    sourceUrls: ["https://developers.google.com/search/docs/fundamentals/creating-helpful-content"],
+  }),
 ] as const;
