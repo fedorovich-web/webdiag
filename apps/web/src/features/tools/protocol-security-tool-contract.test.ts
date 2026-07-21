@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
+  isCorsResponse,
   isHttpCompressionResponse,
+  isHttpHeadersAnalyzerResponse,
+  isHttpProtocolResponse,
   isSslCertificateResponse,
   isTlsConfigurationResponse,
   parseHostnameInput,
   parseHttpsUrlInput,
+  parseOriginInput,
 } from "./protocol-security-tool-contract";
 
 describe("protocol security tool contracts", () => {
@@ -61,6 +65,63 @@ describe("protocol security tool contracts", () => {
       status: "pass",
       recommendation: "OK",
     })).toBe(true);
+
+    expect(isHttpHeadersAnalyzerResponse({
+      contract_version: "webdiag.tool.http_headers_analyzer.v1",
+      generated_at: "2026",
+      requested_url: "https://example.com/",
+      final_url: "https://example.com/",
+      status_code: 200,
+      header_count: 2,
+      redirect_count: 0,
+      server_header_present: true,
+      powered_by_header_present: false,
+      cache_control: "max-age=60",
+      content_type: "text/html",
+      content_length: 512,
+      content_encoding: null,
+      vary: null,
+      headers: [{ name: "server", value: "nginx" }],
+      status: "warning",
+      recommendation: "OK",
+    })).toBe(true);
+
+    expect(isHttpProtocolResponse({
+      contract_version: "webdiag.tool.http_protocol_checker.v1",
+      generated_at: "2026",
+      requested_url: "https://example.com/",
+      final_url: "https://example.com/",
+      status_code: 200,
+      scheme: "https",
+      tls_version: "TLSv1.3",
+      negotiated_protocol: "h2",
+      http2_supported: true,
+      http3_advertised: true,
+      alt_svc: 'h3=":443"',
+      redirect_count: 0,
+      status: "pass",
+      recommendation: "OK",
+    })).toBe(true);
+
+    expect(isCorsResponse({
+      contract_version: "webdiag.tool.cors_checker.v1",
+      generated_at: "2026",
+      requested_url: "https://api.example.com/",
+      final_url: "https://api.example.com/",
+      tested_origin: "https://example.com",
+      status_code: 200,
+      allow_origin: "https://example.com",
+      allow_methods: "GET",
+      allow_headers: "content-type",
+      expose_headers: null,
+      allow_credentials: false,
+      vary_origin: true,
+      allows_tested_origin: true,
+      wildcard_with_credentials: false,
+      redirect_count: 0,
+      status: "pass",
+      recommendation: "OK",
+    })).toBe(true);
   });
 
   it("parses only safe host and URL input shapes", () => {
@@ -71,5 +132,7 @@ describe("protocol security tool contracts", () => {
     expect(parseHttpsUrlInput("https://example.com/path")).toBe("https://example.com/path");
     expect(parseHttpsUrlInput("ftp://example.com/file")).toBeNull();
     expect(parseHttpsUrlInput("https://user@example.com/")).toBeNull();
+    expect(parseOriginInput("https://example.com/")).toBe("https://example.com");
+    expect(parseOriginInput("https://example.com/path")).toBeNull();
   });
 });

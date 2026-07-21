@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  corsResultText,
   httpCompressionResultText,
+  httpHeadersResultText,
+  httpProtocolResultText,
   sslCertificateResultText,
   tlsConfigurationResultText,
 } from "./protocol-security-tools";
@@ -59,5 +62,62 @@ describe("protocol security tool result text", () => {
       status: "pass",
       recommendation: "OK",
     })).toContain("Compressed: yes");
+
+    expect(httpHeadersResultText({
+      contract_version: "webdiag.tool.http_headers_analyzer.v1",
+      generated_at: "2026",
+      requested_url: "https://example.com/",
+      final_url: "https://example.com/",
+      status_code: 200,
+      header_count: 2,
+      redirect_count: 0,
+      server_header_present: true,
+      powered_by_header_present: false,
+      cache_control: null,
+      content_type: "text/html",
+      content_length: null,
+      content_encoding: null,
+      vary: null,
+      headers: [],
+      status: "warning",
+      recommendation: "OK",
+    })).toContain("Headers: 2");
+
+    expect(httpProtocolResultText({
+      contract_version: "webdiag.tool.http_protocol_checker.v1",
+      generated_at: "2026",
+      requested_url: "https://example.com/",
+      final_url: "https://example.com/",
+      status_code: 200,
+      scheme: "https",
+      tls_version: "TLSv1.3",
+      negotiated_protocol: "h2",
+      http2_supported: true,
+      http3_advertised: false,
+      alt_svc: null,
+      redirect_count: 0,
+      status: "pass",
+      recommendation: "OK",
+    })).toContain("ALPN: h2");
+
+    expect(corsResultText({
+      contract_version: "webdiag.tool.cors_checker.v1",
+      generated_at: "2026",
+      requested_url: "https://api.example.com/",
+      final_url: "https://api.example.com/",
+      tested_origin: "https://example.com",
+      status_code: 200,
+      allow_origin: "https://example.com",
+      allow_methods: "GET",
+      allow_headers: null,
+      expose_headers: null,
+      allow_credentials: false,
+      vary_origin: true,
+      allows_tested_origin: true,
+      wildcard_with_credentials: false,
+      redirect_count: 0,
+      status: "pass",
+      recommendation: "OK",
+    })).toContain("Origin: https://example.com");
   });
 });

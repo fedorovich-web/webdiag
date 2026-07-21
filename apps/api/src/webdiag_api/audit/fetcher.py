@@ -3,7 +3,7 @@ from __future__ import annotations
 import ipaddress
 import socket
 import zlib
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from urllib.parse import urljoin, urlsplit, urlunsplit
 
@@ -142,7 +142,13 @@ class SafeHttpFetcher:
             resolved_addresses=normalized_addresses,
         )
 
-    def fetch(self, raw_url: str, *, read_body: bool = True) -> SafeFetchResult:
+    def fetch(
+        self,
+        raw_url: str,
+        *,
+        read_body: bool = True,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> SafeFetchResult:
         current_target = self._validate_before_request(raw_url)
         requested_url = current_target.logical_url
         redirect_chain: list[RedirectHop] = []
@@ -155,7 +161,12 @@ class SafeHttpFetcher:
             limits=httpx.Limits(max_keepalive_connections=0),
         ) as client:
             while True:
-                response = self._fetch_validated_target(client, current_target, read_body=read_body)
+                response = self._fetch_validated_target(
+                    client,
+                    current_target,
+                    read_body=read_body,
+                    extra_headers=extra_headers,
+                )
                 location = response.headers.get("location")
                 if response.status_code in REDIRECT_STATUS_CODES and location:
                     if len(redirect_chain) >= self.config.max_redirects:
@@ -193,6 +204,7 @@ class SafeHttpFetcher:
         target: _ValidatedFetchTarget,
         *,
         read_body: bool,
+        extra_headers: Mapping[str, str] | None = None,
     ) -> _FetchedResponse:
         last_transport_error: httpx.HTTPError | None = None
 
@@ -203,6 +215,7 @@ class SafeHttpFetcher:
                     target=target,
                     address=address,
                     read_body=read_body,
+                    extra_headers=extra_headers,
                 )
             except httpx.TimeoutException as exc:
                 last_transport_error = exc
@@ -222,6 +235,7 @@ class SafeHttpFetcher:
         target: _ValidatedFetchTarget,
         address: str,
         read_body: bool,
+        extra_headers: Mapping[str, str] | None = None,
     ) -> _FetchedResponse:
         headers = {
             "user-agent": self.config.user_agent,
@@ -230,6 +244,7 @@ class SafeHttpFetcher:
             "connection": "close",
             "host": _host_header(target),
         }
+        headers.update(_safe_extra_headers(extra_headers))
         extensions = {"sni_hostname": _ascii_hostname(target.hostname)}
 
         with client.stream(
@@ -293,6 +308,32 @@ class SafeHttpFetcher:
         normalized_peers = {str(ipaddress.ip_address(address)) for address in peer_addresses}
         if str(ipaddress.ip_address(expected_address)) not in normalized_peers:
             raise UrlPolicyError("Connected peer address does not match the pinned target address.")
+
+
+def _safe_extra_headers(extra_headers: Mapping[str, str] | None) -> dict[str, str]:
+    if not extra_headers:
+        return {}
+
+    blocked_names = {
+        "connection",
+        "content-length",
+        "host",
+        "proxy-authorization",
+        "transfer-encoding",
+        "upgrade",
+    }
+    values: dict[str, str] = {}
+    for raw_name, raw_value in extra_headers.items():
+        name = raw_name.strip().lower()
+        value = raw_value.strip()
+        if not name or name in blocked_names:
+            continue
+        if "\r" in name or "\n" in name or "\r" in value or "\n" in value:
+            continue
+        if len(name) > 80 or len(value) > 500:
+            continue
+        values[name] = value
+    return values
 
 
 def _ascii_hostname(hostname: str) -> str:

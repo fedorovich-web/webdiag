@@ -3,13 +3,20 @@
 import { useState, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import {
+  isCorsResponse,
   isHttpCompressionResponse,
+  isHttpHeadersAnalyzerResponse,
+  isHttpProtocolResponse,
   isSslCertificateResponse,
   isTlsConfigurationResponse,
   isToolErrorPayload,
   parseHostnameInput,
   parseHttpsUrlInput,
+  parseOriginInput,
+  type CorsResponse,
   type HttpCompressionResponse,
+  type HttpHeadersAnalyzerResponse,
+  type HttpProtocolResponse,
   type ProtocolSecurityToolResponse,
   type SslCertificateResponse,
   type TlsConfigurationResponse,
@@ -54,7 +61,10 @@ async function runProtocolSecurityTool(
   endpoint:
     | "/api/tools/ssl-certificate"
     | "/api/tools/tls-configuration"
-    | "/api/tools/http-compression",
+    | "/api/tools/http-compression"
+    | "/api/tools/http-headers"
+    | "/api/tools/http-protocol"
+    | "/api/tools/cors",
   payload: Record<string, string | number>,
 ): Promise<ProtocolSecurityToolResponse> {
   const response = await fetch(endpoint, {
@@ -72,6 +82,9 @@ async function runProtocolSecurityTool(
   if (endpoint === "/api/tools/ssl-certificate" && isSslCertificateResponse(data)) return data;
   if (endpoint === "/api/tools/tls-configuration" && isTlsConfigurationResponse(data)) return data;
   if (endpoint === "/api/tools/http-compression" && isHttpCompressionResponse(data)) return data;
+  if (endpoint === "/api/tools/http-headers" && isHttpHeadersAnalyzerResponse(data)) return data;
+  if (endpoint === "/api/tools/http-protocol" && isHttpProtocolResponse(data)) return data;
+  if (endpoint === "/api/tools/cors" && isCorsResponse(data)) return data;
   throw new ProtocolSecurityToolError("Tool API returned an invalid result.");
 }
 
@@ -167,6 +180,49 @@ function UrlForm({
   </Panel>;
 }
 
+function CorsForm({
+  locale,
+  onSubmit,
+  loading,
+}: {
+  locale: Locale;
+  onSubmit: (url: string, origin: string) => void;
+  loading: boolean;
+}) {
+  const [url, setUrl] = useState("https://api.example.com/");
+  const [origin, setOrigin] = useState("https://example.com");
+  const [error, setError] = useState("");
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const parsedUrl = parseHttpsUrlInput(url);
+    const parsedOrigin = parseOriginInput(origin);
+    if (!parsedUrl || !parsedOrigin) {
+      setError(locale === "ru" ? "Введите корректный URL и Origin." : "Enter a valid URL and Origin.");
+      return;
+    }
+    setError("");
+    onSubmit(parsedUrl, parsedOrigin);
+  }
+
+  return <Panel title="CORS">
+    <form className="tool-form" onSubmit={submit}>
+      <label className="field">
+        <span>{dictionary[locale].url}</span>
+        <input value={url} onChange={(event) => setUrl(event.target.value)} />
+      </label>
+      <label className="field">
+        <span>Origin</span>
+        <input value={origin} onChange={(event) => setOrigin(event.target.value)} />
+      </label>
+      {error && <p className="form-error" role="alert">{error}</p>}
+      <button className="button" type="submit" disabled={loading}>
+        {loading ? dictionary[locale].loading : dictionary[locale].run}
+      </button>
+    </form>
+  </Panel>;
+}
+
 export function sslCertificateResultText(result: SslCertificateResponse): string {
   return [
     `Hostname: ${result.hostname}:${result.port}`,
@@ -195,6 +251,41 @@ export function httpCompressionResultText(result: HttpCompressionResponse): stri
     `Content-Type: ${result.content_type ?? "—"}`,
     `Content-Encoding: ${result.content_encoding ?? "—"}`,
     `Compressed: ${result.compressed ? "yes" : "no"}`,
+    `Status: ${result.status}`,
+    `Recommendation: ${result.recommendation}`,
+  ].join("\n");
+}
+
+
+export function httpHeadersResultText(result: HttpHeadersAnalyzerResponse): string {
+  return [
+    `URL: ${result.final_url}`,
+    `Headers: ${result.header_count}`,
+    `Server header: ${result.server_header_present ? "yes" : "no"}`,
+    `X-Powered-By: ${result.powered_by_header_present ? "yes" : "no"}`,
+    `Status: ${result.status}`,
+    `Recommendation: ${result.recommendation}`,
+  ].join("\n");
+}
+
+export function httpProtocolResultText(result: HttpProtocolResponse): string {
+  return [
+    `URL: ${result.final_url}`,
+    `Scheme: ${result.scheme}`,
+    `TLS: ${result.tls_version ?? "—"}`,
+    `ALPN: ${result.negotiated_protocol ?? "—"}`,
+    `HTTP/3 advertised: ${result.http3_advertised ? "yes" : "no"}`,
+    `Status: ${result.status}`,
+    `Recommendation: ${result.recommendation}`,
+  ].join("\n");
+}
+
+export function corsResultText(result: CorsResponse): string {
+  return [
+    `URL: ${result.final_url}`,
+    `Origin: ${result.tested_origin}`,
+    `Access-Control-Allow-Origin: ${result.allow_origin ?? "—"}`,
+    `Credentials: ${result.allow_credentials ? "yes" : "no"}`,
     `Status: ${result.status}`,
     `Recommendation: ${result.recommendation}`,
   ].join("\n");
@@ -250,12 +341,64 @@ function CompressionResult({ locale, result }: { locale: Locale; result: HttpCom
   </Panel>;
 }
 
+function HeadersResult({ locale, result }: { locale: Locale; result: HttpHeadersAnalyzerResponse }) {
+  return <Panel title={dictionary[locale].result}>
+    <div className="metric-grid">
+      <div><span>Status</span><strong>{result.status_code}</strong></div>
+      <div><span>Headers</span><strong>{result.header_count}</strong></div>
+      <div><span>{dictionary[locale].status}</span><strong><StatusBadge value={result.status} /></strong></div>
+    </div>
+    <ul className="result-list">
+      <li><strong>Content-Type</strong><span>{result.content_type ?? "—"}</span></li>
+      <li><strong>Cache-Control</strong><span>{result.cache_control ?? "—"}</span></li>
+      <li><strong>Server</strong><span>{result.server_header_present ? "present" : "—"}</span></li>
+      <li><strong>X-Powered-By</strong><span>{result.powered_by_header_present ? "present" : "—"}</span></li>
+    </ul>
+    <Recommendation locale={locale} value={result.recommendation} />
+  </Panel>;
+}
+
+function HttpProtocolResult({ locale, result }: { locale: Locale; result: HttpProtocolResponse }) {
+  return <Panel title={dictionary[locale].result}>
+    <div className="metric-grid">
+      <div><span>HTTP/2</span><strong>{result.http2_supported ? "yes" : "no"}</strong></div>
+      <div><span>HTTP/3</span><strong>{result.http3_advertised ? "Alt-Svc" : "—"}</strong></div>
+      <div><span>{dictionary[locale].status}</span><strong><StatusBadge value={result.status} /></strong></div>
+    </div>
+    <ul className="result-list">
+      <li><strong>Scheme</strong><span>{result.scheme}</span></li>
+      <li><strong>TLS</strong><span>{result.tls_version ?? "—"}</span></li>
+      <li><strong>ALPN</strong><span>{result.negotiated_protocol ?? "—"}</span></li>
+      <li><strong>Alt-Svc</strong><span>{result.alt_svc ?? "—"}</span></li>
+    </ul>
+    <Recommendation locale={locale} value={result.recommendation} />
+  </Panel>;
+}
+
+function CorsResult({ locale, result }: { locale: Locale; result: CorsResponse }) {
+  return <Panel title={dictionary[locale].result}>
+    <div className="metric-grid">
+      <div><span>Status</span><strong>{result.status_code}</strong></div>
+      <div><span>Origin</span><strong>{result.allows_tested_origin ? "allowed" : "not allowed"}</strong></div>
+      <div><span>{dictionary[locale].status}</span><strong><StatusBadge value={result.status} /></strong></div>
+    </div>
+    <ul className="result-list">
+      <li><strong>ACAO</strong><span>{result.allow_origin ?? "—"}</span></li>
+      <li><strong>Credentials</strong><span>{result.allow_credentials ? "true" : "false"}</span></li>
+      <li><strong>Vary: Origin</strong><span>{result.vary_origin ? "yes" : "no"}</span></li>
+      <li><strong>Wildcard + credentials</strong><span>{result.wildcard_with_credentials ? "yes" : "no"}</span></li>
+    </ul>
+    <Recommendation locale={locale} value={result.recommendation} />
+  </Panel>;
+}
+
+
 function ProtocolSecurityTool({
   locale,
   kind,
 }: {
   locale: Locale;
-  kind: "ssl" | "tls" | "compression";
+  kind: "ssl" | "tls" | "compression" | "headers" | "protocol" | "cors";
 }) {
   const [result, setResult] = useState<ProtocolSecurityToolResponse | null>(null);
   const [error, setError] = useState("");
@@ -264,7 +407,13 @@ function ProtocolSecurityTool({
     ? "/api/tools/ssl-certificate"
     : kind === "tls"
       ? "/api/tools/tls-configuration"
-      : "/api/tools/http-compression";
+      : kind === "compression"
+        ? "/api/tools/http-compression"
+        : kind === "headers"
+          ? "/api/tools/http-headers"
+          : kind === "protocol"
+            ? "/api/tools/http-protocol"
+            : "/api/tools/cors";
 
   async function runHost(hostname: string, port: number) {
     setLoading(true);
@@ -292,14 +441,32 @@ function ProtocolSecurityTool({
     }
   }
 
+  async function runCors(url: string, origin: string) {
+    setLoading(true);
+    setError("");
+    try {
+      setResult(await runProtocolSecurityTool(endpoint, { url, origin }));
+    } catch (caught) {
+      setResult(null);
+      setError(caught instanceof Error ? caught.message : "Tool request failed.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return <div className="tool-grid">
-    {kind === "compression"
-      ? <UrlForm locale={locale} onSubmit={runUrl} loading={loading} />
-      : <HostForm locale={locale} onSubmit={runHost} loading={loading} />}
+    {kind === "cors"
+      ? <CorsForm locale={locale} onSubmit={runCors} loading={loading} />
+      : kind === "compression" || kind === "headers" || kind === "protocol"
+        ? <UrlForm locale={locale} onSubmit={runUrl} loading={loading} />
+        : <HostForm locale={locale} onSubmit={runHost} loading={loading} />}
     {error && <p className="form-error" role="alert">{error}</p>}
     {isSslCertificateResponse(result) && <SslCertificateResult locale={locale} result={result} />}
     {isTlsConfigurationResponse(result) && <TlsConfigurationResult locale={locale} result={result} />}
     {isHttpCompressionResponse(result) && <CompressionResult locale={locale} result={result} />}
+    {isHttpHeadersAnalyzerResponse(result) && <HeadersResult locale={locale} result={result} />}
+    {isHttpProtocolResponse(result) && <HttpProtocolResult locale={locale} result={result} />}
+    {isCorsResponse(result) && <CorsResult locale={locale} result={result} />}
   </div>;
 }
 
@@ -313,4 +480,17 @@ export function TlsConfigurationCheckerTool({ locale }: { locale: Locale }) {
 
 export function HttpCompressionCheckerTool({ locale }: { locale: Locale }) {
   return <ProtocolSecurityTool locale={locale} kind="compression" />;
+}
+
+
+export function HttpHeadersAnalyzerTool({ locale }: { locale: Locale }) {
+  return <ProtocolSecurityTool locale={locale} kind="headers" />;
+}
+
+export function HttpProtocolCheckerTool({ locale }: { locale: Locale }) {
+  return <ProtocolSecurityTool locale={locale} kind="protocol" />;
+}
+
+export function CorsCheckerTool({ locale }: { locale: Locale }) {
+  return <ProtocolSecurityTool locale={locale} kind="cors" />;
 }

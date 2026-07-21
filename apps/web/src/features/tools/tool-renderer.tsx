@@ -32,7 +32,10 @@ import { MetaTagsCheckerTool, SerpPreviewTool, SocialPreviewTool } from "./metad
 import { CachePolicyTool, CoreWebVitalsTool, PageWeightTool } from "./performance-tools";
 import { HtmlMarkupValidatorTool, SchemaMarkupGeneratorTool, StructuredDataValidatorTool } from "./markup-tools";
 import {
+  CorsCheckerTool,
   HttpCompressionCheckerTool,
+  HttpHeadersAnalyzerTool,
+  HttpProtocolCheckerTool,
   SslCertificateCheckerTool,
   TlsConfigurationCheckerTool,
 } from "./protocol-security-tools";
@@ -244,6 +247,9 @@ export const SUPPORTED_TOOL_SLUGS = [
   "http-compression-checker",
   "tls-configuration-checker",
   "ssl-certificate-checker",
+  "http-headers-analyzer",
+  "http-protocol-checker",
+  "cors-checker",
 ] as const;
 
 export function ToolRenderer({ slug, locale }: ToolRendererProps) {
@@ -303,6 +309,9 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "ssl-certificate-checker": return <SslCertificateCheckerTool locale={locale} />;
     case "tls-configuration-checker": return <TlsConfigurationCheckerTool locale={locale} />;
     case "http-compression-checker": return <HttpCompressionCheckerTool locale={locale} />;
+    case "http-headers-analyzer": return <HttpHeadersAnalyzerTool locale={locale} />;
+    case "http-protocol-checker": return <HttpProtocolCheckerTool locale={locale} />;
+    case "cors-checker": return <CorsCheckerTool locale={locale} />;
     default: return null;
   }
 }

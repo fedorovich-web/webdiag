@@ -210,3 +210,98 @@ def test_http_compression_checker_warns_for_uncompressed_html() -> None:
     assert payload["compressed"] is False
     assert payload["compressible_candidate"] is True
     assert payload["status"] == "warning"
+
+
+
+def test_http_headers_analyzer_reports_response_header_inventory() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return streaming_response(
+            200,
+            request=request,
+            headers={
+                "content-type": "text/html; charset=utf-8",
+                "server": "nginx",
+                "cache-control": "max-age=60",
+                "content-length": "512",
+            },
+        )
+
+    app.dependency_overrides[get_compression_fetcher] = lambda: build_fetcher(
+        httpx.MockTransport(handler)
+    )
+    try:
+        response = asyncio.run(
+            post("/v1/tools/http-headers", {"url": "https://example.com/"})
+        )
+    finally:
+        clear_overrides()
+    payload = response.json()
+    assert response.status_code == 200
+    assert payload["contract_version"] == "webdiag.tool.http_headers_analyzer.v1"
+    assert payload["server_header_present"] is True
+    assert payload["content_length"] == 512
+    assert payload["status"] == "warning"
+
+
+def test_http_protocol_checker_uses_alpn_and_alt_svc_signals() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return streaming_response(
+            200,
+            request=request,
+            headers={"alt-svc": 'h3=":443"; ma=86400'},
+        )
+
+    app.dependency_overrides[get_compression_fetcher] = lambda: build_fetcher(
+        httpx.MockTransport(handler)
+    )
+    app.dependency_overrides[get_tls_inspector] = lambda: FakeTlsInspector()
+    try:
+        response = asyncio.run(
+            post("/v1/tools/http-protocol", {"url": "https://example.com/"})
+        )
+    finally:
+        clear_overrides()
+    payload = response.json()
+    assert response.status_code == 200
+    assert payload["contract_version"] == "webdiag.tool.http_protocol_checker.v1"
+    assert payload["http2_supported"] is True
+    assert payload["http3_advertised"] is True
+    assert payload["negotiated_protocol"] == "h2"
+    assert payload["status"] == "pass"
+
+
+def test_cors_checker_sends_origin_and_flags_credentials_wildcard() -> None:
+    seen_origin: list[str | None] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen_origin.append(request.headers.get("origin"))
+        return streaming_response(
+            200,
+            request=request,
+            headers={
+                "access-control-allow-origin": "*",
+                "access-control-allow-credentials": "true",
+            },
+        )
+
+    app.dependency_overrides[get_compression_fetcher] = lambda: build_fetcher(
+        httpx.MockTransport(handler)
+    )
+    try:
+        response = asyncio.run(
+            post(
+                "/v1/tools/cors",
+                {
+                    "url": "https://api.example.com/",
+                    "origin": "https://example.com",
+                },
+            )
+        )
+    finally:
+        clear_overrides()
+    payload = response.json()
+    assert response.status_code == 200
+    assert seen_origin == ["https://example.com"]
+    assert payload["contract_version"] == "webdiag.tool.cors_checker.v1"
+    assert payload["wildcard_with_credentials"] is True
+    assert payload["status"] == "fail"
