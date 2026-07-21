@@ -23,6 +23,7 @@ import {
 } from "@webdiag/tool-core";
 import { CopyButton } from "../../components/copy-button";
 import { CanonicalCheckerTool } from "./canonical-checker-tool";
+import { AddWatermarkImageTool, ImageMetadataViewerTool, SvgOptimizerTool } from "./image-advanced-tools";
 import { ImageCropperTool, ImageFormatConverterTool, ImageOptimizerTool, ImageResizerTool } from "./image-tools";
 import { FaviconCheckerTool, ImagePerformanceCheckerTool, ImageSeoAuditTool } from "./image-audit-tools";
 import { MetaTagsCheckerTool, SerpPreviewTool, SocialPreviewTool } from "./metadata-preview-tools";
@@ -185,6 +186,9 @@ export const SUPPORTED_TOOL_SLUGS = [
   "image-format-converter",
   "image-resizer",
   "image-cropper",
+  "svg-optimizer",
+  "add-watermark-to-image",
+  "image-metadata-viewer",
   "redirect-chain-checker",
   "robots-txt-tester",
   "sitemap-validator",
@@ -220,6 +224,9 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "image-format-converter": return <ImageFormatConverterTool locale={locale} />;
     case "image-resizer": return <ImageResizerTool locale={locale} />;
     case "image-cropper": return <ImageCropperTool locale={locale} />;
+    case "svg-optimizer": return <SvgOptimizerTool locale={locale} />;
+    case "add-watermark-to-image": return <AddWatermarkImageTool locale={locale} />;
+    case "image-metadata-viewer": return <ImageMetadataViewerTool locale={locale} />;
     case "redirect-chain-checker": return <RedirectChainTool locale={locale} />;
     case "robots-txt-tester": return <RobotsTxtTool locale={locale} />;
     case "sitemap-validator": return <SitemapValidatorTool locale={locale} />;

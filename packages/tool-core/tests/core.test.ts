@@ -3,6 +3,7 @@ import {
   calculateHeight,
   contrastRatio,
   decodeBase64,
+  detectImageMetadataSignals,
   decodeUrlComponent,
   encodeBase64,
   encodeUrlComponent,
@@ -17,10 +18,14 @@ import {
   unixSecondsToIso,
   normalizeCropRectangle,
   normalizeImageQuality,
+  normalizeWatermarkOpacity,
+  normalizeWatermarkText,
+  optimizeSvgText,
   outputExtension,
   resizeToHeight,
   resizeToWidth,
   validateImageDimensions,
+  watermarkAnchor,
 } from "../src";
 
 describe("browser tool core", () => {
@@ -90,5 +95,40 @@ describe("browser tool core", () => {
     expect(outputExtension("image/jpeg")).toBe("jpg");
     expect(outputExtension("image/webp")).toBe("webp");
     expect(outputExtension("image/avif")).toBe("avif");
+  });
+});
+
+describe("image metadata and SVG utility helpers", () => {
+  it("optimizes safe SVG text without executing or rendering it", () => {
+    const result = optimizeSvgText(`<?xml version="1.0"?>
+      <!-- editor comment -->
+      <svg version="1.1" data-name="Icon" viewBox="0 0 10 10">
+        <metadata>created by editor</metadata>
+        <path d="M0 0h10v10H0z" />
+      </svg>`);
+    expect(result.optimized).toBe('<svg viewBox="0 0 10 10"><path d="M0 0h10v10H0z" /></svg>');
+    expect(result.outputBytes).toBeLessThan(result.sourceBytes);
+    expect(result.removedBytes).toBeGreaterThan(0);
+  });
+
+  it("rejects active SVG content instead of producing unsafe output", () => {
+    expect(() => optimizeSvgText('<svg><script>alert(1)</script></svg>')).toThrow(/active content/i);
+    expect(() => optimizeSvgText('<svg onload="alert(1)"></svg>')).toThrow(/active content/i);
+    expect(() => optimizeSvgText('<svg><a href="javascript:alert(1)"></a></svg>')).toThrow(/active content/i);
+  });
+
+  it("detects raster image metadata signals by bytes", () => {
+    const jpeg = new Uint8Array([0xff, 0xd8, 0xff, ...new TextEncoder().encode("JFIF\0Exif\0\0ICC_PROFILEPhotoshop 3.0")]);
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, ...new TextEncoder().encode("tEXtiTXtiCCPpHYs")]);
+    expect(detectImageMetadataSignals(jpeg).detectedSegments).toEqual(expect.arrayContaining(["EXIF", "ICC profile", "IPTC/Photoshop", "JFIF"]));
+    expect(detectImageMetadataSignals(png)).toMatchObject({ format: "png", pngTextChunks: 2, iccProfile: true, physicalDensity: true, hasMetadata: true });
+  });
+
+  it("normalizes watermark inputs and anchors", () => {
+    expect(normalizeWatermarkText("  WebDiag   Demo  ")).toBe("WebDiag Demo");
+    expect(normalizeWatermarkOpacity(2)).toBe(1);
+    expect(normalizeWatermarkOpacity(0)).toBe(0.05);
+    expect(watermarkAnchor("bottom-right", 1000, 600, 24)).toMatchObject({ x: 976, y: 576, textAlign: "right", textBaseline: "bottom" });
+    expect(watermarkAnchor("center", 1000, 600, 24)).toMatchObject({ x: 500, y: 300, textAlign: "center", textBaseline: "middle" });
   });
 });

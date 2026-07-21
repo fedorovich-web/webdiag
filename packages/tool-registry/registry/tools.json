@@ -1610,23 +1610,29 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Оптимизирует безопасный SVG локально в браузере: удаляет комментарии, XML/DOCTYPE, metadata и лишние пробелы, блокируя active SVG content.",
+      "en": "Optimizes safe SVG locally in the browser: removes comments, XML/DOCTYPE, metadata, and redundant whitespace while blocking active SVG content."
+    }
   },
   {
     "id": "WD-103",
     "slug": "image-metadata-viewer",
     "title": {
-      "ru": "Просмотр метаданных изображения",
-      "en": "Image Metadata Viewer"
+      "ru": "Просмотр и удаление метаданных изображения",
+      "en": "Image Metadata Viewer and Remover"
     },
     "category": "media-utilities",
     "executorClass": "browser",
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Показывает EXIF, XMP, ICC, IPTC/JFIF и PNG/WebP/AVIF metadata signals и удаляет метаданные локальным Canvas re-encode без загрузки файла на сервер.",
+      "en": "Shows EXIF, XMP, ICC, IPTC/JFIF, and PNG/WebP/AVIF metadata signals and removes metadata with local Canvas re-encode without server upload."
+    }
   },
   {
     "id": "WD-104",
@@ -1740,6 +1746,24 @@
     "description": {
       "ru": "Создаёт новый сортируемый ULID одним нажатием.",
       "en": "Creates a new sortable ULID in one click."
+    }
+  },
+  {
+    "id": "WD-111",
+    "slug": "add-watermark-to-image",
+    "title": {
+      "ru": "Добавить водяной знак на изображение",
+      "en": "Add Watermark to Image"
+    },
+    "category": "media-utilities",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "ready",
+    "description": {
+      "ru": "Добавляет текстовый водяной знак к одному изображению локально в браузере: позиция, прозрачность, размер текста и вывод AVIF/WebP/JPEG/PNG.",
+      "en": "Adds a text watermark to one image locally in the browser: position, opacity, text size, and AVIF/WebP/JPEG/PNG output."
     }
   }
 ]
