@@ -1870,3 +1870,37 @@ body:has(.tool-heading) main.shell::before{
 .security-headers-checks li p { grid-column: 1 / -1; margin: 0; color: var(--text-soft); font-size: 13px; line-height: 1.55; overflow-wrap: anywhere; }
 .security-headers-recommendation { margin: 0; padding: 14px; border-left: 3px solid var(--brand); border-radius: var(--radius-sm); background: var(--surface-muted); color: var(--text-soft); font-size: 13px; line-height: 1.55; }
 @media (max-width: 640px) { .security-headers-checks li { grid-template-columns: 1fr; } .security-headers-checks li b { justify-self: start; } }
+
+/* WebDiag A10.7: metadata, SERP and social preview tools */
+.metadata-tool-form { display: grid; gap: 14px; }
+.metadata-tool-result { gap: 18px; }
+.metadata-tool-meta dd { overflow-wrap: anywhere; }
+.metadata-tool-card { display: grid; gap: 8px; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface-muted); }
+.metadata-tool-card h3 { margin: 0; font-size: 14px; letter-spacing: -0.01em; }
+.metadata-tool-card p { margin: 0; color: var(--text-soft); font-size: 13px; line-height: 1.55; overflow-wrap: anywhere; }
+.metadata-tool-checks { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.metadata-tool-checks li { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; align-items: start; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface-muted); }
+.metadata-tool-checks li.is-pass { border-color: color-mix(in srgb, var(--success) 28%, var(--line)); }
+.metadata-tool-checks li.is-warning { border-color: color-mix(in srgb, var(--warning) 30%, var(--line)); }
+.metadata-tool-checks li.is-fail { border-color: color-mix(in srgb, var(--danger) 30%, var(--line)); }
+.metadata-tool-checks li div { min-width: 0; display: grid; gap: 4px; }
+.metadata-tool-checks li strong { color: var(--text); font-size: 14px; line-height: 1.25; }
+.metadata-tool-checks li span { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+.metadata-tool-checks li p { grid-column: 1 / -1; margin: 0; color: var(--text-soft); font-size: 13px; line-height: 1.55; overflow-wrap: anywhere; }
+.metadata-tool-checks.compact li { align-items: center; }
+.metadata-tool-recommendation { margin: 0; padding: 14px; border-left: 3px solid var(--brand); border-radius: var(--radius-sm); background: var(--surface-muted); color: var(--text-soft); font-size: 13px; line-height: 1.55; }
+.serp-preview-card { display: grid; gap: 6px; padding: 18px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-sm); }
+.serp-preview-card span { color: var(--success); font-size: 13px; overflow-wrap: anywhere; }
+.serp-preview-card h3 { margin: 0; color: #1a0dab; font-size: 20px; line-height: 1.25; font-weight: 500; overflow-wrap: anywhere; }
+.serp-preview-card p { margin: 0; color: var(--text-soft); font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; }
+.social-preview-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.social-preview-card { min-width: 0; display: grid; gap: 10px; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface-muted); }
+.social-preview-card header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.social-preview-card h3 { margin: 0; font-size: 14px; letter-spacing: -0.01em; }
+.social-preview-card strong { color: var(--text); font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; }
+.social-preview-card p, .social-preview-card small { margin: 0; color: var(--text-soft); font-size: 13px; line-height: 1.55; overflow-wrap: anywhere; }
+.social-preview-card small { color: var(--muted); }
+.social-preview-image { min-height: 78px; display: grid; place-items: center; padding: 10px; border-radius: var(--radius-sm); background: var(--brand-soft); color: var(--brand); font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
+.social-preview-image.is-empty { background: var(--surface); color: var(--muted); border: 1px dashed var(--line); }
+@media (max-width: 720px) { .social-preview-grid { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .metadata-tool-checks li { grid-template-columns: 1fr; } .metadata-tool-checks li .status-badge { justify-self: start; } }

@@ -41,8 +41,11 @@
     "riskTier": "R1",
     "access": "none",
     "implementationWave": "W2",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет метаданные страницы как единый SEO-сигнал: title, description, robots, canonical, H1-сводку, Open Graph, Twitter/X и JSON-LD coverage.",
+      "en": "Checks page metadata as one SEO signal: title, description, robots, canonical, H1 summary, Open Graph, Twitter/X, and JSON-LD coverage."
+    }
   },
   {
     "id": "WD-004",
@@ -56,23 +59,29 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Строит предпросмотр поискового сниппета по реальному HTML: display URL, title, description, источники fallback и предупреждения по качеству snippet.",
+      "en": "Builds a search snippet preview from real HTML: display URL, title, description, fallback sources, and snippet quality warnings."
+    }
   },
   {
     "id": "WD-005",
     "slug": "open-graph-preview",
     "title": {
-      "ru": "Предпросмотр Open Graph",
-      "en": "Open Graph Preview"
+      "ru": "Предпросмотр Open Graph и Twitter/X Card",
+      "en": "Open Graph and Twitter/X Card Preview"
     },
     "category": "seo-audit",
     "executorClass": "safe_fetch",
     "riskTier": "R1",
     "access": "none",
     "implementationWave": "W2",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет rich preview для соцсетей и мессенджеров: Open Graph, Twitter/X Card, fallback title/description, image URL и недостающие поля.",
+      "en": "Checks rich previews for social networks and messengers: Open Graph, Twitter/X Card, fallback title/description, image URL, and missing fields."
+    }
   },
   {
     "id": "WD-006",
