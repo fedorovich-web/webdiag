@@ -4,12 +4,14 @@ import { cssDesignToolPages } from "./css-design";
 import { developmentDataToolPages } from "./development-data";
 import { mediaUtilityToolPages } from "./media-utilities";
 import { seoAuditToolPages } from "./seo-audit";
+import { securityNetworkToolPages } from "./security-network";
 
 export const toolPageContents = [
   ...developmentDataToolPages,
   ...cssDesignToolPages,
   ...mediaUtilityToolPages,
   ...seoAuditToolPages,
+  ...securityNetworkToolPages,
 ] as const satisfies readonly ToolPageContent[];
 
 const toolPageContentBySlug = new Map(toolPageContents.map((content) => [content.slug, content]));

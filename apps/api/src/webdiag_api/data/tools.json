@@ -701,8 +701,11 @@
     "riskTier": "R1",
     "access": "none",
     "implementationWave": "W2",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет A, AAAA, CNAME, MX, NS и TXT записи домена через bounded DNS lookup без обхода по URL.",
+      "en": "Checks A, AAAA, CNAME, MX, NS, and TXT records for a domain through a bounded DNS lookup without URL crawling."
+    }
   },
   {
     "id": "WD-042",
@@ -746,8 +749,11 @@
     "riskTier": "R1",
     "access": "none",
     "implementationWave": "W2",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет SPF TXT-запись домена, множественные SPF, final all policy, include/redirect и риск DNS-lookup лимита.",
+      "en": "Checks a domain SPF TXT record, duplicate SPF records, final all policy, include/redirect usage, and DNS lookup-limit risk."
+    }
   },
   {
     "id": "WD-045",
@@ -791,8 +797,11 @@
     "riskTier": "R1",
     "access": "none",
     "implementationWave": "W2",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет MX-записи домена, приоритеты, null MX и наличие A/AAAA адресов у почтовых хостов.",
+      "en": "Checks domain MX records, priorities, null MX, and A/AAAA address coverage for mail hosts."
+    }
   },
   {
     "id": "WD-048",
