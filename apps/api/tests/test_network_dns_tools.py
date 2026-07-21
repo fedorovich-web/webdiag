@@ -44,6 +44,38 @@ class FakeResolver:
                 DnsAnswer("TXT", "bad.example", "v=spf1 +all", 300),
                 DnsAnswer("TXT", "bad.example", "v=spf1 include:x.example ~all", 300),
             ),
+            ("default._domainkey.example.com", "TXT"): (
+                DnsAnswer(
+                    "TXT",
+                    "default._domainkey.example.com",
+                    "v=DKIM1; k=rsa; p=" + "A" * 120,
+                    300,
+                ),
+            ),
+            ("_dmarc.example.com", "TXT"): (
+                DnsAnswer(
+                    "TXT",
+                    "_dmarc.example.com",
+                    "v=DMARC1; p=quarantine; pct=100; rua=mailto:dmarc@example.com",
+                    300,
+                ),
+            ),
+            ("_dmarc.bad.example", "TXT"): (
+                DnsAnswer("TXT", "_dmarc.bad.example", "v=DMARC1; p=none", 300),
+            ),
+            ("example.com", "DS"): (
+                DnsAnswer("DS", "example.com", "12345 13 2 ABCDEF", 300),
+            ),
+            ("example.com", "DNSKEY"): (
+                DnsAnswer(
+                    "DNSKEY",
+                    "example.com",
+                    "flags=257 protocol=3 algorithm=13 key_bytes=64",
+                    300,
+                ),
+            ),
+            ("bad.example", "DS"): (),
+            ("bad.example", "DNSKEY"): (),
         }
         if key == ("timeout.example", "A"):
             raise DnsResolverError("DNS query failed or timed out.")
@@ -147,3 +179,84 @@ def test_dns_tools_reject_urls_and_ip_literals() -> None:
     assert response.status_code == 422
     response = asyncio.run(post("/v1/tools/mx-records", {"domain": "127.0.0.1"}))
     assert response.status_code == 422
+
+
+def test_dkim_checker_validates_selector_record() -> None:
+    app.dependency_overrides[get_network_dns_resolver] = lambda: FakeResolver()
+    try:
+        response = asyncio.run(
+            post("/v1/tools/dkim", {"domain": "example.com", "selector": "default"})
+        )
+    finally:
+        clear_overrides()
+    payload = response.json()
+    assert response.status_code == 200
+    assert payload["contract_version"] == "webdiag.tool.dkim_checker.v1"
+    assert payload["record_name"] == "default._domainkey.example.com"
+    assert payload["dkim_record_count"] == 1
+    assert payload["key_type"] == "rsa"
+    assert payload["has_public_key"] is True
+    assert payload["status"] == "pass"
+
+
+def test_dkim_checker_rejects_invalid_selector() -> None:
+    response = asyncio.run(
+        post("/v1/tools/dkim", {"domain": "example.com", "selector": "bad/selector"})
+    )
+    assert response.status_code == 422
+
+
+def test_dmarc_checker_extracts_policy_and_reporting() -> None:
+    app.dependency_overrides[get_network_dns_resolver] = lambda: FakeResolver()
+    try:
+        response = asyncio.run(post("/v1/tools/dmarc", {"domain": "example.com"}))
+    finally:
+        clear_overrides()
+    payload = response.json()
+    assert response.status_code == 200
+    assert payload["contract_version"] == "webdiag.tool.dmarc_checker.v1"
+    assert payload["policy"] == "quarantine"
+    assert payload["percentage"] == 100
+    assert payload["has_rua"] is True
+    assert payload["status"] == "pass"
+
+
+def test_dmarc_checker_flags_monitoring_only_policy() -> None:
+    app.dependency_overrides[get_network_dns_resolver] = lambda: FakeResolver()
+    try:
+        response = asyncio.run(post("/v1/tools/dmarc", {"domain": "bad.example"}))
+    finally:
+        clear_overrides()
+    payload = response.json()
+    assert response.status_code == 200
+    assert payload["policy"] == "none"
+    assert payload["status"] == "warning"
+
+
+def test_dnssec_checker_reports_ds_and_dnskey_publication() -> None:
+    app.dependency_overrides[get_network_dns_resolver] = lambda: FakeResolver()
+    try:
+        response = asyncio.run(post("/v1/tools/dnssec", {"domain": "example.com"}))
+    finally:
+        clear_overrides()
+    payload = response.json()
+    assert response.status_code == 200
+    assert payload["contract_version"] == "webdiag.tool.dnssec_checker.v1"
+    assert payload["ds_record_count"] == 1
+    assert payload["dnskey_record_count"] == 1
+    assert payload["delegation_signed"] is True
+    assert payload["zone_dnskey_present"] is True
+    assert payload["status"] == "pass"
+
+
+def test_dnssec_checker_flags_missing_records() -> None:
+    app.dependency_overrides[get_network_dns_resolver] = lambda: FakeResolver()
+    try:
+        response = asyncio.run(post("/v1/tools/dnssec", {"domain": "bad.example"}))
+    finally:
+        clear_overrides()
+    payload = response.json()
+    assert response.status_code == 200
+    assert payload["ds_record_count"] == 0
+    assert payload["dnskey_record_count"] == 0
+    assert payload["status"] == "fail"

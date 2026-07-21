@@ -3,12 +3,19 @@
 import { useState, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import {
+  isDkimCheckerResponse,
+  isDmarcCheckerResponse,
   isDnsLookupResponse,
+  isDnssecCheckerResponse,
   isMxCheckerResponse,
   isSpfCheckerResponse,
   isToolErrorPayload,
+  parseDkimSelectorInput,
   parseDomainInput,
+  type DkimCheckerResponse,
+  type DmarcCheckerResponse,
   type DnsLookupResponse,
+  type DnssecCheckerResponse,
   type MxCheckerResponse,
   type NetworkDnsToolResponse,
   type SpfCheckerResponse,
@@ -48,13 +55,20 @@ const dictionary = {
 } as const;
 
 async function runNetworkDnsTool(
-  endpoint: "/api/tools/dns-lookup" | "/api/tools/mx-records" | "/api/tools/spf",
+  endpoint:
+    | "/api/tools/dns-lookup"
+    | "/api/tools/mx-records"
+    | "/api/tools/spf"
+    | "/api/tools/dkim"
+    | "/api/tools/dmarc"
+    | "/api/tools/dnssec",
   domain: string,
+  extraPayload: Record<string, string> = {},
 ): Promise<NetworkDnsToolResponse> {
   const response = await fetch(endpoint, {
     method: "POST",
     headers: { accept: "application/json", "content-type": "application/json" },
-    body: JSON.stringify({ domain }),
+    body: JSON.stringify({ domain, ...extraPayload }),
   });
   const payload: unknown = await response.json().catch(() => null);
   if (!response.ok) {
@@ -66,6 +80,9 @@ async function runNetworkDnsTool(
   if (endpoint === "/api/tools/dns-lookup" && isDnsLookupResponse(payload)) return payload;
   if (endpoint === "/api/tools/mx-records" && isMxCheckerResponse(payload)) return payload;
   if (endpoint === "/api/tools/spf" && isSpfCheckerResponse(payload)) return payload;
+  if (endpoint === "/api/tools/dkim" && isDkimCheckerResponse(payload)) return payload;
+  if (endpoint === "/api/tools/dmarc" && isDmarcCheckerResponse(payload)) return payload;
+  if (endpoint === "/api/tools/dnssec" && isDnssecCheckerResponse(payload)) return payload;
   throw new NetworkDnsToolError("Tool API returned an invalid result.", "tool_invalid_response");
 }
 
@@ -110,6 +127,53 @@ function DomainForm({
   </Panel>;
 }
 
+function DkimForm({
+  locale,
+  onSubmit,
+  loading,
+}: {
+  locale: Locale;
+  onSubmit: (domain: string, selector: string) => void;
+  loading: boolean;
+}) {
+  const [domain, setDomain] = useState("example.com");
+  const [selector, setSelector] = useState("default");
+  const [error, setError] = useState("");
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const parsedDomain = parseDomainInput(domain);
+    const parsedSelector = parseDkimSelectorInput(selector);
+    if (!parsedDomain || !parsedSelector) {
+      setError(
+        locale === "ru"
+          ? "Введите домен и DKIM selector без протокола и пути."
+          : "Enter a domain and DKIM selector without protocol or path.",
+      );
+      return;
+    }
+    setError("");
+    onSubmit(parsedDomain, parsedSelector);
+  }
+
+  return <Panel title="DKIM selector">
+    <form className="tool-form" onSubmit={submit}>
+      <label className="field">
+        <span>{dictionary[locale].domain}</span>
+        <input value={domain} onChange={(event) => setDomain(event.target.value)} />
+      </label>
+      <label className="field">
+        <span>Selector</span>
+        <input value={selector} onChange={(event) => setSelector(event.target.value)} />
+      </label>
+      {error && <p className="form-error" role="alert">{error}</p>}
+      <button className="button" type="submit" disabled={loading}>
+        {loading ? dictionary[locale].loading : dictionary[locale].run}
+      </button>
+    </form>
+  </Panel>;
+}
+
 
 export function dnsLookupResultText(result: DnsLookupResponse): string {
   return [
@@ -135,6 +199,36 @@ export function spfCheckerResultText(result: SpfCheckerResponse): string {
     `SPF records: ${result.spf_record_count}`,
     `Status: ${result.status}`,
     `all: ${result.all_mechanism ?? "—"}`,
+    `Recommendation: ${result.recommendation}`,
+  ].join("\n");
+}
+
+export function dkimCheckerResultText(result: DkimCheckerResponse): string {
+  return [
+    `Domain: ${result.domain}`,
+    `Selector: ${result.selector}`,
+    `DKIM records: ${result.dkim_record_count}`,
+    `Status: ${result.status}`,
+    `Recommendation: ${result.recommendation}`,
+  ].join("\n");
+}
+
+export function dmarcCheckerResultText(result: DmarcCheckerResponse): string {
+  return [
+    `Domain: ${result.domain}`,
+    `DMARC records: ${result.dmarc_record_count}`,
+    `Policy: ${result.policy ?? "—"}`,
+    `Status: ${result.status}`,
+    `Recommendation: ${result.recommendation}`,
+  ].join("\n");
+}
+
+export function dnssecCheckerResultText(result: DnssecCheckerResponse): string {
+  return [
+    `Domain: ${result.domain}`,
+    `DS records: ${result.ds_record_count}`,
+    `DNSKEY records: ${result.dnskey_record_count}`,
+    `Status: ${result.status}`,
     `Recommendation: ${result.recommendation}`,
   ].join("\n");
 }
@@ -200,12 +294,60 @@ function SpfResult({ locale, result }: { locale: Locale; result: SpfCheckerRespo
   </Panel>;
 }
 
+function DkimResult({ locale, result }: { locale: Locale; result: DkimCheckerResponse }) {
+  return <Panel title={dictionary[locale].result}>
+    <div className="metric-grid">
+      <div><span>Selector</span><strong>{result.selector}</strong></div>
+      <div><span>Records</span><strong>{result.dkim_record_count}</strong></div>
+      <div><span>{dictionary[locale].status}</span><strong><StatusBadge value={result.status} /></strong></div>
+    </div>
+    <ul className="result-list">
+      <li><strong>Record</strong><span>{result.record_name}</span></li>
+      <li><strong>Key type</strong><span>{result.key_type ?? "—"}</span></li>
+      <li><strong>Public key</strong><span>{result.has_public_key ? "present" : "missing"}</span></li>
+    </ul>
+    <Recommendation locale={locale} value={result.recommendation} />
+  </Panel>;
+}
+
+function DmarcResult({ locale, result }: { locale: Locale; result: DmarcCheckerResponse }) {
+  return <Panel title={dictionary[locale].result}>
+    <div className="metric-grid">
+      <div><span>Policy</span><strong>{result.policy ?? "—"}</strong></div>
+      <div><span>pct</span><strong>{result.percentage ?? "—"}</strong></div>
+      <div><span>{dictionary[locale].status}</span><strong><StatusBadge value={result.status} /></strong></div>
+    </div>
+    <ul className="result-list">
+      <li><strong>Record</strong><span>{result.record_name}</span></li>
+      <li><strong>rua</strong><span>{result.has_rua ? "present" : "missing"}</span></li>
+      <li><strong>Alignment</strong><span>{result.alignment_dkim ?? "r"} / {result.alignment_spf ?? "r"}</span></li>
+    </ul>
+    <Recommendation locale={locale} value={result.recommendation} />
+  </Panel>;
+}
+
+function DnssecResult({ locale, result }: { locale: Locale; result: DnssecCheckerResponse }) {
+  return <Panel title={dictionary[locale].result}>
+    <div className="metric-grid">
+      <div><span>DS</span><strong>{result.ds_record_count}</strong></div>
+      <div><span>DNSKEY</span><strong>{result.dnskey_record_count}</strong></div>
+      <div><span>{dictionary[locale].status}</span><strong><StatusBadge value={result.status} /></strong></div>
+    </div>
+    <ul className="result-list">
+      <li><strong>Delegation signed</strong><span>{result.delegation_signed ? "yes" : "no"}</span></li>
+      <li><strong>Zone DNSKEY</strong><span>{result.zone_dnskey_present ? "yes" : "no"}</span></li>
+      <li><strong>Algorithms</strong><span>{result.algorithms.join(", ") || "—"}</span></li>
+    </ul>
+    <Recommendation locale={locale} value={result.recommendation} />
+  </Panel>;
+}
+
 function NetworkDnsTool({
   locale,
   kind,
 }: {
   locale: Locale;
-  kind: "dns" | "mx" | "spf";
+  kind: "dns" | "mx" | "spf" | "dkim" | "dmarc" | "dnssec";
 }) {
   const [result, setResult] = useState<NetworkDnsToolResponse | null>(null);
   const [error, setError] = useState("");
@@ -214,13 +356,19 @@ function NetworkDnsTool({
     ? "/api/tools/dns-lookup"
     : kind === "mx"
       ? "/api/tools/mx-records"
-      : "/api/tools/spf";
+      : kind === "spf"
+        ? "/api/tools/spf"
+        : kind === "dkim"
+          ? "/api/tools/dkim"
+          : kind === "dmarc"
+            ? "/api/tools/dmarc"
+            : "/api/tools/dnssec";
 
-  async function run(domain: string) {
+  async function run(domain: string, selector?: string) {
     setLoading(true);
     setError("");
     try {
-      setResult(await runNetworkDnsTool(endpoint, domain));
+      setResult(await runNetworkDnsTool(endpoint, domain, selector ? { selector } : {}));
     } catch (caught) {
       setResult(null);
       setError(caught instanceof Error ? caught.message : "Tool request failed.");
@@ -230,11 +378,16 @@ function NetworkDnsTool({
   }
 
   return <div className="tool-grid">
-    <DomainForm locale={locale} onSubmit={run} loading={loading} />
+    {kind === "dkim"
+      ? <DkimForm locale={locale} onSubmit={run} loading={loading} />
+      : <DomainForm locale={locale} onSubmit={run} loading={loading} />}
     {error && <p className="form-error" role="alert">{error}</p>}
     {isDnsLookupResponse(result) && <DnsLookupResult locale={locale} result={result} />}
     {isMxCheckerResponse(result) && <MxResult locale={locale} result={result} />}
     {isSpfCheckerResponse(result) && <SpfResult locale={locale} result={result} />}
+    {isDkimCheckerResponse(result) && <DkimResult locale={locale} result={result} />}
+    {isDmarcCheckerResponse(result) && <DmarcResult locale={locale} result={result} />}
+    {isDnssecCheckerResponse(result) && <DnssecResult locale={locale} result={result} />}
   </div>;
 }
 
@@ -248,4 +401,16 @@ export function MxRecordCheckerTool({ locale }: { locale: Locale }) {
 
 export function SpfCheckerTool({ locale }: { locale: Locale }) {
   return <NetworkDnsTool locale={locale} kind="spf" />;
+}
+
+export function DkimCheckerTool({ locale }: { locale: Locale }) {
+  return <NetworkDnsTool locale={locale} kind="dkim" />;
+}
+
+export function DmarcCheckerTool({ locale }: { locale: Locale }) {
+  return <NetworkDnsTool locale={locale} kind="dmarc" />;
+}
+
+export function DnssecCheckerTool({ locale }: { locale: Locale }) {
+  return <NetworkDnsTool locale={locale} kind="dnssec" />;
 }

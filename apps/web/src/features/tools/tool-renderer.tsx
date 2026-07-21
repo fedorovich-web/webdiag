@@ -35,7 +35,14 @@ import { RedirectChainTool } from "./redirect-chain-tool";
 import { RobotsTxtTool } from "./robots-txt-tool";
 import { SecurityHeadersTool } from "./security-headers-tool";
 import { FaqSchemaGeneratorTool, RobotsTxtGeneratorTool, SitemapGeneratorTool } from "./seo-generator-tools";
-import { DnsLookupTool, MxRecordCheckerTool, SpfCheckerTool } from "./network-dns-tools";
+import {
+  DkimCheckerTool,
+  DmarcCheckerTool,
+  DnsLookupTool,
+  DnssecCheckerTool,
+  MxRecordCheckerTool,
+  SpfCheckerTool,
+} from "./network-dns-tools";
 import { HreflangCheckerTool, IndexabilityCheckerTool, TechnologyDetectorTool } from "./technical-seo-tools";
 import { SitemapValidatorTool } from "./sitemap-validator-tool";
 import { dictionary } from "../../lib/i18n";
@@ -226,6 +233,9 @@ export const SUPPORTED_TOOL_SLUGS = [
   "dns-lookup",
   "mx-record-checker",
   "spf-checker",
+  "dkim-checker",
+  "dmarc-checker",
+  "dnssec-checker",
 ] as const;
 
 export function ToolRenderer({ slug, locale }: ToolRendererProps) {
@@ -279,6 +289,9 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "dns-lookup": return <DnsLookupTool locale={locale} />;
     case "mx-record-checker": return <MxRecordCheckerTool locale={locale} />;
     case "spf-checker": return <SpfCheckerTool locale={locale} />;
+    case "dkim-checker": return <DkimCheckerTool locale={locale} />;
+    case "dmarc-checker": return <DmarcCheckerTool locale={locale} />;
+    case "dnssec-checker": return <DnssecCheckerTool locale={locale} />;
     default: return null;
   }
 }
