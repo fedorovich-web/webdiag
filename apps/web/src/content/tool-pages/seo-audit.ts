@@ -951,4 +951,128 @@ export const seoAuditToolPages = [
     relatedToolSlugs: ["keyword-density-analyzer", "heading-structure-checker", "meta-tags-checker"],
     sourceUrls: ["https://developers.google.com/search/docs/fundamentals/creating-helpful-content"],
   }),
+
+  toolPage({
+    slug: "indexability-checker",
+    seoTitle: { ru: "Проверка индексируемости страницы", en: "Page Indexability Checker" },
+    metaDescription: { ru: "Проверьте HTTP status, robots.txt, meta robots, X-Robots-Tag, canonical и redirects как единый indexability audit.", en: "Check HTTP status, robots.txt, meta robots, X-Robots-Tag, canonical, and redirects as one indexability audit." },
+    h1: { ru: "Проверка индексируемости страницы", en: "Page Indexability Checker" },
+    lead: { ru: "Введите URL, чтобы увидеть, нет ли жёстких блокировок индексации: noindex, robots.txt disallow, X-Robots-Tag, проблемного canonical или неуспешного HTTP status.", en: "Enter a URL to see whether hard indexability blockers exist: noindex, robots.txt disallow, X-Robots-Tag, problematic canonical, or unsuccessful HTTP status." },
+    quickFacts: [
+      { ru: "robots.txt", en: "robots.txt" },
+      { ru: "Meta/X-Robots", en: "Meta/X-Robots" },
+      { ru: "Canonical", en: "Canonical" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте публичный URL страницы.", en: "Paste a public page URL." },
+      { ru: "WebDiag загрузит HTML и robots.txt через safe fetch.", en: "WebDiag fetches HTML and robots.txt through safe fetch." },
+      { ru: "Проверьте hard blockers, warnings и итоговый indexable candidate signal.", en: "Review hard blockers, warnings, and the final indexable candidate signal." },
+    ],
+    supportedFeatures: [
+      { ru: "Проверяет HTTP status, redirect count, robots.txt allow/disallow и noindex-сигналы.", en: "Checks HTTP status, redirect count, robots.txt allow/disallow, and noindex signals." },
+      { ru: "Сравнивает canonical с финальным URL после redirects.", en: "Compares canonical with the final URL after redirects." },
+      { ru: "Не делает вид, что знает фактическую индексацию поисковика: это technical candidate check.", en: "Does not pretend to know actual search-engine indexing: this is a technical candidate check." },
+    ],
+    limitations: [
+      { ru: "Фактическое наличие страницы в индексе Google/Яндекс не проверяется.", en: "Actual Google/Yandex index presence is not checked." },
+      { ru: "JS-runtime изменения robots/canonical не входят в static HTML scan.", en: "JS-runtime robots/canonical changes are not included in the static HTML scan." },
+    ],
+    useCases: [
+      { ru: "Проверить посадочную страницу перед публикацией.", en: "Check a landing page before publishing." },
+      { ru: "Найти случайный noindex после релиза.", en: "Find accidental noindex after a release." },
+      { ru: "Проверить, не канонизируется ли страница на другой URL.", en: "Check whether the page canonicalizes to another URL." },
+    ],
+    technicalNotes: [
+      { ru: "Robots.txt анализ использует тот же parser allow/disallow precedence, что и audit engine.", en: "Robots.txt analysis uses the same allow/disallow precedence parser as the audit engine." },
+      { ru: "Инструмент возвращает indexable_candidate, а не гарантированный search index state.", en: "The tool returns indexable_candidate, not guaranteed search index state." },
+    ],
+    faq: [
+      { question: { ru: "Это показывает, есть ли страница в индексе?", en: "Does this show whether the page is indexed?" }, answer: { ru: "Нет. Он показывает, есть ли технические блокировки индексации. Проверка фактической выдачи будет отдельным инструментом/интеграцией.", en: "No. It shows technical indexing blockers. Actual SERP/index presence needs a separate tool or integration." } },
+      { question: { ru: "Почему canonical на другой URL не всегда fail?", en: "Why is a different canonical not always a fail?" }, answer: { ru: "Потому что это может быть намеренная консолидация дублей. Для текущего URL это warning: страница, вероятно, не должна ранжироваться как самостоятельная canonical target.", en: "Because it may intentionally consolidate duplicates. For the current URL it is a warning: the page likely should not rank as its own canonical target." } },
+    ],
+    relatedToolSlugs: ["canonical-checker", "robots-txt-tester", "meta-tags-checker"],
+    sourceUrls: ["https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag"],
+  }),
+  toolPage({
+    slug: "hreflang-checker",
+    seoTitle: { ru: "Проверка hreflang-разметки", en: "Hreflang Checker" },
+    metaDescription: { ru: "Проверьте alternate hreflang, x-default, self-reference, дубли языковых кодов и структурные ошибки international SEO.", en: "Check alternate hreflang, x-default, self-reference, duplicate language codes, and structural international SEO issues." },
+    h1: { ru: "Проверка hreflang", en: "Hreflang Checker" },
+    lead: { ru: "Введите URL мультиязычной страницы, чтобы проверить hreflang-ссылки в HTML: языковые коды, x-default, self-reference и дубли.", en: "Enter a multilingual page URL to inspect HTML hreflang links: language codes, x-default, self-reference, and duplicates." },
+    quickFacts: [
+      { ru: "alternate links", en: "alternate links" },
+      { ru: "x-default", en: "x-default" },
+      { ru: "self-reference", en: "self-reference" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте URL одной языковой версии.", en: "Paste the URL of one language version." },
+      { ru: "WebDiag соберёт link rel=alternate hreflang из static HTML.", en: "WebDiag collects link rel=alternate hreflang from static HTML." },
+      { ru: "Проверьте валидность кодов, x-default, дубли и self-reference.", en: "Review language-code validity, x-default, duplicates, and self-reference." },
+    ],
+    supportedFeatures: [
+      { ru: "Проверяет x-default, self-reference и дубли hreflang значений.", en: "Checks x-default, self-reference, and duplicate hreflang values." },
+      { ru: "Нормализует relative href относительно final URL.", en: "Normalizes relative href values against the final URL." },
+      { ru: "Показывает html lang как дополнительный contextual signal.", en: "Shows html lang as an additional contextual signal." },
+    ],
+    limitations: [
+      { ru: "Не проверяет reciprocal links на всех альтернативных страницах — это задача crawler/full-site слоя.", en: "Does not verify reciprocal links on every alternate page; that belongs to the crawler/full-site layer." },
+      { ru: "JS-injected hreflang не входит в static HTML scan.", en: "JS-injected hreflang is not included in the static HTML scan." },
+    ],
+    useCases: [
+      { ru: "Проверить international landing pages перед релизом.", en: "Check international landing pages before release." },
+      { ru: "Найти дубли en/en-US или ошибочные language-region коды.", en: "Find duplicated en/en-US or invalid language-region codes." },
+      { ru: "Проверить наличие x-default для глобального выбора языка.", en: "Check x-default for a global language selector." },
+    ],
+    technicalNotes: [
+      { ru: "Language tag validation намеренно structural; поисковые reciprocity правила проверяются будущим crawler batch.", en: "Language tag validation is intentionally structural; search reciprocity rules require a future crawler batch." },
+      { ru: "Инструмент не делает сетевых запросов ко всем alternate href, чтобы не превращаться в crawler.", en: "The tool does not request every alternate href to avoid becoming a crawler." },
+    ],
+    faq: [
+      { question: { ru: "Нужен ли hreflang одноязычному сайту?", en: "Does a single-language site need hreflang?" }, answer: { ru: "Обычно нет. Инструмент полезен для сайтов с несколькими языками или регионами.", en: "Usually no. The tool is useful for sites with multiple languages or regions." } },
+      { question: { ru: "Почему reciprocal проверка не здесь?", en: "Why is reciprocal validation not here?" }, answer: { ru: "Потому что это уже обход набора URL. Его нужно делать в crawler/job инфраструктуре с лимитами и историей.", en: "Because that requires crawling a URL set. It belongs in crawler/job infrastructure with limits and history." } },
+    ],
+    relatedToolSlugs: ["indexability-checker", "canonical-checker", "sitemap-validator"],
+    sourceUrls: ["https://developers.google.com/search/docs/specialty/international/localized-versions"],
+  }),
+  toolPage({
+    slug: "technology-detector",
+    seoTitle: { ru: "Определение технологий сайта", en: "Website Technology Detector" },
+    metaDescription: { ru: "Определите CMS, frontend-фреймворки, CDN, hosting, analytics и server headers по безопасному static HTML scan и HTTP headers.", en: "Detect CMS, frontend frameworks, CDN, hosting, analytics, and server headers through safe static HTML scan and HTTP headers." },
+    h1: { ru: "Определение технологий сайта", en: "Website Technology Detector" },
+    lead: { ru: "Введите URL, чтобы получить технологический профиль сайта по HTTP-заголовкам, generator meta, asset paths и безопасным static HTML fingerprints.", en: "Enter a URL to get a technology profile from HTTP headers, generator meta, asset paths, and safe static HTML fingerprints." },
+    quickFacts: [
+      { ru: "CMS/framework", en: "CMS/framework" },
+      { ru: "CDN/hosting", en: "CDN/hosting" },
+      { ru: "Headers/assets", en: "Headers/assets" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте публичный URL страницы.", en: "Paste a public page URL." },
+      { ru: "WebDiag проверит HTML и HTTP headers без выполнения JavaScript.", en: "WebDiag inspects HTML and HTTP headers without executing JavaScript." },
+      { ru: "Проверьте detected technologies, confidence и evidence.", en: "Review detected technologies, confidence, and evidence." },
+    ],
+    supportedFeatures: [
+      { ru: "Определяет WordPress, Drupal, Joomla, Shopify, Wix, Tilda, Webflow и common frameworks по fingerprints.", en: "Detects WordPress, Drupal, Joomla, Shopify, Wix, Tilda, Webflow, and common frameworks by fingerprints." },
+      { ru: "Показывает CDN/hosting/server signals из response headers.", en: "Shows CDN/hosting/server signals from response headers." },
+      { ru: "Каждый сигнал имеет confidence и evidence.", en: "Every signal includes confidence and evidence." },
+    ],
+    limitations: [
+      { ru: "Это static detector, не полноценный Wappalyzer-клон и не browser runtime scan.", en: "This is a static detector, not a full Wappalyzer clone or browser runtime scan." },
+      { ru: "Современные build pipelines могут скрывать или переименовывать fingerprints.", en: "Modern build pipelines may hide or rename fingerprints." },
+    ],
+    useCases: [
+      { ru: "Быстро понять стек сайта перед аудитом.", en: "Quickly understand a site stack before an audit." },
+      { ru: "Обнаружить CDN/hosting headers для performance/security review.", en: "Find CDN/hosting headers for performance/security review." },
+      { ru: "Собрать context для дальнейших рекомендаций по CMS и frontend.", en: "Collect context for later CMS and frontend recommendations." },
+    ],
+    technicalNotes: [
+      { ru: "Инструмент не отправляет HTML сторонним fingerprint-провайдерам.", en: "The tool does not send HTML to third-party fingerprint providers." },
+      { ru: "Low-confidence detections требуют ручной проверки.", en: "Low-confidence detections require manual review." },
+    ],
+    faq: [
+      { question: { ru: "Почему не все технологии найдены?", en: "Why are not all technologies detected?" }, answer: { ru: "Потому что инструмент не выполняет JavaScript и не анализирует runtime network waterfall. Это будет отдельный browser/crawler слой.", en: "Because the tool does not execute JavaScript or analyze runtime network waterfalls. That belongs to a separate browser/crawler layer." } },
+      { question: { ru: "Можно ли использовать результат для security conclusions?", en: "Can the result be used for security conclusions?" }, answer: { ru: "Только как context. Для security нужны отдельные проверки headers, TLS, exposed versions и конфигурации.", en: "Only as context. Security conclusions require dedicated header, TLS, exposed-version, and configuration checks." } },
+    ],
+    relatedToolSlugs: ["security-headers-checker", "page-weight-analyzer", "core-web-vitals-checker"],
+    sourceUrls: ["https://developer.mozilla.org/docs/Web/HTTP/Headers/Server"],
+  }),
 ] as const;

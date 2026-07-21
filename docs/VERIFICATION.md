@@ -429,3 +429,59 @@ Known limitations:
 - Heading Structure Checker is a page outline tool, not an accessibility audit;
 - Keyword/Phrase Frequency Analyzer is an evidence signal, not a ranking formula;
 - Readability Analyzer uses multilingual heuristics and does not claim exact Flesch-style scoring for every language.
+
+---
+
+# A10.15 — technical SEO discovery tools
+
+A10.15 adds three aggregate technical SEO tools without creating weak single-field checks.
+
+Changed behavior:
+
+- added `Page Indexability Checker` for HTTP status, redirects, robots.txt, meta robots,
+  X-Robots-Tag, and canonical signals;
+- added `Hreflang Checker` for alternate links, language tags, x-default,
+  self-reference, and duplicate hreflang values;
+- added `Website Technology Detector` for static HTML/header fingerprints covering CMS,
+  frontend frameworks, CDN, hosting, analytics, and server headers;
+- promoted `indexability-checker`, `hreflang-checker`, and `technology-detector` from
+  internal registry entries to ready public tools;
+- did not add standalone noindex, x-robots, html-lang, CMS-only, or one-header microtools.
+
+Backend endpoints:
+
+- `POST /v1/tools/indexability`
+- `POST /v1/tools/hreflang`
+- `POST /v1/tools/technology-detector`
+
+Frontend routes:
+
+- `/tools/indexability-checker` and `/en/tools/indexability-checker`
+- `/tools/hreflang-checker` and `/en/tools/hreflang-checker`
+- `/tools/technology-detector` and `/en/tools/technology-detector`
+
+Observed gates:
+
+| Gate | Result |
+|---|---:|
+| `npm run test:workspace` | PASS — 37/37 via `npm test` |
+| `npm test` | PASS — 202 total Node/Vitest tests: workspace 37/37, registry 2/2, core 17/17, web 146/146 |
+| `npm run verify:registry` | PASS — 111 unique tools, 43 ready tools, no weak ready microtools |
+| `npm run lint` | PASS |
+| `npm run typecheck` | PASS |
+| `npm run build` | NOT COUNTED in this sandbox — Next compiled and TypeScript passed, then sandbox timed out during static generation |
+| `npm run verify:built-site` | NOT RUN after the timed-out build in this sandbox |
+| `npm run test:python` | PASS — 129/129 |
+| `npm run lint:python` | PASS |
+| `npm run verify:python-lock` | PASS — 30 locked packages matched installed packages for linux |
+| `npm run test:browser` | NOT VERIFIED in this sandbox |
+
+Known limitations:
+
+- all three tools use bounded static HTML/header analysis and do not execute JavaScript;
+- Indexability Checker reports a technical `indexable_candidate`, not guaranteed search
+  index inclusion in Google/Yandex;
+- Hreflang Checker validates structural HTML hreflang signals but does not crawl every
+  alternate URL for reciprocal confirmation;
+- Technology Detector is a static fingerprint detector, not a full Wappalyzer/browser
+  runtime clone. Low-confidence detections require manual review.
