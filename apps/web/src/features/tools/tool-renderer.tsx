@@ -34,6 +34,7 @@ import { HtmlMarkupValidatorTool, SchemaMarkupGeneratorTool, StructuredDataValid
 import { RedirectChainTool } from "./redirect-chain-tool";
 import { RobotsTxtTool } from "./robots-txt-tool";
 import { SecurityHeadersTool } from "./security-headers-tool";
+import { HreflangCheckerTool, IndexabilityCheckerTool, TechnologyDetectorTool } from "./technical-seo-tools";
 import { SitemapValidatorTool } from "./sitemap-validator-tool";
 import { dictionary } from "../../lib/i18n";
 
@@ -214,6 +215,9 @@ export const SUPPORTED_TOOL_SLUGS = [
   "heading-structure-checker",
   "keyword-density-analyzer",
   "readability-analyzer",
+  "indexability-checker",
+  "hreflang-checker",
+  "technology-detector",
 ] as const;
 
 export function ToolRenderer({ slug, locale }: ToolRendererProps) {
@@ -258,6 +262,9 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "heading-structure-checker": return <HeadingStructureTool locale={locale} />;
     case "keyword-density-analyzer": return <KeywordFrequencyTool locale={locale} />;
     case "readability-analyzer": return <ReadabilityAnalyzerTool locale={locale} />;
+    case "indexability-checker": return <IndexabilityCheckerTool locale={locale} />;
+    case "hreflang-checker": return <HreflangCheckerTool locale={locale} />;
+    case "technology-detector": return <TechnologyDetectorTool locale={locale} />;
     default: return null;
   }
 }
