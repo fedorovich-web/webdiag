@@ -101,8 +101,11 @@
     "riskTier": "R1",
     "access": "none",
     "implementationWave": "W2",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет canonical для одного URL: наличие link rel=canonical, абсолютный/относительный href, совпадение с финальным URL и noindex-сигналы.",
+      "en": "Checks canonical for a single URL: link rel=canonical presence, absolute/relative href, match with the final URL, and noindex signals."
+    }
   },
   {
     "id": "WD-008",

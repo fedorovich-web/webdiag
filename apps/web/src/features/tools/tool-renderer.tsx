@@ -22,6 +22,7 @@ import {
   type HashAlgorithm,
 } from "@webdiag/tool-core";
 import { CopyButton } from "../../components/copy-button";
+import { CanonicalCheckerTool } from "./canonical-checker-tool";
 import { ImageCropperTool, ImageFormatConverterTool, ImageOptimizerTool, ImageResizerTool } from "./image-tools";
 import { RedirectChainTool } from "./redirect-chain-tool";
 import { RobotsTxtTool } from "./robots-txt-tool";
@@ -182,6 +183,7 @@ export const SUPPORTED_TOOL_SLUGS = [
   "redirect-chain-checker",
   "robots-txt-tester",
   "sitemap-validator",
+  "canonical-checker",
 ] as const;
 
 export function ToolRenderer({ slug, locale }: ToolRendererProps) {
@@ -203,6 +205,7 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "redirect-chain-checker": return <RedirectChainTool locale={locale} />;
     case "robots-txt-tester": return <RobotsTxtTool locale={locale} />;
     case "sitemap-validator": return <SitemapValidatorTool locale={locale} />;
+    case "canonical-checker": return <CanonicalCheckerTool locale={locale} />;
     default: return null;
   }
 }

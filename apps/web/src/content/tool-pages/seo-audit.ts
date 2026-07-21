@@ -2,6 +2,47 @@ import { toolPage } from "./shared";
 
 export const seoAuditToolPages = [
   toolPage({
+    slug: "canonical-checker",
+    seoTitle: { ru: "Проверка canonical URL онлайн", en: "Canonical URL Checker" },
+    metaDescription: { ru: "Проверьте link rel=canonical для страницы: наличие, совпадение с финальным URL, host, noindex и редиректы.", en: "Check a page link rel=canonical: presence, match with the final URL, host, noindex, and redirects." },
+    h1: { ru: "Проверка canonical URL", en: "Canonical URL Checker" },
+    lead: { ru: "Введите URL страницы, чтобы проверить canonical href, финальный адрес после редиректов, noindex-сигналы и совпадение с предпочтительным SEO-URL.", en: "Enter a page URL to check canonical href, the final URL after redirects, noindex signals, and alignment with the preferred SEO URL." },
+    quickFacts: [
+      { ru: "Один URL", en: "Single URL" },
+      { ru: "Canonical href", en: "Canonical href" },
+      { ru: "Final URL match", en: "Final URL match" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте адрес страницы, которую нужно проверить на canonical.", en: "Paste the page address you need to check for canonicalization." },
+      { ru: "Запустите проверку и дождитесь ответа WebDiag API.", en: "Run the check and wait for the WebDiag API response." },
+      { ru: "Сравните canonical href, resolved canonical и финальный URL после редиректов.", en: "Compare canonical href, resolved canonical, and the final URL after redirects." },
+    ],
+    supportedFeatures: [
+      { ru: "Безопасная загрузка HTML-страницы через backend с SSRF-защитой и лимитом размера ответа.", en: "Safe HTML page fetching through the backend with SSRF protection and response size limits." },
+      { ru: "Извлекает первый link rel=canonical и резолвит относительный href относительно финального URL.", en: "Extracts the first link rel=canonical and resolves a relative href against the final URL." },
+      { ru: "Показывает mismatch с final URL, host mismatch, noindex и количество редиректов.", en: "Shows final URL mismatch, host mismatch, noindex, and redirect count." },
+    ],
+    limitations: [
+      { ru: "Инструмент проверяет одну страницу и не ищет canonical-конфликты по всему сайту.", en: "The tool checks one page and does not search for canonical conflicts across the whole site." },
+      { ru: "JavaScript-rendered canonical, который появляется только после client-side hydration, в MVP не исполняется.", en: "JavaScript-rendered canonical tags that appear only after client-side hydration are not executed in this MVP." },
+    ],
+    useCases: [
+      { ru: "Проверить, совпадает ли canonical с финальным URL после HTTPS, www/non-www или trailing slash редиректов.", en: "Check whether canonical matches the final URL after HTTPS, www/non-www, or trailing slash redirects." },
+      { ru: "Найти страницы без canonical после миграции, смены шаблона или релиза CMS.", en: "Find pages without canonical after a migration, template change, or CMS release." },
+      { ru: "Проверить, нет ли accidental noindex на важной посадочной странице.", en: "Check for accidental noindex on an important landing page." },
+    ],
+    technicalNotes: [
+      { ru: "Сравнение URL нормализует host casing, default ports, trailing slash и fragment.", en: "URL comparison normalizes host casing, default ports, trailing slash, and fragments." },
+      { ru: "Относительный canonical резолвится через финальный URL, но в рекомендациях помечается как менее надёжный.", en: "A relative canonical is resolved through the final URL, but the recommendation flags it as less robust." },
+    ],
+    faq: [
+      { question: { ru: "Относительный canonical — это ошибка?", en: "Is a relative canonical an error?" }, answer: { ru: "Не всегда. Браузеры и парсеры могут его резолвить, но абсолютный canonical безопаснее для диагностики, миграций и внешних сигналов.", en: "Not always. Browsers and parsers can resolve it, but an absolute canonical is safer for diagnostics, migrations, and external signals." } },
+      { question: { ru: "Почему canonical должен совпадать с final URL?", en: "Why should canonical match the final URL?" }, answer: { ru: "Так меньше неоднозначности для поисковых систем: редиректы, sitemap, внутренние ссылки и canonical указывают на один предпочтительный адрес.", en: "It reduces ambiguity for search engines: redirects, sitemap, internal links, and canonical point to the same preferred address." } },
+    ],
+    relatedToolSlugs: ["redirect-chain-checker", "sitemap-validator", "robots-txt-tester"],
+    sourceUrls: ["https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls", "https://developer.mozilla.org/docs/Web/HTML/Attributes/rel"],
+  }),
+  toolPage({
     slug: "robots-txt-tester",
     seoTitle: { ru: "Проверка robots.txt для URL", en: "Robots.txt Tester for a URL" },
     metaDescription: { ru: "Проверьте, доступен ли robots.txt, разрешён ли конкретный URL для user-agent и какие Sitemap directives объявлены.", en: "Check whether robots.txt is available, whether a specific URL is allowed for a user-agent, and which Sitemap directives are declared." },
