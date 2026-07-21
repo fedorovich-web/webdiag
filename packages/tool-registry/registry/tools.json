@@ -296,8 +296,11 @@
     "riskTier": "R1",
     "access": "none",
     "implementationWave": "W2",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет структуру заголовков H1–H6 в статическом HTML: количество H1, пропуски уровней, пустые заголовки и общий outline страницы без выделения H1 в отдельный слабый инструмент.",
+      "en": "Checks the H1–H6 heading structure in static HTML: H1 count, skipped levels, empty headings, and the full page outline without splitting H1 into a weak standalone tool."
+    }
   },
   {
     "id": "WD-019",
@@ -325,12 +328,15 @@
       "en": "Keyword and Phrase Frequency Analyzer"
     },
     "category": "seo-audit",
-    "executorClass": "composite",
+    "executorClass": "safe_fetch",
     "riskTier": "R1",
     "access": "none",
     "implementationWave": "W2",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Анализирует видимый текст страницы: частотность слов, биграмм и триграмм, плотность терминов и риск переспама как часть нормального content-аудита, а не как SEO-магия.",
+      "en": "Analyzes visible page text: word, bigram, and trigram frequency, term density, and overuse risk as a content-audit signal rather than SEO magic."
+    }
   },
   {
     "id": "WD-021",
@@ -340,12 +346,15 @@
       "en": "Readability Analyzer"
     },
     "category": "seo-audit",
-    "executorClass": "browser",
+    "executorClass": "safe_fetch",
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Оценивает читабельность видимого текста по мультиязычным эвристикам: объём, предложения, абзацы, длинные фразы, время чтения и рекомендации по упрощению.",
+      "en": "Evaluates visible-text readability with multilingual heuristics: word count, sentences, paragraphs, long sentences, reading time, and simplification recommendations."
+    }
   },
   {
     "id": "WD-022",
