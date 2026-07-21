@@ -403,12 +403,15 @@
       "en": "Structured Data Validator"
     },
     "category": "seo-audit",
-    "executorClass": "composite",
+    "executorClass": "safe_fetch",
     "riskTier": "R1",
     "access": "none",
     "implementationWave": "W2",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет JSON-LD структурированные данные на странице: количество блоков, валидность JSON, найденные Schema.org типы, ошибки парсинга и практическую рекомендацию.",
+      "en": "Checks JSON-LD structured data on a page: block count, JSON validity, detected Schema.org types, parse errors, and a practical recommendation."
+    }
   },
   {
     "id": "WD-027",
@@ -422,8 +425,11 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Генерирует поддерживаемые шаблоны Schema.org JSON-LD для Organization, LocalBusiness, FAQPage и BreadcrumbList без AI-фантазирования.",
+      "en": "Generates supported Schema.org JSON-LD templates for Organization, LocalBusiness, FAQPage, and BreadcrumbList without AI fabrication."
+    }
   },
   {
     "id": "WD-028",
@@ -463,12 +469,15 @@
       "en": "HTML Markup Validator"
     },
     "category": "seo-audit",
-    "executorClass": "composite",
+    "executorClass": "safe_fetch",
     "riskTier": "R1",
     "access": "none",
     "implementationWave": "W2",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет базовую HTML-разметку страницы: doctype, html/head/body, lang, title, viewport, дубли id, неожиданные закрывающие и незакрытые теги.",
+      "en": "Checks basic HTML markup structure for a page: doctype, html/head/body, lang, title, viewport, duplicate IDs, unexpected closing tags, and unclosed tags."
+    }
   },
   {
     "id": "WD-031",

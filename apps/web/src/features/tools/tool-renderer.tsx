@@ -25,6 +25,7 @@ import { CopyButton } from "../../components/copy-button";
 import { CanonicalCheckerTool } from "./canonical-checker-tool";
 import { ImageCropperTool, ImageFormatConverterTool, ImageOptimizerTool, ImageResizerTool } from "./image-tools";
 import { MetaTagsCheckerTool, SerpPreviewTool, SocialPreviewTool } from "./metadata-preview-tools";
+import { HtmlMarkupValidatorTool, SchemaMarkupGeneratorTool, StructuredDataValidatorTool } from "./markup-tools";
 import { RedirectChainTool } from "./redirect-chain-tool";
 import { RobotsTxtTool } from "./robots-txt-tool";
 import { SecurityHeadersTool } from "./security-headers-tool";
@@ -190,6 +191,9 @@ export const SUPPORTED_TOOL_SLUGS = [
   "meta-tags-checker",
   "serp-preview",
   "open-graph-preview",
+  "structured-data-validator",
+  "schema-markup-generator",
+  "html-validator",
 ] as const;
 
 export function ToolRenderer({ slug, locale }: ToolRendererProps) {
@@ -216,6 +220,9 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "meta-tags-checker": return <MetaTagsCheckerTool locale={locale} />;
     case "serp-preview": return <SerpPreviewTool locale={locale} />;
     case "open-graph-preview": return <SocialPreviewTool locale={locale} />;
+    case "structured-data-validator": return <StructuredDataValidatorTool locale={locale} />;
+    case "schema-markup-generator": return <SchemaMarkupGeneratorTool locale={locale} />;
+    case "html-validator": return <HtmlMarkupValidatorTool locale={locale} />;
     default: return null;
   }
 }
