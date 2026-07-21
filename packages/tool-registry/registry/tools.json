@@ -518,8 +518,11 @@
     "riskTier": "R1",
     "access": "none",
     "implementationWave": "W2",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет основные HTTP-заголовки безопасности страницы: HSTS, CSP, nosniff, защиту от фрейминга, Referrer-Policy и Permissions-Policy.",
+      "en": "Checks core HTTP security headers for a page: HSTS, CSP, nosniff, frame protection, Referrer-Policy, and Permissions-Policy."
+    }
   },
   {
     "id": "WD-035",
