@@ -2,6 +2,130 @@ import { toolPage } from "./shared";
 
 export const seoAuditToolPages = [
 
+
+  toolPage({
+    slug: "structured-data-validator",
+    seoTitle: { ru: "Проверка структурированных данных JSON-LD", en: "Structured Data Validator" },
+    metaDescription: { ru: "Проверьте JSON-LD на странице: валидность JSON, Schema.org типы, ошибки парсинга и рекомендации без fake rich-result обещаний.", en: "Check page JSON-LD: JSON validity, Schema.org types, parse errors, and recommendations without fake rich-result promises." },
+    h1: { ru: "Проверка структурированных данных", en: "Structured Data Validator" },
+    lead: { ru: "Введите URL, чтобы проверить JSON-LD блоки на странице: сколько их найдено, какие Schema.org типы объявлены, есть ли синтаксические ошибки и что нужно исправить перед rich-result тестами.", en: "Enter a URL to inspect JSON-LD blocks on a page: how many were found, which Schema.org types are declared, whether syntax errors exist, and what to fix before rich-result tests." },
+    quickFacts: [
+      { ru: "JSON-LD", en: "JSON-LD" },
+      { ru: "Schema.org types", en: "Schema.org types" },
+      { ru: "Parse errors", en: "Parse errors" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте URL страницы со структурированными данными.", en: "Paste the page URL that contains structured data." },
+      { ru: "Запустите проверку через WebDiag API.", en: "Run the check through the WebDiag API." },
+      { ru: "Оцените валидность JSON-LD, найденные типы и ошибки по каждому блоку.", en: "Review JSON-LD validity, detected types, and errors for each block." },
+    ],
+    supportedFeatures: [
+      { ru: "Извлекает все script type=application/ld+json из HTML страницы.", en: "Extracts all script type=application/ld+json blocks from the page HTML." },
+      { ru: "Показывает валидные и невалидные блоки, Schema.org типы и количество JSON-LD nodes.", en: "Shows valid and invalid blocks, Schema.org types, and JSON-LD node counts." },
+      { ru: "Использует SafeHttpFetcher с SSRF-защитой и лимитом размера HTML.", en: "Uses SafeHttpFetcher with SSRF protection and HTML body size limits." },
+    ],
+    limitations: [
+      { ru: "Инструмент проверяет синтаксис JSON-LD и типы, но не гарантирует eligibility для rich results.", en: "The tool checks JSON-LD syntax and types, but does not guarantee rich result eligibility." },
+      { ru: "JavaScript-rendered structured data в MVP не исполняется.", en: "JavaScript-rendered structured data is not executed in this MVP." },
+    ],
+    useCases: [
+      { ru: "Найти сломанный JSON-LD после правки шаблонов CMS.", en: "Find broken JSON-LD after CMS template changes." },
+      { ru: "Проверить, какие типы Schema.org реально отдаются в HTML.", en: "Check which Schema.org types are actually delivered in HTML." },
+      { ru: "Подготовить страницу к последующей проверке в Google rich results tools.", en: "Prepare a page for later verification in Google rich results tools." },
+    ],
+    technicalNotes: [
+      { ru: "Проверка выполняет синтаксический JSON parse и рекурсивно собирает @type значения.", en: "The check performs syntactic JSON parsing and recursively collects @type values." },
+      { ru: "Это не внешняя интеграция с Google Rich Results Test и не Schema.org reasoner.", en: "This is not an external Google Rich Results Test integration and not a Schema.org reasoner." },
+    ],
+    faq: [
+      { question: { ru: "Почему это не обещает rich snippets?", en: "Why does it not promise rich snippets?" }, answer: { ru: "Потому что eligibility зависит от типа данных, контента страницы, политики поисковой системы и качества разметки. WebDiag честно показывает валидность и типы JSON-LD.", en: "Because eligibility depends on data type, page content, search engine policy, and markup quality. WebDiag honestly reports JSON-LD validity and types." } },
+      { question: { ru: "Можно ли проверять несколько блоков JSON-LD?", en: "Can it check multiple JSON-LD blocks?" }, answer: { ru: "Да. Инструмент показывает каждый блок отдельно и суммирует найденные типы.", en: "Yes. The tool shows every block separately and summarizes detected types." } },
+    ],
+    relatedToolSlugs: ["schema-markup-generator", "html-validator", "meta-tags-checker"],
+    sourceUrls: ["https://schema.org/docs/jsonldcontext.json", "https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data"],
+  }),
+  toolPage({
+    slug: "schema-markup-generator",
+    seoTitle: { ru: "Генератор Schema.org JSON-LD", en: "Schema.org JSON-LD Generator" },
+    metaDescription: { ru: "Создайте поддерживаемые шаблоны Schema.org JSON-LD: Organization, LocalBusiness, FAQPage и BreadcrumbList без AI-фантазирования.", en: "Create supported Schema.org JSON-LD templates: Organization, LocalBusiness, FAQPage, and BreadcrumbList without AI fabrication." },
+    h1: { ru: "Генератор Schema.org JSON-LD", en: "Schema.org JSON-LD Generator" },
+    lead: { ru: "Соберите базовую JSON-LD разметку из явных полей. Инструмент не выдумывает факты, не обещает rich results и оставляет финальную проверку за Structured Data Validator.", en: "Build basic JSON-LD markup from explicit fields. The tool does not invent facts, does not promise rich results, and leaves final verification to the Structured Data Validator." },
+    quickFacts: [
+      { ru: "Browser-only", en: "Browser-only" },
+      { ru: "4 шаблона", en: "4 templates" },
+      { ru: "Без AI fake output", en: "No AI fake output" },
+    ],
+    howToSteps: [
+      { ru: "Выберите тип Schema.org шаблона.", en: "Choose the Schema.org template type." },
+      { ru: "Заполните только фактические данные, которые есть на странице.", en: "Fill in only factual data that exists on the page." },
+      { ru: "Скопируйте JSON-LD и затем проверьте опубликованную страницу валидатором.", en: "Copy the JSON-LD and then validate the published page." },
+    ],
+    supportedFeatures: [
+      { ru: "Генерирует Organization, LocalBusiness, FAQPage и BreadcrumbList шаблоны.", en: "Generates Organization, LocalBusiness, FAQPage, and BreadcrumbList templates." },
+      { ru: "Работает в браузере без отправки введённых данных на backend.", en: "Runs in the browser without sending entered data to the backend." },
+      { ru: "Создаёт script type=application/ld+json, готовый для вставки в HTML.", en: "Creates script type=application/ld+json ready to paste into HTML." },
+    ],
+    limitations: [
+      { ru: "Это генератор шаблонов, а не AI-копирайтер и не гарантия rich results.", en: "This is a template generator, not an AI copywriter and not a rich result guarantee." },
+      { ru: "Нужно вручную убедиться, что разметка описывает видимый контент страницы.", en: "You must manually ensure the markup describes visible page content." },
+    ],
+    useCases: [
+      { ru: "Быстро собрать базовую Organization или LocalBusiness разметку.", en: "Quickly build basic Organization or LocalBusiness markup." },
+      { ru: "Подготовить FAQPage JSON-LD из утверждённых вопросов и ответов.", en: "Prepare FAQPage JSON-LD from approved questions and answers." },
+      { ru: "Сформировать BreadcrumbList для шаблонной страницы.", en: "Generate BreadcrumbList for a templated page." },
+    ],
+    technicalNotes: [
+      { ru: "Генератор формирует JSON.stringify output с фиксированной структурой для поддерживаемых типов.", en: "The generator produces JSON.stringify output with a fixed structure for supported types." },
+      { ru: "После публикации результат нужно проверить через Structured Data Validator.", en: "After publishing, the result should be checked through the Structured Data Validator." },
+    ],
+    faq: [
+      { question: { ru: "Это AI-инструмент?", en: "Is this an AI tool?" }, answer: { ru: "Нет. Это детерминированный генератор шаблонов. Он не выдумывает адреса, рейтинги, цены или факты.", en: "No. This is a deterministic template generator. It does not invent addresses, ratings, prices, or facts." } },
+      { question: { ru: "Почему шаблонов мало?", en: "Why only a few templates?" }, answer: { ru: "В MVP лучше поддерживать меньше типов, но без ложных обещаний. Новые типы надо добавлять отдельными проверяемыми шаблонами.", en: "In MVP it is better to support fewer types without false promises. New types should be added as separate verified templates." } },
+    ],
+    relatedToolSlugs: ["structured-data-validator", "meta-tags-checker", "html-validator"],
+    sourceUrls: ["https://schema.org", "https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data"],
+  }),
+  toolPage({
+    slug: "html-validator",
+    seoTitle: { ru: "Проверка HTML-разметки страницы", en: "HTML Markup Validator" },
+    metaDescription: { ru: "Проверьте базовую HTML-структуру страницы: doctype, html/head/body, lang, title, viewport, duplicate IDs и unmatched tags.", en: "Check basic page HTML structure: doctype, html/head/body, lang, title, viewport, duplicate IDs, and unmatched tags." },
+    h1: { ru: "Проверка HTML-разметки", en: "HTML Markup Validator" },
+    lead: { ru: "Введите URL, чтобы получить практическую проверку HTML-структуры страницы. Это не fake W3C-клон, а детерминированная диагностика самых частых проблем шаблонов.", en: "Enter a URL to get a practical HTML structure check. This is not a fake W3C clone, but deterministic diagnostics for common template issues." },
+    quickFacts: [
+      { ru: "HTML structure", en: "HTML structure" },
+      { ru: "Duplicate IDs", en: "Duplicate IDs" },
+      { ru: "Mobile viewport", en: "Mobile viewport" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте URL страницы.", en: "Paste the page URL." },
+      { ru: "Запустите проверку HTML-разметки через backend.", en: "Run the HTML markup check through the backend." },
+      { ru: "Исправьте проблемы doctype, lang, title, viewport, duplicate IDs и unmatched tags.", en: "Fix doctype, lang, title, viewport, duplicate IDs, and unmatched tag issues." },
+    ],
+    supportedFeatures: [
+      { ru: "Проверяет doctype, html/head/body, html lang, title и viewport.", en: "Checks doctype, html/head/body, html lang, title, and viewport." },
+      { ru: "Находит duplicate id attributes, unexpected closing tags и unclosed non-void tags.", en: "Finds duplicate id attributes, unexpected closing tags, and unclosed non-void tags." },
+      { ru: "Использует безопасную backend-загрузку HTML с SSRF-защитой.", en: "Uses safe backend HTML fetching with SSRF protection." },
+    ],
+    limitations: [
+      { ru: "Это WebDiag markup inspection, а не полная W3C conformance validation.", en: "This is WebDiag markup inspection, not full W3C conformance validation." },
+      { ru: "JavaScript-rendered DOM после hydration в MVP не анализируется.", en: "The JavaScript-rendered DOM after hydration is not analyzed in this MVP." },
+    ],
+    useCases: [
+      { ru: "Проверить шаблон после миграции CMS или SSR/SSG релиза.", en: "Check a template after a CMS migration or SSR/SSG release." },
+      { ru: "Найти duplicate IDs, которые ломают anchors, labels, ARIA и scripts.", en: "Find duplicate IDs that break anchors, labels, ARIA, and scripts." },
+      { ru: "Быстро увидеть, есть ли базовые проблемы HTML до SEO-аудита.", en: "Quickly see basic HTML issues before an SEO audit." },
+    ],
+    technicalNotes: [
+      { ru: "Парсер анализирует исходный HTML ответ и не исполняет JavaScript.", en: "The parser analyzes the raw HTML response and does not execute JavaScript." },
+      { ru: "Отчёт специально формулируется как practical inspection, чтобы не имитировать внешний W3C validator.", en: "The report is intentionally framed as practical inspection so it does not imitate an external W3C validator." },
+    ],
+    faq: [
+      { question: { ru: "Это заменяет W3C validator?", en: "Does this replace the W3C validator?" }, answer: { ru: "Нет. Это встроенная WebDiag-проверка базовой структуры и типовых ошибок. Полную conformance validation нужно делать отдельной интеграцией или специализированным валидатором.", en: "No. This is a built-in WebDiag check for basic structure and common errors. Full conformance validation requires a separate integration or specialized validator." } },
+      { question: { ru: "Почему duplicate IDs важны?", en: "Why do duplicate IDs matter?" }, answer: { ru: "Они ломают точечные ссылки, label/for, ARIA references и JavaScript selectors, поэтому это полезный сигнал качества HTML.", en: "They break fragment links, label/for, ARIA references, and JavaScript selectors, so this is a useful HTML quality signal." } },
+    ],
+    relatedToolSlugs: ["structured-data-validator", "meta-tags-checker", "canonical-checker"],
+    sourceUrls: ["https://html.spec.whatwg.org", "https://developer.mozilla.org/docs/Web/HTML"],
+  }),
   toolPage({
     slug: "meta-tags-checker",
     seoTitle: { ru: "Проверка мета-тегов страницы онлайн", en: "Meta Tags Checker" },
