@@ -191,8 +191,11 @@
     "riskTier": "R2",
     "access": "none",
     "implementationWave": "W3",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет HTTP-статус, финальный URL и цепочку редиректов для одной страницы через безопасный WebDiag API.",
+      "en": "Checks the HTTP status, final URL, and redirect chain for a single page through the safe WebDiag API."
+    }
   },
   {
     "id": "WD-014",

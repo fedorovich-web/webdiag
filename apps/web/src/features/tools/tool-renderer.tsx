@@ -23,6 +23,7 @@ import {
 } from "@webdiag/tool-core";
 import { CopyButton } from "../../components/copy-button";
 import { ImageCropperTool, ImageFormatConverterTool, ImageOptimizerTool, ImageResizerTool } from "./image-tools";
+import { RedirectChainTool } from "./redirect-chain-tool";
 import { dictionary } from "../../lib/i18n";
 
 interface ToolRendererProps {
@@ -176,6 +177,7 @@ export const SUPPORTED_TOOL_SLUGS = [
   "image-format-converter",
   "image-resizer",
   "image-cropper",
+  "redirect-chain-checker",
 ] as const;
 
 export function ToolRenderer({ slug, locale }: ToolRendererProps) {
@@ -194,6 +196,7 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "image-format-converter": return <ImageFormatConverterTool locale={locale} />;
     case "image-resizer": return <ImageResizerTool locale={locale} />;
     case "image-cropper": return <ImageCropperTool locale={locale} />;
+    case "redirect-chain-checker": return <RedirectChainTool locale={locale} />;
     default: return null;
   }
 }

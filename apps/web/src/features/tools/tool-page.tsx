@@ -14,15 +14,16 @@ export function ToolPage({ locale, slug }: { locale: Locale; slug: string }) {
   const category = getCategoryTitle(tool.category, locale);
   const related = content.relatedToolSlugs.map((relatedSlug) => getPublicTool(relatedSlug)).filter(Boolean);
   const t = <T extends { readonly ru: string; readonly en: string }>(value: T) => localizeContent(value, locale);
+  const isServerBackedTool = tool.executorClass === "safe_fetch";
   const text = locale === "ru"
     ? {
         home: "Главная",
         tools: "Инструменты",
-        local: "Работает в браузере",
+        local: isServerBackedTool ? "Проверяется через WebDiag API" : "Работает в браузере",
         workspace: "Попробуйте инструмент",
-        note: "Добавьте данные, выберите нужные параметры и получите готовый результат.",
-        processing: "Ваши данные остаются здесь",
-        processingText: "Текст и выбранные файлы обрабатываются в текущем браузере и не отправляются на сервер для получения результата.",
+        note: isServerBackedTool ? "Введите URL: WebDiag безопасно выполнит сетевую проверку и покажет результат." : "Добавьте данные, выберите нужные параметры и получите готовый результат.",
+        processing: isServerBackedTool ? "Сетевая проверка через backend" : "Ваши данные остаются здесь",
+        processingText: isServerBackedTool ? "Для HTTP/SEO-инструментов URL отправляется в WebDiag API, где применяются SSRF-защита, DNS/IP policy и лимиты редиректов." : "Текст и выбранные файлы обрабатываются в текущем браузере и не отправляются на сервер для получения результата.",
         how: "Как пользоваться",
         supports: "Что умеет инструмент",
         limitations: "Что важно учитывать",
@@ -36,11 +37,11 @@ export function ToolPage({ locale, slug }: { locale: Locale; slug: string }) {
     : {
         home: "Home",
         tools: "Tools",
-        local: "Runs in your browser",
+        local: isServerBackedTool ? "Checked through WebDiag API" : "Runs in your browser",
         workspace: "Try the tool",
-        note: "Add your data, choose the settings, and get the result.",
-        processing: "Your data stays here",
-        processingText: "Text and selected files are processed in the current browser and are not sent to a server to produce the result.",
+        note: isServerBackedTool ? "Enter a URL: WebDiag will run a safe network check and show the result." : "Add your data, choose the settings, and get the result.",
+        processing: isServerBackedTool ? "Network check through backend" : "Your data stays here",
+        processingText: isServerBackedTool ? "For HTTP/SEO tools, the URL is sent to the WebDiag API, where SSRF protection, DNS/IP policy, and redirect limits are applied." : "Text and selected files are processed in the current browser and are not sent to a server to produce the result.",
         how: "How to use it",
         supports: "What the tool can do",
         limitations: "What to keep in mind",

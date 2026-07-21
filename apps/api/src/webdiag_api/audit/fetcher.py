@@ -142,7 +142,7 @@ class SafeHttpFetcher:
             resolved_addresses=normalized_addresses,
         )
 
-    def fetch(self, raw_url: str) -> SafeFetchResult:
+    def fetch(self, raw_url: str, *, read_body: bool = True) -> SafeFetchResult:
         current_target = self._validate_before_request(raw_url)
         requested_url = current_target.logical_url
         redirect_chain: list[RedirectHop] = []
@@ -155,7 +155,7 @@ class SafeHttpFetcher:
             limits=httpx.Limits(max_keepalive_connections=0),
         ) as client:
             while True:
-                response = self._fetch_validated_target(client, current_target)
+                response = self._fetch_validated_target(client, current_target, read_body=read_body)
                 location = response.headers.get("location")
                 if response.status_code in REDIRECT_STATUS_CODES and location:
                     if len(redirect_chain) >= self.config.max_redirects:
@@ -191,12 +191,19 @@ class SafeHttpFetcher:
         self,
         client: httpx.Client,
         target: _ValidatedFetchTarget,
+        *,
+        read_body: bool,
     ) -> _FetchedResponse:
         last_transport_error: httpx.HTTPError | None = None
 
         for address in target.resolved_addresses:
             try:
-                return self._fetch_from_address(client, target=target, address=address)
+                return self._fetch_from_address(
+                    client,
+                    target=target,
+                    address=address,
+                    read_body=read_body,
+                )
             except httpx.TimeoutException as exc:
                 last_transport_error = exc
             except httpx.HTTPError as exc:
@@ -214,6 +221,7 @@ class SafeHttpFetcher:
         *,
         target: _ValidatedFetchTarget,
         address: str,
+        read_body: bool,
     ) -> _FetchedResponse:
         headers = {
             "user-agent": self.config.user_agent,
@@ -239,6 +247,14 @@ class SafeHttpFetcher:
                     headers=normalized_headers,
                     body=b"",
                     text_encoding="utf-8",
+                )
+
+            if not read_body:
+                return _FetchedResponse(
+                    status_code=response.status_code,
+                    headers=normalized_headers,
+                    body=b"",
+                    text_encoding=response.encoding or "utf-8",
                 )
 
             declared_length = _declared_content_length(normalized_headers)
