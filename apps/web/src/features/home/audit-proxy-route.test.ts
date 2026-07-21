@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { POST } from "../../../app/api/audits/route";
 import type { NextRequest } from "next/server";
+import { FRONTEND_AUDIT_RESULT_CONTRACT_VERSION } from "./audit-contract";
 
-const validSnapshot = {
+const validBackendSnapshot = {
   contract_version: "webdiag.audit.snapshot.v1",
   generated_at: "2026-07-20T00:00:00Z",
   summary: {
@@ -59,19 +60,22 @@ describe("audit proxy route", () => {
     });
   });
 
-  it("forwards valid audit snapshots from the upstream API", async () => {
+  it("projects valid backend snapshots to the frontend audit result contract", async () => {
     const fetch = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
       expect(init?.method).toBe("POST");
       expect(init?.body).toBe(JSON.stringify({ url: "https://example.ru/" }));
-      return new Response(JSON.stringify(validSnapshot), { status: 201, headers: { "content-type": "application/json" } });
+      return new Response(JSON.stringify(validBackendSnapshot), { status: 201, headers: { "content-type": "application/json" } });
     });
     vi.stubGlobal("fetch", fetch);
 
     const response = await POST(request({ url: "https://example.ru/" }));
     expect(response.status).toBe(201);
     await expect(responseJson(response)).resolves.toMatchObject({
-      contract_version: "webdiag.audit.snapshot.v1",
-      job: { target: { hostname: "example.ru" } },
+      contractVersion: FRONTEND_AUDIT_RESULT_CONTRACT_VERSION,
+      sourceContractVersion: "webdiag.audit.snapshot.v1",
+      job: { id: "00000000-0000-0000-0000-000000000000", target: { hostname: "example.ru" } },
+      summary: { checkCount: 1, issueCount: 0 },
+      run: { checks: [{ id: "http.status" }] },
     });
   });
 
@@ -107,7 +111,7 @@ describe("audit proxy route", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () =>
-        new Response(JSON.stringify({ ...validSnapshot, contract_version: "unknown" }), {
+        new Response(JSON.stringify({ ...validBackendSnapshot, contract_version: "unknown" }), {
           status: 201,
           headers: { "content-type": "application/json" },
         }),

@@ -2,32 +2,34 @@
 
 Date: 2026-07-21
 Package version: `0.5.11`
-Patch scope: A8.3 report tab icon semantics polish. No commit or push was performed by the assistant.
+Patch scope: A9 frontend-safe audit result contract. No commit or push was performed by the assistant.
 
 ## Scope
 
-This verification record covers the clean A0–A7 baseline plus A7.1 backend safety, A7.2 resource correctness, A7.3 timing-contract changes, A7.4 Python lock reproducibility, A7.5 frontend audit API contract hardening, A8 compact live audit result UI extraction, A8.1 UI correction / Python lock compatibility hotfix, A8.2 report tab design differentiation, and this A8.3 report tab icon semantics polish.
+This verification record covers the clean A0–A7 baseline plus A7.1 backend safety, A7.2 resource correctness, A7.3 timing-contract changes, A7.4 Python lock reproducibility, A7.5 frontend audit API contract hardening, A8 compact live audit result UI extraction, A8.1 UI correction / Python lock compatibility hotfix, A8.2 report tab design differentiation, A8.3 report tab icon semantics polish, and this A9 frontend-safe audit result contract patch.
 
-A8.2/A8.3 UI changes:
+A9 changes:
 
-- non-summary report tabs no longer share one identical four-block composition;
-- Priority now uses a priority board plus step-by-step remediation timeline;
-- Indexing now uses a search-engine visibility flow from robots/sitemap/canonical/noindex signals;
-- SEO now uses a search-result preview composition plus title/description/H1/link-preview signals;
-- Performance now uses compact vital/resource rows with visual bars;
-- Security now uses a security-header checklist composition;
-- Accessibility now uses distinct media/label/focus/ARIA icons instead of four repeated keyboard icons;
-- Security now uses distinct SSL/header/CSP/mixed-content style icons instead of repeated shield icons;
-- Export now uses distinct PDF/CSV/share/history icons instead of repeated download icons;
-- wording remains demo/report-oriented and avoids claims about unimplemented persistence, crawler, production monitoring, or real measured data beyond the existing demo values;
-- no backend API, registry, lockfile, Header, Footer, pricing, crawler, database, or queue scope is changed.
+- introduced a dedicated `webdiag.web.audit_result.v1` frontend result contract;
+- kept the backend source contract as `webdiag.audit.snapshot.v1`;
+- added a shared frontend contract module for:
+  - backend snapshot validation;
+  - backend error payload validation;
+  - defensive JSON parsing;
+  - backend-to-frontend projection;
+  - frontend result validation;
+- changed the Next `/api/audits` proxy to return the stable frontend DTO instead of forwarding the raw backend snapshot shape;
+- changed the browser audit client to accept only the frontend DTO;
+- changed the compact result section view model to read camelCase frontend-safe fields;
+- added contract regression tests for projection, validation, client handling, proxy handling, and result view-model consumption;
+- did not change backend API, audit engine behavior, registry data, crawler scope, persistence, queueing, or visual report tab content.
 
 ## Confirmed gates in this environment
 
 | Gate | Result |
 |---|---:|
 | `npm run test:workspace` | passed, 32/32 |
-| `npm test` | passed, 93/93 JavaScript/TypeScript tests |
+| `npm test` | passed, 96/96 JavaScript/TypeScript tests |
 | `npm run verify:registry` | passed, 110 unique tools |
 | `npm run lint` | passed |
 | `npm run typecheck` | passed |
