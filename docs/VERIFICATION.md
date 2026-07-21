@@ -2,28 +2,30 @@
 
 Date: 2026-07-21
 Package version: `0.5.11`
-Patch scope: A7.3 audit check timing contract. No commit or push was performed by the assistant.
+Patch scope: A7.4 Python lock reproducibility gate. No commit or push was performed by the assistant.
 
 ## Scope
 
-This verification record covers the clean A0–A7 baseline plus A7.1 backend safety, A7.2 resource correctness, and A7.3 timing-contract changes.
+This verification record covers the clean A0–A7 baseline plus A7.1 backend safety, A7.2 resource correctness, A7.3 timing-contract changes, and A7.4 Python lock reproducibility.
 
-A7.3 changes:
+A7.4 changes:
 
-- removes the placeholder `duration_ms=0` value from audit checks;
-- records separate `started_at` and `completed_at` timestamps for every assembled check;
-- calculates `duration_ms` from a monotonic timer instead of reusing a constant;
-- rounds sub-millisecond positive elapsed durations up to `1` ms so the integer contract does not hide completed work as `0` ms;
-- adds regression assertions that every check has ordered timestamps and a positive duration value.
+- updates `requirements-dev.lock.txt` to match the actual Python dependency resolution observed after installing `apps/api[dev]` and `apps/worker[dev]`;
+- changes `npm run python:install` to install editable Python packages under `requirements-dev.lock.txt` constraints;
+- adds `npm run verify:python-lock` as an explicit drift gate comparing `pip freeze --exclude-editable` with the lockfile;
+- adds unit tests for Python lock parsing, name normalization, missing-package detection, extra-package detection, and version-drift detection;
+- includes the Python lock test file in `npm run test:workspace`;
+- extends `npm run verify:local` so local full verification includes `verify:python-lock` after Python tests and linting.
 
-No frontend redesign, database, crawler, worker integration, persistence migration, registry refactor, Python lock refactor, commit, or push is included.
+No frontend redesign, database, crawler, worker integration, persistence migration, registry refactor, commit, or push is included.
 
 ## Confirmed gates in this environment
 
 | Gate | Result |
 |---|---:|
-| `npm run test:workspace` | passed, 26/26 |
-| `npm test` | passed, 78/78 JavaScript/TypeScript tests |
+| `npm run python:install` | passed with lock constraints |
+| `npm run test:workspace` | passed, 30/30 |
+| `npm test` | passed, 82/82 JavaScript/TypeScript tests |
 | `npm run verify:registry` | passed, 110 unique tools |
 | `npm run lint` | passed |
 | `npm run typecheck` | passed |
@@ -31,6 +33,7 @@ No frontend redesign, database, crawler, worker integration, persistence migrati
 | `npm run verify:built-site` | passed, 34 public routes / 32 localized HTML routes |
 | `npm run test:python` | passed, 79/79 |
 | `npm run lint:python` | passed |
+| `npm run verify:python-lock` | passed, 30 locked packages matched installed packages |
 | `npm run test:browser` | not verified in this sandbox; local navigation is blocked by environment policy |
 
 ## Browser boundary
@@ -42,9 +45,9 @@ page.goto: net::ERR_BLOCKED_BY_ADMINISTRATOR
 http://127.0.0.1:4173/
 ```
 
-This is the same environment navigation restriction observed before A7.3. Browser behavior, accessibility, responsive reflow, hydration, and visual rendering are therefore not claimed as passed or failed by this verification.
+This is the same environment navigation restriction observed before A7.4. Browser behavior, accessibility, responsive reflow, hydration, and visual rendering are therefore not claimed as passed or failed by this verification.
 
-## Security and correctness boundary after A7.3
+## Security and correctness boundary after A7.4
 
 A7.1 hardened audit execution safety: DNS targets are pinned to validated IPs, the connected peer is verified, environment proxies are disabled, redirects are re-checked, and HTTP response bodies are bounded during streaming and decoding.
 
@@ -52,11 +55,12 @@ A7.2 improved report correctness for origin resources and canonical comparison. 
 
 A7.3 makes the existing check timing fields non-placeholder values. These timings measure the report check assembly step in the synchronous single-page report builder. They are not yet full distributed observability spans and should not be interpreted as network, browser, crawler, queue, or persistence timings.
 
+A7.4 makes Python dependency drift visible and fail-fast after local installation. The lockfile is now used as a constraints file by `python:install`, and `verify:python-lock` fails if installed non-editable packages are missing from the lock, contain extra packages, or differ by version.
+
 ## Remaining known scope
 
-The following findings remain outside A7.3 and require separate minimal patches:
+The following findings remain outside A7.4 and require separate minimal patches:
 
-- Python dependency lock/install reproducibility;
 - byte/semantic equality gate for the duplicated frontend/backend registry JSON;
 - richer sitemap-index expansion and bounded multi-sitemap collection;
 - production persistence, queueing, crawler limits, retry policy, and observability;
@@ -64,4 +68,4 @@ The following findings remain outside A7.3 and require separate minimal patches:
 
 ## Repository boundary
 
-The supplied context archive excludes `.git`. Git status and diff cannot be recomputed from the audit copy. Source changes were made only in the A7.3 files, and no GitHub write, commit, or push was performed by the assistant.
+The supplied context archive excludes `.git`. Git status and diff cannot be recomputed from the audit copy. Source changes were made only in the A7.4 files, and no GitHub write, commit, or push was performed by the assistant.

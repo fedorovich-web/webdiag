@@ -23,15 +23,16 @@
     "verify:release": "node scripts/verify-release.mjs",
     "test:registry": "npm --workspace @webdiag/tool-registry run test",
     "test:core": "npm --workspace @webdiag/tool-core run test",
-    "python:install": "node scripts/run-python.mjs -m pip install -e \"./apps/api[dev]\" -e \"./apps/worker[dev]\"",
+    "python:install": "node scripts/run-python.mjs -m pip install -c requirements-dev.lock.txt -e \"./apps/api[dev]\" -e \"./apps/worker[dev]\"",
     "test:python": "node scripts/run-python.mjs -m pytest apps/api/tests apps/worker/tests",
     "lint:python": "node scripts/run-python.mjs -m ruff check apps/api apps/worker",
-    "verify:local": "npm run verify:registry && npm test && npm run lint && npm run typecheck && npm run build && npm run test:browser && npm run test:python && npm run lint:python",
-    "test:workspace": "node --test scripts/tests-workspace-integrity.test.mjs scripts/tests-python-runtime.test.mjs scripts/tests-ui-foundation.test.mjs",
+    "verify:local": "npm run verify:registry && npm test && npm run lint && npm run typecheck && npm run build && npm run test:browser && npm run test:python && npm run lint:python && npm run verify:python-lock",
+    "test:workspace": "node --test scripts/tests-workspace-integrity.test.mjs scripts/tests-python-runtime.test.mjs scripts/tests-python-lock.test.mjs scripts/tests-ui-foundation.test.mjs",
     "python:where": "node scripts/run-python.mjs -c \"import sys; print(sys.executable)\"",
     "verify:built-site": "node scripts/verify-built-site.mjs",
     "source:manifest": "node scripts/build-source-manifest.mjs",
-    "test:browser": "npm --workspace @webdiag/web run test:browser"
+    "test:browser": "npm --workspace @webdiag/web run test:browser",
+    "verify:python-lock": "node scripts/verify-python-lock.mjs"
   },
   "overrides": {
     "next": {
