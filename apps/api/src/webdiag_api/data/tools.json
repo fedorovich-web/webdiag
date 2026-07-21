@@ -632,8 +632,11 @@
     "riskTier": "R2",
     "access": "none",
     "implementationWave": "W3",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет CORS response headers для заданного Origin: ACAO, credentials, Vary: Origin и wildcard risks.",
+      "en": "Checks CORS response headers for a given Origin: ACAO, credentials, Vary: Origin, and wildcard risks."
+    }
   },
   {
     "id": "WD-037",
@@ -662,8 +665,11 @@
     "riskTier": "R1",
     "access": "none",
     "implementationWave": "W2",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Анализирует полный набор HTTP response headers: status, redirects, Server/X-Powered-By disclosure, cache/content metadata и raw header inventory.",
+      "en": "Analyzes the full HTTP response header set: status, redirects, Server/X-Powered-By disclosure, cache/content metadata, and raw header inventory."
+    }
   },
   {
     "id": "WD-039",
@@ -695,8 +701,11 @@
     "riskTier": "R1",
     "access": "none",
     "implementationWave": "W2",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет HTTP/2 через TLS ALPN и HTTP/3 advertisement через Alt-Svc без fake QUIC negotiation claims.",
+      "en": "Checks HTTP/2 through TLS ALPN and HTTP/3 advertisement through Alt-Svc without fake QUIC negotiation claims."
+    }
   },
   {
     "id": "WD-041",

@@ -6,6 +6,7 @@ import ssl
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Annotated, Literal
+from urllib.parse import urlsplit
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -106,6 +107,94 @@ class HttpCompressionResponse(BaseModel):
     compressed: bool
     compressible_candidate: bool
     vary_accept_encoding: bool
+    redirect_count: int = Field(ge=0)
+    status: ProtocolSecurityStatus
+    recommendation: str = Field(min_length=1, max_length=900)
+
+
+class CorsRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    url: str = Field(min_length=1, max_length=2_048)
+    origin: str = Field(default="https://example.com", min_length=1, max_length=300)
+
+    @field_validator("origin")
+    @classmethod
+    def normalize_origin(cls, value: str) -> str:
+        return _normalize_origin(value)
+
+
+class HeaderItemResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=120)
+    value: str = Field(max_length=1_000)
+
+
+class HttpHeadersAnalyzerResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    contract_version: Literal["webdiag.tool.http_headers_analyzer.v1"] = (
+        "webdiag.tool.http_headers_analyzer.v1"
+    )
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    requested_url: str = Field(min_length=1, max_length=2_048)
+    final_url: str = Field(min_length=1, max_length=2_048)
+    status_code: int = Field(ge=100, le=599)
+    header_count: int = Field(ge=0)
+    redirect_count: int = Field(ge=0)
+    server_header_present: bool
+    powered_by_header_present: bool
+    cache_control: str | None = Field(default=None, max_length=500)
+    content_type: str | None = Field(default=None, max_length=300)
+    content_length: int | None = Field(default=None, ge=0)
+    content_encoding: str | None = Field(default=None, max_length=120)
+    vary: str | None = Field(default=None, max_length=300)
+    headers: tuple[HeaderItemResponse, ...]
+    status: ProtocolSecurityStatus
+    recommendation: str = Field(min_length=1, max_length=900)
+
+
+class HttpProtocolResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    contract_version: Literal["webdiag.tool.http_protocol_checker.v1"] = (
+        "webdiag.tool.http_protocol_checker.v1"
+    )
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    requested_url: str = Field(min_length=1, max_length=2_048)
+    final_url: str = Field(min_length=1, max_length=2_048)
+    status_code: int = Field(ge=100, le=599)
+    scheme: Literal["http", "https"]
+    tls_version: str | None = Field(default=None, max_length=80)
+    negotiated_protocol: str | None = Field(default=None, max_length=80)
+    http2_supported: bool
+    http3_advertised: bool
+    alt_svc: str | None = Field(default=None, max_length=500)
+    redirect_count: int = Field(ge=0)
+    status: ProtocolSecurityStatus
+    recommendation: str = Field(min_length=1, max_length=900)
+
+
+class CorsResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    contract_version: Literal["webdiag.tool.cors_checker.v1"] = (
+        "webdiag.tool.cors_checker.v1"
+    )
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    requested_url: str = Field(min_length=1, max_length=2_048)
+    final_url: str = Field(min_length=1, max_length=2_048)
+    tested_origin: str = Field(min_length=1, max_length=300)
+    status_code: int = Field(ge=100, le=599)
+    allow_origin: str | None = Field(default=None, max_length=500)
+    allow_methods: str | None = Field(default=None, max_length=500)
+    allow_headers: str | None = Field(default=None, max_length=500)
+    expose_headers: str | None = Field(default=None, max_length=500)
+    allow_credentials: bool
+    vary_origin: bool
+    allows_tested_origin: bool
+    wildcard_with_credentials: bool
     redirect_count: int = Field(ge=0)
     status: ProtocolSecurityStatus
     recommendation: str = Field(min_length=1, max_length=900)
@@ -312,6 +401,163 @@ def inspect_http_compression(
     )
 
 
+@router.post("/v1/tools/http-headers", response_model=HttpHeadersAnalyzerResponse)
+def inspect_http_headers(
+    payload: CompressionRequest,
+    fetcher: CompressionFetcherDependency,
+) -> HttpHeadersAnalyzerResponse:
+    fetched = _fetch_or_raise(fetcher, payload.url)
+    headers = tuple(
+        HeaderItemResponse(name=name, value=value)
+        for name, value in sorted(fetched.headers.items())[:120]
+    )
+    status_value = _headers_status(fetched.status_code, fetched.headers)
+    return HttpHeadersAnalyzerResponse(
+        requested_url=fetched.requested_url,
+        final_url=fetched.final_url,
+        status_code=fetched.status_code,
+        header_count=len(fetched.headers),
+        redirect_count=len(fetched.redirect_chain),
+        server_header_present="server" in fetched.headers,
+        powered_by_header_present="x-powered-by" in fetched.headers,
+        cache_control=fetched.headers.get("cache-control"),
+        content_type=fetched.headers.get("content-type"),
+        content_length=_parse_content_length(fetched.headers.get("content-length")),
+        content_encoding=fetched.headers.get("content-encoding"),
+        vary=fetched.headers.get("vary"),
+        headers=headers,
+        status=status_value,
+        recommendation=_headers_recommendation(status_value, fetched.headers),
+    )
+
+
+@router.post("/v1/tools/http-protocol", response_model=HttpProtocolResponse)
+def inspect_http_protocol(
+    payload: CompressionRequest,
+    fetcher: CompressionFetcherDependency,
+    inspector: TlsInspectorDependency,
+) -> HttpProtocolResponse:
+    fetched = _fetch_or_raise(fetcher, payload.url)
+    parsed = urlsplit(fetched.final_url)
+    scheme = parsed.scheme if parsed.scheme in {"http", "https"} else "http"
+    tls_result: TlsInspectionResult | None = None
+
+    if scheme == "https" and parsed.hostname:
+        port = parsed.port or 443
+        try:
+            tls_result = inspector.inspect(parsed.hostname, port)
+        except (UrlPolicyError, TlsInspectionError):
+            tls_result = None
+
+    alt_svc = fetched.headers.get("alt-svc")
+    negotiated_protocol = tls_result.negotiated_protocol if tls_result else None
+    http2_supported = negotiated_protocol == "h2"
+    http3_advertised = _alt_svc_advertises_http3(alt_svc)
+    status_value = _http_protocol_status(
+        scheme=scheme,
+        http2_supported=http2_supported,
+        http3_advertised=http3_advertised,
+    )
+    return HttpProtocolResponse(
+        requested_url=fetched.requested_url,
+        final_url=fetched.final_url,
+        status_code=fetched.status_code,
+        scheme=scheme,
+        tls_version=tls_result.tls_version if tls_result else None,
+        negotiated_protocol=negotiated_protocol,
+        http2_supported=http2_supported,
+        http3_advertised=http3_advertised,
+        alt_svc=alt_svc,
+        redirect_count=len(fetched.redirect_chain),
+        status=status_value,
+        recommendation=_http_protocol_recommendation(
+            status_value,
+            scheme=scheme,
+            http2_supported=http2_supported,
+            http3_advertised=http3_advertised,
+        ),
+    )
+
+
+@router.post("/v1/tools/cors", response_model=CorsResponse)
+def inspect_cors(
+    payload: CorsRequest,
+    fetcher: CompressionFetcherDependency,
+) -> CorsResponse:
+    fetched = _fetch_or_raise(
+        fetcher,
+        payload.url,
+        extra_headers={"origin": payload.origin},
+    )
+    allow_origin = fetched.headers.get("access-control-allow-origin")
+    allow_credentials = _truthy_header(
+        fetched.headers.get("access-control-allow-credentials")
+    )
+    allows_tested_origin = _cors_allows_origin(allow_origin, payload.origin)
+    wildcard_with_credentials = allow_origin == "*" and allow_credentials
+    vary_origin = "origin" in (fetched.headers.get("vary") or "").lower()
+    status_value = _cors_status(
+        allow_origin=allow_origin,
+        allows_tested_origin=allows_tested_origin,
+        wildcard_with_credentials=wildcard_with_credentials,
+        status_code=fetched.status_code,
+    )
+    return CorsResponse(
+        requested_url=fetched.requested_url,
+        final_url=fetched.final_url,
+        tested_origin=payload.origin,
+        status_code=fetched.status_code,
+        allow_origin=allow_origin,
+        allow_methods=fetched.headers.get("access-control-allow-methods"),
+        allow_headers=fetched.headers.get("access-control-allow-headers"),
+        expose_headers=fetched.headers.get("access-control-expose-headers"),
+        allow_credentials=allow_credentials,
+        vary_origin=vary_origin,
+        allows_tested_origin=allows_tested_origin,
+        wildcard_with_credentials=wildcard_with_credentials,
+        redirect_count=len(fetched.redirect_chain),
+        status=status_value,
+        recommendation=_cors_recommendation(
+            status_value,
+            allow_origin=allow_origin,
+            vary_origin=vary_origin,
+            wildcard_with_credentials=wildcard_with_credentials,
+        ),
+    )
+
+
+def _fetch_or_raise(
+    fetcher: SafeHttpFetcher,
+    url: str,
+    *,
+    extra_headers: dict[str, str] | None = None,
+):
+    try:
+        return fetcher.fetch(url, read_body=False, extra_headers=extra_headers)
+    except UrlPolicyError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "tool_url_rejected", "message": str(exc)},
+        ) from exc
+    except SafeFetchError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail={"code": "tool_fetch_failed", "message": str(exc)},
+        ) from exc
+
+
+def _normalize_origin(value: str) -> str:
+    raw = value.strip().rstrip("/")
+    parsed = urlsplit(raw)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise ValueError("Origin must be an http/https origin.")
+    if parsed.username or parsed.password or parsed.path not in {"", "/"}:
+        raise ValueError("Origin must not include credentials, path, query, or fragment.")
+    if parsed.query or parsed.fragment:
+        raise ValueError("Origin must not include credentials, path, query, or fragment.")
+    return f"{parsed.scheme}://{parsed.netloc.lower()}"
+
+
 def _inspect_or_raise(inspector: TlsInspector, hostname: str, port: int) -> TlsInspectionResult:
     try:
         return inspector.inspect(hostname, port)
@@ -503,6 +749,110 @@ def _is_compressible_content_type(value: str | None) -> bool:
         "application/xml",
         "image/svg+xml",
     }
+
+
+def _headers_status(status_code: int, headers: dict[str, str]) -> ProtocolSecurityStatus:
+    if status_code >= 400:
+        return "fail"
+    if "server" in headers or "x-powered-by" in headers:
+        return "warning"
+    return "pass"
+
+
+def _headers_recommendation(
+    status_value: ProtocolSecurityStatus,
+    headers: dict[str, str],
+) -> str:
+    if status_value == "fail":
+        return "Fix the HTTP response status before interpreting header policy."
+    if "x-powered-by" in headers:
+        return "Remove or reduce X-Powered-By disclosure unless it is operationally required."
+    if "server" in headers:
+        return "Review Server header disclosure and keep detailed stack data out of responses."
+    return "HTTP response headers are exposed in a controlled shape for this single request."
+
+
+def _alt_svc_advertises_http3(value: str | None) -> bool:
+    if value is None:
+        return False
+    tokens = {part.strip().lower().split("=", 1)[0] for part in value.split(",")}
+    return bool(tokens & {"h3", "h3-29", "h3-32"})
+
+
+def _http_protocol_status(
+    *,
+    scheme: str,
+    http2_supported: bool,
+    http3_advertised: bool,
+) -> ProtocolSecurityStatus:
+    if scheme != "https":
+        return "warning"
+    if http2_supported or http3_advertised:
+        return "pass"
+    return "warning"
+
+
+def _http_protocol_recommendation(
+    status_value: ProtocolSecurityStatus,
+    *,
+    scheme: str,
+    http2_supported: bool,
+    http3_advertised: bool,
+) -> str:
+    if scheme != "https":
+        return "Use HTTPS to evaluate ALPN-based HTTP/2 and Alt-Svc HTTP/3 signals."
+    if http2_supported and http3_advertised:
+        return "HTTP/2 was negotiated and HTTP/3 is advertised through Alt-Svc."
+    if http2_supported:
+        return "HTTP/2 was negotiated. HTTP/3 is not advertised in the checked response."
+    if http3_advertised:
+        return "HTTP/3 is advertised, but HTTP/2 was not negotiated by this TLS client."
+    if status_value == "warning":
+        return "Enable HTTP/2 ALPN and optionally advertise HTTP/3 via Alt-Svc where supported."
+    return "Protocol signals look controlled for this bounded check."
+
+
+def _truthy_header(value: str | None) -> bool:
+    return value is not None and value.strip().lower() == "true"
+
+
+def _cors_allows_origin(allow_origin: str | None, origin: str) -> bool:
+    if allow_origin is None:
+        return False
+    normalized = allow_origin.strip().lower()
+    return normalized == "*" or normalized == origin.lower()
+
+
+def _cors_status(
+    *,
+    allow_origin: str | None,
+    allows_tested_origin: bool,
+    wildcard_with_credentials: bool,
+    status_code: int,
+) -> ProtocolSecurityStatus:
+    if status_code >= 400 or wildcard_with_credentials:
+        return "fail"
+    if allow_origin is None or not allows_tested_origin:
+        return "warning"
+    return "pass"
+
+
+def _cors_recommendation(
+    status_value: ProtocolSecurityStatus,
+    *,
+    allow_origin: str | None,
+    vary_origin: bool,
+    wildcard_with_credentials: bool,
+) -> str:
+    if wildcard_with_credentials:
+        return "Do not combine Access-Control-Allow-Origin: * with credentials."
+    if allow_origin is None:
+        return "No CORS allow-origin header was returned for the tested Origin request."
+    if not vary_origin and allow_origin != "*":
+        return "Add Vary: Origin when CORS responses vary by request Origin."
+    if status_value == "pass":
+        return "CORS headers allow the tested origin in this single safe request."
+    return "Review CORS origin matching, credentials policy, and cache variation."
 
 
 def _compression_status(

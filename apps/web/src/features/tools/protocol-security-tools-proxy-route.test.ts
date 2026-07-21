@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { NextRequest } from "next/server";
 import { POST as compressionPost } from "../../../app/api/tools/http-compression/route";
+import { POST as corsPost } from "../../../app/api/tools/cors/route";
+import { POST as headersPost } from "../../../app/api/tools/http-headers/route";
+import { POST as protocolPost } from "../../../app/api/tools/http-protocol/route";
 import { POST as sslPost } from "../../../app/api/tools/ssl-certificate/route";
 import { POST as tlsPost } from "../../../app/api/tools/tls-configuration/route";
 
@@ -80,6 +83,83 @@ describe("protocol security proxy routes", () => {
     }), { status: 200, headers: { "content-type": "application/json" } })));
 
     const response = await compressionPost(request({ url: "https://example.com/" }));
+    expect(response.status).toBe(200);
+  });
+
+
+
+  it("proxies valid HTTP headers responses", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      contract_version: "webdiag.tool.http_headers_analyzer.v1",
+      generated_at: "2026",
+      requested_url: "https://example.com/",
+      final_url: "https://example.com/",
+      status_code: 200,
+      header_count: 2,
+      redirect_count: 0,
+      server_header_present: true,
+      powered_by_header_present: false,
+      cache_control: null,
+      content_type: "text/html",
+      content_length: null,
+      content_encoding: null,
+      vary: null,
+      headers: [{ name: "server", value: "nginx" }],
+      status: "warning",
+      recommendation: "OK",
+    }), { status: 200, headers: { "content-type": "application/json" } })));
+
+    const response = await headersPost(request({ url: "https://example.com/" }));
+    expect(response.status).toBe(200);
+  });
+
+  it("proxies valid HTTP protocol responses", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      contract_version: "webdiag.tool.http_protocol_checker.v1",
+      generated_at: "2026",
+      requested_url: "https://example.com/",
+      final_url: "https://example.com/",
+      status_code: 200,
+      scheme: "https",
+      tls_version: "TLSv1.3",
+      negotiated_protocol: "h2",
+      http2_supported: true,
+      http3_advertised: true,
+      alt_svc: 'h3=":443"',
+      redirect_count: 0,
+      status: "pass",
+      recommendation: "OK",
+    }), { status: 200, headers: { "content-type": "application/json" } })));
+
+    const response = await protocolPost(request({ url: "https://example.com/" }));
+    expect(response.status).toBe(200);
+  });
+
+  it("proxies valid CORS responses", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      contract_version: "webdiag.tool.cors_checker.v1",
+      generated_at: "2026",
+      requested_url: "https://api.example.com/",
+      final_url: "https://api.example.com/",
+      tested_origin: "https://example.com",
+      status_code: 200,
+      allow_origin: "https://example.com",
+      allow_methods: "GET",
+      allow_headers: null,
+      expose_headers: null,
+      allow_credentials: false,
+      vary_origin: true,
+      allows_tested_origin: true,
+      wildcard_with_credentials: false,
+      redirect_count: 0,
+      status: "pass",
+      recommendation: "OK",
+    }), { status: 200, headers: { "content-type": "application/json" } })));
+
+    const response = await corsPost(request({
+      origin: "https://example.com",
+      url: "https://api.example.com/",
+    }));
     expect(response.status).toBe(200);
   });
 

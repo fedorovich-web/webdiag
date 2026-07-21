@@ -372,4 +372,128 @@ export const securityNetworkToolPages = [
     relatedToolSlugs: ["page-weight-analyzer", "core-web-vitals-checker", "cache-policy-checker"],
     sourceUrls: ["https://www.rfc-editor.org/rfc/rfc9110"],
   }),
+  toolPage({
+    slug: "http-headers-analyzer",
+    seoTitle: { ru: "Анализ HTTP-заголовков", en: "HTTP Headers Analyzer" },
+    metaDescription: { ru: "Проверьте response headers страницы: status, redirects, Server/X-Powered-By, cache и content metadata.", en: "Check page response headers: status, redirects, Server/X-Powered-By, cache, and content metadata." },
+    h1: { ru: "Анализ HTTP-заголовков", en: "HTTP Headers Analyzer" },
+    lead: { ru: "Введите URL, чтобы получить полный header inventory без дублирования отдельного Security Headers Checker.", en: "Enter a URL to get a full header inventory without duplicating the dedicated Security Headers Checker." },
+    quickFacts: [
+      { ru: "response headers", en: "response headers" },
+      { ru: "cache/content", en: "cache/content" },
+      { ru: "single response", en: "single response" },
+    ],
+    howToSteps: [
+      { ru: "Введите публичный http/https URL.", en: "Enter a public http/https URL." },
+      { ru: "Запустите анализ HTTP headers.", en: "Run the HTTP header analysis." },
+      { ru: "Проверьте disclosure, cache/content metadata и raw headers.", en: "Review disclosure, cache/content metadata, and raw headers." },
+    ],
+    supportedFeatures: [
+      { ru: "Показывает status, redirects и количество headers.", en: "Shows status, redirects, and header count." },
+      { ru: "Фиксирует Server и X-Powered-By disclosure.", en: "Flags Server and X-Powered-By disclosure." },
+      { ru: "Показывает cache-control, content-type, encoding и Vary.", en: "Shows cache-control, content-type, encoding, and Vary." },
+    ],
+    limitations: [
+      { ru: "Это single-response check, не crawler и не waterfall.", en: "This is a single-response check, not a crawler or waterfall." },
+      { ru: "Security headers оцениваются отдельным специализированным инструментом.", en: "Security headers are evaluated by a separate dedicated tool." },
+    ],
+    useCases: [
+      { ru: "Быстро увидеть полный набор response headers.", en: "Quickly inspect the full response header set." },
+      { ru: "Найти лишнее раскрытие технологии в headers.", en: "Find unnecessary technology disclosure in headers." },
+      { ru: "Подготовить данные для CDN/cache настройки.", en: "Prepare data for CDN/cache configuration." },
+    ],
+    technicalNotes: [
+      { ru: "Инструмент использует SafeHttpFetcher и не скачивает большой body.", en: "The tool uses SafeHttpFetcher and does not download a large body." },
+      { ru: "Результат отражает один ответ на момент проверки.", en: "The result reflects one response at check time." },
+    ],
+    faq: [
+      { question: { ru: "Это заменяет Security Headers Checker?", en: "Does this replace Security Headers Checker?" }, answer: { ru: "Нет. Здесь общий inventory headers; security policy проверяется отдельным tool.", en: "No. This is a general header inventory; security policy is checked by a separate tool." } },
+      { question: { ru: "Почему Server header — warning?", en: "Why is Server header a warning?" }, answer: { ru: "Он может раскрывать детали стека. Не всегда критично, но требует осознанной настройки.", en: "It can reveal stack details. Not always critical, but should be intentional." } },
+    ],
+    relatedToolSlugs: ["security-headers-checker", "cache-policy-checker", "http-compression-checker"],
+    sourceUrls: ["https://www.rfc-editor.org/rfc/rfc9110"],
+  }),
+  toolPage({
+    slug: "http-protocol-checker",
+    seoTitle: { ru: "Проверка HTTP/2 и HTTP/3", en: "HTTP/2 and HTTP/3 Checker" },
+    metaDescription: { ru: "Проверьте HTTP/2 через ALPN и HTTP/3 advertisement через Alt-Svc без fake QUIC negotiation.", en: "Check HTTP/2 through ALPN and HTTP/3 advertisement through Alt-Svc without fake QUIC negotiation." },
+    h1: { ru: "Проверка HTTP/2 и HTTP/3", en: "HTTP/2 and HTTP/3 Checker" },
+    lead: { ru: "Введите URL, чтобы проверить negotiated HTTP/2 signal и HTTP/3 Alt-Svc advertisement.", en: "Enter a URL to check negotiated HTTP/2 signal and HTTP/3 Alt-Svc advertisement." },
+    quickFacts: [
+      { ru: "ALPN", en: "ALPN" },
+      { ru: "Alt-Svc", en: "Alt-Svc" },
+      { ru: "bounded", en: "bounded" },
+    ],
+    howToSteps: [
+      { ru: "Введите публичный HTTPS URL.", en: "Enter a public HTTPS URL." },
+      { ru: "Запустите protocol check.", en: "Run the protocol check." },
+      { ru: "Проверьте ALPN h2 и Alt-Svc h3 signals.", en: "Review ALPN h2 and Alt-Svc h3 signals." },
+    ],
+    supportedFeatures: [
+      { ru: "Проверяет HTTP/2 по TLS ALPN negotiation.", en: "Checks HTTP/2 through TLS ALPN negotiation." },
+      { ru: "Проверяет HTTP/3 advertisement через Alt-Svc header.", en: "Checks HTTP/3 advertisement through the Alt-Svc header." },
+      { ru: "Показывает TLS version context.", en: "Shows TLS version context." },
+    ],
+    limitations: [
+      { ru: "Не делает QUIC handshake и не заявляет full HTTP/3 validation.", en: "Does not perform a QUIC handshake or claim full HTTP/3 validation." },
+      { ru: "Не перебирает все CDN/protocol варианты.", en: "Does not enumerate all CDN/protocol variants." },
+    ],
+    useCases: [
+      { ru: "Понять, отдаёт ли сайт HTTP/2 современному клиенту.", en: "Understand whether the site serves HTTP/2 to a modern client." },
+      { ru: "Проверить, рекламируется ли HTTP/3 через CDN.", en: "Check whether HTTP/3 is advertised through a CDN." },
+      { ru: "Подготовить protocol layer к performance audit.", en: "Prepare protocol layer for a performance audit." },
+    ],
+    technicalNotes: [
+      { ru: "HTTP/2 определяется по ALPN результата TLS handshake.", en: "HTTP/2 is detected from the TLS handshake ALPN result." },
+      { ru: "HTTP/3 определяется только как advertised signal в Alt-Svc.", en: "HTTP/3 is detected only as an advertised signal in Alt-Svc." },
+    ],
+    faq: [
+      { question: { ru: "Почему HTTP/3 только advertised?", en: "Why is HTTP/3 only advertised?" }, answer: { ru: "Полная проверка HTTP/3 требует QUIC-capable transport. Здесь фиксируется проверяемый Alt-Svc signal.", en: "Full HTTP/3 validation requires QUIC-capable transport. This tool records the verifiable Alt-Svc signal." } },
+      { question: { ru: "HTTP URL подходит?", en: "Can I test HTTP URLs?" }, answer: { ru: "Можно, но ALPN работает через TLS, поэтому для protocol check нужен HTTPS.", en: "You can, but ALPN works through TLS, so protocol checks need HTTPS." } },
+    ],
+    relatedToolSlugs: ["tls-configuration-checker", "http-compression-checker", "core-web-vitals-checker"],
+    sourceUrls: ["https://www.rfc-editor.org/rfc/rfc9110"],
+  }),
+  toolPage({
+    slug: "cors-checker",
+    seoTitle: { ru: "Проверка CORS-заголовков", en: "CORS Header Checker" },
+    metaDescription: { ru: "Проверьте Access-Control-Allow-Origin, credentials, Vary: Origin и wildcard risks для заданного Origin.", en: "Check Access-Control-Allow-Origin, credentials, Vary: Origin, and wildcard risks for a given Origin." },
+    h1: { ru: "Проверка CORS-заголовков", en: "CORS Header Checker" },
+    lead: { ru: "Введите URL API и Origin, чтобы проверить CORS response headers без fake browser simulation.", en: "Enter an API URL and Origin to check CORS response headers without fake browser simulation." },
+    quickFacts: [
+      { ru: "ACAO", en: "ACAO" },
+      { ru: "credentials", en: "credentials" },
+      { ru: "Vary: Origin", en: "Vary: Origin" },
+    ],
+    howToSteps: [
+      { ru: "Введите публичный URL ресурса.", en: "Enter a public resource URL." },
+      { ru: "Введите Origin, который нужно проверить.", en: "Enter the Origin to test." },
+      { ru: "Проверьте ACAO, credentials и cache variation.", en: "Review ACAO, credentials, and cache variation." },
+    ],
+    supportedFeatures: [
+      { ru: "Отправляет безопасный request с Origin header.", en: "Sends a safe request with an Origin header." },
+      { ru: "Проверяет wildcard + credentials misconfiguration.", en: "Checks wildcard + credentials misconfiguration." },
+      { ru: "Фиксирует Vary: Origin для cache correctness.", en: "Flags Vary: Origin for cache correctness." },
+    ],
+    limitations: [
+      { ru: "Не выполняет browser preflight matrix для всех методов.", en: "Does not execute a browser preflight matrix for all methods." },
+      { ru: "Не тестирует private/internal endpoints.", en: "Does not test private/internal endpoints." },
+    ],
+    useCases: [
+      { ru: "Проверить, разрешён ли конкретный frontend Origin.", en: "Check whether a specific frontend Origin is allowed." },
+      { ru: "Найти опасный wildcard с credentials.", en: "Find dangerous wildcard with credentials." },
+      { ru: "Подготовить API к безопасному CDN/cache поведению.", en: "Prepare an API for safe CDN/cache behavior." },
+    ],
+    technicalNotes: [
+      { ru: "Проверка не является полной browser CORS emulation.", en: "The check is not full browser CORS emulation." },
+      { ru: "Результат основан на одном safe HTTP request с заданным Origin.", en: "The result is based on one safe HTTP request with the given Origin." },
+    ],
+    faq: [
+      { question: { ru: "Почему * + credentials плохо?", en: "Why is * + credentials bad?" }, answer: { ru: "Такую комбинацию нельзя считать контролируемой политикой доступа и её нельзя использовать для credentialed access.", en: "That combination is not a controlled access policy and must not be used for credentialed access." } },
+      { question: { ru: "Это проверяет OPTIONS preflight?", en: "Does this check OPTIONS preflight?" }, answer: { ru: "Нет. Preflight matrix будет отдельным расширением, чтобы не смешивать простой header check и heavy API testing.", en: "No. A preflight matrix is a later extension to avoid mixing simple header checks with heavier API testing." } },
+    ],
+    relatedToolSlugs: ["http-headers-analyzer", "security-headers-checker", "http-protocol-checker"],
+    sourceUrls: ["https://fetch.spec.whatwg.org/"],
+  }),
+
 ] as const;

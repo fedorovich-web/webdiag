@@ -60,10 +60,76 @@ export interface HttpCompressionResponse {
   readonly recommendation: string;
 }
 
+
+export interface HeaderItemResult {
+  readonly name: string;
+  readonly value: string;
+}
+
+export interface HttpHeadersAnalyzerResponse {
+  readonly contract_version: "webdiag.tool.http_headers_analyzer.v1";
+  readonly generated_at: string;
+  readonly requested_url: string;
+  readonly final_url: string;
+  readonly status_code: number;
+  readonly header_count: number;
+  readonly redirect_count: number;
+  readonly server_header_present: boolean;
+  readonly powered_by_header_present: boolean;
+  readonly cache_control: string | null;
+  readonly content_type: string | null;
+  readonly content_length: number | null;
+  readonly content_encoding: string | null;
+  readonly vary: string | null;
+  readonly headers: readonly HeaderItemResult[];
+  readonly status: "pass" | "warning" | "fail";
+  readonly recommendation: string;
+}
+
+export interface HttpProtocolResponse {
+  readonly contract_version: "webdiag.tool.http_protocol_checker.v1";
+  readonly generated_at: string;
+  readonly requested_url: string;
+  readonly final_url: string;
+  readonly status_code: number;
+  readonly scheme: "http" | "https";
+  readonly tls_version: string | null;
+  readonly negotiated_protocol: string | null;
+  readonly http2_supported: boolean;
+  readonly http3_advertised: boolean;
+  readonly alt_svc: string | null;
+  readonly redirect_count: number;
+  readonly status: "pass" | "warning" | "fail";
+  readonly recommendation: string;
+}
+
+export interface CorsResponse {
+  readonly contract_version: "webdiag.tool.cors_checker.v1";
+  readonly generated_at: string;
+  readonly requested_url: string;
+  readonly final_url: string;
+  readonly tested_origin: string;
+  readonly status_code: number;
+  readonly allow_origin: string | null;
+  readonly allow_methods: string | null;
+  readonly allow_headers: string | null;
+  readonly expose_headers: string | null;
+  readonly allow_credentials: boolean;
+  readonly vary_origin: boolean;
+  readonly allows_tested_origin: boolean;
+  readonly wildcard_with_credentials: boolean;
+  readonly redirect_count: number;
+  readonly status: "pass" | "warning" | "fail";
+  readonly recommendation: string;
+}
+
 export type ProtocolSecurityToolResponse =
   | SslCertificateResponse
   | TlsConfigurationResponse
-  | HttpCompressionResponse;
+  | HttpCompressionResponse
+  | HttpHeadersAnalyzerResponse
+  | HttpProtocolResponse
+  | CorsResponse;
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
@@ -151,6 +217,78 @@ export function isHttpCompressionResponse(payload: unknown): payload is HttpComp
   );
 }
 
+
+export function isHttpHeadersAnalyzerResponse(
+  payload: unknown,
+): payload is HttpHeadersAnalyzerResponse {
+  return (
+    isRecord(payload) &&
+    payload.contract_version === "webdiag.tool.http_headers_analyzer.v1" &&
+    typeof payload.generated_at === "string" &&
+    typeof payload.requested_url === "string" &&
+    typeof payload.final_url === "string" &&
+    typeof payload.status_code === "number" &&
+    typeof payload.header_count === "number" &&
+    typeof payload.redirect_count === "number" &&
+    typeof payload.server_header_present === "boolean" &&
+    typeof payload.powered_by_header_present === "boolean" &&
+    (typeof payload.cache_control === "string" || payload.cache_control === null) &&
+    (typeof payload.content_type === "string" || payload.content_type === null) &&
+    (typeof payload.content_length === "number" || payload.content_length === null) &&
+    (typeof payload.content_encoding === "string" || payload.content_encoding === null) &&
+    (typeof payload.vary === "string" || payload.vary === null) &&
+    Array.isArray(payload.headers) &&
+    payload.headers.every(
+      (item) => isRecord(item) && typeof item.name === "string" && typeof item.value === "string",
+    ) &&
+    isStatus(payload.status) &&
+    typeof payload.recommendation === "string"
+  );
+}
+
+export function isHttpProtocolResponse(payload: unknown): payload is HttpProtocolResponse {
+  return (
+    isRecord(payload) &&
+    payload.contract_version === "webdiag.tool.http_protocol_checker.v1" &&
+    typeof payload.generated_at === "string" &&
+    typeof payload.requested_url === "string" &&
+    typeof payload.final_url === "string" &&
+    typeof payload.status_code === "number" &&
+    (payload.scheme === "http" || payload.scheme === "https") &&
+    (typeof payload.tls_version === "string" || payload.tls_version === null) &&
+    (typeof payload.negotiated_protocol === "string" || payload.negotiated_protocol === null) &&
+    typeof payload.http2_supported === "boolean" &&
+    typeof payload.http3_advertised === "boolean" &&
+    (typeof payload.alt_svc === "string" || payload.alt_svc === null) &&
+    typeof payload.redirect_count === "number" &&
+    isStatus(payload.status) &&
+    typeof payload.recommendation === "string"
+  );
+}
+
+export function isCorsResponse(payload: unknown): payload is CorsResponse {
+  return (
+    isRecord(payload) &&
+    payload.contract_version === "webdiag.tool.cors_checker.v1" &&
+    typeof payload.generated_at === "string" &&
+    typeof payload.requested_url === "string" &&
+    typeof payload.final_url === "string" &&
+    typeof payload.tested_origin === "string" &&
+    typeof payload.status_code === "number" &&
+    (typeof payload.allow_origin === "string" || payload.allow_origin === null) &&
+    (typeof payload.allow_methods === "string" || payload.allow_methods === null) &&
+    (typeof payload.allow_headers === "string" || payload.allow_headers === null) &&
+    (typeof payload.expose_headers === "string" || payload.expose_headers === null) &&
+    typeof payload.allow_credentials === "boolean" &&
+    typeof payload.vary_origin === "boolean" &&
+    typeof payload.allows_tested_origin === "boolean" &&
+    typeof payload.wildcard_with_credentials === "boolean" &&
+    typeof payload.redirect_count === "number" &&
+    isStatus(payload.status) &&
+    typeof payload.recommendation === "string"
+  );
+}
+
 export function parseHostnameInput(value: string): string | null {
   const hostname = value.trim().replace(/\.$/, "").toLowerCase();
   if (!hostname || hostname.includes("://") || hostname.includes("/") || hostname.includes("@")) {
@@ -171,6 +309,19 @@ export function parseHttpsUrlInput(value: string): string | null {
     if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return null;
     if (parsed.username || parsed.password) return null;
     return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
+
+export function parseOriginInput(value: string): string | null {
+  try {
+    const parsed = new URL(value.trim());
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return null;
+    if (parsed.username || parsed.password || parsed.pathname !== "/") return null;
+    if (parsed.search || parsed.hash) return null;
+    return parsed.origin;
   } catch {
     return null;
   }
