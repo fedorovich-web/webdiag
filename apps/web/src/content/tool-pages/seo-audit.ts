@@ -4,6 +4,131 @@ export const seoAuditToolPages = [
 
 
   toolPage({
+    slug: "core-web-vitals-checker",
+    seoTitle: { ru: "Проверка Core Web Vitals и PageSpeed", en: "Core Web Vitals and PageSpeed Checker" },
+    metaDescription: { ru: "Проверьте PageSpeed, Core Web Vitals, Lighthouse lab metrics, field data и opportunities через backend-интеграцию Google PageSpeed API.", en: "Check PageSpeed, Core Web Vitals, Lighthouse lab metrics, field data, and opportunities through the backend Google PageSpeed API integration." },
+    h1: { ru: "Проверка Core Web Vitals", en: "Core Web Vitals Checker" },
+    lead: { ru: "Запустите mobile, desktop или обе стратегии PageSpeed, чтобы увидеть performance score, LCP, FCP, CLS, TBT, INP field data и главные Lighthouse opportunities.", en: "Run mobile, desktop, or both PageSpeed strategies to see performance score, LCP, FCP, CLS, TBT, INP field data, and key Lighthouse opportunities." },
+    quickFacts: [
+      { ru: "Google PageSpeed API", en: "Google PageSpeed API" },
+      { ru: "Mobile/Desktop", en: "Mobile/Desktop" },
+      { ru: "Lab + Field data", en: "Lab + Field data" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте публичный URL страницы.", en: "Paste a public page URL." },
+      { ru: "Выберите mobile, desktop или обе стратегии.", en: "Choose mobile, desktop, or both strategies." },
+      { ru: "Проверьте score, lab metrics, field data availability и top opportunities.", en: "Review score, lab metrics, field data availability, and top opportunities." },
+    ],
+    supportedFeatures: [
+      { ru: "Backend-интеграция с Google PageSpeed API через env GOOGLE_PAGESPEED_API_KEY.", en: "Backend Google PageSpeed API integration through GOOGLE_PAGESPEED_API_KEY env." },
+      { ru: "Разделяет Lighthouse lab metrics и Chrome UX field data, если field data доступна.", en: "Separates Lighthouse lab metrics from Chrome UX field data when field data is available." },
+      { ru: "Graceful unavailable state: отсутствие ключа или ошибка провайдера не превращается в fake score.", en: "Graceful unavailable state: missing key or provider errors never become a fake score." },
+    ],
+    limitations: [
+      { ru: "PageSpeed проверяет только публично доступные URL и не работает для закрытого localhost/staging без отдельной инфраструктуры.", en: "PageSpeed checks only publicly accessible URLs and does not work for private localhost/staging without separate infrastructure." },
+      { ru: "Результат зависит от Google API, лимитов, региона и доступности field data.", en: "The result depends on Google API, quotas, region, and field data availability." },
+    ],
+    useCases: [
+      { ru: "Оценить релиз landing page перед запуском трафика.", en: "Evaluate a landing page release before driving traffic." },
+      { ru: "Понять, какие Lighthouse opportunities дают максимальную экономию.", en: "Identify which Lighthouse opportunities provide the largest savings." },
+      { ru: "Разделить lab-проблемы и реальные Core Web Vitals field signals.", en: "Separate lab issues from real Core Web Vitals field signals." },
+    ],
+    technicalNotes: [
+      { ru: "Frontend не вызывает Google напрямую: запрос идёт через WebDiag backend и нормализованный DTO.", en: "The frontend does not call Google directly: requests go through the WebDiag backend and normalized DTO." },
+      { ru: "Тесты используют mocked provider response; реальные external calls не выполняются в test suite.", en: "Tests use mocked provider responses; real external calls do not run in the test suite." },
+    ],
+    faq: [
+      { question: { ru: "Почему нет результата без API key?", en: "Why is there no result without an API key?" }, answer: { ru: "Чтобы не подделывать PageSpeed. В production нужно задать GOOGLE_PAGESPEED_API_KEY; без него WebDiag честно показывает unavailable state.", en: "To avoid fake PageSpeed data. Production must set GOOGLE_PAGESPEED_API_KEY; without it WebDiag honestly shows an unavailable state." } },
+      { question: { ru: "Field data всегда есть?", en: "Is field data always available?" }, answer: { ru: "Нет. Chrome UX field data доступна только при достаточном объёме реальных пользовательских данных для URL или origin.", en: "No. Chrome UX field data is available only when there is enough real-user data for the URL or origin." } },
+    ],
+    relatedToolSlugs: ["page-weight-analyzer", "cache-policy-checker", "image-optimizer"],
+    sourceUrls: ["https://developers.google.com/speed/docs/insights/rest/v5/pagespeedapi/runpagespeed", "https://web.dev/vitals/"],
+  }),
+  toolPage({
+    slug: "cache-policy-checker",
+    seoTitle: { ru: "Проверка HTTP-кэширования", en: "HTTP Cache Policy Checker" },
+    metaDescription: { ru: "Проверьте Cache-Control, ETag, Last-Modified, Expires, Vary и рекомендации для browser/CDN cache.", en: "Check Cache-Control, ETag, Last-Modified, Expires, Vary, and browser/CDN cache recommendations." },
+    h1: { ru: "Проверка HTTP-кэширования", en: "HTTP Cache Policy Checker" },
+    lead: { ru: "Введите URL страницы или статического ресурса, чтобы проверить явность cache policy, validators, Vary и соответствие правилам для HTML или hashed static assets.", en: "Enter a page or static asset URL to check explicit cache policy, validators, Vary, and whether the rules fit HTML or hashed static assets." },
+    quickFacts: [
+      { ru: "Cache-Control", en: "Cache-Control" },
+      { ru: "ETag / Last-Modified", en: "ETag / Last-Modified" },
+      { ru: "CDN/browser cache", en: "CDN/browser cache" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте URL HTML, CSS, JS, изображения или шрифта.", en: "Paste an HTML, CSS, JS, image, or font URL." },
+      { ru: "Запустите проверку заголовков без скачивания тела ответа.", en: "Run the header check without downloading the response body." },
+      { ru: "Проверьте score, cache directives, validators и Vary policy.", en: "Review score, cache directives, validators, and Vary policy." },
+    ],
+    supportedFeatures: [
+      { ru: "Определяет static asset по URL/content-type и применяет другой стандарт оценки, чем для HTML.", en: "Detects static assets by URL/content-type and applies a different evaluation standard than for HTML." },
+      { ru: "Проверяет Cache-Control, validators, Expires fallback и Vary: Accept-Encoding.", en: "Checks Cache-Control, validators, Expires fallback, and Vary: Accept-Encoding." },
+      { ru: "Работает через SafeHttpFetcher с SSRF-защитой и read_body=false.", en: "Runs through SafeHttpFetcher with SSRF protection and read_body=false." },
+    ],
+    limitations: [
+      { ru: "Инструмент не знает вашу CDN purge policy и не доказывает корректность персонализации.", en: "The tool does not know your CDN purge policy and cannot prove personalization safety." },
+      { ru: "Для runtime cache waterfall нужен browser/PageSpeed слой.", en: "Runtime cache waterfall requires the browser/PageSpeed layer." },
+    ],
+    useCases: [
+      { ru: "Проверить, что hashed CSS/JS/шрифты кэшируются долго и immutable.", en: "Verify that hashed CSS/JS/fonts use long-lived immutable caching." },
+      { ru: "Найти HTML с опасным long public cache.", en: "Find HTML with risky long public caching." },
+      { ru: "Проверить, есть ли validators для revalidation.", en: "Check whether validators exist for revalidation." },
+    ],
+    technicalNotes: [
+      { ru: "Тело финального ответа не скачивается; используются status, final URL и headers.", en: "The final response body is not downloaded; status, final URL, and headers are used." },
+      { ru: "Static asset heuristics учитывает расширение URL и content-type.", en: "Static asset heuristics use both URL extension and content-type." },
+    ],
+    faq: [
+      { question: { ru: "Для всех файлов нужен max-age=31536000?", en: "Should every file use max-age=31536000?" }, answer: { ru: "Нет. Долгий immutable cache безопасен для content-hashed assets. Для HTML и неперсонализированных страниц правила должны учитывать purge и релизы.", en: "No. Long immutable caching is safe for content-hashed assets. HTML and non-personalized pages need rules that account for purge and releases." } },
+      { question: { ru: "Почему важен Vary?", en: "Why does Vary matter?" }, answer: { ru: "При сжатии или content negotiation Vary помогает кэшам не смешивать разные варианты ответа для клиентов.", en: "With compression or content negotiation, Vary helps caches avoid mixing incompatible response variants." } },
+    ],
+    relatedToolSlugs: ["core-web-vitals-checker", "page-weight-analyzer", "security-headers-checker"],
+    sourceUrls: ["https://developer.mozilla.org/docs/Web/HTTP/Headers/Cache-Control", "https://developer.mozilla.org/docs/Web/HTTP/Headers/Vary"],
+  }),
+  toolPage({
+    slug: "page-weight-analyzer",
+    seoTitle: { ru: "Анализ веса страницы и ресурсов", en: "Page Weight and Resource Summary Analyzer" },
+    metaDescription: { ru: "Проверьте статический вес HTML-страницы, найденные ресурсы, Content-Length, тяжёлые assets и JPEG/PNG vs AVIF/WebP сигналы.", en: "Check static HTML page weight, discovered resources, Content-Length, heavy assets, and JPEG/PNG vs AVIF/WebP signals." },
+    h1: { ru: "Анализ веса страницы", en: "Page Weight Analyzer" },
+    lead: { ru: "Введите URL страницы, чтобы получить bounded static HTML scan: размер HTML, найденные img/script/link/source ресурсы, известный вес, тяжёлые файлы и сигналы по современным форматам изображений.", en: "Enter a page URL to get a bounded static HTML scan: HTML size, discovered img/script/link/source resources, known weight, heavy files, and modern image format signals." },
+    quickFacts: [
+      { ru: "Static HTML scan", en: "Static HTML scan" },
+      { ru: "Resource bytes", en: "Resource bytes" },
+      { ru: "AVIF/WebP signals", en: "AVIF/WebP signals" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте публичный URL страницы.", en: "Paste a public page URL." },
+      { ru: "WebDiag загрузит HTML и безопасно проверит до 40 найденных статических ресурсов.", en: "WebDiag loads HTML and safely inspects up to 40 discovered static resources." },
+      { ru: "Проверьте known bytes, unknown sizes, legacy images и самые тяжёлые assets.", en: "Review known bytes, unknown sizes, legacy images, and largest assets." },
+    ],
+    supportedFeatures: [
+      { ru: "Ищет img/srcset/source/script/link/preload/icon/poster ресурсы в HTML.", en: "Finds img/srcset/source/script/link/preload/icon/poster resources in HTML." },
+      { ru: "Определяет ресурсные типы и modern image signals по content-type/URL.", en: "Detects resource types and modern image signals by content-type/URL." },
+      { ru: "Показывает bounded scan mode, чтобы не выдавать static scan за полный браузерный waterfall.", en: "Shows bounded scan mode so a static scan is not misrepresented as a full browser waterfall." },
+    ],
+    limitations: [
+      { ru: "Не исполняет JavaScript и не видит runtime/background-image ресурсы из CSS.", en: "Does not execute JavaScript and does not see runtime/background-image resources from CSS." },
+      { ru: "LCP image и фактический transfer size требуют PageSpeed или browser waterfall.", en: "LCP image and actual transfer size require PageSpeed or browser waterfall." },
+    ],
+    useCases: [
+      { ru: "Быстро найти тяжёлые JPEG/PNG и JS/CSS assets до полноценного Lighthouse анализа.", en: "Quickly find heavy JPEG/PNG and JS/CSS assets before a full Lighthouse analysis." },
+      { ru: "Проверить, используются ли AVIF/WebP варианты для найденных изображений.", en: "Check whether AVIF/WebP variants are used for discovered images." },
+      { ru: "Оценить базовый вес страницы после релиза или смены темы.", en: "Evaluate baseline page weight after a release or theme change." },
+    ],
+    technicalNotes: [
+      { ru: "HTML body ограничен лимитом SafeHttpFetcher; ресурсы проверяются read_body=false по headers.", en: "HTML body is capped by SafeHttpFetcher; resources are checked with read_body=false headers." },
+      { ru: "Инструмент не заменяет Core Web Vitals checker, а закрывает быстрый resource summary слой.", en: "The tool does not replace the Core Web Vitals checker; it covers the fast resource summary layer." },
+    ],
+    faq: [
+      { question: { ru: "Почему это не полный waterfall?", en: "Why is this not a full waterfall?" }, answer: { ru: "Полный waterfall требует браузера или PageSpeed. Здесь безопасный быстрый static scan, чтобы не смешивать уровни проверки.", en: "A full waterfall requires a browser or PageSpeed. This is a safe fast static scan, so validation levels are not mixed." } },
+      { question: { ru: "Будут ли рекомендации AVIF/WebP?", en: "Will it recommend AVIF/WebP?" }, answer: { ru: "Да. Legacy JPEG/PNG для тяжёлых растровых изображений помечаются как candidates для AVIF/WebP, но SVG/PNG сохраняются там, где это оправдано.", en: "Yes. Legacy JPEG/PNG heavy raster images are flagged as AVIF/WebP candidates, while SVG/PNG remain acceptable where justified." } },
+    ],
+    relatedToolSlugs: ["core-web-vitals-checker", "cache-policy-checker", "image-format-converter"],
+    sourceUrls: ["https://web.dev/learn/performance/image-performance", "https://developer.chrome.com/docs/lighthouse/performance/uses-webp-images/"],
+  }),
+
+
+  toolPage({
     slug: "structured-data-validator",
     seoTitle: { ru: "Проверка структурированных данных JSON-LD", en: "Structured Data Validator" },
     metaDescription: { ru: "Проверьте JSON-LD на странице: валидность JSON, Schema.org типы, ошибки парсинга и рекомендации без fake rich-result обещаний.", en: "Check page JSON-LD: JSON validity, Schema.org types, parse errors, and recommendations without fake rich-result promises." },
