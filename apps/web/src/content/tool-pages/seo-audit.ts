@@ -1199,4 +1199,86 @@ export const seoAuditToolPages = [
     relatedToolSlugs: ["structured-data-validator", "schema-markup-generator", "html-validator"],
     sourceUrls: ["https://schema.org/FAQPage", "https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data"],
   }),
+  toolPage({
+    slug: "third-party-script-analyzer",
+    seoTitle: { ru: "Анализ сторонних скриптов", en: "Third-party Script Analyzer" },
+    metaDescription: { ru: "Проверьте static HTML script inventory: same-host и cross-host candidates, async, defer, module, parser-blocking signals, дубли и SRI.", en: "Check a static HTML script inventory: same-host and cross-host candidates, async, defer, module, parser-blocking signals, duplicates, and SRI." },
+    h1: { ru: "Анализ сторонних скриптов", en: "Third-party Script Analyzer" },
+    lead: { ru: "Введите URL, чтобы разобрать script elements в исходном HTML без исполнения JavaScript, runtime waterfall и fake tracker claims.", en: "Enter a URL to inspect script elements in source HTML without executing JavaScript, building a runtime waterfall, or making fake tracker claims." },
+    quickFacts: [
+      { ru: "static HTML", en: "static HTML" },
+      { ru: "async / defer / module", en: "async / defer / module" },
+      { ru: "hostname classification", en: "hostname classification" },
+    ],
+    howToSteps: [
+      { ru: "Введите публичный URL страницы.", en: "Enter a public page URL." },
+      { ru: "Запустите bounded script inventory.", en: "Run the bounded script inventory." },
+      { ru: "Проверьте cross-host, blocking candidates, дубли и host groups.", en: "Review cross-host scripts, blocking candidates, duplicates, and host groups." },
+    ],
+    supportedFeatures: [
+      { ru: "Разделяет inline, external, same-host и cross-host candidates.", en: "Separates inline, external, same-host, and cross-host candidates." },
+      { ru: "Показывает async, defer, module, nomodule, integrity и crossorigin.", en: "Shows async, defer, module, nomodule, integrity, and crossorigin." },
+      { ru: "Группирует известные hostname patterns для analytics, tag manager, ads, social и CDN.", en: "Groups known hostname patterns for analytics, tag managers, ads, social platforms, and CDNs." },
+    ],
+    limitations: [
+      { ru: "Third-party означает другой hostname, а не доказанного владельца или tracker.", en: "Third-party means a different hostname, not proven ownership or tracking." },
+      { ru: "Не видит scripts, добавленные runtime JavaScript, consent flow или browser extensions.", en: "Does not see scripts added by runtime JavaScript, consent flows, or browser extensions." },
+    ],
+    useCases: [
+      { ru: "Проверить script surface после подключения analytics или tag manager.", en: "Review the script surface after adding analytics or a tag manager." },
+      { ru: "Найти parser-blocking candidates и duplicate src.", en: "Find parser-blocking candidates and duplicate src values." },
+      { ru: "Подготовить inventory для performance и privacy review.", en: "Prepare an inventory for performance and privacy review." },
+    ],
+    technicalNotes: [
+      { ru: "Инструмент делает один SafeHttpFetcher request и не скачивает JS resources.", en: "The tool makes one SafeHttpFetcher request and does not download JavaScript resources." },
+      { ru: "Hostname groups являются прозрачной эвристикой, а не verdict о назначении скрипта.", en: "Hostname groups are a transparent heuristic, not a verdict about script purpose." },
+    ],
+    faq: [
+      { question: { ru: "Инструмент находит все trackers?", en: "Does the tool find every tracker?" }, answer: { ru: "Нет. Он показывает static script sources и несколько известных hostname patterns без runtime execution.", en: "No. It shows static script sources and selected known hostname patterns without runtime execution." } },
+      { question: { ru: "Почему same-host script может быть сторонним?", en: "Why can a same-host script still be third-party?" }, answer: { ru: "Reverse proxy или first-party collection endpoint могут скрывать фактического поставщика; ownership требует ручной проверки.", en: "A reverse proxy or first-party collection endpoint can hide the actual provider; ownership requires manual review." } },
+    ],
+    relatedToolSlugs: ["csp-analyzer", "page-weight-analyzer", "resource-hints-analyzer"],
+    sourceUrls: ["https://html.spec.whatwg.org/multipage/scripting.html#the-script-element", "https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script"],
+  }),
+  toolPage({
+    slug: "resource-hints-analyzer",
+    seoTitle: { ru: "Анализ Resource Hints", en: "Resource Hints Analyzer" },
+    metaDescription: { ru: "Проверьте preconnect, dns-prefetch, preload, prefetch, modulepreload и preinit: дубли, as, crossorigin и excessive preconnect signals.", en: "Check preconnect, dns-prefetch, preload, prefetch, modulepreload, and preinit: duplicates, as, crossorigin, and excessive-preconnect signals." },
+    h1: { ru: "Анализ Resource Hints", en: "Resource Hints Analyzer" },
+    lead: { ru: "Введите URL, чтобы проверить resource hints в static HTML без fake performance score и без утверждений, что каждый hint реально использован браузером.", en: "Enter a URL to check resource hints in static HTML without a fake performance score or claims that every hint is used by the browser." },
+    quickFacts: [
+      { ru: "preconnect / dns-prefetch", en: "preconnect / dns-prefetch" },
+      { ru: "preload / modulepreload", en: "preload / modulepreload" },
+      { ru: "дубли и attributes", en: "duplicates and attributes" },
+    ],
+    howToSteps: [
+      { ru: "Введите публичный URL страницы.", en: "Enter a public page URL." },
+      { ru: "Запустите bounded static HTML analysis.", en: "Run bounded static HTML analysis." },
+      { ru: "Проверьте количество hints, дубли, as и crossorigin signals.", en: "Review hint counts, duplicates, as values, and crossorigin signals." },
+    ],
+    supportedFeatures: [
+      { ru: "Поддерживает preconnect, dns-prefetch, preload, prefetch, modulepreload и literal preinit.", en: "Supports preconnect, dns-prefetch, preload, prefetch, modulepreload, and literal preinit." },
+      { ru: "Нормализует relative URLs и показывает same-host/cross-host signal.", en: "Normalizes relative URLs and shows same-host/cross-host signals." },
+      { ru: "Отмечает duplicate hints, preload без as и excessive preconnect count.", en: "Flags duplicate hints, preload without as, and excessive preconnect counts." },
+    ],
+    limitations: [
+      { ru: "Не измеряет реальный waterfall, priority или reuse connection.", en: "Does not measure the real waterfall, priority, or connection reuse." },
+      { ru: "Наличие или отсутствие hint само по себе не является performance verdict.", en: "The presence or absence of a hint is not a performance verdict by itself." },
+    ],
+    useCases: [
+      { ru: "Проверить head после изменений frontend performance setup.", en: "Review the head after frontend performance setup changes." },
+      { ru: "Найти лишние preconnect и duplicate preload.", en: "Find excessive preconnects and duplicate preloads." },
+      { ru: "Проверить crossorigin signal для cross-origin resources.", en: "Review crossorigin signals for cross-origin resources." },
+    ],
+    technicalNotes: [
+      { ru: "Порог many preconnects является review signal, а не универсальным лимитом браузера.", en: "The many-preconnect threshold is a review signal, not a universal browser limit." },
+      { ru: "Эффект hints нужно подтверждать browser profiling и real-user data.", en: "Hint effectiveness should be verified with browser profiling and real-user data." },
+    ],
+    faq: [
+      { question: { ru: "Нужно ли добавлять preload для каждого ресурса?", en: "Should every resource be preloaded?" }, answer: { ru: "Нет. Избыточный preload конкурирует за bandwidth и priority; использовать его нужно для измеренных критических ресурсов.", en: "No. Excessive preload competes for bandwidth and priority; use it for measured critical resources." } },
+      { question: { ru: "Почему preconnect без crossorigin отмечен?", en: "Why is preconnect without crossorigin flagged?" }, answer: { ru: "Для некоторых cross-origin fetch modes соединение без matching crossorigin может не переиспользоваться; это сигнал для проверки, не автоматическая ошибка.", en: "For some cross-origin fetch modes, a connection without matching crossorigin may not be reusable; this is a review signal, not an automatic error." } },
+    ],
+    relatedToolSlugs: ["third-party-script-analyzer", "page-weight-analyzer", "core-web-vitals-checker"],
+    sourceUrls: ["https://html.spec.whatwg.org/multipage/links.html#link-type-preconnect", "https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/rel/preload"],
+  }),
 ] as const;

@@ -1,5 +1,14 @@
 # Changelog
 
+## A10.22 — CSP / third-party scripts / resource hints
+
+- Added CSP Analyzer for enforced headers, Report-Only, static meta policies, directive inventory, risky source expressions, duplicate directives, and missing key restrictions.
+- Added Third-party Script Analyzer with bounded static HTML inventory, hostname-based same-host/cross-host classification, async/defer/module signals, parser-blocking candidates, duplicate src detection, SRI/crossorigin signals, and transparent hostname-pattern groups.
+- Added Resource Hints Analyzer for preconnect, dns-prefetch, preload, prefetch, modulepreload, and literal preinit, including duplicate, `as`, `crossorigin`, malformed URL, and excessive-preconnect review signals.
+- Kept all three tools on SafeHttpFetcher with SSRF, redirect revalidation, peer-IP verification, decoded-body limits, and one page fetch per analyzer.
+- Added strict backend contracts, Next.js proxy validation, client runtime validators, RU/EN editorial pages, copyable summaries, parser/API/proxy/renderer tests, and registry gates.
+- Registry baseline is now 115 entries and 64 ready public tools; no one-header, one-script, or one-hint microtools were added.
+
 ## 0.5.11 — approved homepage redesign patch
 
 - Repositioned WebDiag as a technical SEO audit platform rather than a generic toolbox.
