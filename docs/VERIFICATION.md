@@ -485,3 +485,45 @@ Known limitations:
   alternate URL for reciprocal confirmation;
 - Technology Detector is a static fingerprint detector, not a full Wappalyzer/browser
   runtime clone. Low-confidence detections require manual review.
+
+---
+
+# A10.16 — deterministic SEO generator tools
+
+A10.16 adds deterministic browser-side SEO generators without crawler behavior, AI output, or hidden assumptions.
+
+Changed behavior:
+
+- promoted `robots-txt-generator` and `sitemap-generator` from internal registry entries to ready public tools;
+- added `faq-schema-generator` as a focused FAQPage JSON-LD generator for explicit question/answer pairs;
+- kept `schema-markup-generator` as the broader Schema.org generator and added FAQ Schema as a dedicated user-facing workflow;
+- did not add crawled sitemap generation, AI FAQ writing, or hidden policy recommendations.
+
+Frontend routes:
+
+- `/tools/robots-txt-generator` and `/en/tools/robots-txt-generator`
+- `/tools/sitemap-generator` and `/en/tools/sitemap-generator`
+- `/tools/faq-schema-generator` and `/en/tools/faq-schema-generator`
+
+Observed gates:
+
+| Gate | Result |
+|---|---:|
+| `npm run test:workspace` | PASS — 37/37 via `npm test` |
+| `npm test` | PASS — 205 total Node/Vitest tests: workspace 37/37, registry 2/2, core 17/17, web 149/149 |
+| `npm run verify:registry` | PASS — 112 unique tools, 46 ready tools, no weak ready microtools |
+| `npm run lint` | PASS |
+| `npm run typecheck` | PASS |
+| `npm run build` | NOT COUNTED in this sandbox — Next compiled and TypeScript passed, then sandbox timed out during static generation |
+| `npm run verify:built-site` | NOT RUN after the timed-out build in this sandbox |
+| `npm run test:python` | PASS — 129/129 |
+| `npm run lint:python` | PASS |
+| `npm run verify:python-lock` | PASS — 30 locked packages matched installed packages for linux |
+| `npm run test:browser` | NOT VERIFIED in this sandbox |
+
+Known limitations:
+
+- all three tools are browser-only deterministic generators;
+- Robots.txt Generator does not crawl the site or infer private sections;
+- Sitemap Generator accepts explicit absolute HTTP(S) URLs and does not discover pages automatically;
+- FAQ Schema Generator does not invent questions/answers and does not promise rich-result eligibility.

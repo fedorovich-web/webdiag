@@ -1075,4 +1075,128 @@ export const seoAuditToolPages = [
     relatedToolSlugs: ["security-headers-checker", "page-weight-analyzer", "core-web-vitals-checker"],
     sourceUrls: ["https://developer.mozilla.org/docs/Web/HTTP/Headers/Server"],
   }),
+
+  toolPage({
+    slug: "robots-txt-generator",
+    seoTitle: { ru: "Генератор robots.txt", en: "Robots.txt Generator" },
+    metaDescription: { ru: "Соберите robots.txt из явных правил: User-agent, Allow, Disallow, Sitemap и Crawl-delay без обращения к сайту.", en: "Build robots.txt from explicit rules: User-agent, Allow, Disallow, Sitemap, and Crawl-delay without fetching the site." },
+    h1: { ru: "Генератор robots.txt", en: "Robots.txt Generator" },
+    lead: { ru: "Сформируйте robots.txt вручную из подтверждённых правил. Инструмент не сканирует сайт и не выдумывает закрытые разделы.", en: "Create robots.txt manually from confirmed rules. The tool does not crawl the site or invent private sections." },
+    quickFacts: [
+      { ru: "Browser-only", en: "Browser-only" },
+      { ru: "Allow/Disallow", en: "Allow/Disallow" },
+      { ru: "Sitemap directive", en: "Sitemap directive" },
+    ],
+    howToSteps: [
+      { ru: "Укажите user-agent и правила Allow/Disallow.", en: "Enter the user-agent and Allow/Disallow rules." },
+      { ru: "Добавьте Sitemap URL и Crawl-delay только если это реально нужно.", en: "Add Sitemap URL and Crawl-delay only when actually needed." },
+      { ru: "Скопируйте файл и проверьте его через Robots.txt Tester после публикации.", en: "Copy the file and verify it with Robots.txt Tester after publishing." },
+    ],
+    supportedFeatures: [
+      { ru: "Нормализует относительные пути к /path.", en: "Normalizes relative paths to /path." },
+      { ru: "Проверяет, что Sitemap является HTTP(S) URL.", en: "Checks that Sitemap is an HTTP(S) URL." },
+      { ru: "Работает полностью в браузере без отправки правил на backend.", en: "Runs fully in the browser without sending rules to the backend." },
+    ],
+    limitations: [
+      { ru: "Инструмент не знает структуру вашего сайта и не заменяет SEO-стратегию индексации.", en: "The tool does not know your site structure and does not replace indexing strategy." },
+      { ru: "После публикации файл нужно проверить тестером robots.txt на фактическом домене.", en: "After publishing, verify the file with the robots.txt tester on the real domain." },
+    ],
+    useCases: [
+      { ru: "Подготовить базовый robots.txt для нового сайта.", en: "Prepare a basic robots.txt for a new site." },
+      { ru: "Быстро собрать безопасный шаблон для staging/служебных разделов.", en: "Quickly build a safe template for staging or utility sections." },
+      { ru: "Добавить Sitemap directive без ручной ошибки синтаксиса.", en: "Add a Sitemap directive without syntax mistakes." },
+    ],
+    technicalNotes: [
+      { ru: "Generator intentionally deterministic: output зависит только от введённых полей.", en: "The generator is intentionally deterministic: output depends only on entered fields." },
+      { ru: "Это не crawler и не robots policy adviser.", en: "This is not a crawler and not a robots policy adviser." },
+    ],
+    faq: [
+      { question: { ru: "Можно ли Disallow всё?", en: "Can I Disallow everything?" }, answer: { ru: "Технически да, но для production это обычно закрывает сайт от обхода. Такие правила нужно применять только осознанно.", en: "Technically yes, but in production it usually blocks crawling. Use such rules only deliberately." } },
+      { question: { ru: "Почему нет автоматического списка URL?", en: "Why is there no automatic URL list?" }, answer: { ru: "Потому что это уже crawler/function of project structure. Генератор принимает только явные правила.", en: "Because that requires crawler or project-structure knowledge. This generator accepts only explicit rules." } },
+    ],
+    relatedToolSlugs: ["robots-txt-tester", "sitemap-generator", "indexability-checker"],
+    sourceUrls: ["https://developers.google.com/search/docs/crawling-indexing/robots/intro"],
+  }),
+  toolPage({
+    slug: "sitemap-generator",
+    seoTitle: { ru: "Генератор sitemap.xml", en: "Sitemap.xml Generator" },
+    metaDescription: { ru: "Создайте sitemap.xml из списка HTTP(S) URL с optional lastmod, changefreq и priority.", en: "Create sitemap.xml from an HTTP(S) URL list with optional lastmod, changefreq, and priority." },
+    h1: { ru: "Генератор sitemap.xml", en: "Sitemap.xml Generator" },
+    lead: { ru: "Соберите XML sitemap из явного списка URL. Инструмент экранирует XML, проверяет HTTP(S) адреса и не притворяется crawler-обходом сайта.", en: "Build an XML sitemap from an explicit URL list. The tool escapes XML, validates HTTP(S) URLs, and does not pretend to crawl the site." },
+    quickFacts: [
+      { ru: "Browser-only", en: "Browser-only" },
+      { ru: "XML escaping", en: "XML escaping" },
+      { ru: "HTTP(S) URLs", en: "HTTP(S) URLs" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте URL, по одному на строку.", en: "Paste URLs, one per line." },
+      { ru: "При необходимости задайте lastmod, changefreq и priority.", en: "Optionally set lastmod, changefreq, and priority." },
+      { ru: "Скопируйте XML и проверьте опубликованный файл через Sitemap Validator.", en: "Copy the XML and check the published file through Sitemap Validator." },
+    ],
+    supportedFeatures: [
+      { ru: "Генерирует стандартный urlset sitemap.xml.", en: "Generates a standard urlset sitemap.xml." },
+      { ru: "Экранирует &, <, >, кавычки и apostrophe внутри URL.", en: "Escapes &, <, >, quotes, and apostrophes inside URLs." },
+      { ru: "Валидирует priority как число 0.0–1.0.", en: "Validates priority as a number from 0.0 to 1.0." },
+    ],
+    limitations: [
+      { ru: "Не обходит сайт и не находит страницы автоматически.", en: "Does not crawl the site or discover pages automatically." },
+      { ru: "Для больших сайтов нужен crawler/job слой и инкрементальные sitemap index files.", en: "Large sites require crawler/job infrastructure and incremental sitemap index files." },
+    ],
+    useCases: [
+      { ru: "Быстро подготовить sitemap для небольшого сайта или landing set.", en: "Quickly prepare a sitemap for a small site or landing set." },
+      { ru: "Собрать временный sitemap перед автоматизацией crawler layer.", en: "Build a temporary sitemap before crawler-layer automation." },
+      { ru: "Проверить XML escaping для URL с query parameters.", en: "Check XML escaping for URLs with query parameters." },
+    ],
+    technicalNotes: [
+      { ru: "Output полностью deterministic и строится локально в браузере.", en: "Output is fully deterministic and built locally in the browser." },
+      { ru: "Это generator, а не validator: опубликованный файл нужно проверять Sitemap Validator.", en: "This is a generator, not a validator: verify the published file with Sitemap Validator." },
+    ],
+    faq: [
+      { question: { ru: "Можно ли вставлять относительные URL?", en: "Can I paste relative URLs?" }, answer: { ru: "Нет. Sitemap должен содержать абсолютные HTTP(S) URL.", en: "No. A sitemap should contain absolute HTTP(S) URLs." } },
+      { question: { ru: "Нужен ли changefreq?", en: "Is changefreq required?" }, answer: { ru: "Нет. Это optional signal. Не указывайте его, если нет уверенной политики обновлений.", en: "No. It is an optional signal. Omit it unless you have a clear update policy." } },
+    ],
+    relatedToolSlugs: ["sitemap-validator", "robots-txt-generator", "indexability-checker"],
+    sourceUrls: ["https://www.sitemaps.org/protocol.html"],
+  }),
+  toolPage({
+    slug: "faq-schema-generator",
+    seoTitle: { ru: "Генератор FAQ Schema JSON-LD", en: "FAQ Schema JSON-LD Generator" },
+    metaDescription: { ru: "Создайте FAQPage JSON-LD из утверждённых вопросов и ответов без AI-фантазирования и обещаний rich results.", en: "Create FAQPage JSON-LD from approved questions and answers without AI fabrication or rich-result promises." },
+    h1: { ru: "Генератор FAQ Schema", en: "FAQ Schema Generator" },
+    lead: { ru: "Соберите FAQPage JSON-LD только из фактических вопросов и ответов, которые уже есть или будут опубликованы на странице.", en: "Build FAQPage JSON-LD only from factual questions and answers that already exist or will be published on the page." },
+    quickFacts: [
+      { ru: "FAQPage", en: "FAQPage" },
+      { ru: "JSON-LD", en: "JSON-LD" },
+      { ru: "No AI output", en: "No AI output" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте URL страницы FAQ или страницы с FAQ-блоком.", en: "Paste the URL of the FAQ page or page with a FAQ block." },
+      { ru: "Добавьте пары вопрос/ответ блоками через пустую строку.", en: "Add question/answer pairs separated by a blank line." },
+      { ru: "Скопируйте JSON-LD и проверьте опубликованную страницу валидатором структурированных данных.", en: "Copy the JSON-LD and validate the published page with Structured Data Validator." },
+    ],
+    supportedFeatures: [
+      { ru: "Генерирует script type=application/ld+json с @type FAQPage.", en: "Generates script type=application/ld+json with @type FAQPage." },
+      { ru: "Не выдумывает вопросы и ответы: использует только введённые пользователем данные.", en: "Does not invent questions or answers: uses only user-entered data." },
+      { ru: "Работает в браузере без отправки контента на backend.", en: "Runs in the browser without sending content to the backend." },
+    ],
+    limitations: [
+      { ru: "Не обещает rich snippets: eligibility зависит от поисковой системы и качества страницы.", en: "Does not promise rich snippets: eligibility depends on the search engine and page quality." },
+      { ru: "FAQ-разметка должна соответствовать видимому контенту страницы.", en: "FAQ markup must match visible page content." },
+    ],
+    useCases: [
+      { ru: "Подготовить FAQPage JSON-LD для service page или knowledge page.", en: "Prepare FAQPage JSON-LD for a service page or knowledge page." },
+      { ru: "Избежать ручных ошибок в структуре Question/Answer.", en: "Avoid manual mistakes in the Question/Answer structure." },
+      { ru: "Быстро проверить формат перед публикацией.", en: "Quickly check the format before publishing." },
+    ],
+    technicalNotes: [
+      { ru: "Генератор создаёт синтаксически корректный JSON-LD, но не проверяет published DOM.", en: "The generator creates syntactically valid JSON-LD but does not verify the published DOM." },
+      { ru: "После внедрения используйте Structured Data Validator на конечном URL.", en: "After implementation, use Structured Data Validator on the final URL." },
+    ],
+    faq: [
+      { question: { ru: "Можно ли генерировать FAQ с помощью AI?", en: "Can FAQ be generated with AI?" }, answer: { ru: "Этот инструмент — нет. Он сознательно не выдумывает ответы. AI FAQ может быть отдельным provider-tool с маркировкой и лимитами.", en: "Not in this tool. It intentionally does not invent answers. AI FAQ may be a separate provider tool with labeling and limits." } },
+      { question: { ru: "Нужно ли показывать FAQ на странице?", en: "Does the FAQ need to be visible on the page?" }, answer: { ru: "Да, FAQ-разметка должна соответствовать фактическому контенту страницы, иначе это риск для качества и доверия поисковых систем.", en: "Yes, FAQ markup should match the actual page content; otherwise it creates quality and search-trust risk." } },
+    ],
+    relatedToolSlugs: ["structured-data-validator", "schema-markup-generator", "html-validator"],
+    sourceUrls: ["https://schema.org/FAQPage", "https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data"],
+  }),
 ] as const;
