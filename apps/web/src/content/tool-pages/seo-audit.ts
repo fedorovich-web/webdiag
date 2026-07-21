@@ -43,6 +43,47 @@ export const seoAuditToolPages = [
     sourceUrls: ["https://developers.google.com/search/docs/crawling-indexing/robots/robots_txt", "https://www.rfc-editor.org/rfc/rfc9309"],
   }),
   toolPage({
+    slug: "sitemap-validator",
+    seoTitle: { ru: "Проверка sitemap.xml онлайн", en: "Sitemap.xml Validator" },
+    metaDescription: { ru: "Проверьте доступность sitemap.xml, валидность XML, тип sitemap, количество URL и наличие важной страницы в файле.", en: "Check sitemap.xml availability, XML validity, sitemap type, URL count, and whether an important page is listed." },
+    h1: { ru: "Проверка sitemap.xml", en: "Sitemap.xml Validator" },
+    lead: { ru: "Введите sitemap.xml или адрес сайта, чтобы проверить статус файла, XML-структуру, количество URL и наличие конкретной посадочной страницы в sitemap.", en: "Enter a sitemap.xml or a site address to check file status, XML structure, URL count, and whether a specific landing page is listed." },
+    quickFacts: [
+      { ru: "Sitemap URL", en: "Sitemap URL" },
+      { ru: "XML validation", en: "XML validation" },
+      { ru: "Поиск URL", en: "URL lookup" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте адрес sitemap.xml или любую страницу сайта — WebDiag попробует /sitemap.xml для этого домена.", en: "Paste a sitemap.xml address or any site page — WebDiag will try /sitemap.xml for that domain." },
+      { ru: "При необходимости укажите целевой URL, который должен быть в sitemap.", en: "Optionally enter the target URL that should be listed in the sitemap." },
+      { ru: "Проверьте статус, тип XML, количество URL и примеры найденных loc-адресов.", en: "Review status, XML type, URL count, and sample loc addresses." },
+    ],
+    supportedFeatures: [
+      { ru: "Безопасная загрузка sitemap через backend с SSRF-защитой и лимитом размера ответа.", en: "Safe sitemap fetching through the backend with SSRF protection and response size limits." },
+      { ru: "Определяет urlset и sitemapindex, показывает количество URL или дочерних sitemap.", en: "Detects urlset and sitemapindex, showing URL count or child sitemap count." },
+      { ru: "Проверяет, присутствует ли выбранный целевой URL среди loc-адресов.", en: "Checks whether a selected target URL is present in the loc entries." },
+    ],
+    limitations: [
+      { ru: "Инструмент проверяет один sitemap за запуск и не раскрывает все дочерние sitemap index автоматически.", en: "The tool checks one sitemap per run and does not recursively expand every sitemap index child." },
+      { ru: "Это не crawler: он не доказывает, что все страницы сайта включены в sitemap.", en: "This is not a crawler: it does not prove that every page on the site is included in the sitemap." },
+    ],
+    useCases: [
+      { ru: "Проверить, опубликован ли sitemap после релиза, миграции или смены CMS.", en: "Verify that a sitemap is published after a release, migration, or CMS change." },
+      { ru: "Понять, попала ли важная коммерческая страница в sitemap discovery.", en: "Check whether an important commercial page is included for sitemap discovery." },
+      { ru: "Найти очевидные XML-ошибки перед отправкой sitemap в поисковые системы.", en: "Find obvious XML errors before submitting a sitemap to search engines." },
+    ],
+    technicalNotes: [
+      { ru: "Если введён не XML-файл, WebDiag строит /sitemap.xml от origin указанного URL.", en: "If the input is not an XML file, WebDiag builds /sitemap.xml from the input URL origin." },
+      { ru: "Сравнение целевого URL нормализует регистр хоста, default ports и trailing slash.", en: "Target URL comparison normalizes host casing, default ports, and trailing slash." },
+    ],
+    faq: [
+      { question: { ru: "Нужно указывать sitemap.xml или страницу сайта?", en: "Should I enter sitemap.xml or a site page?" }, answer: { ru: "Можно оба варианта. Если ввести страницу сайта, WebDiag проверит /sitemap.xml на том же домене. Если ввести sitemap XML напрямую, будет проверен именно он.", en: "Both work. If you enter a site page, WebDiag checks /sitemap.xml on that domain. If you enter a sitemap XML directly, that exact URL is checked." } },
+      { question: { ru: "Инструмент проверяет все дочерние sitemap index?", en: "Does it check every child sitemap in a sitemap index?" }, answer: { ru: "Нет. MVP показывает сам sitemap index и список дочерних loc. Рекурсивная проверка всех дочерних файлов должна идти отдельным этапом с лимитами.", en: "No. The MVP shows the sitemap index and child loc entries. Recursive checking of every child file should be a separate stage with limits." } },
+    ],
+    relatedToolSlugs: ["robots-txt-tester", "redirect-chain-checker", "url-encoder-decoder"],
+    sourceUrls: ["https://www.sitemaps.org/protocol.html", "https://developers.google.com/search/docs/crawling-indexing/sitemaps/overview"],
+  }),
+  toolPage({
     slug: "redirect-chain-checker",
     seoTitle: { ru: "Проверка HTTP-статуса и цепочки редиректов", en: "HTTP Status & Redirect Chain Checker" },
     metaDescription: { ru: "Проверьте HTTP-статус, финальный URL, content-type и цепочку редиректов для одной страницы через безопасный WebDiag API.", en: "Check the HTTP status, final URL, content type, and redirect chain for a single page through the safe WebDiag API." },

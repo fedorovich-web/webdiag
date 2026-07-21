@@ -25,6 +25,7 @@ import { CopyButton } from "../../components/copy-button";
 import { ImageCropperTool, ImageFormatConverterTool, ImageOptimizerTool, ImageResizerTool } from "./image-tools";
 import { RedirectChainTool } from "./redirect-chain-tool";
 import { RobotsTxtTool } from "./robots-txt-tool";
+import { SitemapValidatorTool } from "./sitemap-validator-tool";
 import { dictionary } from "../../lib/i18n";
 
 interface ToolRendererProps {
@@ -180,6 +181,7 @@ export const SUPPORTED_TOOL_SLUGS = [
   "image-cropper",
   "redirect-chain-checker",
   "robots-txt-tester",
+  "sitemap-validator",
 ] as const;
 
 export function ToolRenderer({ slug, locale }: ToolRendererProps) {
@@ -200,6 +202,7 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "image-cropper": return <ImageCropperTool locale={locale} />;
     case "redirect-chain-checker": return <RedirectChainTool locale={locale} />;
     case "robots-txt-tester": return <RobotsTxtTool locale={locale} />;
+    case "sitemap-validator": return <SitemapValidatorTool locale={locale} />;
     default: return null;
   }
 }
