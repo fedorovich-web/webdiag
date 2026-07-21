@@ -155,3 +155,56 @@ The browser gate is not claimed as passed in this environment. The local sandbox
 - Image SEO Audit does not generate AI alt text and does not infer image meaning from pixels.
 - Favicon Checker validates icon declarations and availability, but it is not a full PWA manifest validator.
 - Full image utility operations such as resize, compress, convert, crop, SVG optimizer, and watermark remain planned as separate utility batches.
+
+---
+
+# A10.11 — Image utility modern format hardening
+
+A10.11 changes:
+
+- hardened existing browser-local image utilities instead of adding weak microtools;
+- updated Image Compressor, Image Converter, Image Resizer, and Image Cropper to use a shared modern raster format policy:
+  - input candidates: PNG, JPEG, WebP, AVIF;
+  - output candidates: AVIF, WebP, JPEG, PNG;
+  - explicit note that AVIF encode/decode depends on the current browser Canvas/ImageBitmap support;
+- added bounded local processing limits:
+  - 25 MB source file cap;
+  - 40,000,000 pixel cap for input/output canvas work;
+  - unsupported raster formats fail explicitly instead of silently producing fake output;
+- added source-vs-output byte delta in the image utility result panel;
+- changed default output for conversion/resizing/cropping toward WebP as the safer web default while retaining PNG/JPEG/AVIF options;
+- updated tool registry descriptions for:
+  - `image-optimizer`;
+  - `image-format-converter`;
+  - `image-resizer`;
+  - `image-cropper`;
+- updated media utility editorial pages to reflect AVIF/WebP/JPEG/PNG support and browser capability limits;
+- added image utility helper tests covering modern raster policy, AVIF input/output exposure, rejected SVG utility input, byte formatting, and compression delta math;
+- extended `@webdiag/tool-core` raster output format support with `image/avif` and `.avif` extension mapping;
+- did not add weak tools such as AVIF Checker, PNG Checker, JPEG Checker, single-format converter pages, or server-side fake compression.
+
+## Confirmed gates in this environment
+
+| Gate | Result |
+|---|---:|
+| `npm run test:workspace` | PASS — 37/37 |
+| `npm test` | PASS — 178/178 JavaScript/TypeScript tests |
+| `npm run verify:registry` | PASS — 110 unique tools, 31 ready tools, no weak ready microtools |
+| `npm run lint` | PASS |
+| `npm run typecheck` | PASS |
+| `npm run build` | PASS — includes `verify:built-site` |
+| `npm run verify:built-site` | PASS — 68 public routes / 66 localized HTML routes |
+| `npm run test:python` | PASS — 117/117 |
+| `npm run lint:python` | PASS |
+| `npm run verify:python-lock` | PASS — 30 locked packages matched installed packages for linux |
+| `npm run test:browser` | NOT VERIFIED in this sandbox |
+
+## Browser gate note
+
+The browser gate is not claimed as passed in this environment. Previous sandbox runs started Chromium and the local test server but blocked navigation to `http://127.0.0.1:4173/` with `net::ERR_BLOCKED_BY_ADMINISTRATOR`.
+
+## Known limitations after A10.11
+
+- Browser-local image utilities depend on the user's current browser encoder/decoder support. AVIF is exposed honestly but unsupported browsers will return a clear encode/decode failure.
+- Browser Canvas re-encoding does not preserve original EXIF metadata, color-profile metadata, animation, or vector semantics.
+- SVG optimization, watermarking, background removal, batch image processing, and server-side Sharp/Squoosh-style pipelines remain future work.
