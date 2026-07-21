@@ -7,6 +7,25 @@ import { requireVenvPython } from "./python-runtime.mjs";
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const lockfilePath = path.join(rootDir, "requirements-dev.lock.txt");
 
+const WINDOWS_SKIPPED_LOCKED_PACKAGES = new Set(["uvloop"]);
+const WINDOWS_ALLOWED_INSTALLED_PACKAGES = new Map([["colorama", "0.4.6"]]);
+const OPTIONAL_PROJECT_INSTALLED_PACKAGES = new Map([["pika", "1.4.1"]]);
+
+function isWindowsPlatform(platform) {
+  return platform === "win32";
+}
+
+function isSkippableMissingLockedPackage(name, platform) {
+  return isWindowsPlatform(platform) && WINDOWS_SKIPPED_LOCKED_PACKAGES.has(name);
+}
+
+function allowedInstalledPackageVersion(name, platform) {
+  if (isWindowsPlatform(platform) && WINDOWS_ALLOWED_INSTALLED_PACKAGES.has(name)) {
+    return WINDOWS_ALLOWED_INSTALLED_PACKAGES.get(name);
+  }
+  return OPTIONAL_PROJECT_INSTALLED_PACKAGES.get(name);
+}
+
 export function normalizePackageName(value) {
   return value.trim().toLowerCase().replace(/[_.]+/g, "-");
 }
@@ -38,7 +57,7 @@ export function parseFrozenRequirements(rawText, { sourceName = "requirements" }
   return { requirements, invalidLines };
 }
 
-export function compareLockedRequirements({ lockedText, installedText }) {
+export function compareLockedRequirements({ lockedText, installedText, platform = process.platform }) {
   const locked = parseFrozenRequirements(lockedText, { sourceName: "requirements-dev.lock.txt" });
   const installed = parseFrozenRequirements(installedText, { sourceName: "pip freeze" });
   const errors = [...locked.invalidLines, ...installed.invalidLines];
@@ -46,7 +65,9 @@ export function compareLockedRequirements({ lockedText, installedText }) {
   for (const [name, expected] of locked.requirements.entries()) {
     const actual = installed.requirements.get(name);
     if (!actual) {
-      errors.push(`missing installed package: ${expected.name}==${expected.version}`);
+      if (!isSkippableMissingLockedPackage(name, platform)) {
+        errors.push(`missing installed package: ${expected.name}==${expected.version}`);
+      }
       continue;
     }
     if (actual.version !== expected.version) {
@@ -58,7 +79,15 @@ export function compareLockedRequirements({ lockedText, installedText }) {
 
   for (const [name, actual] of installed.requirements.entries()) {
     if (!locked.requirements.has(name)) {
-      errors.push(`unlocked installed package: ${actual.name}==${actual.version}`);
+      const allowedVersion = allowedInstalledPackageVersion(name, platform);
+      if (allowedVersion === actual.version) continue;
+      if (allowedVersion) {
+        errors.push(
+          `unlocked installed package version drift: ${actual.name} expected ${allowedVersion}, installed ${actual.version}`,
+        );
+      } else {
+        errors.push(`unlocked installed package: ${actual.name}==${actual.version}`);
+      }
     }
   }
 
@@ -108,7 +137,7 @@ async function run() {
   }
 
   console.log(
-    `Python lock verification passed: ${result.lockedCount} locked packages match installed packages.`,
+    `Python lock verification passed: ${result.lockedCount} locked packages match installed packages for ${process.platform}.`,
   );
 }
 
