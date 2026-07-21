@@ -1,34 +1,32 @@
 import { describe, expect, it } from "vitest";
 import { AuditClientError, normalizeAuditUrlInput, parseAuditUrlInput, startAuditSnapshot } from "./audit-client";
+import { FRONTEND_AUDIT_RESULT_CONTRACT_VERSION, type AuditFrontendResult } from "./audit-contract";
 
-const validSnapshot = {
-  contract_version: "webdiag.audit.snapshot.v1",
-  generated_at: "2026-07-20T00:00:00Z",
-  summary: {
-    job_id: "00000000-0000-0000-0000-000000000000",
-    status: "succeeded",
-    run: {
-      status: "succeeded",
-      score: 100,
-      check_count: 1,
-      issue_count: 0,
-      checks_by_status: { passed: 1 },
-      issues_by_severity: {},
-      issues_by_priority: {},
-      highest_severity: null,
-      top_priority: null,
-    },
-  },
+const validFrontendResult: AuditFrontendResult = {
+  contractVersion: FRONTEND_AUDIT_RESULT_CONTRACT_VERSION,
+  sourceContractVersion: "webdiag.audit.snapshot.v1",
+  generatedAt: "2026-07-20T00:00:00Z",
   job: {
-    job_id: "00000000-0000-0000-0000-000000000000",
+    id: "00000000-0000-0000-0000-000000000000",
     status: "succeeded",
-    target: { original_url: "https://example.ru/", normalized_url: "https://example.ru/", hostname: "example.ru", scope: "single_url" },
+    target: { originalUrl: "https://example.ru/", normalizedUrl: "https://example.ru/", hostname: "example.ru", scope: "single_url" },
   },
-  run: {
-    run_id: "11111111-1111-1111-1111-111111111111",
+  summary: {
     status: "succeeded",
     score: 100,
-    checks: [{ check_id: "http.status", name: "HTTP status", category: "technical", status: "passed" }],
+    checkCount: 1,
+    issueCount: 0,
+    checksByStatus: { passed: 1 },
+    issuesBySeverity: {},
+    issuesByPriority: {},
+    highestSeverity: null,
+    topPriority: null,
+  },
+  run: {
+    id: "11111111-1111-1111-1111-111111111111",
+    status: "succeeded",
+    score: 100,
+    checks: [{ id: "http.status", name: "HTTP status", category: "technical", status: "passed" }],
     issues: [],
   },
 };
@@ -51,13 +49,13 @@ describe("home audit client", () => {
       expect(input).toBe("/api/audits");
       expect(init.method).toBe("POST");
       expect(init.body).toBe(JSON.stringify({ url: "https://example.ru/" }));
-      return new Response(JSON.stringify(validSnapshot), { status: 201, headers: { "content-type": "application/json" } });
+      return new Response(JSON.stringify(validFrontendResult), { status: 201, headers: { "content-type": "application/json" } });
     };
 
     await expect(startAuditSnapshot("https://example.ru/", { fetcher })).resolves.toMatchObject({
-      contract_version: "webdiag.audit.snapshot.v1",
+      contractVersion: FRONTEND_AUDIT_RESULT_CONTRACT_VERSION,
       job: { target: { hostname: "example.ru" } },
-      run: { checks: [{ check_id: "http.status" }] },
+      run: { checks: [{ id: "http.status" }] },
     });
   });
 
@@ -76,9 +74,9 @@ describe("home audit client", () => {
     } satisfies Partial<AuditClientError>);
   });
 
-  it("rejects successful responses with invalid audit snapshot contracts", async () => {
+  it("rejects successful responses with invalid frontend result contracts", async () => {
     const fetcher = async () =>
-      new Response(JSON.stringify({ ...validSnapshot, contract_version: "unknown" }), {
+      new Response(JSON.stringify({ ...validFrontendResult, contractVersion: "unknown" }), {
         status: 201,
         headers: { "content-type": "application/json" },
       });
