@@ -204,3 +204,147 @@ export function outputExtension(format: RasterOutputFormat): "png" | "jpg" | "we
   if (format === "image/webp") return "webp";
   return "avif";
 }
+
+export interface SvgOptimizationResult {
+  sourceBytes: number;
+  outputBytes: number;
+  removedBytes: number;
+  savingsPercent: number;
+  optimized: string;
+}
+
+export function optimizeSvgText(value: string): SvgOptimizationResult {
+  const source = value.trim().replace(/^\uFEFF/, "");
+  if (!/<svg(?:\s|>)/i.test(source)) {
+    throw new TypeError("Input must contain an SVG root element.");
+  }
+  const forbiddenPatterns = [/<script\b/i, /\bon[a-z]+\s*=/i, /javascript:/i, /<foreignObject\b/i];
+  if (forbiddenPatterns.some((pattern) => pattern.test(source))) {
+    throw new TypeError("SVG contains active content and cannot be optimized safely in this browser tool.");
+  }
+
+  const optimized = source
+    .replace(/<\?xml[\s\S]*?\?>/gi, "")
+    .replace(/<!DOCTYPE[\s\S]*?>/gi, "")
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/<metadata\b[\s\S]*?<\/metadata>/gi, "")
+    .replace(/\s(?:version|data-name)=("[^"]*"|'[^']*')/gi, "")
+    .replace(/\s+/g, " ")
+    .replace(/>\s+</g, "><")
+    .replace(/\s*=\s*/g, "=")
+    .trim();
+
+  const sourceBytes = new TextEncoder().encode(source).byteLength;
+  const outputBytes = new TextEncoder().encode(optimized).byteLength;
+  const removedBytes = Math.max(0, sourceBytes - outputBytes);
+  return {
+    sourceBytes,
+    outputBytes,
+    removedBytes,
+    savingsPercent: sourceBytes > 0 ? removedBytes / sourceBytes : 0,
+    optimized,
+  };
+}
+
+export type ImageMetadataFormat = "jpeg" | "png" | "webp" | "avif" | "unknown";
+
+export interface ImageMetadataSignals {
+  format: ImageMetadataFormat;
+  exif: boolean;
+  xmp: boolean;
+  iccProfile: boolean;
+  iptc: boolean;
+  jfif: boolean;
+  pngTextChunks: number;
+  physicalDensity: boolean;
+  detectedSegments: string[];
+  hasMetadata: boolean;
+}
+
+function byteString(bytes: Uint8Array): string {
+  return new TextDecoder("latin1").decode(bytes);
+}
+
+function startsWithBytes(bytes: Uint8Array, signature: readonly number[]): boolean {
+  if (bytes.length < signature.length) return false;
+  return signature.every((value, index) => bytes[index] === value);
+}
+
+function countOccurrences(value: string, needle: string): number {
+  let count = 0;
+  let index = value.indexOf(needle);
+  while (index !== -1) {
+    count += 1;
+    index = value.indexOf(needle, index + needle.length);
+  }
+  return count;
+}
+
+export function detectImageMetadataSignals(input: ArrayBuffer | Uint8Array): ImageMetadataSignals {
+  const bytes = input instanceof Uint8Array ? input : new Uint8Array(input);
+  const text = byteString(bytes);
+  let format: ImageMetadataFormat = "unknown";
+  if (startsWithBytes(bytes, [0xff, 0xd8, 0xff])) format = "jpeg";
+  else if (startsWithBytes(bytes, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) format = "png";
+  else if (text.startsWith("RIFF") && text.slice(8, 12) === "WEBP") format = "webp";
+  else if (/ftyp(?:avif|avis|mif1|msf1)/.test(text.slice(4, 32))) format = "avif";
+
+  const exif = text.includes("Exif\0\0") || text.includes("Exif");
+  const xmp = text.includes("http://ns.adobe.com/xap/1.0/") || /xmpmeta/i.test(text);
+  const iccProfile = text.includes("ICC_PROFILE") || text.includes("iCCP") || text.includes("ICCP");
+  const iptc = text.includes("Photoshop 3.0") || text.includes("8BIM") || text.includes("IPTC");
+  const jfif = text.includes("JFIF\0") || text.includes("JFIF");
+  const pngTextChunks = format === "png" ? countOccurrences(text, "tEXt") + countOccurrences(text, "zTXt") + countOccurrences(text, "iTXt") : 0;
+  const physicalDensity = text.includes("pHYs") || jfif;
+  const detectedSegments = [
+    exif ? "EXIF" : "",
+    xmp ? "XMP" : "",
+    iccProfile ? "ICC profile" : "",
+    iptc ? "IPTC/Photoshop" : "",
+    jfif ? "JFIF" : "",
+    pngTextChunks > 0 ? `PNG text chunks: ${pngTextChunks}` : "",
+    physicalDensity && !jfif ? "Pixel density" : "",
+  ].filter(Boolean);
+
+  return {
+    format,
+    exif,
+    xmp,
+    iccProfile,
+    iptc,
+    jfif,
+    pngTextChunks,
+    physicalDensity,
+    detectedSegments,
+    hasMetadata: detectedSegments.length > 0,
+  };
+}
+
+export type WatermarkPosition = "top-left" | "top-right" | "center" | "bottom-left" | "bottom-right";
+
+export function normalizeWatermarkText(value: string, maxLength = 80): string {
+  const normalized = value.trim().replace(/\s+/g, " ");
+  if (!normalized) throw new TypeError("Watermark text must not be empty.");
+  if (normalized.length > maxLength) throw new RangeError(`Watermark text must be ${maxLength} characters or shorter.`);
+  return normalized;
+}
+
+export function normalizeWatermarkOpacity(value: number): number {
+  if (!Number.isFinite(value)) throw new TypeError("Watermark opacity must be a finite number.");
+  return Math.min(1, Math.max(0.05, value));
+}
+
+export function watermarkAnchor(
+  position: WatermarkPosition,
+  width: number,
+  height: number,
+  margin: number,
+): { x: number; y: number; textAlign: CanvasTextAlign; textBaseline: CanvasTextBaseline } {
+  validateImageDimensions(width, height);
+  if (!Number.isFinite(margin) || margin < 0) throw new TypeError("Watermark margin must be zero or greater.");
+  if (position === "top-left") return { x: margin, y: margin, textAlign: "left", textBaseline: "top" };
+  if (position === "top-right") return { x: width - margin, y: margin, textAlign: "right", textBaseline: "top" };
+  if (position === "bottom-left") return { x: margin, y: height - margin, textAlign: "left", textBaseline: "bottom" };
+  if (position === "bottom-right") return { x: width - margin, y: height - margin, textAlign: "right", textBaseline: "bottom" };
+  return { x: width / 2, y: height / 2, textAlign: "center", textBaseline: "middle" };
+}

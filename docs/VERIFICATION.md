@@ -208,3 +208,66 @@ The browser gate is not claimed as passed in this environment. Previous sandbox 
 - Browser-local image utilities depend on the user's current browser encoder/decoder support. AVIF is exposed honestly but unsupported browsers will return a clear encode/decode failure.
 - Browser Canvas re-encoding does not preserve original EXIF metadata, color-profile metadata, animation, or vector semantics.
 - SVG optimization, watermarking, background removal, batch image processing, and server-side Sharp/Squoosh-style pipelines remain future work.
+
+---
+
+# A10.12 — Advanced image utility tools
+
+A10.12 changes:
+
+- promoted and implemented three production-safe browser-local image utility tools:
+  - `svg-optimizer`;
+  - `add-watermark-to-image`;
+  - `image-metadata-viewer` as a combined metadata viewer/remover tool;
+- added `add-watermark-to-image` as a new registry entry, moving the catalog from 110 to 111 tools;
+- promoted public ready count from 31 to 34 tools;
+- added `apps/web/src/features/tools/image-advanced-tools.tsx` with:
+  - SVG optimizer UI;
+  - text watermark UI;
+  - metadata viewer and metadata-stripping re-encode UI;
+- added `@webdiag/tool-core` deterministic helpers for:
+  - safe SVG text optimization;
+  - SVG active-content rejection;
+  - raster metadata signal detection for JPEG, PNG, WebP, and AVIF byte signatures;
+  - watermark text normalization, opacity normalization, and anchor positioning;
+- added editorial pages for:
+  - `/tools/svg-optimizer` and `/en/tools/svg-optimizer`;
+  - `/tools/add-watermark-to-image` and `/en/tools/add-watermark-to-image`;
+  - `/tools/image-metadata-viewer` and `/en/tools/image-metadata-viewer`;
+- updated frontend renderer support for the three tools;
+- updated registry and API registry count tests from 110/31 to 111/34;
+- updated registry verification count from 110 to 111;
+- kept `image-metadata-remover` internal because the ready public page combines viewer and remover in one user-facing workflow;
+- did not add remove-watermark functionality;
+- did not add AI/background-removal behavior;
+- did not upload user files to the backend;
+- did not add weak microtools for EXIF-only, ICC-only, PNG-only, SVG-only attribute checks, or single-format conversion pages.
+
+## Confirmed gates in this environment
+
+| Gate | Result |
+|---|---:|
+| `npm test` | PASS — 185/185 total Node/Vitest tests: workspace 37/37, registry 2/2, core 17/17, web 129/129 |
+| `npm run verify:registry` | PASS — 111 unique tools, 34 ready tools, no weak ready microtools |
+| `npm run lint` | PASS |
+| `npm run typecheck` | PASS |
+| `npm run test:python` | PASS — 117/117 |
+| `npm run lint:python` | PASS |
+| `npm run verify:python-lock` | PASS — 30 locked packages matched installed packages for linux |
+| `npm run build` | NOT COMPLETED in this sandbox: Next build compiled and reached static generation, then the tool runtime timed out before writing `prerender-manifest.json` |
+| `npm run verify:built-site` | NOT COMPLETED after the build timeout because `.next/prerender-manifest.json` was not available |
+| `npm run test:browser` | NOT VERIFIED in this sandbox |
+
+## Browser/build gate note
+
+The browser gate is not claimed as passed in this environment. Previous sandbox runs started Chromium and the local test server but blocked navigation to `http://127.0.0.1:4173/` with `net::ERR_BLOCKED_BY_ADMINISTRATOR`.
+
+The root Next build compiled and entered static generation for 89 pages, but the sandbox command timed out before completion. Run `npm run build` and `npm run verify:built-site` locally before commit/push.
+
+## Known limitations after A10.12
+
+- SVG Optimizer is a safe browser-local cleanup tool. It is not a full SVGO plugin pipeline.
+- Add Watermark supports text watermarking only. It intentionally does not remove watermarks.
+- Image Metadata Viewer detects metadata signals by byte signatures and does not decode every EXIF field or GPS value.
+- Metadata removal uses Canvas re-encode, which normally strips source metadata chunks but can change format, color profile, file size, and exact pixel representation.
+- Background Remover remains a future AI/provider-backed tool and was not faked in this patch.
