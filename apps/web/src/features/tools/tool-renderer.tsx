@@ -25,6 +25,7 @@ import { CopyButton } from "../../components/copy-button";
 import { CanonicalCheckerTool } from "./canonical-checker-tool";
 import { AddWatermarkImageTool, ImageMetadataViewerTool, SvgOptimizerTool } from "./image-advanced-tools";
 import { ImageCropperTool, ImageFormatConverterTool, ImageOptimizerTool, ImageResizerTool } from "./image-tools";
+import { BrokenImageCheckerTool, BrokenLinkCheckerTool, LinkAnalyzerTool } from "./link-health-tools";
 import { FaviconCheckerTool, ImagePerformanceCheckerTool, ImageSeoAuditTool } from "./image-audit-tools";
 import { MetaTagsCheckerTool, SerpPreviewTool, SocialPreviewTool } from "./metadata-preview-tools";
 import { CachePolicyTool, CoreWebVitalsTool, PageWeightTool } from "./performance-tools";
@@ -206,6 +207,9 @@ export const SUPPORTED_TOOL_SLUGS = [
   "image-performance-checker",
   "image-seo-audit",
   "favicon-checker",
+  "link-analyzer",
+  "broken-link-checker",
+  "broken-image-checker",
 ] as const;
 
 export function ToolRenderer({ slug, locale }: ToolRendererProps) {
@@ -244,6 +248,9 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "image-performance-checker": return <ImagePerformanceCheckerTool locale={locale} />;
     case "image-seo-audit": return <ImageSeoAuditTool locale={locale} />;
     case "favicon-checker": return <FaviconCheckerTool locale={locale} />;
+    case "link-analyzer": return <LinkAnalyzerTool locale={locale} />;
+    case "broken-link-checker": return <BrokenLinkCheckerTool locale={locale} />;
+    case "broken-image-checker": return <BrokenImageCheckerTool locale={locale} />;
     default: return null;
   }
 }

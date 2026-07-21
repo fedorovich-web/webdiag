@@ -170,6 +170,129 @@ export const seoAuditToolPages = [
     sourceUrls: ["https://web.dev/learn/performance/image-performance", "https://developer.chrome.com/docs/lighthouse/performance/uses-webp-images/"],
   }),
   toolPage({
+    slug: "link-analyzer",
+    seoTitle: { ru: "Анализ внутренних и внешних ссылок", en: "Internal and External Link Analyzer" },
+    metaDescription: { ru: "Проверьте структуру ссылок страницы: внутренние, внешние, nofollow, sponsored, UGC, target blank, якоря, mailto и tel без полноценного crawler-обхода.", en: "Check a page link structure: internal, external, nofollow, sponsored, UGC, target blank, anchors, mailto, and tel without pretending to run a full crawler." },
+    h1: { ru: "Анализ ссылок страницы", en: "Page Link Analyzer" },
+    lead: { ru: "Введите URL страницы, чтобы получить bounded static HTML анализ ссылок: внутренние и внешние URL, rel-сигналы, якорные ссылки, небезопасный target=_blank и потенциальные SEO-проблемы.", en: "Enter a page URL to get a bounded static HTML link analysis: internal and external URLs, rel signals, anchor links, unsafe target=_blank, and likely SEO issues." },
+    quickFacts: [
+      { ru: "Static HTML scan", en: "Static HTML scan" },
+      { ru: "Internal/external links", en: "Internal/external links" },
+      { ru: "rel и target signals", en: "rel and target signals" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте публичный URL страницы, которую нужно проверить.", en: "Paste the public page URL you want to inspect." },
+      { ru: "WebDiag загрузит HTML и извлечёт HTTP(S), якорные, mailto и tel ссылки.", en: "WebDiag fetches the HTML and extracts HTTP(S), anchor, mailto, and tel links." },
+      { ru: "Проверьте распределение внутренних/внешних ссылок, rel-сигналы и рекомендации.", en: "Review internal/external distribution, rel signals, and recommendations." },
+    ],
+    supportedFeatures: [
+      { ru: "Считает internal, external, same-page, mailto, tel и non-http ссылки без запуска браузера.", en: "Counts internal, external, same-page, mailto, tel, and non-http links without launching a browser." },
+      { ru: "Показывает rel=nofollow, sponsored, ugc и target=_blank без noopener/noreferrer.", en: "Shows rel=nofollow, sponsored, ugc, and target=_blank without noopener/noreferrer." },
+      { ru: "Работает через backend SafeHttpFetcher с SSRF-защитой и лимитом HTML-ответа.", en: "Runs through backend SafeHttpFetcher with SSRF protection and an HTML response limit." },
+    ],
+    limitations: [
+      { ru: "Инструмент анализирует статический HTML одной страницы и не исполняет JavaScript.", en: "The tool analyzes static HTML for one page and does not execute JavaScript." },
+      { ru: "Это не полный crawler: он не строит граф всего сайта и не проверяет каждый URL на доступность.", en: "This is not a full crawler: it does not build the whole-site graph or verify every URL availability." },
+    ],
+    useCases: [
+      { ru: "Проверить ссылочную структуру посадочной страницы перед SEO-релизом.", en: "Check a landing page link structure before an SEO release." },
+      { ru: "Найти внешние ссылки без корректных rel-сигналов.", en: "Find external links without correct rel signals." },
+      { ru: "Обнаружить target=_blank без noopener/noreferrer в публичной разметке.", en: "Detect target=_blank without noopener/noreferrer in public markup." },
+    ],
+    technicalNotes: [
+      { ru: "URL нормализуются относительно final URL страницы, включая relative href.", en: "URLs are normalized against the page final URL, including relative href values." },
+      { ru: "Динамические ссылки, добавленные JS после загрузки, должны проверяться будущим browser/crawler слоем.", en: "Links inserted by JavaScript after load require the future browser/crawler layer." },
+    ],
+    faq: [
+      { question: { ru: "Это проверка битых ссылок?", en: "Is this a broken link checker?" }, answer: { ru: "Нет. Link Analyzer показывает структуру ссылок и rel-сигналы. Для проверки статусов используйте Broken Link Checker.", en: "No. Link Analyzer shows link structure and rel signals. Use Broken Link Checker for status verification." } },
+      { question: { ru: "Почему не исполняется JavaScript?", en: "Why is JavaScript not executed?" }, answer: { ru: "MVP intentionally uses a bounded safe HTML scan. Runtime DOM и SPA-ссылки добавляются позже через crawler/browser infrastructure.", en: "The MVP intentionally uses a bounded safe HTML scan. Runtime DOM and SPA links come later through crawler/browser infrastructure." } },
+    ],
+    relatedToolSlugs: ["broken-link-checker", "redirect-chain-checker", "canonical-checker"],
+    sourceUrls: ["https://developer.mozilla.org/docs/Web/HTML/Element/a", "https://developer.mozilla.org/docs/Web/HTML/Attributes/rel/noopener"],
+  }),
+  toolPage({
+    slug: "broken-link-checker",
+    seoTitle: { ru: "Проверка битых ссылок на странице", en: "Broken Link Checker for a Page" },
+    metaDescription: { ru: "Найдите битые HTTP-ссылки в статическом HTML одной страницы: 4xx, 5xx, недоступные URL и проверенные статусы с безопасными лимитами.", en: "Find broken HTTP links in one page static HTML: 4xx, 5xx, unreachable URLs, and checked statuses with safe limits." },
+    h1: { ru: "Проверка битых ссылок", en: "Broken Link Checker" },
+    lead: { ru: "Введите URL страницы, чтобы WebDiag извлёк HTTP(S)-ссылки из HTML и безопасно проверил ограниченный набор уникальных URL на ошибки ответа.", en: "Enter a page URL so WebDiag extracts HTTP(S) links from HTML and safely checks a bounded set of unique URLs for response errors." },
+    quickFacts: [
+      { ru: "HTTP(S) links", en: "HTTP(S) links" },
+      { ru: "4xx / 5xx", en: "4xx / 5xx" },
+      { ru: "Bounded checks", en: "Bounded checks" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте публичный URL страницы.", en: "Paste a public page URL." },
+      { ru: "Инструмент извлечёт уникальные HTTP(S)-ссылки из статического HTML.", en: "The tool extracts unique HTTP(S) links from static HTML." },
+      { ru: "Проверьте broken list, skipped count, статусы и рекомендации по исправлению.", en: "Review the broken list, skipped count, statuses, and remediation recommendations." },
+    ],
+    supportedFeatures: [
+      { ru: "Проверяет до безопасного лимита уникальных HTTP(S)-ссылок за запуск.", en: "Checks up to a safe limit of unique HTTP(S) links per run." },
+      { ru: "Отмечает 4xx, 5xx и network/policy errors как broken candidates.", en: "Marks 4xx, 5xx, and network/policy errors as broken candidates." },
+      { ru: "Не скачивает тела целевых страниц: проверка выполняется read_body=false.", en: "Does not download target page bodies: checks run with read_body=false." },
+    ],
+    limitations: [
+      { ru: "Статический HTML scan не видит ссылки, созданные JavaScript после загрузки.", en: "Static HTML scan does not see links created by JavaScript after load." },
+      { ru: "Инструмент проверяет одну страницу, а не весь сайт и не sitemap-recrawl.", en: "The tool checks one page, not the whole site and not a sitemap recrawl." },
+    ],
+    useCases: [
+      { ru: "Найти 404/500 ссылки на коммерческой странице перед публикацией.", en: "Find 404/500 links on a commercial page before publishing." },
+      { ru: "Проверить внешние ссылки после миграции, редизайна или смены CMS.", en: "Check external links after a migration, redesign, or CMS change." },
+      { ru: "Снизить SEO-риски от ссылок на удалённые страницы и битые ресурсы.", en: "Reduce SEO risk from links to deleted pages and broken resources." },
+    ],
+    technicalNotes: [
+      { ru: "Проверка использует SafeHttpFetcher, DNS/IP policy, redirect limits и no-body mode.", en: "Checks use SafeHttpFetcher, DNS/IP policy, redirect limits, and no-body mode." },
+      { ru: "mailto, tel, anchor и non-http ссылки не считаются broken HTTP URL и попадают в skipped.", en: "mailto, tel, anchor, and non-http links are not broken HTTP URLs and are counted as skipped." },
+    ],
+    faq: [
+      { question: { ru: "Почему часть ссылок skipped?", en: "Why are some links skipped?" }, answer: { ru: "Skipped означает, что ссылка не HTTP(S) или превышен безопасный лимит проверки за один запуск.", en: "Skipped means the link is not HTTP(S) or the safe per-run check limit has been reached." } },
+      { question: { ru: "Можно проверить весь сайт?", en: "Can it check the whole site?" }, answer: { ru: "Текущий инструмент проверяет одну страницу. Полный site crawler должен быть отдельным модулем с очередью, лимитами и историей.", en: "The current tool checks one page. A full site crawler must be a separate module with queueing, limits, and history." } },
+    ],
+    relatedToolSlugs: ["link-analyzer", "redirect-chain-checker", "sitemap-validator"],
+    sourceUrls: ["https://developer.mozilla.org/docs/Web/HTTP/Status", "https://developer.mozilla.org/docs/Web/HTTP/Methods/HEAD"],
+  }),
+  toolPage({
+    slug: "broken-image-checker",
+    seoTitle: { ru: "Проверка битых изображений страницы", en: "Broken Image Checker for a Page" },
+    metaDescription: { ru: "Проверьте изображения из img, srcset, picture source, og:image и twitter:image на 404, 5xx, недоступность и неверный content-type.", en: "Check images from img, srcset, picture source, og:image, and twitter:image for 404, 5xx, unavailability, and wrong content-type." },
+    h1: { ru: "Проверка битых изображений", en: "Broken Image Checker" },
+    lead: { ru: "Введите URL страницы, чтобы найти битые изображения в статическом HTML и социальных превью: недоступные файлы, ошибочные статусы и ответы без image content-type.", en: "Enter a page URL to find broken images in static HTML and social previews: unavailable files, error statuses, and responses without an image content-type." },
+    quickFacts: [
+      { ru: "img / picture / srcset", en: "img / picture / srcset" },
+      { ru: "OG/Twitter images", en: "OG/Twitter images" },
+      { ru: "Content-Type", en: "Content-Type" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте URL страницы с изображениями.", en: "Paste a page URL that contains images." },
+      { ru: "WebDiag соберёт img/srcset/picture и social image candidates из HTML.", en: "WebDiag collects img/srcset/picture and social image candidates from the HTML." },
+      { ru: "Проверьте broken images, неправильные content-type и skipped candidates.", en: "Review broken images, wrong content types, and skipped candidates." },
+    ],
+    supportedFeatures: [
+      { ru: "Извлекает изображения из img src, srcset, picture source, poster и meta social image tags.", en: "Extracts images from img src, srcset, picture source, poster, and meta social image tags." },
+      { ru: "Проверяет HTTP-статус, финальный URL и image/* content-type без скачивания тела.", en: "Checks HTTP status, final URL, and image/* content-type without downloading the body." },
+      { ru: "Отдельно показывает ограничение количества проверенных candidates, чтобы не превращаться в crawler.", en: "Shows checked candidate limits separately so the tool does not become an uncontrolled crawler." },
+    ],
+    limitations: [
+      { ru: "CSS background-image и runtime lazy images требуют browser/network waterfall слоя.", en: "CSS background-image and runtime lazy images require a browser/network waterfall layer." },
+      { ru: "Инструмент проверяет доступность, но не оценивает качество сжатия — для этого есть Image Performance Checker.", en: "The tool checks availability, not compression quality; use Image Performance Checker for that." },
+    ],
+    useCases: [
+      { ru: "Найти сломанные product/hero изображения после деплоя или миграции CDN.", en: "Find broken product/hero images after deployment or CDN migration." },
+      { ru: "Проверить og:image и twitter:image перед публикацией страницы в соцсетях.", en: "Check og:image and twitter:image before publishing a page to social platforms." },
+      { ru: "Увидеть изображения, которые возвращают HTML/redirect/error вместо image content-type.", en: "See images that return HTML, redirects, or errors instead of an image content-type." },
+    ],
+    technicalNotes: [
+      { ru: "URL изображений нормализуются относительно final URL страницы и дедуплицируются.", en: "Image URLs are normalized against the page final URL and deduplicated." },
+      { ru: "Проверка использует backend SafeHttpFetcher в read_body=false режиме с redirect и SSRF limits.", en: "Checks use backend SafeHttpFetcher in read_body=false mode with redirect and SSRF limits." },
+    ],
+    faq: [
+      { question: { ru: "Это то же самое, что Image SEO Audit?", en: "Is this the same as Image SEO Audit?" }, answer: { ru: "Нет. Broken Image Checker проверяет доступность и content-type. Image SEO Audit проверяет alt, размеры, lazy loading и SEO-сигналы.", en: "No. Broken Image Checker checks availability and content type. Image SEO Audit checks alt, dimensions, lazy loading, and SEO signals." } },
+      { question: { ru: "Почему не видны CSS background images?", en: "Why are CSS background images not shown?" }, answer: { ru: "MVP читает статический HTML. CSS/background/runtime resources будут частью будущего browser или crawler слоя.", en: "The MVP reads static HTML. CSS/background/runtime resources belong in the future browser or crawler layer." } },
+    ],
+    relatedToolSlugs: ["image-performance-checker", "image-seo-audit", "open-graph-preview"],
+    sourceUrls: ["https://developer.mozilla.org/docs/Web/HTML/Element/img", "https://developer.mozilla.org/docs/Web/HTML/Element/picture"],
+  }),
+  toolPage({
     slug: "image-seo-audit",
     seoTitle: { ru: "Полный SEO-аудит изображений", en: "Complete Image SEO Audit" },
     metaDescription: { ru: "Проверьте alt-тексты, изображения-ссылки, размеры, lazy-loading, responsive markup и og/twitter image без слабого отдельного Alt Checker.", en: "Check alt text, linked images, dimensions, lazy-loading, responsive markup, and og/twitter image without a weak standalone Alt Checker." },

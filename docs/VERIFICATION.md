@@ -271,3 +271,111 @@ The root Next build compiled and entered static generation for 89 pages, but the
 - Image Metadata Viewer detects metadata signals by byte signatures and does not decode every EXIF field or GPS value.
 - Metadata removal uses Canvas re-encode, which normally strips source metadata chunks but can change format, color profile, file size, and exact pixel representation.
 - Background Remover remains a future AI/provider-backed tool and was not faked in this patch.
+
+---
+
+# A10.13 — Link health tools
+
+A10.13 changes:
+
+- promoted and implemented three link/resource health tools:
+  - `link-analyzer`;
+  - `broken-link-checker`;
+  - `broken-image-checker`;
+- promoted public ready count from 34 to 37 tools while keeping total registry entries at 111;
+- added backend `apps/api/src/webdiag_api/tools/link_health.py` with:
+  - static HTML link extraction;
+  - internal/external/same-page/mailto/tel/non-http link classification;
+  - rel=nofollow/sponsored/ugc and unsafe `target=_blank` detection;
+  - bounded broken HTTP(S) link checks with `read_body=false`;
+  - bounded broken image checks for `img`, `srcset`, `picture source`, poster, `og:image`, and `twitter:image` candidates;
+- added backend endpoints:
+  - `POST /v1/tools/link-analyzer`;
+  - `POST /v1/tools/broken-links`;
+  - `POST /v1/tools/broken-images`;
+- added frontend API proxies:
+  - `/api/tools/link-analyzer`;
+  - `/api/tools/broken-links`;
+  - `/api/tools/broken-images`;
+- added public pages:
+  - `/tools/link-analyzer` and `/en/tools/link-analyzer`;
+  - `/tools/broken-link-checker` and `/en/tools/broken-link-checker`;
+  - `/tools/broken-image-checker` and `/en/tools/broken-image-checker`;
+- added frontend contract validators and UI for all three tools;
+- updated renderer support and public slug allowlist;
+- updated registry/API count tests from 34 ready tools to 37 ready tools;
+- did not add weak microtools such as single-link checker, nofollow checker, target blank checker, single-image checker, or status-code-only checker;
+- did not claim crawler/browser execution: all three tools are clearly bounded static HTML scans.
+
+## Gates observed during A10.13 preparation
+
+| Gate | Result |
+|---|---:|
+| `npm test` | PASS in the original A10.13 working tree before sandbox build crash — 193 total Node/Vitest tests: workspace 37/37, registry 2/2, core 17/17, web 137/137 |
+| `npm run verify:registry` | PASS in the original A10.13 working tree — 111 unique tools, 37 ready tools, no weak ready microtools |
+| `npm run lint` | PASS in the original A10.13 working tree |
+| `npm run typecheck` | PASS in the original A10.13 working tree |
+| `npm run test:python` | PASS in the original A10.13 working tree — 121/121 |
+| `npm run lint:python` | PASS in the original A10.13 working tree |
+| `python -m py_compile apps/api/src/webdiag_api/tools/link_health.py apps/api/tests/test_link_health_tools.py` | PASS after reconstruction |
+| registry JSON count check | PASS after reconstruction — 111 unique tools, 37 ready tools |
+| `npm run build` | NOT COMPLETED in this sandbox: Next build compiled and reached static generation, then the tool runtime failed/timed out before a full build artifact could be trusted |
+| `npm run verify:built-site` | NOT CLAIMED after the build failure |
+| `npm run test:browser` | NOT VERIFIED in this sandbox |
+
+## Browser/build gate note
+
+The browser gate is not claimed as passed in this environment. Previous sandbox runs started Chromium and the local test server but blocked navigation to `http://127.0.0.1:4173/` with `net::ERR_BLOCKED_BY_ADMINISTRATOR`.
+
+The A10.13 patch ZIP was assembled after reconstructing the worktree from the A10.12 baseline plus the same A10.13 changed files, because the sandbox build crash invalidated the original worktree. Run the complete local gate set before commit/push.
+
+## Known limitations after A10.13
+
+- Link Analyzer, Broken Link Checker, and Broken Image Checker use bounded static HTML parsing and do not execute JavaScript.
+- CSS `background-image`, runtime DOM links, SPA route-generated links, and real browser waterfall signals remain future crawler/browser-layer work.
+- Broken Link Checker checks a bounded set of unique HTTP(S) links and skips anchors, `mailto:`, `tel:`, non-HTTP URLs, and links beyond the limit.
+- Broken Image Checker checks availability and `image/*` content-type only; compression quality and AVIF/WebP recommendations remain in Image Performance Checker.
+
+---
+
+# A10.13.1 — link-health Python lint hotfix
+
+A10.13.1 fixes Python style-gate failures reported on Windows after applying A10.13.
+
+Changed files:
+
+- `apps/api/src/webdiag_api/tools/link_health.py`
+- `apps/api/tests/test_link_health_tools.py`
+- `docs/VERIFICATION.md`
+
+Fixes:
+
+- split long Pydantic contract/version declarations;
+- split long parser append calls and response constructors;
+- removed one-line semicolon statements;
+- expanded one-line test branches into standard blocks;
+- sorted Python imports in `test_link_health_tools.py`;
+- kept A10.13 behavior unchanged: bounded static HTML link/image health scans.
+
+Observed in the sandbox for A10.13.1:
+
+| Gate | Result |
+|---|---:|
+| Python max line length check for changed Python files | PASS — no line above 100 characters |
+| Python semicolon quick check for changed Python files | PASS — no semicolon statements |
+| `python -m py_compile apps/api/src/webdiag_api/tools/link_health.py apps/api/tests/test_link_health_tools.py` | PASS |
+
+Required local gate before committing remains unchanged:
+
+```powershell
+npm run test:workspace
+npm test
+npm run verify:registry
+npm run lint
+npm run typecheck
+npm run build
+npm run verify:built-site
+npm run test:python
+npm run lint:python
+npm run verify:python-lock
+```

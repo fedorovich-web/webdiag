@@ -238,12 +238,15 @@
       "en": "Broken Link Checker"
     },
     "category": "seo-audit",
-    "executorClass": "crawler",
-    "riskTier": "R3",
-    "access": "optional",
-    "implementationWave": "W4",
-    "state": "internal",
-    "description": null
+    "executorClass": "safe_fetch",
+    "riskTier": "R2",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет ссылки одной страницы через bounded static HTML scan: внутренние и внешние HTTP(S) URL, 4xx/5xx, недоступные цели и редиректы без полного краулинга сайта.",
+      "en": "Checks links on one page through a bounded static HTML scan: internal and external HTTP(S) URLs, 4xx/5xx, unreachable targets, and redirects without full-site crawling."
+    }
   },
   {
     "id": "WD-016",
@@ -253,12 +256,15 @@
       "en": "Broken Image Checker"
     },
     "category": "seo-audit",
-    "executorClass": "crawler",
-    "riskTier": "R3",
-    "access": "optional",
-    "implementationWave": "W4",
-    "state": "internal",
-    "description": null
+    "executorClass": "safe_fetch",
+    "riskTier": "R2",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет битые изображения одной страницы: img, srcset, picture/source и social images, HTTP-статусы, редиректы и non-image responses.",
+      "en": "Checks broken images on one page: img, srcset, picture/source, and social images, HTTP statuses, redirects, and non-image responses."
+    }
   },
   {
     "id": "WD-017",
@@ -305,8 +311,11 @@
     "riskTier": "R1",
     "access": "none",
     "implementationWave": "W2",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Анализирует ссылочную структуру страницы: внутренние, внешние, якорные, mailto/tel ссылки, rel=nofollow/sponsored/ugc и target=_blank без noopener.",
+      "en": "Analyzes page link structure: internal, external, same-page, mailto/tel links, rel=nofollow/sponsored/ugc, and target=_blank without noopener."
+    }
   },
   {
     "id": "WD-020",
