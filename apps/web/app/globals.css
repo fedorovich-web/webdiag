@@ -1831,3 +1831,17 @@ body:has(.tool-heading) main.shell::before{
 .sitemap-validator-samples .result-list li { overflow-wrap: anywhere; }
 .sitemap-validator-recommendation { margin: 0; padding: 14px; border-left: 3px solid var(--brand); border-radius: var(--radius-sm); background: var(--surface-muted); color: var(--text-soft); font-size: 13px; line-height: 1.55; }
 @media (max-width: 640px) { .sitemap-validator-summary { grid-template-columns: 1fr; } }
+
+.canonical-checker-form { display: grid; gap: 14px; }
+.canonical-checker-result { gap: 18px; }
+.canonical-checker-meta dd { overflow-wrap: anywhere; }
+.canonical-checker-card { display: grid; gap: 8px; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface-muted); }
+.canonical-checker-card h3 { margin: 0; font-size: 14px; letter-spacing: -0.01em; }
+.canonical-checker-card p, .canonical-checker-card small { margin: 0; color: var(--text-soft); font-size: 13px; line-height: 1.55; overflow-wrap: anywhere; }
+.canonical-checker-card small { color: var(--muted); }
+.canonical-checker-signals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.canonical-checker-signals article { display: grid; gap: 6px; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface-muted); }
+.canonical-checker-signals span { color: var(--muted); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.canonical-checker-signals strong { color: var(--text); font-size: 20px; line-height: 1; letter-spacing: -0.03em; }
+.canonical-checker-recommendation { margin: 0; padding: 14px; border-left: 3px solid var(--brand); border-radius: var(--radius-sm); background: var(--surface-muted); color: var(--text-soft); font-size: 13px; line-height: 1.55; }
+@media (max-width: 640px) { .canonical-checker-signals { grid-template-columns: 1fr; } }
