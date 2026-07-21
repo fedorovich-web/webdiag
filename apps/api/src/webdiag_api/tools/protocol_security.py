@@ -5,8 +5,9 @@ import socket
 import ssl
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from html.parser import HTMLParser
 from typing import Annotated, Literal
-from urllib.parse import urlsplit
+from urllib.parse import urljoin, urlsplit
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -200,6 +201,96 @@ class CorsResponse(BaseModel):
     recommendation: str = Field(min_length=1, max_length=900)
 
 
+class ServerTimingMetricResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=120)
+    duration_ms: float | None = Field(default=None, ge=0)
+    description: str | None = Field(default=None, max_length=400)
+
+
+class ServerTimingAnalyzerResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    contract_version: Literal["webdiag.tool.server_timing_analyzer.v1"] = (
+        "webdiag.tool.server_timing_analyzer.v1"
+    )
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    requested_url: str = Field(min_length=1, max_length=2_048)
+    final_url: str = Field(min_length=1, max_length=2_048)
+    status_code: int = Field(ge=100, le=599)
+    raw_header: str | None = Field(default=None, max_length=2_000)
+    server_timing_present: bool
+    metric_count: int = Field(ge=0)
+    metrics: tuple[ServerTimingMetricResponse, ...]
+    redirect_count: int = Field(ge=0)
+    status: ProtocolSecurityStatus
+    recommendation: str = Field(min_length=1, max_length=900)
+
+
+class CookieItemResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=160)
+    secure: bool
+    http_only: bool
+    same_site: str | None = Field(default=None, max_length=40)
+    domain: str | None = Field(default=None, max_length=300)
+    path: str | None = Field(default=None, max_length=300)
+    persistent: bool
+    issues: tuple[str, ...]
+
+
+class CookiePolicyResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    contract_version: Literal["webdiag.tool.cookie_policy_checker.v1"] = (
+        "webdiag.tool.cookie_policy_checker.v1"
+    )
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    requested_url: str = Field(min_length=1, max_length=2_048)
+    final_url: str = Field(min_length=1, max_length=2_048)
+    status_code: int = Field(ge=100, le=599)
+    set_cookie_count: int = Field(ge=0)
+    secure_count: int = Field(ge=0)
+    http_only_count: int = Field(ge=0)
+    same_site_count: int = Field(ge=0)
+    issue_count: int = Field(ge=0)
+    cookies: tuple[CookieItemResponse, ...]
+    redirect_count: int = Field(ge=0)
+    status: ProtocolSecurityStatus
+    recommendation: str = Field(min_length=1, max_length=900)
+
+
+class MixedContentItemResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    url: str = Field(min_length=1, max_length=2_048)
+    source: str = Field(min_length=1, max_length=80)
+    active: bool
+
+
+class MixedContentResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    contract_version: Literal["webdiag.tool.mixed_content_checker.v1"] = (
+        "webdiag.tool.mixed_content_checker.v1"
+    )
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    requested_url: str = Field(min_length=1, max_length=2_048)
+    final_url: str = Field(min_length=1, max_length=2_048)
+    status_code: int = Field(ge=100, le=599)
+    page_scheme: Literal["http", "https"]
+    candidate_count: int = Field(ge=0)
+    mixed_content_count: int = Field(ge=0)
+    active_mixed_content_count: int = Field(ge=0)
+    passive_mixed_content_count: int = Field(ge=0)
+    sample_items: tuple[MixedContentItemResponse, ...]
+    redirect_count: int = Field(ge=0)
+    status: ProtocolSecurityStatus
+    recommendation: str = Field(min_length=1, max_length=900)
+
+
 @dataclass(frozen=True, slots=True)
 class TlsInspectionResult:
     hostname: str
@@ -216,6 +307,56 @@ class TlsInspectionResult:
     key_exchange_bits: int | None
     negotiated_protocol: str | None
 
+
+
+
+@dataclass(frozen=True, slots=True)
+class MixedContentCandidate:
+    url: str
+    source: str
+    active: bool
+
+
+class MixedContentHTMLParser(HTMLParser):
+    def __init__(self, base_url: str) -> None:
+        super().__init__(convert_charrefs=True)
+        self.base_url = base_url
+        self.candidates: list[MixedContentCandidate] = []
+
+    def handle_starttag(
+        self,
+        tag: str,
+        attrs: list[tuple[str, str | None]],
+    ) -> None:
+        values = {name.lower(): value or "" for name, value in attrs}
+        tag = tag.lower()
+        if tag == "script":
+            self._add(values.get("src"), "script-src", active=True)
+        elif tag == "iframe":
+            self._add(values.get("src"), "iframe-src", active=True)
+        elif tag == "object":
+            self._add(values.get("data"), "object-data", active=True)
+        elif tag == "embed":
+            self._add(values.get("src"), "embed-src", active=True)
+        elif tag == "link":
+            rel = values.get("rel", "").lower()
+            source = "link-href"
+            active = any(token in rel for token in ("stylesheet", "preload", "modulepreload"))
+            self._add(values.get("href"), source, active=active)
+        elif tag in {"img", "audio", "video", "source", "track"}:
+            self._add(values.get("src"), f"{tag}-src", active=False)
+            self._add(values.get("poster"), f"{tag}-poster", active=False)
+            for srcset_url in _srcset_urls(values.get("srcset")):
+                self._add(srcset_url, f"{tag}-srcset", active=False)
+
+    def _add(self, value: str | None, source: str, *, active: bool) -> None:
+        if not value:
+            return
+        absolute = urljoin(self.base_url, value.strip())
+        if urlsplit(absolute).scheme in {"http", "https"}:
+            self.candidates.append(
+                MixedContentCandidate(url=absolute, source=source, active=active)
+            )
 
 class TlsInspectionError(RuntimeError):
     pass
@@ -270,7 +411,7 @@ def get_tls_inspector() -> TlsInspector:
 
 
 def get_compression_fetcher() -> SafeHttpFetcher:
-    return SafeHttpFetcher(config=SafeFetchConfig(max_body_bytes=1_024))
+    return SafeHttpFetcher(config=SafeFetchConfig(max_body_bytes=600_000))
 
 
 TlsInspectorDependency = Annotated[TlsInspector, Depends(get_tls_inspector)]
@@ -526,14 +667,122 @@ def inspect_cors(
     )
 
 
+@router.post("/v1/tools/server-timing", response_model=ServerTimingAnalyzerResponse)
+def inspect_server_timing(
+    payload: CompressionRequest,
+    fetcher: CompressionFetcherDependency,
+) -> ServerTimingAnalyzerResponse:
+    fetched = _fetch_or_raise(fetcher, payload.url)
+    raw_header = fetched.headers.get("server-timing")
+    metrics = tuple(_parse_server_timing(raw_header))
+    status_value = _server_timing_status(
+        status_code=fetched.status_code,
+        raw_header=raw_header,
+        metric_count=len(metrics),
+    )
+    return ServerTimingAnalyzerResponse(
+        requested_url=fetched.requested_url,
+        final_url=fetched.final_url,
+        status_code=fetched.status_code,
+        raw_header=raw_header,
+        server_timing_present=raw_header is not None,
+        metric_count=len(metrics),
+        metrics=metrics,
+        redirect_count=len(fetched.redirect_chain),
+        status=status_value,
+        recommendation=_server_timing_recommendation(
+            status_value,
+            raw_header=raw_header,
+            metric_count=len(metrics),
+        ),
+    )
+
+
+@router.post("/v1/tools/cookie-policy", response_model=CookiePolicyResponse)
+def inspect_cookie_policy(
+    payload: CompressionRequest,
+    fetcher: CompressionFetcherDependency,
+) -> CookiePolicyResponse:
+    fetched = _fetch_or_raise(fetcher, payload.url)
+    cookies = tuple(_parse_cookie_items(fetched.headers.get("set-cookie"), fetched.final_url))
+    issue_count = sum(len(cookie.issues) for cookie in cookies)
+    status_value = _cookie_policy_status(
+        status_code=fetched.status_code,
+        set_cookie_count=len(cookies),
+        issue_count=issue_count,
+    )
+    return CookiePolicyResponse(
+        requested_url=fetched.requested_url,
+        final_url=fetched.final_url,
+        status_code=fetched.status_code,
+        set_cookie_count=len(cookies),
+        secure_count=sum(cookie.secure for cookie in cookies),
+        http_only_count=sum(cookie.http_only for cookie in cookies),
+        same_site_count=sum(cookie.same_site is not None for cookie in cookies),
+        issue_count=issue_count,
+        cookies=cookies[:50],
+        redirect_count=len(fetched.redirect_chain),
+        status=status_value,
+        recommendation=_cookie_policy_recommendation(
+            status_value,
+            set_cookie_count=len(cookies),
+            issue_count=issue_count,
+        ),
+    )
+
+
+@router.post("/v1/tools/mixed-content", response_model=MixedContentResponse)
+def inspect_mixed_content(
+    payload: CompressionRequest,
+    fetcher: CompressionFetcherDependency,
+) -> MixedContentResponse:
+    fetched = _fetch_or_raise(fetcher, payload.url, read_body=True)
+    parsed = urlsplit(fetched.final_url)
+    page_scheme = parsed.scheme if parsed.scheme in {"http", "https"} else "http"
+    candidates = _mixed_content_candidates(fetched.body_text, fetched.final_url)
+    mixed = tuple(candidate for candidate in candidates if urlsplit(candidate.url).scheme == "http")
+    active_count = sum(candidate.active for candidate in mixed)
+    passive_count = len(mixed) - active_count
+    status_value = _mixed_content_status(
+        status_code=fetched.status_code,
+        page_scheme=page_scheme,
+        active_count=active_count,
+        passive_count=passive_count,
+    )
+    return MixedContentResponse(
+        requested_url=fetched.requested_url,
+        final_url=fetched.final_url,
+        status_code=fetched.status_code,
+        page_scheme=page_scheme,
+        candidate_count=len(candidates),
+        mixed_content_count=len(mixed),
+        active_mixed_content_count=active_count,
+        passive_mixed_content_count=passive_count,
+        sample_items=tuple(_mixed_content_item(candidate) for candidate in mixed[:50]),
+        redirect_count=len(fetched.redirect_chain),
+        status=status_value,
+        recommendation=_mixed_content_recommendation(
+            status_value,
+            page_scheme=page_scheme,
+            active_count=active_count,
+            passive_count=passive_count,
+        ),
+    )
+
+
 def _fetch_or_raise(
     fetcher: SafeHttpFetcher,
     url: str,
     *,
+    read_body: bool = False,
     extra_headers: dict[str, str] | None = None,
 ):
     try:
-        return fetcher.fetch(url, read_body=False, extra_headers=extra_headers)
+        return fetcher.fetch(
+            url,
+            read_body=read_body,
+            extra_headers=extra_headers,
+        )
     except UrlPolicyError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -853,6 +1102,265 @@ def _cors_recommendation(
     if status_value == "pass":
         return "CORS headers allow the tested origin in this single safe request."
     return "Review CORS origin matching, credentials policy, and cache variation."
+
+
+def _parse_server_timing(value: str | None) -> list[ServerTimingMetricResponse]:
+    if not value:
+        return []
+    metrics: list[ServerTimingMetricResponse] = []
+    for raw_metric in _split_header_list(value)[:50]:
+        parts = [part.strip() for part in raw_metric.split(";") if part.strip()]
+        if not parts:
+            continue
+        name = parts[0][:120]
+        duration_ms: float | None = None
+        description: str | None = None
+        for param in parts[1:]:
+            key, _, raw_param_value = param.partition("=")
+            key = key.strip().lower()
+            raw_param_value = raw_param_value.strip().strip('"')
+            if key == "dur":
+                try:
+                    parsed_duration = float(raw_param_value)
+                except ValueError:
+                    continue
+                if parsed_duration >= 0:
+                    duration_ms = parsed_duration
+            elif key == "desc" and raw_param_value:
+                description = raw_param_value[:400]
+        metrics.append(
+            ServerTimingMetricResponse(
+                name=name,
+                duration_ms=duration_ms,
+                description=description,
+            )
+        )
+    return metrics
+
+
+def _split_header_list(value: str) -> list[str]:
+    items: list[str] = []
+    current: list[str] = []
+    in_quotes = False
+    for char in value:
+        if char == '"':
+            in_quotes = not in_quotes
+        if char == "," and not in_quotes:
+            item = "".join(current).strip()
+            if item:
+                items.append(item)
+            current = []
+            continue
+        current.append(char)
+    item = "".join(current).strip()
+    if item:
+        items.append(item)
+    return items
+
+
+def _server_timing_status(
+    *,
+    status_code: int,
+    raw_header: str | None,
+    metric_count: int,
+) -> ProtocolSecurityStatus:
+    if status_code >= 400:
+        return "fail"
+    if raw_header is None:
+        return "warning"
+    if metric_count == 0:
+        return "warning"
+    return "pass"
+
+
+def _server_timing_recommendation(
+    status_value: ProtocolSecurityStatus,
+    *,
+    raw_header: str | None,
+    metric_count: int,
+) -> str:
+    if status_value == "fail":
+        return "Fix the HTTP response status before interpreting Server-Timing signals."
+    if raw_header is None:
+        return "No Server-Timing header was returned for this response."
+    if metric_count == 0:
+        return "Server-Timing is present but no parseable metrics were found."
+    return "Server-Timing metrics are visible for this bounded single-response check."
+
+
+def _parse_cookie_items(value: str | None, final_url: str) -> list[CookieItemResponse]:
+    if not value:
+        return []
+    https_page = urlsplit(final_url).scheme == "https"
+    items: list[CookieItemResponse] = []
+    for raw_cookie in _split_set_cookie_header(value)[:80]:
+        parsed = _parse_set_cookie(raw_cookie, https_page=https_page)
+        if parsed is not None:
+            items.append(parsed)
+    return items
+
+
+def _split_set_cookie_header(value: str) -> list[str]:
+    items: list[str] = []
+    current: list[str] = []
+    in_expires = False
+    for chunk in value.split(","):
+        stripped = chunk.strip()
+        lower = stripped.lower()
+        if not current:
+            current.append(chunk)
+            in_expires = "expires=" in lower and ";" not in lower
+            continue
+        looks_like_cookie = "=" in stripped.split(";", 1)[0] and not in_expires
+        if looks_like_cookie:
+            items.append(",".join(current).strip())
+            current = [chunk]
+        else:
+            current.append(chunk)
+        if in_expires and ";" in chunk:
+            in_expires = False
+    if current:
+        items.append(",".join(current).strip())
+    return [item for item in items if item]
+
+
+def _parse_set_cookie(raw_cookie: str, *, https_page: bool) -> CookieItemResponse | None:
+    parts = [part.strip() for part in raw_cookie.split(";") if part.strip()]
+    if not parts or "=" not in parts[0]:
+        return None
+    name, _, _cookie_value = parts[0].partition("=")
+    attrs: dict[str, str | bool] = {}
+    for part in parts[1:]:
+        key, separator, value = part.partition("=")
+        normalized_key = key.strip().lower()
+        attrs[normalized_key] = value.strip() if separator else True
+
+    secure = "secure" in attrs
+    http_only = "httponly" in attrs
+    same_site_value = attrs.get("samesite")
+    same_site = str(same_site_value) if isinstance(same_site_value, str) else None
+    domain_value = attrs.get("domain")
+    path_value = attrs.get("path")
+    persistent = "max-age" in attrs or "expires" in attrs
+    issues: list[str] = []
+
+    if https_page and not secure:
+        issues.append("missing-secure")
+    if not http_only:
+        issues.append("missing-httponly")
+    if same_site is None:
+        issues.append("missing-samesite")
+    elif same_site.lower() == "none" and not secure:
+        issues.append("samesite-none-without-secure")
+
+    return CookieItemResponse(
+        name=name[:160],
+        secure=secure,
+        http_only=http_only,
+        same_site=same_site,
+        domain=str(domain_value)[:300] if isinstance(domain_value, str) else None,
+        path=str(path_value)[:300] if isinstance(path_value, str) else None,
+        persistent=persistent,
+        issues=tuple(issues),
+    )
+
+
+def _cookie_policy_status(
+    *,
+    status_code: int,
+    set_cookie_count: int,
+    issue_count: int,
+) -> ProtocolSecurityStatus:
+    if status_code >= 400:
+        return "fail"
+    if set_cookie_count == 0:
+        return "pass"
+    if issue_count > 0:
+        return "warning"
+    return "pass"
+
+
+def _cookie_policy_recommendation(
+    status_value: ProtocolSecurityStatus,
+    *,
+    set_cookie_count: int,
+    issue_count: int,
+) -> str:
+    if status_value == "fail":
+        return "Fix the HTTP response status before interpreting cookie policy."
+    if set_cookie_count == 0:
+        return "No Set-Cookie headers were returned for this single response."
+    if issue_count > 0:
+        return "Review Set-Cookie attributes: Secure, HttpOnly, and SameSite are expected."
+    return "Set-Cookie attributes look controlled for this single response."
+
+
+def _srcset_urls(value: str | None) -> list[str]:
+    if not value:
+        return []
+    urls: list[str] = []
+    for candidate in value.split(","):
+        parts = candidate.strip().split()
+        if parts:
+            urls.append(parts[0])
+    return urls
+
+
+def _mixed_content_candidates(body_text: str, final_url: str) -> list[MixedContentCandidate]:
+    parser = MixedContentHTMLParser(final_url)
+    parser.feed(body_text[:600_000])
+    seen: set[tuple[str, str]] = set()
+    output: list[MixedContentCandidate] = []
+    for candidate in parser.candidates:
+        key = (candidate.url, candidate.source)
+        if key not in seen:
+            seen.add(key)
+            output.append(candidate)
+    return output
+
+
+def _mixed_content_item(candidate: MixedContentCandidate) -> MixedContentItemResponse:
+    return MixedContentItemResponse(
+        url=candidate.url,
+        source=candidate.source,
+        active=candidate.active,
+    )
+
+
+def _mixed_content_status(
+    *,
+    status_code: int,
+    page_scheme: str,
+    active_count: int,
+    passive_count: int,
+) -> ProtocolSecurityStatus:
+    if status_code >= 400:
+        return "fail"
+    if page_scheme != "https":
+        return "warning"
+    if active_count > 0:
+        return "fail"
+    if passive_count > 0:
+        return "warning"
+    return "pass"
+
+
+def _mixed_content_recommendation(
+    status_value: ProtocolSecurityStatus,
+    *,
+    page_scheme: str,
+    active_count: int,
+    passive_count: int,
+) -> str:
+    if status_value == "fail" and active_count > 0:
+        return "Replace active HTTP subresources with HTTPS URLs before deployment."
+    if status_value == "fail":
+        return "Fix the HTTP response status before interpreting mixed-content signals."
+    if page_scheme != "https":
+        return "Mixed-content checks are only meaningful for HTTPS pages."
+    if passive_count > 0:
+        return "Replace HTTP image/media resources with HTTPS URLs to avoid mixed content."
+    return "No static HTTP subresource candidates were found in this HTTPS HTML response."
 
 
 def _compression_status(

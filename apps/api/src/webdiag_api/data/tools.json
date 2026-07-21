@@ -639,19 +639,40 @@
     }
   },
   {
-    "id": "WD-037",
-    "slug": "cookie-security-analyzer",
+    "id": "WD-113",
+    "slug": "server-timing-analyzer",
     "title": {
-      "ru": "Анализ безопасности cookie",
-      "en": "Cookie Security Analyzer"
+      "ru": "Анализ Server-Timing",
+      "en": "Server-Timing Analyzer"
+    },
+    "category": "performance",
+    "executorClass": "safe_fetch",
+    "riskTier": "R1",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "ready",
+    "description": {
+      "ru": "Разбирает Server-Timing header одного HTTP-ответа: metrics, dur, desc и наличие backend timing signals без synthetic performance claims.",
+      "en": "Parses the Server-Timing header for one HTTP response: metrics, dur, desc, and backend timing signals without synthetic performance claims."
+    }
+  },
+  {
+    "id": "WD-037",
+    "slug": "cookie-policy-checker",
+    "title": {
+      "ru": "Проверка политики cookie",
+      "en": "Cookie Policy Checker"
     },
     "category": "security-network",
     "executorClass": "safe_fetch",
     "riskTier": "R1",
     "access": "none",
     "implementationWave": "W2",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет Set-Cookie headers одного ответа: Secure, HttpOnly, SameSite, persistent cookies и атрибуты без browser session tracking.",
+      "en": "Checks Set-Cookie headers for one response: Secure, HttpOnly, SameSite, persistent cookies, and attributes without browser session tracking."
+    }
   },
   {
     "id": "WD-038",
@@ -864,16 +885,19 @@
     "id": "WD-050",
     "slug": "mixed-content-checker",
     "title": {
-      "ru": "Поиск смешанного HTTP/HTTPS-контента",
+      "ru": "Проверка смешанного контента",
       "en": "Mixed Content Checker"
     },
     "category": "security-network",
-    "executorClass": "chromium",
-    "riskTier": "R3",
-    "access": "optional",
-    "implementationWave": "W4",
-    "state": "internal",
-    "description": null
+    "executorClass": "safe_fetch",
+    "riskTier": "R1",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "ready",
+    "description": {
+      "ru": "Ищет HTTP subresource candidates в HTTPS HTML: script, iframe, stylesheet, images, srcset и media без runtime browser DOM.",
+      "en": "Finds HTTP subresource candidates in HTTPS HTML: scripts, iframes, stylesheets, images, srcset, and media without runtime browser DOM."
+    }
   },
   {
     "id": "WD-051",

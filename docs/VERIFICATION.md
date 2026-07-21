@@ -106,3 +106,55 @@ npm run test:python
 npm run lint:python
 npm run verify:python-lock
 ```
+
+# A10.21 — Server timing / cookie / mixed content tools
+
+## Scope
+
+- added Server Timing Analyzer:
+  - parses the `Server-Timing` response header;
+  - extracts metric name, `dur`, and `desc` values;
+  - does not claim synthetic performance measurement or RUM coverage;
+- added Cookie Policy Checker:
+  - checks `Set-Cookie` attributes for one response;
+  - reports Secure, HttpOnly, SameSite, persistent-cookie signals, and issues;
+  - does not evaluate legal consent banners or browser session flows;
+- added Mixed Content Checker:
+  - parses bounded static HTML;
+  - detects HTTP subresource candidates on HTTPS pages;
+  - separates active and passive mixed content;
+  - does not execute JavaScript, parse runtime DOM, or crawl CSS background images;
+- added Next.js proxy routes:
+  - `POST /api/tools/server-timing`;
+  - `POST /api/tools/cookie-policy`;
+  - `POST /api/tools/mixed-content`;
+- promoted exactly 3 public tools to `ready`:
+  - `server-timing-analyzer`;
+  - `cookie-policy-checker`;
+  - `mixed-content-checker`;
+- public tool count is now 61;
+- registry entry count is now 113;
+- no weak one-header or one-cookie microtools were added.
+
+## Local verification notes
+
+The current sandbox reconstruction did not include `node_modules` or `.venv`, so full Vitest/build/npm-python-wrapper gates could not be executed here. The patch was checked with direct Python/API and Node workspace/registry gates:
+
+```text
+python -m py_compile apps/api/src/webdiag_api/tools/protocol_security.py apps/api/tests/test_protocol_security_tools.py
+PASS
+
+python -m pytest apps/api/tests -q
+PASS — 153/153
+
+npm run test:workspace
+PASS — 37/37
+
+npm run verify:registry
+PASS — 113 unique tools, 61 ready tools, no weak ready microtools
+
+registry JSON count/sync
+PASS — 113 entries / 61 ready tools / duplicated backend registry byte-identical
+```
+
+Run the full local pre-push gate before commit/push.

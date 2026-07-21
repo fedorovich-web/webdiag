@@ -6,7 +6,7 @@ const ids = new Set(tools.map((tool) => tool.id));
 const slugs = new Set(tools.map((tool) => tool.slug));
 
 const failures = [];
-if (tools.length !== 112) failures.push(`Expected 112 registry entries, got ${tools.length}.`);
+if (tools.length !== 113) failures.push(`Expected 113 registry entries, got ${tools.length}.`);
 if (ids.size !== tools.length) failures.push("Tool IDs are not unique.");
 if (slugs.size !== tools.length) failures.push("Tool slugs are not unique.");
 for (const tool of tools) {

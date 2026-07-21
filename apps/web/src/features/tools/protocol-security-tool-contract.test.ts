@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  isCookiePolicyResponse,
   isCorsResponse,
   isHttpCompressionResponse,
   isHttpHeadersAnalyzerResponse,
   isHttpProtocolResponse,
+  isMixedContentResponse,
+  isServerTimingAnalyzerResponse,
   isSslCertificateResponse,
   isTlsConfigurationResponse,
   parseHostnameInput,
@@ -120,6 +123,65 @@ describe("protocol security tool contracts", () => {
       wildcard_with_credentials: false,
       redirect_count: 0,
       status: "pass",
+      recommendation: "OK",
+    })).toBe(true);
+
+
+    expect(isServerTimingAnalyzerResponse({
+      contract_version: "webdiag.tool.server_timing_analyzer.v1",
+      generated_at: "2026",
+      requested_url: "https://example.com/",
+      final_url: "https://example.com/",
+      status_code: 200,
+      raw_header: "app;dur=42",
+      server_timing_present: true,
+      metric_count: 1,
+      metrics: [{ name: "app", duration_ms: 42, description: null }],
+      redirect_count: 0,
+      status: "pass",
+      recommendation: "OK",
+    })).toBe(true);
+
+    expect(isCookiePolicyResponse({
+      contract_version: "webdiag.tool.cookie_policy_checker.v1",
+      generated_at: "2026",
+      requested_url: "https://example.com/",
+      final_url: "https://example.com/",
+      status_code: 200,
+      set_cookie_count: 1,
+      secure_count: 1,
+      http_only_count: 1,
+      same_site_count: 1,
+      issue_count: 0,
+      cookies: [{
+        name: "sid",
+        secure: true,
+        http_only: true,
+        same_site: "Lax",
+        domain: null,
+        path: "/",
+        persistent: false,
+        issues: [],
+      }],
+      redirect_count: 0,
+      status: "pass",
+      recommendation: "OK",
+    })).toBe(true);
+
+    expect(isMixedContentResponse({
+      contract_version: "webdiag.tool.mixed_content_checker.v1",
+      generated_at: "2026",
+      requested_url: "https://example.com/",
+      final_url: "https://example.com/",
+      status_code: 200,
+      page_scheme: "https",
+      candidate_count: 1,
+      mixed_content_count: 1,
+      active_mixed_content_count: 1,
+      passive_mixed_content_count: 0,
+      sample_items: [{ url: "http://cdn.example.com/app.js", source: "script-src", active: true }],
+      redirect_count: 0,
+      status: "fail",
       recommendation: "OK",
     })).toBe(true);
   });

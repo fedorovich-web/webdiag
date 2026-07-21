@@ -1,9 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { NextRequest } from "next/server";
 import { POST as compressionPost } from "../../../app/api/tools/http-compression/route";
+import { POST as cookiePolicyPost } from "../../../app/api/tools/cookie-policy/route";
 import { POST as corsPost } from "../../../app/api/tools/cors/route";
 import { POST as headersPost } from "../../../app/api/tools/http-headers/route";
+import { POST as mixedContentPost } from "../../../app/api/tools/mixed-content/route";
 import { POST as protocolPost } from "../../../app/api/tools/http-protocol/route";
+import { POST as serverTimingPost } from "../../../app/api/tools/server-timing/route";
 import { POST as sslPost } from "../../../app/api/tools/ssl-certificate/route";
 import { POST as tlsPost } from "../../../app/api/tools/tls-configuration/route";
 
@@ -160,6 +163,79 @@ describe("protocol security proxy routes", () => {
       origin: "https://example.com",
       url: "https://api.example.com/",
     }));
+    expect(response.status).toBe(200);
+  });
+
+  it("proxies valid Server-Timing responses", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      contract_version: "webdiag.tool.server_timing_analyzer.v1",
+      generated_at: "2026",
+      requested_url: "https://example.com/",
+      final_url: "https://example.com/",
+      status_code: 200,
+      raw_header: "app;dur=42",
+      server_timing_present: true,
+      metric_count: 1,
+      metrics: [{ name: "app", duration_ms: 42, description: null }],
+      redirect_count: 0,
+      status: "pass",
+      recommendation: "OK",
+    }), { status: 200, headers: { "content-type": "application/json" } })));
+
+    const response = await serverTimingPost(request({ url: "https://example.com/" }));
+    expect(response.status).toBe(200);
+  });
+
+  it("proxies valid cookie policy responses", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      contract_version: "webdiag.tool.cookie_policy_checker.v1",
+      generated_at: "2026",
+      requested_url: "https://example.com/",
+      final_url: "https://example.com/",
+      status_code: 200,
+      set_cookie_count: 1,
+      secure_count: 1,
+      http_only_count: 1,
+      same_site_count: 1,
+      issue_count: 0,
+      cookies: [{
+        name: "sid",
+        secure: true,
+        http_only: true,
+        same_site: "Lax",
+        domain: null,
+        path: "/",
+        persistent: false,
+        issues: [],
+      }],
+      redirect_count: 0,
+      status: "pass",
+      recommendation: "OK",
+    }), { status: 200, headers: { "content-type": "application/json" } })));
+
+    const response = await cookiePolicyPost(request({ url: "https://example.com/" }));
+    expect(response.status).toBe(200);
+  });
+
+  it("proxies valid mixed content responses", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      contract_version: "webdiag.tool.mixed_content_checker.v1",
+      generated_at: "2026",
+      requested_url: "https://example.com/",
+      final_url: "https://example.com/",
+      status_code: 200,
+      page_scheme: "https",
+      candidate_count: 1,
+      mixed_content_count: 1,
+      active_mixed_content_count: 1,
+      passive_mixed_content_count: 0,
+      sample_items: [{ url: "http://cdn.example.com/app.js", source: "script-src", active: true }],
+      redirect_count: 0,
+      status: "fail",
+      recommendation: "OK",
+    }), { status: 200, headers: { "content-type": "application/json" } })));
+
+    const response = await mixedContentPost(request({ url: "https://example.com/" }));
     expect(response.status).toBe(200);
   });
 

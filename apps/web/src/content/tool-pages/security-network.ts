@@ -496,4 +496,128 @@ export const securityNetworkToolPages = [
     sourceUrls: ["https://fetch.spec.whatwg.org/"],
   }),
 
+  toolPage({
+    slug: "server-timing-analyzer",
+    seoTitle: { ru: "Анализ Server-Timing", en: "Server-Timing Analyzer" },
+    metaDescription: { ru: "Проверьте Server-Timing header, dur и desc metrics одного HTTP-ответа без fake performance claims.", en: "Check Server-Timing header metrics, dur, and desc values for one HTTP response without fake performance claims." },
+    h1: { ru: "Анализ Server-Timing", en: "Server-Timing Analyzer" },
+    lead: { ru: "Введите URL, чтобы разобрать Server-Timing header и увидеть backend timing signals, которые сервер отдаёт клиенту.", en: "Enter a URL to parse the Server-Timing header and inspect backend timing signals exposed to clients." },
+    quickFacts: [
+      { ru: "Server-Timing", en: "Server-Timing" },
+      { ru: "dur / desc", en: "dur / desc" },
+      { ru: "single response", en: "single response" },
+    ],
+    howToSteps: [
+      { ru: "Введите публичный http/https URL.", en: "Enter a public http/https URL." },
+      { ru: "Запустите анализ response headers.", en: "Run response-header analysis." },
+      { ru: "Проверьте metrics, duration и description values.", en: "Review metric names, duration, and description values." },
+    ],
+    supportedFeatures: [
+      { ru: "Разбирает Server-Timing header на metrics.", en: "Parses Server-Timing header metrics." },
+      { ru: "Показывает dur= и desc= параметры.", en: "Shows dur= and desc= parameters." },
+      { ru: "Не подменяет Lighthouse или RUM-аналитику.", en: "Does not replace Lighthouse or RUM analytics." },
+    ],
+    limitations: [
+      { ru: "Не измеряет реальное время выполнения backend операций.", en: "Does not measure actual backend operation duration." },
+      { ru: "Проверяет только один HTTP response.", en: "Checks only one HTTP response." },
+    ],
+    useCases: [
+      { ru: "Проверить, публикует ли backend timing metrics.", en: "Check whether backend timing metrics are published." },
+      { ru: "Найти отсутствующий Server-Timing перед performance work.", en: "Find missing Server-Timing before performance work." },
+      { ru: "Проверить формат metrics после релиза.", en: "Validate metric formatting after a release." },
+    ],
+    technicalNotes: [
+      { ru: "Инструмент читает header, а не строит synthetic benchmark.", en: "The tool reads a header, not a synthetic benchmark." },
+      { ru: "Результат зависит от конкретного URL и cache/CDN слоя.", en: "The result depends on the URL and cache/CDN layer." },
+    ],
+    faq: [
+      { question: { ru: "Это замена PageSpeed?", en: "Is this a PageSpeed replacement?" }, answer: { ru: "Нет. Server-Timing показывает опубликованные сервером metrics; PageSpeed и RUM измеряют другие уровни performance.", en: "No. Server-Timing exposes server-published metrics; PageSpeed and RUM measure different performance layers." } },
+      { question: { ru: "Почему header отсутствует?", en: "Why is the header missing?" }, answer: { ru: "Многие сайты не публикуют Server-Timing или скрывают его на CDN/cache уровне.", en: "Many sites do not publish Server-Timing or hide it at the CDN/cache layer." } },
+    ],
+    relatedToolSlugs: ["http-headers-analyzer", "core-web-vitals-checker", "cache-policy-checker"],
+    sourceUrls: ["https://www.w3.org/TR/server-timing/"],
+  }),
+  toolPage({
+    slug: "cookie-policy-checker",
+    seoTitle: { ru: "Проверка политики cookie", en: "Cookie Policy Checker" },
+    metaDescription: { ru: "Проверьте Set-Cookie атрибуты: Secure, HttpOnly, SameSite, persistent cookies и базовые issues одного ответа.", en: "Check Set-Cookie attributes: Secure, HttpOnly, SameSite, persistent cookies, and baseline issues for one response." },
+    h1: { ru: "Проверка политики cookie", en: "Cookie Policy Checker" },
+    lead: { ru: "Введите URL, чтобы проверить Set-Cookie headers без browser session tracking и без анализа consent banner.", en: "Enter a URL to inspect Set-Cookie headers without browser session tracking or consent-banner analysis." },
+    quickFacts: [
+      { ru: "Secure", en: "Secure" },
+      { ru: "HttpOnly", en: "HttpOnly" },
+      { ru: "SameSite", en: "SameSite" },
+    ],
+    howToSteps: [
+      { ru: "Введите публичный URL.", en: "Enter a public URL." },
+      { ru: "Запустите cookie policy check.", en: "Run the cookie policy check." },
+      { ru: "Проверьте Set-Cookie count, атрибуты и issues.", en: "Review Set-Cookie count, attributes, and issues." },
+    ],
+    supportedFeatures: [
+      { ru: "Проверяет Secure, HttpOnly и SameSite.", en: "Checks Secure, HttpOnly, and SameSite." },
+      { ru: "Фиксирует SameSite=None без Secure.", en: "Flags SameSite=None without Secure." },
+      { ru: "Отмечает persistent cookies по Max-Age/Expires.", en: "Marks persistent cookies by Max-Age/Expires." },
+    ],
+    limitations: [
+      { ru: "Не кликает cookie banner и не анализирует legal consent.", en: "Does not click cookie banners or analyze legal consent." },
+      { ru: "Проверяет только Set-Cookie headers одного ответа.", en: "Checks only Set-Cookie headers from one response." },
+    ],
+    useCases: [
+      { ru: "Найти cookies без Secure или HttpOnly.", en: "Find cookies missing Secure or HttpOnly." },
+      { ru: "Проверить SameSite policy после релиза.", en: "Check SameSite policy after release." },
+      { ru: "Подготовить baseline для security review.", en: "Prepare a baseline for security review." },
+    ],
+    technicalNotes: [
+      { ru: "Инструмент не оценивает законодательное соответствие cookie banner.", en: "The tool does not assess legal compliance of cookie banners." },
+      { ru: "Некоторые cookies могут появляться только после JS или login-flow.", en: "Some cookies may appear only after JavaScript or login flows." },
+    ],
+    faq: [
+      { question: { ru: "Это legal cookie audit?", en: "Is this a legal cookie audit?" }, answer: { ru: "Нет. Это техническая проверка Set-Cookie атрибутов, не юридическая оценка согласия.", en: "No. This is a technical Set-Cookie attribute check, not legal consent assessment." } },
+      { question: { ru: "Почему нет cookies?", en: "Why are there no cookies?" }, answer: { ru: "Ответ мог не отдавать Set-Cookie до login, JS-flow или выбора consent.", en: "The response may not set cookies before login, JavaScript flow, or consent choice." } },
+    ],
+    relatedToolSlugs: ["security-headers-checker", "cors-checker", "http-headers-analyzer"],
+    sourceUrls: ["https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie"],
+  }),
+  toolPage({
+    slug: "mixed-content-checker",
+    seoTitle: { ru: "Проверка смешанного контента", en: "Mixed Content Checker" },
+    metaDescription: { ru: "Найдите HTTP subresource candidates внутри HTTPS HTML: scripts, iframes, stylesheets, images, media и srcset.", en: "Find HTTP subresource candidates inside HTTPS HTML: scripts, iframes, stylesheets, images, media, and srcset." },
+    h1: { ru: "Проверка смешанного контента", en: "Mixed Content Checker" },
+    lead: { ru: "Введите HTTPS URL, чтобы найти static HTML mixed-content candidates без browser runtime DOM и CSS crawling.", en: "Enter an HTTPS URL to find static HTML mixed-content candidates without browser runtime DOM or CSS crawling." },
+    quickFacts: [
+      { ru: "active/passive", en: "active/passive" },
+      { ru: "static HTML", en: "static HTML" },
+      { ru: "HTTPS page", en: "HTTPS page" },
+    ],
+    howToSteps: [
+      { ru: "Введите публичный HTTPS URL.", en: "Enter a public HTTPS URL." },
+      { ru: "Запустите mixed-content scan.", en: "Run the mixed-content scan." },
+      { ru: "Проверьте active и passive HTTP subresources.", en: "Review active and passive HTTP subresources." },
+    ],
+    supportedFeatures: [
+      { ru: "Проверяет script, iframe, object, embed и stylesheet.", en: "Checks script, iframe, object, embed, and stylesheet." },
+      { ru: "Проверяет img, audio, video, source, poster и srcset.", en: "Checks img, audio, video, source, poster, and srcset." },
+      { ru: "Разделяет active и passive mixed content.", en: "Separates active and passive mixed content." },
+    ],
+    limitations: [
+      { ru: "Не исполняет JavaScript и не строит browser DOM.", en: "Does not execute JavaScript or build a browser DOM." },
+      { ru: "Не сканирует CSS background-image и runtime assets.", en: "Does not scan CSS background-image or runtime assets." },
+    ],
+    useCases: [
+      { ru: "Найти HTTP resources перед HTTPS migration.", en: "Find HTTP resources before HTTPS migration." },
+      { ru: "Проверить шаблон после смены CDN/assets host.", en: "Check a template after changing CDN/assets host." },
+      { ru: "Убрать active mixed content из production pages.", en: "Remove active mixed content from production pages." },
+    ],
+    technicalNotes: [
+      { ru: "Результат основан на bounded static HTML parsing.", en: "The result is based on bounded static HTML parsing." },
+      { ru: "Browser-level mixed content blocking будет отдельным crawler/browser gate.", en: "Browser-level mixed-content blocking belongs to a later crawler/browser gate." },
+    ],
+    faq: [
+      { question: { ru: "Почему CSS background-image не найден?", en: "Why is CSS background-image not detected?" }, answer: { ru: "Этот batch не скачивает CSS и не исполняет runtime DOM; это честное ограничение static HTML scan.", en: "This batch does not fetch CSS or execute runtime DOM; that is an explicit static HTML scan limit." } },
+      { question: { ru: "HTTP-ссылки в меню считаются mixed content?", en: "Are HTTP menu links mixed content?" }, answer: { ru: "Обычные navigation links не считаются subresources; инструмент ищет загружаемые ресурсы страницы.", en: "Regular navigation links are not subresources; the tool finds page-loaded resources." } },
+    ],
+    relatedToolSlugs: ["ssl-certificate-checker", "http-protocol-checker", "security-headers-checker"],
+    sourceUrls: ["https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content"],
+  }),
+
 ] as const;
