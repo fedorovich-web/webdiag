@@ -2,6 +2,47 @@ import { toolPage } from "./shared";
 
 export const seoAuditToolPages = [
   toolPage({
+    slug: "robots-txt-tester",
+    seoTitle: { ru: "Проверка robots.txt для URL", en: "Robots.txt Tester for a URL" },
+    metaDescription: { ru: "Проверьте, доступен ли robots.txt, разрешён ли конкретный URL для user-agent и какие Sitemap directives объявлены.", en: "Check whether robots.txt is available, whether a specific URL is allowed for a user-agent, and which Sitemap directives are declared." },
+    h1: { ru: "Проверка robots.txt", en: "Robots.txt Tester" },
+    lead: { ru: "Введите URL и user-agent, чтобы понять, разрешён ли путь для поискового робота, какое правило сработало и есть ли Sitemap directives для ускорения индексации.", en: "Enter a URL and user-agent to see whether the path is allowed for a search crawler, which rule matched, and whether Sitemap directives are declared." },
+    quickFacts: [
+      { ru: "Один URL", en: "Single URL" },
+      { ru: "Allow/Disallow", en: "Allow/Disallow" },
+      { ru: "Sitemap directives", en: "Sitemap directives" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте URL страницы, которую нужно проверить для индексации.", en: "Paste the page URL you need to test for crawling." },
+      { ru: "Оставьте WebDiagBot или укажите другой user-agent, например Googlebot.", en: "Keep WebDiagBot or enter another user-agent, for example Googlebot." },
+      { ru: "Проверьте статус robots.txt, matching rule и список Sitemap directives.", en: "Review robots.txt status, the matching rule, and the Sitemap directives list." },
+    ],
+    supportedFeatures: [
+      { ru: "Безопасная загрузка /robots.txt с SSRF-защитой и лимитом размера ответа.", en: "Safe /robots.txt fetching with SSRF protection and response size limits." },
+      { ru: "Проверка конкретного пути URL по Allow/Disallow для выбранного user-agent.", en: "Checks a specific URL path against Allow/Disallow rules for the selected user-agent." },
+      { ru: "Показывает matched rule, количество Disallow rules и найденные Sitemap directives.", en: "Shows the matched rule, Disallow rule count, and discovered Sitemap directives." },
+    ],
+    limitations: [
+      { ru: "Инструмент проверяет один URL и не сканирует весь сайт.", en: "The tool checks one URL and does not crawl the whole site." },
+      { ru: "robots.txt управляет crawl-доступом, но сам по себе не гарантирует удаление страницы из индекса.", en: "robots.txt controls crawl access, but does not by itself guarantee that a page is removed from the index." },
+    ],
+    useCases: [
+      { ru: "Проверить, не закрыта ли важная посадочная страница от поисковых роботов.", en: "Check whether an important landing page is blocked from search crawlers." },
+      { ru: "Понять, какое правило robots.txt влияет на каталог, фильтр, блог или сервисную страницу.", en: "Find which robots.txt rule affects a catalog, filter, blog, or service page." },
+      { ru: "Проверить, объявлен ли Sitemap после релиза, миграции или смены CMS.", en: "Verify Sitemap declarations after a release, migration, or CMS change." },
+    ],
+    technicalNotes: [
+      { ru: "WebDiag строит URL /robots.txt от origin проверяемого адреса и анализирует файл существующим robots parser.", en: "WebDiag builds the /robots.txt URL from the tested address origin and analyzes it with the existing robots parser." },
+      { ru: "Allow выигрывает у Disallow при равной специфичности, а более специфичное правило перекрывает более широкое.", en: "Allow wins over Disallow at equal specificity, and a more specific rule overrides a broader one." },
+    ],
+    faq: [
+      { question: { ru: "Если robots.txt недоступен, сайт закрыт от индексации?", en: "If robots.txt is unavailable, is the site blocked from indexing?" }, answer: { ru: "Нет. Недоступный robots.txt обычно означает, что явных crawl-ограничений не найдено. Для рабочих сайтов лучше явно публиковать robots.txt и Sitemap directives.", en: "No. An unavailable robots.txt usually means no explicit crawl restrictions were found. Production sites should publish robots.txt and Sitemap directives explicitly." } },
+      { question: { ru: "Можно ли проверять Googlebot или Яндекс?", en: "Can I test Googlebot or Yandex?" }, answer: { ru: "Да, можно указать другой user-agent. Инструмент применит наиболее специфичную подходящую группу правил.", en: "Yes, you can enter another user-agent. The tool applies the most specific matching rule group." } },
+    ],
+    relatedToolSlugs: ["redirect-chain-checker", "url-encoder-decoder", "json-formatter-validator"],
+    sourceUrls: ["https://developers.google.com/search/docs/crawling-indexing/robots/robots_txt", "https://www.rfc-editor.org/rfc/rfc9309"],
+  }),
+  toolPage({
     slug: "redirect-chain-checker",
     seoTitle: { ru: "Проверка HTTP-статуса и цепочки редиректов", en: "HTTP Status & Redirect Chain Checker" },
     metaDescription: { ru: "Проверьте HTTP-статус, финальный URL, content-type и цепочку редиректов для одной страницы через безопасный WebDiag API.", en: "Check the HTTP status, final URL, content type, and redirect chain for a single page through the safe WebDiag API." },

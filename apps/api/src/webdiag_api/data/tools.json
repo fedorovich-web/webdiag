@@ -131,8 +131,11 @@
     "riskTier": "R1",
     "access": "none",
     "implementationWave": "W2",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет robots.txt для одного URL: доступность файла, разрешён ли путь для user-agent, matching rule и Sitemap directives.",
+      "en": "Checks robots.txt for a single URL: file availability, whether the path is allowed for a user-agent, matching rule, and Sitemap directives."
+    }
   },
   {
     "id": "WD-010",
