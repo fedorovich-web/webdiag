@@ -25,6 +25,7 @@ import { CopyButton } from "../../components/copy-button";
 import { CanonicalCheckerTool } from "./canonical-checker-tool";
 import { ImageCropperTool, ImageFormatConverterTool, ImageOptimizerTool, ImageResizerTool } from "./image-tools";
 import { MetaTagsCheckerTool, SerpPreviewTool, SocialPreviewTool } from "./metadata-preview-tools";
+import { CachePolicyTool, CoreWebVitalsTool, PageWeightTool } from "./performance-tools";
 import { HtmlMarkupValidatorTool, SchemaMarkupGeneratorTool, StructuredDataValidatorTool } from "./markup-tools";
 import { RedirectChainTool } from "./redirect-chain-tool";
 import { RobotsTxtTool } from "./robots-txt-tool";
@@ -194,6 +195,9 @@ export const SUPPORTED_TOOL_SLUGS = [
   "structured-data-validator",
   "schema-markup-generator",
   "html-validator",
+  "core-web-vitals-checker",
+  "cache-policy-checker",
+  "page-weight-analyzer",
 ] as const;
 
 export function ToolRenderer({ slug, locale }: ToolRendererProps) {
@@ -223,6 +227,9 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "structured-data-validator": return <StructuredDataValidatorTool locale={locale} />;
     case "schema-markup-generator": return <SchemaMarkupGeneratorTool locale={locale} />;
     case "html-validator": return <HtmlMarkupValidatorTool locale={locale} />;
+    case "core-web-vitals-checker": return <CoreWebVitalsTool locale={locale} />;
+    case "cache-policy-checker": return <CachePolicyTool locale={locale} />;
+    case "page-weight-analyzer": return <PageWeightTool locale={locale} />;
     default: return null;
   }
 }

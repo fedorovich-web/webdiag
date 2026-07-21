@@ -794,8 +794,11 @@
     "riskTier": "R3",
     "access": "optional",
     "implementationWave": "W4",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет Core Web Vitals и PageSpeed через backend-интеграцию с Google PageSpeed API: mobile/desktop, lab metrics, field data и Lighthouse opportunities.",
+      "en": "Checks Core Web Vitals and PageSpeed through a backend Google PageSpeed API integration: mobile/desktop, lab metrics, field data, and Lighthouse opportunities."
+    }
   },
   {
     "id": "WD-052",
@@ -820,12 +823,15 @@
       "en": "Page Weight Analyzer"
     },
     "category": "performance",
-    "executorClass": "chromium",
-    "riskTier": "R3",
-    "access": "optional",
-    "implementationWave": "W4",
-    "state": "internal",
-    "description": null
+    "executorClass": "safe_fetch",
+    "riskTier": "R2",
+    "access": "none",
+    "implementationWave": "W3",
+    "state": "ready",
+    "description": {
+      "ru": "Анализирует статический вес страницы: HTML, найденные ресурсы, известный размер, тяжёлые assets и использование современных форматов изображений.",
+      "en": "Analyzes static page weight: HTML, discovered resources, known size, heavy assets, and modern image format usage."
+    }
   },
   {
     "id": "WD-054",
@@ -884,8 +890,11 @@
     "riskTier": "R2",
     "access": "none",
     "implementationWave": "W3",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет HTTP-кэширование URL: Cache-Control, validators, Vary, static asset policy и рекомендации для CDN/browser cache.",
+      "en": "Checks HTTP caching for a URL: Cache-Control, validators, Vary, static asset policy, and CDN/browser cache recommendations."
+    }
   },
   {
     "id": "WD-058",
