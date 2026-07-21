@@ -164,8 +164,11 @@
     "riskTier": "R2",
     "access": "none",
     "implementationWave": "W3",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет sitemap.xml или sitemap index: доступность, валидность XML, количество URL и наличие конкретной страницы.",
+      "en": "Checks a sitemap.xml or sitemap index: availability, XML validity, URL count, and whether a target page is listed."
+    }
   },
   {
     "id": "WD-012",
