@@ -272,8 +272,11 @@
     "riskTier": "R2",
     "access": "none",
     "implementationWave": "W3",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет SEO-сигналы изображений на странице: alt, изображения-ссылки, размеры, lazy-loading, responsive markup и social preview images.",
+      "en": "Checks page image SEO signals: alt text, linked images, dimensions, lazy-loading, responsive markup, and social preview images."
+    }
   },
   {
     "id": "WD-018",
@@ -458,8 +461,11 @@
     "riskTier": "R1",
     "access": "none",
     "implementationWave": "W2",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет favicon и web app icons: rel=icon, SVG/ICO fallback, apple-touch-icon, manifest и доступность объявленных иконок.",
+      "en": "Checks favicon and web app icons: rel=icon, SVG/ICO fallback, apple-touch-icon, manifest, and declared icon availability."
+    }
   },
   {
     "id": "WD-030",
@@ -856,12 +862,15 @@
       "en": "Image Performance Checker"
     },
     "category": "performance",
-    "executorClass": "chromium",
-    "riskTier": "R3",
-    "access": "optional",
-    "implementationWave": "W4",
-    "state": "internal",
-    "description": null
+    "executorClass": "safe_fetch",
+    "riskTier": "R2",
+    "access": "none",
+    "implementationWave": "W3",
+    "state": "ready",
+    "description": {
+      "ru": "Анализирует производительность изображений: форматы AVIF/WebP/JPEG/PNG/SVG, вес, responsive markup, width/height, lazy-loading и рекомендации по оптимизации.",
+      "en": "Analyzes image performance: AVIF/WebP/JPEG/PNG/SVG formats, weight, responsive markup, width/height, lazy-loading, and optimization recommendations."
+    }
   },
   {
     "id": "WD-056",

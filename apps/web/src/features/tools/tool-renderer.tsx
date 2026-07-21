@@ -24,6 +24,7 @@ import {
 import { CopyButton } from "../../components/copy-button";
 import { CanonicalCheckerTool } from "./canonical-checker-tool";
 import { ImageCropperTool, ImageFormatConverterTool, ImageOptimizerTool, ImageResizerTool } from "./image-tools";
+import { FaviconCheckerTool, ImagePerformanceCheckerTool, ImageSeoAuditTool } from "./image-audit-tools";
 import { MetaTagsCheckerTool, SerpPreviewTool, SocialPreviewTool } from "./metadata-preview-tools";
 import { CachePolicyTool, CoreWebVitalsTool, PageWeightTool } from "./performance-tools";
 import { HtmlMarkupValidatorTool, SchemaMarkupGeneratorTool, StructuredDataValidatorTool } from "./markup-tools";
@@ -198,6 +199,9 @@ export const SUPPORTED_TOOL_SLUGS = [
   "core-web-vitals-checker",
   "cache-policy-checker",
   "page-weight-analyzer",
+  "image-performance-checker",
+  "image-seo-audit",
+  "favicon-checker",
 ] as const;
 
 export function ToolRenderer({ slug, locale }: ToolRendererProps) {
@@ -230,6 +234,9 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "core-web-vitals-checker": return <CoreWebVitalsTool locale={locale} />;
     case "cache-policy-checker": return <CachePolicyTool locale={locale} />;
     case "page-weight-analyzer": return <PageWeightTool locale={locale} />;
+    case "image-performance-checker": return <ImagePerformanceCheckerTool locale={locale} />;
+    case "image-seo-audit": return <ImageSeoAuditTool locale={locale} />;
+    case "favicon-checker": return <FaviconCheckerTool locale={locale} />;
     default: return null;
   }
 }

@@ -129,6 +129,131 @@ export const seoAuditToolPages = [
 
 
   toolPage({
+    slug: "image-performance-checker",
+    seoTitle: { ru: "Проверка производительности изображений", en: "Image Performance Checker" },
+    metaDescription: { ru: "Проверьте форматы AVIF/WebP/JPEG/PNG/SVG, вес изображений, responsive markup, width/height, lazy-loading и рекомендации по оптимизации.", en: "Check AVIF/WebP/JPEG/PNG/SVG formats, image weight, responsive markup, width/height, lazy-loading, and optimization recommendations." },
+    h1: { ru: "Проверка производительности изображений", en: "Image Performance Checker" },
+    lead: { ru: "Введите URL страницы, чтобы найти изображения, определить форматы и вес, увидеть legacy JPEG/PNG, oversized assets, отсутствие размеров и рекомендации AVIF/WebP без отдельного мусорного PNG-checker.", en: "Enter a page URL to find images, detect formats and weight, see legacy JPEG/PNG, oversized assets, missing dimensions, and AVIF/WebP recommendations without a separate low-value PNG checker." },
+    quickFacts: [
+      { ru: "AVIF/WebP", en: "AVIF/WebP" },
+      { ru: "Image bytes", en: "Image bytes" },
+      { ru: "Responsive markup", en: "Responsive markup" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте публичный URL страницы.", en: "Paste a public page URL." },
+      { ru: "WebDiag загрузит HTML и безопасно проверит найденные image candidates.", en: "WebDiag loads the HTML and safely inspects discovered image candidates." },
+      { ru: "Оцените форматы, known bytes, oversized images, responsive delivery и lazy-loading.", en: "Review formats, known bytes, oversized images, responsive delivery, and lazy-loading." },
+    ],
+    supportedFeatures: [
+      { ru: "Находит img, srcset, picture/source и social preview images в static HTML.", en: "Finds img, srcset, picture/source, and social preview images in static HTML." },
+      { ru: "Классифицирует AVIF, WebP, JPEG, PNG, SVG, GIF, ICO и unknown форматы.", en: "Classifies AVIF, WebP, JPEG, PNG, SVG, GIF, ICO, and unknown formats." },
+      { ru: "Рекомендует AVIF/WebP только как часть полноценного image performance анализа.", en: "Recommends AVIF/WebP only as part of a complete image performance analysis." },
+    ],
+    limitations: [
+      { ru: "Static HTML scan не исполняет JS и не видит CSS background-image/runtime assets.", en: "Static HTML scan does not execute JS and does not see CSS background-image/runtime assets." },
+      { ru: "LCP image и фактический transfer size подтверждаются PageSpeed/browser waterfall.", en: "LCP image and actual transfer size are confirmed with PageSpeed/browser waterfall." },
+    ],
+    useCases: [
+      { ru: "Найти тяжёлые JPG/PNG, которые стоит заменить на AVIF/WebP.", en: "Find heavy JPG/PNG images that should move to AVIF/WebP." },
+      { ru: "Проверить width/height и responsive image markup после релиза.", en: "Check width/height and responsive image markup after a release." },
+      { ru: "Подготовить список image fixes перед Core Web Vitals оптимизацией.", en: "Prepare image fixes before Core Web Vitals optimization." },
+    ],
+    technicalNotes: [
+      { ru: "Ресурсы проверяются через SafeHttpFetcher с SSRF-защитой и bounded лимитом.", en: "Resources are checked through SafeHttpFetcher with SSRF protection and bounded limits." },
+      { ru: "Это не отдельный AVIF/PNG checker, а полноценный image performance tool.", en: "This is not a separate AVIF/PNG checker, but a complete image performance tool." },
+    ],
+    faq: [
+      { question: { ru: "Всегда ли нужно заменять PNG на AVIF?", en: "Should PNG always be replaced by AVIF?" }, answer: { ru: "Нет. Фото и тяжёлые raster assets обычно кандидаты для AVIF/WebP; SVG подходит для векторной графики, а PNG может быть оправдан для lossless UI-графики.", en: "No. Photos and heavy raster assets are usually AVIF/WebP candidates; SVG fits vector graphics, while PNG can be justified for lossless UI graphics." } },
+      { question: { ru: "Почему это не полный waterfall?", en: "Why is this not a full waterfall?" }, answer: { ru: "Полный waterfall требует браузера/PageSpeed. Этот tool быстрый и безопасный static scan для image layer.", en: "A full waterfall requires a browser/PageSpeed. This tool is a fast and safe static scan for the image layer." } },
+    ],
+    relatedToolSlugs: ["page-weight-analyzer", "core-web-vitals-checker", "image-seo-audit"],
+    sourceUrls: ["https://web.dev/learn/performance/image-performance", "https://developer.chrome.com/docs/lighthouse/performance/uses-webp-images/"],
+  }),
+  toolPage({
+    slug: "image-seo-audit",
+    seoTitle: { ru: "Полный SEO-аудит изображений", en: "Complete Image SEO Audit" },
+    metaDescription: { ru: "Проверьте alt-тексты, изображения-ссылки, размеры, lazy-loading, responsive markup и og/twitter image без слабого отдельного Alt Checker.", en: "Check alt text, linked images, dimensions, lazy-loading, responsive markup, and og/twitter image without a weak standalone Alt Checker." },
+    h1: { ru: "Полный SEO-аудит изображений", en: "Complete Image SEO Audit" },
+    lead: { ru: "Проверьте изображения страницы как SEO-сигналы: alt coverage, изображения внутри ссылок, пустые декоративные alt, размеры, responsive markup, lazy-loading и social preview image.", en: "Check page images as SEO signals: alt coverage, linked images, empty decorative alt, dimensions, responsive markup, lazy-loading, and social preview image." },
+    quickFacts: [
+      { ru: "Alt coverage", en: "Alt coverage" },
+      { ru: "Linked images", en: "Linked images" },
+      { ru: "PNG/JPEG/WebP", en: "PNG/JPEG/WebP" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте URL страницы.", en: "Paste a page URL." },
+      { ru: "Запустите static HTML scan через WebDiag API.", en: "Run a static HTML scan through the WebDiag API." },
+      { ru: "Исправьте alt, linked images, dimensions и social preview image по приоритетам.", en: "Fix alt, linked images, dimensions, and social preview image by priority." },
+    ],
+    supportedFeatures: [
+      { ru: "Отличает missing alt, empty decorative alt и изображения-ссылки без текста.", en: "Distinguishes missing alt, empty decorative alt, and linked images without text." },
+      { ru: "Проверяет width/height, srcset/picture и loading strategy.", en: "Checks width/height, srcset/picture, and loading strategy." },
+      { ru: "Показывает og:image и twitter:image как часть image SEO.", en: "Shows og:image and twitter:image as part of image SEO." },
+    ],
+    limitations: [
+      { ru: "Не исполняет JavaScript и не проверяет изображения, появляющиеся только после runtime rendering.", en: "Does not execute JavaScript and does not check images created only by runtime rendering." },
+      { ru: "Не генерирует AI-alt и не выдумывает описания изображений.", en: "Does not generate AI alt text and does not invent image descriptions." },
+    ],
+    useCases: [
+      { ru: "Проверить CMS-шаблон каталога/блога на alt и размеры изображений.", en: "Check a CMS catalog/blog template for image alt text and dimensions." },
+      { ru: "Найти изображения-ссылки без текстового эквивалента.", en: "Find linked images without a text equivalent." },
+      { ru: "Проверить social preview image перед публикацией страницы.", en: "Check social preview image before publishing a page." },
+    ],
+    technicalNotes: [
+      { ru: "H1/alt/png не выделяются в мусорные микротулы; alt остаётся подпроверкой внутри image SEO.", en: "H1/alt/png are not split into low-value microtools; alt remains a subcheck inside image SEO." },
+      { ru: "Проверка выполняется по static HTML и безопасному URL policy.", en: "The check runs on static HTML and safe URL policy." },
+    ],
+    faq: [
+      { question: { ru: "Почему нет отдельного Alt Checker?", en: "Why is there no separate Alt Checker?" }, answer: { ru: "Потому что alt — только часть image SEO. Отдельный Alt Checker был бы слабым микротулом.", en: "Because alt is only part of image SEO. A standalone Alt Checker would be a weak microtool." } },
+      { question: { ru: "Пустой alt всегда ошибка?", en: "Is an empty alt always an error?" }, answer: { ru: "Нет. Для декоративного изображения alt='' корректен. Для изображения внутри ссылки пустой alt почти всегда проблема доступности и SEO.", en: "No. alt='' is correct for decorative images. For linked images, empty alt is usually an accessibility and SEO problem." } },
+    ],
+    relatedToolSlugs: ["image-performance-checker", "meta-tags-checker", "open-graph-preview"],
+    sourceUrls: ["https://web.dev/learn/accessibility/images", "https://developers.google.com/search/docs/appearance/google-images"],
+  }),
+  toolPage({
+    slug: "favicon-checker",
+    seoTitle: { ru: "Проверка favicon и web app icons", en: "Favicon and Web App Icon Checker" },
+    metaDescription: { ru: "Проверьте rel=icon, SVG favicon, /favicon.ico fallback, apple-touch-icon, manifest и доступность web app icons.", en: "Check rel=icon, SVG favicon, /favicon.ico fallback, apple-touch-icon, manifest, and web app icon availability." },
+    h1: { ru: "Проверка favicon и app icons", en: "Favicon and App Icons Checker" },
+    lead: { ru: "Введите URL страницы, чтобы проверить объявленные иконки сайта: SVG favicon, ICO fallback, apple-touch-icon, web app manifest и доступность файлов.", en: "Enter a page URL to check declared site icons: SVG favicon, ICO fallback, apple-touch-icon, web app manifest, and file availability." },
+    quickFacts: [
+      { ru: "SVG favicon", en: "SVG favicon" },
+      { ru: "Apple touch icon", en: "Apple touch icon" },
+      { ru: "Manifest", en: "Manifest" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте URL страницы.", en: "Paste a page URL." },
+      { ru: "WebDiag найдёт link rel=icon/apple-touch-icon/manifest и проверит fallback /favicon.ico.", en: "WebDiag finds link rel=icon/apple-touch-icon/manifest and checks fallback /favicon.ico." },
+      { ru: "Проверьте форматы, размеры, статусы и недостающие app icon сигналы.", en: "Review formats, sizes, statuses, and missing app icon signals." },
+    ],
+    supportedFeatures: [
+      { ru: "Проверяет declared icons и fallback /favicon.ico.", en: "Checks declared icons and fallback /favicon.ico." },
+      { ru: "Определяет SVG/PNG/ICO по content-type и URL.", en: "Detects SVG/PNG/ICO by content-type and URL." },
+      { ru: "Показывает manifest URL без fake PWA validation.", en: "Shows manifest URL without fake PWA validation." },
+    ],
+    limitations: [
+      { ru: "Не выполняет полный PWA audit и не валидирует содержимое manifest в этом MVP.", en: "Does not run a full PWA audit and does not validate manifest contents in this MVP." },
+      { ru: "Не проверяет реальные отображения иконок в каждом браузере/OS.", en: "Does not verify icon rendering in every browser/OS." },
+    ],
+    useCases: [
+      { ru: "Проверить favicon после редизайна или смены домена.", en: "Check favicon after a redesign or domain migration." },
+      { ru: "Найти битые icon links и отсутствующий apple-touch-icon.", en: "Find broken icon links and missing apple-touch-icon." },
+      { ru: "Подготовить сайт к аккуратному отображению в вкладках, закладках и mobile home screen.", en: "Prepare the site for clean display in tabs, bookmarks, and mobile home screen." },
+    ],
+    technicalNotes: [
+      { ru: "Проверка использует bounded safe fetch; /favicon.ico добавляется как compatibility fallback.", en: "The check uses bounded safe fetch; /favicon.ico is added as a compatibility fallback." },
+      { ru: "Это app icon coverage checker, не генератор favicon.", en: "This is an app icon coverage checker, not a favicon generator." },
+    ],
+    faq: [
+      { question: { ru: "Нужен ли SVG favicon?", en: "Do I need an SVG favicon?" }, answer: { ru: "Желательно. SVG даёт чёткую масштабируемую иконку, но /favicon.ico fallback всё ещё полезен для совместимости.", en: "Preferably yes. SVG gives a crisp scalable icon, while /favicon.ico fallback remains useful for compatibility." } },
+      { question: { ru: "Это проверяет PWA?", en: "Does this check PWA?" }, answer: { ru: "Нет. Этот инструмент проверяет icon coverage и manifest presence. Полный PWA audit будет отдельным performance/app tool.", en: "No. This tool checks icon coverage and manifest presence. Full PWA audit is a separate performance/app tool." } },
+    ],
+    relatedToolSlugs: ["image-performance-checker", "image-format-converter", "html-validator"],
+    sourceUrls: ["https://developer.mozilla.org/docs/Web/HTML/Attributes/rel/icon", "https://developer.mozilla.org/docs/Web/Manifest"],
+  }),
+
+
+  toolPage({
     slug: "structured-data-validator",
     seoTitle: { ru: "Проверка структурированных данных JSON-LD", en: "Structured Data Validator" },
     metaDescription: { ru: "Проверьте JSON-LD на странице: валидность JSON, Schema.org типы, ошибки парсинга и рекомендации без fake rich-result обещаний.", en: "Check page JSON-LD: JSON validity, Schema.org types, parse errors, and recommendations without fake rich-result promises." },

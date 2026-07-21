@@ -88,3 +88,70 @@ The browser gate is not claimed as passed in this environment. Previous runs in 
 2. Image utility batch: Resize Image, Compress Image, Convert Image.
 3. Image editing utility batch: Crop Image, SVG Optimizer, Add Watermark.
 4. Content structure batch: Heading Structure Checker, Keyword/Phrase Frequency Analyzer, Readability Analyzer.
+
+---
+
+# A10.10 — Image audit tools
+
+A10.10 changes:
+
+- added backend image audit tool endpoints:
+  - `POST /v1/tools/image-performance`;
+  - `POST /v1/tools/image-seo`;
+  - `POST /v1/tools/favicon`;
+- added `apps/api/src/webdiag_api/tools/image_audit.py`;
+- added Image Performance Checker:
+  - bounded static HTML scan;
+  - discovers `img`, `srcset`, `picture/source`, `og:image`, and `twitter:image` candidates;
+  - safely inspects up to 50 image candidates with `SafeHttpFetcher` and `read_body=false`;
+  - classifies AVIF, WebP, JPEG, PNG, SVG, GIF, ICO, BMP, and unknown formats;
+  - reports known image bytes, unknown sizes, largest images, legacy raster count, modern raster count, SVG count, oversized images, missing dimensions, lazy-loading candidates, and responsive markup coverage;
+  - recommends AVIF/WebP only inside a full image performance analysis, not as a weak standalone AVIF/PNG checker;
+- added Image SEO Audit:
+  - checks missing alt text, empty decorative alt, linked images without text, explicit dimensions, responsive image markup, lazy-loading strategy, and social preview images;
+  - keeps alt as a subcheck inside a complete image SEO tool, not as a standalone `Alt Checker` microtool;
+  - does not generate AI alt text or invent image descriptions;
+- added Favicon / App Icons Checker:
+  - checks declared `rel=icon`, `apple-touch-icon`, `mask-icon`, `manifest`, and fallback `/favicon.ico`;
+  - detects SVG, PNG, ICO and other image icon formats by content-type and URL;
+  - reports manifest presence without pretending to perform a full PWA audit;
+- added Next.js proxy routes:
+  - `POST /api/tools/image-performance`;
+  - `POST /api/tools/image-seo`;
+  - `POST /api/tools/favicon`;
+- added frontend tool contracts, validators, components, proxy tests, helper tests, and editorial pages for:
+  - `/tools/image-performance-checker` and `/en/tools/image-performance-checker`;
+  - `/tools/image-seo-audit` and `/en/tools/image-seo-audit`;
+  - `/tools/favicon-checker` and `/en/tools/favicon-checker`;
+- promoted exactly 3 public tools to `ready`:
+  - `image-performance-checker`;
+  - `image-seo-audit`;
+  - `favicon-checker`;
+- updated registry counts from 28 to 31 ready tools;
+- did not add weak microtools such as PNG checker, AVIF checker, Alt Checker, or single-attribute image checks.
+
+## Confirmed gates in this environment
+
+| Gate | Result |
+|---|---:|
+| `npm test` | PASS — 175/175 JavaScript/TypeScript tests |
+| `npm run verify:registry` | PASS — 110 unique tools, 31 ready tools, no weak ready microtools |
+| `npm run lint` | PASS |
+| `npm run typecheck` | PASS |
+| `npm run test:python` | PASS — 115/115 |
+| `npm run lint:python` | PASS |
+| `npm run verify:python-lock` | PASS — 30 locked packages matched installed packages for linux |
+| `npm run build` | NOT COMPLETED in this sandbox: Next build compiled and reached static generation, then the tool runtime timed out before writing `prerender-manifest.json` |
+| `npm run verify:built-site` | NOT COMPLETED after the build timeout because `.next/prerender-manifest.json` was not available |
+| `npm run test:browser` | NOT VERIFIED in this sandbox |
+
+## Browser/build gate note
+
+The browser gate is not claimed as passed in this environment. The local sandbox also timed out while Next generated 83 static pages, so the root `npm run build` and subsequent `verify:built-site` must be run on the user's local machine before commit/push.
+
+## Known limitations after A10.10
+
+- Image Performance Checker is a bounded static HTML scan. It does not execute JavaScript, inspect CSS `background-image`, detect the runtime LCP image, or replace PageSpeed/browser waterfall.
+- Image SEO Audit does not generate AI alt text and does not infer image meaning from pixels.
+- Favicon Checker validates icon declarations and availability, but it is not a full PWA manifest validator.
+- Full image utility operations such as resize, compress, convert, crop, SVG optimizer, and watermark remain planned as separate utility batches.
