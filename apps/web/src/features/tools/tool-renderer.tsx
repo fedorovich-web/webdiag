@@ -23,6 +23,11 @@ import {
 } from "@webdiag/tool-core";
 import { CopyButton } from "../../components/copy-button";
 import { CanonicalCheckerTool } from "./canonical-checker-tool";
+import {
+  CspAnalyzerTool,
+  ResourceHintsAnalyzerTool,
+  ThirdPartyScriptAnalyzerTool,
+} from "./client-delivery-tools";
 import { AddWatermarkImageTool, ImageMetadataViewerTool, SvgOptimizerTool } from "./image-advanced-tools";
 import { ImageCropperTool, ImageFormatConverterTool, ImageOptimizerTool, ImageResizerTool } from "./image-tools";
 import { BrokenImageCheckerTool, BrokenLinkCheckerTool, LinkAnalyzerTool } from "./link-health-tools";
@@ -256,6 +261,9 @@ export const SUPPORTED_TOOL_SLUGS = [
   "server-timing-analyzer",
   "cookie-policy-checker",
   "mixed-content-checker",
+  "csp-analyzer",
+  "third-party-script-analyzer",
+  "resource-hints-analyzer",
 ] as const;
 
 export function ToolRenderer({ slug, locale }: ToolRendererProps) {
@@ -321,6 +329,9 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "server-timing-analyzer": return <ServerTimingAnalyzerTool locale={locale} />;
     case "cookie-policy-checker": return <CookiePolicyCheckerTool locale={locale} />;
     case "mixed-content-checker": return <MixedContentCheckerTool locale={locale} />;
+    case "csp-analyzer": return <CspAnalyzerTool locale={locale} />;
+    case "third-party-script-analyzer": return <ThirdPartyScriptAnalyzerTool locale={locale} />;
+    case "resource-hints-analyzer": return <ResourceHintsAnalyzerTool locale={locale} />;
     default: return null;
   }
 }

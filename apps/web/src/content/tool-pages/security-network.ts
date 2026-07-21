@@ -620,4 +620,45 @@ export const securityNetworkToolPages = [
     sourceUrls: ["https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content"],
   }),
 
+  toolPage({
+    slug: "csp-analyzer",
+    seoTitle: { ru: "Анализ Content Security Policy", en: "Content Security Policy Analyzer" },
+    metaDescription: { ru: "Разберите CSP header, Report-Only и static meta policy: директивы, unsafe-inline, unsafe-eval, wildcard sources и ключевые ограничения.", en: "Parse CSP headers, Report-Only, and static meta policies: directives, unsafe-inline, unsafe-eval, wildcard sources, and key restrictions." },
+    h1: { ru: "Анализ Content Security Policy", en: "Content Security Policy Analyzer" },
+    lead: { ru: "Введите URL, чтобы получить bounded policy review без исполнения страницы, fake security score и обещаний защиты от всех XSS-сценариев.", en: "Enter a URL for a bounded policy review without executing the page, producing a fake security score, or claiming protection from every XSS scenario." },
+    quickFacts: [
+      { ru: "header + meta", en: "header + meta" },
+      { ru: "Report-Only", en: "Report-Only" },
+      { ru: "директивы и sources", en: "directives and sources" },
+    ],
+    howToSteps: [
+      { ru: "Введите публичный http/https URL.", en: "Enter a public http/https URL." },
+      { ru: "Запустите разбор CSP response headers и static meta.", en: "Run CSP response-header and static-meta parsing." },
+      { ru: "Проверьте risky sources, missing directives и ограничения meta policy.", en: "Review risky sources, missing directives, and meta-policy limits." },
+    ],
+    supportedFeatures: [
+      { ru: "Разбирает enforced CSP, Report-Only и meta CSP.", en: "Parses enforced CSP, Report-Only, and meta CSP." },
+      { ru: "Показывает directives, values и duplicate directives.", en: "Shows directives, values, and duplicate directives." },
+      { ru: "Отмечает unsafe-inline, unsafe-eval, wildcard и missing key directives.", en: "Flags unsafe-inline, unsafe-eval, wildcard, and missing key directives." },
+    ],
+    limitations: [
+      { ru: "Не исполняет JavaScript и не наблюдает browser CSP violations.", en: "Does not execute JavaScript or observe browser CSP violations." },
+      { ru: "Не доказывает отсутствие XSS, bypass или ошибок серверной логики.", en: "Does not prove the absence of XSS, bypasses, or server-side logic flaws." },
+    ],
+    useCases: [
+      { ru: "Проверить CSP после изменения CDN, analytics или frontend bundle.", en: "Check CSP after changing CDN, analytics, or frontend bundles." },
+      { ru: "Найти слишком широкие source expressions перед hardening.", en: "Find overly broad source expressions before hardening." },
+      { ru: "Сравнить enforced и Report-Only rollout signals.", en: "Compare enforced and Report-Only rollout signals." },
+    ],
+    technicalNotes: [
+      { ru: "Meta CSP имеет ограничения и не заменяет HTTP header для frame-ancestors.", en: "Meta CSP has limitations and does not replace the HTTP header for frame-ancestors." },
+      { ru: "Перед ужесточением policy нужен report-only rollout и проверка реальных ресурсов.", en: "Policy tightening should use a report-only rollout and validation of actual resources." },
+    ],
+    faq: [
+      { question: { ru: "Это дублирует Security Headers Checker?", en: "Does this duplicate Security Headers Checker?" }, answer: { ru: "Нет. Security Headers Checker проверяет общий набор headers, а этот инструмент разбирает структуру и source expressions CSP.", en: "No. Security Headers Checker covers the general header set; this tool parses CSP structure and source expressions." } },
+      { question: { ru: "Статус pass гарантирует защиту от XSS?", en: "Does pass guarantee XSS protection?" }, answer: { ru: "Нет. Pass означает только отсутствие выбранных risky constructions в bounded static review.", en: "No. Pass only means the selected risky constructions were not found in the bounded static review." } },
+    ],
+    relatedToolSlugs: ["security-headers-checker", "http-headers-analyzer", "third-party-script-analyzer"],
+    sourceUrls: ["https://www.w3.org/TR/CSP3/", "https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP"],
+  }),
 ] as const;
