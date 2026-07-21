@@ -548,8 +548,11 @@
     "riskTier": "R1",
     "access": "none",
     "implementationWave": "W2",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет SSL-сертификат домена: срок действия, issuer, SAN, соответствие hostname и базовый статус продления.",
+      "en": "Checks a domain SSL certificate: validity window, issuer, SAN coverage, hostname match, and renewal status."
+    }
   },
   {
     "id": "WD-032",
@@ -563,8 +566,11 @@
     "riskTier": "R2",
     "access": "none",
     "implementationWave": "W3",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет TLS handshake: версию TLS, cipher suite, ALPN/HTTP2 signal и сертификат без заявления полного SSL Labs аудита.",
+      "en": "Checks a TLS handshake: TLS version, cipher suite, ALPN/HTTP2 signal, and certificate status without claiming a full SSL Labs audit."
+    }
   },
   {
     "id": "WD-033",
@@ -671,8 +677,11 @@
     "riskTier": "R1",
     "access": "none",
     "implementationWave": "W2",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет HTTP compression policy для ответа: gzip/Brotli/deflate signal, Vary: Accept-Encoding и compressible content type.",
+      "en": "Checks HTTP compression policy for a response: gzip/Brotli/deflate signal, Vary: Accept-Encoding, and compressible content type."
+    }
   },
   {
     "id": "WD-040",

@@ -12,6 +12,7 @@ from webdiag_api.tools.markup import router as markup_tool_router
 from webdiag_api.tools.network_dns import router as network_dns_tool_router
 from webdiag_api.tools.page_metadata import router as page_metadata_tool_router
 from webdiag_api.tools.performance import router as performance_tool_router
+from webdiag_api.tools.protocol_security import router as protocol_security_tool_router
 from webdiag_api.tools.robots_txt import router as robots_txt_tool_router
 from webdiag_api.tools.security_headers import router as security_headers_tool_router
 from webdiag_api.tools.sitemap_xml import router as sitemap_xml_tool_router
@@ -28,6 +29,7 @@ app.include_router(markup_tool_router)
 app.include_router(network_dns_tool_router)
 app.include_router(page_metadata_tool_router)
 app.include_router(performance_tool_router)
+app.include_router(protocol_security_tool_router)
 app.include_router(robots_txt_tool_router)
 app.include_router(security_headers_tool_router)
 app.include_router(sitemap_xml_tool_router)
