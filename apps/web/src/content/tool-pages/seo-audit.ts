@@ -2,6 +2,47 @@ import { toolPage } from "./shared";
 
 export const seoAuditToolPages = [
   toolPage({
+    slug: "security-headers-checker",
+    seoTitle: { ru: "Проверка заголовков безопасности онлайн", en: "Security Headers Checker" },
+    metaDescription: { ru: "Проверьте HSTS, CSP, nosniff, защиту от фрейминга, Referrer-Policy и Permissions-Policy для одной страницы.", en: "Check HSTS, CSP, nosniff, frame protection, Referrer-Policy, and Permissions-Policy for a single page." },
+    h1: { ru: "Проверка заголовков безопасности", en: "Security Headers Checker" },
+    lead: { ru: "Введите URL, чтобы проверить основные HTTP-заголовки, которые снижают риск XSS, clickjacking, утечек referrer-данных и небезопасной работы браузерных API.", en: "Enter a URL to check the core HTTP headers that reduce XSS, clickjacking, referrer leakage, and unsafe browser API exposure." },
+    quickFacts: [
+      { ru: "Один URL", en: "Single URL" },
+      { ru: "HTTP headers", en: "HTTP headers" },
+      { ru: "Security score", en: "Security score" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте адрес страницы или домена, который нужно проверить.", en: "Paste the page or domain address you need to check." },
+      { ru: "Запустите проверку и дождитесь ответа WebDiag API.", en: "Run the check and wait for the WebDiag API response." },
+      { ru: "Оцените HSTS, CSP, nosniff, защиту от фрейминга, Referrer-Policy и Permissions-Policy.", en: "Review HSTS, CSP, nosniff, frame protection, Referrer-Policy, and Permissions-Policy." },
+    ],
+    supportedFeatures: [
+      { ru: "Безопасная загрузка заголовков через backend с SSRF-защитой и лимитами редиректов.", en: "Safe header fetching through the backend with SSRF protection and redirect limits." },
+      { ru: "Показывает итоговую оценку, уровень риска, найденные и отсутствующие заголовки.", en: "Shows the score, risk level, present headers, and missing headers." },
+      { ru: "Даёт практическую рекомендацию по HTTPS, CSP, HSTS и browser hardening.", en: "Provides practical advice for HTTPS, CSP, HSTS, and browser hardening." },
+    ],
+    limitations: [
+      { ru: "Инструмент проверяет один URL и не доказывает, что заголовки одинаково настроены на всём сайте.", en: "The tool checks one URL and does not prove that headers are consistent across the whole site." },
+      { ru: "Он не проводит pentest и не анализирует фактическую уязвимость JavaScript-кода.", en: "It is not a pentest and does not analyze actual JavaScript vulnerabilities." },
+    ],
+    useCases: [
+      { ru: "Проверить, не потерялись ли security headers после смены CDN, nginx, middleware или хостинга.", en: "Check whether security headers were lost after CDN, nginx, middleware, or hosting changes." },
+      { ru: "Быстро понять, есть ли базовая защита от clickjacking, MIME sniffing и избыточной передачи referrer-данных.", en: "Quickly see whether basic protection exists against clickjacking, MIME sniffing, and excessive referrer leakage." },
+      { ru: "Передать разработчику короткий список missing headers без ручного просмотра DevTools.", en: "Give a developer a compact missing-header list without manual DevTools inspection." },
+    ],
+    technicalNotes: [
+      { ru: "Для результата используется статус, финальный URL после редиректов и HTTP response headers; тело страницы не скачивается.", en: "The result uses status, the final URL after redirects, and HTTP response headers; the page body is not downloaded." },
+      { ru: "Frame protection считается найденной, если есть X-Frame-Options или CSP frame-ancestors.", en: "Frame protection is considered present when X-Frame-Options or CSP frame-ancestors is available." },
+    ],
+    faq: [
+      { question: { ru: "Почему HSTS может быть проблемой на HTTP?", en: "Why can HSTS be a problem on HTTP?" }, answer: { ru: "HSTS действует только на HTTPS-ответах. Если финальный URL остаётся HTTP, сначала нужно исправить HTTPS и редиректы.", en: "HSTS only works on HTTPS responses. If the final URL remains HTTP, fix HTTPS and redirects first." } },
+      { question: { ru: "Высокая оценка означает, что сайт безопасен?", en: "Does a high score mean the site is secure?" }, answer: { ru: "Нет. Это проверка базовых browser security headers для одного URL, а не pentest, SAST или полный security audit.", en: "No. This checks basic browser security headers for one URL, not a pentest, SAST, or full security audit." } },
+    ],
+    relatedToolSlugs: ["redirect-chain-checker", "canonical-checker", "robots-txt-tester"],
+    sourceUrls: ["https://developer.mozilla.org/docs/Web/HTTP/Headers/Content-Security-Policy", "https://developer.mozilla.org/docs/Web/HTTP/Headers/Strict-Transport-Security"],
+  }),
+  toolPage({
     slug: "canonical-checker",
     seoTitle: { ru: "Проверка canonical URL онлайн", en: "Canonical URL Checker" },
     metaDescription: { ru: "Проверьте link rel=canonical для страницы: наличие, совпадение с финальным URL, host, noindex и редиректы.", en: "Check a page link rel=canonical: presence, match with the final URL, host, noindex, and redirects." },

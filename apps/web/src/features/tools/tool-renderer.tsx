@@ -26,6 +26,7 @@ import { CanonicalCheckerTool } from "./canonical-checker-tool";
 import { ImageCropperTool, ImageFormatConverterTool, ImageOptimizerTool, ImageResizerTool } from "./image-tools";
 import { RedirectChainTool } from "./redirect-chain-tool";
 import { RobotsTxtTool } from "./robots-txt-tool";
+import { SecurityHeadersTool } from "./security-headers-tool";
 import { SitemapValidatorTool } from "./sitemap-validator-tool";
 import { dictionary } from "../../lib/i18n";
 
@@ -184,6 +185,7 @@ export const SUPPORTED_TOOL_SLUGS = [
   "robots-txt-tester",
   "sitemap-validator",
   "canonical-checker",
+  "security-headers-checker",
 ] as const;
 
 export function ToolRenderer({ slug, locale }: ToolRendererProps) {
@@ -206,6 +208,7 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "robots-txt-tester": return <RobotsTxtTool locale={locale} />;
     case "sitemap-validator": return <SitemapValidatorTool locale={locale} />;
     case "canonical-checker": return <CanonicalCheckerTool locale={locale} />;
+    case "security-headers-checker": return <SecurityHeadersTool locale={locale} />;
     default: return null;
   }
 }
