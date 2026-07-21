@@ -4,7 +4,6 @@ import { useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import {
   CheckCircle2,
   Download,
-  FileDown,
   Files,
   Flag,
   Gauge,
@@ -16,19 +15,24 @@ import {
   ListFilter,
   Search,
   ShieldCheck,
-  Table2,
   Target,
   TrendingUp,
   TriangleAlert,
   CircleAlert,
   ChevronRight,
-  Map,
-  FileCode2,
   type LucideIcon,
 } from "lucide-react";
 import type { Locale } from "@webdiag/tool-registry";
 
 type TabId = "summary" | "priority" | "index" | "seo" | "speed" | "security" | "a11y" | "export";
+type DemoIssue = readonly [string, string, string, string, string];
+type DemoMetric = readonly [string, string];
+type TabDetail = {
+  readonly metrics: readonly DemoMetric[];
+  readonly actions: readonly string[];
+  readonly urls: readonly string[];
+  readonly note: string;
+};
 
 const tabs: readonly { id: TabId; icon: LucideIcon; ru: string; en: string }[] = [
   { id: "summary", icon: LayoutGrid, ru: "Сводка", en: "Summary" },
@@ -47,6 +51,7 @@ const copy = {
     site: "site.ru",
     checked: "Демо-страниц",
     next: "Повторная проверка",
+    nextDate: "25 мая 2025",
     repeat: "Будет доступно после audit engine",
     summaryTitle: "Сводка проверки",
     summaryText: "Демонстрация будущего отчёта: оценка, приоритеты, затронутые URL и проверки, которые уже проходят.",
@@ -81,6 +86,56 @@ const copy = {
     a11yText: "Контраст, alt, labels, ARIA, focus states и навигация с клавиатуры.",
     exportTitle: "Экспорт",
     exportText: "Экспорт PDF, CSV и публичная ссылка показаны как будущая часть рабочего отчёта.",
+    tabLabels: {
+      signals: "Сигналы",
+      actions: "Что делать",
+      urls: "Примеры URL",
+      note: "Как использовать",
+    },
+    tabDetails: {
+      priority: {
+        metrics: [["P0", "блокирует индексацию"], ["P1", "ухудшает сниппет/CTR"], ["P2", "технический долг"], ["OK", "контролировать после релиза"]],
+        actions: ["Сначала открыть важные URL для поисковых роботов.", "Затем восстановить description на посадочных страницах.", "После этого разбирать скорость шаблонов с высокой посещаемостью."],
+        urls: ["/catalog/", "/services/seo-audit/", "/blog/technical-seo-checklist/"],
+        note: "Приоритизация нужна, чтобы не тратить бюджет на косметику до исправления ошибок, которые режут SEO-трафик и лиды.",
+      },
+      index: {
+        metrics: [["robots.txt", "12 URL закрыто"], ["sitemap", "128 URL найдено"], ["canonical", "проходит"], ["noindex", "проверить шаблоны"]],
+        actions: ["Сверить закрытые URL с коммерческими страницами.", "Убедиться, что sitemap содержит только индексируемые страницы.", "Проверить canonical после редиректов и UTM-параметров."],
+        urls: ["/catalog/", "/catalog/product-1/", "/landing/context-ads/"],
+        note: "Этот блок показывает, может ли поисковик вообще увидеть нужные страницы. Без этого title, тексты и маркетинг не дадут эффекта.",
+      },
+      seo: {
+        metrics: [["Title", "проверка дублей"], ["Description", "14 отсутствует"], ["H1", "структура страницы"], ["OG", "превью ссылок"]],
+        actions: ["Написать description для страниц с коммерческим спросом.", "Сверить title и H1 с интентом запроса.", "Добавить OG-данные для корректного превью в мессенджерах и соцсетях."],
+        urls: ["/services/", "/prices/", "/cases/"],
+        note: "SEO-вкладка помогает маркетингу понять, где страница плохо объясняет оффер в поиске и теряет клики ещё до захода на сайт.",
+      },
+      speed: {
+        metrics: [["LCP", "9 шаблонов"], ["TTFB", "проверить API/CMS"], ["Images", "сжать hero/media"], ["Scripts", "убрать лишнее"]],
+        actions: ["Начать с шаблонов, которые получают SEO-трафик или ведут на заявку.", "Оптимизировать изображения первого экрана.", "Отложить тяжёлые скрипты, не влияющие на первый экран."],
+        urls: ["/", "/catalog/", "/landing/seo/"],
+        note: "Скорость важна не как абстрактный балл, а как фактор отказов, конверсии и качества посадочных страниц.",
+      },
+      security: {
+        metrics: [["SSL", "OK"], ["HSTS", "проверить"], ["CSP", "усилить"], ["Mixed content", "OK"]],
+        actions: ["Сохранить корректный HTTPS-редирект.", "Добавить или проверить HSTS после теста всех поддоменов.", "Настроить CSP без поломки аналитики и форм."],
+        urls: ["https://site.ru/", "https://site.ru/form/", "https://static.site.ru/"],
+        note: "Базовая безопасность влияет на доверие пользователей, корректную работу браузера, форм и рекламных посадочных.",
+      },
+      a11y: {
+        metrics: [["Alt", "проверить медиа"], ["Labels", "формы"], ["Focus", "клавиатура"], ["ARIA", "без лишнего"]],
+        actions: ["Проверить формы заявки и поиска с клавиатуры.", "Добавить понятные labels для полей.", "Исправить alt у смысловых изображений, не дублируя декоративные."],
+        urls: ["/contact/", "/order/", "/catalog/"],
+        note: "Доступность снижает потери в формах, помогает пользователям с разными сценариями и делает интерфейс понятнее для сканирования.",
+      },
+      export: {
+        metrics: [["PDF", "для клиента"], ["CSV", "для разработчика"], ["URL", "публичная ссылка"], ["History", "после повтора"]],
+        actions: ["Отдать PDF как управленческую сводку.", "Передать CSV разработчику как список задач по URL.", "После исправлений запускать повторную проверку и сравнивать изменения."],
+        urls: ["/report/site-ru.pdf", "/export/issues.csv", "/share/report/site-ru"],
+        note: "Экспорт показан как формат будущего рабочего отчёта: менеджеру — выводы, SEO-специалисту — приоритеты, разработчику — конкретные URL и задачи.",
+      },
+    } satisfies Record<Exclude<TabId, "summary">, TabDetail>,
     sidePriority: "Приоритеты исправлений",
     sidePriorityText: "Что исправить первым, почему это важно и какие страницы затронуты.",
     sideUrls: "Затронутые URL",
@@ -94,6 +149,7 @@ const copy = {
     site: "site.com",
     checked: "Demo pages",
     next: "Re-check",
+    nextDate: "25 May 2025",
     repeat: "Available after the audit engine",
     summaryTitle: "Audit summary",
     summaryText: "A preview of the future report: score, priorities, affected URLs, and checks that already pass.",
@@ -128,6 +184,56 @@ const copy = {
     a11yText: "Contrast, alt text, labels, ARIA, focus states, and keyboard navigation.",
     exportTitle: "Export",
     exportText: "PDF, CSV, and a public report link are shown as a future part of the working report.",
+    tabLabels: {
+      signals: "Signals",
+      actions: "What to do",
+      urls: "Example URLs",
+      note: "How to use it",
+    },
+    tabDetails: {
+      priority: {
+        metrics: [["P0", "blocks indexing"], ["P1", "hurts snippets/CTR"], ["P2", "technical debt"], ["OK", "watch after releases"]],
+        actions: ["Open important URLs to search crawlers first.", "Restore descriptions on landing pages next.", "Then handle slow templates with traffic or lead impact."],
+        urls: ["/catalog/", "/services/seo-audit/", "/blog/technical-seo-checklist/"],
+        note: "Prioritization prevents budget waste on cosmetic work before fixing issues that cut traffic and leads.",
+      },
+      index: {
+        metrics: [["robots.txt", "12 URLs blocked"], ["sitemap", "128 URLs found"], ["canonical", "passes"], ["noindex", "check templates"]],
+        actions: ["Compare blocked URLs with commercial pages.", "Keep only indexable URLs in sitemap.", "Check canonical after redirects and tracking parameters."],
+        urls: ["/catalog/", "/catalog/product-1/", "/landing/context-ads/"],
+        note: "This tab answers whether search engines can see the required pages at all.",
+      },
+      seo: {
+        metrics: [["Title", "duplicate check"], ["Description", "14 missing"], ["H1", "page structure"], ["OG", "link previews"]],
+        actions: ["Write descriptions for pages with commercial demand.", "Align title and H1 with search intent.", "Add OG data for clean previews in messengers and social channels."],
+        urls: ["/services/", "/prices/", "/cases/"],
+        note: "The SEO tab helps marketing find pages that explain the offer poorly in search and lose clicks before the visit.",
+      },
+      speed: {
+        metrics: [["LCP", "9 templates"], ["TTFB", "check API/CMS"], ["Images", "compress hero/media"], ["Scripts", "remove noncritical"]],
+        actions: ["Start with templates that receive traffic or lead to forms.", "Optimize above-the-fold images.", "Defer heavy scripts that do not affect the first screen."],
+        urls: ["/", "/catalog/", "/landing/seo/"],
+        note: "Performance matters as a bounce, conversion, and landing-page quality issue, not just as a score.",
+      },
+      security: {
+        metrics: [["SSL", "OK"], ["HSTS", "check"], ["CSP", "strengthen"], ["Mixed content", "OK"]],
+        actions: ["Keep HTTPS redirects correct.", "Add or verify HSTS after checking subdomains.", "Configure CSP without breaking analytics and forms."],
+        urls: ["https://site.com/", "https://site.com/form/", "https://static.site.com/"],
+        note: "Baseline security affects trust, browser behavior, forms, and ad landing pages.",
+      },
+      a11y: {
+        metrics: [["Alt", "check media"], ["Labels", "forms"], ["Focus", "keyboard"], ["ARIA", "avoid noise"]],
+        actions: ["Check search and lead forms by keyboard.", "Add clear labels to fields.", "Fix alt text for meaningful images without duplicating decorative ones."],
+        urls: ["/contact/", "/order/", "/catalog/"],
+        note: "Accessibility reduces form losses, supports more user scenarios, and makes the interface easier to scan.",
+      },
+      export: {
+        metrics: [["PDF", "for client"], ["CSV", "for developer"], ["URL", "public link"], ["History", "after re-check"]],
+        actions: ["Use PDF as the management summary.", "Send CSV to developers as a URL-level task list.", "Run a re-check after fixes and compare changes."],
+        urls: ["/report/site-example.pdf", "/export/issues.csv", "/share/report/site-example"],
+        note: "Export is shown as the future working-report format: conclusions for managers, priorities for SEO, and concrete URL tasks for developers.",
+      },
+    } satisfies Record<Exclude<TabId, "summary">, TabDetail>,
     sidePriority: "Fix priorities",
     sidePriorityText: "What to fix first, why it matters, and which pages are affected.",
     sideUrls: "Affected URLs",
@@ -146,7 +252,7 @@ function ScoreRing() {
   );
 }
 
-function IssueRow({ issue }: { issue: readonly [string, string, string, string, string] }) {
+function IssueRow({ issue }: { issue: DemoIssue }) {
   const [label, title, description, count, tone] = issue;
   return (
     <div className="wd-report-issue-row">
@@ -190,11 +296,35 @@ function SummaryPanel({ locale, hidden }: { locale: Locale; hidden: boolean }) {
   );
 }
 
-function SimplePanel({ title, text, children, id, hidden }: { title: string; text: string; children: ReactNode; id: TabId; hidden: boolean }) {
+function DetailPanel({ locale, id, hidden, title, text, detail }: { locale: Locale; id: Exclude<TabId, "summary">; hidden: boolean; title: string; text: string; detail: TabDetail }) {
+  const labels = copy[locale].tabLabels;
   return (
     <div className="wd-report-panel" id={`wd-report-${id}`} role="tabpanel" aria-labelledby={`wd-report-tab-${id}`} tabIndex={0} hidden={hidden}>
       <div className="wd-report-heading"><div><h3>{title}</h3><p>{text}</p></div></div>
-      {children}
+      <div className="wd-report-detail-grid">
+        <section className="wd-report-detail-main" aria-label={labels.signals}>
+          <h4>{labels.signals}</h4>
+          <div className="wd-report-signal-grid">
+            {detail.metrics.map(([value, label]) => <article key={`${value}-${label}`}><strong>{value}</strong><span>{label}</span></article>)}
+          </div>
+        </section>
+        <section className="wd-report-detail-main" aria-label={labels.actions}>
+          <h4>{labels.actions}</h4>
+          <ol className="wd-report-action-list">
+            {detail.actions.map((item) => <li key={item}>{item}</li>)}
+          </ol>
+        </section>
+        <aside className="wd-report-detail-side" aria-label={labels.urls}>
+          <h4>{labels.urls}</h4>
+          <ul>
+            {detail.urls.map((url) => <li key={url}><Link2 aria-hidden="true" />{url}</li>)}
+          </ul>
+        </aside>
+        <aside className="wd-report-detail-side is-note" aria-label={labels.note}>
+          <h4>{labels.note}</h4>
+          <p>{detail.note}</p>
+        </aside>
+      </div>
     </div>
   );
 }
@@ -255,20 +385,20 @@ export function HomeReportTabs({ locale }: { locale: Locale }) {
             </div>
             <div className="wd-report-site-card">
               <strong><Globe2 aria-hidden="true" />{t.site}</strong>
-              <p>{t.checked}<b>128 / 128</b></p>
-              <p>{t.next}<b>25 May 2025</b></p>
+              <p><span>{t.checked}</span><b>128 / 128</b></p>
+              <p><span>{t.next}</span><b>{t.nextDate}</b></p>
               <PreviewAction>{t.repeat}</PreviewAction>
             </div>
           </div>
           <div className="wd-report-content">
             <SummaryPanel locale={locale} hidden={active !== "summary"} />
-            <SimplePanel id="priority" hidden={active !== "priority"} title={t.priorityTitle} text={t.priorityText}><div className="wd-report-issues"><IssueRow issue={t.issues[0]} /><IssueRow issue={t.issues[1]} /></div></SimplePanel>
-            <SimplePanel id="index" hidden={active !== "index"} title={t.indexTitle} text={t.indexText}><div className="wd-report-mini-grid"><article><FileCode2 /><strong>robots.txt</strong><span>12 URL</span></article><article><Map /><strong>Sitemap.xml</strong><span>128 URL</span></article></div></SimplePanel>
-            <SimplePanel id="seo" hidden={active !== "seo"} title={t.seoTitle} text={t.seoText}><div className="wd-report-issues"><IssueRow issue={t.issues[1]} /></div></SimplePanel>
-            <SimplePanel id="speed" hidden={active !== "speed"} title={t.speedTitle} text={t.speedText}><div className="wd-report-issues"><IssueRow issue={t.issues[2]} /></div></SimplePanel>
-            <SimplePanel id="security" hidden={active !== "security"} title={t.securityTitle} text={t.securityText}><ul className="wd-report-checks"><li><CheckCircle2 />SSL</li><li><CheckCircle2 />Mixed content</li><li><CircleAlert />CSP</li></ul></SimplePanel>
-            <SimplePanel id="a11y" hidden={active !== "a11y"} title={t.a11yTitle} text={t.a11yText}><div className="wd-report-mini-grid"><article><Keyboard /><strong>{locale === "ru" ? "Клавиатура" : "Keyboard"}</strong><span>focus</span></article><article><Keyboard /><strong>{locale === "ru" ? "Семантика" : "Semantics"}</strong><span>ARIA</span></article></div></SimplePanel>
-            <SimplePanel id="export" hidden={active !== "export"} title={t.exportTitle} text={t.exportText}><div className="wd-report-mini-grid"><article><FileDown /><strong>PDF</strong><span>{locale === "ru" ? "план" : "planned"}</span></article><article><Table2 /><strong>CSV</strong><span>{locale === "ru" ? "план" : "planned"}</span></article></div></SimplePanel>
+            <DetailPanel locale={locale} id="priority" hidden={active !== "priority"} title={t.priorityTitle} text={t.priorityText} detail={t.tabDetails.priority} />
+            <DetailPanel locale={locale} id="index" hidden={active !== "index"} title={t.indexTitle} text={t.indexText} detail={t.tabDetails.index} />
+            <DetailPanel locale={locale} id="seo" hidden={active !== "seo"} title={t.seoTitle} text={t.seoText} detail={t.tabDetails.seo} />
+            <DetailPanel locale={locale} id="speed" hidden={active !== "speed"} title={t.speedTitle} text={t.speedText} detail={t.tabDetails.speed} />
+            <DetailPanel locale={locale} id="security" hidden={active !== "security"} title={t.securityTitle} text={t.securityText} detail={t.tabDetails.security} />
+            <DetailPanel locale={locale} id="a11y" hidden={active !== "a11y"} title={t.a11yTitle} text={t.a11yText} detail={t.tabDetails.a11y} />
+            <DetailPanel locale={locale} id="export" hidden={active !== "export"} title={t.exportTitle} text={t.exportText} detail={t.tabDetails.export} />
           </div>
         </div>
       </div>

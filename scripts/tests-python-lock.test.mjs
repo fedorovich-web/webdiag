@@ -43,3 +43,25 @@ test("passes when lock and installed package set match", () => {
     installedCount: 2,
   });
 });
+
+test("allows Windows-specific Python lock resolution differences", () => {
+  const result = compareLockedRequirements({
+    lockedText: "fastapi==0.139.1\nuvloop==0.22.1\n",
+    installedText: "fastapi==0.139.1\ncolorama==0.4.6\npika==1.4.1\n",
+    platform: "win32",
+  });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.errors, []);
+});
+
+test("does not allow arbitrary unlocked Python packages", () => {
+  const result = compareLockedRequirements({
+    lockedText: "fastapi==0.139.1\n",
+    installedText: "fastapi==0.139.1\nrandom-extra==1.0.0\n",
+    platform: "win32",
+  });
+
+  assert.equal(result.ok, false);
+  assert.match(result.errors.join("\n"), /unlocked installed package: random-extra==1\.0\.0/);
+});
