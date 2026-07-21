@@ -141,7 +141,7 @@ export function calculateWidth(height: number, ratioWidth: number, ratioHeight: 
   return (height * ratioWidth) / ratioHeight;
 }
 
-export type RasterOutputFormat = "image/png" | "image/jpeg" | "image/webp";
+export type RasterOutputFormat = "image/png" | "image/jpeg" | "image/webp" | "image/avif";
 
 export interface ImageDimensions {
   width: number;
@@ -198,8 +198,9 @@ export function normalizeCropRectangle(
   return { x, y, width, height };
 }
 
-export function outputExtension(format: RasterOutputFormat): "png" | "jpg" | "webp" {
+export function outputExtension(format: RasterOutputFormat): "png" | "jpg" | "webp" | "avif" {
   if (format === "image/png") return "png";
   if (format === "image/jpeg") return "jpg";
-  return "webp";
+  if (format === "image/webp") return "webp";
+  return "avif";
 }

@@ -89,5 +89,6 @@ describe("browser tool core", () => {
     expect(outputExtension("image/png")).toBe("png");
     expect(outputExtension("image/jpeg")).toBe("jpg");
     expect(outputExtension("image/webp")).toBe("webp");
+    expect(outputExtension("image/avif")).toBe("avif");
   });
 });

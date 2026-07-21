@@ -3,13 +3,13 @@ import { toolPage } from "./shared";
 export const mediaUtilityToolPages = [
   toolPage({
     slug: "image-optimizer",
-    seoTitle: { ru: "Сжатие PNG, JPEG и WebP онлайн", en: "PNG, JPEG & WebP Image Compressor" },
-    metaDescription: { ru: "Сжимайте изображения в PNG, JPEG или WebP с выбранным качеством. Файл обрабатывается локально в браузере.", en: "Compress images as PNG, JPEG, or WebP with selected quality. The file is processed locally in your browser." },
-    h1: { ru: "Сжатие PNG, JPEG и WebP в браузере", en: "PNG, JPEG & WebP Image Compressor" },
+    seoTitle: { ru: "Сжатие PNG, JPEG, WebP и AVIF онлайн", en: "PNG, JPEG, WebP & AVIF Image Compressor" },
+    metaDescription: { ru: "Сжимайте изображения в AVIF, WebP, JPEG или PNG с выбранным качеством. Файл обрабатывается локально в браузере; AVIF зависит от поддержки браузера.", en: "Compress images as AVIF, WebP, JPEG, or PNG with selected quality. The file is processed locally in your browser; AVIF depends on browser support." },
+    h1: { ru: "Сжатие PNG, JPEG, WebP и AVIF в браузере", en: "PNG, JPEG, WebP & AVIF Image Compressor" },
     lead: { ru: "Повторно закодируйте одно изображение с выбранным форматом и качеством, сравните итоговый размер и скачайте результат.", en: "Re-encode one image with a selected format and quality, compare the resulting size, and download the output." },
     quickFacts: [
       { ru: "Один файл", en: "One file" },
-      { ru: "PNG / JPEG / WebP", en: "PNG / JPEG / WebP" },
+      { ru: "AVIF / WebP / JPEG / PNG", en: "AVIF / WebP / JPEG / PNG" },
       { ru: "Canvas re-encode", en: "Canvas re-encode" },
     ],
     howToSteps: [
@@ -19,7 +19,7 @@ export const mediaUtilityToolPages = [
     ],
     supportedFeatures: [
       { ru: "Декодирование форматов, поддерживаемых текущим браузером.", en: "Decoding formats supported by the current browser." },
-      { ru: "Вывод PNG, JPEG или WebP.", en: "PNG, JPEG, or WebP output." },
+      { ru: "Вывод AVIF, WebP, JPEG или PNG при поддержке браузера.", en: "AVIF, WebP, JPEG, or PNG output." },
       { ru: "Настройка качества для форматов, где браузер её учитывает.", en: "Quality control for formats where the browser applies it." },
     ],
     limitations: [
@@ -44,27 +44,27 @@ export const mediaUtilityToolPages = [
   }),
   toolPage({
     slug: "image-format-converter",
-    seoTitle: { ru: "Конвертер PNG, JPEG и WebP онлайн", en: "PNG, JPEG & WebP Image Converter" },
-    metaDescription: { ru: "Конвертируйте одно изображение в PNG, JPEG или WebP без загрузки файла на сервер.", en: "Convert one image to PNG, JPEG, or WebP without uploading the file to a server." },
-    h1: { ru: "Конвертер PNG, JPEG и WebP", en: "PNG, JPEG & WebP Image Converter" },
-    lead: { ru: "Выберите изображение, задайте один из трёх выходных форматов и скачайте новый файл, созданный браузером.", en: "Choose an image, select one of three output formats, and download a new file created by the browser." },
+    seoTitle: { ru: "Конвертер PNG, JPEG, WebP и AVIF онлайн", en: "PNG, JPEG, WebP & AVIF Image Converter" },
+    metaDescription: { ru: "Конвертируйте одно изображение в AVIF, WebP, JPEG или PNG без загрузки файла на сервер.", en: "Convert one image to AVIF, WebP, JPEG, or PNG without uploading the file to a server." },
+    h1: { ru: "Конвертер PNG, JPEG, WebP и AVIF", en: "PNG, JPEG, WebP & AVIF Image Converter" },
+    lead: { ru: "Выберите изображение, задайте один из современных выходных форматов и скачайте новый файл, созданный браузером.", en: "Choose an image, select one modern output format, and download a new file created by the browser." },
     quickFacts: [
-      { ru: "PNG / JPEG / WebP", en: "PNG / JPEG / WebP" },
+      { ru: "AVIF / WebP / JPEG / PNG", en: "AVIF / WebP / JPEG / PNG" },
       { ru: "Один файл", en: "One file" },
       { ru: "Без загрузки", en: "No upload" },
     ],
     howToSteps: [
       { ru: "Выберите исходное изображение.", en: "Choose the source image." },
-      { ru: "Укажите PNG, JPEG или WebP.", en: "Select PNG, JPEG, or WebP." },
+      { ru: "Укажите AVIF, WebP, JPEG или PNG.", en: "Select AVIF, WebP, JPEG, or PNG." },
       { ru: "Запустите конвертацию и скачайте результат.", en: "Run conversion and download the result." },
     ],
     supportedFeatures: [
-      { ru: "Выход в image/png, image/jpeg или image/webp.", en: "Output as image/png, image/jpeg, or image/webp." },
+      { ru: "Выход в image/avif, image/webp, image/jpeg или image/png при поддержке браузера.", en: "Output as image/avif, image/webp, image/jpeg, or image/png when supported by the browser." },
       { ru: "Локальное декодирование и Canvas-конвертация.", en: "Local decoding and Canvas conversion." },
       { ru: "Автоматическое расширение имени результата.", en: "Automatic output filename extension." },
     ],
     limitations: [
-      { ru: "AVIF, HEIC, SVG и GIF output не поддерживаются.", en: "AVIF, HEIC, SVG, and GIF output are not supported." },
+      { ru: "HEIC, SVG и GIF output не поддерживаются; AVIF output зависит от Canvas encoder текущего браузера.", en: "HEIC, SVG, and GIF output are not supported; AVIF output depends on the current browser Canvas encoder." },
       { ru: "Анимация и исходные metadata не сохраняются.", en: "Animation and source metadata are not preserved." },
     ],
     useCases: [
@@ -78,7 +78,7 @@ export const mediaUtilityToolPages = [
     ],
     faq: [
       { question: { ru: "Можно конвертировать HEIC?", en: "Can it convert HEIC?" }, answer: { ru: "Только если конкретный браузер умеет декодировать выбранный файл; HEIC не заявлен как поддерживаемый формат.", en: "Only if the current browser can decode the selected file; HEIC is not an advertised supported format." } },
-      { question: { ru: "Сохранится прозрачность?", en: "Will transparency be preserved?" }, answer: { ru: "PNG и WebP могут поддерживать прозрачность, JPEG — нет.", en: "PNG and WebP can support transparency; JPEG cannot." } },
+      { question: { ru: "Сохранится прозрачность?", en: "Will transparency be preserved?" }, answer: { ru: "PNG, WebP и AVIF могут поддерживать прозрачность, JPEG — нет.", en: "PNG, WebP, and AVIF can support transparency; JPEG cannot." } },
     ],
     relatedToolSlugs: ["image-optimizer", "image-resizer", "image-cropper"],
     sourceUrls: ["https://developer.mozilla.org/docs/Web/API/HTMLCanvasElement/toBlob"],
@@ -86,13 +86,13 @@ export const mediaUtilityToolPages = [
   toolPage({
     slug: "image-resizer",
     seoTitle: { ru: "Изменить размер изображения онлайн", en: "Resize an Image Online" },
-    metaDescription: { ru: "Измените ширину и высоту одного изображения с сохранением пропорций или по точным размерам. PNG, JPEG и WebP output.", en: "Change one image's width and height while preserving proportions or using exact dimensions. PNG, JPEG, and WebP output." },
+    metaDescription: { ru: "Измените ширину и высоту одного изображения с сохранением пропорций или по точным размерам. AVIF, WebP, JPEG и PNG output.", en: "Change one image's width and height while preserving proportions or using exact dimensions. AVIF, WebP, JPEG, and PNG output." },
     h1: { ru: "Изменить размер изображения онлайн", en: "Resize an Image Online" },
     lead: { ru: "Задайте новую ширину и высоту, сохраните исходное соотношение сторон при необходимости и скачайте результат.", en: "Set a new width and height, preserve the source aspect ratio when needed, and download the result." },
     quickFacts: [
       { ru: "Ширина и высота", en: "Width and height" },
       { ru: "Сохранение пропорций", en: "Preserve aspect ratio" },
-      { ru: "PNG / JPEG / WebP", en: "PNG / JPEG / WebP" },
+      { ru: "AVIF / WebP / JPEG / PNG", en: "AVIF / WebP / JPEG / PNG" },
     ],
     howToSteps: [
       { ru: "Выберите изображение.", en: "Choose an image." },
@@ -102,7 +102,7 @@ export const mediaUtilityToolPages = [
     supportedFeatures: [
       { ru: "Изменение ширины и высоты в целых пикселях.", en: "Integer-pixel width and height changes." },
       { ru: "Автоматический расчёт второй стороны при сохранении пропорций.", en: "Automatic calculation of the second dimension when preserving proportions." },
-      { ru: "Выход PNG, JPEG или WebP.", en: "PNG, JPEG, or WebP output." },
+      { ru: "Выход AVIF, WebP, JPEG или PNG.", en: "AVIF, WebP, JPEG, or PNG output." },
     ],
     limitations: [
       { ru: "Пакетный resize, presets и увеличение качества изображения не поддерживаются.", en: "Batch resizing, presets, and quality enhancement are not included." },
@@ -127,13 +127,13 @@ export const mediaUtilityToolPages = [
   toolPage({
     slug: "image-cropper",
     seoTitle: { ru: "Обрезать изображение по координатам", en: "Crop an Image by Coordinates" },
-    metaDescription: { ru: "Обрежьте одно изображение по X, Y, ширине и высоте и скачайте результат в PNG, JPEG или WebP.", en: "Crop one image by X, Y, width, and height, then download the result as PNG, JPEG, or WebP." },
+    metaDescription: { ru: "Обрежьте одно изображение по X, Y, ширине и высоте и скачайте результат в AVIF, WebP, JPEG или PNG.", en: "Crop one image by X, Y, width, and height, then download the result as AVIF, WebP, JPEG, or PNG." },
     h1: { ru: "Обрезать изображение по координатам", en: "Crop an Image by Coordinates" },
     lead: { ru: "Укажите начальную точку и размер прямоугольной области, чтобы создать новый файл из выбранной части изображения.", en: "Enter the starting point and rectangular dimensions to create a new file from the selected image area." },
     quickFacts: [
       { ru: "X / Y / ширина / высота", en: "X / Y / width / height" },
       { ru: "Прямоугольная область", en: "Rectangular crop" },
-      { ru: "PNG / JPEG / WebP", en: "PNG / JPEG / WebP" },
+      { ru: "AVIF / WebP / JPEG / PNG", en: "AVIF / WebP / JPEG / PNG" },
     ],
     howToSteps: [
       { ru: "Выберите изображение.", en: "Choose an image." },
@@ -143,7 +143,7 @@ export const mediaUtilityToolPages = [
     supportedFeatures: [
       { ru: "Целочисленные координаты и размеры.", en: "Integer coordinates and dimensions." },
       { ru: "Автоматическое ограничение области границами изображения.", en: "Automatic clamping to image boundaries." },
-      { ru: "Выход PNG, JPEG или WebP.", en: "PNG, JPEG, or WebP output." },
+      { ru: "Выход AVIF, WebP, JPEG или PNG.", en: "AVIF, WebP, JPEG, or PNG output." },
     ],
     limitations: [
       { ru: "Нет визуального drag-selection, aspect presets и вращения.", en: "Visual drag selection, aspect presets, and rotation are not included." },

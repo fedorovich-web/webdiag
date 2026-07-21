@@ -1467,8 +1467,8 @@
     "id": "WD-094",
     "slug": "image-optimizer",
     "title": {
-      "ru": "Сжатие изображений",
-      "en": "Image Compressor"
+      "ru": "Сжатие PNG, JPEG, WebP и AVIF",
+      "en": "PNG, JPEG, WebP and AVIF Image Compressor"
     },
     "category": "media-utilities",
     "executorClass": "browser",
@@ -1477,16 +1477,16 @@
     "implementationWave": "W1",
     "state": "ready",
     "description": {
-      "ru": "Уменьшает размер изображения с выбранным качеством и форматом.",
-      "en": "Reduces image file size using the selected quality and format."
+      "ru": "Локально перекодирует одно изображение в браузере: AVIF/WebP/JPEG/PNG output, качество для lossy-форматов, сравнение исходного и итогового веса без загрузки файла на сервер.",
+      "en": "Locally re-encodes one image in the browser: AVIF/WebP/JPEG/PNG output, lossy quality control, and source/output byte comparison without uploading the file."
     }
   },
   {
     "id": "WD-095",
     "slug": "image-format-converter",
     "title": {
-      "ru": "Конвертер PNG, JPEG и WebP",
-      "en": "PNG, JPEG and WebP Converter"
+      "ru": "Конвертер PNG, JPEG, WebP и AVIF",
+      "en": "PNG, JPEG, WebP and AVIF Converter"
     },
     "category": "media-utilities",
     "executorClass": "browser",
@@ -1495,8 +1495,8 @@
     "implementationWave": "W1",
     "state": "ready",
     "description": {
-      "ru": "Преобразует изображение в PNG, JPEG или WebP прямо в браузере.",
-      "en": "Converts an image to PNG, JPEG, or WebP directly in the browser."
+      "ru": "Конвертирует одно растровое изображение в PNG, JPEG, WebP или AVIF через browser Canvas, если текущий браузер поддерживает выбранный декодер/энкодер.",
+      "en": "Converts one raster image to PNG, JPEG, WebP, or AVIF through browser Canvas when the current browser supports the selected decoder/encoder."
     }
   },
   {
@@ -1513,8 +1513,8 @@
     "implementationWave": "W1",
     "state": "ready",
     "description": {
-      "ru": "Меняет ширину и высоту с сохранением пропорций или по точным размерам.",
-      "en": "Changes width and height while preserving proportions or using exact dimensions."
+      "ru": "Меняет ширину и высоту одного изображения локально в браузере, сохраняет пропорции и выводит WebP/AVIF/JPEG/PNG без серверной загрузки.",
+      "en": "Resizes one image locally in the browser, preserves aspect ratio, and outputs WebP/AVIF/JPEG/PNG without server upload."
     }
   },
   {
@@ -1531,8 +1531,8 @@
     "implementationWave": "W1",
     "state": "ready",
     "description": {
-      "ru": "Обрезает нужную область изображения по указанным координатам и размерам.",
-      "en": "Crops the required image area using specified coordinates and dimensions."
+      "ru": "Обрезает одно изображение по прямоугольной области локально в браузере и сохраняет результат в WebP/AVIF/JPEG/PNG при поддержке браузера.",
+      "en": "Crops one image by a rectangular area locally in the browser and saves WebP/AVIF/JPEG/PNG output when supported by the browser."
     }
   },
   {
