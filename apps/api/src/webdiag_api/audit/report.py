@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from time import perf_counter_ns
 from urllib.parse import urljoin, urlsplit, urlunsplit
 from uuid import UUID
 
@@ -874,6 +875,9 @@ def _check(
     evidence: tuple[Evidence, ...],
     issue_ids: list[str],
 ) -> AuditCheck:
+    started_at = datetime.now(UTC)
+    started_ns = perf_counter_ns()
+
     definition = get_check_definition(check_id)
     if definition.name != name or definition.category is not category:
         raise ValueError(f"Check {check_id} does not match the audit taxonomy definition.")
@@ -885,12 +889,19 @@ def _check(
         name=definition.name,
         category=definition.category,
         status=CheckStatus.WARNING if failed_when else CheckStatus.PASSED,
-        started_at=completed_at,
+        started_at=started_at,
         completed_at=completed_at,
-        duration_ms=0,
+        duration_ms=_elapsed_duration_ms(started_ns),
         evidence=evidence,
         issue_ids=tuple(issue_ids),
     )
+
+
+def _elapsed_duration_ms(started_ns: int) -> int:
+    elapsed_ns = max(0, perf_counter_ns() - started_ns)
+    if elapsed_ns == 0:
+        return 0
+    return max(1, (elapsed_ns + 999_999) // 1_000_000)
 
 
 def _social_metadata_evidence(
