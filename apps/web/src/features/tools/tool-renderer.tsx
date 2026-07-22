@@ -22,6 +22,11 @@ import {
   type HashAlgorithm,
 } from "@webdiag/tool-core";
 import { CopyButton } from "../../components/copy-button";
+import {
+  FormAccessibilityAnalyzerTool,
+  InteractiveAccessibleNameAnalyzerTool,
+  LandmarkStructureAnalyzerTool,
+} from "./accessibility-static-tools";
 import { CanonicalCheckerTool } from "./canonical-checker-tool";
 import {
   CssDeliveryAnalyzerTool,
@@ -280,6 +285,9 @@ export const SUPPORTED_TOOL_SLUGS = [
   "query-parameter-analyzer",
   "url-normalization-analyzer",
   "redirect-map-validator",
+  "landmark-structure-analyzer",
+  "form-accessibility-analyzer",
+  "interactive-accessible-name-analyzer",
 ] as const;
 
 export function ToolRenderer({ slug, locale }: ToolRendererProps) {
@@ -354,6 +362,9 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "query-parameter-analyzer": return <QueryParameterAnalyzerTool locale={locale} />;
     case "url-normalization-analyzer": return <UrlNormalizationAnalyzerTool locale={locale} />;
     case "redirect-map-validator": return <RedirectMapValidatorTool locale={locale} />;
+    case "landmark-structure-analyzer": return <LandmarkStructureAnalyzerTool locale={locale} />;
+    case "form-accessibility-analyzer": return <FormAccessibilityAnalyzerTool locale={locale} />;
+    case "interactive-accessible-name-analyzer": return <InteractiveAccessibleNameAnalyzerTool locale={locale} />;
     default: return null;
   }
 }
