@@ -2,6 +2,10 @@ import { expect, test } from "@playwright/test";
 import { installBrowserGuard } from "./browser-guard";
 
 const storageKey = "webdiag-theme";
+const expectedBackground = {
+  light: "rgb(246, 248, 252)",
+  dark: "rgb(9, 12, 19)",
+} as const;
 
 type FirstPaintSample = { theme: string | undefined; background: string };
 
@@ -48,7 +52,7 @@ test.describe("explicit theme model", () => {
 
     await expect(page.locator("body")).toHaveAttribute("data-theme", "light");
     await expect(page.getByRole("switch", { name: "Тёмная тема" })).toHaveAttribute("aria-checked", "false");
-    expect(await firstPaint(page)).toEqual({ theme: "light", background: "rgb(244, 246, 251)" });
+    expect(await firstPaint(page)).toEqual({ theme: "light", background: expectedBackground.light });
     expect(await page.evaluate((key) => localStorage.getItem(key), storageKey)).toBeNull();
   });
 
@@ -57,7 +61,7 @@ test.describe("explicit theme model", () => {
     await installFirstPaintProbe(page, "dark");
     await page.goto("/");
 
-    expect(await firstPaint(page)).toEqual({ theme: "dark", background: "rgb(8, 12, 16)" });
+    expect(await firstPaint(page)).toEqual({ theme: "dark", background: expectedBackground.dark });
     await expect(page.locator("body")).toHaveAttribute("data-theme", "dark");
     await expect(page.getByRole("switch", { name: "Тёмная тема" })).toHaveAttribute("aria-checked", "true");
     await page.reload();

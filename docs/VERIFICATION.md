@@ -1,10 +1,70 @@
 # Verification Notes
 
-Patch scope: A10.29 JSONPath / TOML / CSV browser data workbench. No commit or push was performed by the assistant.
+Patch scope: A10.30 SQL / GraphQL / Safe Regex browser code workbench. No commit or push was performed by the assistant.
 
 ## Scope
 
-This verification record covers the clean A0–A7 baseline plus A7.1–A7.5 hardening, A8/A8.1/A8.2/A8.3 UI work, A9 frontend-safe audit result contract, and A10.1–A10.29 public tool batches.
+This verification record covers the clean A0–A7 baseline plus A7.1–A7.5 hardening, A8/A8.1/A8.2/A8.3 UI work, A9 frontend-safe audit result contract, and A10.1–A10.30 public tool batches.
+
+# A10.30 — SQL / GraphQL / Safe Regex code workbench
+
+## Scope
+
+- activated SQL Formatter as a browser-only conservative formatter:
+  - common clauses, joins, list continuation, nested subqueries, comments, strings, placeholders, and quoted identifiers;
+  - upper, lower, or preserved keyword casing with two- or four-space indentation;
+  - explicit dialect warnings for backticks, bracketed identifiers, dollar-quoted strings, and dialect-specific operators;
+  - no database connection, query execution, schema resolution, query plan, or claim of complete vendor-dialect parsing;
+  - input is limited to 500,000 characters, 20,000 tokens, and nesting depth 64;
+- activated GraphQL Formatter as a browser-only lexical formatter:
+  - operations, variables, arguments, directives, aliases, fragments, selection sets, comments, strings, and block strings;
+  - matching braces, parentheses, and brackets are required;
+  - commas are treated as insignificant GraphQL tokens;
+  - no remote schema fetch, introspection, field/type validation, endpoint request, or operation execution;
+  - input is limited to 500,000 characters, 20,000 tokens, and nesting depth 64;
+- activated Safe Regex Lab:
+  - JavaScript RegExp patterns execute only in a fresh dedicated Web Worker;
+  - the UI terminates the worker after a selected hard timeout of 100, 250, 500, or 1,000 ms;
+  - pattern length is limited to 2,000 characters, test text to 100,000 characters, output to 500 matches, and match/capture previews to 4,000 characters;
+  - supports JavaScript flags d, g, i, m, s, u, v, and y with duplicate and u/v conflict checks;
+  - reports match ranges, numbered captures, named captures, optional indices, truncation, and worker duration;
+  - advances zero-length global/sticky matches by Unicode code point where required;
+  - heuristic ReDoS review is explicitly advisory and is not presented as proof that a pattern is safe;
+  - no `eval`, `Function`, server-side regex execution, remote request, or new dependency;
+- activated exactly 3 existing internal tools: `sql-formatter`, `graphql-formatter`, and `regex-tester`;
+- public tool count is now 88; registry entry count remains 125.
+
+## Verified in the patch sandbox
+
+```text
+ad-hoc strict TypeScript compile for engine, UI, and tests
+PASS — strict, noUncheckedIndexedAccess, exactOptionalPropertyTypes, noUnusedLocals, noUnusedParameters
+
+query-code runtime assertions
+PASS — SQL clauses/subqueries/quotes/errors, GraphQL operations/fragments/strings/delimiters, regex risk/flags, worker execution, captures, indices, and zero-length Unicode advancement
+
+npm run test:workspace
+PASS — 37/37
+
+npm run verify:registry
+PASS — 125 unique tools, 88 ready tools, no weak ready microtools
+
+node --test scripts/tests-tool-catalog-quality.test.mjs
+PASS — 5/5
+
+python -m pytest apps/api/tests -q
+PASS — 200/200
+
+registry JSON sync and ready renderer/editorial parity
+PASS — backend registry byte-identical; 88/88 ready slugs covered
+```
+
+## Required local verification
+
+- run full Vitest, ESLint, official TypeScript, build, built-site, Python, Ruff, and lock gates before commit;
+- browser/Playwright remains a separate required gate for the Worker timeout and both themes.
+
+---
 
 # A10.29 — JSONPath / TOML / CSV data workbench
 
