@@ -87,6 +87,11 @@ import {
   YamlJsonConverterTool,
 } from "./structured-data-utility-tools";
 import {
+  CsvDataWorkbenchTool,
+  JsonPathTesterTool,
+  TomlJsonConverterTool,
+} from "./structured-text-workbench-tools";
+import {
   QueryParameterAnalyzerTool,
   RedirectMapValidatorTool,
   UrlNormalizationAnalyzerTool,
@@ -237,8 +242,11 @@ export const SUPPORTED_TOOL_SLUGS = [
   "base64-converter",
   "json-formatter-validator",
   "json-schema-validator",
+  "jsonpath-tester",
   "yaml-json-converter",
+  "toml-json-converter",
   "xml-formatter-validator",
+  "csv-json-converter",
   "hash-generator",
   "px-rem-converter",
   "color-contrast-checker",
@@ -323,8 +331,11 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "base64-converter": return <TextCodec locale={locale} kind="base64" />;
     case "json-formatter-validator": return <JsonTool locale={locale} />;
     case "json-schema-validator": return <JsonSchemaValidatorTool locale={locale} />;
+    case "jsonpath-tester": return <JsonPathTesterTool locale={locale} />;
     case "yaml-json-converter": return <YamlJsonConverterTool locale={locale} />;
+    case "toml-json-converter": return <TomlJsonConverterTool locale={locale} />;
     case "xml-formatter-validator": return <XmlFormatterValidatorTool locale={locale} />;
+    case "csv-json-converter": return <CsvDataWorkbenchTool locale={locale} />;
     case "hash-generator": return <HashTool locale={locale} />;
     case "px-rem-converter": return <PxRemTool locale={locale} />;
     case "color-contrast-checker": return <ContrastTool locale={locale} />;

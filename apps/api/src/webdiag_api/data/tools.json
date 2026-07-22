@@ -1119,16 +1119,19 @@
     "id": "WD-063",
     "slug": "jsonpath-tester",
     "title": {
-      "ru": "JSONPath Tester",
-      "en": "JSONPath Tester"
+      "ru": "JSONPath Query Lab",
+      "en": "JSONPath Query Lab"
     },
     "category": "development-data",
     "executorClass": "browser",
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Выполняет bounded JSONPath-запросы по локальному JSON: properties, indices, wildcards, recursive descent, unions, slices и простые filters без eval и script expressions.",
+      "en": "Runs bounded JSONPath queries against local JSON: properties, indices, wildcards, recursive descent, unions, slices, and simple filters without eval or script expressions."
+    }
   },
   {
     "id": "WD-064",
@@ -1152,7 +1155,7 @@
     "id": "WD-065",
     "slug": "toml-json-converter",
     "title": {
-      "ru": "TOML ↔ JSON",
+      "ru": "TOML ↔ JSON Converter",
       "en": "TOML ↔ JSON Converter"
     },
     "category": "development-data",
@@ -1160,8 +1163,11 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Преобразует bounded TOML configuration subset и JSON локально в браузере: tables, array tables, dotted keys, arrays и inline tables с явными ограничениями TOML/JSON типов.",
+      "en": "Converts a bounded TOML configuration subset and JSON locally in the browser: tables, array tables, dotted keys, arrays, and inline tables with explicit TOML/JSON type limits."
+    }
   },
   {
     "id": "WD-066",
@@ -1200,16 +1206,19 @@
     "id": "WD-068",
     "slug": "csv-json-converter",
     "title": {
-      "ru": "CSV ↔ JSON",
-      "en": "CSV ↔ JSON Converter"
+      "ru": "CSV Data Workbench",
+      "en": "CSV Data Workbench"
     },
     "category": "development-data",
     "executorClass": "browser",
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет и преобразует CSV/JSON локально: delimiter detection, quoted и multiline fields, inconsistent rows, header diagnostics и spreadsheet-formula signals в одном workflow.",
+      "en": "Validates and converts CSV/JSON locally: delimiter detection, quoted and multiline fields, inconsistent rows, header diagnostics, and spreadsheet-formula signals in one workflow."
+    }
   },
   {
     "id": "WD-069",

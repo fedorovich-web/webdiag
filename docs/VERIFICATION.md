@@ -1,10 +1,66 @@
 # Verification Notes
 
-Patch scope: A10.28 JSON Schema / YAML-JSON / XML browser utilities. No commit or push was performed by the assistant.
+Patch scope: A10.29 JSONPath / TOML / CSV browser data workbench. No commit or push was performed by the assistant.
 
 ## Scope
 
-This verification record covers the clean A0–A7 baseline plus A7.1–A7.5 hardening, A8/A8.1/A8.2/A8.3 UI work, A9 frontend-safe audit result contract, and A10.1–A10.28 public tool batches.
+This verification record covers the clean A0–A7 baseline plus A7.1–A7.5 hardening, A8/A8.1/A8.2/A8.3 UI work, A9 frontend-safe audit result contract, and A10.1–A10.29 public tool batches.
+
+# A10.29 — JSONPath / TOML / CSV data workbench
+
+## Scope
+
+- activated JSONPath Query Lab as a browser-only bounded query engine:
+  - supports root, dot/bracket properties, positive/negative indices, wildcards, recursive descent, unions, array slices, and simple existence/comparison filters;
+  - returns JSON Pointer paths, deduplicates by path, and caps output at 500 matches;
+  - script expressions, functions, arithmetic, regular expressions, and `eval` are not executed;
+  - input is limited to 500,000 characters, 10,000 nodes, depth 64, and 10,000 visited nodes;
+- activated TOML ↔ JSON Converter for a documented configuration subset:
+  - supports strings, booleans, safe integers, finite floats, arrays, inline tables, tables, dotted keys, and array tables;
+  - TOML date/time values are preserved as JSON strings with a warning;
+  - multiline strings, inf/nan, unsafe integers, JSON null, and unsupported nested array-table structures are rejected;
+  - input is limited to 500,000 characters, 5,000 nodes, and depth 32;
+- activated CSV Data Workbench instead of a separate weak CSV validator:
+  - supports comma, semicolon, tab, and pipe delimiters, auto-detection, quoted fields, escaped quotes, CRLF/LF, and multiline quoted values;
+  - reports inconsistent columns, duplicate/empty headers, malformed quotes, and spreadsheet-formula-like values;
+  - converts CSV to JSON objects/arrays and JSON arrays of scalar objects/rows to CSV;
+  - optional apostrophe prefix for formula-like values is a review aid, not a universal spreadsheet security guarantee;
+  - input is limited to 500,000 characters, 10,000 rows, 200 columns, and 500,000 cells;
+- all three tools run locally in the browser and add no API routes or dependencies;
+- activated exactly 3 existing internal tools: `jsonpath-tester`, `toml-json-converter`, and `csv-json-converter`; `csv-validator` remains internal as duplicate scope;
+- public tool count is now 85; registry entry count remains 125.
+
+## Verified in the patch sandbox
+
+```text
+ad-hoc strict TypeScript compile for engine, UI, and tests
+PASS — strict, noUncheckedIndexedAccess, exactOptionalPropertyTypes, noUnusedLocals, noUnusedParameters
+
+structured-text runtime assertions
+PASS — JSONPath grammar/filters/paths, TOML tables/array tables/round trip and rejection cases, CSV dialect/quotes/multiline/diagnostics/conversion
+
+npm run test:workspace
+PASS — 37/37
+
+npm run verify:registry
+PASS — 125 unique tools, 85 ready tools, no weak ready microtools
+
+node --test scripts/tests-tool-catalog-quality.test.mjs
+PASS — 5/5
+
+python -m pytest apps/api/tests -q
+PASS — 200/200
+
+registry JSON sync and ready renderer/editorial parity
+PASS — backend registry byte-identical; 85/85 ready slugs covered by workspace integrity gate
+```
+
+## Required local verification
+
+- run full Vitest, ESLint, official TypeScript, build, built-site, Python, Ruff, and lock gates before commit;
+- browser/Playwright remains a separate required gate when the environment supports it.
+
+---
 
 # A10.28 — JSON Schema / YAML-JSON / XML utilities
 
