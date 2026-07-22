@@ -1,5 +1,15 @@
 # Changelog
 
+## A10.23 — JavaScript bundle / CSS delivery / font loading
+
+- Added JavaScript Bundle Surface Analyzer with bounded static script discovery, document-reference counts, unique asset header checks, MIME, declared-size, compression, cache, redirect, module/classic, duplicate, parser-blocking, and nested-target safety signals.
+- Added CSS Delivery Analyzer for stylesheet links and inline styles, bounded CSS retrieval, `@import`, `@font-face`, MIME, compression, cache, media, duplicate, alternate, disabled, and source-map signals.
+- Added Font Loading Analyzer that correlates bounded static `@font-face` rules, font sources, font preloads, `font-display`, formats, cache, MIME, declared bytes, and cross-host/crossorigin signals.
+- Revalidated every nested JavaScript, stylesheet, and font URL through `SafeHttpFetcher`; private or otherwise rejected asset targets are recorded without being requested.
+- Kept runtime execution, browser waterfall, code coverage, unused-code conclusions, rendered-font confirmation, and synthetic performance scores outside scope.
+- Added strict backend contracts, allowlisted Next.js proxies, client runtime validators, RU/EN editorial pages, copyable summaries, parser/API/proxy/renderer tests, and registry gates.
+- Registry baseline is now 117 entries and 67 ready public tools; no single-file, single-header, or single-font microtools were added.
+
 ## A10.22 — CSP / third-party scripts / resource hints
 
 - Added CSP Analyzer for enforced headers, Report-Only, static meta policies, directive inventory, risky source expressions, duplicate directives, and missing key restrictions.
