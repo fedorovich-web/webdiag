@@ -47,7 +47,7 @@ describe("asset delivery report text", () => {
       assets: [],
     } satisfies JavaScriptBundleSurfaceResponse;
     expect(javascriptBundleResultText(result)).toContain("Unique scripts: 3");
-    expect(javascriptBundleResultText(result)).toContain("Known declared bytes: 500000");
+    expect(javascriptBundleResultText(result)).toContain("Declared size: 500000");
   });
 
   it("includes CSS and font-specific counters", () => {
@@ -106,6 +106,6 @@ describe("asset delivery report text", () => {
       preloads: [],
     } satisfies FontLoadingAnalyzerResponse;
     expect(fontLoadingResultText(fonts)).toContain("Missing font-display: 1");
-    expect(fontLoadingResultText(fonts)).toContain("Preloads matched: 1/1");
+    expect(fontLoadingResultText(fonts)).toContain("Matched preloads: 1/1");
   });
 });

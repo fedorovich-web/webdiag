@@ -19,6 +19,7 @@ from webdiag_api.tools.robots_txt import router as robots_txt_tool_router
 from webdiag_api.tools.security_headers import router as security_headers_tool_router
 from webdiag_api.tools.sitemap_xml import router as sitemap_xml_tool_router
 from webdiag_api.tools.technical_seo import router as technical_seo_tool_router
+from webdiag_api.tools.url_management import router as url_management_tool_router
 
 app = FastAPI(title="WebDiag API", version=__version__)
 app.include_router(audit_router)
@@ -38,6 +39,7 @@ app.include_router(robots_txt_tool_router)
 app.include_router(security_headers_tool_router)
 app.include_router(sitemap_xml_tool_router)
 app.include_router(technical_seo_tool_router)
+app.include_router(url_management_tool_router)
 
 @app.get("/health", tags=["system"])
 def health() -> dict[str, str]:
