@@ -409,7 +409,7 @@ export const developmentDataToolPages = [
     ],
     technicalNotes: [
       { ru: "Ввод ограничен 500 000 символов, 10 000 строк, 200 столбцов и 500 000 cells.", en: "Input is limited to 500,000 characters, 10,000 rows, 200 columns, and 500,000 cells." },
-      { ru: "CSV validator и converter объединены в один workflow; отдельный csv-validator остаётся internal как дублирующий microtool.", en: "CSV validation and conversion are combined into one workflow; the separate csv-validator remains internal as a duplicate microtool." },
+      { ru: "Проверка и преобразование CSV объединены в один публичный workflow, чтобы не дублировать функциональность отдельными инструментами.", en: "CSV validation and conversion are combined in one public workflow to avoid splitting duplicate functionality across separate tools." },
     ],
     faq: [
       { question: { ru: "Поддерживаются переносы строк внутри поля?", en: "Are line breaks inside a field supported?" }, answer: { ru: "Да, если поле заключено в двойные кавычки.", en: "Yes, when the field is enclosed in double quotes." } },
@@ -547,5 +547,134 @@ export const developmentDataToolPages = [
     ],
     relatedToolSlugs: ["json-formatter-validator", "json-schema-validator", "yaml-json-converter"],
     sourceUrls: ["https://www.w3.org/TR/xml/"],
+  }),
+  toolPage({
+    slug: "sql-formatter",
+    seoTitle: { ru: "SQL Formatter онлайн без выполнения запроса", en: "SQL Formatter Online — Format Queries Locally" },
+    metaDescription: { ru: "Отформатируйте SQL локально: clauses, joins, списки, вложенные subqueries, строки и комментарии. Запрос не отправляется на сервер и не выполняется.", en: "Format SQL locally with readable clauses, joins, lists, nested subqueries, strings, and comments. Queries are neither uploaded nor executed." },
+    h1: { ru: "SQL Formatter для читаемых запросов", en: "SQL Formatter for Readable Queries" },
+    lead: { ru: "Приведите SQL к последовательной структуре, сохранив quoted values и комментарии, без подключения к базе данных.", en: "Turn SQL into a consistent, reviewable layout while preserving quoted values and comments, with no database connection." },
+    quickFacts: [
+      { ru: "Локально в браузере", en: "Runs locally" },
+      { ru: "Запрос не выполняется", en: "No query execution" },
+      { ru: "Bounded tokenizer", en: "Bounded tokenizer" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте SQL и выберите регистр ключевых слов.", en: "Paste SQL and choose the keyword casing." },
+      { ru: "Выберите отступ в 2 или 4 пробела и запустите форматирование.", en: "Choose two- or four-space indentation and run the formatter." },
+      { ru: "Проверьте dialect warnings и скопируйте результат.", en: "Review any dialect warnings and copy the result." },
+    ],
+    supportedFeatures: [
+      { ru: "Основные SELECT, INSERT, UPDATE, DELETE, WITH, UNION, JOIN и ordering/grouping clauses.", en: "Common SELECT, INSERT, UPDATE, DELETE, WITH, UNION, JOIN, ordering, and grouping clauses." },
+      { ru: "Строки с escaped quotes, line/block comments и quoted identifiers.", en: "Strings with escaped quotes, line and block comments, and quoted identifiers." },
+      { ru: "Вложенные subqueries с bounded depth и readable indentation.", en: "Nested subqueries with bounded depth and readable indentation." },
+      { ru: "Upper, lower или preserved keyword casing.", en: "Uppercase, lowercase, or preserved keyword casing." },
+    ],
+    limitations: [
+      { ru: "Это conservative formatter, а не полноценный parser PostgreSQL, MySQL, SQL Server, Oracle или SQLite.", en: "This is a conservative formatter, not a complete PostgreSQL, MySQL, SQL Server, Oracle, or SQLite parser." },
+      { ru: "Semantic validation, schema resolution, query planning и выполнение SQL не выполняются.", en: "Semantic validation, schema resolution, query planning, and SQL execution are not performed." },
+      { ru: "Редкие vendor-specific constructs могут быть сохранены, но не всегда получают идеальное форматирование.", en: "Uncommon vendor-specific constructs may be preserved without receiving ideal layout." },
+    ],
+    useCases: [
+      { ru: "Подготовка запроса к code review.", en: "Preparing a query for code review." },
+      { ru: "Чтение SQL из логов или миграций.", en: "Reading SQL copied from logs or migrations." },
+      { ru: "Нормализация примера для документации или issue.", en: "Normalizing an example for documentation or an issue." },
+    ],
+    technicalNotes: [
+      { ru: "Ввод ограничен 500 000 символов, 20 000 tokens и глубиной 64.", en: "Input is limited to 500,000 characters, 20,000 tokens, and depth 64." },
+      { ru: "Formatter не подключается к СУБД и не передаёт SQL backend WebDiag.", en: "The formatter does not connect to a database or send SQL to the WebDiag backend." },
+    ],
+    faq: [
+      { question: { ru: "Может ли инструмент проверить, что запрос выполнится?", en: "Can it confirm that the query will run?" }, answer: { ru: "Нет. Для этого нужен parser и schema конкретной СУБД либо безопасная тестовая база. Инструмент проверяет только bounded lexical structure и delimiters.", en: "No. That requires the target database parser and schema, or a controlled test database. This tool only checks bounded lexical structure and delimiters." } },
+      { question: { ru: "SQL отправляется на сервер?", en: "Is the SQL uploaded?" }, answer: { ru: "Нет. Tokenization и форматирование выполняются локально в браузере.", en: "No. Tokenization and formatting run locally in your browser." } },
+    ],
+    relatedToolSlugs: ["json-formatter-validator", "graphql-formatter", "regex-tester"],
+    sourceUrls: ["https://www.postgresql.org/docs/current/sql-syntax-lexical.html"],
+  }),
+  toolPage({
+    slug: "graphql-formatter",
+    seoTitle: { ru: "GraphQL Formatter для queries и fragments", en: "GraphQL Formatter for Queries and Fragments" },
+    metaDescription: { ru: "Отформатируйте GraphQL queries, mutations, variables, directives и fragments локально. Проверяется lexical structure и баланс delimiters без schema validation.", en: "Format GraphQL queries, mutations, variables, directives, and fragments locally. Checks cover lexical structure and balanced delimiters, not schema validity." },
+    h1: { ru: "GraphQL Formatter для документов и операций", en: "GraphQL Formatter for Documents and Operations" },
+    lead: { ru: "Сделайте GraphQL-документ читаемым, сохранив comments, strings, block strings и fragment spreads.", en: "Make a GraphQL document easier to review while preserving comments, strings, block strings, and fragment spreads." },
+    quickFacts: [
+      { ru: "Queries и mutations", en: "Queries and mutations" },
+      { ru: "Fragments и directives", en: "Fragments and directives" },
+      { ru: "Без schema fetch", en: "No schema fetch" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте GraphQL document.", en: "Paste a GraphQL document." },
+      { ru: "Выберите размер отступа и запустите formatter.", en: "Choose the indentation size and run the formatter." },
+      { ru: "Проверьте структуру и скопируйте результат.", en: "Review the structure and copy the formatted document." },
+    ],
+    supportedFeatures: [
+      { ru: "Operation definitions, variables, arguments и directives.", en: "Operation definitions, variables, arguments, and directives." },
+      { ru: "Selection sets, aliases, fragments, inline fragments и type conditions.", en: "Selection sets, aliases, fragments, inline fragments, and type conditions." },
+      { ru: "Comments, escaped strings и triple-quoted block strings.", en: "Comments, escaped strings, and triple-quoted block strings." },
+      { ru: "Проверка matching braces, parentheses и brackets.", en: "Checks for matching braces, parentheses, and brackets." },
+    ],
+    limitations: [
+      { ru: "Инструмент не загружает schema и не проверяет fields, arguments, variable types или deprecations.", en: "The tool does not load a schema or validate fields, arguments, variable types, or deprecations." },
+      { ru: "Операция не отправляется GraphQL endpoint и не выполняется.", en: "The operation is not sent to a GraphQL endpoint or executed." },
+      { ru: "Это bounded lexical formatter, а не полная реализация validation rules GraphQL specification.", en: "This is a bounded lexical formatter, not a complete implementation of GraphQL validation rules." },
+    ],
+    useCases: [
+      { ru: "Подготовка query к pull request или документации.", en: "Preparing a query for a pull request or documentation." },
+      { ru: "Разбор compact GraphQL payload из логов.", en: "Reviewing a compact GraphQL payload copied from logs." },
+      { ru: "Проверка очевидно несбалансированных delimiters перед отладкой.", en: "Catching obviously unbalanced delimiters before debugging." },
+    ],
+    technicalNotes: [
+      { ru: "Ввод ограничен 500 000 символов, 20 000 tokens и глубиной 64.", en: "Input is limited to 500,000 characters, 20,000 tokens, and depth 64." },
+      { ru: "Commas считаются insignificant GraphQL tokens и не требуются в output.", en: "Commas are treated as insignificant GraphQL tokens and are not required in the output." },
+    ],
+    faq: [
+      { question: { ru: "Проверяется ли query по моей schema?", en: "Is the query checked against my schema?" }, answer: { ru: "Нет. Schema introspection и remote endpoint access не входят в scope formatter.", en: "No. Schema introspection and remote endpoint access are outside the formatter's scope." } },
+      { question: { ru: "Можно форматировать fragments и block strings?", en: "Can it format fragments and block strings?" }, answer: { ru: "Да, formatter сохраняет fragment spreads, comments, обычные и triple-quoted strings в рамках bounded lexical parser.", en: "Yes. The formatter preserves fragment spreads, comments, regular strings, and triple-quoted strings within its bounded lexical parser." } },
+    ],
+    relatedToolSlugs: ["json-formatter-validator", "sql-formatter", "regex-tester"],
+    sourceUrls: ["https://spec.graphql.org/October2021/"],
+  }),
+  toolPage({
+    slug: "regex-tester",
+    seoTitle: { ru: "Safe Regex Lab с Web Worker timeout", en: "Safe Regex Lab with an Isolated Worker Timeout" },
+    metaDescription: { ru: "Тестируйте JavaScript regex в отдельном Web Worker с hard timeout, match caps, captures и эвристическими ReDoS signals. Паттерн не выполняется на сервере.", en: "Test JavaScript regex in a dedicated Web Worker with a hard timeout, match caps, captures, and heuristic ReDoS signals. Patterns never run on the server." },
+    h1: { ru: "Safe Regex Lab с изолированным выполнением", en: "Safe Regex Lab with Isolated Execution" },
+    lead: { ru: "Проверьте JavaScript regular expression на bounded тексте, посмотрите captures и остановите слишком дорогой match принудительным timeout.", en: "Test a JavaScript regular expression against bounded input, inspect captures, and terminate expensive matching with a hard timeout." },
+    quickFacts: [
+      { ru: "Отдельный Web Worker", en: "Dedicated Web Worker" },
+      { ru: "Hard timeout", en: "Hard timeout" },
+      { ru: "До 500 matches", en: "Up to 500 matches" },
+    ],
+    howToSteps: [
+      { ru: "Введите pattern без slash-разделителей и укажите JavaScript flags.", en: "Enter a pattern without slash delimiters and provide JavaScript flags." },
+      { ru: "Вставьте тестовый текст и выберите timeout.", en: "Paste test input and choose a timeout." },
+      { ru: "Запустите worker, затем проверьте matches, captures и risk signals.", en: "Run the worker, then review matches, captures, and risk signals." },
+    ],
+    supportedFeatures: [
+      { ru: "JavaScript flags d, g, i, m, s, u, v и y с duplicate/conflict validation.", en: "JavaScript flags d, g, i, m, s, u, v, and y with duplicate and conflict validation." },
+      { ru: "Match ranges, numbered captures, named captures и optional indices.", en: "Match ranges, numbered captures, named captures, and optional indices." },
+      { ru: "Корректное продвижение zero-length global/sticky matches.", en: "Correct advancement for zero-length global or sticky matches." },
+      { ru: "Heuristic review nested quantifiers, broad wildcards, quantified alternation, backreferences и large quantifiers.", en: "Heuristic review for nested quantifiers, broad wildcards, quantified alternation, backreferences, and large quantifiers." },
+    ],
+    limitations: [
+      { ru: "Timeout ограничивает browser worker, но не доказывает, что pattern безопасен во всех runtimes и на всех данных.", en: "The timeout bounds the browser worker but does not prove that a pattern is safe in every runtime or against every input." },
+      { ru: "Эвристические ReDoS signals могут давать false positives и false negatives.", en: "Heuristic ReDoS signals can produce both false positives and false negatives." },
+      { ru: "Поддерживается JavaScript RegExp semantics, а не PCRE, RE2, .NET или Python regex dialect.", en: "The lab uses JavaScript RegExp semantics rather than PCRE, RE2, .NET, or Python regex dialects." },
+    ],
+    useCases: [
+      { ru: "Проверка pattern и capture groups перед использованием во frontend.", en: "Checking a pattern and capture groups before frontend use." },
+      { ru: "Сравнение flags и zero-length behavior.", en: "Comparing flags and zero-length behavior." },
+      { ru: "Первичный review потенциально дорогого pattern до server-side benchmark.", en: "Performing an initial review of a potentially expensive pattern before server-side benchmarking." },
+    ],
+    technicalNotes: [
+      { ru: "Pattern ограничен 2 000 символов, текст — 100 000 символов, output — 500 matches с bounded previews.", en: "Patterns are limited to 2,000 characters, input text to 100,000 characters, and output to 500 matches with bounded previews." },
+      { ru: "Worker создаётся на один запуск, завершается после результата или timeout и не использует eval/Function.", en: "A fresh worker is created for each run, terminated after completion or timeout, and never uses eval or Function construction." },
+    ],
+    faq: [
+      { question: { ru: "Гарантирует ли зелёный risk review отсутствие ReDoS?", en: "Does a low-risk review guarantee the pattern is ReDoS-free?" }, answer: { ru: "Нет. Нужны adversarial tests и benchmark в том runtime, где pattern будет работать в production.", en: "No. You still need adversarial tests and benchmarks in the exact runtime that will execute the pattern in production." } },
+      { question: { ru: "Что происходит при зависании regex?", en: "What happens when matching stalls?" }, answer: { ru: "Main UI остаётся responsive, а отдельный Web Worker принудительно завершается после выбранного timeout.", en: "The main UI remains responsive, and the dedicated Web Worker is forcibly terminated after the selected timeout." } },
+    ],
+    relatedToolSlugs: ["sql-formatter", "graphql-formatter", "json-formatter-validator"],
+    sourceUrls: ["https://developer.mozilla.org/docs/Web/JavaScript/Guide/Regular_expressions", "https://developer.mozilla.org/docs/Web/API/Web_Workers_API"],
   }),
 ] as const;

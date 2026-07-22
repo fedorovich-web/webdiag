@@ -92,6 +92,11 @@ import {
   TomlJsonConverterTool,
 } from "./structured-text-workbench-tools";
 import {
+  GraphqlFormatterTool,
+  SafeRegexLabTool,
+  SqlFormatterTool,
+} from "./query-code-workbench-tools";
+import {
   QueryParameterAnalyzerTool,
   RedirectMapValidatorTool,
   UrlNormalizationAnalyzerTool,
@@ -247,6 +252,9 @@ export const SUPPORTED_TOOL_SLUGS = [
   "toml-json-converter",
   "xml-formatter-validator",
   "csv-json-converter",
+  "sql-formatter",
+  "graphql-formatter",
+  "regex-tester",
   "hash-generator",
   "px-rem-converter",
   "color-contrast-checker",
@@ -336,6 +344,9 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "toml-json-converter": return <TomlJsonConverterTool locale={locale} />;
     case "xml-formatter-validator": return <XmlFormatterValidatorTool locale={locale} />;
     case "csv-json-converter": return <CsvDataWorkbenchTool locale={locale} />;
+    case "sql-formatter": return <SqlFormatterTool locale={locale} />;
+    case "graphql-formatter": return <GraphqlFormatterTool locale={locale} />;
+    case "regex-tester": return <SafeRegexLabTool locale={locale} />;
     case "hash-generator": return <HashTool locale={locale} />;
     case "px-rem-converter": return <PxRemTool locale={locale} />;
     case "color-contrast-checker": return <ContrastTool locale={locale} />;

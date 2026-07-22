@@ -1,5 +1,15 @@
 # Changelog
 
+## A10.30 — SQL / GraphQL / Safe Regex code workbench
+
+- Activated SQL Formatter with a bounded conservative tokenizer for common clauses, joins, lists, nested subqueries, strings, comments, quoted identifiers, keyword casing, and two- or four-space indentation.
+- Activated GraphQL Formatter for operations, variables, arguments, directives, fragments, selection sets, comments, escaped strings, and block strings with bounded lexical and delimiter checks.
+- Activated Safe Regex Lab with JavaScript RegExp semantics inside a fresh dedicated Web Worker, hard 100–1,000 ms timeout, bounded input, 500-match cap, captures, optional indices, and zero-length match advancement.
+- Added heuristic review signals for nested quantifiers, broad wildcards, quantified alternation, backreferences, lookbehind, large quantifiers, and very long patterns without claiming proof of ReDoS safety.
+- Kept all three tools browser-only with no SQL/GraphQL execution, database connection, remote schema fetch, server-side regex execution, `eval`, `Function`, or new dependency.
+- Added pure TypeScript engines, isolated-worker contract, RU/EN interfaces and editorial pages, formatter/worker boundary tests, renderer coverage, and registry gates.
+- Registry remains at 125 entries and now exposes 88 ready public tools; exactly three existing internal entries were promoted.
+
 ## A10.29 — JSONPath / TOML / CSV data workbench
 
 - Activated JSONPath Query Lab with a bounded no-eval parser for properties, indices, wildcards, recursive descent, unions, slices, and simple existence/comparison filters.

@@ -3,7 +3,8 @@ import { publicTools, tools } from "@webdiag/tool-registry";
 import { toolPageContents } from "./tool-pages";
 
 const readySlugs = new Set(publicTools.map((tool) => tool.slug));
-const internalSlugs = new Set(tools.filter((tool) => tool.state !== "ready").map((tool) => tool.slug));
+const internalTools = tools.filter((tool) => tool.state !== "ready");
+const internalSlugs = new Set(internalTools.map((tool) => tool.slug));
 
 describe("tool editorial content", () => {
   it("covers every ready tool exactly once and no internal tools", () => {
@@ -33,6 +34,14 @@ describe("tool editorial content", () => {
       expect(content.technicalNotes.length).toBeGreaterThanOrEqual(2);
       expect(content.faq.length).toBeGreaterThanOrEqual(2);
       expect(content.sourceUrls.every((url) => url.startsWith("https://"))).toBe(true);
+    }
+  });
+
+  it("does not expose internal registry identifiers in public editorial copy", () => {
+    const serialized = JSON.stringify(toolPageContents);
+    for (const tool of internalTools) {
+      expect(serialized).not.toContain(tool.id);
+      expect(serialized).not.toContain(tool.slug);
     }
   });
 

@@ -281,7 +281,9 @@ function parseJsonPath(path: string): readonly JsonPathSelector[] {
     if (end < 0) throw new Error("Unclosed JSONPath bracket selector.");
     const content = input.slice(index + 1, end).trim();
     if (content === "*") selectors.push({ kind: "wildcard" });
-    else if (content.startsWith("?(") && content.endsWith(")")) {
+    else if (content.startsWith("(") && content.endsWith(")")) {
+      throw new Error("Unsupported JSONPath script-style selector syntax.");
+    } else if (content.startsWith("?(") && content.endsWith(")")) {
       selectors.push({ kind: "filter", filter: parseJsonPathFilter(content.slice(2, -1)) });
     } else if (content.includes(":")) {
       const parts = content.split(":");

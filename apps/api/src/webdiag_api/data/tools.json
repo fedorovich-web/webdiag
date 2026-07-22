@@ -1232,8 +1232,11 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Форматирует SQL локально с bounded tokenizer: основные clauses, joins, списки, вложенные subqueries, строки, комментарии и quoted identifiers без выполнения запроса и без ложной проверки конкретной СУБД.",
+      "en": "Formats SQL locally with a bounded tokenizer: common clauses, joins, lists, nested subqueries, strings, comments, and quoted identifiers without executing the query or claiming database-specific validation."
+    }
   },
   {
     "id": "WD-070",
@@ -1247,23 +1250,29 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Форматирует GraphQL documents локально: operations, variables, arguments, directives, fragments, selection sets, comments и strings с проверкой lexical structure и delimiters без schema validation или выполнения.",
+      "en": "Formats GraphQL documents locally: operations, variables, arguments, directives, fragments, selection sets, comments, and strings with lexical and delimiter checks, but no schema validation or execution."
+    }
   },
   {
     "id": "WD-071",
     "slug": "regex-tester",
     "title": {
-      "ru": "Regex Tester",
-      "en": "Regular Expression Tester"
+      "ru": "Safe Regex Lab",
+      "en": "Safe Regex Lab"
     },
     "category": "development-data",
     "executorClass": "browser",
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Тестирует JavaScript regular expressions в отдельном Web Worker с hard timeout, bounded input и match caps, показывает captures и эвристические ReDoS review signals без eval и без выполнения на сервере.",
+      "en": "Tests JavaScript regular expressions in a dedicated Web Worker with a hard timeout, bounded input, and match caps, showing captures and heuristic ReDoS review signals without eval or server-side execution."
+    }
   },
   {
     "id": "WD-072",
