@@ -1404,4 +1404,128 @@ export const seoAuditToolPages = [
     relatedToolSlugs: ["third-party-script-analyzer", "page-weight-analyzer", "core-web-vitals-checker"],
     sourceUrls: ["https://html.spec.whatwg.org/multipage/links.html#link-type-preconnect", "https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/rel/preload"],
   }),
+
+  toolPage({
+    slug: "url-normalization-analyzer",
+    seoTitle: { ru: "Анализ нормализации URL", en: "URL Normalization Analyzer" },
+    metaDescription: { ru: "Разберите синтаксическую нормализацию HTTP/HTTPS URL: scheme/host case, default port, IDNA, dot segments, percent-encoding, fragment и routing-sensitive slash signals.", en: "Inspect HTTP/HTTPS URL syntax normalization: scheme and host casing, default ports, IDNA, dot segments, percent encoding, fragments, and routing-sensitive slash signals." },
+    h1: { ru: "Анализ нормализации URL", en: "URL Normalization Analyzer" },
+    lead: { ru: "Инструмент локально строит детерминированную синтаксическую форму URL и отдельно отмечает изменения, которые нельзя безопасно применять без проверки роутинга.", en: "The tool locally builds a deterministic URL syntax form and separates changes that cannot be applied safely without checking routing behavior." },
+    quickFacts: [
+      { ru: "работает локально", en: "runs locally" },
+      { ru: "IDNA и percent-encoding", en: "IDNA and percent encoding" },
+      { ru: "без canonical-магии", en: "no canonical guesswork" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте полный HTTP/HTTPS URL.", en: "Paste a full HTTP/HTTPS URL." },
+      { ru: "Сравните normalized и request URL.", en: "Compare the normalized and request URLs." },
+      { ru: "Отдельно проверьте slash и query semantics на сервере.", en: "Verify slash and query semantics separately against the server." },
+    ],
+    supportedFeatures: [
+      { ru: "Нормализует регистр scheme/hostname, default port и IDNA serialization.", en: "Normalizes scheme and hostname casing, default ports, and IDNA serialization." },
+      { ru: "Разрешает dot segments и нормализует percent-encoding без декодирования reserved characters.", en: "Resolves dot segments and normalizes percent encoding without decoding reserved characters." },
+      { ru: "Показывает fragment-free request URL и сохраняет query order.", en: "Shows the fragment-free request URL and preserves query order." },
+    ],
+    limitations: [
+      { ru: "Не утверждает, какой URL должен быть rel=canonical.", en: "Does not claim which URL should be rel=canonical." },
+      { ru: "Не схлопывает duplicate slashes и не удаляет trailing slash без проверки приложения.", en: "Does not collapse duplicate slashes or remove a trailing slash without application verification." },
+    ],
+    useCases: [
+      { ru: "Сравнить URL перед настройкой редиректа или canonical.", en: "Compare URLs before configuring a redirect or canonical." },
+      { ru: "Проверить IDN, default ports и неоднозначное percent-encoding.", en: "Review IDNs, default ports, and ambiguous percent encoding." },
+      { ru: "Подготовить единообразные URL для migration spreadsheet.", en: "Prepare consistent URLs for a migration spreadsheet." },
+    ],
+    technicalNotes: [
+      { ru: "Результат строится браузерным URL parser и не выполняет network request.", en: "The result uses the browser URL parser and makes no network request." },
+      { ru: "Query order сохраняется, потому что backend semantics могут зависеть от порядка и повторов.", en: "Query order is preserved because backend semantics can depend on order and repeated keys." },
+    ],
+    faq: [
+      { question: { ru: "Можно ли автоматически заменить все URL на normalized form?", en: "Can every URL be replaced with the normalized form automatically?" }, answer: { ru: "Нет. Duplicate slash, trailing slash, parameter order и application routing нужно проверять на фактическом сервере.", en: "No. Duplicate slashes, trailing slashes, parameter order, and application routing must be checked against the real server." } },
+      { question: { ru: "Это canonical checker?", en: "Is this a canonical checker?" }, answer: { ru: "Нет. Инструмент анализирует синтаксис одного URL; canonical intent проверяется отдельным инструментом по опубликованной странице.", en: "No. It analyzes one URL's syntax; canonical intent is checked separately on the published page." } },
+    ],
+    relatedToolSlugs: ["canonical-checker", "query-parameter-analyzer", "redirect-map-validator"],
+    sourceUrls: ["https://url.spec.whatwg.org/", "https://www.rfc-editor.org/rfc/rfc3986"],
+  }),
+  toolPage({
+    slug: "query-parameter-analyzer",
+    seoTitle: { ru: "Анализ URL-параметров", en: "Query Parameter Analyzer" },
+    metaDescription: { ru: "Локально разберите query-пары, повторы, пустые значения, tracking, pagination, sort, filter, search и session name-patterns без изменения исходного URL.", en: "Locally inspect query pairs, repeats, empty values, and tracking, pagination, sort, filter, search, and session name patterns without changing the source URL." },
+    h1: { ru: "Анализ URL-параметров", en: "Query Parameter Analyzer" },
+    lead: { ru: "Инструмент показывает структуру query string и прозрачные name-based categories, но не выдумывает indexation intent и не удаляет параметры автоматически.", en: "The tool shows query-string structure and transparent name-based categories without inventing indexation intent or removing parameters automatically." },
+    quickFacts: [
+      { ru: "до 200 query-пар", en: "up to 200 query pairs" },
+      { ru: "работает локально", en: "runs locally" },
+      { ru: "tracking removal candidate", en: "tracking-removal candidate" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте URL с query string.", en: "Paste a URL with a query string." },
+      { ru: "Проверьте повторы, пустые значения и категории имён.", en: "Review repeats, empty values, and name categories." },
+      { ru: "Подтвердите server/cache/crawl semantics до любых изменений.", en: "Confirm server, cache, and crawl semantics before making changes." },
+    ],
+    supportedFeatures: [
+      { ru: "Сохраняет порядок пар и показывает repeated parameter names.", en: "Preserves pair order and shows repeated parameter names." },
+      { ru: "Выделяет tracking, pagination, sorting, filtering, search и session name-patterns.", en: "Highlights tracking, pagination, sorting, filtering, search, and session name patterns." },
+      { ru: "Показывает blank names/values, case variants и sensitive-looking names.", en: "Shows blank names and values, case variants, and sensitive-looking names." },
+    ],
+    limitations: [
+      { ru: "Категории основаны на имени параметра, а не на доказанном поведении backend.", en: "Categories are based on parameter names, not proven backend behavior." },
+      { ru: "Кандидат без tracking-параметров не является автоматической canonical рекомендацией.", en: "The tracking-free candidate is not an automatic canonical recommendation." },
+    ],
+    useCases: [
+      { ru: "Проверить faceted navigation и crawl-space risks перед SEO-аудитом.", en: "Review faceted navigation and crawl-space risks before an SEO audit." },
+      { ru: "Найти repeated keys и case variants перед API/cache debugging.", en: "Find repeated keys and case variants before API or cache debugging." },
+      { ru: "Оценить tracking parameters перед формированием чистой ссылки.", en: "Review tracking parameters before preparing a clean share link." },
+    ],
+    technicalNotes: [
+      { ru: "Инструмент не отправляет URL на backend и не обращается к сайту.", en: "The tool does not send the URL to the backend or contact the site." },
+      { ru: "Повторные параметры могут интерпретироваться как list, first-value или last-value в зависимости от framework.", en: "Repeated parameters may be interpreted as a list, first value, or last value depending on the framework." },
+    ],
+    faq: [
+      { question: { ru: "Нужно ли закрывать все URL с параметрами?", en: "Should every parameterized URL be blocked?" }, answer: { ru: "Нет. Решение зависит от контента, навигации, canonical, internal linking, crawl budget и требований пользователей.", en: "No. The decision depends on content, navigation, canonicals, internal linking, crawl budget, and user requirements." } },
+      { question: { ru: "Tracking-параметр всегда можно удалить?", en: "Can a tracking parameter always be removed?" }, answer: { ru: "Только если он не влияет на routing, personalization, attribution requirements или signed URL semantics.", en: "Only when it does not affect routing, personalization, attribution requirements, or signed-URL semantics." } },
+    ],
+    relatedToolSlugs: ["url-normalization-analyzer", "canonical-checker", "indexability-checker"],
+    sourceUrls: ["https://url.spec.whatwg.org/#urlsearchparams", "https://developers.google.com/search/docs/crawling-indexing/crawling-managing-faceted-navigation"],
+  }),
+  toolPage({
+    slug: "redirect-map-validator",
+    seoTitle: { ru: "Проверка карты редиректов", en: "Redirect Map Validator" },
+    metaDescription: { ru: "Проверьте до 25 explicit source→target правил: первый redirect hop, optional status, дубли, конфликты, self redirects, chains и cycles через безопасный fetcher.", en: "Validate up to 25 explicit source-to-target rules: first redirect hop, optional status, duplicates, conflicts, self redirects, chains, and cycles through a safe fetcher." },
+    h1: { ru: "Проверка карты редиректов", en: "Redirect Map Validator" },
+    lead: { ru: "Вставьте CSV или TSV карту миграции. WebDiag проверит только явно заданные source URL и сравнит первый redirect hop с ожидаемым target.", en: "Paste a CSV or TSV migration map. WebDiag checks only explicit source URLs and compares the first redirect hop with the expected target." },
+    quickFacts: [
+      { ru: "до 25 правил", en: "up to 25 rules" },
+      { ru: "first-hop validation", en: "first-hop validation" },
+      { ru: "duplicates / chains / cycles", en: "duplicates / chains / cycles" },
+    ],
+    howToSteps: [
+      { ru: "Подготовьте source,target,status CSV или TSV.", en: "Prepare source,target,status CSV or TSV." },
+      { ru: "Запустите bounded проверку public HTTP/HTTPS sources.", en: "Run the bounded check against public HTTP/HTTPS sources." },
+      { ru: "Исправьте mismatches, conflicts, chains и cycles до deployment.", en: "Fix mismatches, conflicts, chains, and cycles before deployment." },
+    ],
+    supportedFeatures: [
+      { ru: "Сравнивает observed first redirect target и optional 301/302/303/307/308 status.", en: "Compares the observed first redirect target and optional 301/302/303/307/308 status." },
+      { ru: "Находит duplicate/conflicting sources, self redirects, map chains и cycles.", en: "Finds duplicate or conflicting sources, self redirects, map chains, and cycles." },
+      { ru: "Повторно валидирует DNS и каждый redirect target через SafeHttpFetcher.", en: "Revalidates DNS and every redirect target through SafeHttpFetcher." },
+    ],
+    limitations: [
+      { ru: "Не обходит сайт и не ищет отсутствующие redirect rules.", en: "Does not crawl the site or discover missing redirect rules." },
+      { ru: "Проверяет текущий сетевой ответ, но не доказывает будущую конфигурацию CDN/web-server после deployment.", en: "Checks the current network response but cannot prove a future CDN or web-server configuration after deployment." },
+    ],
+    useCases: [
+      { ru: "Проверить migration redirect spreadsheet после релиза.", en: "Validate a migration redirect spreadsheet after release." },
+      { ru: "Найти цепочки и конфликтующие правила до импорта в nginx/CDN/CMS.", en: "Find chains and conflicting rules before importing into nginx, a CDN, or a CMS." },
+      { ru: "Повторно проверить критические URL после изменения routing.", en: "Recheck critical URLs after routing changes." },
+    ],
+    technicalNotes: [
+      { ru: "Каждый source выполняется как отдельный bounded safe fetch без чтения body.", en: "Each source is checked with a separate bounded safe fetch without reading the body." },
+      { ru: "Сравнивается первый hop; дополнительные hops отмечаются как chain review signal.", en: "The first hop is compared; additional hops are reported as a chain review signal." },
+    ],
+    faq: [
+      { question: { ru: "Можно загрузить весь redirect map на десятки тысяч URL?", en: "Can I upload a redirect map with tens of thousands of URLs?" }, answer: { ru: "Нет. Этот public tool ограничен 25 явными строками. Массовая проверка требует отдельной job architecture, очереди и rate limits.", en: "No. This public tool is limited to 25 explicit rows. Bulk validation needs separate job architecture, queues, and rate limits." } },
+      { question: { ru: "Почему сравнивается первый redirect hop?", en: "Why compare the first redirect hop?" }, answer: { ru: "Redirect map обычно описывает непосредственное правило source→target. Финальный URL отдельно показывается, а дополнительные переходы отмечаются как цепочка.", en: "A redirect map usually describes the immediate source-to-target rule. The final URL is shown separately and extra hops are flagged as a chain." } },
+    ],
+    relatedToolSlugs: ["redirect-chain-checker", "url-normalization-analyzer", "canonical-checker"],
+    sourceUrls: ["https://www.rfc-editor.org/rfc/rfc9110.html#name-redirection-3xx", "https://developers.google.com/search/docs/crawling-indexing/301-redirects"],
+  }),
 ] as const;

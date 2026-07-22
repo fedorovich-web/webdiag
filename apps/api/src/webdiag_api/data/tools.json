@@ -415,18 +415,21 @@
   },
   {
     "id": "WD-025",
-    "slug": "pagination-seo-checker",
+    "slug": "query-parameter-analyzer",
     "title": {
-      "ru": "Проверка пагинации и URL-параметров",
-      "en": "Pagination and URL Parameter SEO Checker"
+      "ru": "Анализ URL-параметров",
+      "en": "Query Parameter Analyzer"
     },
     "category": "seo-audit",
-    "executorClass": "safe_fetch",
-    "riskTier": "R2",
+    "executorClass": "browser",
+    "riskTier": "R0",
     "access": "none",
-    "implementationWave": "W3",
-    "state": "internal",
-    "description": null
+    "implementationWave": "W2",
+    "state": "ready",
+    "description": {
+      "ru": "Локально разбирает query-пары, повторы, пустые значения, tracking/pagination/sort/filter/search/session name-patterns и кандидат без известных tracking-параметров без изменения исходного URL.",
+      "en": "Locally inspects query pairs, repeats, empty values, tracking/pagination/sort/filter/search/session name patterns, and a candidate without known tracking parameters without changing the source URL."
+    }
   },
   {
     "id": "WD-026",
@@ -1953,6 +1956,42 @@
     "description": {
       "ru": "Анализирует external и inline CSS: bounded fetch, decoded sample, @import, @font-face, MIME, compression, cache и duplicate links без unused-CSS и render-blocking claims.",
       "en": "Analyzes external and inline CSS: bounded fetches, decoded samples, @import, @font-face, MIME, compression, cache, and duplicate links without unused-CSS or render-blocking claims."
+    }
+  },
+  {
+    "id": "WD-118",
+    "slug": "url-normalization-analyzer",
+    "title": {
+      "ru": "Анализ нормализации URL",
+      "en": "URL Normalization Analyzer"
+    },
+    "category": "seo-audit",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "ready",
+    "description": {
+      "ru": "Локально строит детерминированную синтаксическую форму HTTP/HTTPS URL: регистр scheme/host, default port, IDNA, dot segments и percent-encoding, сохраняя routing-sensitive slash/query semantics.",
+      "en": "Locally builds a deterministic HTTP/HTTPS syntax form for scheme/host casing, default ports, IDNA, dot segments, and percent encoding while preserving routing-sensitive slash and query semantics."
+    }
+  },
+  {
+    "id": "WD-119",
+    "slug": "redirect-map-validator",
+    "title": {
+      "ru": "Проверка карты редиректов",
+      "en": "Redirect Map Validator"
+    },
+    "category": "seo-audit",
+    "executorClass": "safe_fetch",
+    "riskTier": "R2",
+    "access": "none",
+    "implementationWave": "W3",
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет до 25 явно заданных source→target правил: первый redirect hop, optional status, дубли, конфликты, self redirects, chains и cycles через SafeHttpFetcher без crawler и автопоиска правил.",
+      "en": "Validates up to 25 explicit source-to-target rules: first redirect hop, optional status, duplicates, conflicts, self redirects, chains, and cycles through SafeHttpFetcher without crawling or auto-discovering rules."
     }
   }
 ]

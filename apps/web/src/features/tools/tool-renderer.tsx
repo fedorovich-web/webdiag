@@ -66,6 +66,11 @@ import {
 } from "./network-dns-tools";
 import { HreflangCheckerTool, IndexabilityCheckerTool, TechnologyDetectorTool } from "./technical-seo-tools";
 import { SitemapValidatorTool } from "./sitemap-validator-tool";
+import {
+  QueryParameterAnalyzerTool,
+  RedirectMapValidatorTool,
+  UrlNormalizationAnalyzerTool,
+} from "./url-management-tools";
 import { dictionary } from "../../lib/i18n";
 
 interface ToolRendererProps {
@@ -272,6 +277,9 @@ export const SUPPORTED_TOOL_SLUGS = [
   "javascript-bundle-surface-analyzer",
   "css-delivery-analyzer",
   "font-performance-checker",
+  "query-parameter-analyzer",
+  "url-normalization-analyzer",
+  "redirect-map-validator",
 ] as const;
 
 export function ToolRenderer({ slug, locale }: ToolRendererProps) {
@@ -343,6 +351,9 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "javascript-bundle-surface-analyzer": return <JavaScriptBundleSurfaceTool locale={locale} />;
     case "css-delivery-analyzer": return <CssDeliveryAnalyzerTool locale={locale} />;
     case "font-performance-checker": return <FontLoadingAnalyzerTool locale={locale} />;
+    case "query-parameter-analyzer": return <QueryParameterAnalyzerTool locale={locale} />;
+    case "url-normalization-analyzer": return <UrlNormalizationAnalyzerTool locale={locale} />;
+    case "redirect-map-validator": return <RedirectMapValidatorTool locale={locale} />;
     default: return null;
   }
 }

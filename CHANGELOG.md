@@ -1,5 +1,15 @@
 # Changelog
 
+## A10.24 — URL normalization / query parameters / redirect map
+
+- Added URL Normalization Analyzer as a local browser tool for deterministic HTTP/HTTPS syntax normalization: scheme and hostname casing, default ports, IDNA, dot segments, percent encoding, fragments, and routing-sensitive slash review signals.
+- Promoted the former internal pagination/parameter entry as Query Parameter Analyzer, with local bounded query-pair inspection, repeated names, blanks, case variants, sensitive-looking names, transparent tracking/pagination/sort/filter/search/session patterns, and a non-destructive tracking-removal candidate.
+- Added Redirect Map Validator for up to 25 explicit source-to-target rows, first-hop target and optional status comparison, duplicate/conflicting sources, self redirects, map chains, and cycles.
+- Kept URL normalization and query analysis local with no network request; redirect-map network checks use bounded concurrency and `SafeHttpFetcher` with DNS/redirect revalidation, pinned peer verification, no response-body read, and private/local target rejection.
+- Kept crawler discovery, automatic redirect generation, canonical-intent claims, parameter-removal automation, and fake SEO scores outside scope.
+- Added strict backend and frontend contracts, allowlisted proxy payloads, CSV/TSV input parsing, RU/EN editorial pages, copyable reports, parser/API/proxy/renderer tests, and updated registry gates.
+- Registry baseline is now 119 entries and 70 ready public tools; no URL-component or single-parameter microtools were added.
+
 ## A10.23 — JavaScript bundle / CSS delivery / font loading
 
 - Added JavaScript Bundle Surface Analyzer with bounded static script discovery, document-reference counts, unique asset header checks, MIME, declared-size, compression, cache, redirect, module/classic, duplicate, parser-blocking, and nested-target safety signals.

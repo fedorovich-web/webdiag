@@ -1,10 +1,95 @@
 # Verification Notes
 
-Patch scope: A10.23 JavaScript bundle surface / CSS delivery / font loading tools. No commit or push was performed by the assistant.
+Patch scope: A10.24 URL normalization / query parameters / redirect map tools. No commit or push was performed by the assistant.
 
 ## Scope
 
-This verification record covers the clean A0–A7 baseline plus A7.1–A7.5 hardening, A8/A8.1/A8.2/A8.3 UI work, A9 frontend-safe audit result contract, and A10.1–A10.23 public tool batches.
+This verification record covers the clean A0–A7 baseline plus A7.1–A7.5 hardening, A8/A8.1/A8.2/A8.3 UI work, A9 frontend-safe audit result contract, and A10.1–A10.24 public tool batches.
+
+# A10.24 — URL normalization / query parameters / redirect map
+
+## Scope
+
+- added URL Normalization Analyzer as a local browser tool:
+  - deterministic HTTP/HTTPS scheme/host casing, default-port, IDNA, dot-segment, and percent-encoding normalization;
+  - separate normalized display URL and fragment-free HTTP request URL;
+  - duplicate-slash and trailing-slash behavior is preserved and reported as an application-routing review signal;
+  - no network request and no claim about SEO canonical intent;
+- promoted the former internal pagination/URL-parameter entry as Query Parameter Analyzer:
+  - bounded local parsing of up to 200 query pairs while preserving pair order;
+  - repeated names, blank names/values, case variants, and sensitive-looking names;
+  - transparent name-based tracking, pagination, sorting, filtering, search, and session categories;
+  - optional candidate with known tracking-name patterns removed, without changing the source URL or declaring a canonical;
+- added Redirect Map Validator:
+  - accepts 1–25 explicit CSV/TSV source-to-target rows with optional 301/302/303/307/308 status;
+  - compares the observed first redirect hop, optional status, and final URL;
+  - detects duplicate/conflicting sources, self redirects, map chains, and cycles;
+  - uses at most five concurrent SafeHttpFetcher checks with a five-second per-request timeout, five-hop redirect cap, no body read, and existing SSRF/DNS/peer-IP protections;
+  - does not crawl the site, invent missing rules, or generate a redirect map;
+- added strict backend DTOs, frontend runtime validation, allowlisted Next.js proxy input, local parsers, RU/EN editorial pages, copyable summaries, and renderer mappings;
+- activated exactly 3 public tools:
+  - `url-normalization-analyzer`;
+  - `query-parameter-analyzer`;
+  - `redirect-map-validator`;
+- public tool count is now 70;
+- registry entry count is now 119;
+- no URL-component, tracking-parameter, or status-code microtools were added.
+
+## Verified in the patch sandbox
+
+```text
+python -m py_compile changed Python files
+PASS
+
+python -m pytest apps/api/tests/test_url_management_tools.py -q
+PASS — 7/7
+
+python -m pytest selected URL-management / fetcher / URL-policy / HTTP-status / protocol-security / A10.22 / A10.23 tests -q
+PASS — 73/73
+
+python -m pytest apps/api/tests -q
+PASS — 180/180
+
+direct system-Python API + worker fallback
+180 passed, 2 failed — both worker imports failed because dramatiq is absent from the sandbox; this is not counted as a full Python gate PASS
+
+npm run test:workspace
+PASS — 37/37
+
+npm run verify:registry
+PASS — 119 unique tools, 70 ready tools, no weak ready microtools
+
+node --test scripts/tests-tool-catalog-quality.test.mjs
+PASS — 5/5
+
+local URL normalization and query-parameter runtime assertions
+PASS
+
+redirect map CSV/TSV parser runtime assertions
+PASS
+
+ad-hoc strict TypeScript compile for the new A10.24 production and test scope
+PASS — temporary sandbox declarations used for excluded external packages; not a replacement for workspace typecheck
+
+TypeScript isolated syntax transpile for changed TS/TSX files
+PASS — 12 files
+
+registry JSON sync and ready-renderer parity
+PASS — backend registry byte-identical; 70/70 ready slugs have renderers
+```
+
+## Not counted as PASS in this sandbox
+
+- `npm test` reached the workspace tests, then stopped because `vitest` is absent from the handoff archive;
+- `npm run lint` cannot run because `eslint` is absent;
+- official `npm run typecheck` cannot resolve excluded Next.js, React, Vitest, Node, and workspace package declarations;
+- `npm run build` cannot run because `next` is absent, and `npm run verify:built-site` has no `.next` output to inspect;
+- `npm run test:python`, `npm run lint:python`, and `npm run verify:python-lock` require the excluded project `.venv`;
+- browser/Playwright gate was not run.
+
+Run the complete local pre-push gate before commit/push.
+
+---
 
 # A10.23 — JavaScript bundle / CSS delivery / font loading
 
