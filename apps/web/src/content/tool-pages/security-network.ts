@@ -661,4 +661,130 @@ export const securityNetworkToolPages = [
     relatedToolSlugs: ["security-headers-checker", "http-headers-analyzer", "third-party-script-analyzer"],
     sourceUrls: ["https://www.w3.org/TR/CSP3/", "https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP"],
   }),
+
+  toolPage({
+    slug: "dns-propagation-checker",
+    seoTitle: { ru: "Сравнение DNS-резолверов", en: "DNS Resolver Comparison" },
+    metaDescription: { ru: "Сравните один тип DNS-записи через Cloudflare, Google Public DNS, Quad9 и OpenDNS без fake global propagation claims.", en: "Compare one DNS record type across Cloudflare, Google Public DNS, Quad9, and OpenDNS without fake global propagation claims." },
+    h1: { ru: "Сравнение DNS-резолверов", en: "DNS Resolver Comparison" },
+    lead: { ru: "Введите домен и тип записи, чтобы сравнить bounded backend snapshots четырёх recursive resolvers: ответы, ошибки и количество distinct answer sets.", en: "Enter a domain and record type to compare bounded backend snapshots from four recursive resolvers: answers, errors, and distinct answer sets." },
+    quickFacts: [
+      { ru: "4 резолвера", en: "4 resolvers" },
+      { ru: "1 record type", en: "1 record type" },
+      { ru: "backend snapshot", en: "backend snapshot" },
+    ],
+    howToSteps: [
+      { ru: "Введите домен без протокола и пути.", en: "Enter a domain without protocol or path." },
+      { ru: "Выберите A, AAAA, CNAME, MX, NS или TXT.", en: "Choose A, AAAA, CNAME, MX, NS, or TXT." },
+      { ru: "Сравните answer sets, частичные ошибки и TTL.", en: "Compare answer sets, partial errors, and TTLs." },
+    ],
+    supportedFeatures: [
+      { ru: "Параллельно опрашивает четыре фиксированных публичных recursive resolver.", en: "Queries four fixed public recursive resolvers in parallel." },
+      { ru: "Сравнивает значения и MX priority без учёта различий TTL.", en: "Compares values and MX priority while ignoring TTL differences." },
+      { ru: "Показывает backend-to-resolver latency как диагностический сигнал.", en: "Shows backend-to-resolver latency as a diagnostic signal." },
+    ],
+    limitations: [
+      { ru: "Это не глобальный мониторинг всех DNS caches и не доказательство propagation.", en: "This is not global monitoring of every DNS cache and does not prove propagation." },
+      { ru: "Latency измеряется от backend WebDiag, а не от устройства пользователя.", en: "Latency is measured from the WebDiag backend, not the user's device." },
+    ],
+    useCases: [
+      { ru: "Сравнить cache state после DNS-изменения.", en: "Compare cache state after a DNS change." },
+      { ru: "Найти resolver-specific mismatch или частичный timeout.", en: "Find resolver-specific mismatches or partial timeouts." },
+      { ru: "Проверить один record type без полного zone audit.", en: "Check one record type without a full zone audit." },
+    ],
+    technicalNotes: [
+      { ru: "Resolver snapshots зависят от TTL, recursive cache и момента запроса.", en: "Resolver snapshots depend on TTL, recursive cache, and request time." },
+      { ru: "Для окончательной проверки нужно сверять authoritative nameservers.", en: "Authoritative nameservers should be checked for final verification." },
+    ],
+    faq: [
+      { question: { ru: "Почему ответы отличаются?", en: "Why do answers differ?" }, answer: { ru: "Причиной могут быть TTL, разные cache states, geo-aware DNS или ошибка зоны; инструмент не угадывает причину автоматически.", en: "TTL, different cache states, geo-aware DNS, or a zone error can cause differences; the tool does not guess the cause automatically." } },
+      { question: { ru: "Совпадение четырёх ответов означает полное распространение?", en: "Do four matching answers prove full propagation?" }, answer: { ru: "Нет. Это только согласованный snapshot выбранных resolver с точки backend WebDiag.", en: "No. It is only a consistent snapshot of the selected resolvers from the WebDiag backend." } },
+    ],
+    relatedToolSlugs: ["dns-lookup", "dnssec-checker", "whois-lookup"],
+    sourceUrls: ["https://www.rfc-editor.org/rfc/rfc1035"],
+  }),
+
+  toolPage({
+    slug: "whois-lookup",
+    seoTitle: { ru: "RDAP-проверка домена", en: "Domain RDAP Lookup" },
+    metaDescription: { ru: "Получите registry RDAP данные домена через IANA bootstrap: статусы, события, nameservers, registrar и abuse contact без WHOIS scraping.", en: "Retrieve registry RDAP data through IANA bootstrap: statuses, events, nameservers, registrar, and abuse contact without WHOIS scraping." },
+    h1: { ru: "RDAP-проверка домена", en: "Domain RDAP Lookup" },
+    lead: { ru: "Введите домен, чтобы найти его RDAP service через IANA bootstrap и получить bounded registration record без claims о владении или доступности.", en: "Enter a domain to find its RDAP service through IANA bootstrap and retrieve a bounded registration record without ownership or availability claims." },
+    quickFacts: [
+      { ru: "IANA bootstrap", en: "IANA bootstrap" },
+      { ru: "registry RDAP", en: "registry RDAP" },
+      { ru: "без registrant PII", en: "no registrant PII" },
+    ],
+    howToSteps: [
+      { ru: "Введите домен без URL-схемы.", en: "Enter a domain without a URL scheme." },
+      { ru: "Запустите RDAP lookup.", en: "Run the RDAP lookup." },
+      { ru: "Проверьте statuses, events, nameservers, registrar и DNSSEC delegation signal.", en: "Review statuses, events, nameservers, registrar, and the DNSSEC delegation signal." },
+    ],
+    supportedFeatures: [
+      { ru: "Определяет authoritative RDAP service через IANA DNS bootstrap.", en: "Finds the authoritative RDAP service through the IANA DNS bootstrap." },
+      { ru: "Показывает bounded events, nameservers, registrar и abuse contact.", en: "Shows bounded events, nameservers, registrar, and abuse contact." },
+      { ru: "Не выводит registrant personal contact data.", en: "Does not display registrant personal contact data." },
+    ],
+    limitations: [
+      { ru: "RDAP 404 не доказывает, что домен свободен для регистрации.", en: "RDAP 404 does not prove a domain is available for registration." },
+      { ru: "Registry data не подтверждает фактическое владение, безопасность или репутацию домена.", en: "Registry data does not confirm actual ownership, safety, or domain reputation." },
+    ],
+    useCases: [
+      { ru: "Проверить registration/expiration events и статусы домена.", en: "Review domain registration/expiration events and statuses." },
+      { ru: "Найти registrar и опубликованный abuse contact.", en: "Find the registrar and published abuse contact." },
+      { ru: "Сверить nameservers и delegationSigned signal.", en: "Review nameservers and the delegationSigned signal." },
+    ],
+    technicalNotes: [
+      { ru: "Инструмент использует RDAP JSON и не парсит нестандартизированный legacy WHOIS text.", en: "The tool uses RDAP JSON and does not parse non-standard legacy WHOIS text." },
+      { ru: "Bootstrap и RDAP responses проходят bounded safe HTTP fetch.", en: "Bootstrap and RDAP responses use bounded safe HTTP fetching." },
+    ],
+    faq: [
+      { question: { ru: "Почему slug всё ещё whois-lookup?", en: "Why is the slug still whois-lookup?" }, answer: { ru: "Сохранена registry совместимость, но production реализация использует современный RDAP, а не scraping WHOIS.", en: "The registry slug is preserved for compatibility, while the production implementation uses modern RDAP rather than WHOIS scraping." } },
+      { question: { ru: "Можно проверить доступность домена?", en: "Can this check domain availability?" }, answer: { ru: "Нет. Для покупки и availability нужен ответ конкретного registrar/registry в момент заказа.", en: "No. Purchase availability requires the relevant registrar or registry response at order time." } },
+    ],
+    relatedToolSlugs: ["dns-lookup", "dns-propagation-checker", "dnssec-checker"],
+    sourceUrls: ["https://www.rfc-editor.org/rfc/rfc9224", "https://www.rfc-editor.org/rfc/rfc9082", "https://data.iana.org/rdap/"],
+  }),
+
+  toolPage({
+    slug: "ip-information",
+    seoTitle: { ru: "RDAP-информация об IP-сети", en: "IP RDAP Network Lookup" },
+    metaDescription: { ru: "Проверьте registry allocation data публичного IPv4/IPv6 через IANA RDAP bootstrap: диапазон, CIDR, handle, statuses и abuse contact.", en: "Check registry allocation data for a public IPv4/IPv6 address through IANA RDAP bootstrap: range, CIDR, handle, statuses, and abuse contact." },
+    h1: { ru: "RDAP-информация об IP-сети", en: "IP RDAP Network Lookup" },
+    lead: { ru: "Введите публичный IP, чтобы получить bounded network registration record без геолокации, reputation score и claims о текущем пользователе адреса.", en: "Enter a public IP to retrieve a bounded network registration record without geolocation, reputation scores, or claims about the current address user." },
+    quickFacts: [
+      { ru: "IPv4 / IPv6", en: "IPv4 / IPv6" },
+      { ru: "range + CIDR", en: "range + CIDR" },
+      { ru: "не геолокация", en: "not geolocation" },
+    ],
+    howToSteps: [
+      { ru: "Введите публичный глобальный IP-адрес.", en: "Enter a public global IP address." },
+      { ru: "Запустите IP RDAP lookup.", en: "Run the IP RDAP lookup." },
+      { ru: "Проверьте allocation range, CIDR, network handle, statuses и abuse contact.", en: "Review the allocation range, CIDR, network handle, statuses, and abuse contact." },
+    ],
+    supportedFeatures: [
+      { ru: "Использует IANA IPv4/IPv6 RDAP bootstrap и наиболее специфичный prefix match.", en: "Uses IANA IPv4/IPv6 RDAP bootstrap and the most-specific prefix match." },
+      { ru: "Показывает registry range, CIDR0, handle, type и country field.", en: "Shows registry range, CIDR0, handle, type, and country field." },
+      { ru: "Отклоняет private, loopback и другие non-global IP.", en: "Rejects private, loopback, and other non-global IP addresses." },
+    ],
+    limitations: [
+      { ru: "Поле country относится к allocation record и не является точной геолокацией устройства.", en: "The country field belongs to the allocation record and is not precise device geolocation." },
+      { ru: "Инструмент не проверяет reputation, ASN routing, reverse DNS или владельца конкретного соединения.", en: "The tool does not check reputation, ASN routing, reverse DNS, or the owner of a specific connection." },
+    ],
+    useCases: [
+      { ru: "Определить registry network range для incident triage.", en: "Identify the registry network range during incident triage." },
+      { ru: "Найти опубликованный abuse contact для сети.", en: "Find the network's published abuse contact." },
+      { ru: "Сверить CIDR и allocation handle без коммерческого IP API.", en: "Review CIDR and allocation handle without a commercial IP API." },
+    ],
+    technicalNotes: [
+      { ru: "Результат описывает RIR/registry allocation и может не отражать текущую маршрутизацию или аренду адреса.", en: "The result describes RIR/registry allocation and may not reflect current routing or address leasing." },
+      { ru: "IP и RDAP bootstrap URLs проходят bounded safe HTTP fetch.", en: "IP and RDAP bootstrap URLs use bounded safe HTTP fetching." },
+    ],
+    faq: [
+      { question: { ru: "Показывает ли инструмент город?", en: "Does the tool show a city?" }, answer: { ru: "Нет. RDAP — регистрационные данные сети, а не база точной геолокации устройств.", en: "No. RDAP provides network registration data, not a precise device-geolocation database." } },
+      { question: { ru: "Это IP reputation checker?", en: "Is this an IP reputation checker?" }, answer: { ru: "Нет. Blacklists, abuse history и threat intelligence находятся вне scope этого инструмента.", en: "No. Blacklists, abuse history, and threat intelligence are outside this tool's scope." } },
+    ],
+    relatedToolSlugs: ["dns-lookup", "whois-lookup", "ssl-certificate-checker"],
+    sourceUrls: ["https://www.rfc-editor.org/rfc/rfc9224", "https://www.rfc-editor.org/rfc/rfc9082", "https://data.iana.org/rdap/"],
+  }),
 ] as const;

@@ -74,6 +74,11 @@ import {
   MxRecordCheckerTool,
   SpfCheckerTool,
 } from "./network-dns-tools";
+import {
+  DnsResolverComparisonTool,
+  DomainRdapLookupTool,
+  IpRdapLookupTool,
+} from "./network-intelligence-tools";
 import { HreflangCheckerTool, IndexabilityCheckerTool, TechnologyDetectorTool } from "./technical-seo-tools";
 import { SitemapValidatorTool } from "./sitemap-validator-tool";
 import {
@@ -275,6 +280,9 @@ export const SUPPORTED_TOOL_SLUGS = [
   "dkim-checker",
   "dmarc-checker",
   "dnssec-checker",
+  "dns-propagation-checker",
+  "whois-lookup",
+  "ip-information",
   "http-compression-checker",
   "tls-configuration-checker",
   "ssl-certificate-checker",
@@ -355,6 +363,9 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "dkim-checker": return <DkimCheckerTool locale={locale} />;
     case "dmarc-checker": return <DmarcCheckerTool locale={locale} />;
     case "dnssec-checker": return <DnssecCheckerTool locale={locale} />;
+    case "dns-propagation-checker": return <DnsResolverComparisonTool locale={locale} />;
+    case "whois-lookup": return <DomainRdapLookupTool locale={locale} />;
+    case "ip-information": return <IpRdapLookupTool locale={locale} />;
     case "ssl-certificate-checker": return <SslCertificateCheckerTool locale={locale} />;
     case "tls-configuration-checker": return <TlsConfigurationCheckerTool locale={locale} />;
     case "http-compression-checker": return <HttpCompressionCheckerTool locale={locale} />;

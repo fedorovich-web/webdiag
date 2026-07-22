@@ -1,10 +1,81 @@
 # Verification Notes
 
-Patch scope: A10.26 Organization / BreadcrumbList / Product structured-data generators. No commit or push was performed by the assistant.
+Patch scope: A10.27 DNS resolver comparison / domain RDAP / IP RDAP. No commit or push was performed by the assistant.
 
 ## Scope
 
-This verification record covers the clean A0–A7 baseline plus A7.1–A7.5 hardening, A8/A8.1/A8.2/A8.3 UI work, A9 frontend-safe audit result contract, and A10.1–A10.26 public tool batches.
+This verification record covers the clean A0–A7 baseline plus A7.1–A7.5 hardening, A8/A8.1/A8.2/A8.3 UI work, A9 frontend-safe audit result contract, and A10.1–A10.27 public tool batches.
+
+# A10.27 — DNS resolver comparison / domain RDAP / IP RDAP
+
+## Scope
+
+- activated DNS Resolver Comparison for one explicit A, AAAA, CNAME, MX, NS, or TXT type across four fixed public recursive resolvers;
+- resolver queries run in a bounded four-worker pool with 3.5-second per-query timeout, answer-set comparison, partial-error reporting, and backend-to-resolver timing;
+- resolver agreement is explicitly described as a backend snapshot, not global DNS propagation proof;
+- activated Domain RDAP Lookup using IANA DNS bootstrap and the selected HTTPS registry RDAP service;
+- domain output is bounded to registration statuses/events, nameservers, registrar, abuse contact, delegationSigned, and notice titles; registrant personal contacts are not displayed;
+- RDAP 404 is returned as a warning and never presented as proof that a domain is available;
+- activated IP RDAP Network Lookup using IANA IPv4/IPv6 bootstrap and most-specific prefix matching;
+- IP output is bounded to registry allocation range, CIDR0, handle, type, statuses, country field, events, and abuse contact; country is explicitly marked as registration data, not device geolocation;
+- private, loopback, link-local, reserved, and other non-global IP input is rejected;
+- IANA bootstrap and registry RDAP HTTP requests use SafeHttpFetcher with pinned DNS targets, redirect revalidation, peer-IP verification, trust_env disabled, three redirects, seven-second timeout, and 1.5 MB decoded-body cap;
+- added strict API DTOs, frontend runtime validators, allowlisted Next.js proxy payloads, RU/EN editorial pages, copyable reports, and registry/renderer coverage;
+- activated exactly 3 existing internal tools: `dns-propagation-checker`, `whois-lookup`, and `ip-information`; production titles and copy describe resolver comparison and RDAP rather than fake propagation, legacy WHOIS scraping, geolocation, or reputation;
+- public tool count is now 79; registry entry count remains 125.
+
+## Verified in the patch sandbox
+
+```text
+python -m pytest apps/api/tests/test_network_intelligence_tools.py -q
+PASS — 9/9
+
+python -m py_compile changed Python files
+PASS
+
+registry JSON sync
+PASS — backend and package registry byte-identical
+
+npm run test:workspace
+PASS — 37/37
+
+npm run verify:registry
+PASS — 125 unique tools, 79 ready tools, no weak ready microtools
+
+node --test scripts/tests-tool-catalog-quality.test.mjs
+PASS — 5/5
+
+python -m pytest apps/api/tests -q
+PASS — 200/200
+
+python -m pytest selected network intelligence / DNS / SafeHttpFetcher / URL-policy tests -q
+PASS — 47/47
+
+ad-hoc strict TypeScript compile for network intelligence contracts, proxy, UI, routes, and tests
+PASS — strict, noUncheckedIndexedAccess, exactOptionalPropertyTypes; temporary declarations used for excluded external packages
+
+network-intelligence input runtime assertions
+PASS — domain normalization, URL rejection, IPv4/IPv6 syntax, and malformed IPv4 rejection
+
+TypeScript isolated syntax transpile
+PASS — network intelligence production files, renderer, and security-network editorial content
+
+registry JSON sync and ready-renderer/editorial parity
+PASS — backend registry byte-identical; 79/79 ready slugs covered by workspace integrity gate
+```
+
+## Not counted as PASS in this sandbox
+
+- `npm test` passes the 37 workspace checks but cannot run Vitest because `node_modules` is excluded;
+- `npm run lint` cannot run because ESLint is absent;
+- official `npm run typecheck` cannot resolve excluded Next.js, React, Vitest, Node, and workspace package declarations;
+- `npm run build` cannot run because Next.js is absent, and `npm run verify:built-site` has no `.next` output to inspect;
+- `npm run test:python`, `npm run lint:python`, and `npm run verify:python-lock` require the excluded project `.venv`;
+- direct system-Python API+worker fallback reports 200 passed and 2 worker import failures because `webdiag_worker` is unavailable on that interpreter path;
+- Ruff is not installed in the sandbox, so local `npm run lint:python` remains mandatory;
+- browser/Playwright gate was not run.
+
+---
 
 # A10.26 — specialized structured-data generators
 
