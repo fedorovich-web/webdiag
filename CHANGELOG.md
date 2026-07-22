@@ -1,5 +1,15 @@
 # Changelog
 
+## A10.27 — DNS resolver comparison / domain RDAP / IP RDAP
+
+- Added DNS Resolver Comparison for one selected record type across Cloudflare, Google Public DNS, Quad9, and OpenDNS, including bounded parallel queries, answer-set comparison, partial errors, TTL display, and backend-to-resolver timing.
+- Replaced the planned legacy WHOIS implementation with Domain RDAP Lookup using the IANA DNS bootstrap and the selected registry RDAP service for statuses, events, nameservers, registrar, abuse contact, and delegationSigned signals.
+- Added IP RDAP Network Lookup using IANA IPv4/IPv6 bootstrap and most-specific prefix selection for registry range, CIDR0, handle, type, status, country field, and abuse contact.
+- Kept all claims bounded: resolver agreement is not global propagation proof, domain RDAP 404 is not availability proof, and IP country is registration allocation data rather than device geolocation.
+- Kept RDAP responses bounded and omitted registrant personal contact data; bootstrap and registry HTTP requests use the existing safe fetcher with SSRF, redirect, peer-IP, timeout, and body-size protections.
+- Added strict backend contracts, allowlisted Next.js proxies, frontend runtime validators, RU/EN editorial pages, copyable reports, parser/API/proxy/renderer tests, and registry gates.
+- Registry remains at 125 entries and now exposes 79 ready public tools; no commercial IP API, legacy WHOIS scraping, reputation score, or fake global propagation tool was added.
+
 ## A10.26 — specialized structured-data generators
 
 - Added Organization Schema JSON-LD Generator for explicit Organization, Corporation, NGO, or LocalBusiness data, including stable @id, logo, PostalAddress, sameAs, and one bounded ContactPoint.

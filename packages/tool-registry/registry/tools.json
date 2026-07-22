@@ -756,16 +756,19 @@
     "id": "WD-042",
     "slug": "dns-propagation-checker",
     "title": {
-      "ru": "Проверка распространения DNS",
-      "en": "DNS Propagation Checker"
+      "ru": "Сравнение DNS-резолверов",
+      "en": "DNS Resolver Comparison"
     },
     "category": "security-network",
     "executorClass": "dns_tls",
     "riskTier": "R2",
     "access": "none",
     "implementationWave": "W3",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Сравнивает один тип DNS-записи через четыре публичных recursive resolver: answer sets, частичные ошибки и backend latency без заявления о глобальном распространении DNS.",
+      "en": "Compares one DNS record type across four public recursive resolvers: answer sets, partial errors, and backend latency without claiming global DNS propagation."
+    }
   },
   {
     "id": "WD-043",
@@ -861,31 +864,37 @@
     "id": "WD-048",
     "slug": "whois-lookup",
     "title": {
-      "ru": "WHOIS-проверка домена",
-      "en": "Domain WHOIS Lookup"
+      "ru": "RDAP-проверка домена",
+      "en": "Domain RDAP Lookup"
     },
     "category": "security-network",
     "executorClass": "dns_tls",
     "riskTier": "R2",
     "access": "none",
     "implementationWave": "W3",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Получает регистрационные данные домена через IANA RDAP bootstrap и registry RDAP: статусы, события, nameservers, registrar и abuse contact без legacy WHOIS scraping и claims о доступности.",
+      "en": "Retrieves domain registration data through IANA RDAP bootstrap and registry RDAP: statuses, events, nameservers, registrar, and abuse contact without legacy WHOIS scraping or availability claims."
+    }
   },
   {
     "id": "WD-049",
     "slug": "ip-information",
     "title": {
-      "ru": "Информация об IP-адресе",
-      "en": "IP Address Information"
+      "ru": "RDAP-информация об IP-сети",
+      "en": "IP RDAP Network Lookup"
     },
     "category": "security-network",
     "executorClass": "dns_tls",
     "riskTier": "R1",
     "access": "none",
     "implementationWave": "W2",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Показывает registry allocation data для публичного IPv4/IPv6 через IANA RDAP bootstrap: диапазон, CIDR, network handle, status и abuse contact без геолокации или reputation claims.",
+      "en": "Shows registry allocation data for a public IPv4/IPv6 address through IANA RDAP bootstrap: range, CIDR, network handle, status, and abuse contact without geolocation or reputation claims."
+    }
   },
   {
     "id": "WD-050",
