@@ -1,10 +1,65 @@
 # Verification Notes
 
-Patch scope: A10.27 DNS resolver comparison / domain RDAP / IP RDAP. No commit or push was performed by the assistant.
+Patch scope: A10.28 JSON Schema / YAML-JSON / XML browser utilities. No commit or push was performed by the assistant.
 
 ## Scope
 
-This verification record covers the clean A0–A7 baseline plus A7.1–A7.5 hardening, A8/A8.1/A8.2/A8.3 UI work, A9 frontend-safe audit result contract, and A10.1–A10.27 public tool batches.
+This verification record covers the clean A0–A7 baseline plus A7.1–A7.5 hardening, A8/A8.1/A8.2/A8.3 UI work, A9 frontend-safe audit result contract, and A10.1–A10.28 public tool batches.
+
+# A10.28 — JSON Schema / YAML-JSON / XML utilities
+
+## Scope
+
+- activated JSON Schema Validator as a browser-only bounded validator:
+  - JSON input and schema are limited to 500,000 characters, 10,000 nodes, and depth 64;
+  - supports documented core/object/array/string/number keywords, combinators, `$defs`/`definitions`, and local JSON Pointer `$ref`;
+  - selected format checks are syntactic signals only;
+  - remote `$ref`, dynamic references, unevaluated keywords, conditional keywords, and remote schema fetching are not supported;
+- activated YAML ↔ JSON Converter for a safe configuration subset:
+  - mappings, sequences, plain/quoted scalars, JSON-style inline collections, duplicate-key detection, and JSON-compatible output;
+  - two-space indentation, 5,000-node cap, and depth 32;
+  - anchors, aliases, custom tags, merge keys, complex keys, tabs, and block scalars are rejected;
+  - comments are not preserved through conversion;
+- activated XML Formatter and Validator:
+  - one root element, matching start/end tags, self-closing tags, quoted and unique attributes, comments, CDATA, processing instructions, and predefined/numeric entities;
+  - DTD and ENTITY declarations are rejected before parsing; no external entity resolution occurs;
+  - mixed content is preserved compactly so formatting does not inject significant whitespace;
+  - XSD, Relax NG, Schematron, namespace semantics, and canonical XML are outside scope;
+- all three tools run locally in the browser and add no API routes or dependencies;
+- activated exactly 3 existing internal tools: `json-schema-validator`, `yaml-json-converter`, and `xml-formatter-validator`;
+- public tool count is now 82; registry entry count remains 125.
+
+## Verified in the patch sandbox
+
+```text
+ad-hoc strict TypeScript compile for utility engine, UI, and tests
+PASS — strict, noUncheckedIndexedAccess, exactOptionalPropertyTypes; temporary declarations used for excluded React/Vitest packages
+
+structured-data utility runtime assertions
+PASS — JSON Schema, local $ref, unsupported keywords, IPv4/IPv6 format signals, safe YAML, duplicate/unsafe YAML, JSON↔YAML round trip, XML formatting, DTD/CDATA/attribute rejection, and mixed-content cases
+
+npm run test:workspace
+PASS — 37/37
+
+npm run verify:registry
+PASS — 125 unique tools, 82 ready tools, no weak ready microtools
+
+node --test scripts/tests-tool-catalog-quality.test.mjs
+PASS — 5/5
+
+python -m pytest apps/api/tests -q
+PASS — 200/200
+
+registry JSON sync and ready renderer/editorial parity
+PASS — backend registry byte-identical; 82/82 ready slugs covered by workspace integrity gate
+```
+
+## Required local verification
+
+- run full Vitest, ESLint, official TypeScript, build, built-site, Python, Ruff, and lock gates before commit;
+- browser/Playwright remains a separate required gate when the environment supports it.
+
+---
 
 # A10.27 — DNS resolver comparison / domain RDAP / IP RDAP
 
