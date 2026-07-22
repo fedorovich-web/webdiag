@@ -1,10 +1,91 @@
 # Verification Notes
 
-Patch scope: A10.24 URL normalization / query parameters / redirect map tools. No commit or push was performed by the assistant.
+Patch scope: A10.25 landmark structure / form accessibility / link and button accessible-name analyzers. No commit or push was performed by the assistant.
 
 ## Scope
 
-This verification record covers the clean A0–A7 baseline plus A7.1–A7.5 hardening, A8/A8.1/A8.2/A8.3 UI work, A9 frontend-safe audit result contract, and A10.1–A10.24 public tool batches.
+This verification record covers the clean A0–A7 baseline plus A7.1–A7.5 hardening, A8/A8.1/A8.2/A8.3 UI work, A9 frontend-safe audit result contract, and A10.1–A10.25 public tool batches.
+
+# A10.25 — landmark structure / form accessibility / accessible names
+
+## Scope
+
+- added Landmark Structure Analyzer:
+  - bounded static inventory for semantic and explicit ARIA landmark candidates;
+  - main, navigation, banner, contentinfo, complementary, search, form, and region counts;
+  - accessible names from aria-label, aria-labelledby, and title fallback signals;
+  - missing/multiple/nested main, duplicate role/name, unnamed repeated landmarks, hidden signals, duplicate IDs, and broken aria-labelledby findings;
+- added Form Accessibility Analyzer:
+  - bounded inventory of non-hidden input, select, textarea, and button controls;
+  - explicit and implicit label relationships, aria-label, aria-labelledby, button text, image alt, input value/default-value, and title signals;
+  - placeholder-only controls, broken label/description references, duplicate control IDs, fieldset/legend, and repeated radio/checkbox grouping review;
+  - no form submission, validation execution, focus-order test, or dynamic-state claim;
+- added Link and Button Accessible Name Analyzer:
+  - native links/buttons and explicit role=link/role=button candidates;
+  - accessible names from text, descendant image alt, ARIA, input value/default-value, and title signals;
+  - unnamed/generic names, nested interactive elements, custom roles without tabindex=0, duplicate IDs, javascript: links, empty targets, and same-name/different-target review;
+  - explicit role semantics override conflicting native tag semantics in the inventory;
+- all tools use one bounded SafeHttpFetcher document request with a 1 MB decoded-body cap, five redirects, existing URL-policy/DNS/peer-IP protections, 5,000 parsed-node cap, 150-item output cap, and 100-finding cap;
+- browser accessibility tree, JavaScript, CSS visibility, event listeners, focus order, keyboard activation, screen-reader behavior, and WCAG conformance are not claimed;
+- added strict API DTOs, frontend runtime validators, allowlisted Next.js proxy input, RU/EN editorial pages, copyable summaries, and renderer mappings;
+- activated exactly 3 public tools:
+  - `landmark-structure-analyzer`;
+  - `form-accessibility-analyzer`;
+  - `interactive-accessible-name-analyzer`;
+- public tool count is now 73;
+- registry entry count is now 122;
+- no standalone label, alt, ARIA-role, or accessible-name microtools were added.
+
+## Verified in the patch sandbox
+
+```text
+python -m py_compile changed Python files
+PASS
+
+python -m pytest apps/api/tests/test_accessibility_static_tools.py -q
+PASS — 11/11
+
+python -m pytest selected accessibility / SafeHttpFetcher / URL-policy / A10.22 / A10.23 / protocol-security tests -q
+PASS — 69/69
+
+python -m pytest apps/api/tests -q
+PASS — 191/191
+
+npm run test:workspace
+PASS — 37/37
+
+npm run verify:registry
+PASS — 122 unique tools, 73 ready tools, no weak ready microtools
+
+node --test scripts/tests-tool-catalog-quality.test.mjs
+PASS — 5/5
+
+ad-hoc strict TypeScript compile for the new A10.25 contracts, proxies, UI, routes, and tests
+PASS — strict, noUncheckedIndexedAccess, isolatedModules; temporary declarations used for excluded external packages
+
+TypeScript isolated syntax transpile
+PASS — 11 changed TS/TSX files
+
+registry JSON sync and ready-renderer parity
+PASS — backend registry byte-identical; 73/73 ready slugs have renderers
+
+Python changed-file import/line-length static checks
+PASS — no unused imports found by AST scan; no lines above configured 100 characters
+```
+
+## Not counted as PASS in this sandbox
+
+- `npm test` cannot run because `vitest` and `node_modules` are excluded from the handoff archive;
+- `npm run lint` cannot run because `eslint` is absent;
+- official `npm run typecheck` cannot resolve excluded Next.js, React, Vitest, Node, and workspace package declarations;
+- `npm run build` cannot run because `next` is absent, and `npm run verify:built-site` has no `.next` output to inspect;
+- `npm run test:python`, `npm run lint:python`, and `npm run verify:python-lock` require the excluded project `.venv`;
+- Ruff itself is absent from the sandbox, so the AST/line-length checks above do not replace `npm run lint:python`;
+- browser/Playwright gate was not run.
+
+Run the complete local pre-push gate before commit/push.
+
+---
 
 # A10.24 — URL normalization / query parameters / redirect map
 

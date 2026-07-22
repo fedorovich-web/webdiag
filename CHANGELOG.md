@@ -1,5 +1,15 @@
 # Changelog
 
+## A10.25 — static accessibility structure analyzers
+
+- Added Landmark Structure Analyzer for bounded static semantic/ARIA landmark inventory, accessible names, duplicate role/name pairs, main-landmark conflicts, hidden signals, and broken naming references.
+- Added Form Accessibility Analyzer for labels, aria-labelledby/aria-describedby, placeholder-only and title-only controls, duplicate IDs, fieldset/legend, and radio/checkbox grouping signals.
+- Added Link and Button Accessible Name Analyzer for native and role-based links/buttons, text/alt/ARIA naming, generic names, nested interactive elements, custom-role focus signals, duplicate IDs, and suspicious link targets.
+- Kept all three tools on one bounded SafeHttpFetcher page request with existing SSRF, DNS/redirect revalidation, peer-IP verification, decoded-body caps, and no JavaScript execution.
+- Explicitly kept browser accessibility-tree computation, CSS visibility, focus order, keyboard activation, validation flows, screen-reader behavior, and WCAG-conformance claims outside scope.
+- Added strict backend contracts, allowlisted Next.js proxies, client runtime validators, RU/EN editorial pages, copyable reports, parser/API/proxy/renderer tests, and registry gates.
+- Registry baseline is now 122 entries and 73 ready public tools; no standalone label, alt, ARIA, or single-element microtools were added.
+
 ## A10.24 — URL normalization / query parameters / redirect map
 
 - Added URL Normalization Analyzer as a local browser tool for deterministic HTTP/HTTPS syntax normalization: scheme and hostname casing, default ports, IDNA, dot segments, percent encoding, fragments, and routing-sensitive slash review signals.
