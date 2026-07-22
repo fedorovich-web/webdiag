@@ -1,10 +1,81 @@
 # Verification Notes
 
-Patch scope: A10.25 landmark structure / form accessibility / link and button accessible-name analyzers. No commit or push was performed by the assistant.
+Patch scope: A10.26 Organization / BreadcrumbList / Product structured-data generators. No commit or push was performed by the assistant.
 
 ## Scope
 
-This verification record covers the clean A0–A7 baseline plus A7.1–A7.5 hardening, A8/A8.1/A8.2/A8.3 UI work, A9 frontend-safe audit result contract, and A10.1–A10.25 public tool batches.
+This verification record covers the clean A0–A7 baseline plus A7.1–A7.5 hardening, A8/A8.1/A8.2/A8.3 UI work, A9 frontend-safe audit result contract, and A10.1–A10.26 public tool batches.
+
+# A10.26 — specialized structured-data generators
+
+## Scope
+
+- added Organization Schema JSON-LD Generator:
+  - explicit Organization, Corporation, NGO, or LocalBusiness selection;
+  - name, legalName, URL, @id, logo, description, email, telephone, sameAs, PostalAddress, and one bounded ContactPoint;
+  - no placeholder entity facts, ownership checks, or automatic type inference;
+- added BreadcrumbList Schema JSON-LD Generator:
+  - 2–20 explicit Name | URL or TSV rows;
+  - sequential positions and absolute HTTP(S) validation;
+  - item may be omitted only for the final current-page crumb;
+  - no crawler, navigation extraction, or canonical-intent claim;
+- added Product Schema JSON-LD Generator:
+  - explicit name, description, URL, @id, up to 10 images, SKU, Brand, GTIN, MPN, and one optional Offer;
+  - validated price/currency pair, availability, itemCondition, seller, and priceValidUntil;
+  - no fabricated aggregateRating, review, inventory, seller, price, or availability;
+- all three tools run locally in the browser and send no input to the backend;
+- JSON-LD serialization escapes less-than characters to prevent user input from closing the script element;
+- empty optional properties are omitted and example placeholder data is never emitted;
+- added RU/EN forms and editorial pages, copyable output, generator validation tests, and renderer mappings;
+- activated exactly 3 public tools:
+  - `organization-schema-generator`;
+  - `breadcrumb-schema-generator`;
+  - `product-schema-generator`;
+- public tool count is now 76;
+- registry entry count is now 125.
+
+## Verified in the patch sandbox
+
+```text
+npm run test:workspace
+PASS — 37/37
+
+node scripts/verify-registry.mjs
+PASS — 125 unique tools
+
+node scripts/verify-tool-catalog-quality.mjs
+PASS — 125 tools, 76 ready tools, no weak ready microtools
+
+node --test scripts/tests-tool-catalog-quality.test.mjs
+PASS — 5/5
+
+python -m pytest apps/api/tests -q
+PASS — 191/191
+
+ad-hoc strict TypeScript compile for structured-schema generator logic, UI, and tests
+PASS — strict, noUncheckedIndexedAccess, isolatedModules; temporary declarations used for excluded external packages
+
+structured-schema generator runtime assertions
+PASS — Organization, BreadcrumbList, Product/Offer, GTIN, calendar date, explicit-field, and script-closing escape cases
+
+TypeScript isolated syntax transpile
+PASS — generator logic, tests, UI, renderer, and SEO content
+
+registry JSON sync and ready-renderer/editorial parity
+PASS — backend registry byte-identical; 76/76 ready slugs have renderers and editorial pages
+```
+
+## Not counted as PASS in this sandbox
+
+- `npm test` reaches workspace checks but cannot run Vitest because `node_modules` is excluded;
+- `npm run lint` cannot run because ESLint is absent;
+- official `npm run typecheck` cannot resolve excluded Next.js, React, Vitest, Node, and workspace package declarations;
+- `npm run build` cannot run because Next.js is absent, and `npm run verify:built-site` has no `.next` output to inspect;
+- `npm run test:python`, `npm run lint:python`, and `npm run verify:python-lock` require the excluded project `.venv`;
+- direct system-Python API+worker fallback reports 191 passed and 2 worker import failures because `webdiag_worker` is unavailable on that interpreter path;
+- browser/Playwright gate was not run.
+
+---
 
 # A10.25 — landmark structure / form accessibility / accessible names
 

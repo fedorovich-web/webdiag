@@ -62,6 +62,11 @@ import { RobotsTxtTool } from "./robots-txt-tool";
 import { SecurityHeadersTool } from "./security-headers-tool";
 import { FaqSchemaGeneratorTool, RobotsTxtGeneratorTool, SitemapGeneratorTool } from "./seo-generator-tools";
 import {
+  BreadcrumbSchemaGeneratorTool,
+  OrganizationSchemaGeneratorTool,
+  ProductSchemaGeneratorTool,
+} from "./structured-schema-generator-tools";
+import {
   DkimCheckerTool,
   DmarcCheckerTool,
   DnsLookupTool,
@@ -261,6 +266,9 @@ export const SUPPORTED_TOOL_SLUGS = [
   "robots-txt-generator",
   "sitemap-generator",
   "faq-schema-generator",
+  "organization-schema-generator",
+  "breadcrumb-schema-generator",
+  "product-schema-generator",
   "dns-lookup",
   "mx-record-checker",
   "spf-checker",
@@ -338,6 +346,9 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "robots-txt-generator": return <RobotsTxtGeneratorTool locale={locale} />;
     case "sitemap-generator": return <SitemapGeneratorTool locale={locale} />;
     case "faq-schema-generator": return <FaqSchemaGeneratorTool locale={locale} />;
+    case "organization-schema-generator": return <OrganizationSchemaGeneratorTool locale={locale} />;
+    case "breadcrumb-schema-generator": return <BreadcrumbSchemaGeneratorTool locale={locale} />;
+    case "product-schema-generator": return <ProductSchemaGeneratorTool locale={locale} />;
     case "dns-lookup": return <DnsLookupTool locale={locale} />;
     case "mx-record-checker": return <MxRecordCheckerTool locale={locale} />;
     case "spf-checker": return <SpfCheckerTool locale={locale} />;
