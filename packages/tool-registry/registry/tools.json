@@ -990,16 +990,19 @@
     "id": "WD-056",
     "slug": "font-performance-checker",
     "title": {
-      "ru": "Проверка загрузки веб-шрифтов",
-      "en": "Web Font Performance Checker"
+      "ru": "Анализатор загрузки веб-шрифтов",
+      "en": "Font Loading Analyzer"
     },
     "category": "performance",
-    "executorClass": "chromium",
-    "riskTier": "R3",
-    "access": "optional",
-    "implementationWave": "W4",
-    "state": "internal",
-    "description": null
+    "executorClass": "safe_fetch",
+    "riskTier": "R1",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "ready",
+    "description": {
+      "ru": "Разбирает static HTML и bounded CSS: @font-face, font-display, источники и форматы, preload correlation, cache headers и Content-Length без browser runtime и fake performance score.",
+      "en": "Parses static HTML and bounded CSS: @font-face, font-display, sources and formats, preload correlation, cache headers, and Content-Length without browser runtime or a fake performance score."
+    }
   },
   {
     "id": "WD-057",
@@ -1914,6 +1917,42 @@
     "description": {
       "ru": "Проверяет static HTML resource hints: preconnect, dns-prefetch, preload, prefetch, modulepreload и preinit, включая дубли, as, crossorigin и excessive preconnect signals без fake performance score.",
       "en": "Checks static HTML resource hints: preconnect, dns-prefetch, preload, prefetch, modulepreload, and preinit, including duplicates, as, crossorigin, and excessive-preconnect signals without a fake performance score."
+    }
+  },
+  {
+    "id": "WD-116",
+    "slug": "javascript-bundle-surface-analyzer",
+    "title": {
+      "ru": "Анализатор поверхности JavaScript-бандлов",
+      "en": "JavaScript Bundle Surface Analyzer"
+    },
+    "category": "performance",
+    "executorClass": "safe_fetch",
+    "riskTier": "R1",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет bounded static JavaScript delivery surface: уникальные script src, status/MIME, declared bytes, compression, cache, redirects и parser-blocking candidates без исполнения кода.",
+      "en": "Checks a bounded static JavaScript delivery surface: unique script src values, status/MIME, declared bytes, compression, cache, redirects, and parser-blocking candidates without executing code."
+    }
+  },
+  {
+    "id": "WD-117",
+    "slug": "css-delivery-analyzer",
+    "title": {
+      "ru": "Анализатор доставки CSS",
+      "en": "CSS Delivery Analyzer"
+    },
+    "category": "performance",
+    "executorClass": "safe_fetch",
+    "riskTier": "R1",
+    "access": "none",
+    "implementationWave": "W2",
+    "state": "ready",
+    "description": {
+      "ru": "Анализирует external и inline CSS: bounded fetch, decoded sample, @import, @font-face, MIME, compression, cache и duplicate links без unused-CSS и render-blocking claims.",
+      "en": "Analyzes external and inline CSS: bounded fetches, decoded samples, @import, @font-face, MIME, compression, cache, and duplicate links without unused-CSS or render-blocking claims."
     }
   }
 ]

@@ -24,6 +24,11 @@ import {
 import { CopyButton } from "../../components/copy-button";
 import { CanonicalCheckerTool } from "./canonical-checker-tool";
 import {
+  CssDeliveryAnalyzerTool,
+  FontLoadingAnalyzerTool,
+  JavaScriptBundleSurfaceTool,
+} from "./asset-delivery-tools";
+import {
   CspAnalyzerTool,
   ResourceHintsAnalyzerTool,
   ThirdPartyScriptAnalyzerTool,
@@ -264,6 +269,9 @@ export const SUPPORTED_TOOL_SLUGS = [
   "csp-analyzer",
   "third-party-script-analyzer",
   "resource-hints-analyzer",
+  "javascript-bundle-surface-analyzer",
+  "css-delivery-analyzer",
+  "font-performance-checker",
 ] as const;
 
 export function ToolRenderer({ slug, locale }: ToolRendererProps) {
@@ -332,6 +340,9 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "csp-analyzer": return <CspAnalyzerTool locale={locale} />;
     case "third-party-script-analyzer": return <ThirdPartyScriptAnalyzerTool locale={locale} />;
     case "resource-hints-analyzer": return <ResourceHintsAnalyzerTool locale={locale} />;
+    case "javascript-bundle-surface-analyzer": return <JavaScriptBundleSurfaceTool locale={locale} />;
+    case "css-delivery-analyzer": return <CssDeliveryAnalyzerTool locale={locale} />;
+    case "font-performance-checker": return <FontLoadingAnalyzerTool locale={locale} />;
     default: return null;
   }
 }

@@ -1,10 +1,82 @@
 # Verification Notes
 
-Patch scope: A10.20 HTTP headers / protocol / CORS tools. No commit or push was performed by the assistant.
+Patch scope: A10.23 JavaScript bundle surface / CSS delivery / font loading tools. No commit or push was performed by the assistant.
 
 ## Scope
 
-This verification record covers the clean A0–A7 baseline plus A7.1–A7.5 hardening, A8/A8.1/A8.2/A8.3 UI work, A9 frontend-safe audit result contract, A10.1–A10.19 tool batches, and this A10.20 header/protocol batch.
+This verification record covers the clean A0–A7 baseline plus A7.1–A7.5 hardening, A8/A8.1/A8.2/A8.3 UI work, A9 frontend-safe audit result contract, and A10.1–A10.23 public tool batches.
+
+# A10.23 — JavaScript bundle / CSS delivery / font loading
+
+## Scope
+
+- added JavaScript Bundle Surface Analyzer:
+  - parses bounded static HTML external-script references and honours the first valid document `<base href>` when resolving relative assets;
+  - separates document references from unique asset checks;
+  - reports same-host/cross-host, module/classic, async/defer, parser-blocking candidates, duplicates, status, MIME, redirects, declared bytes, compression, and cache signals;
+  - does not execute JavaScript, inspect runtime-injected bundles, calculate coverage, or claim unused code;
+- added CSS Delivery Analyzer:
+  - inventories stylesheet links and inline style blocks;
+  - fetches a bounded set of unique stylesheets through the safe fetcher;
+  - reports media, alternate/disabled, duplicate href, MIME, compression, cache, `@import`, `@font-face`, and source-map reference signals;
+  - does not calculate unused CSS or build a browser render waterfall;
+- added Font Loading Analyzer:
+  - correlates bounded static `@font-face` declarations, local/URL sources, formats, font preloads, `font-display`, cache, MIME, and declared-size signals;
+  - does not confirm rendered fonts, text visibility timing, or Core Web Vitals impact;
+- every nested JavaScript, stylesheet, and font target is independently revalidated through `SafeHttpFetcher`; rejected private/local targets are reported without being requested;
+- added strict API DTOs, frontend runtime validators, allowlisted Next.js proxy payloads, copyable result summaries, RU/EN editorial content, and renderer mappings;
+- promoted exactly 3 public tools to `ready`:
+  - `javascript-bundle-surface-analyzer`;
+  - `css-delivery-analyzer`;
+  - `font-performance-checker` as the Font Loading Analyzer;
+- public tool count is now 67;
+- registry entry count is now 117;
+- no one-file, one-header, unused-code, or fake performance-score microtools were added.
+
+## Verified in the patch sandbox
+
+```text
+python -m py_compile changed Python files
+PASS
+
+python -m pytest apps/api/tests/test_asset_delivery_tools.py -q
+PASS — 10/10
+
+python -m pytest selected asset-delivery / client-delivery / fetcher / URL-policy / protocol-security tests -q
+PASS — 58/58
+
+python -m pytest apps/api/tests -q
+PASS — 173/173
+
+npm run test:workspace
+PASS — 37/37
+
+npm run verify:registry
+PASS — 117 unique tools, 67 ready tools, no weak ready microtools
+
+node --test scripts/tests-tool-catalog-quality.test.mjs
+PASS — 5/5
+
+ad-hoc strict TypeScript compile for the new A10.23 contracts, proxy, UI, routes, and tests
+PASS — temporary sandbox declarations used for excluded external packages; not a replacement for workspace typecheck
+
+registry JSON sync and ready-renderer parity
+PASS — backend registry byte-identical; 67/67 ready slugs have renderers
+```
+
+## Not counted as PASS in this sandbox
+
+- `npm test` reached the workspace tests, then stopped because `vitest` is absent from the handoff archive;
+- `npm run lint` could not run because `eslint` is absent;
+- official `npm run typecheck` could not resolve excluded Next.js, React, Vitest, Node, and workspace package declarations;
+- `npm run build` could not run because `next` is absent, and `npm run verify:built-site` has no `.next` output to inspect;
+- `npm run test:python`, `npm run lint:python`, and `npm run verify:python-lock` require the excluded project `.venv`;
+- direct system-Python fallback across API and worker tests returned `173 passed, 2 failed`; both worker failures are import failures because `dramatiq` is absent;
+- browser/Playwright gate was not run.
+
+Run the complete local pre-push gate before commit/push.
+
+---
 
 A10.20 changes:
 

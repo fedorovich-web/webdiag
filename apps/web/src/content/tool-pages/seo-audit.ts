@@ -2,6 +2,129 @@ import { toolPage } from "./shared";
 
 export const seoAuditToolPages = [
 
+  toolPage({
+    slug: "javascript-bundle-surface-analyzer",
+    seoTitle: { ru: "Анализ JavaScript-бандлов страницы", en: "JavaScript Bundle Surface Analyzer" },
+    metaDescription: { ru: "Проверьте bounded static JavaScript delivery surface: script src, status, MIME, Content-Length, compression, cache, redirects и parser-blocking candidates.", en: "Check a bounded static JavaScript delivery surface: script src, status, MIME, Content-Length, compression, cache, redirects, and parser-blocking candidates." },
+    h1: { ru: "Анализатор поверхности JavaScript-бандлов", en: "JavaScript Bundle Surface Analyzer" },
+    lead: { ru: "Инструмент разбирает static HTML, дедуплицирует внешние script src и безопасно проверяет заголовки ограниченного числа JS-ответов. Он показывает declared transfer bytes, MIME, compression, cache и loading attributes без исполнения JavaScript.", en: "The tool parses static HTML, deduplicates external script src values, and safely checks headers for a bounded number of JavaScript responses. It reports declared transfer bytes, MIME, compression, cache, and loading attributes without executing JavaScript." },
+    quickFacts: [
+      { ru: "До 24 unique JS assets", en: "Up to 24 unique JS assets" },
+      { ru: "Headers-only asset checks", en: "Headers-only asset checks" },
+      { ru: "Без исполнения кода", en: "No code execution" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте публичный URL HTML-страницы.", en: "Paste a public HTML page URL." },
+      { ru: "WebDiag найдёт external script src и проверит bounded set ответов через SafeHttpFetcher.", en: "WebDiag discovers external script src values and checks a bounded response set through SafeHttpFetcher." },
+      { ru: "Сравните unique scripts, declared bytes, parser-blocking candidates, compression, cache и failed assets.", en: "Review unique scripts, declared bytes, parser-blocking candidates, compression, cache, and failed assets." },
+    ],
+    supportedFeatures: [
+      { ru: "Дедупликация script src и разделение module/classic.", en: "Script-src deduplication and module/classic separation." },
+      { ru: "Проверка status, final URL, MIME, Content-Length, Content-Encoding, Cache-Control и redirects.", en: "Checks status, final URL, MIME, Content-Length, Content-Encoding, Cache-Control, and redirects." },
+      { ru: "Heuristic findings для большого asset surface и classic parser-blocking candidates без fake score.", en: "Heuristic findings for a large asset surface and classic parser-blocking candidates without a fake score." },
+    ],
+    limitations: [
+      { ru: "Инструмент не исполняет JavaScript и не видит dynamic imports, runtime-injected scripts, code coverage или main-thread cost.", en: "The tool does not execute JavaScript and cannot see dynamic imports, runtime-injected scripts, code coverage, or main-thread cost." },
+      { ru: "Content-Length может отражать encoded transfer size и не равен parse/compile/execute cost.", en: "Content-Length can represent encoded transfer size and is not parse, compile, or execution cost." },
+    ],
+    useCases: [
+      { ru: "Проверить рост числа bundles после релиза.", en: "Review bundle-count growth after a release." },
+      { ru: "Найти failed, duplicated или MIME-mismatched script responses.", en: "Find failed, duplicated, or MIME-mismatched script responses." },
+      { ru: "Проверить compression и long-cache signals у внешних JS assets.", en: "Review compression and long-cache signals for external JavaScript assets." },
+    ],
+    technicalNotes: [
+      { ru: "HTML загружается bounded GET, а найденные JS assets проверяются headers-only GET через тот же SSRF-safe fetcher.", en: "HTML uses a bounded GET, while discovered JavaScript assets use headers-only GET requests through the same SSRF-safe fetcher." },
+      { ru: "Private/local targets, unsafe redirects и DNS rebinding paths блокируются для каждого вложенного URL.", en: "Private/local targets, unsafe redirects, and DNS-rebinding paths are blocked for every nested URL." },
+    ],
+    faq: [
+      { question: { ru: "Это замена bundle analyzer из сборщика?", en: "Does this replace a bundler analyzer?" }, answer: { ru: "Нет. WebDiag проверяет delivery surface опубликованной страницы. Для module graph, tree shaking и composition нужен отчёт вашего bundler.", en: "No. WebDiag checks the delivery surface of a published page. Module graphs, tree shaking, and composition require your bundler report." } },
+      { question: { ru: "Почему нет performance score?", en: "Why is there no performance score?" }, answer: { ru: "Статические headers и Content-Length недостаточны для честной оценки runtime cost. Для этого нужен browser/PageSpeed слой.", en: "Static headers and Content-Length are not enough for an honest runtime-cost score. That requires a browser or PageSpeed layer." } },
+    ],
+    relatedToolSlugs: ["third-party-script-analyzer", "resource-hints-analyzer", "page-weight-analyzer"],
+    sourceUrls: ["https://developer.mozilla.org/docs/Web/HTML/Element/script", "https://developer.mozilla.org/docs/Web/HTTP/Headers/Content-Encoding"],
+  }),
+  toolPage({
+    slug: "css-delivery-analyzer",
+    seoTitle: { ru: "Анализ доставки CSS", en: "CSS Delivery Analyzer" },
+    metaDescription: { ru: "Проверьте external и inline CSS: bounded decoded sample, @import, @font-face, MIME, compression, cache, media и duplicate stylesheet links.", en: "Check external and inline CSS: bounded decoded samples, @import, @font-face, MIME, compression, cache, media, and duplicate stylesheet links." },
+    h1: { ru: "Анализатор доставки CSS", en: "CSS Delivery Analyzer" },
+    lead: { ru: "Инструмент разбирает stylesheet links и inline style blocks, безопасно загружает ограниченный набор CSS и показывает decoded sample, @import, @font-face, MIME, compression, cache и delivery errors.", en: "The tool parses stylesheet links and inline style blocks, safely fetches a bounded CSS set, and reports decoded samples, @import, @font-face, MIME, compression, cache, and delivery errors." },
+    quickFacts: [
+      { ru: "До 16 unique stylesheets", en: "Up to 16 unique stylesheets" },
+      { ru: "External + inline CSS", en: "External + inline CSS" },
+      { ru: "Без unused-CSS claims", en: "No unused-CSS claims" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте публичный URL HTML-страницы.", en: "Paste a public HTML page URL." },
+      { ru: "WebDiag найдёт stylesheet links, inline style blocks и загрузит bounded CSS sample.", en: "WebDiag discovers stylesheet links and inline style blocks, then fetches a bounded CSS sample." },
+      { ru: "Проверьте duplicate links, @import chains, decoded bytes, MIME, compression и failed stylesheets.", en: "Review duplicate links, @import chains, decoded bytes, MIME, compression, and failed stylesheets." },
+    ],
+    supportedFeatures: [
+      { ru: "Same-host/cross-host inventory и media/alternate/disabled signals.", en: "Same-host/cross-host inventory and media/alternate/disabled signals." },
+      { ru: "Подсчёт inline bytes, sampled decoded bytes, @import и @font-face.", en: "Counts inline bytes, sampled decoded bytes, @import, and @font-face." },
+      { ru: "Проверка response status, text/css MIME, Content-Encoding, Cache-Control и redirects.", en: "Checks response status, text/css MIME, Content-Encoding, Cache-Control, and redirects." },
+    ],
+    limitations: [
+      { ru: "Статический анализ не определяет unused CSS, actual cascade, critical CSS coverage или реальный render-blocking impact.", en: "Static analysis cannot determine unused CSS, the actual cascade, critical-CSS coverage, or real render-blocking impact." },
+      { ru: "Вложенные @import URL считаются, но не обходятся рекурсивно.", en: "Nested @import URLs are counted but not recursively crawled." },
+    ],
+    useCases: [
+      { ru: "Найти duplicate stylesheet requests и MIME errors.", en: "Find duplicate stylesheet requests and MIME errors." },
+      { ru: "Проверить наличие @import discovery chains.", en: "Check for @import discovery chains." },
+      { ru: "Оценить bounded decoded CSS surface после релиза.", en: "Review the bounded decoded CSS surface after a release." },
+    ],
+    technicalNotes: [
+      { ru: "Каждый CSS URL повторно проходит public-target policy и bounded decoded-body limit.", en: "Every CSS URL is revalidated by the public-target policy and bounded decoded-body limit." },
+      { ru: "Размер sample не является browser transfer waterfall или unused-CSS measurement.", en: "The sampled size is not a browser transfer waterfall or an unused-CSS measurement." },
+    ],
+    faq: [
+      { question: { ru: "Инструмент показывает render-blocking CSS?", en: "Does the tool identify render-blocking CSS?" }, answer: { ru: "Он показывает default-media candidates и loading attributes, но не заявляет runtime blocking без браузерной трассировки.", en: "It shows default-media candidates and loading attributes but does not claim runtime blocking without a browser trace." } },
+      { question: { ru: "Почему @import считается проблемным сигналом?", en: "Why is @import treated as a review signal?" }, answer: { ru: "Он может создавать дополнительную цепочку обнаружения. Конкретное влияние зависит от порядка, cache и browser runtime.", en: "It can create an additional discovery chain. The actual impact depends on order, cache, and browser runtime." } },
+    ],
+    relatedToolSlugs: ["resource-hints-analyzer", "font-performance-checker", "page-weight-analyzer"],
+    sourceUrls: ["https://developer.mozilla.org/docs/Web/HTML/Element/link", "https://developer.mozilla.org/docs/Web/CSS/@import"],
+  }),
+  toolPage({
+    slug: "font-performance-checker",
+    seoTitle: { ru: "Анализ загрузки веб-шрифтов", en: "Font Loading Analyzer" },
+    metaDescription: { ru: "Проверьте static @font-face, font-display, font sources и formats, preload correlation, Content-Length, cache headers и font response status.", en: "Check static @font-face rules, font-display, font sources and formats, preload correlation, Content-Length, cache headers, and font response status." },
+    h1: { ru: "Анализатор загрузки веб-шрифтов", en: "Font Loading Analyzer" },
+    lead: { ru: "WebDiag разбирает inline и bounded external CSS, собирает @font-face и font URLs, сопоставляет font preloads и безопасно проверяет ограниченный набор font response headers.", en: "WebDiag parses inline and bounded external CSS, collects @font-face rules and font URLs, correlates font preloads, and safely checks a bounded set of font response headers." },
+    quickFacts: [
+      { ru: "@font-face inventory", en: "@font-face inventory" },
+      { ru: "Preload correlation", en: "Preload correlation" },
+      { ru: "До 24 font assets", en: "Up to 24 font assets" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте публичный URL страницы.", en: "Paste a public page URL." },
+      { ru: "WebDiag проверит inline CSS и до 12 external stylesheets на @font-face.", en: "WebDiag checks inline CSS and up to 12 external stylesheets for @font-face rules." },
+      { ru: "Проверьте font-display, families, sources, WOFF2 signals, matched preloads, bytes и cache headers.", en: "Review font-display, families, sources, WOFF2 signals, matched preloads, bytes, and cache headers." },
+    ],
+    supportedFeatures: [
+      { ru: "Разбор family, style, weight, font-display, local() и URL sources.", en: "Parses family, style, weight, font-display, local(), and URL sources." },
+      { ru: "Сопоставление link rel=preload as=font с найденными @font-face URL.", en: "Correlates link rel=preload as=font with discovered @font-face URLs." },
+      { ru: "Проверка font MIME, Content-Length, cache policy, redirects и public-target safety.", en: "Checks font MIME, Content-Length, cache policy, redirects, and public-target safety." },
+    ],
+    limitations: [
+      { ru: "Инструмент не выполняет CSS cascade и не знает, какой font face реально выбрал браузер для текста.", en: "The tool does not execute the CSS cascade and cannot know which font face the browser actually selected for text." },
+      { ru: "FOIT/FOUT, layout shift и timing требуют browser runtime или field data.", en: "FOIT/FOUT, layout shift, and timing require browser runtime or field data." },
+    ],
+    useCases: [
+      { ru: "Найти @font-face без явного font-display.", en: "Find @font-face rules without an explicit font-display." },
+      { ru: "Найти preload URL, которые не совпадают с static CSS sources.", en: "Find preload URLs that do not match static CSS sources." },
+      { ru: "Проверить количество families/weights и known declared font bytes.", en: "Review family/weight counts and known declared font bytes." },
+    ],
+    technicalNotes: [
+      { ru: "CSS parser bounded и не выполняет JavaScript-generated stylesheets или runtime CSSOM.", en: "The CSS parser is bounded and does not execute JavaScript-generated stylesheets or the runtime CSSOM." },
+      { ru: "Не все fonts нужно preload: инструмент проверяет согласованность существующих preload, а не требует preload для каждого файла.", en: "Not every font should be preloaded: the tool checks consistency of existing preloads rather than requiring a preload for every file." },
+    ],
+    faq: [
+      { question: { ru: "Какое значение font-display лучше?", en: "Which font-display value is best?" }, answer: { ru: "Универсального ответа нет. Инструмент показывает отсутствие или block, но выбор swap, optional, fallback или другого поведения зависит от продукта и метрик.", en: "There is no universal answer. The tool surfaces missing values or block, but choosing swap, optional, fallback, or another behavior depends on the product and metrics." } },
+      { question: { ru: "Почему отсутствие preload не считается ошибкой?", en: "Why is a missing preload not treated as an error?" }, answer: { ru: "Preload полезен только для ограниченного числа критичных fonts. Массовый preload может конкурировать с другими ресурсами.", en: "Preload is useful only for a limited set of critical fonts. Preloading everything can compete with other resources." } },
+    ],
+    relatedToolSlugs: ["css-delivery-analyzer", "resource-hints-analyzer", "cache-policy-checker"],
+    sourceUrls: ["https://developer.mozilla.org/docs/Web/CSS/@font-face", "https://developer.mozilla.org/docs/Web/CSS/@font-face/font-display"],
+  }),
 
   toolPage({
     slug: "core-web-vitals-checker",

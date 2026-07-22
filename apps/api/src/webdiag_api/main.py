@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from webdiag_api import __version__
 from webdiag_api.audit.api import router as audit_router
 from webdiag_api.registry import public_tools
+from webdiag_api.tools.asset_delivery import router as asset_delivery_tool_router
 from webdiag_api.tools.canonical import router as canonical_tool_router
 from webdiag_api.tools.client_delivery import router as client_delivery_tool_router
 from webdiag_api.tools.content_analysis import router as content_analysis_tool_router
@@ -21,6 +22,7 @@ from webdiag_api.tools.technical_seo import router as technical_seo_tool_router
 
 app = FastAPI(title="WebDiag API", version=__version__)
 app.include_router(audit_router)
+app.include_router(asset_delivery_tool_router)
 app.include_router(canonical_tool_router)
 app.include_router(client_delivery_tool_router)
 app.include_router(content_analysis_tool_router)
