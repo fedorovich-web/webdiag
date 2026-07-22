@@ -290,6 +290,136 @@ export const developmentDataToolPages = [
   }),
 
   toolPage({
+    slug: "jsonpath-tester",
+    seoTitle: { ru: "JSONPath Tester и Query Lab онлайн", en: "JSONPath Tester & Query Lab Online" },
+    metaDescription: { ru: "Выполняйте bounded JSONPath-запросы по локальному JSON: properties, indices, wildcards, recursive descent, unions, slices и простые filters без eval.", en: "Run bounded JSONPath queries against local JSON with properties, indices, wildcards, recursive descent, unions, slices, and simple filters without eval." },
+    h1: { ru: "JSONPath Query Lab", en: "JSONPath Query Lab" },
+    lead: { ru: "Проверяйте JSONPath выражения и получайте bounded список совпадений с JSON Pointer paths без выполнения JavaScript-кода.", en: "Test JSONPath expressions and receive a bounded match list with JSON Pointer paths without executing JavaScript code." },
+    quickFacts: [
+      { ru: "Локальный JSON", en: "Local JSON" },
+      { ru: "Без eval", en: "No eval" },
+      { ru: "До 500 совпадений", en: "Up to 500 matches" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте JSON-документ.", en: "Paste a JSON document." },
+      { ru: "Введите JSONPath, начинающийся с $.", en: "Enter a JSONPath expression starting with $." },
+      { ru: "Запустите запрос и изучите paths и значения совпадений.", en: "Run the query and inspect match paths and values." },
+    ],
+    supportedFeatures: [
+      { ru: "Dot и bracket properties, array indices и negative indices.", en: "Dot and bracket properties, array indices, and negative indices." },
+      { ru: "Wildcards, recursive descent, unions и array slices.", en: "Wildcards, recursive descent, unions, and array slices." },
+      { ru: "Existence и comparison filters с string, number, boolean и null literals.", en: "Existence and comparison filters using string, number, boolean, and null literals." },
+      { ru: "JSON Pointer paths для каждого совпадения и дедупликация по path.", en: "JSON Pointer paths for every match and path-based deduplication." },
+    ],
+    limitations: [
+      { ru: "Поддерживается документированный subset JSONPath, а не каждый vendor-specific extension.", en: "A documented JSONPath subset is supported rather than every vendor-specific extension." },
+      { ru: "Script expressions, functions, arithmetic, regular expressions и eval не выполняются.", en: "Script expressions, functions, arithmetic, regular expressions, and eval are not executed." },
+      { ru: "Ввод ограничен 500 000 символов, 10 000 узлов и глубиной 64; результат — 500 совпадений.", en: "Input is limited to 500,000 characters, 10,000 nodes, and depth 64; output is limited to 500 matches." },
+    ],
+    useCases: [
+      { ru: "Проверка path для API response или fixture.", en: "Testing a path against an API response or fixture." },
+      { ru: "Поиск вложенных properties без написания скрипта.", en: "Finding nested properties without writing a script." },
+      { ru: "Подготовка bounded JSONPath выражения для интеграции.", en: "Preparing a bounded JSONPath expression for an integration." },
+    ],
+    technicalNotes: [
+      { ru: "Parser не использует Function, eval или JavaScript expression execution.", en: "The parser does not use Function, eval, or JavaScript expression execution." },
+      { ru: "Traversal ограничен 10 000 посещёнными узлами и останавливается с явной ошибкой при превышении.", en: "Traversal is bounded to 10,000 visited nodes and stops with an explicit error when exceeded." },
+    ],
+    faq: [
+      { question: { ru: "Поддерживаются filters?", en: "Are filters supported?" }, answer: { ru: "Да, но только existence и простые сравнения через ==, !=, <, <=, > и >=. JavaScript expressions и regex не выполняются.", en: "Yes, but only existence checks and simple comparisons using ==, !=, <, <=, >, and >=. JavaScript expressions and regex are not executed." } },
+      { question: { ru: "Загружается ли JSON на сервер?", en: "Is the JSON uploaded?" }, answer: { ru: "Нет. Parsing и query выполняются локально в браузере.", en: "No. Parsing and querying run locally in the browser." } },
+    ],
+    relatedToolSlugs: ["json-formatter-validator", "json-schema-validator", "yaml-json-converter"],
+    sourceUrls: ["https://www.rfc-editor.org/rfc/rfc9535.html"],
+  }),
+  toolPage({
+    slug: "toml-json-converter",
+    seoTitle: { ru: "TOML в JSON и JSON в TOML онлайн", en: "TOML to JSON & JSON to TOML Converter" },
+    metaDescription: { ru: "Преобразуйте bounded TOML configuration subset и JSON локально: tables, array tables, dotted keys, arrays и inline tables с явными type limits.", en: "Convert a bounded TOML configuration subset and JSON locally with tables, array tables, dotted keys, arrays, inline tables, and explicit type limits." },
+    h1: { ru: "TOML ↔ JSON Converter", en: "TOML ↔ JSON Converter" },
+    lead: { ru: "Преобразуйте типичные TOML configuration documents в JSON и обратно без внешних запросов и скрытого object construction.", en: "Convert common TOML configuration documents to JSON and back without external requests or hidden object construction." },
+    quickFacts: [
+      { ru: "Два направления", en: "Two-way conversion" },
+      { ru: "TOML tables", en: "TOML tables" },
+      { ru: "До 5 000 узлов", en: "Up to 5,000 nodes" },
+    ],
+    howToSteps: [
+      { ru: "Выберите TOML → JSON или JSON → TOML.", en: "Choose TOML → JSON or JSON → TOML." },
+      { ru: "Вставьте configuration document.", en: "Paste the configuration document." },
+      { ru: "Запустите conversion и проверьте warnings и результат.", en: "Run conversion and review warnings and output." },
+    ],
+    supportedFeatures: [
+      { ru: "Basic и literal strings, booleans, safe integers, finite floats и arrays.", en: "Basic and literal strings, booleans, safe integers, finite floats, and arrays." },
+      { ru: "Tables, dotted keys, array tables и inline tables.", en: "Tables, dotted keys, array tables, and inline tables." },
+      { ru: "Hex, octal и binary integers с проверкой JSON safe-integer range.", en: "Hexadecimal, octal, and binary integers checked against the JSON safe-integer range." },
+      { ru: "TOML date/time values сохраняются как strings с явным warning.", en: "TOML date/time values are preserved as strings with an explicit warning." },
+    ],
+    limitations: [
+      { ru: "Это bounded configuration subset, а не полная parser implementation TOML 1.0.", en: "This is a bounded configuration subset, not a complete TOML 1.0 parser implementation." },
+      { ru: "Multiline strings не поддерживаются; inf и nan отклоняются как непредставимые в JSON.", en: "Multiline strings are not supported; inf and nan are rejected because JSON cannot represent them." },
+      { ru: "JSON null не имеет TOML 1.0 эквивалента и отклоняется при JSON → TOML.", en: "JSON null has no TOML 1.0 equivalent and is rejected during JSON → TOML conversion." },
+    ],
+    useCases: [
+      { ru: "Преобразование application config для API или тестов.", en: "Converting application configuration for an API or tests." },
+      { ru: "Проверка duplicate keys и type conflicts.", en: "Finding duplicate keys and type conflicts." },
+      { ru: "Подготовка читаемого TOML из JSON-compatible object.", en: "Preparing readable TOML from a JSON-compatible object." },
+    ],
+    technicalNotes: [
+      { ru: "Ввод ограничен 500 000 символов, 5 000 узлов и глубиной 32.", en: "Input is limited to 500,000 characters, 5,000 nodes, and depth 32." },
+      { ru: "JSON → TOML принимает root object; arrays of objects выводятся как array tables.", en: "JSON → TOML accepts a root object; arrays of objects are emitted as array tables." },
+    ],
+    faq: [
+      { question: { ru: "Почему даты становятся строками?", en: "Why do dates become strings?" }, answer: { ru: "JSON не имеет отдельного date/time типа. Инструмент сохраняет lexical TOML value как string и маркирует это warning.", en: "JSON has no dedicated date/time type. The tool preserves the lexical TOML value as a string and reports a warning." } },
+      { question: { ru: "Поддерживается null?", en: "Is null supported?" }, answer: { ru: "Нет при JSON → TOML: TOML 1.0 не определяет null literal.", en: "Not for JSON → TOML: TOML 1.0 does not define a null literal." } },
+    ],
+    relatedToolSlugs: ["json-formatter-validator", "yaml-json-converter", "csv-json-converter"],
+    sourceUrls: ["https://toml.io/en/v1.0.0"],
+  }),
+  toolPage({
+    slug: "csv-json-converter",
+    seoTitle: { ru: "CSV Data Workbench: проверка и CSV ↔ JSON", en: "CSV Data Workbench: Validation & CSV ↔ JSON" },
+    metaDescription: { ru: "Проверяйте и преобразуйте CSV/JSON локально: delimiter detection, quoted и multiline fields, inconsistent rows, headers и formula-like signals.", en: "Validate and convert CSV/JSON locally with delimiter detection, quoted and multiline fields, inconsistent rows, headers, and formula-like signals." },
+    h1: { ru: "CSV Data Workbench", en: "CSV Data Workbench" },
+    lead: { ru: "Проверяйте структуру CSV и преобразуйте данные в JSON или обратно в одном bounded workflow вместо отдельного слабого validator.", en: "Validate CSV structure and convert data to JSON or back in one bounded workflow instead of a separate weak validator." },
+    quickFacts: [
+      { ru: "CSV ↔ JSON", en: "CSV ↔ JSON" },
+      { ru: "Quoted multiline fields", en: "Quoted multiline fields" },
+      { ru: "До 10 000 строк", en: "Up to 10,000 rows" },
+    ],
+    howToSteps: [
+      { ru: "Выберите направление, delimiter и режим header.", en: "Choose direction, delimiter, and header mode." },
+      { ru: "Вставьте CSV или JSON и запустите проверку.", en: "Paste CSV or JSON and run validation." },
+      { ru: "Исправьте diagnostics или скопируйте результат conversion.", en: "Fix diagnostics or copy the converted output." },
+    ],
+    supportedFeatures: [
+      { ru: "Comma, semicolon, tab и pipe delimiters с optional auto-detection.", en: "Comma, semicolon, tab, and pipe delimiters with optional auto-detection." },
+      { ru: "Quoted fields, escaped double quotes, CRLF/LF и multiline quoted values.", en: "Quoted fields, escaped double quotes, CRLF/LF, and multiline quoted values." },
+      { ru: "Inconsistent row, duplicate/empty header и formula-like field diagnostics.", en: "Inconsistent-row, duplicate/empty-header, and formula-like-field diagnostics." },
+      { ru: "JSON arrays of objects или arrays; optional apostrophe prefix для formula-like CSV values.", en: "JSON arrays of objects or arrays; optional apostrophe prefix for formula-like CSV values." },
+    ],
+    limitations: [
+      { ru: "Auto-detection является heuristic и должна проверяться на неоднозначных files.", en: "Auto-detection is heuristic and should be reviewed for ambiguous files." },
+      { ru: "JSON → CSV принимает только scalar values и null; nested objects и arrays отклоняются.", en: "JSON → CSV accepts only scalar values and null; nested objects and arrays are rejected." },
+      { ru: "Apostrophe prefix не является универсальной защитой для всех spreadsheet applications.", en: "An apostrophe prefix is not a universal protection for every spreadsheet application." },
+    ],
+    useCases: [
+      { ru: "Проверка CSV export перед импортом.", en: "Checking a CSV export before import." },
+      { ru: "Преобразование небольшого dataset в JSON fixtures.", en: "Converting a small dataset into JSON fixtures." },
+      { ru: "Поиск inconsistent columns и опасных formula-like cells.", en: "Finding inconsistent columns and risky formula-like cells." },
+    ],
+    technicalNotes: [
+      { ru: "Ввод ограничен 500 000 символов, 10 000 строк, 200 столбцов и 500 000 cells.", en: "Input is limited to 500,000 characters, 10,000 rows, 200 columns, and 500,000 cells." },
+      { ru: "CSV validator и converter объединены в один workflow; отдельный csv-validator остаётся internal как дублирующий microtool.", en: "CSV validation and conversion are combined into one workflow; the separate csv-validator remains internal as a duplicate microtool." },
+    ],
+    faq: [
+      { question: { ru: "Поддерживаются переносы строк внутри поля?", en: "Are line breaks inside a field supported?" }, answer: { ru: "Да, если поле заключено в двойные кавычки.", en: "Yes, when the field is enclosed in double quotes." } },
+      { question: { ru: "Что означает formula-like field?", en: "What is a formula-like field?" }, answer: { ru: "Это значение, начинающееся с =, +, - или @ после optional whitespace. Инструмент маркирует такие значения и может префиксовать их апострофом при export.", en: "It is a value starting with =, +, -, or @ after optional whitespace. The tool flags these values and can prefix them with an apostrophe during export." } },
+    ],
+    relatedToolSlugs: ["json-formatter-validator", "jsonpath-tester", "toml-json-converter"],
+    sourceUrls: ["https://www.rfc-editor.org/rfc/rfc4180.html", "https://owasp.org/www-community/attacks/CSV_Injection"],
+  }),
+
+  toolPage({
     slug: "json-schema-validator",
     seoTitle: { ru: "Проверка JSON по JSON Schema онлайн", en: "JSON Schema Validator Online" },
     metaDescription: { ru: "Проверьте JSON instance по документированному bounded subset JSON Schema 2020-12: типы, properties, required, arrays, combinators и локальные $ref.", en: "Validate a JSON instance against a documented bounded JSON Schema 2020-12 subset covering types, properties, required fields, arrays, combinators, and local $ref." },

@@ -1,5 +1,15 @@
 # Changelog
 
+## A10.29 — JSONPath / TOML / CSV data workbench
+
+- Activated JSONPath Query Lab with a bounded no-eval parser for properties, indices, wildcards, recursive descent, unions, slices, and simple existence/comparison filters.
+- Activated TOML ↔ JSON Converter for a documented TOML configuration subset covering tables, array tables, dotted keys, arrays, inline tables, safe integers, finite floats, and date/time preservation as strings.
+- Activated CSV Data Workbench as one combined validator/converter for delimiter detection, quoted and multiline fields, inconsistent rows, duplicate or empty headers, CSV ↔ JSON conversion, and spreadsheet-formula-like signals.
+- Kept the separate `csv-validator` internal because CSV validation is already part of the stronger workbench and a second public entry would be a duplicate microtool.
+- Kept all three tools browser-only with no backend route, external fetch, eval, custom object construction, or new dependency.
+- Added pure TypeScript engines, RU/EN interfaces and editorial pages, boundary and round-trip tests, renderer coverage, and registry gates.
+- Registry remains at 125 entries and now exposes 85 ready public tools; exactly three existing internal entries were promoted.
+
 ## A10.28 — JSON Schema / YAML-JSON / XML utilities
 
 - Activated JSON Schema Validator with a documented bounded JSON Schema 2020-12 subset covering local JSON Pointer `$ref`, core type/object/array/string/number constraints, combinators, and selected syntactic formats without remote schema fetching.
