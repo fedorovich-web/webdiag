@@ -1101,7 +1101,7 @@
     "id": "WD-062",
     "slug": "json-schema-validator",
     "title": {
-      "ru": "JSON Schema Validator",
+      "ru": "Проверка JSON Schema",
       "en": "JSON Schema Validator"
     },
     "category": "development-data",
@@ -1109,8 +1109,11 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет JSON instance по документированному bounded subset JSON Schema 2020-12: type, properties, required, arrays, числовые и строковые ограничения, combinators и локальные $ref без remote schema fetch.",
+      "en": "Validates a JSON instance against a documented bounded JSON Schema 2020-12 subset: types, properties, required fields, arrays, numeric and string constraints, combinators, and local $ref without remote schema fetching."
+    }
   },
   {
     "id": "WD-063",
@@ -1131,7 +1134,7 @@
     "id": "WD-064",
     "slug": "yaml-json-converter",
     "title": {
-      "ru": "YAML ↔ JSON",
+      "ru": "YAML ↔ JSON Converter",
       "en": "YAML ↔ JSON Converter"
     },
     "category": "development-data",
@@ -1139,8 +1142,11 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Преобразует JSON и безопасный configuration subset YAML локально в браузере: mappings, sequences и scalars; anchors, aliases, custom tags, merge keys и block scalars отклоняются.",
+      "en": "Converts JSON and a safe YAML configuration subset locally in the browser: mappings, sequences, and scalars; anchors, aliases, custom tags, merge keys, and block scalars are rejected."
+    }
   },
   {
     "id": "WD-065",
@@ -1169,8 +1175,11 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет well-formed XML и форматирует структуру с сохранением mixed content. DTD, ENTITY, XSD и external entity resolution отключены; обработка выполняется локально.",
+      "en": "Checks well-formed XML and formats its structure while preserving mixed content. DTD, ENTITY, XSD, and external entity resolution are disabled; processing runs locally."
+    }
   },
   {
     "id": "WD-067",

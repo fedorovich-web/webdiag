@@ -288,4 +288,134 @@ export const developmentDataToolPages = [
     relatedToolSlugs: ["uuid-generator", "unix-timestamp-converter", "hash-generator"],
     sourceUrls: ["https://github.com/ulid/spec"],
   }),
+
+  toolPage({
+    slug: "json-schema-validator",
+    seoTitle: { ru: "Проверка JSON по JSON Schema онлайн", en: "JSON Schema Validator Online" },
+    metaDescription: { ru: "Проверьте JSON instance по документированному bounded subset JSON Schema 2020-12: типы, properties, required, arrays, combinators и локальные $ref.", en: "Validate a JSON instance against a documented bounded JSON Schema 2020-12 subset covering types, properties, required fields, arrays, combinators, and local $ref." },
+    h1: { ru: "Проверка JSON по JSON Schema", en: "JSON Schema Validator" },
+    lead: { ru: "Сопоставьте JSON-данные со schema и получите bounded список ошибок с instance path, keyword и объяснением.", en: "Check JSON data against a schema and receive a bounded list of issues with instance paths, keywords, and explanations." },
+    quickFacts: [
+      { ru: "Локально в браузере", en: "Runs locally" },
+      { ru: "Local $ref", en: "Local $ref" },
+      { ru: "До 10 000 узлов", en: "Up to 10,000 nodes" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте JSON instance.", en: "Paste the JSON instance." },
+      { ru: "Вставьте JSON Schema.", en: "Paste the JSON Schema." },
+      { ru: "Запустите проверку и изучите paths и keywords в отчёте.", en: "Run validation and review paths and keywords in the report." },
+    ],
+    supportedFeatures: [
+      { ru: "type, enum, const, properties, required и additionalProperties.", en: "type, enum, const, properties, required, and additionalProperties." },
+      { ru: "items, min/max items, uniqueItems и object/string/number constraints.", en: "items, min/max items, uniqueItems, and object/string/number constraints." },
+      { ru: "allOf, anyOf, oneOf, not, $defs/definitions и локальные JSON Pointer $ref.", en: "allOf, anyOf, oneOf, not, $defs/definitions, and local JSON Pointer $ref." },
+      { ru: "Ограниченная проверка форматов date, date-time, email, uri, uuid, IPv4, IPv6 и hostname.", en: "Bounded checks for date, date-time, email, uri, uuid, IPv4, IPv6, and hostname formats." },
+    ],
+    limitations: [
+      { ru: "Это документированный subset, а не полная реализация JSON Schema 2020-12 meta-schema.", en: "This is a documented subset, not a complete JSON Schema 2020-12 meta-schema implementation." },
+      { ru: "Remote $ref, dynamic references, unevaluated, conditional и content keywords не выполняются.", en: "Remote $ref, dynamic references, unevaluated, conditional, and content keywords are not executed." },
+      { ru: "Проверка format является syntactic signal и не подтверждает существование email, URL или host.", en: "format checks are syntactic signals and do not confirm that an email, URL, or host exists." },
+    ],
+    useCases: [
+      { ru: "Проверка API fixtures и конфигураций.", en: "Checking API fixtures and configurations." },
+      { ru: "Диагностика required и additional properties.", en: "Diagnosing required and additional properties." },
+      { ru: "Быстрая локальная проверка schema перед CI validator.", en: "Running a quick local check before a CI validator." },
+    ],
+    technicalNotes: [
+      { ru: "Ввод ограничен 500 000 символов, 10 000 узлов и глубиной 64.", en: "Input is limited to 500,000 characters, 10,000 nodes, and depth 64." },
+      { ru: "Отчёт ограничен 100 validation issues; достижение лимита маркируется как truncated.", en: "The report is limited to 100 validation issues and marks truncation when the limit is reached." },
+    ],
+    faq: [
+      { question: { ru: "Поддерживается remote $ref?", en: "Are remote $ref values supported?" }, answer: { ru: "Нет. Инструмент разрешает только local JSON Pointer references внутри введённой schema и не выполняет сетевые запросы.", en: "No. The tool resolves only local JSON Pointer references inside the supplied schema and makes no network requests." } },
+      { question: { ru: "Это замена Ajv или официального validator?", en: "Does this replace Ajv or a standards-complete validator?" }, answer: { ru: "Нет. Используйте специализированный standards-complete validator в CI, если проект зависит от полного vocabulary JSON Schema.", en: "No. Use a standards-complete validator in CI when your project depends on the full JSON Schema vocabulary." } },
+    ],
+    relatedToolSlugs: ["json-formatter-validator", "yaml-json-converter", "xml-formatter-validator"],
+    sourceUrls: ["https://json-schema.org/draft/2020-12/json-schema-core.html", "https://json-schema.org/draft/2020-12/json-schema-validation.html"],
+  }),
+  toolPage({
+    slug: "yaml-json-converter",
+    seoTitle: { ru: "YAML в JSON и JSON в YAML онлайн", en: "YAML to JSON & JSON to YAML Converter" },
+    metaDescription: { ru: "Преобразуйте JSON и безопасный configuration subset YAML локально в браузере. Anchors, aliases, custom tags, merge keys и block scalars отклоняются.", en: "Convert JSON and a safe YAML configuration subset locally in the browser. Anchors, aliases, custom tags, merge keys, and block scalars are rejected." },
+    h1: { ru: "YAML ↔ JSON Converter", en: "YAML ↔ JSON Converter" },
+    lead: { ru: "Преобразуйте mappings, sequences и scalars между JSON и предсказуемым YAML configuration subset без загрузки данных на сервер.", en: "Convert mappings, sequences, and scalars between JSON and a predictable YAML configuration subset without uploading data." },
+    quickFacts: [
+      { ru: "Два направления", en: "Two-way conversion" },
+      { ru: "Safe subset", en: "Safe subset" },
+      { ru: "До 5 000 узлов", en: "Up to 5,000 nodes" },
+    ],
+    howToSteps: [
+      { ru: "Выберите YAML → JSON или JSON → YAML.", en: "Choose YAML → JSON or JSON → YAML." },
+      { ru: "Вставьте документ и запустите преобразование.", en: "Paste the document and run the conversion." },
+      { ru: "Скопируйте результат и проверьте его в целевом приложении.", en: "Copy the result and verify it in the target application." },
+    ],
+    supportedFeatures: [
+      { ru: "Indented mappings и sequences с шагом два пробела.", en: "Indented mappings and sequences using two-space indentation." },
+      { ru: "Plain, single-quoted и double-quoted scalars, numbers, booleans и null.", en: "Plain, single-quoted, and double-quoted scalars, numbers, booleans, and null." },
+      { ru: "Inline arrays и objects при использовании JSON syntax.", en: "Inline arrays and objects when written with JSON syntax." },
+      { ru: "JSON → YAML для JSON-compatible values с безопасным quoting неоднозначных строк.", en: "JSON → YAML for JSON-compatible values with safe quoting of ambiguous strings." },
+    ],
+    limitations: [
+      { ru: "Это безопасный configuration subset, а не полная реализация YAML 1.2.2.", en: "This is a safe configuration subset, not a complete YAML 1.2.2 implementation." },
+      { ru: "Anchors, aliases, custom tags, merge keys, complex keys и block scalars |/> отклоняются.", en: "Anchors, aliases, custom tags, merge keys, complex keys, and |/> block scalars are rejected." },
+      { ru: "Комментарии не сохраняются при преобразовании в JSON и обратно.", en: "Comments are not preserved through JSON conversion and back." },
+    ],
+    useCases: [
+      { ru: "Подготовка простой CI/CD или application config.", en: "Preparing a simple CI/CD or application configuration." },
+      { ru: "Проверка duplicate keys и indentation ошибок.", en: "Finding duplicate keys and indentation errors." },
+      { ru: "Преобразование безопасного fixture между JSON и YAML.", en: "Converting a safe fixture between JSON and YAML." },
+    ],
+    technicalNotes: [
+      { ru: "YAML indentation должна использовать кратное двум количество пробелов; tabs запрещены.", en: "YAML indentation must use multiples of two spaces; tabs are rejected." },
+      { ru: "Ввод ограничен 500 000 символов, 5 000 узлов и глубиной 32.", en: "Input is limited to 500,000 characters, 5,000 nodes, and depth 32." },
+    ],
+    faq: [
+      { question: { ru: "Почему anchors и aliases запрещены?", en: "Why are anchors and aliases rejected?" }, answer: { ru: "Инструмент сознательно исключает graph-like и tag-driven features, чтобы conversion contract оставался bounded и предсказуемым.", en: "The tool deliberately excludes graph-like and tag-driven features so the conversion contract remains bounded and predictable." } },
+      { question: { ru: "Сохраняются комментарии?", en: "Are comments preserved?" }, answer: { ru: "Нет. JSON не имеет модели комментариев, поэтому round trip не может сохранить их без отдельного AST contract.", en: "No. JSON has no comment model, so a round trip cannot preserve them without a separate AST contract." } },
+    ],
+    relatedToolSlugs: ["json-formatter-validator", "json-schema-validator", "xml-formatter-validator"],
+    sourceUrls: ["https://yaml.org/spec/1.2.2/", "https://www.json.org/json-en.html"],
+  }),
+  toolPage({
+    slug: "xml-formatter-validator",
+    seoTitle: { ru: "XML Formatter и проверка well-formed XML", en: "XML Formatter & Well-Formedness Validator" },
+    metaDescription: { ru: "Проверьте well-formed XML и отформатируйте структуру с отступом 2 или 4 пробела. DTD, ENTITY, XSD и external entity resolution отключены.", en: "Check well-formed XML and format its structure with two- or four-space indentation. DTD, ENTITY, XSD, and external entity resolution are disabled." },
+    h1: { ru: "XML Formatter и Validator", en: "XML Formatter and Validator" },
+    lead: { ru: "Проверьте matching tags, quoted attributes, entities и единственный root element, затем получите bounded форматированный документ.", en: "Check matching tags, quoted attributes, entities, and a single root element, then produce a bounded formatted document." },
+    quickFacts: [
+      { ru: "Well-formedness", en: "Well-formedness" },
+      { ru: "DTD/ENTITY отключены", en: "DTD/ENTITY disabled" },
+      { ru: "Mixed content сохраняется", en: "Mixed content preserved" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте XML и выберите размер отступа.", en: "Paste XML and choose the indentation size." },
+      { ru: "Запустите проверку и форматирование.", en: "Run validation and formatting." },
+      { ru: "Исправьте structural errors или скопируйте результат.", en: "Fix structural errors or copy the result." },
+    ],
+    supportedFeatures: [
+      { ru: "Start/end/self-closing tags, quoted attributes и duplicate attribute detection.", en: "Start/end/self-closing tags, quoted attributes, and duplicate-attribute detection." },
+      { ru: "XML comments, CDATA и processing instructions.", en: "XML comments, CDATA, and processing instructions." },
+      { ru: "Predefined и numeric entity references без custom entity expansion.", en: "Predefined and numeric entity references without custom entity expansion." },
+      { ru: "Форматирование structural content; mixed content остаётся compact.", en: "Formatting of structural content while mixed content remains compact." },
+    ],
+    limitations: [
+      { ru: "XSD, Relax NG, Schematron и semantic namespace validation не выполняются.", en: "XSD, Relax NG, Schematron, and semantic namespace validation are not performed." },
+      { ru: "DTD и ENTITY declarations отклоняются, external entities никогда не разрешаются.", en: "DTD and ENTITY declarations are rejected, and external entities are never resolved." },
+      { ru: "Parser использует bounded conservative XML name subset и не является canonical XML serializer.", en: "The parser uses a bounded conservative XML-name subset and is not a canonical XML serializer." },
+    ],
+    useCases: [
+      { ru: "Проверка API payload, feed или configuration XML.", en: "Checking an API payload, feed, or configuration XML." },
+      { ru: "Поиск mismatched tags и duplicate attributes.", en: "Finding mismatched tags and duplicate attributes." },
+      { ru: "Подготовка читаемой копии небольшого XML документа.", en: "Preparing a readable copy of a small XML document." },
+    ],
+    technicalNotes: [
+      { ru: "Ввод ограничен 500 000 символов, 10 000 nodes и глубиной 64.", en: "Input is limited to 500,000 characters, 10,000 nodes, and depth 64." },
+      { ru: "Formatter не вставляет indentation внутрь mixed content, чтобы не менять значащий текст.", en: "The formatter does not inject indentation inside mixed content so significant text is not changed." },
+    ],
+    faq: [
+      { question: { ru: "Проверяется XML по XSD?", en: "Is XML validated against XSD?" }, answer: { ru: "Нет. Инструмент проверяет bounded well-formedness и formatting, но не schema conformance.", en: "No. The tool checks bounded well-formedness and formatting, not schema conformance." } },
+      { question: { ru: "Безопасны ли external entities?", en: "Are external entities resolved?" }, answer: { ru: "Нет. DTD и ENTITY declarations отклоняются до parsing, поэтому XXE-style resolution не выполняется.", en: "No. DTD and ENTITY declarations are rejected before parsing, so XXE-style resolution is not performed." } },
+    ],
+    relatedToolSlugs: ["json-formatter-validator", "json-schema-validator", "yaml-json-converter"],
+    sourceUrls: ["https://www.w3.org/TR/xml/"],
+  }),
 ] as const;

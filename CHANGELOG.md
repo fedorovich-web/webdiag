@@ -1,5 +1,15 @@
 # Changelog
 
+## A10.28 — JSON Schema / YAML-JSON / XML utilities
+
+- Activated JSON Schema Validator with a documented bounded JSON Schema 2020-12 subset covering local JSON Pointer `$ref`, core type/object/array/string/number constraints, combinators, and selected syntactic formats without remote schema fetching.
+- Activated YAML ↔ JSON Converter for a safe configuration subset with mappings, sequences, scalars, duplicate-key detection, bounded indentation/depth, and explicit rejection of anchors, aliases, custom tags, merge keys, and block scalars.
+- Activated XML Formatter and Validator for bounded well-formedness checks, matching tags, quoted attributes, comments, CDATA, processing instructions, predefined/numeric entities, and mixed-content-preserving formatting.
+- Kept all three tools browser-only with no backend requests, custom code execution, schema fetching, DTD/entity expansion, or server-side parsing.
+- Explicitly excluded full JSON Schema vocabulary support, full YAML 1.2.2 semantics, XSD/Relax NG/Schematron validation, canonical XML serialization, and automatic repair claims.
+- Added pure TypeScript engines, RU/EN interfaces and editorial pages, copyable reports, boundary tests, renderer coverage, and registry gates.
+- Registry remains at 125 entries and now exposes 82 ready public tools; exactly three existing internal entries were promoted.
+
 ## A10.27 — DNS resolver comparison / domain RDAP / IP RDAP
 
 - Added DNS Resolver Comparison for one selected record type across Cloudflare, Google Public DNS, Quad9, and OpenDNS, including bounded parallel queries, answer-set comparison, partial errors, TTL display, and backend-to-resolver timing.

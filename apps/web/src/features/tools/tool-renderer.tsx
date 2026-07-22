@@ -82,6 +82,11 @@ import {
 import { HreflangCheckerTool, IndexabilityCheckerTool, TechnologyDetectorTool } from "./technical-seo-tools";
 import { SitemapValidatorTool } from "./sitemap-validator-tool";
 import {
+  JsonSchemaValidatorTool,
+  XmlFormatterValidatorTool,
+  YamlJsonConverterTool,
+} from "./structured-data-utility-tools";
+import {
   QueryParameterAnalyzerTool,
   RedirectMapValidatorTool,
   UrlNormalizationAnalyzerTool,
@@ -231,6 +236,9 @@ export const SUPPORTED_TOOL_SLUGS = [
   "url-encoder-decoder",
   "base64-converter",
   "json-formatter-validator",
+  "json-schema-validator",
+  "yaml-json-converter",
+  "xml-formatter-validator",
   "hash-generator",
   "px-rem-converter",
   "color-contrast-checker",
@@ -314,6 +322,9 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "url-encoder-decoder": return <TextCodec locale={locale} kind="url" />;
     case "base64-converter": return <TextCodec locale={locale} kind="base64" />;
     case "json-formatter-validator": return <JsonTool locale={locale} />;
+    case "json-schema-validator": return <JsonSchemaValidatorTool locale={locale} />;
+    case "yaml-json-converter": return <YamlJsonConverterTool locale={locale} />;
+    case "xml-formatter-validator": return <XmlFormatterValidatorTool locale={locale} />;
     case "hash-generator": return <HashTool locale={locale} />;
     case "px-rem-converter": return <PxRemTool locale={locale} />;
     case "color-contrast-checker": return <ContrastTool locale={locale} />;
