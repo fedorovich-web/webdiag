@@ -2047,5 +2047,59 @@
       "ru": "Проверяет static HTML accessible names ссылок, кнопок и role=link/button: text, alt, ARIA, generic names, nested interactive и keyboard-focus signals без browser accessibility tree.",
       "en": "Checks static HTML accessible names for links, buttons, and role=link/button: text, alt, ARIA, generic names, nested interactive elements, and keyboard-focus signals without a browser accessibility tree."
     }
+  },
+  {
+    "id": "WD-123",
+    "slug": "organization-schema-generator",
+    "title": {
+      "ru": "Генератор Organization Schema JSON-LD",
+      "en": "Organization Schema JSON-LD Generator"
+    },
+    "category": "seo-audit",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "ready",
+    "description": {
+      "ru": "Генерирует Organization, Corporation, NGO или LocalBusiness JSON-LD из явно введённых name, URL, logo, address, sameAs и ContactPoint без placeholder-данных, AI и обещаний rich results.",
+      "en": "Generates Organization, Corporation, NGO, or LocalBusiness JSON-LD from explicit name, URL, logo, address, sameAs, and ContactPoint data without placeholders, AI, or rich-result promises."
+    }
+  },
+  {
+    "id": "WD-124",
+    "slug": "breadcrumb-schema-generator",
+    "title": {
+      "ru": "Генератор Breadcrumb Schema JSON-LD",
+      "en": "Breadcrumb Schema JSON-LD Generator"
+    },
+    "category": "seo-audit",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "ready",
+    "description": {
+      "ru": "Генерирует ordered BreadcrumbList JSON-LD из 2–20 явно заданных пунктов, валидирует HTTP(S) URL и разрешает отсутствие item только у последнего crumb без crawler или canonical-claims.",
+      "en": "Generates ordered BreadcrumbList JSON-LD from 2–20 explicit items, validates HTTP(S) URLs, and permits an omitted item only for the final crumb without crawling or canonical claims."
+    }
+  },
+  {
+    "id": "WD-125",
+    "slug": "product-schema-generator",
+    "title": {
+      "ru": "Генератор Product Schema JSON-LD",
+      "en": "Product Schema JSON-LD Generator"
+    },
+    "category": "seo-audit",
+    "executorClass": "browser",
+    "riskTier": "R0",
+    "access": "none",
+    "implementationWave": "W1",
+    "state": "ready",
+    "description": {
+      "ru": "Генерирует Product и optional Offer JSON-LD из проверенных name, image, SKU, brand, GTIN, price, currency, availability и condition без выдуманных ratings, reviews или availability.",
+      "en": "Generates Product and optional Offer JSON-LD from verified name, image, SKU, brand, GTIN, price, currency, availability, and condition without invented ratings, reviews, or availability."
+    }
   }
 ]

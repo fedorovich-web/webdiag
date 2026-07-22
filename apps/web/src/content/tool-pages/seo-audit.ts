@@ -1528,4 +1528,128 @@ export const seoAuditToolPages = [
     relatedToolSlugs: ["redirect-chain-checker", "url-normalization-analyzer", "canonical-checker"],
     sourceUrls: ["https://www.rfc-editor.org/rfc/rfc9110.html#name-redirection-3xx", "https://developers.google.com/search/docs/crawling-indexing/301-redirects"],
   }),
+
+  toolPage({
+    slug: "organization-schema-generator",
+    seoTitle: { ru: "Генератор Organization Schema JSON-LD", en: "Organization Schema JSON-LD Generator" },
+    metaDescription: { ru: "Создайте Organization, Corporation, NGO или LocalBusiness JSON-LD из проверенных данных: URL, logo, address, sameAs и ContactPoint без AI и placeholder-значений.", en: "Create Organization, Corporation, NGO, or LocalBusiness JSON-LD from verified URL, logo, address, sameAs, and ContactPoint data without AI or placeholder values." },
+    h1: { ru: "Генератор Organization Schema JSON-LD", en: "Organization Schema JSON-LD Generator" },
+    lead: { ru: "Специализированный генератор собирает одну согласованную сущность организации из явно введённых фактов. Он не подставляет фиктивные контакты, рейтинги или адреса и не обещает поисковый rich result.", en: "This specialized generator builds one consistent organization entity from explicitly supplied facts. It does not invent contacts, ratings, or addresses and does not promise a search rich result." },
+    quickFacts: [
+      { ru: "Organization / Corporation / NGO / LocalBusiness", en: "Organization / Corporation / NGO / LocalBusiness" },
+      { ru: "PostalAddress и ContactPoint", en: "PostalAddress and ContactPoint" },
+      { ru: "Локально в браузере", en: "Runs locally in the browser" },
+    ],
+    howToSteps: [
+      { ru: "Выберите наиболее точный поддерживаемый @type и укажите фактическое название.", en: "Choose the most accurate supported @type and enter the factual name." },
+      { ru: "Добавьте только опубликованные URL, logo, address, sameAs и контактные данные.", en: "Add only published URL, logo, address, sameAs, and contact data." },
+      { ru: "Скопируйте JSON-LD, проверьте его валидатором и сопоставьте с видимым контентом страницы.", en: "Copy the JSON-LD, validate it, and compare it with visible page content." },
+    ],
+    supportedFeatures: [
+      { ru: "Формирует стабильный @id из URL или принимает явно заданный HTTP(S)/fragment identifier.", en: "Builds a stable @id from the URL or accepts an explicit HTTP(S) or fragment identifier." },
+      { ru: "Поддерживает legalName, description, email, telephone, logo и до 20 sameAs URL.", en: "Supports legalName, description, email, telephone, logo, and up to 20 sameAs URLs." },
+      { ru: "Создаёт PostalAddress и ContactPoint с areaServed и availableLanguage из явного ввода.", en: "Creates PostalAddress and ContactPoint structures with explicit areaServed and availableLanguage input." },
+    ],
+    limitations: [
+      { ru: "Инструмент не проверяет юридическое существование организации и не подтверждает владение URL или social profiles.", en: "The tool does not verify legal existence or ownership of URLs and social profiles." },
+      { ru: "JSON-LD должен соответствовать видимому контенту; генерация сама по себе не гарантирует индексацию или rich result.", en: "JSON-LD must match visible content; generation alone does not guarantee indexing or a rich result." },
+    ],
+    useCases: [
+      { ru: "Подготовить основную Organization entity для corporate home page.", en: "Prepare the primary Organization entity for a corporate home page." },
+      { ru: "Описать LocalBusiness с опубликованным адресом и контактной точкой.", en: "Describe a LocalBusiness with a published address and contact point." },
+      { ru: "Унифицировать @id, logo и sameAs перед связыванием других schema entities.", en: "Standardize @id, logo, and sameAs before linking other schema entities." },
+    ],
+    technicalNotes: [
+      { ru: "Значения сериализуются локально; символ < экранируется, чтобы пользовательский ввод не закрывал script element.", en: "Values are serialized locally; the less-than character is escaped so user input cannot close the script element." },
+      { ru: "Пустые optional properties не выводятся, а placeholder-данные не создаются.", en: "Empty optional properties are omitted and placeholder data is never generated." },
+    ],
+    faq: [
+      { question: { ru: "Какой тип выбрать: Organization или LocalBusiness?", en: "Should I use Organization or LocalBusiness?" }, answer: { ru: "Выбирайте наиболее точный тип, соответствующий реальной сущности и опубликованному контенту. Генератор не определяет тип автоматически.", en: "Choose the most accurate type matching the real entity and published content. The generator does not infer the type automatically." } },
+      { question: { ru: "Можно ли добавить несколько contact points?", en: "Can I add multiple contact points?" }, answer: { ru: "Текущая bounded форма создаёт одну контактную точку. Для сложной модели отредактируйте JSON-LD вручную и повторно проверьте его.", en: "The current bounded form creates one contact point. For a complex model, edit the JSON-LD manually and validate it again." } },
+    ],
+    relatedToolSlugs: ["schema-markup-generator", "structured-data-validator", "html-validator"],
+    sourceUrls: ["https://schema.org/Organization", "https://schema.org/ContactPoint", "https://schema.org/PostalAddress"],
+  }),
+  toolPage({
+    slug: "breadcrumb-schema-generator",
+    seoTitle: { ru: "Генератор BreadcrumbList Schema JSON-LD", en: "BreadcrumbList Schema JSON-LD Generator" },
+    metaDescription: { ru: "Соберите ordered BreadcrumbList JSON-LD из 2–20 пунктов, проверьте HTTP(S) URL и при необходимости оставьте item только у последнего текущего пункта пустым.", en: "Build ordered BreadcrumbList JSON-LD from 2–20 items, validate HTTP(S) URLs, and optionally omit item only for the final current-page crumb." },
+    h1: { ru: "Генератор BreadcrumbList Schema JSON-LD", en: "BreadcrumbList Schema JSON-LD Generator" },
+    lead: { ru: "Вставьте фактическую навигационную цепочку в порядке от главной страницы к текущей. Генератор назначит position последовательно и не будет обходить сайт или угадывать canonical URL.", en: "Paste the factual navigation trail from the home page to the current page. The generator assigns positions sequentially without crawling the site or guessing canonical URLs." },
+    quickFacts: [
+      { ru: "От 2 до 20 пунктов", en: "From 2 to 20 items" },
+      { ru: "Name | URL или TSV", en: "Name | URL or TSV" },
+      { ru: "Последний item URL можно пропустить", en: "Final item URL may be omitted" },
+    ],
+    howToSteps: [
+      { ru: "Добавьте каждый breadcrumb как Name | URL, по одному пункту на строку.", en: "Add each breadcrumb as Name | URL, one item per line." },
+      { ru: "Сохраните фактический порядок интерфейса; URL можно не указывать только у последнего пункта.", en: "Preserve the actual interface order; URL may be omitted only for the final item." },
+      { ru: "Скопируйте BreadcrumbList и проверьте соответствие видимой навигации страницы.", en: "Copy the BreadcrumbList and verify that it matches the page's visible navigation." },
+    ],
+    supportedFeatures: [
+      { ru: "Автоматически назначает position от 1 до количества строк.", en: "Automatically assigns positions from 1 through the row count." },
+      { ru: "Проверяет абсолютные HTTP(S) URL и запрещает пропуск URL у промежуточного пункта.", en: "Validates absolute HTTP(S) URLs and rejects a missing URL for an intermediate item." },
+      { ru: "Не выводит пустой item у текущей страницы, если последний URL намеренно пропущен.", en: "Omits item for the current page when the final URL is intentionally left blank." },
+    ],
+    limitations: [
+      { ru: "Инструмент не извлекает breadcrumbs из HTML и не проверяет, отображаются ли они пользователю.", en: "The tool does not extract breadcrumbs from HTML or verify that users can see them." },
+      { ru: "Порядок и URL должны быть подтверждены владельцем сайта; генератор не определяет canonical intent.", en: "The site owner must confirm order and URLs; the generator does not determine canonical intent." },
+    ],
+    useCases: [
+      { ru: "Подготовить BreadcrumbList для страницы категории или карточки товара.", en: "Prepare BreadcrumbList markup for a category or product page." },
+      { ru: "Проверить позиции и URL перед публикацией нового шаблона.", en: "Review positions and URLs before publishing a new template." },
+      { ru: "Быстро заменить ручную JSON-нумерацию на детерминированный список.", en: "Replace manual JSON position numbering with a deterministic list." },
+    ],
+    technicalNotes: [
+      { ru: "Парсер принимает pipe или tab delimiter и ограничивает список двадцатью непустыми строками.", en: "The parser accepts a pipe or tab delimiter and limits the list to twenty non-empty rows." },
+      { ru: "Символы пользовательского ввода безопасно сериализуются внутри application/ld+json script.", en: "User input is safely serialized inside the application/ld+json script." },
+    ],
+    faq: [
+      { question: { ru: "Нужно ли указывать URL текущей страницы?", en: "Must the current page include an item URL?" }, answer: { ru: "Генератор разрешает оба варианта, но отсутствие URL допускается только у последнего пункта. Выберите вариант, соответствующий вашей опубликованной разметке и требованиям проекта.", en: "The generator supports both patterns, but an omitted URL is allowed only for the final item. Use the pattern that matches your published markup and project requirements." } },
+      { question: { ru: "Можно ли сгенерировать цепочку автоматически из меню?", en: "Can it generate a trail automatically from navigation?" }, answer: { ru: "Нет. Автоматическое извлечение потребовало бы crawler/browser слоя и могло бы неверно принять меню за фактические breadcrumbs.", en: "No. Automatic extraction would require a crawler or browser layer and could incorrectly treat navigation menus as the actual breadcrumb trail." } },
+    ],
+    relatedToolSlugs: ["schema-markup-generator", "structured-data-validator", "url-normalization-analyzer"],
+    sourceUrls: ["https://schema.org/BreadcrumbList", "https://schema.org/ListItem", "https://developers.google.com/search/docs/appearance/structured-data/breadcrumb"],
+  }),
+  toolPage({
+    slug: "product-schema-generator",
+    seoTitle: { ru: "Генератор Product Schema JSON-LD", en: "Product Schema JSON-LD Generator" },
+    metaDescription: { ru: "Создайте Product и optional Offer JSON-LD из фактических name, image, SKU, brand, GTIN, price, currency, availability и condition без выдуманных reviews.", en: "Create Product and optional Offer JSON-LD from factual name, image, SKU, brand, GTIN, price, currency, availability, and condition without invented reviews." },
+    h1: { ru: "Генератор Product Schema JSON-LD", en: "Product Schema JSON-LD Generator" },
+    lead: { ru: "Генератор формирует Product entity и добавляет Offer только при явно введённых price и priceCurrency. Ratings, reviews, seller, availability и condition никогда не подставляются автоматически.", en: "The generator builds a Product entity and adds Offer only when price and priceCurrency are explicitly supplied. Ratings, reviews, seller, availability, and condition are never invented." },
+    quickFacts: [
+      { ru: "Product + optional Offer", en: "Product + optional Offer" },
+      { ru: "GTIN 8/12/13/14 validation", en: "GTIN 8/12/13/14 validation" },
+      { ru: "До 10 image URL", en: "Up to 10 image URLs" },
+    ],
+    howToSteps: [
+      { ru: "Укажите фактическое название и доступные product identifiers.", en: "Enter the factual name and available product identifiers." },
+      { ru: "Добавьте Offer только когда опубликованы price, currency и соответствующие availability/condition данные.", en: "Add Offer only when price, currency, and corresponding availability or condition data are published." },
+      { ru: "Проверьте JSON-LD и синхронизируйте его с видимой карточкой и текущими данными магазина.", en: "Validate the JSON-LD and keep it synchronized with the visible product page and current store data." },
+    ],
+    supportedFeatures: [
+      { ru: "Поддерживает name, description, URL, @id, images, SKU, Brand, GTIN и MPN.", en: "Supports name, description, URL, @id, images, SKU, Brand, GTIN, and MPN." },
+      { ru: "Создаёт Offer с price, ISO-like three-letter currency, availability, itemCondition, seller и priceValidUntil.", en: "Creates Offer with price, a three-letter currency, availability, itemCondition, seller, and priceValidUntil." },
+      { ru: "Не выводит Offer при неполной паре price/priceCurrency и не создаёт aggregateRating или review.", en: "Does not output Offer for an incomplete price and currency pair and never creates aggregateRating or review." },
+    ],
+    limitations: [
+      { ru: "Инструмент не проверяет склад, checkout, merchant feed или реальную доступность товара.", en: "The tool does not verify inventory, checkout, merchant feeds, or actual product availability." },
+      { ru: "Поддерживается одна bounded Offer entity; variants, shippingDetails, returns и complex pricing требуют ручной модели.", en: "One bounded Offer entity is supported; variants, shippingDetails, returns, and complex pricing require a manual model." },
+    ],
+    useCases: [
+      { ru: "Подготовить базовый Product JSON-LD для одной карточки товара.", en: "Prepare baseline Product JSON-LD for one product page." },
+      { ru: "Проверить формат GTIN, currency и Offer перед внедрением в шаблон CMS.", en: "Review GTIN, currency, and Offer formatting before CMS template integration." },
+      { ru: "Создать безопасный черновик без фиктивных рейтингов и отзывов.", en: "Create a safe draft without fabricated ratings and reviews." },
+    ],
+    technicalNotes: [
+      { ru: "GTIN property выбирается по длине: gtin8, gtin12, gtin13 или gtin14.", en: "The GTIN property is selected by length: gtin8, gtin12, gtin13, or gtin14." },
+      { ru: "Availability и itemCondition сериализуются как schema.org URL только из ограниченного списка формы.", en: "Availability and itemCondition are serialized as schema.org URLs only from the form's constrained list." },
+    ],
+    faq: [
+      { question: { ru: "Можно ли добавить рейтинг, если отзывов пока нет?", en: "Can I add a rating when no reviews exist?" }, answer: { ru: "Нет. Генератор намеренно не создаёт ratings или reviews. Добавляйте их только из реальных опубликованных данных и после отдельной проверки требований.", en: "No. The generator intentionally omits ratings and reviews. Add them only from real published data after reviewing the applicable requirements." } },
+      { question: { ru: "Почему availability требует price и currency?", en: "Why does availability require price and currency?" }, answer: { ru: "В этой bounded модели availability находится внутри Offer. Чтобы не создавать неполную offer-сущность, форма требует базовую ценовую пару.", en: "In this bounded model, availability belongs to Offer. The form requires the base price pair to avoid creating an incomplete offer entity." } },
+    ],
+    relatedToolSlugs: ["structured-data-validator", "schema-markup-generator", "image-seo-audit"],
+    sourceUrls: ["https://schema.org/Product", "https://schema.org/Offer", "https://developers.google.com/search/docs/appearance/structured-data/product"],
+  }),
 ] as const;

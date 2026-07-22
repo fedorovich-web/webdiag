@@ -3,7 +3,7 @@ from webdiag_api.registry import load_tools, public_tools
 
 def test_registry_counts() -> None:
     tools = load_tools()
-    assert len(tools) == 122
-    assert len(public_tools()) == 73
-    assert len({tool["id"] for tool in tools}) == 122
-    assert len({tool["slug"] for tool in tools}) == 122
+    assert len(tools) == 125
+    assert len(public_tools()) == 76
+    assert len({tool["id"] for tool in tools}) == 125
+    assert len({tool["slug"] for tool in tools}) == 125

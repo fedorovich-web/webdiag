@@ -1,5 +1,15 @@
 # Changelog
 
+## A10.26 — specialized structured-data generators
+
+- Added Organization Schema JSON-LD Generator for explicit Organization, Corporation, NGO, or LocalBusiness data, including stable @id, logo, PostalAddress, sameAs, and one bounded ContactPoint.
+- Added BreadcrumbList Schema JSON-LD Generator for 2–20 ordered items with HTTP(S) validation, sequential positions, and optional omission of item only for the final crumb.
+- Added Product Schema JSON-LD Generator for explicit Product and optional Offer fields, including images, SKU, Brand, GTIN, MPN, price, currency, availability, condition, seller, and priceValidUntil.
+- Kept all three tools browser-only with no backend request, crawler, AI, placeholder fabrication, ratings/reviews invention, availability inference, or rich-result eligibility claim.
+- Escaped less-than characters in JSON-LD serialization so user input cannot close the script element; empty optional fields are omitted rather than filled with examples.
+- Added deterministic validation, RU/EN forms and editorial pages, copyable output, generator tests, renderer coverage, and registry gates.
+- Registry baseline is now 125 entries and 76 ready public tools; the existing generic schema generator remains the quick template while these tools provide deeper entity-specific contracts.
+
 ## A10.25 — static accessibility structure analyzers
 
 - Added Landmark Structure Analyzer for bounded static semantic/ARIA landmark inventory, accessible names, duplicate role/name pairs, main-landmark conflicts, hidden signals, and broken naming references.
