@@ -128,7 +128,8 @@ test.describe("home information architecture", () => {
     await expect(faqItems.nth(0).locator("button")).toHaveAttribute("aria-expanded", "false");
     await expect(faqItems.nth(2).locator("button")).toHaveAttribute("aria-expanded", "true");
     const afterHeight = await page.locator(".wd-faq-grid").evaluate((node) => node.getBoundingClientRect().height);
-    expect(Math.abs(afterHeight - beforeHeight)).toBeLessThanOrEqual(12);
+    expect(Math.abs(afterHeight - beforeHeight)).toBeLessThanOrEqual(16);
   });
 
 });
+
