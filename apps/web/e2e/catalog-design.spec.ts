@@ -8,16 +8,24 @@ async function readVisibleCount(page: import("@playwright/test").Page) {
   return count;
 }
 
-async function expectCardsMatchVisibleCount(page: import("@playwright/test").Page) {
-  await expect(page.locator(".compact-tool-card")).toHaveCount(await readVisibleCount(page));
+async function expectCardsMatchVisibleCount(
+  page: import("@playwright/test").Page,
+) {
+  await expect(page.locator(".compact-tool-card")).toHaveCount(
+    await readVisibleCount(page),
+  );
 }
 
-async function expectGroupCountsMatchCards(page: import("@playwright/test").Page) {
+async function expectGroupCountsMatchCards(
+  page: import("@playwright/test").Page,
+) {
   const groups = page.locator(".catalog-group");
   const groupCount = await groups.count();
   for (let index = 0; index < groupCount; index += 1) {
     const group = groups.nth(index);
-    const text = await group.locator(".catalog-group-heading > strong").textContent();
+    const text = await group
+      .locator(".catalog-group-heading > strong")
+      .textContent();
     const expected = Number.parseInt(text?.trim() ?? "", 10);
     expect(Number.isInteger(expected)).toBe(true);
     await expect(group.locator(".compact-tool-card")).toHaveCount(expected);
@@ -40,14 +48,25 @@ test.describe("catalog structure", () => {
     await expect(page.locator(".catalog-group")).toHaveCount(3);
     await expectCardsMatchVisibleCount(page);
     await expectGroupCountsMatchCards(page);
-    await expect(page.getByRole("heading", { level: 2, name: "Разметка и данные" })).toBeVisible();
-    await expect(page.getByRole("heading", { level: 2, name: "UI и accessibility" })).toBeVisible();
-    await expect(page.getByRole("heading", { level: 2, name: "Изображения на страницах" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 2, name: "Разметка и данные" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 2, name: "UI и accessibility" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 2, name: "Изображения на страницах" }),
+    ).toBeVisible();
   });
 
-  test("search and category filtering preserve the compact grouped layout", async ({ page }) => {
+  test("search and category filtering preserve the compact grouped layout", async ({
+    page,
+  }) => {
     await page.goto("/en/tools");
-    const allCountText = await page.getByRole("button", { name: /^All/ }).locator("span").textContent();
+    const allCountText = await page
+      .getByRole("button", { name: /^All/ })
+      .locator("span")
+      .textContent();
     const allCount = Number.parseInt(allCountText?.trim() ?? "", 10);
     expect(Number.isInteger(allCount)).toBe(true);
 
@@ -57,6 +76,10 @@ test.describe("catalog structure", () => {
     await expectGroupCountsMatchCards(page);
 
     await page.getByRole("button", { name: /UI and accessibility/ }).click();
+    await expectCardsMatchVisibleCount(page);
+    await expectGroupCountsMatchCards(page);
+
+    await page.getByRole("searchbox").fill("__webdiag_no_matching_tool__");
     await expect(page.getByText("No tools found")).toBeVisible();
     await page.getByRole("button", { name: "Reset filters" }).click();
     await expect(page.locator(".compact-tool-card")).toHaveCount(allCount);
