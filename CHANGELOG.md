@@ -1,5 +1,11 @@
 # Changelog
 
+## A10.33 — CSS Design Generator Workbench
+
+- Activated CSS Gradient Generator, Box Shadow Generator, and Border Radius Generator as bounded browser-only design utilities.
+- Kept each generator local with explicit numeric caps, HEX-only color parsing where applicable, no backend calls, no storage, no canvas export, no AI design claims, and no remote assets.
+- Added pure TypeScript generation helpers, RU/EN tool UIs, editorial pages, runtime tests, renderer coverage, and registry/API parity updates.
+- Registry remains at 125 entries and now exposes 93 ready public tools; exactly three existing internal CSS-design entries were promoted.
 ## A10.31 — Cron Expression Workbench / JWT Inspection Lab
 
 - Replaced the planned separate cron generator/parser microtools with one Cron Expression Workbench for five-field Unix cron: builder fields, strict parsing, ranges/lists/steps, JAN–DEC and SUN–SAT names, Vixie-style day-of-month/day-of-week semantics, and normalized explanation.

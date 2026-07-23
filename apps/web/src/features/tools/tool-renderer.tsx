@@ -105,6 +105,11 @@ import {
   RedirectMapValidatorTool,
   UrlNormalizationAnalyzerTool,
 } from "./url-management-tools";
+import {
+  BorderRadiusGeneratorTool,
+  BoxShadowGeneratorTool,
+  GradientGeneratorTool,
+} from "./css-design-generators";
 import { dictionary } from "../../lib/i18n";
 
 interface ToolRendererProps {
@@ -264,6 +269,9 @@ export const SUPPORTED_TOOL_SLUGS = [
   "hash-generator",
   "px-rem-converter",
   "color-contrast-checker",
+  "gradient-generator",
+  "box-shadow-generator",
+  "border-radius-generator",
   "image-aspect-ratio-calculator",
   "image-optimizer",
   "image-format-converter",
@@ -358,6 +366,9 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "hash-generator": return <HashTool locale={locale} />;
     case "px-rem-converter": return <PxRemTool locale={locale} />;
     case "color-contrast-checker": return <ContrastTool locale={locale} />;
+    case "gradient-generator": return <GradientGeneratorTool locale={locale} />;
+    case "box-shadow-generator": return <BoxShadowGeneratorTool locale={locale} />;
+    case "border-radius-generator": return <BorderRadiusGeneratorTool locale={locale} />;
     case "image-aspect-ratio-calculator": return <AspectRatioTool locale={locale} />;
     case "image-optimizer": return <ImageOptimizerTool locale={locale} />;
     case "image-format-converter": return <ImageFormatConverterTool locale={locale} />;

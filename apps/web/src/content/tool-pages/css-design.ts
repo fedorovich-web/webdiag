@@ -83,7 +83,129 @@ export const cssDesignToolPages = [
     relatedToolSlugs: ["color-contrast-checker", "image-aspect-ratio-calculator", "json-formatter-validator"],
     sourceUrls: ["https://developer.mozilla.org/docs/Learn/CSS/Building_blocks/Values_and_units"],
   }),
-
+  toolPage({
+    slug: "gradient-generator",
+    seoTitle: { ru: "Генератор CSS-градиентов с live preview", en: "CSS Gradient Generator with Live Preview" },
+    metaDescription: { ru: "Собирайте linear и radial CSS-градиенты из двух HEX-цветов, угла и stop-позиций прямо в браузере без изображений и внешних библиотек.", en: "Build linear and radial CSS gradients from two HEX colors, an angle, and stop positions directly in the browser without images or external libraries." },
+    h1: { ru: "Генератор CSS-градиентов", en: "CSS Gradient Generator" },
+    lead: { ru: "Настройте безопасный CSS gradient, проверьте preview и скопируйте готовую declaration для интерфейсного слоя или design token.", en: "Configure a safe CSS gradient, review the preview, and copy a ready declaration for UI styling or design tokens." },
+    quickFacts: [
+      { ru: "Linear и radial", en: "Linear and radial" },
+      { ru: "HEX color stops", en: "HEX color stops" },
+      { ru: "Без remote assets", en: "No remote assets" },
+    ],
+    howToSteps: [
+      { ru: "Выберите linear или radial mode.", en: "Choose linear or radial mode." },
+      { ru: "Введите два HEX-цвета и stop-позиции.", en: "Enter two HEX colors and stop positions." },
+      { ru: "Скопируйте готовую CSS declaration после проверки preview.", en: "Copy the generated CSS declaration after checking the preview." },
+    ],
+    supportedFeatures: [
+      { ru: "Linear gradient с углом 0–360 градусов.", en: "Linear gradient with a 0–360 degree angle." },
+      { ru: "Radial gradient circle at center для базовых UI surfaces.", en: "Radial gradient circle at center for basic UI surfaces." },
+      { ru: "Проверка HEX 3/6 символов и диапазона stop-позиций 0–100%.", en: "Validation for 3/6-digit HEX and 0–100% stop positions." },
+    ],
+    limitations: [
+      { ru: "Инструмент поддерживает две цветовые точки, а не сложную multi-stop палитру.", en: "The tool supports two color stops, not a complex multi-stop palette." },
+      { ru: "Он не анализирует существующие CSS-файлы и не проверяет брендовые design tokens.", en: "It does not analyze existing CSS files or validate brand design tokens." },
+    ],
+    useCases: [
+      { ru: "Быстрый background для hero, карточки или CTA.", en: "Quick background for a hero, card, or CTA." },
+      { ru: "Подбор gradient token перед переносом в дизайн-систему.", en: "Choosing a gradient token before moving it into a design system." },
+      { ru: "Проверка угла и stop-позиций без ручного CSS набора.", en: "Checking angle and stop positions without hand-writing CSS." },
+    ],
+    technicalNotes: [
+      { ru: "Preview использует только валидированные HEX-цвета и числовые значения.", en: "The preview uses only validated HEX colors and numeric values." },
+      { ru: "Генератор выдаёт plain CSS и не создаёт изображения или JavaScript snippets.", en: "The generator emits plain CSS and does not create images or JavaScript snippets." },
+    ],
+    faq: [
+      { question: { ru: "Можно добавить больше двух цветов?", en: "Can I add more than two colors?" }, answer: { ru: "В этом batch — нет. Инструмент намеренно ограничен двумя stop-позициями, чтобы не превращаться в визуальный редактор.", en: "Not in this batch. The tool is intentionally limited to two stops so it does not become a visual editor." } },
+      { question: { ru: "Почему только HEX?", en: "Why HEX only?" }, answer: { ru: "HEX проще валидировать безопасно и достаточно для быстрого design-token workflow.", en: "HEX is straightforward to validate safely and is enough for a quick design-token workflow." } },
+    ],
+    relatedToolSlugs: ["color-contrast-checker", "box-shadow-generator", "border-radius-generator"],
+    sourceUrls: ["https://developer.mozilla.org/docs/Web/CSS/gradient/linear-gradient"],
+  }),
+  toolPage({
+    slug: "box-shadow-generator",
+    seoTitle: { ru: "Генератор CSS box-shadow с preview", en: "CSS box-shadow Generator with Preview" },
+    metaDescription: { ru: "Настройте offset, blur, spread, HEX-цвет и opacity для box-shadow, посмотрите preview и скопируйте готовый CSS прямо в браузере.", en: "Tune offset, blur, spread, HEX color, and opacity for box-shadow, preview the result, and copy ready CSS directly in the browser." },
+    h1: { ru: "Генератор CSS box-shadow", en: "CSS box-shadow Generator" },
+    lead: { ru: "Соберите аккуратную тень карточки или панели из явных числовых параметров без сторонних библиотек и скрытых CSS side effects.", en: "Build a clean card or panel shadow from explicit numeric parameters without third-party libraries or hidden CSS side effects." },
+    quickFacts: [
+      { ru: "Offset/blur/spread", en: "Offset/blur/spread" },
+      { ru: "HEX + opacity", en: "HEX + opacity" },
+      { ru: "Copyable CSS", en: "Copyable CSS" },
+    ],
+    howToSteps: [
+      { ru: "Укажите X/Y offset, blur и spread.", en: "Enter X/Y offset, blur, and spread." },
+      { ru: "Выберите HEX-цвет и opacity от 0 до 1.", en: "Choose a HEX color and opacity from 0 to 1." },
+      { ru: "Проверьте preview и скопируйте declaration.", en: "Check the preview and copy the declaration." },
+    ],
+    supportedFeatures: [
+      { ru: "Отрицательные X/Y offsets в bounded диапазоне.", en: "Negative X/Y offsets within a bounded range." },
+      { ru: "Blur до 400 px и spread от -200 до 200 px.", en: "Blur up to 400 px and spread from -200 to 200 px." },
+      { ru: "HEX to rgba conversion для контролируемой прозрачности.", en: "HEX to rgba conversion for controlled opacity." },
+    ],
+    limitations: [
+      { ru: "Multiple shadows и inset mode пока не поддерживаются.", en: "Multiple shadows and inset mode are not supported yet." },
+      { ru: "Инструмент не проверяет визуальную доступность всей дизайн-системы.", en: "The tool does not validate visual accessibility across a full design system." },
+    ],
+    useCases: [
+      { ru: "Подбор shadow token для карточек и dropdown.", en: "Choosing a shadow token for cards and dropdowns." },
+      { ru: "Смягчение border-heavy интерфейса через elevation.", en: "Replacing border-heavy UI with elevation." },
+      { ru: "Быстрая проверка тени перед переносом в CSS variables.", en: "Quickly checking a shadow before moving it into CSS variables." },
+    ],
+    technicalNotes: [
+      { ru: "Цвет выводится как rgba после безопасного HEX parsing.", en: "The color is emitted as rgba after safe HEX parsing." },
+      { ru: "Все числовые параметры ограничены, чтобы исключить случайные огромные CSS values.", en: "All numeric parameters are bounded to avoid accidental huge CSS values." },
+    ],
+    faq: [
+      { question: { ru: "Можно сделать несколько теней?", en: "Can it create multiple shadows?" }, answer: { ru: "Нет. Текущая версия генерирует одну тень для предсказуемого token workflow.", en: "No. The current version generates one shadow for a predictable token workflow." } },
+      { question: { ru: "Почему цвет вводится в HEX?", en: "Why is the color entered as HEX?" }, answer: { ru: "HEX удобно валидировать, а opacity затем добавляется отдельно в rgba output.", en: "HEX is easy to validate, and opacity is added separately in the rgba output." } },
+    ],
+    relatedToolSlugs: ["gradient-generator", "border-radius-generator", "color-contrast-checker"],
+    sourceUrls: ["https://developer.mozilla.org/docs/Web/CSS/box-shadow"],
+  }),
+  toolPage({
+    slug: "border-radius-generator",
+    seoTitle: { ru: "Генератор CSS border-radius для четырёх углов", en: "Four-Corner CSS border-radius Generator" },
+    metaDescription: { ru: "Настройте border-radius для каждого угла, проверьте форму на preview и скопируйте короткую CSS declaration без canvas и внешних зависимостей.", en: "Set border-radius for each corner, inspect the shape in a preview, and copy a compact CSS declaration without canvas or external dependencies." },
+    h1: { ru: "Генератор CSS border-radius", en: "CSS border-radius Generator" },
+    lead: { ru: "Рассчитайте shorthand border-radius для четырёх углов и быстро проверьте геометрию панели, кнопки или карточки.", en: "Calculate a four-corner border-radius shorthand and quickly review the geometry for a panel, button, or card." },
+    quickFacts: [
+      { ru: "4 угла", en: "4 corners" },
+      { ru: "0–240 px", en: "0–240 px" },
+      { ru: "Live preview", en: "Live preview" },
+    ],
+    howToSteps: [
+      { ru: "Введите radius для каждого угла в px.", en: "Enter the radius for each corner in px." },
+      { ru: "Проверьте форму в preview-блоке.", en: "Review the shape in the preview block." },
+      { ru: "Скопируйте готовый shorthand для CSS.", en: "Copy the generated CSS shorthand." },
+    ],
+    supportedFeatures: [
+      { ru: "Top-left, top-right, bottom-right и bottom-left значения.", en: "Top-left, top-right, bottom-right, and bottom-left values." },
+      { ru: "Bounded numeric validation от 0 до 240 px.", en: "Bounded numeric validation from 0 to 240 px." },
+      { ru: "Короткий shorthand output в стандартном CSS порядке.", en: "Compact shorthand output in standard CSS order." },
+    ],
+    limitations: [
+      { ru: "Elliptical slash syntax не поддерживается в этом batch.", en: "Elliptical slash syntax is not supported in this batch." },
+      { ru: "Инструмент не измеряет реальные размеры DOM-элемента.", en: "The tool does not measure a real DOM element's dimensions." },
+    ],
+    useCases: [
+      { ru: "Подбор radius token для карточек и модальных окон.", en: "Choosing a radius token for cards and modals." },
+      { ru: "Проверка асимметричной формы для UI-компонента.", en: "Testing an asymmetric shape for a UI component." },
+      { ru: "Быстрое получение shorthand вместо четырёх ручных declarations.", en: "Getting shorthand quickly instead of writing four declarations." },
+    ],
+    technicalNotes: [
+      { ru: "Порядок output: top-left, top-right, bottom-right, bottom-left.", en: "Output order is top-left, top-right, bottom-right, bottom-left." },
+      { ru: "Значения ограничены px, чтобы сохранить простой и проверяемый генератор.", en: "Values are limited to px to keep the generator simple and verifiable." },
+    ],
+    faq: [
+      { question: { ru: "Можно использовать проценты?", en: "Can I use percentages?" }, answer: { ru: "Нет. В этой версии поддерживаются только px-значения для стабильного preview и простого shorthand.", en: "No. This version supports only px values for a stable preview and simple shorthand." } },
+      { question: { ru: "Почему порядок именно такой?", en: "Why this order?" }, answer: { ru: "Это стандартный CSS shorthand порядок: top-left, top-right, bottom-right, bottom-left.", en: "It is the standard CSS shorthand order: top-left, top-right, bottom-right, bottom-left." } },
+    ],
+    relatedToolSlugs: ["box-shadow-generator", "gradient-generator", "px-rem-converter"],
+    sourceUrls: ["https://developer.mozilla.org/docs/Web/CSS/border-radius"],
+  }),
   toolPage({
     slug: "landmark-structure-analyzer",
     seoTitle: { ru: "Анализ структуры landmarks страницы", en: "Page Landmark Structure Analyzer" },
