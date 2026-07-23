@@ -1,11 +1,35 @@
 # Verification Notes
 
-Patch scope: A10.31 Cron Expression Workbench / JWT Inspection Lab. No commit or push was performed by the assistant.
+Patch scope: A10.33 CSS Design Generator Workbench. No commit or push was performed by the assistant.
 
 ## Scope
 
 This verification record covers the clean A0–A7 baseline plus A7.1–A7.5 hardening, A8/A8.1/A8.2/A8.3 UI work, A9 frontend-safe audit result contract, and A10.1–A10.31 public tool batches.
 
+# A10.33 — CSS Design Generator Workbench
+
+## Scope
+
+- promoted `WD-084` as `gradient-generator`:
+  - supports linear and radial CSS gradients with two validated HEX color stops;
+  - validates angle 0–360 degrees and stop positions 0–100%;
+  - emits plain CSS and a local preview only;
+- promoted `WD-085` as `box-shadow-generator`:
+  - supports bounded offset, blur, spread, HEX color and opacity;
+  - emits a single rgba-based `box-shadow` declaration and local preview;
+- promoted `WD-086` as `border-radius-generator`:
+  - supports four px corner values with bounded validation;
+  - emits standard top-left/top-right/bottom-right/bottom-left shorthand;
+- all three tools are browser-only R0 utilities with no backend request, no browser storage, no canvas export, no remote assets, no AI design generation, and no dependency addition;
+- public tool count is now 93; registry entry count remains 125.
+
+## Required local verification
+
+- run `npm run verify:registry`, Vitest, ESLint, typecheck, build, built-site verification, Python/Ruff/lock gates, and Playwright;
+- review and update affected catalog visual snapshots after the public tool count changes from 90 to 93;
+- confirm no unrelated generated artifacts, `.next`, `test-results`, or handoff files enter staging.
+
+---
 # A10.31 — Cron Expression Workbench / JWT Inspection Lab
 
 ## Scope

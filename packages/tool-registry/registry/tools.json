@@ -1484,8 +1484,11 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Собирает CSS-градиенты локально: linear/radial mode, угол или форма, две цветовые точки, позиции, live preview и копируемый CSS без скриптов, изображений и remote assets.",
+      "en": "Builds CSS gradients locally: linear/radial mode, angle or shape, two color stops, positions, live preview, and copyable CSS without scripts, images, or remote assets."
+    }
   },
   {
     "id": "WD-085",
@@ -1499,8 +1502,11 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Генерирует box-shadow из явных числовых параметров: offset, blur, spread, HEX color и opacity, показывает preview и копируемую CSS declaration без сторонних библиотек.",
+      "en": "Generates box-shadow from explicit numeric parameters: offset, blur, spread, HEX color, and opacity, with a preview and copyable CSS declaration without third-party libraries."
+    }
   },
   {
     "id": "WD-086",
@@ -1514,8 +1520,11 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Генерирует border-radius для четырёх углов, проверяет допустимые px-значения, показывает preview формы и выдаёт короткую CSS declaration без canvas или runtime CSS parsing.",
+      "en": "Generates border-radius for four corners, validates px values, shows a shape preview, and emits a compact CSS declaration without canvas or runtime CSS parsing."
+    }
   },
   {
     "id": "WD-087",
