@@ -1,10 +1,26 @@
 # Verification Notes
 
-Patch scope: A10.33 CSS Design Generator Workbench. No commit or push was performed by the assistant.
+
+## A10.34 targeted verification
+
+A10.34 promotes three browser-only CSS design utilities and keeps the registry total unchanged.
+
+```bash
+npm run verify:registry
+npm --workspace @webdiag/web exec -- vitest run \
+  src/features/tools/css-design-analysis-tools.test.ts \
+  src/features/tools/tool-renderer.test.ts \
+  src/content/tool-pages.test.ts \
+  --pool=forks --maxWorkers=1
+npm run verify:local
+```
+
+Expected registry counts after A10.34: 125 total / 96 ready / 29 internal.
+Patch scope: A10.34 CSS color / specificity / typography tools. No commit or push was performed by the assistant.
 
 ## Scope
 
-This verification record covers the clean A0–A7 baseline plus A7.1–A7.5 hardening, A8/A8.1/A8.2/A8.3 UI work, A9 frontend-safe audit result contract, and A10.1–A10.31 public tool batches.
+This verification record covers the clean A0–A7 baseline plus A7.1–A7.5 hardening, A8/A8.1/A8.2/A8.3 UI work, A9 frontend-safe audit result contract, and A10.1–A10.34 public tool batches.
 
 # A10.33 — CSS Design Generator Workbench
 

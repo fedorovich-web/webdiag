@@ -1,5 +1,14 @@
 # Changelog
 
+## A10.34 — CSS color / specificity / typography tools
+
+- Activated Color Converter for local HEX normalization and HEX → RGB/HSL conversion with copyable CSS values, channel display, preview, and strict 3/6-digit HEX validation.
+- Activated CSS Specificity Calculator for bounded selector-list analysis, ID/class/type buckets, pseudo-element/type counting, :where() zeroing, and strongest-argument handling for :is(), :not(), and :has().
+- Activated Typography Scale Generator for base px + ratio modular-scale generation, bounded step ranges, px/rem output, and CSS custom properties for design-token workflows.
+- Kept all three tools browser-only with no backend request, stylesheet execution, file upload, color-palette extraction, font metric inference, or new dependency.
+- Added pure TypeScript contracts, RU/EN interfaces and editorial pages, renderer coverage, registry/API parity updates, and targeted unit tests.
+- Registry remains at 125 entries and now exposes 96 ready public tools; exactly three existing internal entries were promoted.
+
 ## A10.33 — CSS Design Generator Workbench
 
 - Activated CSS Gradient Generator, Box Shadow Generator, and Border Radius Generator as bounded browser-only design utilities.

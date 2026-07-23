@@ -1436,8 +1436,11 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Преобразует HEX-цвета локально: нормализует short/full HEX, показывает RGB и HSL CSS values, числовые каналы и preview без загрузки данных на backend.",
+      "en": "Converts HEX colors locally: normalizes short/full HEX, shows RGB and HSL CSS values, numeric channels, and a preview without uploading data to the backend."
+    }
   },
   {
     "id": "WD-082",
@@ -1568,8 +1571,11 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Считает специфичность CSS selector list локально: ID, class/attribute/pseudo-class и type/pseudo-element buckets, :where() zeroing и bounded :is/:not/:has handling.",
+      "en": "Calculates CSS selector-list specificity locally: ID, class/attribute/pseudo-class, and type/pseudo-element buckets, :where() zeroing, and bounded :is/:not/:has handling."
+    }
   },
   {
     "id": "WD-090",
@@ -1601,8 +1607,11 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Генерирует типографическую шкалу локально из base px, ratio и диапазона шагов: px/rem значения, CSS custom properties и bounded token output.",
+      "en": "Generates a typography scale locally from base px, ratio, and step range: px/rem values, CSS custom properties, and bounded token output."
+    }
   },
   {
     "id": "WD-092",

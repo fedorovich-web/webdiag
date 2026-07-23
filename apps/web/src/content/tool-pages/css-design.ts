@@ -84,6 +84,129 @@ export const cssDesignToolPages = [
     sourceUrls: ["https://developer.mozilla.org/docs/Learn/CSS/Building_blocks/Values_and_units"],
   }),
   toolPage({
+    slug: "color-converter",
+    seoTitle: { ru: "Конвертер HEX-цветов в RGB и HSL", en: "HEX to RGB and HSL Color Converter" },
+    metaDescription: { ru: "Преобразуйте HEX-цвет в RGB и HSL, проверьте каналы и скопируйте CSS-значения прямо в браузере без загрузки данных на сервер.", en: "Convert a HEX color to RGB and HSL, inspect channels, and copy CSS values directly in the browser without sending data to a server." },
+    h1: { ru: "Конвертер HEX-цветов", en: "HEX Color Converter" },
+    lead: { ru: "Введите 3- или 6-значный HEX и получите нормализованный HEX, RGB, HSL и числовые каналы для design-token workflow.", en: "Enter a 3- or 6-digit HEX value and get normalized HEX, RGB, HSL, and numeric channels for a design-token workflow." },
+    quickFacts: [
+      { ru: "HEX → RGB/HSL", en: "HEX to RGB/HSL" },
+      { ru: "3/6 digit support", en: "3/6 digit support" },
+      { ru: "Локальный расчёт", en: "Local calculation" },
+    ],
+    howToSteps: [
+      { ru: "Введите HEX-цвет с символом # или без него.", en: "Enter a HEX color with or without #." },
+      { ru: "Проверьте нормализованное значение и preview.", en: "Review the normalized value and preview." },
+      { ru: "Скопируйте RGB или HSL CSS value.", en: "Copy the RGB or HSL CSS value." },
+    ],
+    supportedFeatures: [
+      { ru: "Нормализация short HEX в полный #RRGGBB.", en: "Normalizes short HEX to full #RRGGBB." },
+      { ru: "Расчёт RGB channels и CSS rgb() notation.", en: "Calculates RGB channels and CSS rgb() notation." },
+      { ru: "Расчёт HSL hue, saturation и lightness.", en: "Calculates HSL hue, saturation, and lightness." },
+    ],
+    limitations: [
+      { ru: "RGB, HSL, alpha, lab/lch и named colors не принимаются как вход.", en: "RGB, HSL, alpha, lab/lch, and named colors are not accepted as input." },
+      { ru: "Инструмент не извлекает палитры из файлов и не оценивает contrast ratio.", en: "The tool does not extract palettes from files or evaluate contrast ratio." },
+    ],
+    useCases: [
+      { ru: "Перевод HEX design token в CSS rgb() или hsl().", en: "Converting a HEX design token to CSS rgb() or hsl()." },
+      { ru: "Проверка цветовых каналов перед документацией UI kit.", en: "Checking color channels before documenting a UI kit." },
+      { ru: "Быстрая нормализация short HEX из макета.", en: "Quickly normalizing short HEX from a design." },
+    ],
+    technicalNotes: [
+      { ru: "HSL округляется до целых градусов и процентов для практического CSS output.", en: "HSL is rounded to whole degrees and percentages for practical CSS output." },
+      { ru: "Расчёт выполняется в браузере и не требует network request.", en: "The calculation runs in the browser and does not require a network request." },
+    ],
+    faq: [
+      { question: { ru: "Почему вход только HEX?", en: "Why is input HEX only?" }, answer: { ru: "Так инструмент остаётся детерминированным и безопасным для быстрого token conversion.", en: "This keeps the tool deterministic and safe for quick token conversion." } },
+      { question: { ru: "Это заменяет contrast checker?", en: "Does this replace the contrast checker?" }, answer: { ru: "Нет. Для проверки доступности пары цветов используйте отдельный инструмент контраста.", en: "No. Use the dedicated contrast tool to evaluate an accessible color pair." } },
+    ],
+    relatedToolSlugs: ["color-contrast-checker", "gradient-generator", "box-shadow-generator"],
+    sourceUrls: ["https://developer.mozilla.org/docs/Web/CSS/color_value"],
+  }),
+  toolPage({
+    slug: "css-specificity-calculator",
+    seoTitle: { ru: "Калькулятор специфичности CSS selectors", en: "CSS Selector Specificity Calculator" },
+    metaDescription: { ru: "Посчитайте специфичность CSS selector list в формате ID/class/type, включая bounded поддержку :where(), :is(), :not() и :has().", en: "Calculate CSS selector-list specificity as ID/class/type values, including bounded support for :where(), :is(), :not(), and :has()." },
+    h1: { ru: "Калькулятор специфичности CSS", en: "CSS Specificity Calculator" },
+    lead: { ru: "Проверьте, почему один selector перекрывает другой, без выполнения CSS и без анализа всего stylesheet.", en: "Check why one selector overrides another without executing CSS or analyzing a full stylesheet." },
+    quickFacts: [
+      { ru: "ID/class/type score", en: "ID/class/type score" },
+      { ru: "Selector list", en: "Selector list" },
+      { ru: "Без CSS execution", en: "No CSS execution" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте один selector или список через запятую.", en: "Paste one selector or a comma-separated list." },
+      { ru: "Проверьте итоговый score для каждого selector.", en: "Review the resulting score for each selector." },
+      { ru: "Сравните ID, class/attribute/pseudo-class и type buckets.", en: "Compare ID, class/attribute/pseudo-class, and type buckets." },
+    ],
+    supportedFeatures: [
+      { ru: "Подсчёт ID selectors, classes, attributes и pseudo-classes.", en: "Counts ID selectors, classes, attributes, and pseudo-classes." },
+      { ru: "Подсчёт type selectors и pseudo-elements.", en: "Counts type selectors and pseudo-elements." },
+      { ru: "Bounded обработка :where() как zero и :is/:not/:has по strongest argument.", en: "Bounded handling of :where() as zero and :is/:not/:has by strongest argument." },
+    ],
+    limitations: [
+      { ru: "Это не полноценный CSS parser и не учитывает cascade layers, source order или !important.", en: "This is not a full CSS parser and does not account for cascade layers, source order, or !important." },
+      { ru: "Сложные вложенные selector functions ограничены, чтобы расчёт оставался bounded.", en: "Complex nested selector functions are limited so the calculation remains bounded." },
+    ],
+    useCases: [
+      { ru: "Разбор конфликта между utility class и component selector.", en: "Debugging a conflict between a utility class and a component selector." },
+      { ru: "Проверка selector перед упрощением CSS.", en: "Checking a selector before simplifying CSS." },
+      { ru: "Документация правил специфичности в дизайн-системе.", en: "Documenting specificity rules in a design system." },
+    ],
+    technicalNotes: [
+      { ru: "Score выводится как IDs-classes-types, например 1-2-0.", en: "The score is emitted as IDs-classes-types, for example 1-2-0." },
+      { ru: "Функция :where() обнуляется согласно современным правилам specificity.", en: ":where() is zeroed according to modern specificity rules." },
+    ],
+    faq: [
+      { question: { ru: "Почему !important не входит в score?", en: "Why is !important not in the score?" }, answer: { ru: "!important относится к cascade resolution, а не к числу specificity selector.", en: "!important belongs to cascade resolution, not to the selector specificity number." } },
+      { question: { ru: "Можно анализировать весь CSS-файл?", en: "Can it analyze a whole CSS file?" }, answer: { ru: "Нет. Инструмент считает явно вставленные selectors, без stylesheet parsing.", en: "No. The tool calculates explicitly pasted selectors without stylesheet parsing." } },
+    ],
+    relatedToolSlugs: ["color-converter", "px-rem-converter", "gradient-generator"],
+    sourceUrls: ["https://developer.mozilla.org/docs/Web/CSS/CSS_cascade/Specificity"],
+  }),
+  toolPage({
+    slug: "typography-scale-generator",
+    seoTitle: { ru: "Генератор типографической шкалы px/rem", en: "px/rem Typography Scale Generator" },
+    metaDescription: { ru: "Соберите bounded typography scale из базового размера, ratio и диапазона шагов, получите px, rem и CSS custom properties.", en: "Build a bounded typography scale from a base size, ratio, and step range, with px, rem, and CSS custom properties." },
+    h1: { ru: "Генератор типографической шкалы", en: "Typography Scale Generator" },
+    lead: { ru: "Настройте modular scale для интерфейса и скопируйте CSS variables без анализа шрифтов или внешних библиотек.", en: "Configure a modular scale for an interface and copy CSS variables without font analysis or external libraries." },
+    quickFacts: [
+      { ru: "Base px + ratio", en: "Base px + ratio" },
+      { ru: "px и rem output", en: "px and rem output" },
+      { ru: "CSS variables", en: "CSS variables" },
+    ],
+    howToSteps: [
+      { ru: "Укажите базовый размер текста в px.", en: "Enter the base text size in px." },
+      { ru: "Задайте ratio и диапазон шагов.", en: "Set the ratio and step range." },
+      { ru: "Скопируйте CSS custom properties.", en: "Copy the CSS custom properties." },
+    ],
+    supportedFeatures: [
+      { ru: "Шаги от отрицательных размеров до крупных heading values.", en: "Steps from smaller text values to larger heading values." },
+      { ru: "Расчёт px и rem относительно выбранной базы.", en: "Calculates px and rem relative to the selected base." },
+      { ru: "Генерация custom properties для token layer.", en: "Generates custom properties for a token layer." },
+    ],
+    limitations: [
+      { ru: "Инструмент не измеряет реальные font metrics, optical size или line-height.", en: "The tool does not measure real font metrics, optical size, or line-height." },
+      { ru: "Он не заменяет визуальную проверку typographic rhythm в макете.", en: "It does not replace visual review of typographic rhythm in a layout." },
+    ],
+    useCases: [
+      { ru: "Подготовка font-size tokens для UI kit.", en: "Preparing font-size tokens for a UI kit." },
+      { ru: "Сравнение ratio перед редизайном typography scale.", en: "Comparing a ratio before redesigning a typography scale." },
+      { ru: "Быстрая генерация px/rem значений для документации.", en: "Quickly generating px/rem values for documentation." },
+    ],
+    technicalNotes: [
+      { ru: "Каждый шаг считается как base × ratio^step.", en: "Each step is calculated as base multiplied by ratio to the step power." },
+      { ru: "Диапазон ограничен, чтобы output оставался читаемым и предсказуемым.", en: "The range is bounded so output remains readable and predictable." },
+    ],
+    faq: [
+      { question: { ru: "Как выбрать ratio?", en: "How do I choose a ratio?" }, answer: { ru: "Начните с 1.2–1.333 для интерфейсов и проверьте результат в реальном layout.", en: "Start with 1.2–1.333 for interfaces and review the result in the actual layout." } },
+      { question: { ru: "Почему нет line-height?", en: "Why no line-height?" }, answer: { ru: "Line-height зависит от шрифта, длины строк и компонента; здесь генерируются только font-size tokens.", en: "Line-height depends on the font, line length, and component; this tool generates font-size tokens only." } },
+    ],
+    relatedToolSlugs: ["px-rem-converter", "color-converter", "css-specificity-calculator"],
+    sourceUrls: ["https://developer.mozilla.org/docs/Web/CSS/font-size"],
+  }),
+  toolPage({
     slug: "gradient-generator",
     seoTitle: { ru: "Генератор CSS-градиентов с live preview", en: "CSS Gradient Generator with Live Preview" },
     metaDescription: { ru: "Собирайте linear и radial CSS-градиенты из двух HEX-цветов, угла и stop-позиций прямо в браузере без изображений и внешних библиотек.", en: "Build linear and radial CSS gradients from two HEX colors, an angle, and stop positions directly in the browser without images or external libraries." },

@@ -110,6 +110,11 @@ import {
   BoxShadowGeneratorTool,
   GradientGeneratorTool,
 } from "./css-design-generators";
+import {
+  ColorConverterTool,
+  CssSpecificityCalculatorTool,
+  TypographyScaleGeneratorTool,
+} from "./css-design-analysis-tools";
 import { dictionary } from "../../lib/i18n";
 
 interface ToolRendererProps {
@@ -269,6 +274,9 @@ export const SUPPORTED_TOOL_SLUGS = [
   "hash-generator",
   "px-rem-converter",
   "color-contrast-checker",
+  "color-converter",
+  "css-specificity-calculator",
+  "typography-scale-generator",
   "gradient-generator",
   "box-shadow-generator",
   "border-radius-generator",
@@ -366,6 +374,9 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "hash-generator": return <HashTool locale={locale} />;
     case "px-rem-converter": return <PxRemTool locale={locale} />;
     case "color-contrast-checker": return <ContrastTool locale={locale} />;
+    case "color-converter": return <ColorConverterTool locale={locale} />;
+    case "css-specificity-calculator": return <CssSpecificityCalculatorTool locale={locale} />;
+    case "typography-scale-generator": return <TypographyScaleGeneratorTool locale={locale} />;
     case "gradient-generator": return <GradientGeneratorTool locale={locale} />;
     case "box-shadow-generator": return <BoxShadowGeneratorTool locale={locale} />;
     case "border-radius-generator": return <BorderRadiusGeneratorTool locale={locale} />;
