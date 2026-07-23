@@ -97,6 +97,10 @@ import {
   SqlFormatterTool,
 } from "./query-code-workbench-tools";
 import {
+  CronExpressionWorkbenchTool,
+  JwtInspectionLabTool,
+} from "./developer-inspection-workbench-tools";
+import {
   QueryParameterAnalyzerTool,
   RedirectMapValidatorTool,
   UrlNormalizationAnalyzerTool,
@@ -255,6 +259,8 @@ export const SUPPORTED_TOOL_SLUGS = [
   "sql-formatter",
   "graphql-formatter",
   "regex-tester",
+  "cron-expression-workbench",
+  "jwt-inspection-lab",
   "hash-generator",
   "px-rem-converter",
   "color-contrast-checker",
@@ -347,6 +353,8 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "sql-formatter": return <SqlFormatterTool locale={locale} />;
     case "graphql-formatter": return <GraphqlFormatterTool locale={locale} />;
     case "regex-tester": return <SafeRegexLabTool locale={locale} />;
+    case "cron-expression-workbench": return <CronExpressionWorkbenchTool locale={locale} />;
+    case "jwt-inspection-lab": return <JwtInspectionLabTool locale={locale} />;
     case "hash-generator": return <HashTool locale={locale} />;
     case "px-rem-converter": return <PxRemTool locale={locale} />;
     case "color-contrast-checker": return <ContrastTool locale={locale} />;

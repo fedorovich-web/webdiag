@@ -1,5 +1,15 @@
 # Changelog
 
+## A10.31 — Cron Expression Workbench / JWT Inspection Lab
+
+- Replaced the planned separate cron generator/parser microtools with one Cron Expression Workbench for five-field Unix cron: builder fields, strict parsing, ranges/lists/steps, JAN–DEC and SUN–SAT names, Vixie-style day-of-month/day-of-week semantics, and normalized explanation.
+- Added bounded UTC next-occurrence preview in a dedicated same-origin Web Worker with a 10-result cap, 366-day horizon, fixed iteration ceiling, request validation, hard UI timeout, cancellation, and no scheduler execution.
+- Reframed the planned JWT Decoder as JWT Inspection Lab with strict Base64URL, fatal UTF-8, JSON object/depth/node limits, header/payload display, exp/nbf/iat browser-clock review, iss/sub/aud/jti checks, and explicit alg=none, missing-alg, empty-signature, and decode-is-not-verification warnings.
+- Kept JWT processing browser-only with no signature verification, remote JWKS, OAuth/OIDC discovery, network request, logging, history, persistent storage, private-key input, or dynamic HTML rendering.
+- Kept the separate cron parser and URL parser candidates internal because their useful scope is covered by the combined cron workflow and the existing URL normalization/query tools.
+- Added pure TypeScript contracts, RU/EN interfaces and editorial pages, Worker/security/runtime tests, renderer coverage, and registry/API parity updates without a new dependency.
+- Registry remains at 125 entries and now exposes 90 ready public tools; exactly two existing internal entries were promoted.
+
 ## A10.30 — SQL / GraphQL / Safe Regex code workbench
 
 - Activated SQL Formatter with a bounded conservative tokenizer for common clauses, joins, lists, nested subqueries, strings, comments, quoted identifiers, keyword casing, and two- or four-space indentation.

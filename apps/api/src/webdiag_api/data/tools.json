@@ -1276,18 +1276,21 @@
   },
   {
     "id": "WD-072",
-    "slug": "cron-generator",
+    "slug": "cron-expression-workbench",
     "title": {
-      "ru": "Генератор cron-выражений",
-      "en": "Cron Expression Generator"
+      "ru": "Cron Expression Workbench",
+      "en": "Cron Expression Workbench"
     },
     "category": "development-data",
     "executorClass": "browser",
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Собирает, разбирает и объясняет 5-польные Unix cron-выражения локально, проверяет ranges, lists и steps и показывает до 10 следующих запусков в UTC через bounded Web Worker без выполнения scheduler.",
+      "en": "Builds, parses, and explains five-field Unix cron expressions locally, validates ranges, lists, and steps, and previews up to 10 next UTC occurrences in a bounded Web Worker without running a scheduler."
+    }
   },
   {
     "id": "WD-073",
@@ -1306,18 +1309,21 @@
   },
   {
     "id": "WD-074",
-    "slug": "jwt-decoder",
+    "slug": "jwt-inspection-lab",
     "title": {
-      "ru": "JWT Decoder",
-      "en": "JWT Decoder"
+      "ru": "JWT Inspection Lab",
+      "en": "JWT Inspection Lab"
     },
     "category": "development-data",
     "executorClass": "browser",
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Строго декодирует compact JWT/JWS локально, показывает header, payload и claims exp, nbf, iat, iss и aud, отмечает alg=none и временные риски без проверки подписи, сети, логирования или сохранения токена.",
+      "en": "Strictly decodes compact JWT/JWS locally, displays the header, payload, and exp, nbf, iat, iss, and aud claims, and flags alg=none and timing risks without signature verification, network access, logging, or token storage."
+    }
   },
   {
     "id": "WD-075",

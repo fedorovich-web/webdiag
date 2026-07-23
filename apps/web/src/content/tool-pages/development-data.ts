@@ -677,4 +677,89 @@ export const developmentDataToolPages = [
     relatedToolSlugs: ["sql-formatter", "graphql-formatter", "json-formatter-validator"],
     sourceUrls: ["https://developer.mozilla.org/docs/Web/JavaScript/Guide/Regular_expressions", "https://developer.mozilla.org/docs/Web/API/Web_Workers_API"],
   }),
+  toolPage({
+    slug: "cron-expression-workbench",
+    seoTitle: { ru: "Cron Workbench: генератор, проверка и следующие запуски", en: "Cron Expression Workbench: Build, Validate & Preview" },
+    metaDescription: { ru: "Соберите или проверьте 5-польное Unix cron-выражение, получите объяснение полей и bounded preview следующих запусков в UTC прямо в браузере.", en: "Build or validate a five-field Unix cron expression, inspect every field, and preview bounded next UTC occurrences directly in your browser." },
+    h1: { ru: "Cron Expression Workbench для 5-польных расписаний", en: "Cron Expression Workbench for Five-Field Schedules" },
+    lead: { ru: "Соберите расписание из пяти полей, проверьте lists, ranges и steps, разберите итоговое выражение и посмотрите до десяти следующих запусков в UTC.", en: "Build a five-field schedule, validate lists, ranges, and steps, inspect the normalized expression, and preview up to ten next UTC occurrences." },
+    quickFacts: [
+      { ru: "5-польный Unix cron", en: "Five-field Unix cron" },
+      { ru: "Preview только в UTC", en: "UTC-only preview" },
+      { ru: "Bounded Web Worker", en: "Bounded Web Worker" },
+    ],
+    howToSteps: [
+      { ru: "Заполните отдельные поля или вставьте готовое cron-выражение.", en: "Fill the individual fields or paste an existing cron expression." },
+      { ru: "Запустите проверку синтаксиса и диапазонов.", en: "Run syntax and range validation." },
+      { ru: "Проверьте объяснение и следующие моменты запуска в UTC.", en: "Review the explanation and the next UTC occurrence timestamps." },
+    ],
+    supportedFeatures: [
+      { ru: "Wildcards, числа, списки, диапазоны и steps.", en: "Wildcards, numeric values, lists, ranges, and steps." },
+      { ru: "Названия месяцев JAN–DEC и дней недели SUN–SAT.", en: "JAN–DEC month names and SUN–SAT weekday names." },
+      { ru: "Vixie-style OR semantics для одновременно ограниченных day-of-month и day-of-week.", en: "Vixie-style OR semantics when both day-of-month and day-of-week are restricted." },
+      { ru: "До 10 будущих запусков с горизонтом 366 дней и жёстким timeout.", en: "Up to 10 future occurrences with a 366-day horizon and a hard timeout." },
+    ],
+    limitations: [
+      { ru: "Seconds, year, Quartz tokens ?, L, W и #, macros и systemd timers не поддерживаются.", en: "Seconds, year, Quartz tokens ?, L, W, and #, macros, and systemd timers are not supported." },
+      { ru: "Preview использует UTC и не моделирует IANA timezone или переходы DST.", en: "Preview uses UTC and does not model IANA timezones or DST transitions." },
+      { ru: "Инструмент не создаёт и не выполняет реальные scheduler jobs.", en: "The tool does not create or execute real scheduler jobs." },
+    ],
+    useCases: [
+      { ru: "Проверка расписания перед добавлением в crontab или CI job.", en: "Checking a schedule before adding it to crontab or a CI job." },
+      { ru: "Поиск ошибки в диапазоне, списке или шаге.", en: "Finding an error in a range, list, or step." },
+      { ru: "Проверка того, когда расписание сработает в UTC.", en: "Checking when a schedule will run in UTC." },
+    ],
+    technicalNotes: [
+      { ru: "Выражение ограничено 256 символами, а preview — 10 результатами, 366 днями и фиксированным iteration cap.", en: "Expressions are limited to 256 characters, while preview is capped at 10 results, 366 days, and a fixed iteration limit." },
+      { ru: "Расчёт следующих запусков выполняется в отдельном same-origin Web Worker, который завершается при timeout, reset или уходе со страницы.", en: "Next-occurrence calculation runs in a dedicated same-origin Web Worker that is terminated on timeout, reset, or component unmount." },
+    ],
+    faq: [
+      { question: { ru: "Поддерживается ли шестое поле с секундами?", en: "Does it support a sixth seconds field?" }, answer: { ru: "Нет. Текущий contract ограничен стандартным пяти-польным Unix dialect: minute, hour, day-of-month, month и day-of-week.", en: "No. The current contract is limited to the five-field Unix dialect: minute, hour, day-of-month, month, and day-of-week." } },
+      { question: { ru: "Почему результаты показаны только в UTC?", en: "Why are results shown only in UTC?" }, answer: { ru: "UTC делает preview детерминированным и не создаёт ложной совместимости с конкретным scheduler, timezone database или правилами DST.", en: "UTC keeps preview deterministic and avoids claiming compatibility with a particular scheduler, timezone database, or DST rule set." } },
+    ],
+    relatedToolSlugs: ["unix-timestamp-converter", "sql-formatter", "graphql-formatter"],
+    sourceUrls: ["https://man7.org/linux/man-pages/man5/crontab.5.html"],
+  }),
+  toolPage({
+    slug: "jwt-inspection-lab",
+    seoTitle: { ru: "JWT Inspection Lab: header, payload и claims локально", en: "JWT Inspection Lab: Decode Header, Payload & Claims" },
+    metaDescription: { ru: "Строго декодируйте compact JWT/JWS локально, изучите header, payload, exp, nbf, iat, iss и aud и получите security warnings без отправки токена на сервер.", en: "Strictly decode compact JWT/JWS locally, inspect header, payload, exp, nbf, iat, iss, and aud, and review security warnings without uploading the token." },
+    h1: { ru: "JWT Inspection Lab для локальной проверки токена", en: "JWT Inspection Lab for Local Token Review" },
+    lead: { ru: "Разберите три сегмента JWT/JWS, просмотрите JSON и зарегистрированные claims и отдельно оцените alg, подпись и временные значения без ложного заявления об аутентичности.", en: "Inspect the three JWT/JWS segments, review JSON and registered claims, and assess alg, signature presence, and timing values without claiming authenticity." },
+    quickFacts: [
+      { ru: "Только локальная обработка", en: "Local processing only" },
+      { ru: "Строгий Base64URL и UTF-8", en: "Strict Base64URL and UTF-8" },
+      { ru: "Decode не равен verify", en: "Decode is not verify" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте compact JWT/JWS из трёх сегментов.", en: "Paste a three-segment compact JWT/JWS." },
+      { ru: "При необходимости выберите допустимый clock skew.", en: "Select an allowed clock skew when needed." },
+      { ru: "Проверьте header, payload, temporal claims и security warnings.", en: "Review the header, payload, temporal claims, and security warnings." },
+    ],
+    supportedFeatures: [
+      { ru: "Строгий разбор Base64URL, UTF-8 и JSON object для header и payload.", en: "Strict Base64URL, UTF-8, and JSON-object parsing for header and payload." },
+      { ru: "Проверка exp, nbf и iat относительно часов браузера с настраиваемым clock skew.", en: "Inspection of exp, nbf, and iat against the browser clock with configurable clock skew." },
+      { ru: "Review claims iss, sub, aud и jti и предупреждения для alg=none, missing alg и пустой signature.", en: "Review of iss, sub, aud, and jti claims plus warnings for alg=none, missing alg, and an empty signature." },
+    ],
+    limitations: [
+      { ru: "Подпись не проверяется, authenticity и допустимость токена не подтверждаются.", en: "The signature is not verified, and token authenticity or acceptability is not confirmed." },
+      { ru: "JWE, remote JWKS, OAuth/OIDC discovery, token exchange и private keys не поддерживаются.", en: "JWE, remote JWKS, OAuth/OIDC discovery, token exchange, and private keys are not supported." },
+      { ru: "Временные статусы зависят от часов браузера и не заменяют проверку на принимающем сервере.", en: "Timing statuses depend on the browser clock and do not replace validation by the accepting server." },
+    ],
+    useCases: [
+      { ru: "Просмотр claims тестового access или ID token во время разработки.", en: "Reviewing claims in a test access or ID token during development." },
+      { ru: "Поиск malformed Base64URL, JSON или NumericDate.", en: "Finding malformed Base64URL, JSON, or NumericDate values." },
+      { ru: "Проверка того, почему exp или nbf выглядит некорректно.", en: "Investigating why exp or nbf appears incorrect." },
+    ],
+    technicalNotes: [
+      { ru: "JWT ограничен 64 KiB, JSON — глубиной 64 и 5 000 nodes; токен не сохраняется, не логируется и не отправляется по сети.", en: "JWT input is capped at 64 KiB and JSON at depth 64 and 5,000 nodes; the token is not stored, logged, or sent over the network." },
+      { ru: "Декодированные значения выводятся как text/JSON и не вставляются в HTML через динамическую разметку.", en: "Decoded values are rendered as text/JSON and are not inserted through dynamic HTML markup." },
+    ],
+    faq: [
+      { question: { ru: "Декодирование подтверждает подпись JWT?", en: "Does decoding verify a JWT signature?" }, answer: { ru: "Нет. Любой может сформировать похожие header и payload. Подлинность требует проверки signature с доверенным ключом, алгоритмом и policy на стороне принимающей системы.", en: "No. Anyone can construct similar header and payload data. Authenticity requires signature verification with a trusted key, algorithm, and policy in the accepting system." } },
+      { question: { ru: "Инструмент загружает токен или получает JWKS?", en: "Does the tool upload the token or fetch JWKS?" }, answer: { ru: "Нет. Обработка выполняется локально, сетевые запросы, история и persistent storage не используются.", en: "No. Processing is local, and the tool uses no network requests, history, or persistent storage." } },
+    ],
+    relatedToolSlugs: ["base64-converter", "json-formatter-validator", "unix-timestamp-converter"],
+    sourceUrls: ["https://www.rfc-editor.org/rfc/rfc7519", "https://www.rfc-editor.org/rfc/rfc7515"],
+  }),
 ] as const;
