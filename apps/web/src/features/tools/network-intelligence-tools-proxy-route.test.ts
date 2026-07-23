@@ -38,8 +38,12 @@ describe("network intelligence proxy routes", () => {
 
   it("forwards only allowlisted DNS comparison fields", async () => {
     const fetchMock = vi.fn(async (
-      ..._args: Parameters<typeof fetch>
-    ) => new Response(JSON.stringify({
+      input: Parameters<typeof fetch>[0],
+      init?: Parameters<typeof fetch>[1],
+    ) => {
+      void input;
+      void init;
+      return new Response(JSON.stringify({
       contract_version: "webdiag.tool.dns_resolver_comparison.v1",
       generated_at: "2026",
       domain: "example.com",
@@ -52,7 +56,8 @@ describe("network intelligence proxy routes", () => {
       snapshots: [],
       status: "pass",
       recommendation: "Snapshot only.",
-    }), { status: 200, headers: { "content-type": "application/json" } }));
+    }), { status: 200, headers: { "content-type": "application/json" } });
+    });
     vi.stubGlobal("fetch", fetchMock);
     const response = await dnsPost(request({ domain: "Example.COM", record_type: "A", extra: "drop" }));
     expect(response.status).toBe(200);

@@ -30,7 +30,7 @@ test.describe("local developer inspection workbenches", () => {
 
     await page.getByLabel("Five-field expression").fill("0 0 L * *");
     await inspectButton.click();
-    await expect(page.getByRole("alert")).toContainText("outside the supported five-field Unix cron dialect");
+    await expect(page.locator(".form-error")).toContainText("outside the supported five-field Unix cron dialect");
   });
 
   test("JWT inspection stays local, warns that decode is not verify, and does not persist user input", async ({ page }) => {
@@ -49,7 +49,7 @@ test.describe("local developer inspection workbenches", () => {
     await page.getByRole("button", { name: "Декодировать и проверить claims" }).click();
 
     await expect(page.getByText("Декодирование не подтверждает подпись", { exact: false })).toBeVisible();
-    await expect(page.getByText("alg=none", { exact: false })).toBeVisible();
+    await expect(page.locator(".metadata-tool-checks").getByText("alg=none", { exact: false })).toBeVisible();
     await expect(page.locator(".result-card").filter({ hasText: "Header" })).toContainText('"alg": "none"');
     expect(sentBodies.join("\n")).not.toContain(algNone);
     expect(page.url()).not.toContain(algNone);
@@ -59,3 +59,4 @@ test.describe("local developer inspection workbenches", () => {
     await expect(page.locator(".tool-panel").last().locator("pre.output")).toHaveText("—");
   });
 });
+

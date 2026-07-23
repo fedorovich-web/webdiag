@@ -88,12 +88,12 @@ function scrollToReportPreview() {
 
 function AuditResultPreview({ locale, snapshot }: { locale: Locale; snapshot: AuditSnapshotResponse }) {
   const t = copy[locale];
-  const runSummary = snapshot.summary.run;
+  const runSummary = snapshot.summary;
   const issues = snapshot.run?.issues.slice(0, 3) ?? [];
   const score = runSummary?.score ?? snapshot.run?.score ?? null;
-  const issueCount = runSummary?.issue_count ?? snapshot.run?.issues.length ?? 0;
-  const checkCount = runSummary?.check_count ?? snapshot.run?.checks.length ?? 0;
-  const highestSeverity = runSummary?.highest_severity ?? "info";
+  const issueCount = runSummary?.issueCount ?? snapshot.run?.issues.length ?? 0;
+  const checkCount = runSummary?.checkCount ?? snapshot.run?.checks.length ?? 0;
+  const highestSeverity = runSummary?.highestSeverity ?? "info";
   const severityLabel = severityLabels[locale][highestSeverity as keyof typeof severityLabels.ru] ?? highestSeverity;
 
   return (
@@ -103,7 +103,7 @@ function AuditResultPreview({ locale, snapshot }: { locale: Locale; snapshot: Au
           <span>{snapshot.job.target.hostname}</span>
           <h2 id="wd-live-audit-title">{t.resultTitle}</h2>
         </div>
-        <b>{snapshot.summary.status}</b>
+        <b>{snapshot.summary?.status ?? snapshot.job.status}</b>
       </div>
       <div className="wd-live-audit-metrics">
         <article><span>{t.score}</span><strong>{score ?? "—"}</strong></article>
@@ -119,7 +119,7 @@ function AuditResultPreview({ locale, snapshot }: { locale: Locale; snapshot: Au
               const priority = priorityLabels[locale][issue.priority as keyof typeof priorityLabels.ru] ?? issue.priority;
               const severity = severityLabels[locale][issue.severity as keyof typeof severityLabels.ru] ?? issue.severity;
               return (
-                <li key={issue.issue_id}>
+                <li key={issue.id}>
                   <span>{priority} · {severity}</span>
                   <b>{issue.title}</b>
                 </li>
@@ -207,3 +207,4 @@ export function HomeUrlCheckForm({ locale }: { locale: Locale }) {
     </form>
   );
 }
+
