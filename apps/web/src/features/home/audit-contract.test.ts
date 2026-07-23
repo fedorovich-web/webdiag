@@ -76,6 +76,41 @@ describe("audit frontend contract", () => {
     expect(isAuditFrontendResult(frontend)).toBe(true);
   });
 
+  it("does not leak backend-shaped field names into mapped frontend results", () => {
+    const frontend = toAuditFrontendResult(backendSnapshot);
+    const serialized = JSON.stringify(frontend);
+
+    expect(frontend.summary).toMatchObject({
+      checkCount: 4,
+      issueCount: 1,
+      highestSeverity: "medium",
+      topPriority: "p1",
+    });
+    expect(frontend.run?.issues[0]).toMatchObject({ id: "metadata.title.missing", checkId: "metadata.title" });
+    expect(serialized).not.toContain("issue_id");
+    expect(serialized).not.toContain("check_id");
+    expect(serialized).not.toContain("issue_count");
+    expect(serialized).not.toContain("check_count");
+    expect(serialized).not.toContain("highest_severity");
+    expect(serialized).not.toContain("top_priority");
+  });
+
+  it("keeps pending snapshots nullable instead of inventing frontend summary data", () => {
+    const pending: BackendAuditSnapshotResponse = {
+      ...backendSnapshot,
+      summary: { ...backendSnapshot.summary, status: "pending", run: null },
+      job: { ...backendSnapshot.job, status: "pending" },
+      run: null,
+    };
+
+    const frontend = toAuditFrontendResult(pending);
+
+    expect(frontend.summary).toBeNull();
+    expect(frontend.run).toBeNull();
+    expect(frontend.job.status).toBe("pending");
+    expect(isAuditFrontendResult(frontend)).toBe(true);
+  });
+
   it("rejects raw backend snapshots as frontend results", () => {
     expect(isAuditFrontendResult(backendSnapshot)).toBe(false);
   });

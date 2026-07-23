@@ -85,6 +85,34 @@ test("home recommendations are explicit and do not depend on registry order", as
   assert.match(content, /json-formatter-validator/);
 });
 
+test("home audit UI consumes only frontend-shaped audit result contracts", async () => {
+  const uiFiles = [
+    "apps/web/src/features/home/home-url-check-form.tsx",
+    "apps/web/src/features/home/home-audit-result-section.tsx",
+  ];
+  const forbiddenBackendFields = [
+    [/summary\.run/, "backend summary.run"],
+    [/issue\.issue_id/, "backend issue_id"],
+    [/issue\.check_id/, "backend check_id"],
+    [/\bissue_count\b/, "backend issue_count"],
+    [/\bcheck_count\b/, "backend check_count"],
+    [/\bhighest_severity\b/, "backend highest_severity"],
+    [/\btop_priority\b/, "backend top_priority"],
+  ];
+
+  for (const path of uiFiles) {
+    const source = await read(path);
+    for (const [pattern, label] of forbiddenBackendFields) {
+      assert.doesNotMatch(source, pattern, `${path} must not consume ${label}; map through AuditFrontendResult instead`);
+    }
+  }
+
+  const contract = await read("apps/web/src/features/home/audit-contract.ts");
+  assert.match(contract, /toAuditFrontendResult/);
+  assert.match(contract, /issue_id/);
+  assert.match(contract, /issueCount/);
+});
+
 test("SEO layer includes social metadata, structured data, and localized sitemap alternates", async () => {
   const seo = await read("apps/web/src/lib/seo.ts");
   const sitemap = await read("apps/web/app/sitemap.ts");
