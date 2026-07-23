@@ -1,10 +1,22 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { installBrowserGuard } from "./browser-guard";
 
 const sampleJwt = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidXNlci0xMjMiLCJhdWQiOiJ3ZWJkaWFnIiwiZXhwIjoyMDUwMDAwMDAwLCJpYXQiOjE3MDAwMDAwMDB9.c2lnbmF0dXJl";
 
 function base64Url(value: string): string {
   return Buffer.from(value, "utf8").toString("base64url");
+}
+
+function formError(page: Page): Locator {
+  return page.locator(".form-error").filter({ hasText: /\S/ });
+}
+
+function resultCard(page: Page, heading: string): Locator {
+  return page.locator(".result-card").filter({ hasText: heading });
+}
+
+function warningList(page: Page): Locator {
+  return page.locator(".metadata-tool-checks");
 }
 
 test.describe("local developer inspection workbenches", () => {
@@ -30,7 +42,7 @@ test.describe("local developer inspection workbenches", () => {
 
     await page.getByLabel("Five-field expression").fill("0 0 L * *");
     await inspectButton.click();
-    await expect(page.locator(".form-error")).toContainText("outside the supported five-field Unix cron dialect");
+    await expect(formError(page)).toContainText("outside the supported five-field Unix cron dialect");
   });
 
   test("JWT inspection stays local, warns that decode is not verify, and does not persist user input", async ({ page }) => {
@@ -49,8 +61,8 @@ test.describe("local developer inspection workbenches", () => {
     await page.getByRole("button", { name: "Декодировать и проверить claims" }).click();
 
     await expect(page.getByText("Декодирование не подтверждает подпись", { exact: false })).toBeVisible();
-    await expect(page.locator(".metadata-tool-checks").getByText("alg=none", { exact: false })).toBeVisible();
-    await expect(page.locator(".result-card").filter({ hasText: "Header" })).toContainText('"alg": "none"');
+    await expect(warningList(page).getByText("alg=none", { exact: false })).toBeVisible();
+    await expect(resultCard(page, "Header")).toContainText('"alg": "none"');
     expect(sentBodies.join("\n")).not.toContain(algNone);
     expect(page.url()).not.toContain(algNone);
 
@@ -59,4 +71,3 @@ test.describe("local developer inspection workbenches", () => {
     await expect(page.locator(".tool-panel").last().locator("pre.output")).toHaveText("—");
   });
 });
-
