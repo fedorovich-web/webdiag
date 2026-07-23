@@ -1,10 +1,66 @@
 # Verification Notes
 
-Patch scope: A10.30 SQL / GraphQL / Safe Regex browser code workbench. No commit or push was performed by the assistant.
+Patch scope: A10.31 Cron Expression Workbench / JWT Inspection Lab. No commit or push was performed by the assistant.
 
 ## Scope
 
-This verification record covers the clean A0–A7 baseline plus A7.1–A7.5 hardening, A8/A8.1/A8.2/A8.3 UI work, A9 frontend-safe audit result contract, and A10.1–A10.30 public tool batches.
+This verification record covers the clean A0–A7 baseline plus A7.1–A7.5 hardening, A8/A8.1/A8.2/A8.3 UI work, A9 frontend-safe audit result contract, and A10.1–A10.31 public tool batches.
+
+# A10.31 — Cron Expression Workbench / JWT Inspection Lab
+
+## Scope
+
+- promoted `WD-072` as `cron-expression-workbench` rather than publishing separate generator and parser microtools:
+  - supports exactly five Unix cron fields with wildcards, values, lists, ranges, steps, JAN–DEC, and SUN–SAT;
+  - validates field ranges and uses Vixie-style OR semantics when both day-of-month and day-of-week are restricted;
+  - previews up to 10 next occurrences in UTC through a dedicated Worker;
+  - expression length is limited to 256 characters; preview is limited to 366 days, a fixed iteration cap, and a 1,000 ms UI timeout;
+  - the Worker validates its own request bounds and has no dynamic execution, network API, scheduler execution, or persistence;
+  - seconds, year, Quartz tokens, macros, IANA timezone/DST modelling, systemd timers, and scheduler job creation remain out of scope;
+- promoted `WD-074` as `jwt-inspection-lab` rather than a thin decoder:
+  - accepts a compact three-segment JWT/JWS up to 64 KiB and rejects five-segment JWE;
+  - strictly validates Base64URL, fatal UTF-8, JSON objects, depth 64, and 5,000 JSON nodes;
+  - displays header and payload and reviews `exp`, `nbf`, `iat`, `iss`, `sub`, `aud`, and `jti` against the browser clock with bounded skew;
+  - warns about `alg=none`, missing/invalid/unknown algorithms, HMAC shared-secret context, empty signature, malformed claims, and the fact that decoding does not verify authenticity;
+  - performs no signature verification, remote JWKS lookup, OAuth/OIDC discovery, token exchange, network request, logging, history, or persistent storage;
+- kept `WD-073` and `WD-075` internal because the separate cron parser and URL parser would duplicate stronger existing workflows;
+- public tool count is now 90; registry entry count remains 125.
+
+## Verified in the patch sandbox
+
+```text
+strict TypeScript compile for the pure engine
+PASS — strict, noUncheckedIndexedAccess, isolatedModules
+
+stubbed strict JSX/React TypeScript compile for the new UI boundary
+PASS — engine and component compile under strict local declarations
+
+runtime and Worker assertions
+PASS — cron grammar/names/ranges/Sunday handling/request caps, deterministic UTC occurrences, forged request rejection, JWT decoding/claims/alg=none/expiry/JWE/size/depth/prototype-safety
+
+npm run test:workspace
+PASS — 37/37
+
+npm run verify:registry
+PASS — 125 unique tools, 90 ready tools, no weak ready microtools
+
+python -m pytest apps/api/tests -q
+PASS — 200/200
+
+registry JSON sync and ready renderer/editorial parity
+PASS — backend registry byte-identical; 90/90 ready slugs covered; internal IDs/slugs absent from public editorial source
+
+security source scan
+PASS — no eval, Function construction, fetch, XHR, WebSocket, EventSource, importScripts, browser storage, console token logging, or dangerouslySetInnerHTML in the new implementation
+```
+
+## Environment blocker and required local verification
+
+- `npm ci` was retried and failed with HTTP 503 from the package mirror while downloading `zod-validation-error-4.0.2.tgz`; therefore project Vitest, ESLint, official workspace typecheck, Next build, built-site verification, Playwright, and visual review were not executable in this sandbox;
+- the Python project virtualenv was not rebuilt, so the aggregate Python/Ruff/lock scripts remain required even though the available API pytest suite passed;
+- before commit, run `npm run verify:local`, review actual/diff images for the two catalog snapshots, and confirm no unrelated homepage or handoff-builder files enter staging.
+
+---
 
 # A10.30 — SQL / GraphQL / Safe Regex code workbench
 
