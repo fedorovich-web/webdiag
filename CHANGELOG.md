@@ -1,5 +1,13 @@
 # Changelog
 
+## A10.36 — HTML entity and bounded text diff tools
+
+- Activated HTML Entities Encoder / Decoder for local encoding of HTML-significant characters and bounded decoding of common named, decimal, and hexadecimal entity references without executing decoded markup.
+- Activated Text and Code Diff Checker for deterministic line-level comparison, CRLF/CR normalization, optional trailing-whitespace ignoring, summary counters, and bounded unified-diff output.
+- Enforced 200,000-character input limits, Unicode scalar validation for entity conversion, 5,000-line limits, a 2,000,000-cell comparison budget, and a 350,000-character diff-output cap.
+- Added pure TypeScript contracts, RU/EN interfaces and editorial pages, renderer coverage, registry/API parity updates, unit tests, and focused browser tests without backend routes or new dependencies.
+- Registry remains at 125 entries and now exposes 102 ready public tools; exactly two existing internal development-data entries were promoted.
+
 ## A10.35 — CSS layout and effects tools
 
 - Activated Clip-path Generator, CSS Filter Playground, CSS Grid Generator, and Flexbox Playground as browser-only R0 tools.

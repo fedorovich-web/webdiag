@@ -1370,8 +1370,11 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Кодирует HTML-значимые символы и декодирует именованные и числовые HTML-сущности локально с ограничением размера ввода.",
+      "en": "Encodes HTML-significant characters and decodes named and numeric HTML entities locally with bounded input."
+    }
   },
   {
     "id": "WD-078",
@@ -1403,8 +1406,11 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Сравнивает два текста построчно локально, показывает добавления, удаления и замены и формирует ограниченный unified diff.",
+      "en": "Compares two texts line by line locally, reports additions, deletions, and replacements, and produces a bounded unified diff."
+    }
   },
   {
     "id": "WD-080",
