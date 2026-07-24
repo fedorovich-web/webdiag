@@ -115,6 +115,12 @@ import {
   CssSpecificityCalculatorTool,
   TypographyScaleGeneratorTool,
 } from "./css-design-analysis-tools";
+import {
+  ClipPathGeneratorTool,
+  CssFilterPlaygroundTool,
+  CssGridGeneratorTool,
+  FlexboxPlaygroundTool,
+} from "./css-layout-effects-tools";
 import { dictionary } from "../../lib/i18n";
 
 interface ToolRendererProps {
@@ -277,6 +283,10 @@ export const SUPPORTED_TOOL_SLUGS = [
   "color-converter",
   "css-specificity-calculator",
   "typography-scale-generator",
+  "clip-path-generator",
+  "css-filter-playground",
+  "css-grid-generator",
+  "flexbox-playground",
   "gradient-generator",
   "box-shadow-generator",
   "border-radius-generator",
@@ -377,6 +387,10 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "color-converter": return <ColorConverterTool locale={locale} />;
     case "css-specificity-calculator": return <CssSpecificityCalculatorTool locale={locale} />;
     case "typography-scale-generator": return <TypographyScaleGeneratorTool locale={locale} />;
+    case "clip-path-generator": return <ClipPathGeneratorTool locale={locale} />;
+    case "css-filter-playground": return <CssFilterPlaygroundTool locale={locale} />;
+    case "css-grid-generator": return <CssGridGeneratorTool locale={locale} />;
+    case "flexbox-playground": return <FlexboxPlaygroundTool locale={locale} />;
     case "gradient-generator": return <GradientGeneratorTool locale={locale} />;
     case "box-shadow-generator": return <BoxShadowGeneratorTool locale={locale} />;
     case "border-radius-generator": return <BorderRadiusGeneratorTool locale={locale} />;

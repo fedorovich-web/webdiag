@@ -1541,8 +1541,11 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Генерирует bounded CSS clip-path локально: inset, circle, ellipse и четырёхточечный polygon с проверкой процентных значений, preview и copyable CSS declaration.",
+      "en": "Generates bounded CSS clip-path locally: inset, circle, ellipse, and a four-point polygon with percentage validation, preview, and a copyable CSS declaration."
+    }
   },
   {
     "id": "WD-088",
@@ -1556,8 +1559,11 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Генерирует CSS filter declaration локально: blur, brightness, contrast, grayscale, saturate и hue-rotate с bounded ranges, preview и copyable output.",
+      "en": "Generates CSS filter declarations locally: blur, brightness, contrast, grayscale, saturate, and hue-rotate with bounded ranges, preview, and copyable output."
+    }
   },
   {
     "id": "WD-089",
@@ -1625,8 +1631,11 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Генерирует базовый CSS Grid container локально: repeat/minmax columns, rows, gap и bounded min column size без layout editor или stylesheet parsing.",
+      "en": "Generates a basic CSS Grid container locally: repeat/minmax columns, rows, gap, and bounded min column size without a layout editor or stylesheet parsing."
+    }
   },
   {
     "id": "WD-093",
@@ -1640,8 +1649,11 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Генерирует Flexbox container declaration локально: direction, justify-content, align-items, gap и wrap с bounded output без child item rules.",
+      "en": "Generates Flexbox container declarations locally: direction, justify-content, align-items, gap, and wrap with bounded output and no child item rules."
+    }
   },
   {
     "id": "WD-094",
