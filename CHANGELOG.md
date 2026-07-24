@@ -1,5 +1,12 @@
 # Changelog
 
+## A10.35 — CSS layout and effects tools
+
+- Activated Clip-path Generator, CSS Filter Playground, CSS Grid Generator, and Flexbox Playground as browser-only R0 tools.
+- Kept the tools bounded: no arbitrary CSS execution, no DOM/layout inspection, no file uploads, no canvas export, no network request, and no dependency addition.
+- Added deterministic TypeScript contracts, RU/EN tool UI, editorial pages, renderer coverage, registry/API count updates, and targeted unit tests.
+- Registry remains at 125 entries and now exposes 100 ready public tools; four existing internal CSS-design entries were promoted.
+
 ## A10.34 — CSS color / specificity / typography tools
 
 - Activated Color Converter for local HEX normalization and HEX → RGB/HSL conversion with copyable CSS values, channel display, preview, and strict 3/6-digit HEX validation.
@@ -15,6 +22,7 @@
 - Kept each generator local with explicit numeric caps, HEX-only color parsing where applicable, no backend calls, no storage, no canvas export, no AI design claims, and no remote assets.
 - Added pure TypeScript generation helpers, RU/EN tool UIs, editorial pages, runtime tests, renderer coverage, and registry/API parity updates.
 - Registry remains at 125 entries and now exposes 93 ready public tools; exactly three existing internal CSS-design entries were promoted.
+
 ## A10.31 — Cron Expression Workbench / JWT Inspection Lab
 
 - Replaced the planned separate cron generator/parser microtools with one Cron Expression Workbench for five-field Unix cron: builder fields, strict parsing, ranges/lists/steps, JAN–DEC and SUN–SAT names, Vixie-style day-of-month/day-of-week semantics, and normalized explanation.

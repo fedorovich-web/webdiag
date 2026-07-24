@@ -1,5 +1,27 @@
 # Verification Notes
 
+Patch scope: A10.35 CSS layout and effects tools. No commit or push was performed by the assistant.
+
+## Scope
+
+This verification record covers the clean A0–A7 baseline plus A7.1–A7.5 hardening, A8/A8.1/A8.2/A8.3 UI work, A9 frontend-safe audit result contract, and A10.1–A10.35 public tool batches.
+
+# A10.35 — CSS layout and effects tools
+
+## Scope
+
+- promoted `WD-087` as `clip-path-generator`;
+- promoted `WD-088` as `css-filter-playground`;
+- promoted `WD-092` as `css-grid-generator`;
+- promoted `WD-093` as `flexbox-playground`;
+- all four tools are browser-only R0 utilities with no backend request, no browser storage, no arbitrary CSS execution, no DOM/layout inspection, no file upload, no canvas export, no remote assets, and no dependency addition;
+- public tool count is now 100; registry entry count remains 125.
+
+## Required local verification
+
+- run `npm run verify:registry`, Vitest, ESLint, typecheck, build, built-site verification, Python/Ruff/lock gates, and Playwright;
+- review and update affected catalog/home visual snapshots after the public tool count changes from 96 to 100;
+- confirm no unrelated generated artifacts, `.next`, `test-results`, handoff files, or patch archives enter staging.
 
 ## A10.34 targeted verification
 
@@ -46,6 +68,7 @@ This verification record covers the clean A0–A7 baseline plus A7.1–A7.5 hard
 - confirm no unrelated generated artifacts, `.next`, `test-results`, or handoff files enter staging.
 
 ---
+
 # A10.31 — Cron Expression Workbench / JWT Inspection Lab
 
 ## Scope
