@@ -121,6 +121,10 @@ import {
   CssGridGeneratorTool,
   FlexboxPlaygroundTool,
 } from "./css-layout-effects-tools";
+import {
+  DiffCheckerTool,
+  HtmlEntitiesConverterTool,
+} from "./text-encoding-diff-tools";
 import { dictionary } from "../../lib/i18n";
 
 interface ToolRendererProps {
@@ -264,7 +268,9 @@ export const SUPPORTED_TOOL_SLUGS = [
   "ulid-generator",
   "unix-timestamp-converter",
   "url-encoder-decoder",
+  "html-entities-converter",
   "base64-converter",
+  "diff-checker",
   "json-formatter-validator",
   "json-schema-validator",
   "jsonpath-tester",
@@ -368,7 +374,9 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "ulid-generator": return <Generator locale={locale} kind="ulid" />;
     case "unix-timestamp-converter": return <UnixTimestampTool locale={locale} />;
     case "url-encoder-decoder": return <TextCodec locale={locale} kind="url" />;
+    case "html-entities-converter": return <HtmlEntitiesConverterTool locale={locale} />;
     case "base64-converter": return <TextCodec locale={locale} kind="base64" />;
+    case "diff-checker": return <DiffCheckerTool locale={locale} />;
     case "json-formatter-validator": return <JsonTool locale={locale} />;
     case "json-schema-validator": return <JsonSchemaValidatorTool locale={locale} />;
     case "jsonpath-tester": return <JsonPathTesterTool locale={locale} />;

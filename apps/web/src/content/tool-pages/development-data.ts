@@ -125,6 +125,88 @@ export const developmentDataToolPages = [
     sourceUrls: ["https://developer.mozilla.org/docs/Glossary/Base64"],
   }),
   toolPage({
+    slug: "html-entities-converter",
+    seoTitle: { ru: "HTML Entities Encoder и Decoder онлайн", en: "HTML Entities Encoder & Decoder Online" },
+    metaDescription: { ru: "Кодируйте HTML-значимые символы и декодируйте именованные, десятичные и шестнадцатеричные HTML-сущности локально в браузере.", en: "Encode HTML-significant characters and decode named, decimal, and hexadecimal HTML entities locally in your browser." },
+    h1: { ru: "Кодирование и декодирование HTML-сущностей", en: "HTML Entity Encoder and Decoder" },
+    lead: { ru: "Преобразуйте текст в безопасную для HTML-показа форму или восстановите символы из поддерживаемых entity references без выполнения полученной разметки.", en: "Convert text to an HTML-display-safe form or restore characters from supported entity references without executing the resulting markup." },
+    quickFacts: [
+      { ru: "Named и numeric entities", en: "Named and numeric entities" },
+      { ru: "Лимит 200 000 символов", en: "200,000-character limit" },
+      { ru: "Локальная обработка", en: "Local processing" },
+    ],
+    howToSteps: [
+      { ru: "Введите обычный текст или строку с HTML-сущностями.", en: "Enter plain text or a string containing HTML entities." },
+      { ru: "Для кодирования выберите обработку кавычек и non-ASCII символов.", en: "For encoding, choose whether to process quotation marks and non-ASCII characters." },
+      { ru: "Запустите кодирование или декодирование и скопируйте результат.", en: "Run encode or decode and copy the result." },
+    ],
+    supportedFeatures: [
+      { ru: "Кодирование &, <, > и опционально кавычек.", en: "Encoding for &, <, >, and optional quotation marks." },
+      { ru: "Декодирование common named entities и числовых ссылок в decimal или hexadecimal формате.", en: "Decoding for common named entities and decimal or hexadecimal numeric references." },
+      { ru: "Поддержка Unicode code points, включая символы вне Basic Multilingual Plane.", en: "Unicode code point support, including characters outside the Basic Multilingual Plane." },
+    ],
+    limitations: [
+      { ru: "Именованные сущности ограничены документированным набором; неизвестные имена сохраняются без изменения.", en: "Named entities are limited to the documented set; unknown names remain unchanged." },
+      { ru: "Декодирование требует завершающую точку с запятой и отклоняет U+0000, surrogate и значения выше U+10FFFF.", en: "Decoding requires a terminating semicolon and rejects U+0000, surrogates, and values above U+10FFFF." },
+    ],
+    useCases: [
+      { ru: "Подготовка фрагмента текста для показа внутри HTML.", en: "Preparing a text fragment for display inside HTML." },
+      { ru: "Проверка entity references в шаблоне или CMS-контенте.", en: "Inspecting entity references in a template or CMS content." },
+      { ru: "Восстановление читаемого текста из тестового HTML payload.", en: "Restoring readable text from a test HTML payload." },
+    ],
+    technicalNotes: [
+      { ru: "Результат выводится как обычный текст через React и не передаётся в dangerouslySetInnerHTML.", en: "Output is rendered as plain React text and is never passed to dangerouslySetInnerHTML." },
+      { ru: "Non-ASCII символы можно оставить без изменения либо представить decimal или uppercase hexadecimal references.", en: "Non-ASCII characters can remain unchanged or be emitted as decimal or uppercase hexadecimal references." },
+    ],
+    faq: [
+      { question: { ru: "Декодированный HTML выполняется на странице?", en: "Is decoded HTML executed on the page?" }, answer: { ru: "Нет. Результат показывается как текст, поэтому теги и script-фрагменты не исполняются.", en: "No. The result is displayed as text, so tags and script fragments are not executed." } },
+      { question: { ru: "Поддерживаются сущности без точки с запятой?", en: "Are entities without a semicolon supported?" }, answer: { ru: "Нет. Инструмент требует явную завершающую точку с запятой, чтобы избежать неоднозначного декодирования.", en: "No. The tool requires an explicit terminating semicolon to avoid ambiguous decoding." } },
+    ],
+    relatedToolSlugs: ["url-encoder-decoder", "base64-converter", "diff-checker", "json-formatter-validator"],
+    sourceUrls: ["https://developer.mozilla.org/docs/Glossary/Character_reference"],
+  }),
+  toolPage({
+    slug: "diff-checker",
+    seoTitle: { ru: "Сравнение текста и кода построчно онлайн", en: "Line-by-Line Text & Code Diff Checker" },
+    metaDescription: { ru: "Сравните два текста построчно, найдите добавления, удаления и группы замен и получите ограниченный unified diff локально в браузере.", en: "Compare two texts line by line, find additions, deletions, and replacement groups, and generate a bounded unified diff locally in your browser." },
+    h1: { ru: "Построчное сравнение текста и кода", en: "Line-by-Line Text and Code Diff Checker" },
+    lead: { ru: "Сопоставьте исходную и изменённую версии, получите детерминированную сводку и текстовый unified diff без загрузки данных и без применения patch.", en: "Compare original and changed versions, receive a deterministic summary and text-only unified diff without uploading data or applying a patch." },
+    quickFacts: [
+      { ru: "Line-level diff", en: "Line-level diff" },
+      { ru: "До 5 000 строк на сторону", en: "Up to 5,000 lines per side" },
+      { ru: "Без patch apply", en: "No patch application" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте исходный текст в первое поле.", en: "Paste the original text into the first field." },
+      { ru: "Вставьте изменённую версию и при необходимости включите игнорирование trailing whitespace.", en: "Paste the changed version and optionally enable trailing-whitespace ignoring." },
+      { ru: "Запустите сравнение, проверьте сводку и скопируйте diff.", en: "Run the comparison, review the summary, and copy the diff." },
+    ],
+    supportedFeatures: [
+      { ru: "Детерминированное сравнение строк с добавлениями, удалениями и replacement groups.", en: "Deterministic line comparison with additions, deletions, and replacement groups." },
+      { ru: "Нормализация CRLF и CR в LF перед сравнением.", en: "CRLF and CR normalization to LF before comparison." },
+      { ru: "Опциональное игнорирование пробелов и табуляции только в конце строки.", en: "Optional ignoring of spaces and tabs only at the end of each line." },
+    ],
+    limitations: [
+      { ru: "Это построчный diff без word-level подсветки, syntax parsing и автоматического merge.", en: "This is a line-level diff without word-level highlighting, syntax parsing, or automatic merge." },
+      { ru: "Каждая сторона ограничена 200 000 символов и 5 000 строк; матрица сравнения ограничена 2 000 000 операций.", en: "Each side is limited to 200,000 characters and 5,000 lines; the comparison matrix is capped at 2,000,000 operations." },
+    ],
+    useCases: [
+      { ru: "Проверка изменений конфигурации перед review.", en: "Reviewing configuration changes before approval." },
+      { ru: "Сравнение двух версий текстового ответа API.", en: "Comparing two versions of a text API response." },
+      { ru: "Поиск добавленных и удалённых строк в небольшом code fragment.", en: "Finding added and removed lines in a small code fragment." },
+    ],
+    technicalNotes: [
+      { ru: "Алгоритм использует bounded LCS matrix и фиксированный tie-breaker для воспроизводимого результата.", en: "The algorithm uses a bounded LCS matrix and a fixed tie-breaker for reproducible output." },
+      { ru: "Unified diff содержит один bounded hunk для полного введённого текста и отображается как plain text.", en: "The unified diff contains one bounded hunk for the full entered text and is rendered as plain text." },
+    ],
+    faq: [
+      { question: { ru: "Инструмент может применить полученный patch?", en: "Can the tool apply the generated patch?" }, answer: { ru: "Нет. Он только формирует текстовое представление различий и ничего не изменяет в файлах или репозитории.", en: "No. It only produces a text representation of differences and changes no files or repositories." } },
+      { question: { ru: "Почему большое сравнение может быть отклонено?", en: "Why can a large comparison be rejected?" }, answer: { ru: "Фиксированные лимиты символов, строк и операций предотвращают зависание вкладки на небезопасно большом вводе.", en: "Fixed character, line, and operation limits prevent the tab from stalling on unsafe input sizes." } },
+    ],
+    relatedToolSlugs: ["html-entities-converter", "json-formatter-validator", "regex-tester", "base64-converter"],
+    sourceUrls: ["https://www.gnu.org/software/diffutils/manual/html_node/Unified-Format.html"],
+  }),
+  toolPage({
     slug: "hash-generator",
     seoTitle: { ru: "Генератор SHA-256, SHA-384 и SHA-512", en: "SHA-256, SHA-384 & SHA-512 Hash Generator" },
     metaDescription: { ru: "Вычислите SHA-256, SHA-384 или SHA-512 для введённого текста через Web Crypto API прямо в браузере.", en: "Calculate SHA-256, SHA-384, or SHA-512 for entered text with the Web Crypto API directly in your browser." },

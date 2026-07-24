@@ -1,10 +1,48 @@
 # Verification Notes
 
-Patch scope: A10.35 CSS layout and effects tools. No commit or push was performed by the assistant.
+Patch scope: A10.36 HTML entity and bounded text diff tools. No commit or push was performed by the assistant.
 
 ## Scope
 
-This verification record covers the clean A0–A7 baseline plus A7.1–A7.5 hardening, A8/A8.1/A8.2/A8.3 UI work, A9 frontend-safe audit result contract, and A10.1–A10.35 public tool batches.
+This verification record covers the clean A0–A7 baseline plus A7.1–A7.5 hardening, A8/A8.1/A8.2/A8.3 UI work, A9 frontend-safe audit result contract, and A10.1–A10.36 public tool batches.
+
+# A10.36 — HTML entity and bounded text diff tools
+
+## Scope
+
+- promoted `WD-077` as `html-entities-converter`;
+- promoted `WD-079` as `diff-checker`;
+- kept both tools browser-only R0 with no backend request, browser storage, file access, network request, dynamic execution, HTML execution, patch application, or dependency addition;
+- entity conversion is capped at 200,000 UTF-16 code units and rejects U+0000, isolated surrogates, invalid numeric references, and entity bodies longer than 32 characters;
+- line diff normalizes CRLF/CR to LF, optionally ignores trailing spaces/tabs, caps each side at 200,000 characters and 5,000 lines, caps the LCS matrix at 2,000,000 cells, and caps unified-diff output at 350,000 characters;
+- public tool count is now 102; registry entry count remains 125.
+
+## Targeted verification
+
+```bash
+npm run verify:registry
+npm --workspace @webdiag/web exec -- vitest run \
+  src/features/tools/text-encoding-diff-tools.test.ts \
+  src/features/tools/tool-renderer.test.ts \
+  src/content/tool-pages.test.ts \
+  --pool=forks --maxWorkers=1
+node scripts/run-python.mjs -m pytest apps/api/tests/test_registry.py apps/api/tests/test_api.py -q
+npm run typecheck
+npm run build
+npm --workspace @webdiag/web exec -- playwright test \
+  e2e/text-encoding-diff.spec.ts \
+  e2e/tool-content.spec.ts \
+  e2e/catalog-design.spec.ts \
+  --project=chromium
+```
+
+## Required release verification
+
+- run `npm run verify:local` after all targeted tests pass;
+- review the actual/diff images and update only the Windows Chromium RU catalog desktop/mobile snapshots affected by the public count change from 100 to 102;
+- rerun the complete visual suite after snapshot acceptance;
+- confirm no `.next`, `test-results`, downloaded dependencies, handoff files, or patch archives enter staging;
+- stage only the exact A10.36 file list, run `git diff --cached --check`, and commit only after the exact artifact is green.
 
 # A10.35 — CSS layout and effects tools
 
