@@ -16,7 +16,7 @@ Recover the latest known WebDiag development state into GitHub without modifying
 
 ## Recovered candidate evidence
 
-Two independent local sources were compared:
+Three evidence inputs were compared:
 
 1. the preserved verified handoff based on Git HEAD `d9f0a9208499cd626cd172e3c8b2ef4878ab1dba`, with its documented dirty A11.0/account worktree;
 2. `webdiag-a11.5-cumulative-replacement-files.zip`, whose recorded SHA-256 is `f36a0aac6a16148df836820bd4506229530e74c8f50f7131399532c55a03089f`;
