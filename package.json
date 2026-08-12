@@ -36,7 +36,24 @@
   },
   "overrides": {
     "next": {
-      "postcss": "8.5.19"
+      "postcss": "8.5.23"
+    },
+    "eslint": {
+      "@eslint/eslintrc": {
+        "js-yaml": "4.3.1"
+      }
+    },
+    "minimatch@3.1.5": {
+      "brace-expansion": "1.1.18"
+    },
+    "eslint-config-next": {
+      "typescript-eslint": {
+        "@typescript-eslint/typescript-estree": {
+          "minimatch": {
+            "brace-expansion": "5.0.9"
+          }
+        }
+      }
     }
   }
 }
