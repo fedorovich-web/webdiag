@@ -44,8 +44,10 @@ test.describe("home information architecture", () => {
       page.getByRole("button", { name: "Проверить сайт" }),
     ).toBeVisible();
     await expect(page.getByLabel("Адрес сайта или страницы")).toBeVisible();
-    await expect(page.getByRole("link", { name: "Войти" })).toHaveCount(0);
-    await expect(page.getByText("Войти", { exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Войти" })).toHaveAttribute(
+      "href",
+      "/login",
+    );
 
     const designState = await page.evaluate(() => {
       const root = getComputedStyle(document.documentElement);
@@ -138,6 +140,10 @@ test.describe("home information architecture", () => {
     await expect(
       page.getByRole("link", { name: "Русская версия" }),
     ).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("link", { name: "Личный кабинет" })).toHaveAttribute(
+      "href",
+      "/login",
+    );
 
     const dimensions = await page.evaluate(() => ({
       viewport: document.documentElement.clientWidth,

@@ -1,0 +1,75 @@
+import type { Locale } from "@webdiag/tool-registry";
+import { AccountClientError } from "./account-client";
+
+const ruMessages: Readonly<Record<string, string>> = {
+  account_project_origin_invalid: "Укажите публичный домен или HTTP(S) origin без пути.",
+  account_project_name_invalid: "Название проекта должно содержать от 2 до 80 символов.",
+  account_project_origin_exists: "Проект с таким доменом уже существует.",
+  account_project_limit_reached: "Достигнут лимит проектов аккаунта.",
+  account_project_not_found: "Проект не найден.",
+  account_saved_audit_not_found: "Сохранённый аудит не найден.",
+  account_saved_audit_limit_reached: "Достигнут лимит сохранённых аудитов проекта.",
+  account_saved_audit_too_large: "Результат аудита превышает допустимый размер.",
+  account_audit_failed: "Аудит сайта не удалось завершить.",
+  account_monitor_exists: "Мониторинг для проекта уже настроен.",
+  account_monitor_not_found: "Мониторинг проекта ещё не настроен.",
+  account_report_not_found: "Отчёт не найден.",
+  account_report_title_invalid: "Название отчёта должно содержать от 2 до 120 символов.",
+  account_report_locale_invalid: "Язык отчёта не поддерживается.",
+  account_report_limit_reached: "Достигнут лимит сохранённых отчётов.",
+  account_report_too_large: "Отчёт превышает допустимый размер.",
+  public_report_not_found: "Ссылка на отчёт недействительна, отозвана или истекла.",
+  account_invalid_email: "Укажите корректный адрес электронной почты.",
+  account_invalid_display_name: "Имя должно содержать от 2 до 80 символов.",
+  account_weak_password: "Используйте пароль длиной от 12 до 128 символов без части email.",
+  account_email_exists: "Аккаунт с такой почтой уже существует.",
+  account_invalid_credentials: "Неверная почта или пароль.",
+  account_invalid_request: "Проверьте заполненные поля.",
+  account_request_too_large: "Запрос превышает допустимый размер.",
+  account_api_unavailable: "Сервис аккаунтов временно недоступен.",
+  account_api_timeout: "Сервис аккаунтов не ответил вовремя.",
+  account_api_misconfigured: "Внутренний адрес API аккаунтов не настроен.",
+  account_api_invalid_response: "Сервис аккаунтов вернул некорректный ответ.",
+  account_invalid_response: "Сервис аккаунтов вернул неподдерживаемый формат данных.",
+};
+
+const enMessages: Readonly<Record<string, string>> = {
+  account_project_origin_invalid: "Enter a public domain or HTTP(S) origin without a path.",
+  account_project_name_invalid: "Project name must contain between 2 and 80 characters.",
+  account_project_origin_exists: "A project with this origin already exists.",
+  account_project_limit_reached: "The account project limit has been reached.",
+  account_project_not_found: "Project not found.",
+  account_saved_audit_not_found: "Saved audit not found.",
+  account_saved_audit_limit_reached: "The project saved-audit limit has been reached.",
+  account_saved_audit_too_large: "The saved audit result exceeds the allowed size.",
+  account_audit_failed: "The website audit could not be completed.",
+  account_monitor_exists: "Monitoring is already configured for this project.",
+  account_monitor_not_found: "Project monitoring is not configured yet.",
+  account_report_not_found: "Report not found.",
+  account_report_title_invalid: "Report title must contain between 2 and 120 characters.",
+  account_report_locale_invalid: "Report locale is not supported.",
+  account_report_limit_reached: "The saved-report limit has been reached.",
+  account_report_too_large: "The report exceeds the allowed size.",
+  public_report_not_found: "The report link is invalid, revoked, or expired.",
+  account_invalid_email: "Enter a valid email address.",
+  account_invalid_display_name: "Name must contain between 2 and 80 characters.",
+  account_weak_password: "Use a password between 12 and 128 characters without the email local part.",
+  account_email_exists: "An account with this email already exists.",
+  account_invalid_credentials: "Invalid email or password.",
+  account_invalid_request: "Check the submitted fields.",
+  account_request_too_large: "The request exceeds the allowed size.",
+  account_api_unavailable: "The account service is temporarily unavailable.",
+  account_api_timeout: "The account service did not respond in time.",
+  account_api_misconfigured: "The internal account API address is not configured.",
+  account_api_invalid_response: "The account service returned invalid data.",
+  account_invalid_response: "The account service returned an unsupported response format.",
+};
+
+export function accountErrorMessage(locale: Locale, error: unknown): string {
+  const fallback = locale === "ru"
+    ? "Не удалось выполнить запрос. Повторите попытку."
+    : "The request failed. Try again.";
+  if (!(error instanceof AccountClientError)) return fallback;
+  const messages = locale === "ru" ? ruMessages : enMessages;
+  return messages[error.code] ?? fallback;
+}

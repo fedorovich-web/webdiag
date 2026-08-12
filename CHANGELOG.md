@@ -1,5 +1,58 @@
 # Changelog
 
+## A11.5 — Saved reports and expiring share links
+
+- Added immutable ownership-scoped reports generated only from persisted `webdiag.account.saved_audit_payload.v1` data.
+- Added bounded report storage, HTML export, a print-ready view for browser PDF creation, and exact artifact hashing without a new rendering dependency.
+- Added hash-only share tokens with 1–30-day expiry, one-time token disclosure, revoke semantics, no public listing, and noindex/no-store public responses.
+- Added RU/EN report list/detail/share UI and a public report route without exposing user, project, audit, session, or raw-evidence fields.
+- Deliberately excluded server-side PDF generation, email/webhook delivery, analytics, and destructive report deletion.
+
+## A10.40 — Certificate Inspection Workbench
+
+- Activated WD-033 as a browser-local bounded PEM X.509 certificate viewer.
+- Added DER/ASN.1 inspection for subject, issuer, validity, SAN, algorithms, chain order, Basic Constraints, and SHA-256 fingerprints.
+- Explicitly rejects private keys and CSRs and makes no trust-store, OCSP, CRL, hostname, or network-validation claims.
+- Registry now exposes 103 ready tools and 22 internal tools.
+
+
+## A11.4 — Monitoring foundation
+
+- Added one ownership-scoped monitor per project with bounded cadence, IANA timezone, enable/pause state, next/last run timestamps, consecutive failure tracking, and a 100-run persisted history.
+- Added a real scheduled execution path: SQLite due-claim lease, existing audit service execution, stable fingerprint comparison, baseline/unchanged/changed/failed outcomes, and bounded retry delays.
+- Added authenticated internal `run-due`, a standard-library worker bridge, Dramatiq actor, and a dedicated Compose scheduler service without adding a new runtime dependency.
+- Added RU/EN configuration, run-now, and real history UI; deliberately excluded fake uptime, synthetic charts, incident management, and notification delivery claims.
+- Added `webdiag.monitor.notification_event.v1` as an event contract only for changed/failed runs; no provider or destination is configured or exposed.
+
+## A11.3 — Issues and priorities
+
+- Added ownership-scoped issue list and issue-detail projections derived only from persisted `webdiag.account.saved_audit_payload.v1` data, without new storage tables or repeated audits.
+- Added deterministic global fix order from persisted priority and severity, normalized SEO/performance/accessibility/security/content/technical categories, and bounded server-side filtering and sorting.
+- Added RU/EN issue list and detail routes inside the existing account shell with affected URLs and evidence-backed recommendations, while excluding raw evidence, tool mappings, internal run identifiers, and pseudo-AI conclusions.
+- Added strict same-origin client contracts, UUID/dotted-issue proxy confinement, no-store API responses, backend ownership tests, frontend validators, and browser coverage.
+
+## A11.2 — Account workspace UI
+
+- Added a route-aware account shell around the real A11.1 projects and saved-audit contracts without adding backend state or synthetic analytics.
+- Added a sticky desktop sidebar, accessible mobile drawer with focus trap/Escape restoration, RU/EN navigation, and a project switcher populated only from the ownership-scoped project list.
+- Reworked the account overview around real project count, recently updated projects, project creation, and the complete project list; creating a project updates the shell without a second list request.
+- Wrapped project and saved-audit routes in the same responsive shell, kept light/dark design-token parity, and added browser contracts for focus management, responsive overflow, project selection, and honest logout failure.
+
+## A11.1 — Projects and saved audits
+
+- Added ownership-scoped projects with canonical public HTTP(S) origins, duplicate protection, and a bounded 100-project account limit.
+- Added atomic server-side audit execution and persistence: the browser sends only the owned project ID, while WebDiag runs the existing audit service and stores a versioned safe result.
+- Added bounded saved-audit history, exact RU/EN client contracts, project/detail/report routes, accessible create/run/loading/error states, and same-origin proxy confinement.
+- Excluded raw evidence, internal tool mappings, source job/run identifiers, credentials, query strings, fragments, cross-origin affected URLs, delete/archive semantics, monitoring, and synthetic metrics.
+
+## A11.0 — Account foundation closeout
+
+- Reduced the account contract to registration, login, current session, and server-side logout without premature projects, saved-audit, monitoring, or usage-metric presentation.
+- Added bounded configuration for session TTL, active-session eviction, SQLite path confinement, and scrypt parameters, with Secure cookies required in production.
+- Kept only password hashes and session-token hashes in the foundation database and normalized account validation errors into a stable no-store envelope.
+- Hardened the Next.js account proxy to use only the private internal API origin and forward only the HttpOnly WebDiag session cookie.
+- Added localized RU/EN error states, retry behavior, honest logout handling, dark-mode-compatible account styles, and targeted backend/client/proxy/browser tests.
+
 ## A10.36 — HTML entity and bounded text diff tools
 
 - Activated HTML Entities Encoder / Decoder for local encoding of HTML-significant characters and bounded decoding of common named, decimal, and hexadecimal entity references without executing decoded markup.

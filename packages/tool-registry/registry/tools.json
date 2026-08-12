@@ -587,8 +587,11 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Локально разбирает цепочку PEM X.509-сертификатов, показывает subject, issuer, сроки, SAN, алгоритмы и SHA-256 fingerprint без сетевой проверки.",
+      "en": "Locally inspects a PEM X.509 certificate chain, showing subject, issuer, validity, SANs, algorithms, and SHA-256 fingerprints without network verification."
+    }
   },
   {
     "id": "WD-034",

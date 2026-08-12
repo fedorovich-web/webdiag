@@ -787,4 +787,21 @@ export const securityNetworkToolPages = [
     relatedToolSlugs: ["dns-lookup", "whois-lookup", "ssl-certificate-checker"],
     sourceUrls: ["https://www.rfc-editor.org/rfc/rfc9224", "https://www.rfc-editor.org/rfc/rfc9082", "https://data.iana.org/rdap/"],
   }),
+  toolPage({
+    slug: "pem-certificate-viewer",
+    seoTitle: { ru: "Просмотр PEM X.509-сертификатов онлайн", en: "PEM X.509 Certificate Viewer Online" },
+    metaDescription: { ru: "Локально разберите PEM-цепочку X.509: subject, issuer, сроки, SAN, алгоритмы и SHA-256 fingerprint без загрузки сертификатов.", en: "Inspect a PEM X.509 chain locally: subject, issuer, validity, SANs, algorithms, and SHA-256 fingerprints without uploading certificates." },
+    h1: { ru: "Просмотр PEM X.509-сертификатов", en: "PEM X.509 Certificate Viewer" },
+    lead: { ru: "Вставьте один или несколько публичных сертификатов, чтобы проверить структуру и порядок цепочки локально в браузере без сетевой валидации.", en: "Paste one or more public certificates to inspect their structure and chain order locally in your browser without network validation." },
+    quickFacts: [{ ru: "До 20 сертификатов", en: "Up to 20 certificates" }, { ru: "SHA-256 fingerprint", en: "SHA-256 fingerprint" }, { ru: "Без загрузки", en: "No upload" }],
+    howToSteps: [{ ru: "Вставьте PEM-блоки CERTIFICATE.", en: "Paste PEM CERTIFICATE blocks." }, { ru: "Запустите локальный разбор.", en: "Run the local inspection." }, { ru: "Проверьте subject, issuer, validity, SAN и порядок цепочки.", en: "Review subject, issuer, validity, SANs, and chain order." }],
+    supportedFeatures: [{ ru: "Разбирает bounded DER/ASN.1 X.509 certificate structure.", en: "Parses bounded DER/ASN.1 X.509 certificate structures." }, { ru: "Показывает serial, ключевой и signature algorithms, Basic Constraints и SAN.", en: "Shows serial, key and signature algorithms, Basic Constraints, and SANs." }, { ru: "Рассчитывает SHA-256 fingerprint через Web Crypto.", en: "Calculates SHA-256 fingerprints through Web Crypto." }],
+    limitations: [{ ru: "Не выполняет hostname verification, OCSP, CRL, trust-store или сетевую проверку цепочки.", en: "Does not perform hostname verification, OCSP, CRL, trust-store, or network chain validation." }, { ru: "CSR и закрытые ключи намеренно отклоняются.", en: "CSRs and private keys are intentionally rejected." }],
+    useCases: [{ ru: "Проверить публичный сертификат перед установкой.", en: "Inspect a public certificate before installation." }, { ru: "Сверить SAN и сроки действия.", en: "Review SANs and validity dates." }, { ru: "Сопоставить SHA-256 fingerprint вне сети.", en: "Compare a SHA-256 fingerprint offline." }],
+    technicalNotes: [{ ru: "Вход ограничен 1 000 000 символов, 20 сертификатами и 256 000 DER bytes на сертификат.", en: "Input is bounded to 1,000,000 characters, 20 certificates, and 256,000 DER bytes per certificate." }, { ru: "Результат является inspection, а не доказательством доверия сертификату.", en: "The result is an inspection, not proof that a certificate is trusted." }],
+    faq: [{ question: { ru: "Проверяется ли доверие браузера?", en: "Is browser trust verified?" }, answer: { ru: "Нет. Инструмент не использует системное trust store и не выполняет сетевые запросы.", en: "No. The tool does not use the system trust store or make network requests." } }, { question: { ru: "Можно вставить закрытый ключ?", en: "Can I paste a private key?" }, answer: { ru: "Нет. Закрытые ключи явно отклоняются и не должны передаваться инструментам анализа.", en: "No. Private keys are explicitly rejected and should not be submitted to inspection tools." } }],
+    relatedToolSlugs: ["ssl-certificate-checker", "tls-configuration-checker", "security-headers-checker"],
+    sourceUrls: ["https://www.rfc-editor.org/rfc/rfc5280", "https://www.rfc-editor.org/rfc/rfc7468"],
+  }),
+
 ] as const;

@@ -27,3 +27,5 @@ SHA256SUMS.txt
 *.log
 .DS_Store
 Thumbs.db
+
+.webdiag/
