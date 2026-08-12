@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import secrets
 import sqlite3
 import threading
 import time
@@ -46,6 +48,10 @@ class AIRunStateError(RuntimeError):
     pass
 
 
+class AILeaseLostError(RuntimeError):
+    pass
+
+
 @dataclass(frozen=True, slots=True)
 class CreditAccount:
     user_id: str
@@ -87,9 +93,24 @@ class StoredAIRun:
     deleted_at: int | None
 
 
+@dataclass(frozen=True, slots=True)
+class StoredAIClaim:
+    run_id: str
+    attempt_number: int
+    lease_token: str
+    lease_expires_at: int
+    tool_id: str
+    contract_version: str
+    model_policy: str
+    input_json: str
+
+
 class SqliteAIStore:
-    def __init__(self, database_path: str) -> None:
+    def __init__(self, database_path: str, *, lease_seconds: int = 900) -> None:
+        if not 60 <= lease_seconds <= 3600:
+            raise ValueError("AI lease seconds must be between 60 and 3600")
         self._path = Path(database_path)
+        self._lease_seconds = lease_seconds
         self._schema_lock = threading.Lock()
         self._schema_ready = False
 
@@ -465,6 +486,239 @@ class SqliteAIStore:
             connection.execute("COMMIT")
         return self._run(deleted)
 
+    def claim_pending(self, *, now: int | None = None) -> StoredAIClaim | None:
+        self.ensure_schema()
+        current = int(time.time()) if now is None else now
+        lease_token = secrets.token_urlsafe(32)
+        lease_hash = hashlib.sha256(lease_token.encode()).hexdigest()
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                """
+                SELECT r.*
+                FROM ai_runs AS r
+                LEFT JOIN ai_run_attempts AS a
+                    ON a.run_id = r.id
+                    AND a.attempt_number = (
+                        SELECT MAX(latest.attempt_number)
+                        FROM ai_run_attempts AS latest WHERE latest.run_id = r.id
+                    )
+                WHERE r.state = 'pending'
+                    OR (
+                        r.state = 'running'
+                        AND a.lease_expires_at <= ?
+                        AND a.submitted_at IS NULL
+                    )
+                ORDER BY r.created_at ASC, r.id ASC LIMIT 1
+                """,
+                (current,),
+            ).fetchone()
+            if row is None:
+                connection.execute("ROLLBACK")
+                return None
+            attempt_number = int(
+                connection.execute(
+                    """
+                    SELECT COALESCE(MAX(attempt_number), 0) + 1
+                    FROM ai_run_attempts WHERE run_id = ?
+                    """,
+                    (row["id"],),
+                ).fetchone()[0]
+            )
+            lease_expires_at = current + self._lease_seconds
+            connection.execute(
+                """
+                INSERT INTO ai_run_attempts(
+                    run_id, attempt_number, lease_token_hash, lease_expires_at, created_at
+                ) VALUES (?, ?, ?, ?, ?)
+                """,
+                (row["id"], attempt_number, lease_hash, lease_expires_at, current),
+            )
+            connection.execute(
+                "UPDATE ai_runs SET state = 'running', updated_at = ? WHERE id = ?",
+                (time.time_ns(), row["id"]),
+            )
+            connection.execute("COMMIT")
+        return StoredAIClaim(
+            run_id=str(row["id"]),
+            attempt_number=attempt_number,
+            lease_token=lease_token,
+            lease_expires_at=lease_expires_at,
+            tool_id=str(row["tool_id"]),
+            contract_version=str(row["contract_version"]),
+            model_policy=str(row["model_policy"]),
+            input_json=str(row["input_json"]),
+        )
+
+    def renew_lease(
+        self,
+        *,
+        run_id: str,
+        lease_token: str,
+        now: int | None = None,
+    ) -> int:
+        current = int(time.time()) if now is None else now
+        token_hash = hashlib.sha256(lease_token.encode()).hexdigest()
+        self.ensure_schema()
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            attempt = self._current_attempt(
+                connection,
+                run_id=run_id,
+                token_hash=token_hash,
+                now=current,
+            )
+            expires_at = current + self._lease_seconds
+            connection.execute(
+                """
+                UPDATE ai_run_attempts SET lease_expires_at = ?
+                WHERE run_id = ? AND attempt_number = ?
+                """,
+                (expires_at, run_id, attempt["attempt_number"]),
+            )
+            connection.execute("COMMIT")
+        return expires_at
+
+    def mark_submitted(
+        self,
+        *,
+        run_id: str,
+        lease_token: str,
+        now: int | None = None,
+    ) -> None:
+        current = int(time.time()) if now is None else now
+        token_hash = hashlib.sha256(lease_token.encode()).hexdigest()
+        self.ensure_schema()
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            attempt = self._current_attempt(
+                connection,
+                run_id=run_id,
+                token_hash=token_hash,
+                now=current,
+            )
+            connection.execute(
+                """
+                UPDATE ai_run_attempts SET submitted_at = COALESCE(submitted_at, ?)
+                WHERE run_id = ? AND attempt_number = ?
+                """,
+                (current, run_id, attempt["attempt_number"]),
+            )
+            connection.execute("COMMIT")
+
+    def complete_run(
+        self,
+        *,
+        run_id: str,
+        lease_token: str,
+        output_json: str,
+        output_sha256: str,
+        now: int | None = None,
+    ) -> StoredAIRun:
+        current = int(time.time()) if now is None else now
+        token_hash = hashlib.sha256(lease_token.encode()).hexdigest()
+        if hashlib.sha256(output_json.encode()).hexdigest() != output_sha256:
+            raise CreditIntegrityError("AI output digest does not match content")
+        self.ensure_schema()
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            attempt = self._current_attempt(
+                connection,
+                run_id=run_id,
+                token_hash=token_hash,
+                now=current,
+            )
+            run = self._run(
+                connection.execute("SELECT * FROM ai_runs WHERE id = ?", (run_id,)).fetchone()
+            )
+            self._settle_reservation(
+                connection,
+                run=run,
+                operation_type="capture",
+                available_delta=0,
+                reserved_delta=-run.credit_price,
+                reason="Completed AI run",
+                created_at=time.time_ns(),
+            )
+            updated_at = time.time_ns()
+            connection.execute(
+                """
+                UPDATE ai_runs SET state = 'succeeded', output_json = ?, output_sha256 = ?,
+                    public_error_code = NULL, updated_at = ? WHERE id = ?
+                """,
+                (output_json, output_sha256, updated_at, run_id),
+            )
+            connection.execute(
+                """
+                UPDATE ai_run_attempts SET completed_at = ?
+                WHERE run_id = ? AND attempt_number = ?
+                """,
+                (current, run_id, attempt["attempt_number"]),
+            )
+            row = connection.execute("SELECT * FROM ai_runs WHERE id = ?", (run_id,)).fetchone()
+            connection.execute("COMMIT")
+        return self._run(row)
+
+    def fail_run(
+        self,
+        *,
+        run_id: str,
+        lease_token: str,
+        error_code: str,
+        provider_unknown: bool,
+        now: int | None = None,
+    ) -> StoredAIRun:
+        if (
+            not error_code
+            or len(error_code) > 120
+            or any(
+                character not in "abcdefghijklmnopqrstuvwxyz0123456789_"
+                for character in error_code
+            )
+        ):
+            raise ValueError("AI public error code is invalid")
+        current = int(time.time()) if now is None else now
+        token_hash = hashlib.sha256(lease_token.encode()).hexdigest()
+        self.ensure_schema()
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            attempt = self._current_attempt(
+                connection,
+                run_id=run_id,
+                token_hash=token_hash,
+                now=current,
+            )
+            run = self._run(
+                connection.execute("SELECT * FROM ai_runs WHERE id = ?", (run_id,)).fetchone()
+            )
+            state = "provider_unknown" if provider_unknown else "failed"
+            self._settle_reservation(
+                connection,
+                run=run,
+                operation_type="release",
+                available_delta=run.credit_price,
+                reserved_delta=-run.credit_price,
+                reason=f"AI run ended as {state}",
+                created_at=time.time_ns(),
+            )
+            connection.execute(
+                """
+                UPDATE ai_runs SET state = ?, public_error_code = ?, updated_at = ?
+                WHERE id = ?
+                """,
+                (state, error_code, time.time_ns(), run_id),
+            )
+            connection.execute(
+                """
+                UPDATE ai_run_attempts SET completed_at = ?
+                WHERE run_id = ? AND attempt_number = ?
+                """,
+                (current, run_id, attempt["attempt_number"]),
+            )
+            row = connection.execute("SELECT * FROM ai_runs WHERE id = ?", (run_id,)).fetchone()
+            connection.execute("COMMIT")
+        return self._run(row)
+
     def list_ledger(self, *, user_id: str, limit: int) -> tuple[CreditLedgerEntry, ...]:
         if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 100:
             raise ValueError("ledger limit must be between 1 and 100")
@@ -512,6 +766,75 @@ class SqliteAIStore:
         if actual != expected:
             raise CreditIntegrityError("credit materialized balance does not match ledger")
         return actual
+
+    @staticmethod
+    def _current_attempt(
+        connection: sqlite3.Connection,
+        *,
+        run_id: str,
+        token_hash: str,
+        now: int,
+    ) -> sqlite3.Row:
+        attempt = connection.execute(
+            """
+            SELECT a.* FROM ai_run_attempts AS a
+            JOIN ai_runs AS r ON r.id = a.run_id
+            WHERE a.run_id = ? AND r.state = 'running'
+            ORDER BY a.attempt_number DESC LIMIT 1
+            """,
+            (run_id,),
+        ).fetchone()
+        if (
+            attempt is None
+            or str(attempt["lease_token_hash"]) != token_hash
+            or int(attempt["lease_expires_at"]) <= now
+            or attempt["completed_at"] is not None
+        ):
+            connection.execute("ROLLBACK")
+            raise AILeaseLostError
+        return attempt
+
+    def _settle_reservation(
+        self,
+        connection: sqlite3.Connection,
+        *,
+        run: StoredAIRun,
+        operation_type: str,
+        available_delta: int,
+        reserved_delta: int,
+        reason: str,
+        created_at: int,
+    ) -> None:
+        updated = connection.execute(
+            """
+            UPDATE credit_accounts
+            SET available = available + ?, reserved = reserved + ?, version = version + 1
+            WHERE user_id = ? AND reserved >= ?
+                AND available + ? >= 0 AND reserved + ? >= 0
+            """,
+            (
+                available_delta,
+                reserved_delta,
+                run.user_id,
+                run.credit_price,
+                available_delta,
+                reserved_delta,
+            ),
+        )
+        if updated.rowcount != 1:
+            connection.execute("ROLLBACK")
+            raise CreditIntegrityError("run reservation is unavailable")
+        self._insert_ledger(
+            connection,
+            user_id=run.user_id,
+            operation_type=operation_type,
+            available_delta=available_delta,
+            reserved_delta=reserved_delta,
+            run_id=run.id,
+            correlation_id=f"run:{run.id}:{operation_type}",
+            reason=reason,
+            created_at=created_at,
+        )
 
     @staticmethod
     def _bounded_text(value: str, *, name: str, maximum: int) -> str:

@@ -9,6 +9,7 @@ from webdiag_api.ai.models import (
     AIRunCreateRequest,
     AIRunResponse,
     AIToolResponse,
+    AIWorkerClaim,
     CreditAccountResponse,
     CreditLedgerEntryResponse,
     utc_from_ns,
@@ -20,6 +21,7 @@ from webdiag_api.ai.storage import (
     CreditAccount,
     CreditLedgerEntry,
     SqliteAIStore,
+    StoredAIClaim,
     StoredAIRun,
 )
 
@@ -39,10 +41,12 @@ class AIService:
         *,
         catalog: AIToolCatalog,
         input_max_bytes: int,
+        output_max_bytes: int = 1_000_000,
     ) -> None:
         self._store = store
         self._catalog = catalog
         self._input_max_bytes = input_max_bytes
+        self._output_max_bytes = output_max_bytes
 
     def catalog(self) -> AICatalogResponse:
         return AICatalogResponse(
@@ -145,6 +149,54 @@ class AIService:
     def list_ledger(self, *, user_id: str, limit: int) -> tuple[CreditLedgerEntry, ...]:
         return self._store.list_ledger(user_id=user_id, limit=limit)
 
+    def claim_pending(self) -> AIWorkerClaim | None:
+        claim = self._store.claim_pending()
+        return self._public_claim(claim) if claim is not None else None
+
+    def renew_lease(self, *, run_id: str, lease_token: str) -> int:
+        return self._store.renew_lease(run_id=run_id, lease_token=lease_token)
+
+    def mark_submitted(self, *, run_id: str, lease_token: str) -> None:
+        self._store.mark_submitted(run_id=run_id, lease_token=lease_token)
+
+    def complete_run(
+        self,
+        *,
+        run_id: str,
+        lease_token: str,
+        output: dict[str, object],
+    ) -> StoredAIRun:
+        output_json = json.dumps(
+            output,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        encoded = output_json.encode("utf-8")
+        if len(encoded) > self._output_max_bytes:
+            raise AIServiceError(413, "ai_output_too_large", "AI output is too large.")
+        return self._store.complete_run(
+            run_id=run_id,
+            lease_token=lease_token,
+            output_json=output_json,
+            output_sha256=hashlib.sha256(encoded).hexdigest(),
+        )
+
+    def fail_run(
+        self,
+        *,
+        run_id: str,
+        lease_token: str,
+        error_code: str,
+        provider_unknown: bool,
+    ) -> StoredAIRun:
+        return self._store.fail_run(
+            run_id=run_id,
+            lease_token=lease_token,
+            error_code=error_code,
+            provider_unknown=provider_unknown,
+        )
+
     @staticmethod
     def public_credit(account: CreditAccount) -> CreditAccountResponse:
         return CreditAccountResponse(available=account.available, reserved=account.reserved)
@@ -174,4 +226,17 @@ class AIService:
             error_code=run.public_error_code,
             created_at=utc_from_ns(run.created_at),
             updated_at=utc_from_ns(run.updated_at),
+        )
+
+    @staticmethod
+    def _public_claim(claim: StoredAIClaim) -> AIWorkerClaim:
+        return AIWorkerClaim(
+            run_id=claim.run_id,
+            attempt_number=claim.attempt_number,
+            lease_token=claim.lease_token,
+            lease_expires_at=claim.lease_expires_at,
+            tool_id=claim.tool_id,
+            contract_version=claim.contract_version,
+            model_policy=claim.model_policy,
+            input=json.loads(claim.input_json),
         )

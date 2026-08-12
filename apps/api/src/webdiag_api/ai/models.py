@@ -71,5 +71,44 @@ class CreditLedgerResponse(StrictAIModel):
     entries: tuple[CreditLedgerEntryResponse, ...]
 
 
+class AIWorkerClaim(StrictAIModel):
+    run_id: str
+    attempt_number: int = Field(gt=0)
+    lease_token: str
+    lease_expires_at: int
+    tool_id: str
+    contract_version: str
+    model_policy: str
+    input: dict[str, object]
+
+
+class AIWorkerClaimResponse(StrictAIModel):
+    contract_version: Literal["webdiag.ai.worker.v1"] = "webdiag.ai.worker.v1"
+    claim: AIWorkerClaim | None
+
+
+class AIWorkerLeaseRequest(StrictAIModel):
+    lease_token: str = Field(min_length=32, max_length=256)
+
+
+class AIWorkerLeaseResponse(StrictAIModel):
+    contract_version: Literal["webdiag.ai.worker.v1"] = "webdiag.ai.worker.v1"
+    lease_expires_at: int
+
+
+class AIWorkerCompleteRequest(AIWorkerLeaseRequest):
+    output: dict[str, object]
+
+
+class AIWorkerFailRequest(AIWorkerLeaseRequest):
+    error_code: str = Field(pattern=r"^[a-z0-9_]{1,120}$")
+    outcome: Literal["known_safe", "provider_unknown"]
+
+
+class AIWorkerRunResponse(StrictAIModel):
+    contract_version: Literal["webdiag.ai.worker.v1"] = "webdiag.ai.worker.v1"
+    state: Literal["running", "succeeded", "failed", "provider_unknown"]
+
+
 def utc_from_ns(value: int) -> datetime:
     return datetime.fromtimestamp(value / 1_000_000_000, tz=UTC)

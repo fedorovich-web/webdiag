@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hmac
 from functools import lru_cache
 from typing import Annotated
 from uuid import UUID
@@ -15,22 +16,33 @@ from webdiag_api.ai.models import (
     AIRunCreateRequest,
     AIRunDetailResponse,
     AIRunListResponse,
+    AIWorkerClaimResponse,
+    AIWorkerCompleteRequest,
+    AIWorkerFailRequest,
+    AIWorkerLeaseRequest,
+    AIWorkerLeaseResponse,
+    AIWorkerRunResponse,
     CreditBalanceResponse,
     CreditLedgerResponse,
 )
 from webdiag_api.ai.service import AIService, AIServiceError
-from webdiag_api.ai.storage import SqliteAIStore
+from webdiag_api.ai.storage import AILeaseLostError, SqliteAIStore
 from webdiag_api.config import settings
 
 router = APIRouter(prefix="/v1/account", tags=["account-ai"])
+internal_router = APIRouter(prefix="/v1/internal/ai", tags=["internal-ai"])
 
 
 @lru_cache(maxsize=1)
 def get_ai_service() -> AIService:
     return AIService(
-        SqliteAIStore(settings.account_database_path),
+        SqliteAIStore(
+            settings.account_database_path,
+            lease_seconds=settings.ai_lease_seconds,
+        ),
         catalog=DEFAULT_AI_CATALOG,
         input_max_bytes=settings.ai_input_max_bytes,
+        output_max_bytes=settings.ai_output_max_bytes,
     )
 
 
@@ -58,6 +70,17 @@ def _error(error: AIServiceError) -> HTTPException:
 
 def _no_store(response: Response) -> None:
     response.headers["cache-control"] = "no-store"
+
+
+def _authorize_internal(authorization: str | None) -> None:
+    expected = settings.ai_internal_token
+    supplied = authorization.removeprefix("Bearer ") if authorization else ""
+    if not expected or not hmac.compare_digest(supplied, expected):
+        raise HTTPException(
+            status_code=401,
+            detail={"code": "ai_internal_unauthorized", "message": "Unauthorized."},
+            headers={"Cache-Control": "no-store"},
+        )
 
 
 @router.get("/ai/catalog", response_model=AICatalogResponse)
@@ -170,3 +193,101 @@ def ledger(
     _no_store(response)
     entries = ai.list_ledger(user_id=_user_id(account_service, webdiag_session), limit=limit)
     return CreditLedgerResponse(entries=tuple(ai.public_ledger(entry) for entry in entries))
+
+
+@internal_router.post("/runs/claim", response_model=AIWorkerClaimResponse)
+def claim_run(
+    response: Response,
+    ai: AIServiceDependency,
+    authorization: Annotated[str | None, Header()] = None,
+) -> AIWorkerClaimResponse:
+    _no_store(response)
+    _authorize_internal(authorization)
+    return AIWorkerClaimResponse(claim=ai.claim_pending())
+
+
+@internal_router.post("/runs/{run_id}/renew", response_model=AIWorkerLeaseResponse)
+def renew_run(
+    run_id: UUID,
+    request: AIWorkerLeaseRequest,
+    response: Response,
+    ai: AIServiceDependency,
+    authorization: Annotated[str | None, Header()] = None,
+) -> AIWorkerLeaseResponse:
+    _no_store(response)
+    _authorize_internal(authorization)
+    try:
+        expires_at = ai.renew_lease(run_id=str(run_id), lease_token=request.lease_token)
+    except AILeaseLostError as error:
+        raise _internal_lease_error() from error
+    return AIWorkerLeaseResponse(lease_expires_at=expires_at)
+
+
+@internal_router.post("/runs/{run_id}/mark-submitted", response_model=AIWorkerRunResponse)
+def mark_run_submitted(
+    run_id: UUID,
+    request: AIWorkerLeaseRequest,
+    response: Response,
+    ai: AIServiceDependency,
+    authorization: Annotated[str | None, Header()] = None,
+) -> AIWorkerRunResponse:
+    _no_store(response)
+    _authorize_internal(authorization)
+    try:
+        ai.mark_submitted(run_id=str(run_id), lease_token=request.lease_token)
+    except AILeaseLostError as error:
+        raise _internal_lease_error() from error
+    return AIWorkerRunResponse(state="running")
+
+
+@internal_router.post("/runs/{run_id}/complete", response_model=AIWorkerRunResponse)
+def complete_run_internal(
+    run_id: UUID,
+    request: AIWorkerCompleteRequest,
+    response: Response,
+    ai: AIServiceDependency,
+    authorization: Annotated[str | None, Header()] = None,
+) -> AIWorkerRunResponse:
+    _no_store(response)
+    _authorize_internal(authorization)
+    try:
+        run = ai.complete_run(
+            run_id=str(run_id),
+            lease_token=request.lease_token,
+            output=request.output,
+        )
+    except AIServiceError as error:
+        raise _error(error) from error
+    except AILeaseLostError as error:
+        raise _internal_lease_error() from error
+    return AIWorkerRunResponse(state=run.state)
+
+
+@internal_router.post("/runs/{run_id}/fail", response_model=AIWorkerRunResponse)
+def fail_run_internal(
+    run_id: UUID,
+    request: AIWorkerFailRequest,
+    response: Response,
+    ai: AIServiceDependency,
+    authorization: Annotated[str | None, Header()] = None,
+) -> AIWorkerRunResponse:
+    _no_store(response)
+    _authorize_internal(authorization)
+    try:
+        run = ai.fail_run(
+            run_id=str(run_id),
+            lease_token=request.lease_token,
+            error_code=request.error_code,
+            provider_unknown=request.outcome == "provider_unknown",
+        )
+    except AILeaseLostError as error:
+        raise _internal_lease_error() from error
+    return AIWorkerRunResponse(state=run.state)
+
+
+def _internal_lease_error() -> HTTPException:
+    return HTTPException(
+        status_code=409,
+        detail={"code": "ai_run_lease_lost", "message": "AI run lease is no longer valid."},
+        headers={"Cache-Control": "no-store"},
+    )
