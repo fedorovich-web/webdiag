@@ -13,6 +13,7 @@ from webdiag_api.accounts.report_api import (
     public_router as report_public_router,
 )
 from webdiag_api.accounts.workspace_api import router as workspace_router
+from webdiag_api.ai.api import router as ai_router
 from webdiag_api.audit.api import router as audit_router
 from webdiag_api.config import settings
 from webdiag_api.registry import public_tools
@@ -46,6 +47,7 @@ app.add_middleware(
 )
 app.add_exception_handler(RequestValidationError, api_validation_exception_handler)
 app.include_router(account_router)
+app.include_router(ai_router)
 app.include_router(workspace_router)
 app.include_router(monitoring_router)
 app.include_router(report_account_router)

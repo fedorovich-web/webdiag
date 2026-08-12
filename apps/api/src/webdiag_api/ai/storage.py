@@ -34,6 +34,18 @@ class CreditIntegrityError(RuntimeError):
     pass
 
 
+class AIInsufficientCreditsError(RuntimeError):
+    pass
+
+
+class AIIdempotencyConflictError(RuntimeError):
+    pass
+
+
+class AIRunStateError(RuntimeError):
+    pass
+
+
 @dataclass(frozen=True, slots=True)
 class CreditAccount:
     user_id: str
@@ -53,6 +65,26 @@ class CreditLedgerEntry:
     correlation_id: str
     reason: str
     created_at: int
+
+
+@dataclass(frozen=True, slots=True)
+class StoredAIRun:
+    id: str
+    user_id: str
+    tool_id: str
+    contract_version: str
+    model_policy: str
+    credit_price: int
+    idempotency_key: str
+    input_json: str
+    input_sha256: str
+    state: str
+    output_json: str | None
+    output_sha256: str | None
+    public_error_code: str | None
+    created_at: int
+    updated_at: int
+    deleted_at: int | None
 
 
 class SqliteAIStore:
@@ -279,6 +311,160 @@ class SqliteAIStore:
             return CreditAccount(user_id=user_id, available=0, reserved=0, version=0)
         return self._credit_account(row)
 
+    def create_run(
+        self,
+        *,
+        user_id: str,
+        tool_id: str,
+        contract_version: str,
+        model_policy: str,
+        credit_price: int,
+        idempotency_key: str,
+        input_json: str,
+        input_sha256: str,
+    ) -> tuple[StoredAIRun, bool]:
+        self.ensure_schema()
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            existing = connection.execute(
+                "SELECT * FROM ai_runs WHERE user_id = ? AND idempotency_key = ?",
+                (user_id, idempotency_key),
+            ).fetchone()
+            if existing is not None:
+                run = self._run(existing)
+                if run.tool_id != tool_id or run.input_sha256 != input_sha256:
+                    connection.execute("ROLLBACK")
+                    raise AIIdempotencyConflictError
+                connection.execute("COMMIT")
+                return run, False
+            run_id = str(uuid.uuid4())
+            now = time.time_ns()
+            connection.execute(
+                """
+                INSERT INTO ai_runs(
+                    id, user_id, tool_id, contract_version, model_policy, credit_price,
+                    idempotency_key, input_json, input_sha256, state, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
+                """,
+                (
+                    run_id,
+                    user_id,
+                    tool_id,
+                    contract_version,
+                    model_policy,
+                    credit_price,
+                    idempotency_key,
+                    input_json,
+                    input_sha256,
+                    now,
+                    now,
+                ),
+            )
+            updated = connection.execute(
+                """
+                UPDATE credit_accounts
+                SET available = available - ?, reserved = reserved + ?, version = version + 1
+                WHERE user_id = ? AND available >= ?
+                """,
+                (credit_price, credit_price, user_id, credit_price),
+            )
+            if updated.rowcount != 1:
+                connection.execute("ROLLBACK")
+                raise AIInsufficientCreditsError
+            self._insert_ledger(
+                connection,
+                user_id=user_id,
+                operation_type="reserve",
+                available_delta=-credit_price,
+                reserved_delta=credit_price,
+                run_id=run_id,
+                correlation_id=f"run:{run_id}:reserve",
+                reason="AI run credit reservation",
+                created_at=now,
+            )
+            row = connection.execute("SELECT * FROM ai_runs WHERE id = ?", (run_id,)).fetchone()
+            connection.execute("COMMIT")
+        return self._run(row), True
+
+    def get_run_for_user(self, *, user_id: str, run_id: str) -> StoredAIRun | None:
+        self.ensure_schema()
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM ai_runs WHERE id = ? AND user_id = ?",
+                (run_id, user_id),
+            ).fetchone()
+        return self._run(row) if row is not None else None
+
+    def list_runs_for_user(self, *, user_id: str, limit: int) -> tuple[StoredAIRun, ...]:
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 50:
+            raise ValueError("run limit must be between 1 and 50")
+        self.ensure_schema()
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT * FROM ai_runs WHERE user_id = ?
+                ORDER BY created_at DESC, id DESC LIMIT ?
+                """,
+                (user_id, limit),
+            ).fetchall()
+        return tuple(self._run(row) for row in rows)
+
+    def delete_run_for_user(self, *, user_id: str, run_id: str) -> StoredAIRun | None:
+        self.ensure_schema()
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                "SELECT * FROM ai_runs WHERE id = ? AND user_id = ?",
+                (run_id, user_id),
+            ).fetchone()
+            if row is None:
+                connection.execute("ROLLBACK")
+                return None
+            run = self._run(row)
+            if run.state == "running":
+                connection.execute("ROLLBACK")
+                raise AIRunStateError
+            if run.state == "deleted":
+                connection.execute("COMMIT")
+                return run
+            now = time.time_ns()
+            if run.state == "pending":
+                updated = connection.execute(
+                    """
+                    UPDATE credit_accounts
+                    SET available = available + ?, reserved = reserved - ?, version = version + 1
+                    WHERE user_id = ? AND reserved >= ?
+                    """,
+                    (run.credit_price, run.credit_price, user_id, run.credit_price),
+                )
+                if updated.rowcount != 1:
+                    connection.execute("ROLLBACK")
+                    raise CreditIntegrityError("run reservation is unavailable")
+                self._insert_ledger(
+                    connection,
+                    user_id=user_id,
+                    operation_type="release",
+                    available_delta=run.credit_price,
+                    reserved_delta=-run.credit_price,
+                    run_id=run.id,
+                    correlation_id=f"run:{run.id}:delete-release",
+                    reason="Deleted pending AI run",
+                    created_at=now,
+                )
+            connection.execute(
+                """
+                UPDATE ai_runs
+                SET state = 'deleted', input_json = '{}', output_json = NULL,
+                    output_sha256 = NULL, public_error_code = NULL,
+                    updated_at = ?, deleted_at = ?
+                WHERE id = ? AND user_id = ?
+                """,
+                (now, now, run_id, user_id),
+            )
+            deleted = connection.execute("SELECT * FROM ai_runs WHERE id = ?", (run_id,)).fetchone()
+            connection.execute("COMMIT")
+        return self._run(deleted)
+
     def list_ledger(self, *, user_id: str, limit: int) -> tuple[CreditLedgerEntry, ...]:
         if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 100:
             raise ValueError("ledger limit must be between 1 and 100")
@@ -355,4 +541,64 @@ class SqliteAIStore:
             correlation_id=str(row["correlation_id"]),
             reason=str(row["reason"]),
             created_at=int(row["created_at"]),
+        )
+
+    @staticmethod
+    def _run(row: sqlite3.Row) -> StoredAIRun:
+        return StoredAIRun(
+            id=str(row["id"]),
+            user_id=str(row["user_id"]),
+            tool_id=str(row["tool_id"]),
+            contract_version=str(row["contract_version"]),
+            model_policy=str(row["model_policy"]),
+            credit_price=int(row["credit_price"]),
+            idempotency_key=str(row["idempotency_key"]),
+            input_json=str(row["input_json"]),
+            input_sha256=str(row["input_sha256"]),
+            state=str(row["state"]),
+            output_json=str(row["output_json"]) if row["output_json"] is not None else None,
+            output_sha256=(
+                str(row["output_sha256"]) if row["output_sha256"] is not None else None
+            ),
+            public_error_code=(
+                str(row["public_error_code"])
+                if row["public_error_code"] is not None
+                else None
+            ),
+            created_at=int(row["created_at"]),
+            updated_at=int(row["updated_at"]),
+            deleted_at=int(row["deleted_at"]) if row["deleted_at"] is not None else None,
+        )
+
+    @staticmethod
+    def _insert_ledger(
+        connection: sqlite3.Connection,
+        *,
+        user_id: str,
+        operation_type: str,
+        available_delta: int,
+        reserved_delta: int,
+        run_id: str,
+        correlation_id: str,
+        reason: str,
+        created_at: int,
+    ) -> None:
+        connection.execute(
+            """
+            INSERT INTO credit_ledger(
+                id, user_id, operation_type, available_delta, reserved_delta,
+                run_id, correlation_id, reason, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                str(uuid.uuid4()),
+                user_id,
+                operation_type,
+                available_delta,
+                reserved_delta,
+                run_id,
+                correlation_id,
+                reason,
+                created_at,
+            ),
         )
