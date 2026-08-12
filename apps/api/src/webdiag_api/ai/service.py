@@ -216,6 +216,9 @@ class AIService:
         run_id: str,
         lease_token: str,
         output: dict[str, object],
+        provider_request_id: str | None,
+        input_units: int,
+        output_units: int,
     ) -> StoredAIRun:
         output_json = json.dumps(
             output,
@@ -231,6 +234,9 @@ class AIService:
             lease_token=lease_token,
             output_json=output_json,
             output_sha256=hashlib.sha256(encoded).hexdigest(),
+            provider_request_id=provider_request_id,
+            input_units=input_units,
+            output_units=output_units,
         )
 
     def fail_run(

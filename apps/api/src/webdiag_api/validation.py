@@ -12,6 +12,11 @@ async def api_validation_exception_handler(
 ) -> Response:
     contracts = (
         ("/v1/account/", "account_invalid_request", "Invalid account request."),
+        (
+            "/v1/internal/ai/",
+            "ai_internal_invalid_request",
+            "Invalid internal AI request.",
+        ),
         ("/v1/audits", "audit_invalid_request", "Invalid audit request."),
     )
     for prefix, code, message in contracts:

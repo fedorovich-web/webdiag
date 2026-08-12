@@ -51,8 +51,12 @@ class ProviderResult:
 
     def __post_init__(self) -> None:
         for value in (self.input_units, self.output_units):
-            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
-                raise ValueError("provider usage must use non-negative integers")
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, int)
+                or not 0 <= value <= 1_000_000_000
+            ):
+                raise ValueError("provider usage must use bounded non-negative integers")
         if self.provider_request_id is not None and not 1 <= len(self.provider_request_id) <= 200:
             raise ValueError("provider request ID is invalid")
 
@@ -239,7 +243,13 @@ def run_one_ai_job(
     completed = _request_json(
         "POST",
         f"/v1/internal/ai/runs/{claim.run_id}/complete",
-        {"lease_token": lease_token, "output": result.output},
+        {
+            "lease_token": lease_token,
+            "output": result.output,
+            "provider_request_id": result.provider_request_id,
+            "input_units": result.input_units,
+            "output_units": result.output_units,
+        },
     )
     _validate_contract(completed)
     if completed.get("state") != "succeeded":

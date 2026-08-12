@@ -171,6 +171,10 @@ class SqliteAIStore:
                         lease_expires_at INTEGER NOT NULL,
                         submitted_at INTEGER,
                         provider_request_id TEXT,
+                        input_units INTEGER NOT NULL DEFAULT 0
+                            CHECK(input_units BETWEEN 0 AND 1000000000),
+                        output_units INTEGER NOT NULL DEFAULT 0
+                            CHECK(output_units BETWEEN 0 AND 1000000000),
                         created_at INTEGER NOT NULL,
                         completed_at INTEGER,
                         PRIMARY KEY(run_id, attempt_number),
@@ -222,6 +226,26 @@ class SqliteAIStore:
                     END;
                     """
                 )
+                connection.execute("BEGIN IMMEDIATE")
+                columns = {
+                    str(row[1])
+                    for row in connection.execute("PRAGMA table_info(ai_run_attempts)").fetchall()
+                }
+                if "input_units" not in columns:
+                    connection.execute(
+                        """
+                        ALTER TABLE ai_run_attempts ADD COLUMN input_units INTEGER NOT NULL
+                        DEFAULT 0 CHECK(input_units BETWEEN 0 AND 1000000000)
+                        """
+                    )
+                if "output_units" not in columns:
+                    connection.execute(
+                        """
+                        ALTER TABLE ai_run_attempts ADD COLUMN output_units INTEGER NOT NULL
+                        DEFAULT 0 CHECK(output_units BETWEEN 0 AND 1000000000)
+                        """
+                    )
+                connection.execute("COMMIT")
             self._schema_ready = True
 
     def grant_credits(
@@ -633,8 +657,16 @@ class SqliteAIStore:
         lease_token: str,
         output_json: str,
         output_sha256: str,
+        provider_request_id: str | None = None,
+        input_units: int = 0,
+        output_units: int = 0,
         now: int | None = None,
     ) -> StoredAIRun:
+        self._validate_provider_usage(
+            provider_request_id=provider_request_id,
+            input_units=input_units,
+            output_units=output_units,
+        )
         current = int(time.time()) if now is None else now
         token_hash = hashlib.sha256(lease_token.encode()).hexdigest()
         if hashlib.sha256(output_json.encode()).hexdigest() != output_sha256:
@@ -670,10 +702,19 @@ class SqliteAIStore:
             )
             connection.execute(
                 """
-                UPDATE ai_run_attempts SET completed_at = ?
+                UPDATE ai_run_attempts
+                SET completed_at = ?, provider_request_id = ?,
+                    input_units = ?, output_units = ?
                 WHERE run_id = ? AND attempt_number = ?
                 """,
-                (current, run_id, attempt["attempt_number"]),
+                (
+                    current,
+                    provider_request_id,
+                    input_units,
+                    output_units,
+                    run_id,
+                    attempt["attempt_number"],
+                ),
             )
             row = connection.execute("SELECT * FROM ai_runs WHERE id = ?", (run_id,)).fetchone()
             connection.execute("COMMIT")
@@ -875,6 +916,23 @@ class SqliteAIStore:
             reason=reason,
             created_at=created_at,
         )
+
+    @staticmethod
+    def _validate_provider_usage(
+        *,
+        provider_request_id: str | None,
+        input_units: int,
+        output_units: int,
+    ) -> None:
+        if provider_request_id is not None and not 1 <= len(provider_request_id) <= 200:
+            raise ValueError("provider request ID is invalid")
+        for value in (input_units, output_units):
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, int)
+                or not 0 <= value <= 1_000_000_000
+            ):
+                raise ValueError("provider usage must use bounded non-negative integers")
 
     @staticmethod
     def _bounded_text(value: str, *, name: str, maximum: int) -> str:

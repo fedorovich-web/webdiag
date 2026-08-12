@@ -273,6 +273,9 @@ def complete_run_internal(
             run_id=str(run_id),
             lease_token=request.lease_token,
             output=request.output,
+            provider_request_id=request.provider_request_id,
+            input_units=request.input_units,
+            output_units=request.output_units,
         )
     except AIServiceError as error:
         raise _error(error) from error

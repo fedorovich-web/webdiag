@@ -71,6 +71,9 @@ def test_worker_claims_marks_submitted_and_completes_typed_result(monkeypatch) -
     assert calls[-1][2] == {
         "lease_token": "lease-token-value-with-at-least-32-chars",
         "output": {"text": "grounded"},
+        "provider_request_id": "req_test",
+        "input_units": 12,
+        "output_units": 4,
     }
 
 
