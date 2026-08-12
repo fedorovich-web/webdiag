@@ -44,6 +44,7 @@ class AIRunDetailResponse(StrictAIModel):
 class AIRunListResponse(StrictAIModel):
     contract_version: Literal["webdiag.ai.run_list.v1"] = "webdiag.ai.run_list.v1"
     runs: tuple[AIRunResponse, ...]
+    next_cursor: str | None = None
 
 
 class CreditAccountResponse(StrictAIModel):
@@ -69,6 +70,7 @@ class CreditLedgerEntryResponse(StrictAIModel):
 class CreditLedgerResponse(StrictAIModel):
     contract_version: Literal["webdiag.credits.ledger.v1"] = "webdiag.credits.ledger.v1"
     entries: tuple[CreditLedgerEntryResponse, ...]
+    next_cursor: str | None = None
 
 
 class AIWorkerClaim(StrictAIModel):

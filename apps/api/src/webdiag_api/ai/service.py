@@ -14,6 +14,7 @@ from webdiag_api.ai.models import (
     CreditLedgerEntryResponse,
     utc_from_ns,
 )
+from webdiag_api.ai.pagination import AICursorError, decode_cursor, encode_cursor
 from webdiag_api.ai.storage import (
     AIIdempotencyConflictError,
     AIInsufficientCreditsError,
@@ -129,11 +130,31 @@ class AIService:
             raise AIServiceError(404, "ai_run_not_found", "AI run not found.")
         return self._public_run(run)
 
-    def list_runs(self, *, user_id: str, limit: int) -> tuple[AIRunResponse, ...]:
-        return tuple(
-            self._public_run(run)
-            for run in self._store.list_runs_for_user(user_id=user_id, limit=limit)
+    def list_runs(
+        self,
+        *,
+        user_id: str,
+        limit: int,
+        cursor: str | None,
+    ) -> tuple[tuple[AIRunResponse, ...], str | None]:
+        decoded = self._decode_cursor(cursor, kind="runs")
+        rows = self._store.list_runs_for_user(
+            user_id=user_id,
+            limit=limit + 1,
+            after_created_at=decoded.created_at if decoded else None,
+            after_id=decoded.item_id if decoded else None,
         )
+        page = rows[:limit]
+        next_cursor = (
+            encode_cursor(
+                kind="runs",
+                created_at=page[-1].created_at,
+                item_id=page[-1].id,
+            )
+            if len(rows) > limit
+            else None
+        )
+        return tuple(self._public_run(run) for run in page), next_cursor
 
     def delete_run(self, *, user_id: str, run_id: str) -> None:
         try:
@@ -146,8 +167,38 @@ class AIService:
     def get_credits(self, *, user_id: str) -> CreditAccount:
         return self._store.get_credit_account(user_id=user_id)
 
-    def list_ledger(self, *, user_id: str, limit: int) -> tuple[CreditLedgerEntry, ...]:
-        return self._store.list_ledger(user_id=user_id, limit=limit)
+    def list_ledger(
+        self,
+        *,
+        user_id: str,
+        limit: int,
+        cursor: str | None = None,
+    ) -> tuple[tuple[CreditLedgerEntry, ...], str | None]:
+        decoded = self._decode_cursor(cursor, kind="ledger")
+        rows = self._store.list_ledger(
+            user_id=user_id,
+            limit=limit + 1,
+            after_created_at=decoded.created_at if decoded else None,
+            after_id=decoded.item_id if decoded else None,
+        )
+        page = rows[:limit]
+        next_cursor = (
+            encode_cursor(
+                kind="ledger",
+                created_at=page[-1].created_at,
+                item_id=page[-1].id,
+            )
+            if len(rows) > limit
+            else None
+        )
+        return page, next_cursor
+
+    @staticmethod
+    def _decode_cursor(value: str | None, *, kind: str):
+        try:
+            return decode_cursor(value, kind=kind)
+        except AICursorError as error:
+            raise AIServiceError(422, "ai_invalid_cursor", "Invalid pagination cursor.") from error
 
     def claim_pending(self) -> AIWorkerClaim | None:
         claim = self._store.claim_pending()

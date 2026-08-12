@@ -416,18 +416,38 @@ class SqliteAIStore:
             ).fetchone()
         return self._run(row) if row is not None else None
 
-    def list_runs_for_user(self, *, user_id: str, limit: int) -> tuple[StoredAIRun, ...]:
-        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 50:
-            raise ValueError("run limit must be between 1 and 50")
+    def list_runs_for_user(
+        self,
+        *,
+        user_id: str,
+        limit: int,
+        after_created_at: int | None = None,
+        after_id: str | None = None,
+    ) -> tuple[StoredAIRun, ...]:
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 51:
+            raise ValueError("run limit must be between 1 and 51")
+        if (after_created_at is None) != (after_id is None):
+            raise ValueError("run cursor components must be provided together")
         self.ensure_schema()
         with self._connect() as connection:
-            rows = connection.execute(
-                """
-                SELECT * FROM ai_runs WHERE user_id = ?
-                ORDER BY created_at DESC, id DESC LIMIT ?
-                """,
-                (user_id, limit),
-            ).fetchall()
+            if after_created_at is None:
+                rows = connection.execute(
+                    """
+                    SELECT * FROM ai_runs WHERE user_id = ?
+                    ORDER BY created_at DESC, id DESC LIMIT ?
+                    """,
+                    (user_id, limit),
+                ).fetchall()
+            else:
+                rows = connection.execute(
+                    """
+                    SELECT * FROM ai_runs
+                    WHERE user_id = ?
+                        AND (created_at < ? OR (created_at = ? AND id < ?))
+                    ORDER BY created_at DESC, id DESC LIMIT ?
+                    """,
+                    (user_id, after_created_at, after_created_at, after_id, limit),
+                ).fetchall()
         return tuple(self._run(row) for row in rows)
 
     def delete_run_for_user(self, *, user_id: str, run_id: str) -> StoredAIRun | None:
@@ -719,18 +739,38 @@ class SqliteAIStore:
             connection.execute("COMMIT")
         return self._run(row)
 
-    def list_ledger(self, *, user_id: str, limit: int) -> tuple[CreditLedgerEntry, ...]:
-        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 100:
-            raise ValueError("ledger limit must be between 1 and 100")
+    def list_ledger(
+        self,
+        *,
+        user_id: str,
+        limit: int,
+        after_created_at: int | None = None,
+        after_id: str | None = None,
+    ) -> tuple[CreditLedgerEntry, ...]:
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 101:
+            raise ValueError("ledger limit must be between 1 and 101")
+        if (after_created_at is None) != (after_id is None):
+            raise ValueError("ledger cursor components must be provided together")
         self.ensure_schema()
         with self._connect() as connection:
-            rows = connection.execute(
-                """
-                SELECT * FROM credit_ledger WHERE user_id = ?
-                ORDER BY created_at DESC, id DESC LIMIT ?
-                """,
-                (user_id, limit),
-            ).fetchall()
+            if after_created_at is None:
+                rows = connection.execute(
+                    """
+                    SELECT * FROM credit_ledger WHERE user_id = ?
+                    ORDER BY created_at DESC, id DESC LIMIT ?
+                    """,
+                    (user_id, limit),
+                ).fetchall()
+            else:
+                rows = connection.execute(
+                    """
+                    SELECT * FROM credit_ledger
+                    WHERE user_id = ?
+                        AND (created_at < ? OR (created_at = ? AND id < ?))
+                    ORDER BY created_at DESC, id DESC LIMIT ?
+                    """,
+                    (user_id, after_created_at, after_created_at, after_id, limit),
+                ).fetchall()
         return tuple(self._ledger_entry(row) for row in rows)
 
     def reconcile_credits(self, *, user_id: str) -> CreditAccount:

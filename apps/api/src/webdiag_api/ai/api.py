@@ -126,11 +126,18 @@ def list_runs(
     account_service: AccountServiceDependency,
     webdiag_session: SessionCookie = None,
     limit: Annotated[int, Query(ge=1, le=50)] = 20,
+    cursor: Annotated[str | None, Query(max_length=256)] = None,
 ) -> AIRunListResponse:
     _no_store(response)
-    return AIRunListResponse(
-        runs=ai.list_runs(user_id=_user_id(account_service, webdiag_session), limit=limit)
-    )
+    try:
+        runs, next_cursor = ai.list_runs(
+            user_id=_user_id(account_service, webdiag_session),
+            limit=limit,
+            cursor=cursor,
+        )
+    except AIServiceError as error:
+        raise _error(error) from error
+    return AIRunListResponse(runs=runs, next_cursor=next_cursor)
 
 
 @router.get("/ai/runs/{run_id}", response_model=AIRunDetailResponse)
@@ -189,10 +196,21 @@ def ledger(
     account_service: AccountServiceDependency,
     webdiag_session: SessionCookie = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    cursor: Annotated[str | None, Query(max_length=256)] = None,
 ) -> CreditLedgerResponse:
     _no_store(response)
-    entries = ai.list_ledger(user_id=_user_id(account_service, webdiag_session), limit=limit)
-    return CreditLedgerResponse(entries=tuple(ai.public_ledger(entry) for entry in entries))
+    try:
+        entries, next_cursor = ai.list_ledger(
+            user_id=_user_id(account_service, webdiag_session),
+            limit=limit,
+            cursor=cursor,
+        )
+    except AIServiceError as error:
+        raise _error(error) from error
+    return CreditLedgerResponse(
+        entries=tuple(ai.public_ledger(entry) for entry in entries),
+        next_cursor=next_cursor,
+    )
 
 
 @internal_router.post("/runs/claim", response_model=AIWorkerClaimResponse)
