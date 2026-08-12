@@ -502,6 +502,46 @@ def test_non_disabling_update_invalidates_running_lease_without_phantom_state(
     assert history.runs == ()
 
 
+@pytest.mark.parametrize("prior_status", ["passed", "changed", "failed"])
+def test_empty_non_running_update_preserves_existing_status(
+    tmp_path: Path,
+    prior_status: str,
+) -> None:
+    database = tmp_path / f"{prior_status}.sqlite3"
+    audit: StubAuditService = (
+        FailedAuditService() if prior_status == "failed" else StubAuditService()
+    )
+    account, workspace, monitoring, _ = build_services(database, audit_service=audit)
+    user_id, _ = register(account)
+    project = workspace.create_project(
+        user_id=user_id,
+        request=ProjectCreateRequest(name="Main", origin="https://example.com"),
+    )
+    monitoring.create_monitor(
+        user_id=user_id,
+        project_id=project.id,
+        request=MonitorCreateRequest(cadence="daily", timezone="UTC"),
+    )
+    first = monitoring.run_monitor(user_id=user_id, project_id=project.id)
+    if prior_status == "changed":
+        audit.score = 75
+        current = monitoring.run_monitor(user_id=user_id, project_id=project.id)
+    else:
+        current = first
+    assert current.run.status == prior_status
+
+    updated = monitoring.update_monitor(
+        user_id=user_id,
+        project_id=project.id,
+        request=MonitorUpdateRequest(),
+    )
+
+    assert updated.status == prior_status
+    assert updated.enabled is True
+    assert updated.cadence == "daily"
+    assert updated.timezone == "UTC"
+
+
 def test_failed_manual_audit_completes_through_its_claimed_lease(tmp_path: Path) -> None:
     database = tmp_path / "accounts.sqlite3"
     audit = FailedAuditService()
