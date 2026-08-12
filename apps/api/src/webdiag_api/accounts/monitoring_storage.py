@@ -17,6 +17,12 @@ from webdiag_api.accounts.monitoring_models import (
 from webdiag_api.accounts.workspace_models import SavedAuditPayload
 
 MAX_MONITOR_RUNS = 100
+MONITOR_LEASE_SECONDS = 900
+
+
+class MonitorLeaseLostError(RuntimeError):
+    def __init__(self) -> None:
+        super().__init__("account_monitor_lease_lost")
 
 
 @dataclass(frozen=True, slots=True)
@@ -315,26 +321,38 @@ class SqliteMonitoringStore:
         error_code: str | None = None,
     ) -> StoredMonitorRun:
         self.ensure_schema()
-        run = StoredMonitorRun(
-            id=str(uuid.uuid4()),
-            monitor_id=monitor.id,
-            project_id=monitor.project_id,
-            user_id=monitor.user_id,
-            status=status,
-            score=score,
-            issue_count=issue_count,
-            started_at=started_at,
-            completed_at=completed_at,
-            change_json=change.model_dump_json(),
-            payload_json=payload.model_dump_json() if payload else None,
-            error_code=error_code,
-        )
-        failures = monitor.consecutive_failures + 1 if status == "failed" else 0
-        delay = CADENCE_SECONDS[monitor.cadence]
-        if status == "failed":
-            delay = min(delay, (5, 15, 60, 360)[min(failures - 1, 3)] * 60)
         with self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                """
+                SELECT * FROM account_workspace_monitors
+                WHERE id = ? AND user_id = ? AND status = 'running'
+                    AND lease_token = ? AND lease_expires_at > ?
+                """,
+                (monitor.id, monitor.user_id, monitor.lease_token, int(time.time())),
+            ).fetchone()
+            if row is None:
+                connection.execute("ROLLBACK")
+                raise MonitorLeaseLostError
+            current = self._monitor(row)
+            run = StoredMonitorRun(
+                id=str(uuid.uuid4()),
+                monitor_id=current.id,
+                project_id=current.project_id,
+                user_id=current.user_id,
+                status=status,
+                score=score,
+                issue_count=issue_count,
+                started_at=started_at,
+                completed_at=completed_at,
+                change_json=change.model_dump_json(),
+                payload_json=payload.model_dump_json() if payload else None,
+                error_code=error_code,
+            )
+            failures = current.consecutive_failures + 1 if status == "failed" else 0
+            delay = CADENCE_SECONDS[current.cadence]
+            if status == "failed":
+                delay = min(delay, (5, 15, 60, 360)[min(failures - 1, 3)] * 60)
             connection.execute(
                 """
                 INSERT INTO account_workspace_monitor_runs(
@@ -357,24 +375,30 @@ class SqliteMonitoringStore:
                     run.error_code,
                 ),
             )
-            connection.execute(
+            cursor = connection.execute(
                 """
                 UPDATE account_workspace_monitors
                 SET status = ?, last_run_at = ?, next_run_at = ?,
                     consecutive_failures = ?, updated_at = ?,
                     lease_token = NULL, lease_expires_at = NULL
-                WHERE id = ? AND user_id = ?
+                WHERE id = ? AND user_id = ? AND status = 'running'
+                    AND lease_token = ? AND lease_expires_at > ?
                 """,
                 (
                     status,
                     completed_at,
-                    completed_at + delay if monitor.enabled else None,
+                    completed_at + delay if current.enabled else None,
                     failures,
                     completed_at,
-                    monitor.id,
-                    monitor.user_id,
+                    current.id,
+                    current.user_id,
+                    current.lease_token,
+                    int(time.time()),
                 ),
             )
+            if cursor.rowcount != 1:
+                connection.execute("ROLLBACK")
+                raise MonitorLeaseLostError
             connection.execute(
                 """
                 DELETE FROM account_workspace_monitor_runs
@@ -384,7 +408,7 @@ class SqliteMonitoringStore:
                     ORDER BY completed_at DESC, rowid DESC LIMIT ?
                 )
                 """,
-                (monitor.id, monitor.id, MAX_MONITOR_RUNS),
+                (current.id, current.id, MAX_MONITOR_RUNS),
             )
             connection.execute("COMMIT")
         return run
@@ -428,10 +452,52 @@ class SqliteMonitoringStore:
                 SET status = 'running', lease_token = ?, lease_expires_at = ?, updated_at = ?
                 WHERE id = ?
                 """,
-                (token, current + 900, current, row["id"]),
+                (token, current + MONITOR_LEASE_SECONDS, current, row["id"]),
             )
+            claimed = connection.execute(
+                "SELECT * FROM account_workspace_monitors WHERE id = ?",
+                (row["id"],),
+            ).fetchone()
             connection.execute("COMMIT")
-        return self.get_monitor(user_id=row["user_id"], project_id=row["project_id"])
+        return self._monitor(claimed)
+
+    def claim_manual(
+        self,
+        *,
+        user_id: str,
+        project_id: str,
+        now: int | None = None,
+    ) -> StoredMonitor | None:
+        self.ensure_schema()
+        current = int(time.time()) if now is None else now
+        token = str(uuid.uuid4())
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                """
+                SELECT * FROM account_workspace_monitors
+                WHERE user_id = ? AND project_id = ?
+                    AND (lease_expires_at IS NULL OR lease_expires_at <= ?)
+                """,
+                (user_id, project_id, current),
+            ).fetchone()
+            if row is None:
+                connection.execute("ROLLBACK")
+                return None
+            connection.execute(
+                """
+                UPDATE account_workspace_monitors
+                SET status = 'running', lease_token = ?, lease_expires_at = ?, updated_at = ?
+                WHERE id = ?
+                """,
+                (token, current + MONITOR_LEASE_SECONDS, current, row["id"]),
+            )
+            claimed = connection.execute(
+                "SELECT * FROM account_workspace_monitors WHERE id = ?",
+                (row["id"],),
+            ).fetchone()
+            connection.execute("COMMIT")
+        return self._monitor(claimed)
 
     @staticmethod
     def _monitor(row: sqlite3.Row) -> StoredMonitor:

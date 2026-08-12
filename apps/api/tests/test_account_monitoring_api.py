@@ -1,15 +1,24 @@
 import asyncio
+import threading
+import time
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
+import pytest
+from pydantic import ValidationError
 
 from webdiag_api.accounts.api import get_account_service
 from webdiag_api.accounts.models import RegisterRequest
 from webdiag_api.accounts.monitoring_api import get_monitoring_service
-from webdiag_api.accounts.monitoring_models import MonitorCreateRequest
-from webdiag_api.accounts.monitoring_service import MonitoringService
-from webdiag_api.accounts.monitoring_storage import SqliteMonitoringStore
+from webdiag_api.accounts.monitoring_models import (
+    MonitorChange,
+    MonitorCreateRequest,
+    MonitorUpdateRequest,
+)
+from webdiag_api.accounts.monitoring_service import MonitoringService, MonitoringServiceError
+from webdiag_api.accounts.monitoring_storage import SqliteMonitoringStore, StoredMonitor
 from webdiag_api.accounts.security import ScryptParameters
 from webdiag_api.accounts.service import AccountService
 from webdiag_api.accounts.storage import SqliteAccountStore
@@ -39,14 +48,51 @@ class StubAuditService:
         return AuditSnapshot(job=job, run=run)
 
 
-def build_services(database_path: Path):
+class OverlapAuditService(StubAuditService):
+    def __init__(self) -> None:
+        super().__init__()
+        self.calls = 0
+        self.first_started = threading.Event()
+        self.release_first = threading.Event()
+        self._calls_lock = threading.Lock()
+
+    def start_single_url_audit(self, origin: str) -> AuditSnapshot:
+        with self._calls_lock:
+            self.calls += 1
+            call_number = self.calls
+        if call_number == 1:
+            self.first_started.set()
+            if not self.release_first.wait(timeout=10):
+                raise TimeoutError("The first monitoring audit was not released by the test.")
+        return super().start_single_url_audit(origin)
+
+
+class BlockingFailedAuditService(StubAuditService):
+    def __init__(self) -> None:
+        super().__init__()
+        self.started = threading.Event()
+        self.release = threading.Event()
+
+    def start_single_url_audit(self, origin: str) -> AuditSnapshot:
+        self.started.set()
+        if not self.release.wait(timeout=10):
+            raise TimeoutError("The failed monitoring audit was not released by the test.")
+        raise RuntimeError("audit failed")
+
+
+class FailedAuditService(StubAuditService):
+    def start_single_url_audit(self, origin: str) -> AuditSnapshot:
+        raise RuntimeError("audit failed")
+
+
+def build_services(database_path: Path, *, audit_service: StubAuditService | None = None):
     account = AccountService(
         SqliteAccountStore(str(database_path)),
         session_ttl_seconds=3600,
         active_session_limit=10,
         scrypt_parameters=ScryptParameters(n=2**12),
     )
-    audit = StubAuditService()
+    audit = audit_service or StubAuditService()
     workspace_store = SqliteWorkspaceStore(str(database_path))
     workspace = WorkspaceService(workspace_store, audit_service=audit)
     monitoring = MonitoringService(
@@ -55,6 +101,40 @@ def build_services(database_path: Path):
         audit_service=audit,
     )
     return account, workspace, monitoring, audit
+
+
+def create_stored_monitor(
+    database: Path,
+) -> tuple[str, str, MonitoringService, SqliteMonitoringStore, StubAuditService]:
+    account, workspace, monitoring, audit = build_services(database)
+    user_id, _ = register(account)
+    project = workspace.create_project(
+        user_id=user_id,
+        request=ProjectCreateRequest(name="Main", origin="https://example.com"),
+    )
+    monitoring.create_monitor(
+        user_id=user_id,
+        project_id=project.id,
+        request=MonitorCreateRequest(cadence="daily", timezone="UTC"),
+    )
+    store = SqliteMonitoringStore(str(database))
+    monitor = store.get_monitor(user_id=user_id, project_id=project.id)
+    assert monitor is not None
+    return user_id, project.id, monitoring, store, audit
+
+
+def save_passed_run(store: SqliteMonitoringStore, monitor: StoredMonitor):
+    now = int(time.time())
+    return store.save_run(
+        monitor=monitor,
+        status="passed",
+        score=90,
+        issue_count=0,
+        started_at=now,
+        completed_at=now,
+        change=MonitorChange(kind="baseline", current_score=90, current_issue_count=0),
+        payload=None,
+    )
 
 
 def register(account: AccountService) -> tuple[str, str]:
@@ -147,8 +227,6 @@ def test_monitoring_account_api_is_owned_and_no_store(tmp_path: Path) -> None:
 
 
 def test_monitoring_configuration_and_notification_contract() -> None:
-    from pydantic import ValidationError
-
     from webdiag_api.accounts.monitoring_models import MonitorChange, MonitorRun
     from webdiag_api.accounts.monitoring_notifications import notification_event
     from webdiag_api.config import Settings
@@ -177,3 +255,252 @@ def test_monitoring_configuration_and_notification_contract() -> None:
     serialized = event.model_dump()
     assert "provider" not in serialized
     assert "destination" not in serialized
+
+
+def test_claimed_run_requires_the_current_lease_token(tmp_path: Path) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    user_id, project_id, _, store, _ = create_stored_monitor(database)
+    pending = store.get_monitor(user_id=user_id, project_id=project_id)
+    assert pending is not None
+    assert pending.next_run_at is not None
+    claimed = store.claim_due(now=pending.next_run_at)
+    assert claimed is not None
+    assert claimed.lease_token is not None
+
+    stale = replace(claimed, lease_token="not-the-current-token")
+    with pytest.raises(RuntimeError, match="account_monitor_lease_lost"):
+        save_passed_run(store, stale)
+
+    assert store.list_runs(user_id=user_id, monitor_id=claimed.id) == ()
+    current = store.get_monitor(user_id=user_id, project_id=project_id)
+    assert current is not None
+    assert current.status == "running"
+    assert current.lease_token == claimed.lease_token
+
+    completed = save_passed_run(store, claimed)
+    assert completed.status == "passed"
+    assert len(store.list_runs(user_id=user_id, monitor_id=claimed.id)) == 1
+
+
+def test_reclaimed_lease_rejects_the_old_claimant_without_mutation(tmp_path: Path) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    user_id, project_id, _, store, _ = create_stored_monitor(database)
+    pending = store.get_monitor(user_id=user_id, project_id=project_id)
+    assert pending is not None
+    assert pending.next_run_at is not None
+    first_claim = store.claim_due(now=pending.next_run_at)
+    assert first_claim is not None
+    assert first_claim.lease_expires_at is not None
+    second_claim = store.claim_due(now=first_claim.lease_expires_at)
+    assert second_claim is not None
+    assert second_claim.lease_token != first_claim.lease_token
+
+    before = store.get_monitor(user_id=user_id, project_id=project_id)
+    assert before is not None
+    with pytest.raises(RuntimeError, match="account_monitor_lease_lost"):
+        save_passed_run(store, first_claim)
+
+    after = store.get_monitor(user_id=user_id, project_id=project_id)
+    assert after == before
+    assert store.list_runs(user_id=user_id, monitor_id=first_claim.id) == ()
+
+
+def test_current_token_cannot_complete_after_its_lease_expires(tmp_path: Path) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    user_id, project_id, _, store, _ = create_stored_monitor(database)
+    claimed = store.claim_manual(
+        user_id=user_id,
+        project_id=project_id,
+        now=int(time.time()) - 901,
+    )
+    assert claimed is not None
+    assert claimed.lease_token is not None
+
+    before = store.get_monitor(user_id=user_id, project_id=project_id)
+    assert before is not None
+    with pytest.raises(RuntimeError, match="account_monitor_lease_lost"):
+        save_passed_run(store, claimed)
+
+    assert store.get_monitor(user_id=user_id, project_id=project_id) == before
+    assert store.list_runs(user_id=user_id, monitor_id=claimed.id) == ()
+
+
+def test_pause_invalidates_claim_and_stale_completion_cannot_reschedule(
+    tmp_path: Path,
+) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    user_id, project_id, _, store, _ = create_stored_monitor(database)
+    pending = store.get_monitor(user_id=user_id, project_id=project_id)
+    assert pending is not None
+    assert pending.next_run_at is not None
+    claimed = store.claim_due(now=pending.next_run_at)
+    assert claimed is not None
+
+    paused = store.update_monitor(
+        user_id=user_id,
+        project_id=project_id,
+        cadence=None,
+        timezone=None,
+        enabled=False,
+    )
+    assert paused is not None
+    assert paused.enabled is False
+    assert paused.next_run_at is None
+    assert paused.lease_token is None
+
+    with pytest.raises(RuntimeError, match="account_monitor_lease_lost"):
+        save_passed_run(store, claimed)
+
+    after = store.get_monitor(user_id=user_id, project_id=project_id)
+    assert after == paused
+    assert store.list_runs(user_id=user_id, monitor_id=claimed.id) == ()
+
+
+def test_overlapping_manual_run_is_rejected_before_a_second_audit(tmp_path: Path) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    audit = OverlapAuditService()
+    account, workspace, monitoring, _ = build_services(database, audit_service=audit)
+    user_id, _ = register(account)
+    project = workspace.create_project(
+        user_id=user_id,
+        request=ProjectCreateRequest(name="Main", origin="https://example.com"),
+    )
+    monitoring.create_monitor(
+        user_id=user_id,
+        project_id=project.id,
+        request=MonitorCreateRequest(cadence="daily", timezone="UTC"),
+    )
+    first_results: list[object] = []
+    first_errors: list[BaseException] = []
+
+    def run_first() -> None:
+        try:
+            first_results.append(
+                monitoring.run_monitor(user_id=user_id, project_id=project.id)
+            )
+        except BaseException as error:
+            first_errors.append(error)
+
+    first = threading.Thread(target=run_first)
+    first.start()
+    try:
+        assert audit.first_started.wait(timeout=5)
+        with pytest.raises(MonitoringServiceError) as caught:
+            monitoring.run_monitor(user_id=user_id, project_id=project.id)
+        error = caught.value
+        assert error.status_code == 409
+        assert error.code == "account_monitor_already_running"
+        assert audit.calls == 1
+    finally:
+        audit.release_first.set()
+        first.join(timeout=10)
+
+    assert not first.is_alive()
+    assert first_errors == []
+    assert len(first_results) == 1
+    history = monitoring.get_history(user_id=user_id, project_id=project.id)
+    assert len(history.runs) == 1
+
+
+def test_failed_audit_cannot_create_a_fake_run_after_pause(tmp_path: Path) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    audit = BlockingFailedAuditService()
+    account, workspace, monitoring, _ = build_services(database, audit_service=audit)
+    user_id, _ = register(account)
+    project = workspace.create_project(
+        user_id=user_id,
+        request=ProjectCreateRequest(name="Main", origin="https://example.com"),
+    )
+    monitoring.create_monitor(
+        user_id=user_id,
+        project_id=project.id,
+        request=MonitorCreateRequest(cadence="daily", timezone="UTC"),
+    )
+    execution_errors: list[BaseException] = []
+
+    def run_failed_audit() -> None:
+        try:
+            monitoring.run_monitor(user_id=user_id, project_id=project.id)
+        except BaseException as error:
+            execution_errors.append(error)
+
+    execution = threading.Thread(target=run_failed_audit)
+    execution.start()
+    try:
+        assert audit.started.wait(timeout=5)
+        paused = monitoring.update_monitor(
+            user_id=user_id,
+            project_id=project.id,
+            request=MonitorUpdateRequest(enabled=False),
+        )
+        assert paused.enabled is False
+    finally:
+        audit.release.set()
+        execution.join(timeout=10)
+
+    assert not execution.is_alive()
+    assert len(execution_errors) == 1
+    error = execution_errors[0]
+    assert isinstance(error, MonitoringServiceError)
+    assert error.code == "account_monitor_run_lease_lost"
+    history = monitoring.get_history(user_id=user_id, project_id=project.id)
+    assert history.monitor.enabled is False
+    assert history.monitor.next_run_at is None
+    assert history.runs == ()
+
+
+def test_failed_manual_audit_completes_through_its_claimed_lease(tmp_path: Path) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    audit = FailedAuditService()
+    account, workspace, monitoring, _ = build_services(database, audit_service=audit)
+    user_id, _ = register(account)
+    project = workspace.create_project(
+        user_id=user_id,
+        request=ProjectCreateRequest(name="Main", origin="https://example.com"),
+    )
+    monitoring.create_monitor(
+        user_id=user_id,
+        project_id=project.id,
+        request=MonitorCreateRequest(cadence="daily", timezone="UTC"),
+    )
+
+    result = monitoring.run_monitor(user_id=user_id, project_id=project.id)
+
+    assert result.run.status == "failed"
+    assert result.run.error_code == "RuntimeError"
+    history = monitoring.get_history(user_id=user_id, project_id=project.id)
+    assert len(history.runs) == 1
+    assert history.runs[0].status == "failed"
+    assert history.monitor.status == "failed"
+    assert history.monitor.consecutive_failures == 1
+    assert history.monitor.next_run_at is not None
+
+
+def test_manual_run_preserves_an_already_disabled_monitor(tmp_path: Path) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    user_id, project_id, monitoring, _, _ = create_stored_monitor(database)
+    paused = monitoring.update_monitor(
+        user_id=user_id,
+        project_id=project_id,
+        request=MonitorUpdateRequest(enabled=False),
+    )
+    assert paused.enabled is False
+
+    result = monitoring.run_monitor(user_id=user_id, project_id=project_id)
+
+    assert result.run.status == "passed"
+    history = monitoring.get_history(user_id=user_id, project_id=project_id)
+    assert history.monitor.enabled is False
+    assert history.monitor.next_run_at is None
+    assert len(history.runs) == 1
+
+
+def test_monitor_timezone_requires_an_available_iana_zone() -> None:
+    assert MonitorCreateRequest(timezone="UTC").timezone == "UTC"
+    assert MonitorCreateRequest(timezone="Europe/Berlin").timezone == "Europe/Berlin"
+    assert MonitorUpdateRequest(timezone="Europe/Berlin").timezone == "Europe/Berlin"
+
+    with pytest.raises(ValidationError):
+        MonitorCreateRequest(timezone="Europe/Not_A_Zone")
+    with pytest.raises(ValidationError):
+        MonitorUpdateRequest(timezone="Europe/Not_A_Zone")

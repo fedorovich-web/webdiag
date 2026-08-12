@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Literal
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -30,8 +31,10 @@ class MonitorCreateRequest(BaseModel):
         normalized = value.strip()
         if not normalized or any(char.isspace() for char in normalized):
             raise ValueError("timezone must be a canonical IANA name")
-        if normalized != "UTC" and "/" not in normalized:
-            raise ValueError("timezone must be UTC or an IANA area/location name")
+        try:
+            ZoneInfo(normalized)
+        except (ValueError, ZoneInfoNotFoundError) as error:
+            raise ValueError("timezone must name an available IANA zone") from error
         return normalized
 
 

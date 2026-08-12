@@ -11,7 +11,11 @@ from webdiag_api.accounts.monitoring_models import (
     MonitorRunResponse,
     MonitorUpdateRequest,
 )
-from webdiag_api.accounts.monitoring_storage import SqliteMonitoringStore, StoredMonitor
+from webdiag_api.accounts.monitoring_storage import (
+    MonitorLeaseLostError,
+    SqliteMonitoringStore,
+    StoredMonitor,
+)
 from webdiag_api.accounts.workspace_service import build_saved_audit_payload
 from webdiag_api.accounts.workspace_storage import SqliteWorkspaceStore
 from webdiag_api.audit.service import AuditExecutionError, AuditExecutionService
@@ -87,9 +91,23 @@ class MonitoringService:
         return updated.public()
 
     def run_monitor(self, *, user_id: str, project_id: str) -> MonitorRunResponse:
-        monitor = self._owned_monitor(user_id=user_id, project_id=project_id)
+        self._owned_monitor(user_id=user_id, project_id=project_id)
         project = self._owned_project(user_id=user_id, project_id=project_id)
-        return self._execute(monitor, origin=project.origin)
+        monitor = self._store.claim_manual(user_id=user_id, project_id=project_id)
+        if monitor is None:
+            raise MonitoringServiceError(
+                409,
+                "account_monitor_already_running",
+                "A monitoring run is already in progress.",
+            )
+        try:
+            return self._execute(monitor, origin=project.origin)
+        except MonitorLeaseLostError as error:
+            raise MonitoringServiceError(
+                409,
+                "account_monitor_run_lease_lost",
+                "The monitoring run no longer owns its execution lease.",
+            ) from error
 
     def get_history(self, *, user_id: str, project_id: str) -> MonitorHistoryResponse:
         monitor = self._owned_monitor(user_id=user_id, project_id=project_id)
@@ -109,10 +127,13 @@ class MonitoringService:
                 user_id=monitor.user_id,
                 project_id=monitor.project_id,
             )
-            if project is None:
-                self._record_failure(monitor, "account_project_not_found")
-            else:
-                self._execute(monitor, origin=project.origin)
+            try:
+                if project is None:
+                    self._record_failure(monitor, "account_project_not_found")
+                else:
+                    self._execute(monitor, origin=project.origin)
+            except MonitorLeaseLostError:
+                pass
             completed += 1
         return completed
 
