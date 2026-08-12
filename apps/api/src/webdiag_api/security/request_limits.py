@@ -6,11 +6,6 @@ Send = Callable[[dict[str, Any]], Awaitable[None]]
 ASGIApp = Callable[[dict[str, Any], Receive, Send], Awaitable[None]]
 
 
-class _RequestBodyTooLarge(Exception):
-    def __init__(self, code: str) -> None:
-        self.code = code
-
-
 class RequestBodyLimitMiddleware:
     def __init__(
         self,
@@ -29,27 +24,26 @@ class RequestBodyLimitMiddleware:
             return
 
         limit, code = self._limit_for_path(scope.get("path", ""))
-        content_length = _declared_content_length(scope.get("headers", ()))
-        if content_length is not None and content_length > limit:
+        if _declared_content_length_exceeds_limit(scope.get("headers", ()), limit):
             await _send_request_too_large(send, code)
             return
 
-        body_size = 0
+        request_messages = await _read_request_messages(receive, limit)
+        if request_messages is None:
+            await _send_request_too_large(send, code)
+            return
 
-        async def receive_with_limit() -> dict[str, Any]:
-            nonlocal body_size
+        message_index = 0
 
-            message = await receive()
-            if message["type"] == "http.request":
-                body_size += len(message.get("body", b""))
-                if body_size > limit:
-                    raise _RequestBodyTooLarge(code)
-            return message
+        async def receive_replay() -> dict[str, Any]:
+            nonlocal message_index
+            if message_index < len(request_messages):
+                message = request_messages[message_index]
+                message_index += 1
+                return message
+            return await receive()
 
-        try:
-            await self.app(scope, receive_with_limit, send)
-        except _RequestBodyTooLarge as error:
-            await _send_request_too_large(send, error.code)
+        await self.app(scope, receive_replay, send)
 
     def _limit_for_path(self, path: str) -> tuple[int, str]:
         if path == "/v1/account" or path.startswith("/v1/account/"):
@@ -57,18 +51,43 @@ class RequestBodyLimitMiddleware:
         return self.http_request_body_max_bytes, "request_too_large"
 
 
-def _declared_content_length(headers: Iterable[tuple[bytes, bytes]]) -> int | None:
+async def _read_request_messages(receive: Receive, limit: int) -> list[dict[str, Any]] | None:
+    messages: list[dict[str, Any]] = []
+    body_size = 0
+
+    while True:
+        message = await receive()
+        messages.append(message)
+        if message["type"] != "http.request":
+            return messages
+
+        body_size += len(message.get("body", b""))
+        if body_size > limit:
+            return None
+        if not message.get("more_body", False):
+            return messages
+
+
+def _declared_content_length_exceeds_limit(
+    headers: Iterable[tuple[bytes, bytes]], limit: int
+) -> bool:
     values = [value for name, value in headers if name.lower() == b"content-length"]
     if len(values) != 1:
-        return None
+        return False
 
     try:
         value = values[0].decode("ascii")
     except UnicodeDecodeError:
-        return None
-    if not value.isdecimal():
-        return None
-    return int(value)
+        return False
+    if not value or any(character < "0" or character > "9" for character in value):
+        return False
+
+    normalized_value = value.lstrip("0") or "0"
+    normalized_limit = str(limit)
+    return len(normalized_value) > len(normalized_limit) or (
+        len(normalized_value) == len(normalized_limit)
+        and normalized_value > normalized_limit
+    )
 
 
 async def _send_request_too_large(send: Send, code: str) -> None:

@@ -143,6 +143,100 @@ def test_request_limit_rejects_streamed_account_body_with_account_envelope() -> 
     )
 
 
+def test_request_limit_rejects_oversized_stream_before_downstream_that_never_reads() -> None:
+    assert RequestBodyLimitMiddleware is not None, "request body limit middleware is missing"
+    downstream_started = False
+
+    async def downstream(
+        scope: dict[str, object],
+        receive: object,
+        send: object,
+    ) -> None:
+        nonlocal downstream_started
+        downstream_started = True
+
+    middleware = RequestBodyLimitMiddleware(
+        downstream,
+        http_request_body_max_bytes=4,
+        account_request_body_max_bytes=2,
+    )
+
+    sent = asyncio.run(
+        call_asgi(
+            middleware,
+            {"type": "http", "path": "/v1/tools", "headers": []},
+            [{"type": "http.request", "body": b"12345", "more_body": False}],
+        )
+    )
+
+    assert downstream_started is False
+    assert sent[0]["status"] == 413
+
+
+def test_request_limit_rejects_oversized_stream_before_downstream_response_start() -> None:
+    assert RequestBodyLimitMiddleware is not None, "request body limit middleware is missing"
+    downstream_started = False
+
+    async def downstream(
+        scope: dict[str, object],
+        receive: object,
+        send: object,
+    ) -> None:
+        nonlocal downstream_started
+        downstream_started = True
+        await send(  # type: ignore[operator]
+            {"type": "http.response.start", "status": 200, "headers": []}
+        )
+
+    middleware = RequestBodyLimitMiddleware(
+        downstream,
+        http_request_body_max_bytes=4,
+        account_request_body_max_bytes=2,
+    )
+
+    sent = asyncio.run(
+        call_asgi(
+            middleware,
+            {"type": "http", "path": "/v1/tools", "headers": []},
+            [{"type": "http.request", "body": b"12345", "more_body": False}],
+        )
+    )
+
+    assert downstream_started is False
+    assert sent[0]["status"] == 413
+
+
+def test_request_limit_compares_arbitrarily_long_decimal_content_length() -> None:
+    assert RequestBodyLimitMiddleware is not None, "request body limit middleware is missing"
+
+    async def downstream(
+        scope: dict[str, object],
+        receive: object,
+        send: object,
+    ) -> None:
+        raise AssertionError("downstream must not run for an oversized declared body")
+
+    middleware = RequestBodyLimitMiddleware(
+        downstream,
+        http_request_body_max_bytes=4,
+        account_request_body_max_bytes=2,
+    )
+
+    sent = asyncio.run(
+        call_asgi(
+            middleware,
+            {
+                "type": "http",
+                "path": "/v1/tools",
+                "headers": [(b"content-length", b"0" * 5_000 + b"5")],
+            },
+            [],
+        )
+    )
+
+    assert sent[0]["status"] == 413
+
+
 def test_request_limit_counts_invalid_content_length_stream_chunks() -> None:
     assert RequestBodyLimitMiddleware is not None, "request body limit middleware is missing"
 
