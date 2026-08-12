@@ -177,7 +177,7 @@ A11.4 adds a real monitoring execution path rather than a presentation-only dash
 - one ownership-scoped monitor per project;
 - cadence values from one hour to one week;
 - canonical IANA timezone input;
-- atomic SQLite due claiming with a 15-minute lease;
+- atomic SQLite due claiming with a 15-minute lease and a five-minute heartbeat;
 - scheduled execution through the existing audit service;
 - persisted baseline, unchanged, changed, and failed outcomes;
 - bounded retry delays and a maximum history of 100 runs;

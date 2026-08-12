@@ -1,4 +1,5 @@
 import asyncio
+import sqlite3
 import threading
 import time
 from dataclasses import replace
@@ -135,6 +136,20 @@ def save_passed_run(store: SqliteMonitoringStore, monitor: StoredMonitor):
         change=MonitorChange(kind="baseline", current_score=90, current_issue_count=0),
         payload=None,
     )
+
+
+def _capture_monitor_run(
+    monitoring: MonitoringService,
+    *,
+    user_id: str,
+    project_id: str,
+    results: list[object],
+    errors: list[BaseException],
+) -> None:
+    try:
+        results.append(monitoring.run_monitor(user_id=user_id, project_id=project_id))
+    except BaseException as error:
+        errors.append(error)
 
 
 def register(account: AccountService) -> tuple[str, str]:
@@ -405,6 +420,80 @@ def test_overlapping_manual_run_is_rejected_before_a_second_audit(tmp_path: Path
     assert not first.is_alive()
     assert first_errors == []
     assert len(first_results) == 1
+    history = monitoring.get_history(user_id=user_id, project_id=project.id)
+    assert len(history.runs) == 1
+
+
+def test_long_running_audit_renews_its_claim_lease(tmp_path: Path) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    audit = OverlapAuditService()
+    account, workspace, _, _ = build_services(database, audit_service=audit)
+    user_id, _ = register(account)
+    project = workspace.create_project(
+        user_id=user_id,
+        request=ProjectCreateRequest(name="Main", origin="https://example.com"),
+    )
+    store = SqliteMonitoringStore(str(database))
+    monitoring = MonitoringService(
+        store,
+        workspace_store=SqliteWorkspaceStore(str(database)),
+        audit_service=audit,
+        lease_renew_interval_seconds=0.01,
+    )
+    monitoring.create_monitor(
+        user_id=user_id,
+        project_id=project.id,
+        request=MonitorCreateRequest(cadence="daily", timezone="UTC"),
+    )
+    results: list[object] = []
+    errors: list[BaseException] = []
+
+    execution = threading.Thread(
+        target=lambda: _capture_monitor_run(
+            monitoring,
+            user_id=user_id,
+            project_id=project.id,
+            results=results,
+            errors=errors,
+        )
+    )
+    execution.start()
+    try:
+        assert audit.first_started.wait(timeout=5)
+        near_expiry = int(time.time()) + 1
+        with sqlite3.connect(database) as connection:
+            connection.execute(
+                """
+                UPDATE account_workspace_monitors
+                SET lease_expires_at = ?
+                WHERE user_id = ? AND project_id = ?
+                """,
+                (near_expiry, user_id, project.id),
+            )
+            connection.commit()
+
+        deadline = time.monotonic() + 2
+        renewed = None
+        while time.monotonic() < deadline:
+            renewed = store.get_monitor(user_id=user_id, project_id=project.id)
+            if renewed is not None and (renewed.lease_expires_at or 0) > near_expiry + 100:
+                break
+            time.sleep(0.01)
+        assert renewed is not None
+        assert renewed.lease_expires_at is not None
+        assert renewed.lease_expires_at > near_expiry + 100
+        assert store.claim_manual(
+            user_id=user_id,
+            project_id=project.id,
+            now=near_expiry + 1,
+        ) is None
+    finally:
+        audit.release_first.set()
+        execution.join(timeout=10)
+
+    assert not execution.is_alive()
+    assert errors == []
+    assert len(results) == 1
     history = monitoring.get_history(user_id=user_id, project_id=project.id)
     assert len(history.runs) == 1
 

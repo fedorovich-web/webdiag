@@ -499,6 +499,42 @@ class SqliteMonitoringStore:
             connection.execute("COMMIT")
         return self._monitor(claimed)
 
+    def renew_lease(
+        self,
+        monitor: StoredMonitor,
+        *,
+        now: int | None = None,
+    ) -> StoredMonitor:
+        self.ensure_schema()
+        current = int(time.time()) if now is None else now
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            cursor = connection.execute(
+                """
+                UPDATE account_workspace_monitors
+                SET lease_expires_at = ?, updated_at = ?
+                WHERE id = ? AND user_id = ? AND status = 'running'
+                    AND lease_token = ? AND lease_expires_at > ?
+                """,
+                (
+                    current + MONITOR_LEASE_SECONDS,
+                    current,
+                    monitor.id,
+                    monitor.user_id,
+                    monitor.lease_token,
+                    current,
+                ),
+            )
+            if cursor.rowcount != 1:
+                connection.execute("ROLLBACK")
+                raise MonitorLeaseLostError
+            row = connection.execute(
+                "SELECT * FROM account_workspace_monitors WHERE id = ?",
+                (monitor.id,),
+            ).fetchone()
+            connection.execute("COMMIT")
+        return self._monitor(row)
+
     @staticmethod
     def _monitor(row: sqlite3.Row) -> StoredMonitor:
         return StoredMonitor(

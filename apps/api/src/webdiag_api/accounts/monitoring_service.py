@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import threading
 import time
+from types import TracebackType
 
 from webdiag_api.accounts.monitoring_change import compare_payloads
 from webdiag_api.accounts.monitoring_models import (
@@ -12,6 +14,7 @@ from webdiag_api.accounts.monitoring_models import (
     MonitorUpdateRequest,
 )
 from webdiag_api.accounts.monitoring_storage import (
+    MONITOR_LEASE_SECONDS,
     MonitorLeaseLostError,
     SqliteMonitoringStore,
     StoredMonitor,
@@ -29,6 +32,49 @@ class MonitoringServiceError(RuntimeError):
         self.message = message
 
 
+class _LeaseHeartbeat:
+    def __init__(
+        self,
+        store: SqliteMonitoringStore,
+        monitor: StoredMonitor,
+        *,
+        interval_seconds: float,
+    ) -> None:
+        self._store = store
+        self._monitor = monitor
+        self._interval_seconds = interval_seconds
+        self._stop = threading.Event()
+        self._error: BaseException | None = None
+        self._thread = threading.Thread(
+            target=self._run,
+            name=f"webdiag-monitor-lease-{monitor.id}",
+            daemon=True,
+        )
+
+    def __enter__(self) -> None:
+        self._thread.start()
+
+    def __exit__(
+        self,
+        error_type: type[BaseException] | None,
+        _error: BaseException | None,
+        _traceback: TracebackType | None,
+    ) -> None:
+        self._stop.set()
+        self._thread.join()
+        if error_type is None and self._error is not None:
+            raise self._error
+
+    def _run(self) -> None:
+        while not self._stop.wait(self._interval_seconds):
+            try:
+                self._monitor = self._store.renew_lease(self._monitor)
+            except BaseException as error:
+                self._error = error
+                self._stop.set()
+                return
+
+
 class MonitoringService:
     def __init__(
         self,
@@ -36,10 +82,14 @@ class MonitoringService:
         *,
         workspace_store: SqliteWorkspaceStore,
         audit_service: AuditExecutionService,
+        lease_renew_interval_seconds: float = MONITOR_LEASE_SECONDS / 3,
     ) -> None:
         self._store = store
         self._workspace_store = workspace_store
         self._audit_service = audit_service
+        if lease_renew_interval_seconds <= 0:
+            raise ValueError("monitor lease renewal interval must be positive")
+        self._lease_renew_interval_seconds = lease_renew_interval_seconds
 
     def create_monitor(
         self,
@@ -144,13 +194,18 @@ class MonitoringService:
             monitor_id=monitor.id,
         )
         try:
-            snapshot = self._audit_service.start_single_url_audit(origin)
-            if snapshot.run is None:
-                raise AuditExecutionError(
-                    "Audit did not produce a run.",
-                    job_id=snapshot.job.job_id,
-                )
-            payload = build_saved_audit_payload(snapshot.run, target_origin=origin)
+            with _LeaseHeartbeat(
+                self._store,
+                monitor,
+                interval_seconds=self._lease_renew_interval_seconds,
+            ):
+                snapshot = self._audit_service.start_single_url_audit(origin)
+                if snapshot.run is None:
+                    raise AuditExecutionError(
+                        "Audit did not produce a run.",
+                        job_id=snapshot.job.job_id,
+                    )
+                payload = build_saved_audit_payload(snapshot.run, target_origin=origin)
         except AuditExecutionError:
             run = self._record_failure(monitor, "monitoring_audit_failed")
             return MonitorRunResponse(run=run.public())
