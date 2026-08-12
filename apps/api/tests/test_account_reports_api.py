@@ -132,9 +132,16 @@ def seed_report(database_path: Path):
     return account, workspace, reports, user_id, token, project, audit, report
 
 
-async def request(method: str, path: str, *, cookie: str | None = None, json=None):
+async def request(
+    method: str,
+    path: str,
+    *,
+    cookie: str | None = None,
+    json=None,
+    raise_app_exceptions: bool = True,
+):
     headers = {"cookie": f"webdiag_session={cookie}"} if cookie else None
-    transport = httpx.ASGITransport(app=app)
+    transport = httpx.ASGITransport(app=app, raise_app_exceptions=raise_app_exceptions)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
         return await client.request(method, path, headers=headers, json=json)
 
@@ -244,6 +251,47 @@ def test_report_store_additively_migrates_and_backfills_a11_5_table(
     assert columns.count("artifact_sha256") == 1
     assert stored_hash == expected_hash
     assert migrated_store.get_report(user_id=user_id, report_id=report.report.id) is not None
+
+
+def test_report_store_restart_does_not_backfill_missing_hash_in_existing_schema(
+    tmp_path: Path,
+) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    account, workspace, _, _, token, _, _, report = seed_report(database)
+    tampered_snapshot_json = report.snapshot.model_copy(
+        update={"title": "Restart tampering"}
+    ).model_dump_json()
+    with sqlite3.connect(database) as connection:
+        connection.execute(
+            """
+            UPDATE account_workspace_reports
+            SET snapshot_json = ?, artifact_sha256 = NULL
+            WHERE id = ?
+            """,
+            (tampered_snapshot_json, report.report.id),
+        )
+    restarted_reports = ReportService(
+        SqliteReportStore(str(database)),
+        workspace=workspace,
+    )
+
+    app.dependency_overrides[get_account_service] = lambda: account
+    app.dependency_overrides[get_workspace_service] = lambda: workspace
+    app.dependency_overrides[get_report_service] = lambda: restarted_reports
+    try:
+        private_detail = asyncio.run(
+            request("GET", f"/v1/account/reports/{report.report.id}", cookie=token)
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert_private_report_unavailable(private_detail)
+    with sqlite3.connect(database) as connection:
+        stored_hash = connection.execute(
+            "SELECT artifact_sha256 FROM account_workspace_reports WHERE id = ?",
+            (report.report.id,),
+        ).fetchone()[0]
+    assert stored_hash is None
 
 
 def test_report_api_rejects_valid_snapshot_tampering_before_detail_or_export(
@@ -419,6 +467,41 @@ def test_invalid_legacy_snapshot_migration_returns_controlled_api_errors(
 
     assert_private_report_unavailable(private_detail)
     assert_public_report_hidden(public_detail)
+
+
+def test_report_list_api_maps_legacy_integrity_failure_to_unavailable(
+    tmp_path: Path,
+) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    account, workspace, _, _, token, _, _, report = seed_report(database)
+    remove_artifact_hash_column(database)
+    with sqlite3.connect(database) as connection:
+        connection.execute(
+            "UPDATE account_workspace_reports SET snapshot_json = ? WHERE id = ?",
+            ("{not-json", report.report.id),
+        )
+    migrating_reports = ReportService(
+        SqliteReportStore(str(database)),
+        workspace=workspace,
+    )
+
+    app.dependency_overrides[get_account_service] = lambda: account
+    app.dependency_overrides[get_workspace_service] = lambda: workspace
+    app.dependency_overrides[get_report_service] = lambda: migrating_reports
+    try:
+        response = asyncio.run(
+            request(
+                "GET",
+                "/v1/account/reports",
+                cookie=token,
+                raise_app_exceptions=False,
+            )
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.headers["content-type"].startswith("application/json")
+    assert_private_report_unavailable(response)
 
 
 def test_report_ownership_share_hash_expiry_and_revoke(tmp_path: Path) -> None:

@@ -114,7 +114,10 @@ def list_reports(
 ) -> AccountReportListResponse:
     response.headers["cache-control"] = "no-store"
     user_id = _current_user_id(account_service, webdiag_session)
-    return reports.list_reports(user_id=user_id)
+    try:
+        return reports.list_reports(user_id=user_id)
+    except ReportServiceError as error:
+        raise _report_error(error) from error
 
 
 @account_router.get("/reports/{report_id}", response_model=AccountReportDetailResponse)

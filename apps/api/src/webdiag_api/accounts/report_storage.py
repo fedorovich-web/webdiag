@@ -158,25 +158,25 @@ class SqliteReportStore:
                             "ALTER TABLE account_workspace_reports "
                             "ADD COLUMN artifact_sha256 TEXT"
                         )
-                    legacy_rows = connection.execute(
-                        """
-                        SELECT id, snapshot_json
-                        FROM account_workspace_reports
-                        WHERE artifact_sha256 IS NULL
-                        """
-                    ).fetchall()
-                    backfill: list[tuple[str, str]] = []
-                    for row in legacy_rows:
-                        snapshot = _validated_snapshot(str(row["snapshot_json"]))
-                        backfill.append((artifact_sha256(snapshot), str(row["id"])))
-                    connection.executemany(
-                        """
-                        UPDATE account_workspace_reports
-                        SET artifact_sha256 = ?
-                        WHERE id = ? AND artifact_sha256 IS NULL
-                        """,
-                        backfill,
-                    )
+                        legacy_rows = connection.execute(
+                            """
+                            SELECT id, snapshot_json
+                            FROM account_workspace_reports
+                            WHERE artifact_sha256 IS NULL
+                            """
+                        ).fetchall()
+                        backfill: list[tuple[str, str]] = []
+                        for row in legacy_rows:
+                            snapshot = _validated_snapshot(str(row["snapshot_json"]))
+                            backfill.append((artifact_sha256(snapshot), str(row["id"])))
+                        connection.executemany(
+                            """
+                            UPDATE account_workspace_reports
+                            SET artifact_sha256 = ?
+                            WHERE id = ? AND artifact_sha256 IS NULL
+                            """,
+                            backfill,
+                        )
                     connection.execute(
                         """
                         CREATE INDEX IF NOT EXISTS account_workspace_reports_user_idx
