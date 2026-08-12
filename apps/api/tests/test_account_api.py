@@ -7,9 +7,14 @@ import httpx
 import pytest
 from pydantic import ValidationError
 
-from webdiag_api.accounts.api import get_account_service
+from webdiag_api.accounts.api import _http_error, get_account_service
 from webdiag_api.accounts.models import LoginRequest, RegisterRequest
-from webdiag_api.accounts.security import ScryptParameters, hash_password, verify_password
+from webdiag_api.accounts.security import (
+    ScryptParameters,
+    hash_password,
+    password_needs_rehash,
+    verify_password,
+)
 from webdiag_api.accounts.service import AccountService, AccountServiceError
 from webdiag_api.accounts.storage import SqliteAccountStore
 from webdiag_api.config import Settings
@@ -45,7 +50,10 @@ def build_service(
         SqliteAccountStore(str(tmp_path / "accounts.sqlite3")),
         session_ttl_seconds=session_ttl_seconds,
         active_session_limit=active_session_limit,
-        scrypt_parameters=scrypt_parameters or ScryptParameters(),
+        scrypt_parameters=scrypt_parameters or ScryptParameters(n=2**12),
+        login_attempt_limit=5,
+        login_attempt_window_seconds=900,
+        login_block_seconds=900,
     )
 
 
@@ -85,6 +93,11 @@ def test_settings_reject_insecure_production_and_unsafe_storage_paths() -> None:
 
 
 def test_settings_bound_session_and_scrypt_parameters() -> None:
+    defaults = Settings()
+    assert defaults.account_scrypt_n == 2**15
+    assert defaults.account_scrypt_r == 8
+    assert defaults.account_scrypt_p == 3
+
     for payload in (
         {"account_session_ttl_seconds": 0},
         {"account_session_ttl_seconds": 60 * 60 * 24 * 91},
@@ -94,6 +107,9 @@ def test_settings_bound_session_and_scrypt_parameters() -> None:
         {"account_scrypt_r": 0},
         {"account_scrypt_p": 0},
         {"account_scrypt_dklen": 15},
+        {"account_login_attempt_limit": 2},
+        {"account_login_attempt_window_seconds": 59},
+        {"account_login_block_seconds": 29},
     ):
         with pytest.raises(ValidationError):
             Settings(**payload)
@@ -156,6 +172,107 @@ def test_configured_scrypt_hash_and_bounded_verification() -> None:
 
     malicious = stronger.replace("scrypt$8192$", f"scrypt${2**20}$", 1)
     assert not verify_password("a sufficiently long password", malicious)
+
+    desired = ScryptParameters(n=2**13, r=8, p=1, length=32)
+    assert password_needs_rehash(encoded, desired)
+    assert not password_needs_rehash(stronger, desired)
+
+
+def test_successful_login_rehashes_legacy_password_parameters(tmp_path: Path) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    legacy = ScryptParameters(n=2**12, r=8, p=1, length=32)
+    current = ScryptParameters(n=2**13, r=8, p=1, length=32)
+    legacy_service = build_service(tmp_path, scrypt_parameters=legacy)
+    register_user(legacy_service)
+
+    current_service = build_service(tmp_path, scrypt_parameters=current)
+    current_service.login(
+        LoginRequest(email="user@example.com", password="correct horse battery staple")
+    )
+
+    with sqlite3.connect(database_path) as connection:
+        password_hash = connection.execute(
+            "SELECT password_hash FROM account_users WHERE email = ?",
+            ("user@example.com",),
+        ).fetchone()[0]
+    assert password_hash.startswith("scrypt$8192$8$1$")
+
+
+def test_login_failures_are_persistently_bounded_and_hashed(
+    tmp_path: Path,
+) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    service = build_service(tmp_path)
+    register_user(service)
+
+    for _ in range(4):
+        with pytest.raises(AccountServiceError) as invalid:
+            service.login(LoginRequest(email="user@example.com", password="wrong password"))
+        assert invalid.value.status_code == 401
+
+    with pytest.raises(AccountServiceError) as limited:
+        service.login(LoginRequest(email="user@example.com", password="wrong password"))
+    assert limited.value.status_code == 429
+    assert limited.value.code == "account_login_rate_limited"
+    assert limited.value.retry_after == 900
+    assert _http_error(limited.value).headers == {
+        "Cache-Control": "no-store",
+        "Retry-After": "900",
+    }
+
+    replacement = build_service(tmp_path)
+    with pytest.raises(AccountServiceError) as still_limited:
+        replacement.login(
+            LoginRequest(email="user@example.com", password="correct horse battery staple")
+        )
+    assert still_limited.value.status_code == 429
+
+    with sqlite3.connect(database_path) as connection:
+        row = connection.execute(
+            "SELECT identity_hash, failed_attempts FROM account_login_attempts"
+        ).fetchone()
+    assert row is not None
+    assert row[0] != "user@example.com"
+    assert row[1] == 5
+
+    second = build_service(tmp_path)
+    second.register(
+        RegisterRequest(
+            email="second@example.com",
+            display_name="Second User",
+            password="another correct horse password",
+        )
+    )
+    with pytest.raises(AccountServiceError):
+        second.login(LoginRequest(email="second@example.com", password="wrong password"))
+    second.login(
+        LoginRequest(
+            email="second@example.com",
+            password="another correct horse password",
+        )
+    )
+    with sqlite3.connect(database_path) as connection:
+        assert connection.execute(
+            "SELECT COUNT(*) FROM account_login_attempts"
+        ).fetchone()[0] == 1
+
+
+def test_missing_account_uses_the_bounded_password_verifier(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    service = build_service(tmp_path)
+    calls: list[str] = []
+
+    def recording_verify(password: str, encoded: str) -> bool:
+        calls.append(password)
+        return False
+
+    monkeypatch.setattr("webdiag_api.accounts.service.verify_password", recording_verify)
+    with pytest.raises(AccountServiceError):
+        service.login(LoginRequest(email="missing@example.com", password="wrong password"))
+    with pytest.raises(AccountServiceError):
+        service.login(LoginRequest(email="bad", password="wrong password"))
+    assert calls == ["wrong password", "wrong password"]
 
 
 def test_account_service_register_login_session_and_logout(tmp_path: Path) -> None:
@@ -251,7 +368,7 @@ def test_storage_is_foundation_only_hashes_tokens_and_caps_sessions(tmp_path: Pa
             ).fetchall()
         }
 
-    assert tables == {"account_users", "account_sessions"}
+    assert tables == {"account_users", "account_sessions", "account_login_attempts"}
     assert password_hash != raw_password
     assert raw_password not in database_path.read_bytes().decode("latin-1", errors="ignore")
     assert len(session_hashes) == 3

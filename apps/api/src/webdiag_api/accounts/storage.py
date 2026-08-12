@@ -69,6 +69,15 @@ class SqliteAccountStore:
                         ON account_sessions(user_id);
                     CREATE INDEX IF NOT EXISTS account_sessions_expires_at_idx
                         ON account_sessions(expires_at);
+                    CREATE TABLE IF NOT EXISTS account_login_attempts (
+                        identity_hash TEXT PRIMARY KEY,
+                        failed_attempts INTEGER NOT NULL CHECK(failed_attempts >= 1),
+                        window_started_at INTEGER NOT NULL,
+                        blocked_until INTEGER NOT NULL,
+                        updated_at INTEGER NOT NULL
+                    );
+                    CREATE INDEX IF NOT EXISTS account_login_attempts_updated_at_idx
+                        ON account_login_attempts(updated_at);
                     """
                 )
             self._schema_ready = True
@@ -185,6 +194,98 @@ class SqliteAccountStore:
         self.ensure_schema()
         with self._connect() as connection:
             connection.execute("DELETE FROM account_sessions WHERE token_hash = ?", (token_hash,))
+
+    def get_login_retry_after(self, *, identity_hash: str, now: int) -> int | None:
+        self.ensure_schema()
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT blocked_until FROM account_login_attempts WHERE identity_hash = ?",
+                (identity_hash,),
+            ).fetchone()
+        if row is None or int(row["blocked_until"]) <= now:
+            return None
+        return int(row["blocked_until"]) - now
+
+    def record_login_failure(
+        self,
+        *,
+        identity_hash: str,
+        now: int,
+        attempt_limit: int,
+        window_seconds: int,
+        block_seconds: int,
+    ) -> int | None:
+        self.ensure_schema()
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                """
+                SELECT failed_attempts, window_started_at, blocked_until
+                FROM account_login_attempts
+                WHERE identity_hash = ?
+                """,
+                (identity_hash,),
+            ).fetchone()
+            if row is not None and int(row["blocked_until"]) > now:
+                connection.execute("COMMIT")
+                return int(row["blocked_until"]) - now
+            if row is None or int(row["window_started_at"]) + window_seconds <= now:
+                failed_attempts = 1
+                window_started_at = now
+            else:
+                failed_attempts = int(row["failed_attempts"]) + 1
+                window_started_at = int(row["window_started_at"])
+            blocked_until = now + block_seconds if failed_attempts >= attempt_limit else 0
+            connection.execute(
+                """
+                INSERT INTO account_login_attempts(
+                    identity_hash, failed_attempts, window_started_at, blocked_until, updated_at
+                ) VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(identity_hash) DO UPDATE SET
+                    failed_attempts = excluded.failed_attempts,
+                    window_started_at = excluded.window_started_at,
+                    blocked_until = excluded.blocked_until,
+                    updated_at = excluded.updated_at
+                """,
+                (identity_hash, failed_attempts, window_started_at, blocked_until, now),
+            )
+            connection.execute(
+                "DELETE FROM account_login_attempts WHERE updated_at <= ?",
+                (now - max(window_seconds, block_seconds) * 2,),
+            )
+            connection.execute(
+                """
+                DELETE FROM account_login_attempts
+                WHERE identity_hash IN (
+                    SELECT identity_hash FROM account_login_attempts
+                    ORDER BY updated_at DESC, identity_hash DESC
+                    LIMIT -1 OFFSET 10000
+                )
+                """
+            )
+            connection.execute("COMMIT")
+        return block_seconds if blocked_until else None
+
+    def clear_login_failures(self, *, identity_hash: str) -> None:
+        self.ensure_schema()
+        with self._connect() as connection:
+            connection.execute(
+                "DELETE FROM account_login_attempts WHERE identity_hash = ?",
+                (identity_hash,),
+            )
+
+    def update_password_hash(
+        self, *, user_id: str, expected_hash: str, password_hash: str
+    ) -> None:
+        self.ensure_schema()
+        with self._connect() as connection:
+            connection.execute(
+                """
+                UPDATE account_users SET password_hash = ?
+                WHERE id = ? AND password_hash = ?
+                """,
+                (password_hash, user_id, expected_hash),
+            )
 
     @staticmethod
     def _stored_user(row: sqlite3.Row | None) -> StoredUser | None:

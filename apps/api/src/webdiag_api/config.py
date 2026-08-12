@@ -37,10 +37,13 @@ class Settings(BaseSettings):
         ge=_MIN_ACCOUNT_REQUEST_BODY_MAX_BYTES,
         le=_MAX_ACCOUNT_REQUEST_BODY_MAX_BYTES,
     )
-    account_scrypt_n: int = Field(default=2**14, ge=_MIN_SCRYPT_N, le=_MAX_SCRYPT_N)
+    account_scrypt_n: int = Field(default=2**15, ge=_MIN_SCRYPT_N, le=_MAX_SCRYPT_N)
     account_scrypt_r: int = Field(default=8, ge=1, le=16)
-    account_scrypt_p: int = Field(default=1, ge=1, le=4)
+    account_scrypt_p: int = Field(default=3, ge=1, le=4)
     account_scrypt_dklen: int = Field(default=32, ge=16, le=64)
+    account_login_attempt_limit: int = Field(default=5, ge=3, le=20)
+    account_login_attempt_window_seconds: int = Field(default=900, ge=60, le=3600)
+    account_login_block_seconds: int = Field(default=900, ge=30, le=3600)
     monitoring_internal_token: str = ""
     monitoring_scheduler_interval_seconds: int = Field(default=60, ge=30, le=300)
 

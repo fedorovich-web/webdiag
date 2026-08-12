@@ -35,6 +35,9 @@ def get_account_service() -> AccountService:
             p=settings.account_scrypt_p,
             length=settings.account_scrypt_dklen,
         ),
+        login_attempt_limit=settings.account_login_attempt_limit,
+        login_attempt_window_seconds=settings.account_login_attempt_window_seconds,
+        login_block_seconds=settings.account_login_block_seconds,
     )
 
 
@@ -47,10 +50,13 @@ def _detail(error: AccountServiceError) -> dict[str, str]:
 
 
 def _http_error(error: AccountServiceError) -> HTTPException:
+    headers = {"Cache-Control": "no-store"}
+    if error.retry_after is not None:
+        headers["Retry-After"] = str(error.retry_after)
     return HTTPException(
         status_code=error.status_code,
         detail=_detail(error),
-        headers={"Cache-Control": "no-store"},
+        headers=headers,
     )
 
 

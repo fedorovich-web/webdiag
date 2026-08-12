@@ -2,6 +2,11 @@
 
 A11.0 provides registration, login, current-session state, server-side logout, bounded scrypt hashing, opaque sessions, and the private same-origin account proxy.
 
+Login failures are stored as bounded SHA-256 identity keys rather than submitted email
+addresses. Five failures within 15 minutes block that identity for 15 minutes; the API
+returns `429 account_login_rate_limited` with `Retry-After`. Successful authentication
+clears the failure record and upgrades a legacy scrypt hash to the configured work factors.
+
 A11.1 adds the first real data layer:
 
 - ownership-scoped projects;
