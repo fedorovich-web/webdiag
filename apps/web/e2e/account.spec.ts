@@ -96,7 +96,7 @@ test.describe("account workspace", () => {
 
     await page.getByRole("button", { name: "Выйти" }).click();
     await expect(page).toHaveURL(/\/account$/);
-    await expect(page.getByRole("alert")).toContainText("Сервис аккаунтов временно недоступен");
+    await expect(page.locator(".wd-account-workspace-page .wd-account-error")).toContainText("Сервис аккаунтов временно недоступен");
   });
 
   test("project route keeps the real project selected in the shell", async ({ page }) => {
@@ -253,7 +253,7 @@ test.describe("account workspace", () => {
     await page.goto(`/account/projects/${firstProject.id}/audits/${auditId}/issues`);
     await expect(page.getByRole("heading", { level: 1, name: "Проблемы и приоритеты" })).toBeVisible();
     await expect(page.getByRole("link", { name: issue.title })).toBeVisible();
-    await page.getByLabel("Категория", { exact: true }).selectOption("security");
+    await page.locator(".wd-issue-filters label").filter({ hasText: /^Категория/ }).locator("select").selectOption("security");
     await expect.poll(() => filteredRequest).toContain("category=security");
 
     await page.getByRole("link", { name: issue.title }).click();
