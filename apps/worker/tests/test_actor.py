@@ -4,6 +4,7 @@ def test_actor_is_registered_with_stub_broker(monkeypatch) -> None:
     monkeypatch.setenv("WEBDIAG_BROKER_BACKEND", "stub")
     actors = importlib.import_module("webdiag_worker.actors")
     assert actors.health_probe.actor_name.endswith("health_probe")
+    assert actors.run_pending_ai.actor_name.endswith("run_pending_ai")
 
 
 def test_unknown_broker_backend_is_rejected(monkeypatch) -> None:

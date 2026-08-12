@@ -15,3 +15,8 @@ def health_probe(value: str) -> str:
 @dramatiq.actor(queue_name="monitoring")
 def run_due_monitoring() -> int:
     return run_due_monitors()
+
+
+@dramatiq.actor(queue_name="ai")
+def run_pending_ai() -> bool:
+    raise RuntimeError("AI provider adapter is not configured; A12.0 cannot execute real AI work")
