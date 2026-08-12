@@ -22,10 +22,20 @@ class AuditRequestError(ValueError):
 class AuditExecutionError(RuntimeError):
     """Raised when an accepted audit cannot be executed successfully."""
 
-    def __init__(self, message: str, *, job_id: UUID, run_id: UUID | None = None) -> None:
+    def __init__(
+        self,
+        message: str,
+        *,
+        job_id: UUID,
+        run_id: UUID | None = None,
+        code: str = "audit_fetch_failed",
+        status_code: int = 502,
+    ) -> None:
         super().__init__(message)
         self.job_id = job_id
         self.run_id = run_id
+        self.code = code
+        self.status_code = status_code
 
 
 @dataclass(frozen=True, slots=True)
@@ -123,9 +133,15 @@ class AuditExecutionService:
                 job_id=failed.job_id,
                 run_id=failed_run.run_id,
             ) from exc
-        except Exception:
-            self._record_failed_execution(job=job, target=target)
-            raise
+        except Exception as exc:
+            failed, failed_run = self._record_failed_execution(job=job, target=target)
+            raise AuditExecutionError(
+                "Audit execution failed.",
+                job_id=failed.job_id,
+                run_id=failed_run.run_id,
+                code="audit_execution_failed",
+                status_code=500,
+            ) from exc
 
         job = job.model_copy(
             update={"status": AuditJobStatus.SUCCEEDED, "updated_at": _utc_now()}

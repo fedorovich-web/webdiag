@@ -75,9 +75,9 @@ def start_single_url_audit(
         ) from exc
     except AuditExecutionError as exc:
         raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
+            status_code=exc.status_code,
             detail={
-                "code": "audit_fetch_failed",
+                "code": exc.code,
                 "message": str(exc),
                 "job_id": str(exc.job_id),
                 "run_id": str(exc.run_id) if exc.run_id else None,

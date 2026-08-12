@@ -10,6 +10,7 @@ from webdiag_api.audit.api import get_audit_service
 from webdiag_api.audit.fetcher import SafeHttpFetcher
 from webdiag_api.audit.models import AuditJob, AuditJobStatus
 from webdiag_api.audit.service import (
+    AuditExecutionError,
     AuditExecutionService,
     InMemoryAuditStore,
 )
@@ -63,8 +64,12 @@ async def request(
     path: str,
     *,
     json: dict[str, object] | None = None,
+    raise_app_exceptions: bool = True,
 ) -> httpx.Response:
-    transport = httpx.ASGITransport(app=app)
+    transport = httpx.ASGITransport(
+        app=app,
+        raise_app_exceptions=raise_app_exceptions,
+    )
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
         return await client.request(method, path, json=json)
 
@@ -350,8 +355,12 @@ def test_unexpected_execution_failure_still_persists_failed_state(monkeypatch) -
 
     monkeypatch.setattr(audit_service_module, "assemble_single_page_report", fail_report)
 
-    with pytest.raises(RuntimeError, match="report assembly failed"):
+    with pytest.raises(AuditExecutionError, match="Audit execution failed") as failure:
         service.start_single_url_audit("https://example.com/")
+
+    assert failure.value.code == "audit_execution_failed"
+    assert failure.value.status_code == 500
+    assert isinstance(failure.value.__cause__, RuntimeError)
 
     assert [job.status for job in store.saved_jobs] == [
         AuditJobStatus.RUNNING,
@@ -362,6 +371,36 @@ def test_unexpected_execution_failure_still_persists_failed_state(monkeypatch) -
     assert snapshot.job.status is AuditJobStatus.FAILED
     assert snapshot.run is not None
     assert snapshot.run.status is AuditJobStatus.FAILED
+
+
+def test_unexpected_execution_failure_returns_stable_private_error(monkeypatch) -> None:
+    service = build_service(healthy_resource_response)
+
+    def fail_report(**_kwargs):
+        raise RuntimeError("private report assembly detail")
+
+    monkeypatch.setattr(audit_service_module, "assemble_single_page_report", fail_report)
+    with_service(service)
+    try:
+        response = asyncio.run(
+            request(
+                "POST",
+                "/v1/audits",
+                json={"url": "https://example.com/"},
+                raise_app_exceptions=False,
+            )
+        )
+    finally:
+        clear_overrides()
+
+    assert response.status_code == 500
+    assert response.headers["cache-control"] == "no-store"
+    detail = response.json()["detail"]
+    assert detail["code"] == "audit_execution_failed"
+    assert detail["message"] == "Audit execution failed."
+    assert detail["job_id"]
+    assert detail["run_id"]
+    assert "private report assembly detail" not in response.text
 
 
 def test_get_unknown_audit_returns_404() -> None:

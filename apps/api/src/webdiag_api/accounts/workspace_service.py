@@ -183,7 +183,7 @@ class WorkspaceService:
             snapshot = self._audit_service.start_single_url_audit(project.origin)
         except AuditExecutionError as error:
             raise WorkspaceServiceError(
-                502,
+                error.status_code,
                 "account_audit_failed",
                 "The website audit could not be completed.",
             ) from error
