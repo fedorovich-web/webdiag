@@ -11,7 +11,17 @@ export function isReleaseRegistryReady(tools) {
   const slugs = new Set();
 
   return tools.every((tool) => {
-    if (tool.state !== "ready" || ids.has(tool.id) || slugs.has(tool.slug)) {
+    if (
+      tool === null ||
+      typeof tool !== "object" ||
+      typeof tool.id !== "string" ||
+      tool.id.trim() === "" ||
+      typeof tool.slug !== "string" ||
+      tool.slug.trim() === "" ||
+      tool.state !== "ready" ||
+      ids.has(tool.id) ||
+      slugs.has(tool.slug)
+    ) {
       return false;
     }
 
