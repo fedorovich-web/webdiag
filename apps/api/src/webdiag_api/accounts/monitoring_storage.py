@@ -9,8 +9,8 @@ from pathlib import Path
 
 from webdiag_api.accounts.models import utc_datetime
 from webdiag_api.accounts.monitoring_models import (
-    AccountMonitor,
     CADENCE_SECONDS,
+    AccountMonitor,
     MonitorChange,
     MonitorRun,
 )

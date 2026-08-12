@@ -4,14 +4,18 @@ from fastapi.exceptions import RequestValidationError
 from webdiag_api import __version__
 from webdiag_api.accounts.api import (
     account_validation_exception_handler,
+)
+from webdiag_api.accounts.api import (
     router as account_router,
 )
-from webdiag_api.accounts.workspace_api import router as workspace_router
 from webdiag_api.accounts.monitoring_api import router as monitoring_router
 from webdiag_api.accounts.report_api import (
     account_router as report_account_router,
+)
+from webdiag_api.accounts.report_api import (
     public_router as report_public_router,
 )
+from webdiag_api.accounts.workspace_api import router as workspace_router
 from webdiag_api.audit.api import router as audit_router
 from webdiag_api.registry import public_tools
 from webdiag_api.tools.accessibility_static import router as accessibility_static_tool_router

@@ -3,7 +3,6 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
-import pytest
 
 from webdiag_api.accounts.api import get_account_service
 from webdiag_api.accounts.models import RegisterRequest

@@ -4,20 +4,22 @@ from functools import lru_cache
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Path as ApiPath, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi import Path as ApiPath
 
 from webdiag_api.accounts.api import (
     AccountServiceDependency,
     SessionCookie,
 )
+from webdiag_api.accounts.service import AccountServiceError
 from webdiag_api.accounts.workspace_issues import (
     AccountIssueDetailResponse,
     AccountIssueListResponse,
     IssueListOptions,
-    NormalizedIssueCategory,
     IssueOrder,
     IssuePriority,
     IssueSort,
+    NormalizedIssueCategory,
     project_saved_audit_issue,
     project_saved_audit_issues,
 )
@@ -28,7 +30,6 @@ from webdiag_api.accounts.workspace_models import (
     ProjectCreateRequest,
     SavedAuditDetailResponse,
 )
-from webdiag_api.accounts.service import AccountServiceError
 from webdiag_api.accounts.workspace_service import WorkspaceService, WorkspaceServiceError
 from webdiag_api.accounts.workspace_storage import SqliteWorkspaceStore
 from webdiag_api.audit.api import get_audit_service
@@ -168,10 +169,10 @@ def list_saved_audit_issues(
     response: Response,
     workspace: WorkspaceServiceDependency,
     account_service: AccountServiceDependency,
-    category: NormalizedIssueCategory | None = Query(default=None),
-    priority: IssuePriority | None = Query(default=None),
-    sort: IssueSort = Query(default="priority"),
-    order: IssueOrder = Query(default="asc"),
+    category: Annotated[NormalizedIssueCategory | None, Query()] = None,
+    priority: Annotated[IssuePriority | None, Query()] = None,
+    sort: Annotated[IssueSort, Query()] = "priority",
+    order: Annotated[IssueOrder, Query()] = "asc",
     webdiag_session: SessionCookie = None,
 ) -> AccountIssueListResponse:
     response.headers["cache-control"] = "no-store"
