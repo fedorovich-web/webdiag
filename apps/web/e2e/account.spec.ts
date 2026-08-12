@@ -30,9 +30,14 @@ const secondProject = {
 
 test.describe("account workspace", () => {
   let assertBrowserClean: ReturnType<typeof installBrowserGuard>;
+  let expectedBrowserErrors: RegExp[];
 
   test.beforeEach(async ({ page }) => {
-    assertBrowserClean = installBrowserGuard(page);
+    expectedBrowserErrors = [];
+    assertBrowserClean = installBrowserGuard(
+      page,
+      (error) => expectedBrowserErrors.some((pattern) => pattern.test(error)),
+    );
   });
 
   test.afterEach(async ({}, testInfo) => {
@@ -56,6 +61,10 @@ test.describe("account workspace", () => {
   });
 
   test("desktop shell creates a project without reloading the project list and keeps failed logout on the page", async ({ page }) => {
+    expectedBrowserErrors.push(
+      /^console\.error: Failed to load resource: the server responded with a status of 502\b/,
+      /^http 502: .*\/api\/account\/logout$/,
+    );
     let projectListReads = 0;
     await page.route("**/api/account/me", (route) => route.fulfill({ json: session }));
     await page.route("**/api/account/projects", async (route) => {
@@ -147,6 +156,10 @@ test.describe("account workspace", () => {
   });
 
   test("unavailable account state offers retry instead of a false sign-in action", async ({ page }) => {
+    expectedBrowserErrors.push(
+      /^console\.error: Failed to load resource: the server responded with a status of 502\b/,
+      /^http 502: .*\/api\/account\/me$/,
+    );
     let calls = 0;
     await page.route("**/api/account/me", (route) => {
       calls += 1;
@@ -240,7 +253,7 @@ test.describe("account workspace", () => {
     await page.goto(`/account/projects/${firstProject.id}/audits/${auditId}/issues`);
     await expect(page.getByRole("heading", { level: 1, name: "Проблемы и приоритеты" })).toBeVisible();
     await expect(page.getByRole("link", { name: issue.title })).toBeVisible();
-    await page.getByLabel("Категория").selectOption("security");
+    await page.getByLabel("Категория", { exact: true }).selectOption("security");
     await expect.poll(() => filteredRequest).toContain("category=security");
 
     await page.getByRole("link", { name: issue.title }).click();

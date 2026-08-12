@@ -26,10 +26,10 @@ test.describe("PEM certificate viewer", () => {
     await expect(page.getByRole("heading", { level: 1, name: "PEM X.509 Certificate Viewer" })).toBeVisible();
     await page.getByLabel("Paste one or more PEM certificates").fill(CERTIFICATE);
     await page.getByRole("button", { name: "Inspect certificates" }).click();
-    await expect(page.getByRole("alert")).toHaveCount(1); // malformed bounded fixture is rejected safely
+    await expect(page.locator(".pem-certificate-tool .form-error")).toHaveCount(1); // malformed bounded fixture is rejected safely
     await page.getByLabel("Paste one or more PEM certificates").fill("-----BEGIN PRIVATE KEY-----\nAA==\n-----END PRIVATE KEY-----");
     await page.getByRole("button", { name: "Inspect certificates" }).click();
-    await expect(page.getByRole("alert")).toBeVisible();
+    await expect(page.locator(".pem-certificate-tool .form-error")).toBeVisible();
     expect(writes).toEqual([]);
   });
 });

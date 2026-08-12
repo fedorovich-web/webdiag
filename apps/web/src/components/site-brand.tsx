@@ -18,7 +18,7 @@ function normalizePath(path: string) {
 function BrandArtwork() {
   return (
     <>
-      <picture className="brand-picture" aria-hidden="true">
+      <picture className="brand-picture">
         <source srcSet="/logo.avif" type="image/avif" />
         <img
           className="brand-logo"
@@ -57,9 +57,9 @@ export function SiteBrand({ locale, className = "brand", variant }: SiteBrandPro
         className={className}
         data-brand-variant={variant}
         aria-current="page"
-        aria-label={label}
       >
         <BrandArtwork />
+        <span className="sr-only">{label}</span>
       </span>
     );
   }

@@ -135,7 +135,7 @@ export function AccountMonitoring({ locale, projectId }: Props) {
         <div>
           <span className="eyebrow">WebDiag Monitoring</span>
           <h1>{ru ? "Мониторинг проекта" : "Project monitoring"}</h1>
-          <p>{ru ? "Плановые проверки и история фактических изменений без фиктивного uptime." : "Scheduled audits and persisted change history without synthetic uptime."}</p>
+          <p>{ru ? "Плановые проверки и история фактических изменений без вымышленных метрик доступности." : "Scheduled audits and persisted change history without synthetic availability metrics."}</p>
         </div>
         {history && <button className="wd-button wd-button-primary" type="button" onClick={runNow} disabled={pending} aria-busy={pending}>{ru ? "Проверить сейчас" : "Run now"}</button>}
       </header>
