@@ -47,6 +47,10 @@ jobs:
       - name: Validate exact snapshot delta
         shell: pwsh
         run: |
+          git restore -- apps/web/next-env.d.ts
+          if ($LASTEXITCODE -ne 0) {
+            throw "Failed to restore generated next-env.d.ts before snapshot validation."
+          }
           $expected = @(
             "apps/web/e2e/visual.spec.ts-snapshots/home-ru-light-chromium-win32.png",
             "apps/web/e2e/visual.spec.ts-snapshots/home-ru-dark-chromium-win32.png",
