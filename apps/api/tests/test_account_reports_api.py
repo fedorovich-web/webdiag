@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
+import pytest
 
 from webdiag_api.accounts.api import get_account_service
 from webdiag_api.accounts.models import RegisterRequest
@@ -138,6 +139,38 @@ async def request(method: str, path: str, *, cookie: str | None = None, json=Non
         return await client.request(method, path, headers=headers, json=json)
 
 
+def remove_artifact_hash_column(database_path: Path) -> None:
+    with sqlite3.connect(database_path) as connection:
+        columns = {
+            str(row[1])
+            for row in connection.execute("PRAGMA table_info(account_workspace_reports)")
+        }
+        if "artifact_sha256" in columns:
+            connection.execute(
+                "ALTER TABLE account_workspace_reports DROP COLUMN artifact_sha256"
+            )
+
+
+def assert_private_report_unavailable(response: httpx.Response) -> None:
+    assert response.status_code == 500
+    assert response.json() == {
+        "detail": {
+            "code": "account_report_unavailable",
+            "message": "Report is unavailable.",
+        }
+    }
+
+
+def assert_public_report_hidden(response: httpx.Response) -> None:
+    assert response.status_code == 404
+    assert response.json() == {
+        "detail": {
+            "code": "public_report_not_found",
+            "message": "Report was not found.",
+        }
+    }
+
+
 def test_report_snapshot_is_safe_versioned_and_artifact_is_exact(tmp_path: Path) -> None:
     database = tmp_path / "accounts.sqlite3"
     _, workspace, _, user_id, _, project, audit, report = seed_report(database)
@@ -168,6 +201,224 @@ def test_report_snapshot_is_safe_versioned_and_artifact_is_exact(tmp_path: Path)
         ).fetchone()
     assert token_hash is None
     assert "<Report>" in snapshot_json
+
+
+def test_new_report_persists_exact_lowercase_artifact_sha256(tmp_path: Path) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    _, _, _, _, _, _, _, report = seed_report(database)
+
+    with sqlite3.connect(database) as connection:
+        stored_hash = connection.execute(
+            "SELECT artifact_sha256 FROM account_workspace_reports WHERE id = ?",
+            (report.report.id,),
+        ).fetchone()[0]
+
+    assert stored_hash == artifact_sha256(report.snapshot)
+    assert len(stored_hash) == 64
+    assert set(stored_hash) <= set("0123456789abcdef")
+
+
+def test_report_store_additively_migrates_and_backfills_a11_5_table(
+    tmp_path: Path,
+) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    _, _, _, user_id, _, _, _, report = seed_report(database)
+    expected_hash = artifact_sha256(report.snapshot)
+    remove_artifact_hash_column(database)
+
+    migrated_store = SqliteReportStore(str(database))
+    migrated_store.ensure_schema()
+    migrated_store.ensure_schema()
+    SqliteReportStore(str(database)).ensure_schema()
+
+    with sqlite3.connect(database) as connection:
+        columns = [
+            str(row[1])
+            for row in connection.execute("PRAGMA table_info(account_workspace_reports)")
+        ]
+        stored_hash = connection.execute(
+            "SELECT artifact_sha256 FROM account_workspace_reports WHERE id = ?",
+            (report.report.id,),
+        ).fetchone()[0]
+
+    assert columns.count("artifact_sha256") == 1
+    assert stored_hash == expected_hash
+    assert migrated_store.get_report(user_id=user_id, report_id=report.report.id) is not None
+
+
+def test_report_api_rejects_valid_snapshot_tampering_before_detail_or_export(
+    tmp_path: Path,
+) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    account, workspace, reports, user_id, token, _, _, report = seed_report(database)
+    shared = reports.enable_share(
+        user_id=user_id,
+        report_id=report.report.id,
+        request=ReportShareRequest(expires_in_days=2),
+    )
+    tampered_snapshot_json = report.snapshot.model_copy(
+        update={"title": "Tampered report"}
+    ).model_dump_json()
+    with sqlite3.connect(database) as connection:
+        connection.execute(
+            "UPDATE account_workspace_reports SET snapshot_json = ? WHERE id = ?",
+            (tampered_snapshot_json, report.report.id),
+        )
+
+    app.dependency_overrides[get_account_service] = lambda: account
+    app.dependency_overrides[get_workspace_service] = lambda: workspace
+    app.dependency_overrides[get_report_service] = lambda: reports
+    try:
+        private_detail = asyncio.run(
+            request("GET", f"/v1/account/reports/{report.report.id}", cookie=token)
+        )
+        private_export = asyncio.run(
+            request(
+                "GET",
+                f"/v1/account/reports/{report.report.id}/export.html",
+                cookie=token,
+            )
+        )
+        public_detail = asyncio.run(
+            request("GET", f"/v1/public/reports/{shared.share_token}")
+        )
+        public_export = asyncio.run(
+            request("GET", f"/v1/public/reports/{shared.share_token}/export.html")
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert_private_report_unavailable(private_detail)
+    assert_private_report_unavailable(private_export)
+    assert_public_report_hidden(public_detail)
+    assert_public_report_hidden(public_export)
+    for response in (private_detail, private_export, public_detail, public_export):
+        assert "Tampered report" not in response.text
+
+
+@pytest.mark.parametrize(
+    "invalid_snapshot_json",
+    (
+        "{not-json",
+        '{"contract_version":"webdiag.account.report_snapshot.v1"}',
+    ),
+    ids=("invalid-json", "invalid-schema"),
+)
+def test_report_api_hides_invalid_snapshot_validation_details(
+    tmp_path: Path,
+    invalid_snapshot_json: str,
+) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    account, workspace, reports, user_id, token, _, _, report = seed_report(database)
+    shared = reports.enable_share(
+        user_id=user_id,
+        report_id=report.report.id,
+        request=ReportShareRequest(expires_in_days=2),
+    )
+    with sqlite3.connect(database) as connection:
+        connection.execute(
+            "UPDATE account_workspace_reports SET snapshot_json = ? WHERE id = ?",
+            (invalid_snapshot_json, report.report.id),
+        )
+
+    app.dependency_overrides[get_account_service] = lambda: account
+    app.dependency_overrides[get_workspace_service] = lambda: workspace
+    app.dependency_overrides[get_report_service] = lambda: reports
+    try:
+        private_detail = asyncio.run(
+            request("GET", f"/v1/account/reports/{report.report.id}", cookie=token)
+        )
+        public_detail = asyncio.run(
+            request("GET", f"/v1/public/reports/{shared.share_token}")
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert_private_report_unavailable(private_detail)
+    assert_public_report_hidden(public_detail)
+    for response in (private_detail, public_detail):
+        body = response.text.lower()
+        for forbidden in (
+            "validationerror",
+            "pydantic",
+            "json_invalid",
+            "snapshot_json",
+            "traceback",
+        ):
+            assert forbidden not in body
+
+
+@pytest.mark.parametrize("stored_hash", (None, "é" * 64), ids=("missing", "malformed"))
+def test_report_api_rejects_missing_or_malformed_artifact_hash(
+    tmp_path: Path,
+    stored_hash: str | None,
+) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    account, workspace, reports, user_id, token, _, _, report = seed_report(database)
+    shared = reports.enable_share(
+        user_id=user_id,
+        report_id=report.report.id,
+        request=ReportShareRequest(expires_in_days=2),
+    )
+    with sqlite3.connect(database) as connection:
+        connection.execute(
+            "UPDATE account_workspace_reports SET artifact_sha256 = ? WHERE id = ?",
+            (stored_hash, report.report.id),
+        )
+
+    app.dependency_overrides[get_account_service] = lambda: account
+    app.dependency_overrides[get_workspace_service] = lambda: workspace
+    app.dependency_overrides[get_report_service] = lambda: reports
+    try:
+        private_detail = asyncio.run(
+            request("GET", f"/v1/account/reports/{report.report.id}", cookie=token)
+        )
+        public_detail = asyncio.run(
+            request("GET", f"/v1/public/reports/{shared.share_token}")
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert_private_report_unavailable(private_detail)
+    assert_public_report_hidden(public_detail)
+
+
+def test_invalid_legacy_snapshot_migration_returns_controlled_api_errors(
+    tmp_path: Path,
+) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    account, workspace, reports, user_id, token, _, _, report = seed_report(database)
+    shared = reports.enable_share(
+        user_id=user_id,
+        report_id=report.report.id,
+        request=ReportShareRequest(expires_in_days=2),
+    )
+    remove_artifact_hash_column(database)
+    with sqlite3.connect(database) as connection:
+        connection.execute(
+            "UPDATE account_workspace_reports SET snapshot_json = ? WHERE id = ?",
+            ("{not-json", report.report.id),
+        )
+    migrating_reports = ReportService(
+        SqliteReportStore(str(database)),
+        workspace=workspace,
+    )
+
+    app.dependency_overrides[get_account_service] = lambda: account
+    app.dependency_overrides[get_workspace_service] = lambda: workspace
+    app.dependency_overrides[get_report_service] = lambda: migrating_reports
+    try:
+        private_detail = asyncio.run(
+            request("GET", f"/v1/account/reports/{report.report.id}", cookie=token)
+        )
+        public_detail = asyncio.run(
+            request("GET", f"/v1/public/reports/{shared.share_token}")
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert_private_report_unavailable(private_detail)
+    assert_public_report_hidden(public_detail)
 
 
 def test_report_ownership_share_hash_expiry_and_revoke(tmp_path: Path) -> None:
