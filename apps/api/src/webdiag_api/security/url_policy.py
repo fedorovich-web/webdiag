@@ -42,6 +42,18 @@ def validate_resolved_addresses(addresses: list[str]) -> None:
             raise UrlPolicyError("Resolved address is not allowed.")
 
 
+def _has_valid_dns_labels(hostname: str) -> bool:
+    if len(hostname) > 253:
+        return False
+    return all(
+        0 < len(label) <= 63
+        and label[0].isalnum()
+        and label[-1].isalnum()
+        and all(character.isalnum() or character == "-" for character in label)
+        for label in hostname.split(".")
+    )
+
+
 def _canonicalize_hostname(
     hostname: str,
 ) -> tuple[str, ipaddress.IPv4Address | ipaddress.IPv6Address | None]:
@@ -49,9 +61,12 @@ def _canonicalize_hostname(
         address = ipaddress.ip_address(hostname)
     except ValueError:
         try:
-            return hostname.encode("idna").decode("ascii").lower(), None
+            canonical_hostname = hostname.encode("idna").decode("ascii").lower()
         except UnicodeError as exc:
             raise UrlPolicyError("Hostname cannot be encoded as IDNA.") from exc
+        if not _has_valid_dns_labels(canonical_hostname):
+            raise UrlPolicyError("Hostname contains an invalid DNS label.") from None
+        return canonical_hostname, None
     return str(address), address
 
 
@@ -81,7 +96,7 @@ def validate_url(raw: str) -> ValidatedUrl:
     except ValueError as exc:
         raise UrlPolicyError("Port is invalid.") from exc
     default_port = 443 if scheme == "https" else 80
-    port = parsed_port or default_port
+    port = default_port if parsed_port is None else parsed_port
     if port not in {80, 443}:
         raise UrlPolicyError("Only ports 80 and 443 are allowed.")
     authority_hostname = f"[{hostname}]" if isinstance(address, ipaddress.IPv6Address) else hostname
