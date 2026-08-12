@@ -1000,3 +1000,20 @@ worker bridge and actor: 11 passed
 ```
 
 These tests cover the internal-only 15-tool catalog, distinct production bearer configuration, immutable ledger and reconciliation, idempotent run reservation, ownership-scoped access, pending-run release, hashed renewable claims, stale completion rejection, safe and unknown failure settlement, bounded internal HTTP, and disabled real-provider behavior.
+
+### A12.0 hardening follow-up
+
+After adding type-separated opaque cursor pagination, bounded provider usage persistence, a stable internal-AI validation envelope, and timing-safe lease-hash comparison, the affected backend packages were verified once:
+
+```text
+npm run test:python
+PASS — 326/326
+
+npm run lint:python
+PASS — Ruff reported no findings
+
+npm run verify:python-lock
+PASS — 31 locked packages match the installed win32 environment
+```
+
+Frontend sources were not changed in this follow-up, so the unchanged local frontend suites were not repeated. The push-triggered GitHub `Full verification` remains the complete repository gate.
