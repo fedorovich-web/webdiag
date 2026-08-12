@@ -13,7 +13,10 @@ from webdiag_api.accounts.workspace_models import (
     SavedAuditPayload,
     SavedAuditRecommendation,
 )
-from webdiag_api.accounts.workspace_storage import SqliteWorkspaceStore
+from webdiag_api.accounts.workspace_storage import (
+    SqliteWorkspaceStore,
+    WorkspaceStoreIntegrityError,
+)
 from webdiag_api.audit.models import AuditJobStatus, AuditRun
 from webdiag_api.audit.service import AuditExecutionError, AuditExecutionService
 from webdiag_api.security.url_policy import UrlPolicyError, validate_url
@@ -231,10 +234,18 @@ class WorkspaceService:
             raise WorkspaceServiceError(
                 404, "account_saved_audit_not_found", "Audit was not found."
             )
+        try:
+            payload = audit.payload()
+        except WorkspaceStoreIntegrityError as error:
+            raise WorkspaceServiceError(
+                500,
+                "account_saved_audit_unavailable",
+                "The stored audit is temporarily unavailable.",
+            ) from error
         return SavedAuditDetailResponse(
             project=project.public(),
             audit=audit.summary(),
-            payload=audit.payload(),
+            payload=payload,
         )
 
     def _owned_project(self, *, user_id: str, project_id: str):

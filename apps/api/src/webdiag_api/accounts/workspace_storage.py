@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import hashlib
+import hmac
 import sqlite3
 import threading
 import time
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
+
+from pydantic import ValidationError
 
 from webdiag_api.accounts.models import utc_datetime
 from webdiag_api.accounts.workspace_models import (
@@ -16,6 +20,14 @@ from webdiag_api.accounts.workspace_models import (
 
 MAX_PROJECTS_PER_ACCOUNT = 100
 MAX_AUDITS_PER_PROJECT = 100
+
+
+class WorkspaceStoreIntegrityError(RuntimeError):
+    """Persisted saved-audit data failed its schema or digest check."""
+
+
+def _payload_digest(payload_json: str) -> str:
+    return hashlib.sha256(payload_json.encode("utf-8")).hexdigest()
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,6 +61,7 @@ class StoredAudit:
     completed_at: int
     created_at: int
     payload_json: str
+    payload_sha256: str
 
     def summary(self) -> SavedAuditSummary:
         return SavedAuditSummary(
@@ -63,7 +76,26 @@ class StoredAudit:
         )
 
     def payload(self) -> SavedAuditPayload:
-        return SavedAuditPayload.model_validate_json(self.payload_json)
+        actual = _payload_digest(self.payload_json)
+        if not self.payload_sha256 or not hmac.compare_digest(actual, self.payload_sha256):
+            raise WorkspaceStoreIntegrityError("persisted saved-audit digest does not match")
+        try:
+            payload = SavedAuditPayload.model_validate_json(self.payload_json, strict=True)
+        except (ValidationError, ValueError) as error:
+            raise WorkspaceStoreIntegrityError(
+                "persisted saved-audit payload is invalid"
+            ) from error
+        if (
+            self.status != payload.status
+            or self.score != payload.score
+            or self.check_count != len(payload.checks)
+            or self.issue_count != len(payload.issues)
+            or self.completed_at != int(payload.completed_at.timestamp())
+        ):
+            raise WorkspaceStoreIntegrityError(
+                "persisted saved-audit summary does not match its payload"
+            )
+        return payload
 
 
 class SqliteWorkspaceStore:
@@ -115,6 +147,7 @@ class SqliteWorkspaceStore:
                         created_at INTEGER NOT NULL,
                         payload_version TEXT NOT NULL,
                         payload_json TEXT NOT NULL,
+                        payload_sha256 TEXT NOT NULL CHECK(length(payload_sha256) = 64),
                         FOREIGN KEY(project_id) REFERENCES account_workspace_projects(id)
                             ON DELETE CASCADE,
                         FOREIGN KEY(user_id) REFERENCES account_users(id) ON DELETE CASCADE
@@ -125,6 +158,38 @@ class SqliteWorkspaceStore:
                         );
                     """
                 )
+                columns = {
+                    str(row[1])
+                    for row in connection.execute(
+                        "PRAGMA table_info(account_workspace_saved_audits)"
+                    ).fetchall()
+                }
+                if "payload_sha256" not in columns:
+                    try:
+                        connection.execute("BEGIN IMMEDIATE")
+                        connection.execute(
+                            """
+                            ALTER TABLE account_workspace_saved_audits
+                            ADD COLUMN payload_sha256 TEXT CHECK(length(payload_sha256) = 64)
+                            """
+                        )
+                        rows = connection.execute(
+                            "SELECT id, payload_json FROM account_workspace_saved_audits"
+                        ).fetchall()
+                        for row in rows:
+                            payload_json = str(row["payload_json"])
+                            SavedAuditPayload.model_validate_json(payload_json, strict=True)
+                            connection.execute(
+                                """
+                                UPDATE account_workspace_saved_audits
+                                SET payload_sha256 = ? WHERE id = ?
+                                """,
+                                (_payload_digest(payload_json), str(row["id"])),
+                            )
+                        connection.execute("COMMIT")
+                    except Exception:
+                        connection.execute("ROLLBACK")
+                        raise
             self._schema_ready = True
 
     def create_project(self, *, user_id: str, name: str, origin: str) -> StoredProject:
@@ -223,6 +288,7 @@ class SqliteWorkspaceStore:
             completed_at=completed_at,
             created_at=created_at,
             payload_json=payload_json,
+            payload_sha256=_payload_digest(payload_json),
         )
         with self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
@@ -252,8 +318,9 @@ class SqliteWorkspaceStore:
                 """
                 INSERT INTO account_workspace_saved_audits(
                     id, project_id, user_id, status, score, check_count,
-                    issue_count, completed_at, created_at, payload_version, payload_json
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    issue_count, completed_at, created_at, payload_version,
+                    payload_json, payload_sha256
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     audit.id,
@@ -267,6 +334,7 @@ class SqliteWorkspaceStore:
                     audit.created_at,
                     payload.contract_version,
                     audit.payload_json,
+                    audit.payload_sha256,
                 ),
             )
             connection.execute(
@@ -282,7 +350,7 @@ class SqliteWorkspaceStore:
             rows = connection.execute(
                 """
                 SELECT id, project_id, user_id, status, score, check_count,
-                       issue_count, completed_at, created_at, payload_json
+                       issue_count, completed_at, created_at, payload_json, payload_sha256
                 FROM account_workspace_saved_audits
                 WHERE user_id = ? AND project_id = ?
                 ORDER BY completed_at DESC, id DESC
@@ -304,7 +372,7 @@ class SqliteWorkspaceStore:
             row = connection.execute(
                 """
                 SELECT id, project_id, user_id, status, score, check_count,
-                       issue_count, completed_at, created_at, payload_json
+                       issue_count, completed_at, created_at, payload_json, payload_sha256
                 FROM account_workspace_saved_audits
                 WHERE user_id = ? AND project_id = ? AND id = ?
                 """,
@@ -336,4 +404,5 @@ class SqliteWorkspaceStore:
             completed_at=int(row["completed_at"]),
             created_at=int(row["created_at"]),
             payload_json=str(row["payload_json"]),
+            payload_sha256=str(row["payload_sha256"] or ""),
         )

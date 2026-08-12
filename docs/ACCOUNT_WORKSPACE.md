@@ -186,6 +186,10 @@ A11.4 adds a real monitoring execution path rather than a presentation-only dash
 Monitoring stores its own safe versioned audit snapshots and does not consume the A11.1 saved-audit limit.
 It does not expose raw evidence, internal tokens, provider destinations, or worker lease values.
 
+Saved-audit payloads carry a SHA-256 integrity digest. Legacy A11.1 rows are
+additively backfilled once; reads verify the digest, schema, and summary metadata before
+issues or reports can consume the snapshot.
+
 Monitoring tables:
 
 ```text

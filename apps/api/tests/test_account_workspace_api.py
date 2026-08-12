@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
@@ -266,6 +267,96 @@ def test_saved_audit_is_versioned_bounded_and_excludes_internal_fields(tmp_path:
     }
     assert payload_version == "webdiag.account.saved_audit_payload.v1"
     assert "evidence" not in payload_json
+
+
+def test_saved_audit_hash_migration_detects_tampering_without_reblessing(
+    tmp_path: Path,
+) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    account = build_account_service(database_path)
+    user_id, _ = register(account, "owner@example.com")
+    workspace = build_workspace(database_path)
+    project = workspace.create_project(
+        user_id=user_id,
+        request=ProjectCreateRequest(name="Main", origin="https://example.com"),
+    )
+    saved = workspace.run_and_save_audit(user_id=user_id, project_id=project.id)
+
+    with sqlite3.connect(database_path) as connection:
+        columns = {
+            row[1]
+            for row in connection.execute(
+                "PRAGMA table_info(account_workspace_saved_audits)"
+            ).fetchall()
+        }
+        if "payload_sha256" in columns:
+            connection.execute(
+                "ALTER TABLE account_workspace_saved_audits DROP COLUMN payload_sha256"
+            )
+        connection.commit()
+
+    migrated_store = SqliteWorkspaceStore(str(database_path))
+    migrated_store.ensure_schema()
+    with sqlite3.connect(database_path) as connection:
+        payload_json, payload_sha256 = connection.execute(
+            """
+            SELECT payload_json, payload_sha256
+            FROM account_workspace_saved_audits
+            WHERE id = ?
+            """,
+            (saved.audit.id,),
+        ).fetchone()
+        assert payload_sha256 == hashlib.sha256(payload_json.encode("utf-8")).hexdigest()
+        connection.execute(
+            """
+            UPDATE account_workspace_saved_audits
+            SET payload_json = replace(payload_json, 'Title tag is missing', 'Tampered title')
+            WHERE id = ?
+            """,
+            (saved.audit.id,),
+        )
+        connection.commit()
+
+    restarted = WorkspaceService(
+        SqliteWorkspaceStore(str(database_path)),
+        audit_service=StubAuditService(),
+    )
+    with pytest.raises(WorkspaceServiceError) as unavailable:
+        restarted.get_saved_audit(
+            user_id=user_id,
+            project_id=project.id,
+            audit_id=saved.audit.id,
+        )
+    assert unavailable.value.status_code == 500
+    assert unavailable.value.code == "account_saved_audit_unavailable"
+
+
+def test_saved_audit_rejects_summary_payload_mismatch(tmp_path: Path) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    account = build_account_service(database_path)
+    user_id, _ = register(account, "owner@example.com")
+    workspace = build_workspace(database_path)
+    project = workspace.create_project(
+        user_id=user_id,
+        request=ProjectCreateRequest(name="Main", origin="https://example.com"),
+    )
+    saved = workspace.run_and_save_audit(user_id=user_id, project_id=project.id)
+
+    with sqlite3.connect(database_path) as connection:
+        connection.execute(
+            "UPDATE account_workspace_saved_audits SET score = 1 WHERE id = ?",
+            (saved.audit.id,),
+        )
+        connection.commit()
+
+    with pytest.raises(WorkspaceServiceError) as unavailable:
+        workspace.get_saved_audit(
+            user_id=user_id,
+            project_id=project.id,
+            audit_id=saved.audit.id,
+        )
+    assert unavailable.value.status_code == 500
+    assert unavailable.value.code == "account_saved_audit_unavailable"
 
 
 def test_workspace_api_create_run_history_and_detail(tmp_path: Path) -> None:
