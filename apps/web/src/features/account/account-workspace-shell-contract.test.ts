@@ -1,13 +1,10 @@
+import { describe, expect, it } from "vitest";
 import {
   buildAccountWorkspaceNavigation,
   recentAccountProjects,
   resolveActiveAccountProject,
 } from "./account-workspace-shell-contract";
 import type { AccountProject } from "./account-workspace-contract";
-
-function assert(condition: unknown, message: string): asserts condition {
-  if (!condition) throw new Error(message);
-}
 
 const projects: readonly AccountProject[] = [
   {
@@ -33,20 +30,27 @@ const projects: readonly AccountProject[] = [
   },
 ];
 
-const ru = buildAccountWorkspaceNavigation("ru", "overview");
-assert(ru.length === 3, "RU navigation must contain overview, projects, and reports");
-assert(ru[0]?.label === "Обзор" && ru[0].active, "RU overview must be active");
-assert(ru[1]?.href === "/account#projects", "RU projects link must target the real list");
-assert(ru[2]?.href === "/account/reports", "RU reports link must target saved reports");
+describe("account workspace shell contract", () => {
+  it("builds localized navigation for the real account routes", () => {
+    const ru = buildAccountWorkspaceNavigation("ru", "overview");
+    expect(ru).toHaveLength(3);
+    expect(ru[0]?.label).toBe("Обзор");
+    expect(ru[0]?.active).toBe(true);
+    expect(ru[1]?.href).toBe("/account#projects");
+    expect(ru[2]?.href).toBe("/account/reports");
 
-const en = buildAccountWorkspaceNavigation("en", "projects");
-assert(en[0]?.href === "/en/account", "EN overview path must be localized");
-assert(en[1]?.label === "Projects" && en[1].active, "EN projects must be active");
-assert(en[2]?.label === "Reports" && !en[2].active, "EN reports must be present");
+    const en = buildAccountWorkspaceNavigation("en", "projects");
+    expect(en[0]?.href).toBe("/en/account");
+    expect(en[1]?.label).toBe("Projects");
+    expect(en[1]?.active).toBe(true);
+    expect(en[2]?.label).toBe("Reports");
+    expect(en[2]?.active).toBe(false);
+  });
 
-const recent = recentAccountProjects(projects, 2);
-assert(recent.map((project) => project.name).join(",") === "Newest,Middle", "Recent projects must be sorted by updated_at");
-assert(resolveActiveAccountProject(projects, projects[1]!.id)?.name === "Newest", "Current project must resolve by UUID");
-assert(resolveActiveAccountProject(projects, "not-a-project") === null, "Unknown project must resolve to null");
-
-console.log("account workspace shell contract: PASS");
+  it("orders recent projects and resolves the active project by UUID", () => {
+    const recent = recentAccountProjects(projects, 2);
+    expect(recent.map((project) => project.name)).toEqual(["Newest", "Middle"]);
+    expect(resolveActiveAccountProject(projects, projects[1]!.id)?.name).toBe("Newest");
+    expect(resolveActiveAccountProject(projects, "not-a-project")).toBeNull();
+  });
+});
