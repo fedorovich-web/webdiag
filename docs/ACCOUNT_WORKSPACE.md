@@ -120,6 +120,11 @@ WEBDIAG_ACCOUNT_COOKIE_SECURE=true
 WEBDIAG_API_INTERNAL_URL=http://api:8000
 ```
 
+Public audit jobs and runs are persisted in the configured SQLite file
+(`WEBDIAG_AUDIT_DATABASE_PATH`) with SHA-256 integrity checks and bounded retention
+(`WEBDIAG_AUDIT_HISTORY_LIMIT`, default 1000). The Docker account override stores this
+database in the same durable `/data` volume as account state.
+
 `NEXT_PUBLIC_WEBDIAG_API_BASE_URL` is not used for account-cookie proxying.
 
 ## Verification

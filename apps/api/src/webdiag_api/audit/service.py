@@ -4,6 +4,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from threading import Lock
+from typing import Protocol
 from uuid import UUID
 
 from webdiag_api.audit.fetcher import SafeFetchError, SafeHttpFetcher
@@ -62,6 +63,20 @@ class InMemoryAuditStore:
                 return None
             return AuditSnapshot(job=job, run=self._runs_by_job.get(job_id))
 
+    def save_snapshot(self, job: AuditJob, run: AuditRun) -> None:
+        self.save_job(job)
+        self.save_run(run)
+
+
+class AuditStore(Protocol):
+    def save_job(self, job: AuditJob) -> AuditJob: ...
+
+    def save_run(self, run: AuditRun) -> AuditRun: ...
+
+    def save_snapshot(self, job: AuditJob, run: AuditRun) -> None: ...
+
+    def get_snapshot(self, job_id: UUID) -> AuditSnapshot | None: ...
+
 
 FetcherFactory = Callable[[], SafeHttpFetcher]
 
@@ -76,7 +91,7 @@ class AuditExecutionService:
     def __init__(
         self,
         *,
-        store: InMemoryAuditStore | None = None,
+        store: AuditStore | None = None,
         fetcher_factory: FetcherFactory | None = None,
     ) -> None:
         self.store = store or InMemoryAuditStore()
@@ -112,10 +127,10 @@ class AuditExecutionService:
             self._record_failed_execution(job=job, target=target)
             raise
 
-        job = self.store.save_job(
-            job.model_copy(update={"status": AuditJobStatus.SUCCEEDED, "updated_at": _utc_now()})
+        job = job.model_copy(
+            update={"status": AuditJobStatus.SUCCEEDED, "updated_at": _utc_now()}
         )
-        self.store.save_run(run)
+        self.store.save_snapshot(job, run)
         return AuditSnapshot(job=job, run=run)
 
     def get_snapshot(self, job_id: UUID) -> AuditSnapshot | None:
@@ -135,13 +150,14 @@ class AuditExecutionService:
     ) -> tuple[AuditJob, AuditRun]:
         failed = self._mark_job_failed(job)
         failed_run = self._create_failed_run(job=failed, target=target)
+        self.store.save_snapshot(failed, failed_run)
         return failed, failed_run
 
     def _mark_job_failed(self, job: AuditJob) -> AuditJob:
         failed = job.model_copy(
             update={"status": AuditJobStatus.FAILED, "updated_at": _utc_now()}
         )
-        return self.store.save_job(failed)
+        return failed
 
     def _create_failed_run(self, *, job: AuditJob, target: AuditTarget) -> AuditRun:
         failed_run = AuditRun(
@@ -150,4 +166,4 @@ class AuditExecutionService:
             status=AuditJobStatus.FAILED,
             completed_at=_utc_now(),
         )
-        return self.store.save_run(failed_run)
+        return failed_run

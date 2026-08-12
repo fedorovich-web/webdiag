@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     environment: str = "development"
     public_release: bool = False
     account_database_path: str = ".webdiag/accounts.sqlite3"
+    audit_database_path: str = ".webdiag/audits.sqlite3"
+    audit_history_limit: int = Field(default=1_000, ge=1, le=100_000)
     account_session_ttl_seconds: int = Field(
         default=60 * 60 * 24 * 30,
         ge=_MIN_SESSION_TTL_SECONDS,
@@ -47,20 +49,20 @@ class Settings(BaseSettings):
     monitoring_internal_token: str = ""
     monitoring_scheduler_interval_seconds: int = Field(default=60, ge=30, le=300)
 
-    @field_validator("account_database_path")
+    @field_validator("account_database_path", "audit_database_path")
     @classmethod
     def validate_account_database_path(cls, value: str) -> str:
         normalized = value.strip()
         lowered = normalized.casefold()
         if not normalized or "\x00" in normalized:
-            raise ValueError("account database path is invalid")
+            raise ValueError("database path is invalid")
         if lowered == ":memory:" or lowered.startswith("file:"):
-            raise ValueError("account database must use a file path")
+            raise ValueError("database must use a file path")
         if normalized.endswith(("/", "\\")):
-            raise ValueError("account database path must include a file name")
+            raise ValueError("database path must include a file name")
         for path in (PurePosixPath(normalized), PureWindowsPath(normalized)):
             if ".." in path.parts:
-                raise ValueError("account database path must not contain traversal")
+                raise ValueError("database path must not contain traversal")
         return normalized
 
     @field_validator("monitoring_internal_token")

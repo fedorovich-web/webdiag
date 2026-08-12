@@ -14,10 +14,17 @@ from webdiag_api.audit.service import (
     AuditRequestError,
     AuditSnapshot,
 )
+from webdiag_api.audit.storage import AuditStoreIntegrityError, SqliteAuditStore
 from webdiag_api.audit.summary import summarize_audit_run
+from webdiag_api.config import settings
 
 router = APIRouter(prefix="/v1/audits", tags=["audits"])
-_default_audit_service = AuditExecutionService()
+_default_audit_service = AuditExecutionService(
+    store=SqliteAuditStore(
+        settings.audit_database_path,
+        history_limit=settings.audit_history_limit,
+    )
+)
 
 
 class StartAuditRequest(BaseModel):
@@ -80,7 +87,17 @@ def get_audit_snapshot(
     job_id: UUID,
     service: AuditServiceDependency,
 ) -> AuditSnapshotResponse:
-    snapshot = service.get_snapshot(job_id)
+    try:
+        snapshot = service.get_snapshot(job_id)
+    except AuditStoreIntegrityError as error:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "code": "audit_unavailable",
+                "message": "The stored audit is temporarily unavailable.",
+            },
+            headers={"Cache-Control": "no-store"},
+        ) from error
     if snapshot is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

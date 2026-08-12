@@ -1,4 +1,5 @@
 import asyncio
+import sqlite3
 from collections.abc import Callable
 
 import httpx
@@ -8,7 +9,12 @@ from webdiag_api.audit import service as audit_service_module
 from webdiag_api.audit.api import get_audit_service
 from webdiag_api.audit.fetcher import SafeHttpFetcher
 from webdiag_api.audit.models import AuditJob, AuditJobStatus
-from webdiag_api.audit.service import AuditExecutionService, InMemoryAuditStore
+from webdiag_api.audit.service import (
+    AuditExecutionService,
+    InMemoryAuditStore,
+)
+from webdiag_api.audit.storage import AuditStoreIntegrityError, SqliteAuditStore
+from webdiag_api.config import Settings
 from webdiag_api.main import app
 
 SAFE_IP = "93.184.216.34"
@@ -176,6 +182,51 @@ def test_get_audit_returns_stored_snapshot() -> None:
     assert payload["run"]["job_id"] == job_id
     assert payload["summary"]["job_id"] == job_id
     assert payload["summary"]["run"]["status"] == "succeeded"
+
+
+def test_sqlite_audit_store_survives_restart_and_bounds_history(tmp_path) -> None:
+    database = tmp_path / "audits.sqlite3"
+    first_store = SqliteAuditStore(str(database), history_limit=2)
+    first_service = build_service(healthy_resource_response, store=first_store)
+    first = first_service.start_single_url_audit("https://example.com/")
+
+    restarted = SqliteAuditStore(str(database), history_limit=2)
+    restored = restarted.get_snapshot(first.job.job_id)
+    assert restored == first
+
+    second_service = build_service(healthy_resource_response, store=restarted)
+    second = second_service.start_single_url_audit("https://example.org/")
+    third = second_service.start_single_url_audit("https://www.example.com/")
+    assert restarted.get_snapshot(first.job.job_id) is None
+    assert restarted.get_snapshot(second.job.job_id) is not None
+    assert restarted.get_snapshot(third.job.job_id) is not None
+
+    with sqlite3.connect(database) as connection:
+        assert connection.execute("PRAGMA foreign_key_check").fetchall() == []
+        assert connection.execute("SELECT COUNT(*) FROM audit_jobs").fetchone()[0] == 2
+        assert connection.execute("SELECT COUNT(*) FROM audit_runs").fetchone()[0] == 2
+
+
+def test_default_audit_database_configuration_is_file_backed() -> None:
+    configured = Settings()
+    assert configured.audit_database_path == ".webdiag/audits.sqlite3"
+    assert configured.audit_history_limit == 1_000
+
+
+def test_sqlite_audit_store_rejects_tampered_payload(tmp_path) -> None:
+    database = tmp_path / "audits.sqlite3"
+    store = SqliteAuditStore(str(database))
+    service = build_service(healthy_resource_response, store=store)
+    snapshot = service.start_single_url_audit("https://example.com/")
+
+    with sqlite3.connect(database) as connection:
+        connection.execute(
+            "UPDATE audit_runs SET payload_json = replace(payload_json, 'succeeded', 'failed')"
+        )
+        connection.commit()
+
+    with pytest.raises(AuditStoreIntegrityError):
+        store.get_snapshot(snapshot.job.job_id)
 
 
 def test_start_audit_rejects_disallowed_url_before_fetch() -> None:
