@@ -73,7 +73,11 @@ def test_settings_reject_insecure_production_and_unsafe_storage_paths() -> None:
     with pytest.raises(ValidationError):
         Settings(environment="production", account_cookie_secure=False)
 
-    production = Settings(environment="production", account_cookie_secure=True)
+    production = Settings(
+        environment="production",
+        account_cookie_secure=True,
+        monitoring_internal_token="x" * 32,
+    )
     assert production.account_cookie_secure is True
 
     for unsafe_path in (

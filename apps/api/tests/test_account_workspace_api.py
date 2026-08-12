@@ -260,6 +260,7 @@ def test_saved_audit_is_versioned_bounded_and_excludes_internal_fields(tmp_path:
     assert tables == {
         "account_users",
         "account_sessions",
+        "account_login_attempts",
         "account_workspace_projects",
         "account_workspace_saved_audits",
     }
