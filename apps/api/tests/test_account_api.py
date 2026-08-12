@@ -77,6 +77,7 @@ def test_settings_reject_insecure_production_and_unsafe_storage_paths() -> None:
         environment="production",
         account_cookie_secure=True,
         monitoring_internal_token="x" * 32,
+        ai_internal_token="y" * 32,
     )
     assert production.account_cookie_secure is True
 
@@ -141,6 +142,36 @@ def test_settings_bound_request_body_limits() -> None:
             "http_request_body_max_bytes": 16_384,
             "account_request_body_max_bytes": 16_385,
         },
+    ):
+        with pytest.raises(ValidationError):
+            Settings(**payload)
+
+
+def test_settings_require_bounded_distinct_ai_worker_credentials() -> None:
+    with pytest.raises(ValidationError, match="production AI internal token is required"):
+        Settings(
+            environment="production",
+            account_cookie_secure=True,
+            monitoring_internal_token="m" * 32,
+        )
+
+    with pytest.raises(ValidationError, match="must be distinct"):
+        Settings(
+            environment="production",
+            account_cookie_secure=True,
+            monitoring_internal_token="x" * 32,
+            ai_internal_token="x" * 32,
+        )
+
+    for payload in (
+        {"ai_internal_token": "short"},
+        {"ai_internal_token": "x" * 16 + "\n" + "y" * 16},
+        {"ai_lease_seconds": 59},
+        {"ai_lease_seconds": 3_601},
+        {"ai_lease_renew_interval_seconds": 9},
+        {"ai_input_max_bytes": 1_023},
+        {"ai_output_max_bytes": 2_000_001},
+        {"ai_lease_seconds": 60, "ai_lease_renew_interval_seconds": 60},
     ):
         with pytest.raises(ValidationError):
             Settings(**payload)

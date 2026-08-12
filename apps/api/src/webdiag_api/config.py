@@ -12,9 +12,17 @@ _MIN_HTTP_REQUEST_BODY_MAX_BYTES = 16_384
 _MAX_HTTP_REQUEST_BODY_MAX_BYTES = 10_000_000
 _MIN_ACCOUNT_REQUEST_BODY_MAX_BYTES = 1_024
 _MAX_ACCOUNT_REQUEST_BODY_MAX_BYTES = 10_000_000
+_MIN_AI_PAYLOAD_MAX_BYTES = 1_024
+_MAX_AI_PAYLOAD_MAX_BYTES = 2_000_000
 _MONITORING_TOKEN_PLACEHOLDERS = frozenset(
     {
         "change-this-monitoring-token-32chars",
+        "replace-with-at-least-32-random-characters",
+    }
+)
+_AI_TOKEN_PLACEHOLDERS = frozenset(
+    {
+        "change-this-ai-token-32-characters",
         "replace-with-at-least-32-random-characters",
     }
 )
@@ -54,6 +62,19 @@ class Settings(BaseSettings):
     account_login_block_seconds: int = Field(default=900, ge=30, le=3600)
     monitoring_internal_token: str = ""
     monitoring_scheduler_interval_seconds: int = Field(default=60, ge=30, le=300)
+    ai_internal_token: str = ""
+    ai_lease_seconds: int = Field(default=900, ge=60, le=3600)
+    ai_lease_renew_interval_seconds: int = Field(default=300, ge=10, le=1200)
+    ai_input_max_bytes: int = Field(
+        default=262_144,
+        ge=_MIN_AI_PAYLOAD_MAX_BYTES,
+        le=_MAX_AI_PAYLOAD_MAX_BYTES,
+    )
+    ai_output_max_bytes: int = Field(
+        default=1_000_000,
+        ge=_MIN_AI_PAYLOAD_MAX_BYTES,
+        le=_MAX_AI_PAYLOAD_MAX_BYTES,
+    )
 
     @field_validator("account_database_path", "audit_database_path")
     @classmethod
@@ -91,6 +112,24 @@ class Settings(BaseSettings):
             raise ValueError("monitoring internal token must not use a documented placeholder")
         return normalized
 
+    @field_validator("ai_internal_token")
+    @classmethod
+    def validate_ai_internal_token(cls, value: str) -> str:
+        normalized = value.strip()
+        if value != normalized:
+            raise ValueError(
+                "AI internal token must contain only visible ASCII characters without spaces"
+            )
+        if normalized and len(normalized) < 32:
+            raise ValueError("AI internal token must contain at least 32 characters")
+        if any(not 0x21 <= ord(character) <= 0x7E for character in normalized):
+            raise ValueError(
+                "AI internal token must contain only visible ASCII characters without spaces"
+            )
+        if normalized in _AI_TOKEN_PLACEHOLDERS:
+            raise ValueError("AI internal token must not use a documented placeholder")
+        return normalized
+
     @field_validator("account_scrypt_n")
     @classmethod
     def validate_scrypt_n(cls, value: int) -> int:
@@ -105,8 +144,14 @@ class Settings(BaseSettings):
                 raise ValueError("production account cookies must be secure")
             if not self.monitoring_internal_token:
                 raise ValueError("production monitoring internal token is required")
+            if not self.ai_internal_token:
+                raise ValueError("production AI internal token is required")
+            if self.ai_internal_token == self.monitoring_internal_token:
+                raise ValueError("production internal tokens must be distinct")
         if self.account_request_body_max_bytes > self.http_request_body_max_bytes:
             raise ValueError("account request body max must not exceed HTTP request body max")
+        if self.ai_lease_renew_interval_seconds >= self.ai_lease_seconds:
+            raise ValueError("AI lease renew interval must be shorter than the AI lease")
         return self
 
 
