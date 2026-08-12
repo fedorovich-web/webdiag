@@ -28,6 +28,7 @@ test.describe("approved visual baselines", () => {
       await page.setViewportSize({ width: view.width, height: view.height });
       await page.addInitScript((theme) => localStorage.setItem("webdiag-theme", theme), view.theme);
       await page.goto(view.route);
+      await expect(page.locator("body")).toHaveAttribute("data-theme-ready", "true");
       if ("menu" in view && view.menu) await page.locator(".mobile-menu summary").click();
       await expect(page).toHaveScreenshot(`${view.name}.png`, {
         fullPage: !view.name.includes("header-menu"),
