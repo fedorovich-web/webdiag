@@ -21,6 +21,7 @@ async def request(
     path: str,
     *,
     json: dict[str, object] | None = None,
+    content: bytes | None = None,
     cookies: httpx.Cookies | None = None,
 ) -> tuple[httpx.Response, httpx.Cookies]:
     transport = httpx.ASGITransport(app=app)
@@ -29,7 +30,7 @@ async def request(
         base_url="http://test",
         cookies=cookies,
     ) as client:
-        response = await client.request(method, path, json=json)
+        response = await client.request(method, path, json=json, content=content)
         return response, client.cookies
 
 
@@ -104,6 +105,40 @@ def test_settings_bound_session_and_scrypt_parameters() -> None:
         account_scrypt_dklen=32,
     )
     assert settings.account_scrypt_n == 2**15
+
+
+def test_settings_bound_request_body_limits() -> None:
+    defaults = Settings()
+    assert defaults.http_request_body_max_bytes == 2_000_000
+    assert defaults.account_request_body_max_bytes == 16_384
+
+    for payload in (
+        {"http_request_body_max_bytes": 16_383},
+        {"http_request_body_max_bytes": 10_000_001},
+        {"account_request_body_max_bytes": 1_023},
+        {"account_request_body_max_bytes": 10_000_001},
+        {
+            "http_request_body_max_bytes": 16_384,
+            "account_request_body_max_bytes": 16_385,
+        },
+    ):
+        with pytest.raises(ValidationError):
+            Settings(**payload)
+
+
+def test_account_api_rejects_oversized_direct_request_with_proxy_envelope() -> None:
+    response, _ = asyncio.run(
+        request("POST", "/v1/account/login", content=b"x" * 16_385)
+    )
+
+    assert response.status_code == 413
+    assert response.headers["cache-control"] == "no-store"
+    assert response.json() == {
+        "detail": {
+            "code": "account_request_too_large",
+            "message": "Request body is too large.",
+        }
+    }
 
 
 def test_configured_scrypt_hash_and_bounded_verification() -> None:

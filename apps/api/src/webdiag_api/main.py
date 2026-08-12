@@ -17,7 +17,9 @@ from webdiag_api.accounts.report_api import (
 )
 from webdiag_api.accounts.workspace_api import router as workspace_router
 from webdiag_api.audit.api import router as audit_router
+from webdiag_api.config import settings
 from webdiag_api.registry import public_tools
+from webdiag_api.security.request_limits import RequestBodyLimitMiddleware
 from webdiag_api.tools.accessibility_static import router as accessibility_static_tool_router
 from webdiag_api.tools.asset_delivery import router as asset_delivery_tool_router
 from webdiag_api.tools.canonical import router as canonical_tool_router
@@ -39,6 +41,11 @@ from webdiag_api.tools.technical_seo import router as technical_seo_tool_router
 from webdiag_api.tools.url_management import router as url_management_tool_router
 
 app = FastAPI(title="WebDiag API", version=__version__)
+app.add_middleware(
+    RequestBodyLimitMiddleware,
+    http_request_body_max_bytes=settings.http_request_body_max_bytes,
+    account_request_body_max_bytes=settings.account_request_body_max_bytes,
+)
 app.add_exception_handler(RequestValidationError, account_validation_exception_handler)
 app.include_router(account_router)
 app.include_router(workspace_router)

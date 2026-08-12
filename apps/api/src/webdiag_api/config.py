@@ -8,6 +8,10 @@ _MIN_SESSION_TTL_SECONDS = 300
 _MAX_SESSION_TTL_SECONDS = 60 * 60 * 24 * 90
 _MIN_SCRYPT_N = 2**12
 _MAX_SCRYPT_N = 2**16
+_MIN_HTTP_REQUEST_BODY_MAX_BYTES = 16_384
+_MAX_HTTP_REQUEST_BODY_MAX_BYTES = 10_000_000
+_MIN_ACCOUNT_REQUEST_BODY_MAX_BYTES = 1_024
+_MAX_ACCOUNT_REQUEST_BODY_MAX_BYTES = 10_000_000
 
 
 class Settings(BaseSettings):
@@ -23,6 +27,16 @@ class Settings(BaseSettings):
     )
     account_active_session_limit: int = Field(default=10, ge=1, le=20)
     account_cookie_secure: bool = False
+    http_request_body_max_bytes: int = Field(
+        default=2_000_000,
+        ge=_MIN_HTTP_REQUEST_BODY_MAX_BYTES,
+        le=_MAX_HTTP_REQUEST_BODY_MAX_BYTES,
+    )
+    account_request_body_max_bytes: int = Field(
+        default=16_384,
+        ge=_MIN_ACCOUNT_REQUEST_BODY_MAX_BYTES,
+        le=_MAX_ACCOUNT_REQUEST_BODY_MAX_BYTES,
+    )
     account_scrypt_n: int = Field(default=2**14, ge=_MIN_SCRYPT_N, le=_MAX_SCRYPT_N)
     account_scrypt_r: int = Field(default=8, ge=1, le=16)
     account_scrypt_p: int = Field(default=1, ge=1, le=4)
@@ -65,6 +79,8 @@ class Settings(BaseSettings):
     def require_secure_cookie_in_production(self) -> Self:
         if self.environment.strip().casefold() == "production" and not self.account_cookie_secure:
             raise ValueError("production account cookies must be secure")
+        if self.account_request_body_max_bytes > self.http_request_body_max_bytes:
+            raise ValueError("account request body max must not exceed HTTP request body max")
         return self
 
 
