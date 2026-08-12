@@ -4,8 +4,8 @@
 
 Setting `PUBLIC_RELEASE=true` invokes `scripts/verify-release.mjs`. The build fails unless:
 
-- the registry contains exactly 110 unique tools;
-- all 110 entries have state `ready`;
+- the registry is the source of truth for declared tools;
+- every registry entry has a unique `id` and `slug` and state `ready`;
 - all required application tests and checks are run by the release pipeline.
 
 The current package is an internal development scaffold, not a public release.

@@ -3,7 +3,7 @@
 - npm monorepo for the Next.js application and shared TypeScript packages.
 - FastAPI service in a separate Python package.
 - Dramatiq worker package prepared for RabbitMQ.
-- Registry contains 110 definitions; public selectors expose only the 14 entries with verified implementations.
+- The registry is the source of truth for declared tool definitions; public selectors expose only ready entries with verified implementations.
 - Browser-only tool logic lives in `packages/tool-core` and is covered by unit tests.
 - RU routes have no locale prefix; EN routes use `/en`.
 - Public UI is light-first and supports only explicit `light` and `dark` preferences. Operating-system color preferences are intentionally ignored.
