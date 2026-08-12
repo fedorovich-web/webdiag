@@ -82,8 +82,11 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def require_secure_cookie_in_production(self) -> Self:
-        if self.environment.strip().casefold() == "production" and not self.account_cookie_secure:
-            raise ValueError("production account cookies must be secure")
+        if self.environment.strip().casefold() == "production":
+            if not self.account_cookie_secure:
+                raise ValueError("production account cookies must be secure")
+            if not self.monitoring_internal_token:
+                raise ValueError("production monitoring internal token is required")
         if self.account_request_body_max_bytes > self.http_request_body_max_bytes:
             raise ValueError("account request body max must not exceed HTTP request body max")
         return self

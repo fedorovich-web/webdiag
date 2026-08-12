@@ -151,8 +151,11 @@ class MonitoringService:
                     job_id=snapshot.job.job_id,
                 )
             payload = build_saved_audit_payload(snapshot.run, target_origin=origin)
-        except Exception as error:
-            run = self._record_failure(monitor, type(error).__name__)
+        except AuditExecutionError:
+            run = self._record_failure(monitor, "monitoring_audit_failed")
+            return MonitorRunResponse(run=run.public())
+        except Exception:
+            run = self._record_failure(monitor, "monitoring_execution_failed")
             return MonitorRunResponse(run=run.public())
         completed_at = int(time.time())
         change = compare_payloads(previous, payload)

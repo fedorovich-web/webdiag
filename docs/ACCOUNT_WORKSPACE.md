@@ -118,6 +118,7 @@ Production requires:
 WEBDIAG_ENVIRONMENT=production
 WEBDIAG_ACCOUNT_COOKIE_SECURE=true
 WEBDIAG_API_INTERNAL_URL=http://api:8000
+WEBDIAG_MONITORING_INTERNAL_TOKEN=<at-least-32-random-characters>
 ```
 
 Public audit jobs and runs are persisted in the configured SQLite file

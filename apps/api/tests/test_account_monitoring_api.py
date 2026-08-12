@@ -238,6 +238,13 @@ def test_monitoring_configuration_and_notification_contract() -> None:
     else:
         raise AssertionError("Short internal monitoring tokens must be rejected")
 
+    with pytest.raises(ValidationError):
+        Settings(
+            environment="production",
+            account_cookie_secure=True,
+            monitoring_internal_token="",
+        )
+
     run = MonitorRun(
         id="run-1",
         monitor_id="monitor-1",
@@ -560,7 +567,7 @@ def test_failed_manual_audit_completes_through_its_claimed_lease(tmp_path: Path)
     result = monitoring.run_monitor(user_id=user_id, project_id=project.id)
 
     assert result.run.status == "failed"
-    assert result.run.error_code == "RuntimeError"
+    assert result.run.error_code == "monitoring_execution_failed"
     history = monitoring.get_history(user_id=user_id, project_id=project.id)
     assert len(history.runs) == 1
     assert history.runs[0].status == "failed"
