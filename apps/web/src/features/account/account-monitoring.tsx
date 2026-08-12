@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { accountErrorMessage } from "./account-messages";
 import {
@@ -45,7 +45,7 @@ export function AccountMonitoring({ locale, projectId }: Props) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
 
-  const load = useCallback(async () => {
+  async function refresh() {
     try {
       const value = await getAccountMonitorHistory(projectId);
       setError("");
@@ -62,9 +62,31 @@ export function AccountMonitoring({ locale, projectId }: Props) {
         setError(accountErrorMessage(locale, caught));
       }
     }
-  }, [locale, projectId]);
+  }
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    let active = true;
+    getAccountMonitorHistory(projectId)
+      .then((value) => {
+        if (!active) return;
+        setError("");
+        setHistory(value);
+        setCadence(value.monitor.cadence);
+        setTimezone(value.monitor.timezone);
+        setMissing(false);
+      })
+      .catch((caught) => {
+        if (!active) return;
+        if (caught instanceof Error && "status" in caught && caught.status === 404) {
+          setError("");
+          setMissing(true);
+          setHistory(null);
+        } else {
+          setError(accountErrorMessage(locale, caught));
+        }
+      });
+    return () => { active = false; };
+  }, [locale, projectId]);
 
   async function configure(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -73,7 +95,7 @@ export function AccountMonitoring({ locale, projectId }: Props) {
     try {
       if (missing) await createAccountMonitor(projectId, { cadence, timezone });
       else await updateAccountMonitor(projectId, { cadence, timezone });
-      await load();
+      await refresh();
     } catch (caught) {
       setError(accountErrorMessage(locale, caught));
     } finally {
@@ -86,7 +108,7 @@ export function AccountMonitoring({ locale, projectId }: Props) {
     setError("");
     try {
       await runAccountMonitor(projectId);
-      await load();
+      await refresh();
     } catch (caught) {
       setError(accountErrorMessage(locale, caught));
     } finally {
@@ -99,7 +121,7 @@ export function AccountMonitoring({ locale, projectId }: Props) {
     setError("");
     try {
       await updateAccountMonitor(projectId, { enabled: !monitor.enabled });
-      await load();
+      await refresh();
     } catch (caught) {
       setError(accountErrorMessage(locale, caught));
     } finally {
