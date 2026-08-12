@@ -12,6 +12,12 @@ _MIN_HTTP_REQUEST_BODY_MAX_BYTES = 16_384
 _MAX_HTTP_REQUEST_BODY_MAX_BYTES = 10_000_000
 _MIN_ACCOUNT_REQUEST_BODY_MAX_BYTES = 1_024
 _MAX_ACCOUNT_REQUEST_BODY_MAX_BYTES = 10_000_000
+_MONITORING_TOKEN_PLACEHOLDERS = frozenset(
+    {
+        "change-this-monitoring-token-32chars",
+        "replace-with-at-least-32-random-characters",
+    }
+)
 
 
 class Settings(BaseSettings):
@@ -71,6 +77,8 @@ class Settings(BaseSettings):
         normalized = value.strip()
         if normalized and len(normalized) < 32:
             raise ValueError("monitoring internal token must contain at least 32 characters")
+        if normalized in _MONITORING_TOKEN_PLACEHOLDERS:
+            raise ValueError("monitoring internal token must not use a documented placeholder")
         return normalized
 
     @field_validator("account_scrypt_n")

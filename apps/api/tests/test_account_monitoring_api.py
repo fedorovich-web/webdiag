@@ -283,6 +283,22 @@ def test_monitoring_configuration_and_notification_contract() -> None:
     assert "destination" not in serialized
 
 
+@pytest.mark.parametrize(
+    "placeholder",
+    (
+        "replace-with-at-least-32-random-characters",
+        "change-this-monitoring-token-32chars",
+    ),
+)
+def test_monitoring_configuration_rejects_documented_placeholder_tokens(
+    placeholder: str,
+) -> None:
+    from webdiag_api.config import Settings
+
+    with pytest.raises(ValidationError):
+        Settings(monitoring_internal_token=placeholder)
+
+
 def test_claimed_run_requires_the_current_lease_token(tmp_path: Path) -> None:
     database = tmp_path / "accounts.sqlite3"
     user_id, project_id, _, store, _ = create_stored_monitor(database)
