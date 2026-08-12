@@ -39,6 +39,29 @@ const categoryLabels: Record<Locale, Record<AccountIssueCategory, string>> = {
   },
 };
 
+interface AccountIssuesRequestState {
+  readonly key: string;
+  readonly result: AccountIssueListResponse | null;
+  readonly error: string;
+}
+
+function accountIssuesRequestKey(
+  locale: Locale,
+  projectId: string,
+  auditId: string,
+  filters: AccountIssueFilters,
+): string {
+  return JSON.stringify([
+    locale,
+    projectId,
+    auditId,
+    filters.category ?? null,
+    filters.priority ?? null,
+    filters.sort ?? "priority",
+    filters.order ?? "asc",
+  ]);
+}
+
 export function AccountIssuesList({
   locale,
   projectId,
@@ -53,20 +76,32 @@ export function AccountIssuesList({
     sort: "priority",
     order: "asc",
   });
-  const [result, setResult] = useState<AccountIssueListResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [requestState, setRequestState] = useState<AccountIssuesRequestState>({
+    key: "",
+    result: null,
+    error: "",
+  });
+  const requestKey = accountIssuesRequestKey(locale, projectId, auditId, filters);
+  const loading = requestState.key !== requestKey;
+  const result = requestState.result;
+  const error = requestState.key === requestKey ? requestState.error : "";
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
-    setError("");
     listAccountIssues(projectId, auditId, filters)
-      .then((value) => { if (active) setResult(value); })
-      .catch((caught) => { if (active) setError(accountErrorMessage(locale, caught)); })
-      .finally(() => { if (active) setLoading(false); });
+      .then((value) => {
+        if (active) setRequestState({ key: requestKey, result: value, error: "" });
+      })
+      .catch((caught) => {
+        if (!active) return;
+        setRequestState((current) => ({
+          key: requestKey,
+          result: current.result,
+          error: accountErrorMessage(locale, caught),
+        }));
+      });
     return () => { active = false; };
-  }, [auditId, filters, locale, projectId]);
+  }, [auditId, filters, locale, projectId, requestKey]);
 
   const category = filters.category ?? "";
   const priority = filters.priority ?? "";

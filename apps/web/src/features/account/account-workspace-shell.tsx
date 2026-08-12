@@ -108,7 +108,7 @@ export function AccountWorkspaceShell({
   const ru = locale === "ru";
   const [session, setSession] = useState<AccountSessionResponse | null>(null);
   const [projects, setProjects] = useState<readonly AccountProject[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadedToken, setLoadedToken] = useState<number | null>(null);
   const [loadState, setLoadState] = useState<"ready" | "unauthenticated" | "unavailable">("ready");
   const [reloadToken, setReloadToken] = useState(0);
   const [logoutPending, setLogoutPending] = useState(false);
@@ -117,17 +117,18 @@ export function AccountWorkspaceShell({
   const drawerTriggerRef = useRef<HTMLButtonElement>(null);
   const drawerCloseRef = useRef<HTMLButtonElement>(null);
   const drawerPanelRef = useRef<HTMLElement>(null);
+  const loading = loadedToken !== reloadToken;
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
-    setError("");
-    setLoadState("ready");
     Promise.all([getAccountSession(), listAccountProjects()])
       .then(([sessionValue, projectValue]) => {
         if (!active) return;
         setSession(sessionValue);
         setProjects(projectValue.projects);
+        setLoadState("ready");
+        setError("");
+        setLoadedToken(reloadToken);
       })
       .catch((caught) => {
         if (!active) return;
@@ -138,9 +139,7 @@ export function AccountWorkspaceShell({
             ? "unauthenticated"
             : "unavailable",
         );
-      })
-      .finally(() => {
-        if (active) setLoading(false);
+        setLoadedToken(reloadToken);
       });
     return () => {
       active = false;

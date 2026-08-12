@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { accountErrorMessage } from "./account-messages";
 import {
@@ -45,25 +45,26 @@ export function AccountMonitoring({ locale, projectId }: Props) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
 
-  async function load() {
-    setError("");
+  const load = useCallback(async () => {
     try {
       const value = await getAccountMonitorHistory(projectId);
+      setError("");
       setHistory(value);
       setCadence(value.monitor.cadence);
       setTimezone(value.monitor.timezone);
       setMissing(false);
     } catch (caught) {
       if (caught instanceof Error && "status" in caught && caught.status === 404) {
+        setError("");
         setMissing(true);
         setHistory(null);
       } else {
         setError(accountErrorMessage(locale, caught));
       }
     }
-  }
+  }, [locale, projectId]);
 
-  useEffect(() => { void load(); }, [projectId]);
+  useEffect(() => { void load(); }, [load]);
 
   async function configure(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

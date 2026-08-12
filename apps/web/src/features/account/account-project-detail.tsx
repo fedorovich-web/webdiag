@@ -11,21 +11,30 @@ import { accountPath, projectMonitoringPath, savedAuditPath } from "../../lib/ro
 export function AccountProjectDetail({ locale, projectId }: { readonly locale: Locale; readonly projectId: string }) {
   const ru = locale === "ru";
   const [detail, setDetail] = useState<AccountProjectDetailResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState("");
   const [reload, setReload] = useState(0);
+  const requestKey = `${locale}:${projectId}:${reload}`;
+  const loading = loadedKey !== requestKey;
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
-    setError("");
     getAccountProject(projectId)
-      .then((value) => { if (active) setDetail(value); })
-      .catch((caught) => { if (active) setError(accountErrorMessage(locale, caught)); })
-      .finally(() => { if (active) setLoading(false); });
+      .then((value) => {
+        if (!active) return;
+        setDetail(value);
+        setError("");
+        setLoadedKey(requestKey);
+      })
+      .catch((caught) => {
+        if (!active) return;
+        setDetail(null);
+        setError(accountErrorMessage(locale, caught));
+        setLoadedKey(requestKey);
+      });
     return () => { active = false; };
-  }, [locale, projectId, reload]);
+  }, [locale, projectId, requestKey]);
 
   async function runAudit() {
     setRunning(true);
