@@ -213,7 +213,7 @@ POST  /v1/account/projects/{projectId}/monitor/run
 POST  /v1/internal/monitoring/run-due
 ```
 
-The internal endpoint requires `WEBDIAG_MONITORING_INTERNAL_TOKEN`. The worker sends it only as a Bearer header over the configured private HTTP(S) origin.
+The internal endpoint requires `WEBDIAG_MONITORING_INTERNAL_TOKEN`. The worker sends it only as a Bearer header over the configured private HTTP(S) origin. Authenticated internal calls reject redirects, so the token cannot be forwarded to a redirect target.
 
 The notification boundary is contract-only:
 

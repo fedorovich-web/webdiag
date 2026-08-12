@@ -2,11 +2,32 @@ from __future__ import annotations
 
 import json
 import os
+from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
-from urllib.request import Request, urlopen
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 MAX_RESPONSE_BYTES = 1_000_000
+
+
+class _RejectRedirects(HTTPRedirectHandler):
+    def redirect_request(
+        self,
+        req: Request,
+        fp: Any,
+        code: int,
+        msg: str,
+        headers: Any,
+        _newurl: str,
+    ) -> None:
+        raise HTTPError(req.full_url, code, "Monitoring API redirect rejected", headers, fp)
+
+
+_NO_REDIRECT_OPENER = build_opener(_RejectRedirects())
+
+
+def urlopen(request: Request, *, timeout: int) -> Any:
+    return _NO_REDIRECT_OPENER.open(request, timeout=timeout)
 
 
 def run_due_monitors() -> int:
