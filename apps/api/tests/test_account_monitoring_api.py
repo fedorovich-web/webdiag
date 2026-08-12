@@ -7,11 +7,13 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import httpx
 import pytest
 from pydantic import ValidationError
 
+from webdiag_api.accounts import monitoring_storage as monitoring_storage_module
 from webdiag_api.accounts.api import get_account_service
 from webdiag_api.accounts.models import RegisterRequest
 from webdiag_api.accounts.monitoring_api import get_monitoring_service
@@ -304,6 +306,42 @@ def test_claimed_run_requires_the_current_lease_token(tmp_path: Path) -> None:
     completed = save_passed_run(store, claimed)
     assert completed.status == "passed"
     assert len(store.list_runs(user_id=user_id, monitor_id=claimed.id)) == 1
+
+
+def test_daily_monitor_preserves_local_hour_across_dst_start(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    account, workspace, _, _ = build_services(database)
+    user_id, _ = register(account)
+    project = workspace.create_project(
+        user_id=user_id,
+        request=ProjectCreateRequest(name="Main", origin="https://example.com"),
+    )
+    store = SqliteMonitoringStore(str(database))
+    before_dst = int(datetime(2026, 3, 28, 11, tzinfo=UTC).timestamp())
+    monkeypatch.setattr(monitoring_storage_module.time, "time", lambda: before_dst)
+
+    pending = store.create_monitor(
+        user_id=user_id,
+        project_id=project.id,
+        cadence="daily",
+        timezone="Europe/Berlin",
+    )
+    assert pending.next_run_at is not None
+    first_local = datetime.fromtimestamp(pending.next_run_at, tz=ZoneInfo("Europe/Berlin"))
+    assert first_local.isoformat() == "2026-03-29T12:00:00+02:00"
+
+    claimed = store.claim_due(now=pending.next_run_at)
+    assert claimed is not None
+    completed = pending.next_run_at + 60
+    monkeypatch.setattr(monitoring_storage_module.time, "time", lambda: completed)
+    save_passed_run(store, claimed)
+    current = store.get_monitor(user_id=user_id, project_id=project.id)
+    assert current is not None
+    assert current.next_run_at is not None
+    second_local = datetime.fromtimestamp(current.next_run_at, tz=ZoneInfo("Europe/Berlin"))
+    assert second_local.isoformat() == "2026-03-30T12:00:00+02:00"
 
 
 def test_reclaimed_lease_rejects_the_old_claimant_without_mutation(tmp_path: Path) -> None:

@@ -7,7 +7,9 @@ import threading
 import time
 import uuid
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from pydantic import ValidationError
 
@@ -30,6 +32,29 @@ class MonitorRunIntegrityError(RuntimeError):
 
 def _payload_digest(payload_json: str) -> str:
     return hashlib.sha256(payload_json.encode("utf-8")).hexdigest()
+
+
+def _next_scheduled_run(
+    cadence: str,
+    timezone: str,
+    *,
+    after: int,
+    previous: int | None = None,
+) -> int:
+    if previous is not None and previous > after:
+        return previous
+    interval = CADENCE_SECONDS[cadence]
+    if cadence not in {"daily", "weekly"}:
+        anchor = previous if previous is not None else after
+        return anchor + (((after - anchor) // interval) + 1) * interval
+
+    zone = ZoneInfo(timezone)
+    anchor = datetime.fromtimestamp(previous if previous is not None else after, tz=zone)
+    step = timedelta(days=1 if cadence == "daily" else 7)
+    candidate = anchor + step
+    while candidate.timestamp() <= after:
+        candidate += step
+    return int(candidate.timestamp())
 
 
 def _validated_payload(
@@ -272,7 +297,7 @@ class SqliteMonitoringStore:
             timezone=timezone,
             enabled=True,
             status="pending",
-            next_run_at=now + CADENCE_SECONDS[cadence],
+            next_run_at=_next_scheduled_run(cadence, timezone, after=now),
             last_run_at=None,
             consecutive_failures=0,
             lease_token=None,
@@ -351,7 +376,13 @@ class SqliteMonitoringStore:
         new_timezone = timezone or current.timezone
         new_enabled = current.enabled if enabled is None else enabled
         now = int(time.time())
-        next_run = now + CADENCE_SECONDS[new_cadence] if new_enabled else None
+        schedule_changed = cadence is not None or timezone is not None
+        if not new_enabled:
+            next_run = None
+        elif not current.enabled or schedule_changed or current.next_run_at is None:
+            next_run = _next_scheduled_run(new_cadence, new_timezone, after=now)
+        else:
+            next_run = current.next_run_at
         status = "pending" if current.status == "running" or not new_enabled else current.status
         with self._connect() as connection:
             connection.execute(
@@ -444,9 +475,19 @@ class SqliteMonitoringStore:
                 error_code=error_code,
             )
             failures = current.consecutive_failures + 1 if status == "failed" else 0
-            delay = CADENCE_SECONDS[current.cadence]
             if status == "failed":
-                delay = min(delay, (5, 15, 60, 360)[min(failures - 1, 3)] * 60)
+                retry_delay = min(
+                    CADENCE_SECONDS[current.cadence],
+                    (5, 15, 60, 360)[min(failures - 1, 3)] * 60,
+                )
+                next_run_at = completed_at + retry_delay
+            else:
+                next_run_at = _next_scheduled_run(
+                    current.cadence,
+                    current.timezone,
+                    after=completed_at,
+                    previous=current.next_run_at,
+                )
             connection.execute(
                 """
                 INSERT INTO account_workspace_monitor_runs(
@@ -483,7 +524,7 @@ class SqliteMonitoringStore:
                 (
                     status,
                     completed_at,
-                    completed_at + delay if current.enabled else None,
+                    next_run_at if current.enabled else None,
                     failures,
                     completed_at,
                     current.id,
