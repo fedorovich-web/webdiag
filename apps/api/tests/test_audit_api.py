@@ -375,3 +375,38 @@ def test_get_unknown_audit_returns_404() -> None:
 
     assert response.status_code == 404
     assert response.json()["detail"]["code"] == "audit_not_found"
+
+
+def test_audit_api_uses_stable_no_store_contracts() -> None:
+    with_service(build_service(healthy_resource_response))
+    try:
+        created = asyncio.run(
+            request("POST", "/v1/audits", json={"url": "https://example.com/?token=secret"})
+        )
+        fetched = asyncio.run(
+            request("GET", f"/v1/audits/{created.json()['job']['job_id']}")
+        )
+        rejected = asyncio.run(
+            request("POST", "/v1/audits", json={"url": "http://127.0.0.1/"})
+        )
+        invalid = asyncio.run(request("POST", "/v1/audits", json={"url": ""}))
+        malformed_id = asyncio.run(request("GET", "/v1/audits/not-a-uuid"))
+    finally:
+        clear_overrides()
+
+    assert [
+        created.status_code,
+        fetched.status_code,
+        rejected.status_code,
+        invalid.status_code,
+        malformed_id.status_code,
+    ] == [201, 200, 400, 422, 422]
+    for response in (created, fetched, rejected, invalid, malformed_id):
+        assert response.headers["cache-control"] == "no-store"
+    for response in (invalid, malformed_id):
+        assert response.json() == {
+            "detail": {
+                "code": "audit_invalid_request",
+                "message": "Invalid audit request.",
+            }
+        }

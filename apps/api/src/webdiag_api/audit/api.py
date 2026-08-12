@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from webdiag_api.audit.models import AuditJob, AuditJobStatus, AuditRun, AuditRunSummary
@@ -61,14 +61,17 @@ AuditServiceDependency = Annotated[AuditExecutionService, Depends(get_audit_serv
 @router.post("", response_model=AuditSnapshotResponse, status_code=status.HTTP_201_CREATED)
 def start_single_url_audit(
     payload: StartAuditRequest,
+    response: Response,
     service: AuditServiceDependency,
 ) -> AuditSnapshotResponse:
+    response.headers["cache-control"] = "no-store"
     try:
         return _to_response(service.start_single_url_audit(payload.url))
     except AuditRequestError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"code": "audit_url_rejected", "message": str(exc)},
+            headers={"Cache-Control": "no-store"},
         ) from exc
     except AuditExecutionError as exc:
         raise HTTPException(
@@ -79,14 +82,17 @@ def start_single_url_audit(
                 "job_id": str(exc.job_id),
                 "run_id": str(exc.run_id) if exc.run_id else None,
             },
+            headers={"Cache-Control": "no-store"},
         ) from exc
 
 
 @router.get("/{job_id}", response_model=AuditSnapshotResponse)
 def get_audit_snapshot(
     job_id: UUID,
+    response: Response,
     service: AuditServiceDependency,
 ) -> AuditSnapshotResponse:
+    response.headers["cache-control"] = "no-store"
     try:
         snapshot = service.get_snapshot(job_id)
     except AuditStoreIntegrityError as error:
@@ -102,6 +108,7 @@ def get_audit_snapshot(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"code": "audit_not_found", "message": "Audit job was not found."},
+            headers={"Cache-Control": "no-store"},
         )
     return _to_response(snapshot)
 

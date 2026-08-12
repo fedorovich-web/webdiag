@@ -3,9 +3,6 @@ from fastapi.exceptions import RequestValidationError
 
 from webdiag_api import __version__
 from webdiag_api.accounts.api import (
-    account_validation_exception_handler,
-)
-from webdiag_api.accounts.api import (
     router as account_router,
 )
 from webdiag_api.accounts.monitoring_api import router as monitoring_router
@@ -39,6 +36,7 @@ from webdiag_api.tools.security_headers import router as security_headers_tool_r
 from webdiag_api.tools.sitemap_xml import router as sitemap_xml_tool_router
 from webdiag_api.tools.technical_seo import router as technical_seo_tool_router
 from webdiag_api.tools.url_management import router as url_management_tool_router
+from webdiag_api.validation import api_validation_exception_handler
 
 app = FastAPI(title="WebDiag API", version=__version__)
 app.add_middleware(
@@ -46,7 +44,7 @@ app.add_middleware(
     http_request_body_max_bytes=settings.http_request_body_max_bytes,
     account_request_body_max_bytes=settings.account_request_body_max_bytes,
 )
-app.add_exception_handler(RequestValidationError, account_validation_exception_handler)
+app.add_exception_handler(RequestValidationError, api_validation_exception_handler)
 app.include_router(account_router)
 app.include_router(workspace_router)
 app.include_router(monitoring_router)

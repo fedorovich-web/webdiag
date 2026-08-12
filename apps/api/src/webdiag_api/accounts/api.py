@@ -3,10 +3,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Annotated
 
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response
-from fastapi.exception_handlers import request_validation_exception_handler
-from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Response
 
 from webdiag_api.accounts.models import (
     AccountLogoutResponse,
@@ -71,24 +68,6 @@ def _set_session_cookie(response: Response, token: str) -> None:
         path="/",
     )
     response.headers["cache-control"] = "no-store"
-
-
-async def account_validation_exception_handler(
-    request: Request,
-    error: RequestValidationError,
-) -> Response:
-    if not request.url.path.startswith("/v1/account/"):
-        return await request_validation_exception_handler(request, error)
-    return JSONResponse(
-        status_code=422,
-        content={
-            "detail": {
-                "code": "account_invalid_request",
-                "message": "Invalid account request.",
-            }
-        },
-        headers={"Cache-Control": "no-store"},
-    )
 
 
 @router.post("/register", response_model=AccountSessionResponse, status_code=201)
