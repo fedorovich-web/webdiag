@@ -16,6 +16,7 @@ from webdiag_api.accounts.monitoring_models import (
 from webdiag_api.accounts.monitoring_storage import (
     MONITOR_LEASE_SECONDS,
     MonitorLeaseLostError,
+    MonitorRunIntegrityError,
     SqliteMonitoringStore,
     StoredMonitor,
 )
@@ -189,11 +190,11 @@ class MonitoringService:
 
     def _execute(self, monitor: StoredMonitor, *, origin: str) -> MonitorRunResponse:
         started_at = int(time.time())
-        previous = self._store.latest_successful_payload(
-            user_id=monitor.user_id,
-            monitor_id=monitor.id,
-        )
         try:
+            previous = self._store.latest_successful_payload(
+                user_id=monitor.user_id,
+                monitor_id=monitor.id,
+            )
             with _LeaseHeartbeat(
                 self._store,
                 monitor,
@@ -204,8 +205,11 @@ class MonitoringService:
                     raise AuditExecutionError(
                         "Audit did not produce a run.",
                         job_id=snapshot.job.job_id,
-                    )
+                )
                 payload = build_saved_audit_payload(snapshot.run, target_origin=origin)
+        except MonitorRunIntegrityError:
+            run = self._record_failure(monitor, "monitoring_history_unavailable")
+            return MonitorRunResponse(run=run.public())
         except AuditExecutionError:
             run = self._record_failure(monitor, "monitoring_audit_failed")
             return MonitorRunResponse(run=run.public())

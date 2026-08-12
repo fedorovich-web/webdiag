@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import sqlite3
 import threading
 import time
@@ -663,6 +664,69 @@ def test_failed_manual_audit_completes_through_its_claimed_lease(tmp_path: Path)
     assert history.monitor.status == "failed"
     assert history.monitor.consecutive_failures == 1
     assert history.monitor.next_run_at is not None
+
+
+def test_monitoring_payload_hash_migration_detects_tampered_baseline(
+    tmp_path: Path,
+) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    account, workspace, monitoring, audit = build_services(database)
+    user_id, _ = register(account)
+    project = workspace.create_project(
+        user_id=user_id,
+        request=ProjectCreateRequest(name="Main", origin="https://example.com"),
+    )
+    monitoring.create_monitor(
+        user_id=user_id,
+        project_id=project.id,
+        request=MonitorCreateRequest(cadence="daily", timezone="UTC"),
+    )
+    monitoring.run_monitor(user_id=user_id, project_id=project.id)
+
+    with sqlite3.connect(database) as connection:
+        columns = {
+            row[1]
+            for row in connection.execute(
+                "PRAGMA table_info(account_workspace_monitor_runs)"
+            ).fetchall()
+        }
+        if "payload_sha256" in columns:
+            connection.execute(
+                "ALTER TABLE account_workspace_monitor_runs DROP COLUMN payload_sha256"
+            )
+        connection.commit()
+
+    migrated_store = SqliteMonitoringStore(str(database))
+    migrated_store.ensure_schema()
+    with sqlite3.connect(database) as connection:
+        payload_json, payload_sha256 = connection.execute(
+            """
+            SELECT payload_json, payload_sha256
+            FROM account_workspace_monitor_runs
+            WHERE payload_json IS NOT NULL
+            """
+        ).fetchone()
+        assert payload_sha256 == hashlib.sha256(payload_json.encode("utf-8")).hexdigest()
+        connection.execute(
+            """
+            UPDATE account_workspace_monitor_runs
+            SET payload_json = replace(payload_json, '"score":90', '"score":1')
+            WHERE payload_json IS NOT NULL
+            """
+        )
+        connection.commit()
+
+    restarted = MonitoringService(
+        SqliteMonitoringStore(str(database)),
+        workspace_store=SqliteWorkspaceStore(str(database)),
+        audit_service=audit,
+    )
+    result = restarted.run_monitor(user_id=user_id, project_id=project.id)
+    assert result.run.status == "failed"
+    assert result.run.error_code == "monitoring_history_unavailable"
+    current = restarted.get_monitor(user_id=user_id, project_id=project.id)
+    assert current.status == "failed"
+    assert current.next_run_at is not None
 
 
 def test_manual_run_preserves_an_already_disabled_monitor(tmp_path: Path) -> None:

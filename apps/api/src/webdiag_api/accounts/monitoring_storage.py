@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import hashlib
+import hmac
 import sqlite3
 import threading
 import time
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
+
+from pydantic import ValidationError
 
 from webdiag_api.accounts.models import utc_datetime
 from webdiag_api.accounts.monitoring_models import (
@@ -18,6 +22,35 @@ from webdiag_api.accounts.workspace_models import SavedAuditPayload
 
 MAX_MONITOR_RUNS = 100
 MONITOR_LEASE_SECONDS = 900
+
+
+class MonitorRunIntegrityError(RuntimeError):
+    """Persisted monitoring baseline failed its schema or digest check."""
+
+
+def _payload_digest(payload_json: str) -> str:
+    return hashlib.sha256(payload_json.encode("utf-8")).hexdigest()
+
+
+def _validated_payload(
+    payload_json: str,
+    payload_sha256: str | None,
+    *,
+    score: int | None,
+    issue_count: int,
+) -> SavedAuditPayload:
+    actual = _payload_digest(payload_json)
+    if not payload_sha256 or not hmac.compare_digest(actual, payload_sha256):
+        raise MonitorRunIntegrityError("persisted monitoring payload digest does not match")
+    try:
+        payload = SavedAuditPayload.model_validate_json(payload_json, strict=True)
+    except (ValidationError, ValueError) as error:
+        raise MonitorRunIntegrityError("persisted monitoring payload is invalid") from error
+    if payload.score != score or len(payload.issues) != issue_count:
+        raise MonitorRunIntegrityError(
+            "persisted monitoring summary does not match its payload"
+        )
+    return payload
 
 
 class MonitorLeaseLostError(RuntimeError):
@@ -71,6 +104,7 @@ class StoredMonitorRun:
     completed_at: int
     change_json: str
     payload_json: str | None
+    payload_sha256: str | None
     error_code: str | None
 
     def change(self) -> MonitorChange:
@@ -79,7 +113,12 @@ class StoredMonitorRun:
     def payload(self) -> SavedAuditPayload | None:
         if self.payload_json is None:
             return None
-        return SavedAuditPayload.model_validate_json(self.payload_json)
+        return _validated_payload(
+            self.payload_json,
+            self.payload_sha256,
+            score=self.score,
+            issue_count=self.issue_count,
+        )
 
     def public(self) -> MonitorRun:
         return MonitorRun(
@@ -154,6 +193,7 @@ class SqliteMonitoringStore:
                         completed_at INTEGER NOT NULL,
                         change_json TEXT NOT NULL,
                         payload_json TEXT,
+                        payload_sha256 TEXT CHECK(length(payload_sha256) = 64),
                         error_code TEXT,
                         FOREIGN KEY(monitor_id) REFERENCES account_workspace_monitors(id)
                             ON DELETE CASCADE,
@@ -167,6 +207,51 @@ class SqliteMonitoringStore:
                         );
                     """
                 )
+                columns = {
+                    str(row[1])
+                    for row in connection.execute(
+                        "PRAGMA table_info(account_workspace_monitor_runs)"
+                    ).fetchall()
+                }
+                if "payload_sha256" not in columns:
+                    try:
+                        connection.execute("BEGIN IMMEDIATE")
+                        connection.execute(
+                            """
+                            ALTER TABLE account_workspace_monitor_runs
+                            ADD COLUMN payload_sha256 TEXT CHECK(length(payload_sha256) = 64)
+                            """
+                        )
+                        rows = connection.execute(
+                            """
+                            SELECT id, score, issue_count, payload_json
+                            FROM account_workspace_monitor_runs
+                            WHERE payload_json IS NOT NULL
+                            """
+                        ).fetchall()
+                        for row in rows:
+                            payload_json = str(row["payload_json"])
+                            payload = SavedAuditPayload.model_validate_json(
+                                payload_json, strict=True
+                            )
+                            if (
+                                payload.score != row["score"]
+                                or len(payload.issues) != int(row["issue_count"])
+                            ):
+                                raise MonitorRunIntegrityError(
+                                    "legacy monitoring summary does not match its payload"
+                                )
+                            connection.execute(
+                                """
+                                UPDATE account_workspace_monitor_runs
+                                SET payload_sha256 = ? WHERE id = ?
+                                """,
+                                (_payload_digest(payload_json), str(row["id"])),
+                            )
+                        connection.execute("COMMIT")
+                    except Exception:
+                        connection.execute("ROLLBACK")
+                        raise
             self._schema_ready = True
 
     def create_monitor(
@@ -296,7 +381,8 @@ class SqliteMonitoringStore:
         with self._connect() as connection:
             row = connection.execute(
                 """
-                SELECT payload_json FROM account_workspace_monitor_runs
+                SELECT score, issue_count, payload_json, payload_sha256
+                FROM account_workspace_monitor_runs
                 WHERE user_id = ? AND monitor_id = ? AND status IN ('passed', 'changed')
                     AND payload_json IS NOT NULL
                 ORDER BY completed_at DESC, rowid DESC LIMIT 1
@@ -305,7 +391,12 @@ class SqliteMonitoringStore:
             ).fetchone()
         if row is None:
             return None
-        return SavedAuditPayload.model_validate_json(row["payload_json"])
+        return _validated_payload(
+            str(row["payload_json"]),
+            str(row["payload_sha256"]) if row["payload_sha256"] is not None else None,
+            score=int(row["score"]) if row["score"] is not None else None,
+            issue_count=int(row["issue_count"]),
+        )
 
     def save_run(
         self,
@@ -347,6 +438,9 @@ class SqliteMonitoringStore:
                 completed_at=completed_at,
                 change_json=change.model_dump_json(),
                 payload_json=payload.model_dump_json() if payload else None,
+                payload_sha256=(
+                    _payload_digest(payload.model_dump_json()) if payload else None
+                ),
                 error_code=error_code,
             )
             failures = current.consecutive_failures + 1 if status == "failed" else 0
@@ -357,8 +451,9 @@ class SqliteMonitoringStore:
                 """
                 INSERT INTO account_workspace_monitor_runs(
                     id, monitor_id, project_id, user_id, status, score, issue_count,
-                    started_at, completed_at, change_json, payload_json, error_code
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    started_at, completed_at, change_json, payload_json,
+                    payload_sha256, error_code
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     run.id,
@@ -372,6 +467,7 @@ class SqliteMonitoringStore:
                     run.completed_at,
                     run.change_json,
                     run.payload_json,
+                    run.payload_sha256,
                     run.error_code,
                 ),
             )
@@ -568,5 +664,6 @@ class SqliteMonitoringStore:
             completed_at=row["completed_at"],
             change_json=row["change_json"],
             payload_json=row["payload_json"],
+            payload_sha256=row["payload_sha256"],
             error_code=row["error_code"],
         )

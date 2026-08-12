@@ -190,6 +190,10 @@ Saved-audit payloads carry a SHA-256 integrity digest. Legacy A11.1 rows are
 additively backfilled once; reads verify the digest, schema, and summary metadata before
 issues or reports can consume the snapshot.
 
+Successful monitoring baselines use the same one-time additive digest migration. A
+corrupted baseline produces a real failed run with `monitoring_history_unavailable` and
+releases the claim; it is never used to calculate a change fingerprint.
+
 Monitoring tables:
 
 ```text
