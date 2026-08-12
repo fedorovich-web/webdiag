@@ -237,6 +237,44 @@ def test_request_limit_compares_arbitrarily_long_decimal_content_length() -> Non
     assert sent[0]["status"] == 413
 
 
+def test_request_limit_coalesces_empty_and_fragmented_request_chunks() -> None:
+    assert RequestBodyLimitMiddleware is not None, "request body limit middleware is missing"
+    replayed: list[dict[str, object]] = []
+
+    async def downstream(
+        scope: dict[str, object],
+        receive: object,
+        send: object,
+    ) -> None:
+        replayed.append(await receive())  # type: ignore[operator]
+
+    middleware = RequestBodyLimitMiddleware(
+        downstream,
+        http_request_body_max_bytes=8,
+        account_request_body_max_bytes=2,
+    )
+    empty_chunks = [
+        {"type": "http.request", "body": b"", "more_body": True} for _ in range(64)
+    ]
+
+    sent = asyncio.run(
+        call_asgi(
+            middleware,
+            {"type": "http", "path": "/v1/tools", "headers": []},
+            [
+                *empty_chunks,
+                {"type": "http.request", "body": b"ab", "more_body": True},
+                {"type": "http.request", "body": b"cd", "more_body": False},
+            ],
+        )
+    )
+
+    assert sent == []
+    assert replayed == [
+        {"type": "http.request", "body": b"abcd", "more_body": False}
+    ]
+
+
 def test_request_limit_counts_invalid_content_length_stream_chunks() -> None:
     assert RequestBodyLimitMiddleware is not None, "request body limit middleware is missing"
 

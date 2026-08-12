@@ -28,19 +28,18 @@ class RequestBodyLimitMiddleware:
             await _send_request_too_large(send, code)
             return
 
-        request_messages = await _read_request_messages(receive, limit)
-        if request_messages is None:
+        request_message = await _read_request_message(receive, limit)
+        if request_message is None:
             await _send_request_too_large(send, code)
             return
 
-        message_index = 0
+        replayed = False
 
         async def receive_replay() -> dict[str, Any]:
-            nonlocal message_index
-            if message_index < len(request_messages):
-                message = request_messages[message_index]
-                message_index += 1
-                return message
+            nonlocal replayed
+            if not replayed:
+                replayed = True
+                return request_message
             return await receive()
 
         await self.app(scope, receive_replay, send)
@@ -51,21 +50,20 @@ class RequestBodyLimitMiddleware:
         return self.http_request_body_max_bytes, "request_too_large"
 
 
-async def _read_request_messages(receive: Receive, limit: int) -> list[dict[str, Any]] | None:
-    messages: list[dict[str, Any]] = []
-    body_size = 0
+async def _read_request_message(receive: Receive, limit: int) -> dict[str, Any] | None:
+    body = bytearray()
 
     while True:
         message = await receive()
-        messages.append(message)
         if message["type"] != "http.request":
-            return messages
+            return message
 
-        body_size += len(message.get("body", b""))
-        if body_size > limit:
+        chunk = message.get("body", b"")
+        if len(body) + len(chunk) > limit:
             return None
+        body.extend(chunk)
         if not message.get("more_body", False):
-            return messages
+            return {"type": "http.request", "body": bytes(body), "more_body": False}
 
 
 def _declared_content_length_exceeds_limit(
