@@ -10,6 +10,10 @@ const webPackage = await readJson("apps/web/package.json");
 const corePackage = await readJson("packages/tool-core/package.json");
 const registryPackage = await readJson("packages/tool-registry/package.json");
 const lock = await readJson("package-lock.json");
+const accountComposeOverride = await readFile(
+  new URL("docker-compose.account.override.yml", root),
+  "utf8",
+);
 
 const workspacePackages = [webPackage, corePackage, registryPackage];
 
@@ -61,4 +65,16 @@ test("Python npm scripts always use the project virtualenv wrapper", () => {
   }
   assert.equal(rootPackage.scripts["test:python"].includes("python -m"), false);
   assert.equal(rootPackage.scripts["lint:python"].includes("python -m"), false);
+});
+
+test("account compose requires an explicit monitoring token", () => {
+  const assignments = [
+    ...accountComposeOverride.matchAll(
+      /WEBDIAG_MONITORING_INTERNAL_TOKEN:\s*["']?\$\{([^}]+)\}/g,
+    ),
+  ].map((match) => match[1]);
+  assert.deepEqual(assignments, [
+    "WEBDIAG_MONITORING_INTERNAL_TOKEN:?set a random token of at least 32 characters",
+    "WEBDIAG_MONITORING_INTERNAL_TOKEN:?set a random token of at least 32 characters",
+  ]);
 });

@@ -14,7 +14,7 @@ services:
       WEBDIAG_ACCOUNT_LOGIN_ATTEMPT_LIMIT: 5
       WEBDIAG_ACCOUNT_LOGIN_ATTEMPT_WINDOW_SECONDS: 900
       WEBDIAG_ACCOUNT_LOGIN_BLOCK_SECONDS: 900
-      WEBDIAG_MONITORING_INTERNAL_TOKEN: ${WEBDIAG_MONITORING_INTERNAL_TOKEN:-change-this-monitoring-token-32chars}
+      WEBDIAG_MONITORING_INTERNAL_TOKEN: "${WEBDIAG_MONITORING_INTERNAL_TOKEN:?set a random token of at least 32 characters}"
     volumes:
       - account_data:/data
 
@@ -25,7 +25,7 @@ services:
     command: ["python", "-m", "webdiag_worker.scheduler"]
     environment:
       WEBDIAG_MONITORING_API_INTERNAL_URL: http://api:8000
-      WEBDIAG_MONITORING_INTERNAL_TOKEN: ${WEBDIAG_MONITORING_INTERNAL_TOKEN:-change-this-monitoring-token-32chars}
+      WEBDIAG_MONITORING_INTERNAL_TOKEN: "${WEBDIAG_MONITORING_INTERNAL_TOKEN:?set a random token of at least 32 characters}"
       WEBDIAG_MONITORING_SCHEDULER_INTERVAL_SECONDS: 60
     depends_on:
       - api
