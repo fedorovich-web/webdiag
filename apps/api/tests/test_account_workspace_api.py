@@ -176,11 +176,11 @@ def test_project_origin_normalization_and_duplicate_limit(tmp_path: Path) -> Non
 
     project = workspace.create_project(
         user_id=user_id,
-        request=ProjectCreateRequest(name="  Main   website ", origin="example.com"),
+        request=ProjectCreateRequest(
+            name="  Main   website ", origin="https://Example.COM:443"
+        ),
     )
     assert project.name == "Main website"
-    assert project.origin == "https://example.com"
-    assert workspace.list_projects(user_id=user_id).projects == (project,)
 
     with pytest.raises(WorkspaceServiceError) as duplicate:
         workspace.create_project(
@@ -188,6 +188,8 @@ def test_project_origin_normalization_and_duplicate_limit(tmp_path: Path) -> Non
             request=ProjectCreateRequest(name="Duplicate", origin="https://example.com/"),
         )
     assert duplicate.value.code == "account_project_origin_exists"
+    assert project.origin == "https://example.com"
+    assert workspace.list_projects(user_id=user_id).projects == (project,)
 
 
 def test_project_and_audit_ownership_are_hidden(tmp_path: Path) -> None:
