@@ -46,6 +46,27 @@ def test_worker_rejects_credentialed_internal_url(monkeypatch) -> None:
         raise AssertionError("Credentialed monitoring URL must be rejected")
 
 
+@pytest.mark.parametrize(
+    "token",
+    (
+        "x" * 16 + "\n" + "y" * 16,
+        "x" * 31 + "é",
+        " " + "x" * 32,
+    ),
+)
+def test_worker_rejects_non_header_token_characters(monkeypatch, token: str) -> None:
+    monkeypatch.setenv("WEBDIAG_MONITORING_INTERNAL_TOKEN", token)
+    monkeypatch.setenv("WEBDIAG_MONITORING_API_INTERNAL_URL", "http://api:8000")
+    with (
+        patch(
+            "webdiag_worker.monitoring.urlopen",
+            side_effect=AssertionError("HTTP request must not be attempted"),
+        ),
+        pytest.raises(RuntimeError, match="visible ASCII"),
+    ):
+        run_due_monitors()
+
+
 def test_worker_rejects_redirect_without_forwarding_bearer_token(monkeypatch) -> None:
     redirected_authorization: list[str | None] = []
 

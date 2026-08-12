@@ -48,6 +48,11 @@ def run_due_monitors() -> int:
     timeout = max(5, min(120, int(os.getenv("WEBDIAG_MONITORING_WORKER_TIMEOUT_SECONDS", "60"))))
     if not token:
         raise RuntimeError("WEBDIAG_MONITORING_INTERNAL_TOKEN is required")
+    if any(not 0x21 <= ord(character) <= 0x7E for character in token):
+        raise RuntimeError(
+            "WEBDIAG_MONITORING_INTERNAL_TOKEN must contain only visible ASCII characters "
+            "without spaces"
+        )
     request = Request(
         f"{base}/v1/internal/monitoring/run-due",
         method="POST",

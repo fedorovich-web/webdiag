@@ -75,8 +75,18 @@ class Settings(BaseSettings):
     @classmethod
     def validate_monitoring_internal_token(cls, value: str) -> str:
         normalized = value.strip()
+        if value != normalized:
+            raise ValueError(
+                "monitoring internal token must contain only visible ASCII characters "
+                "without spaces"
+            )
         if normalized and len(normalized) < 32:
             raise ValueError("monitoring internal token must contain at least 32 characters")
+        if any(not 0x21 <= ord(character) <= 0x7E for character in normalized):
+            raise ValueError(
+                "monitoring internal token must contain only visible ASCII characters "
+                "without spaces"
+            )
         if normalized in _MONITORING_TOKEN_PLACEHOLDERS:
             raise ValueError("monitoring internal token must not use a documented placeholder")
         return normalized
