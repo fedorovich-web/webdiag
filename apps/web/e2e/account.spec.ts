@@ -116,7 +116,9 @@ test.describe("account workspace", () => {
     }));
 
     await page.goto(`/account/projects/${firstProject.id}`);
-    await expect(page.getByRole("link", { name: "Проекты" })).toHaveAttribute("aria-current", "page");
+    await expect(
+      page.getByRole("complementary", { name: "Панель кабинета" }).getByRole("link", { name: "Проекты" }),
+    ).toHaveAttribute("aria-current", "page");
     await expect(page.getByLabel("Текущий проект")).toHaveValue(firstProject.id);
     await expect(page.getByRole("heading", { level: 1, name: "Основной сайт" })).toBeVisible();
   });
