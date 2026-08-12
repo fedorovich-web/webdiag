@@ -47,7 +47,11 @@ function readLength(bytes: Uint8Array, offset: number): [number, number] {
   const count = first & 0x7f;
   if (count === 0 || count > 4 || offset + count >= bytes.length) throw new Error("certificate_der_length_invalid");
   let length = 0;
-  for (let i = 0; i < count; i++) length = length * 256 + bytes[offset + 1 + i];
+  for (let i = 0; i < count; i++) {
+    const byte = bytes[offset + 1 + i];
+    if (byte === undefined) throw new Error("certificate_der_length_invalid");
+    length = length * 256 + byte;
+  }
   return [length, offset + 1 + count];
 }
 
@@ -69,8 +73,9 @@ function parseNode(bytes: Uint8Array, offset: number, depth = 0): [Node, number]
 
 function decodeOid(bytes: Uint8Array, node: Node): string {
   const data = bytes.subarray(node.valueStart, node.end);
-  if (data.length === 0) return "";
-  const parts = [Math.floor(data[0] / 40), data[0] % 40];
+  const first = data[0];
+  if (first === undefined) return "";
+  const parts = [Math.floor(first / 40), first % 40];
   let value = 0;
   for (const byte of data.subarray(1)) { value = value * 128 + (byte & 0x7f); if ((byte & 0x80) === 0) { parts.push(value); value = 0; } }
   return parts.join(".");
@@ -79,7 +84,13 @@ function decodeOid(bytes: Uint8Array, node: Node): string {
 function decodeText(bytes: Uint8Array, node: Node): string {
   const data = bytes.subarray(node.valueStart, node.end);
   if (node.tag === 30) { // BMPString
-    let result = ""; for (let i = 0; i + 1 < data.length; i += 2) result += String.fromCharCode(data[i] * 256 + data[i + 1]); return result;
+    let result = "";
+    for (let i = 0; i + 1 < data.length; i += 2) {
+      const high = data[i]; const low = data[i + 1];
+      if (high === undefined || low === undefined) break;
+      result += String.fromCharCode(high * 256 + low);
+    }
+    return result;
   }
   return new TextDecoder(node.tag === 22 ? "ascii" : "utf-8", { fatal: false }).decode(data);
 }
@@ -130,7 +141,9 @@ function parseExtensions(bytes: Uint8Array, extensionWrapper: Node | undefined):
           else if (name.cls === 2 && name.tag === 7) result.sans.push(`IP:${Array.from(data).join(".")}`);
         }
       } else if (oid === "2.5.29.19") {
-        const boolNode = inner.children.find(child => child.tag === 1); result.ca = boolNode ? payload[boolNode.valueStart] !== 0 : false;
+        const boolNode = inner.children.find(child => child.tag === 1);
+        const boolValue = boolNode ? payload[boolNode.valueStart] : undefined;
+        result.ca = boolValue === undefined ? false : boolValue !== 0;
       }
     } catch { /* bounded extension parse: ignore malformed optional extension */ }
   }
@@ -144,7 +157,9 @@ function pemBlocks(input: string): { pem: string; der: Uint8Array }[] {
   const matches = [...input.matchAll(/-----BEGIN CERTIFICATE-----\s*([A-Za-z0-9+/=\s]+?)\s*-----END CERTIFICATE-----/g)];
   if (matches.length === 0 || matches.length > MAX_CERTIFICATES) throw new Error("certificate_pem_count_invalid");
   return matches.map(match => {
-    const compact = match[1].replace(/\s/g, "");
+    const encoded = match[1];
+    if (encoded === undefined) throw new Error("certificate_pem_base64_invalid");
+    const compact = encoded.replace(/\s/g, "");
     if (!/^[A-Za-z0-9+/]+={0,2}$/.test(compact)) throw new Error("certificate_pem_base64_invalid");
     const binary = atob(compact); if (binary.length === 0 || binary.length > MAX_DER_BYTES) throw new Error("certificate_der_size_invalid");
     const der = Uint8Array.from(binary, char => char.charCodeAt(0));
@@ -159,11 +174,15 @@ async function parseCertificate(block: { pem: string; der: Uint8Array }, index: 
   let cursor = tbs.children[0]?.cls === 2 && tbs.children[0]?.tag === 0 ? 1 : 0;
   const serial = tbs.children[cursor++]; cursor++; // tbs signature
   const issuer = tbs.children[cursor++]; const validity = tbs.children[cursor++]; const subject = tbs.children[cursor++]; const spki = tbs.children[cursor++];
-  if (!serial || !issuer || !validity || !subject || !spki || validity.children.length < 2) throw new Error("certificate_structure_invalid");
-  const notBefore = parseTime(block.der, validity.children[0]); const notAfter = parseTime(block.der, validity.children[1]);
+  if (!serial || !issuer || !validity || !subject || !spki) throw new Error("certificate_structure_invalid");
+  const notBeforeNode = validity.children[0]; const notAfterNode = validity.children[1];
+  if (!notBeforeNode || !notAfterNode) throw new Error("certificate_structure_invalid");
+  const notBefore = parseTime(block.der, notBeforeNode); const notAfter = parseTime(block.der, notAfterNode);
   const extensionWrapper = tbs.children.find(child => child.cls === 2 && child.tag === 3);
   const extensions = parseExtensions(block.der, extensionWrapper);
-  const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", block.der));
+  const digestInput = new Uint8Array(new ArrayBuffer(block.der.byteLength));
+  digestInput.set(block.der);
+  const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", digestInput));
   const state: CertificateValidityState = now < notBefore ? "not_yet_valid" : now > notAfter ? "expired" : "valid";
   return {
     index, subject: parseName(block.der, subject), issuer: parseName(block.der, issuer),
@@ -178,16 +197,19 @@ async function parseCertificate(block: { pem: string; der: Uint8Array }, index: 
 function orderChain(certificates: readonly ParsedCertificate[]): { order: number[]; complete: boolean } {
   if (certificates.length <= 1) return { order: certificates.map(c => c.index), complete: true };
   const issuerSubjects = new Set(certificates.map(c => c.issuer));
-  let current = certificates.find(c => !issuerSubjects.has(c.subject) || c.subject === c.issuer) ?? certificates[0];
+  let current: ParsedCertificate | undefined = certificates.find(c => !issuerSubjects.has(c.subject) || c.subject === c.issuer) ?? certificates[0];
   // Prefer leaf: subject is not issuer of another certificate.
   current = certificates.find(c => !certificates.some(other => other.index !== c.index && other.issuer === c.subject)) ?? current;
   const order: number[] = []; const used = new Set<number>();
   while (current && !used.has(current.index)) {
     order.push(current.index); used.add(current.index);
     if (current.subject === current.issuer) break;
-    current = certificates.find(c => !used.has(c.index) && c.subject === current.issuer) as ParsedCertificate;
+    const issuer = current.issuer;
+    current = certificates.find(c => !used.has(c.index) && c.subject === issuer);
   }
-  return { order, complete: used.size === certificates.length && (certificates[order.at(-1) ?? 0]?.subject === certificates[order.at(-1) ?? 0]?.issuer || certificates.length === 1) };
+  const lastIndex = order.at(-1);
+  const last = lastIndex === undefined ? undefined : certificates.find(c => c.index === lastIndex);
+  return { order, complete: used.size === certificates.length && last !== undefined && last.subject === last.issuer };
 }
 
 export async function inspectPemCertificates(input: string, now = new Date()): Promise<CertificateInspectionResult> {
