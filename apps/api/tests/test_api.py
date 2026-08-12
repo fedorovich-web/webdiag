@@ -275,6 +275,42 @@ def test_request_limit_coalesces_empty_and_fragmented_request_chunks() -> None:
     ]
 
 
+def test_request_limit_replays_partial_body_before_disconnect() -> None:
+    assert RequestBodyLimitMiddleware is not None, "request body limit middleware is missing"
+    replayed: list[dict[str, object]] = []
+
+    async def downstream(
+        scope: dict[str, object],
+        receive: object,
+        send: object,
+    ) -> None:
+        replayed.append(await receive())  # type: ignore[operator]
+        replayed.append(await receive())  # type: ignore[operator]
+
+    middleware = RequestBodyLimitMiddleware(
+        downstream,
+        http_request_body_max_bytes=8,
+        account_request_body_max_bytes=2,
+    )
+
+    sent = asyncio.run(
+        call_asgi(
+            middleware,
+            {"type": "http", "path": "/v1/tools", "headers": []},
+            [
+                {"type": "http.request", "body": b"abcd", "more_body": True},
+                {"type": "http.disconnect"},
+            ],
+        )
+    )
+
+    assert sent == []
+    assert replayed == [
+        {"type": "http.request", "body": b"abcd", "more_body": True},
+        {"type": "http.disconnect"},
+    ]
+
+
 def test_request_limit_counts_invalid_content_length_stream_chunks() -> None:
     assert RequestBodyLimitMiddleware is not None, "request body limit middleware is missing"
 

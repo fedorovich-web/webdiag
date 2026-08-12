@@ -28,18 +28,20 @@ class RequestBodyLimitMiddleware:
             await _send_request_too_large(send, code)
             return
 
-        request_message = await _read_request_message(receive, limit)
-        if request_message is None:
+        replay_messages = await _read_request_messages(receive, limit)
+        if replay_messages is None:
             await _send_request_too_large(send, code)
             return
 
-        replayed = False
+        message_index = 0
 
         async def receive_replay() -> dict[str, Any]:
-            nonlocal replayed
-            if not replayed:
-                replayed = True
-                return request_message
+            nonlocal message_index
+            if message_index < len(replay_messages):
+                message = replay_messages[message_index]
+                message_index += 1
+                if message is not None:
+                    return message
             return await receive()
 
         await self.app(scope, receive_replay, send)
@@ -50,20 +52,29 @@ class RequestBodyLimitMiddleware:
         return self.http_request_body_max_bytes, "request_too_large"
 
 
-async def _read_request_message(receive: Receive, limit: int) -> dict[str, Any] | None:
+async def _read_request_messages(
+    receive: Receive, limit: int
+) -> tuple[dict[str, Any], dict[str, Any] | None] | None:
     body = bytearray()
+    saw_request = False
 
     while True:
         message = await receive()
         if message["type"] != "http.request":
-            return message
+            if saw_request:
+                return (
+                    {"type": "http.request", "body": bytes(body), "more_body": True},
+                    message,
+                )
+            return message, None
 
+        saw_request = True
         chunk = message.get("body", b"")
         if len(body) + len(chunk) > limit:
             return None
         body.extend(chunk)
         if not message.get("more_body", False):
-            return {"type": "http.request", "body": bytes(body), "more_body": False}
+            return {"type": "http.request", "body": bytes(body), "more_body": False}, None
 
 
 def _declared_content_length_exceeds_limit(
