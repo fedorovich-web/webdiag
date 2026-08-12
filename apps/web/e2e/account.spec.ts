@@ -226,19 +226,16 @@ test.describe("account workspace", () => {
         projects: [firstProject],
       },
     }));
+    await page.route(`**/api/account/projects/${firstProject.id}/audits/${auditId}/issues/**`, (route) => route.fulfill({
+      json: {
+        contract_version: "webdiag.account.issue_detail.v1",
+        project: firstProject,
+        audit,
+        issue,
+      },
+    }));
     await page.route(`**/api/account/projects/${firstProject.id}/audits/${auditId}/issues*`, (route) => {
-      const url = route.request().url();
-      if (url.endsWith(`/issues/${issue.issue_id}`)) {
-        return route.fulfill({
-          json: {
-            contract_version: "webdiag.account.issue_detail.v1",
-            project: firstProject,
-            audit,
-            issue,
-          },
-        });
-      }
-      filteredRequest = url;
+      filteredRequest = route.request().url();
       return route.fulfill({
         json: {
           contract_version: "webdiag.account.issue_list.v1",
