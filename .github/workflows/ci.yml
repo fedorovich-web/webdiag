@@ -19,7 +19,7 @@ concurrency:
 jobs:
   verify:
     name: Full verification
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     timeout-minutes: 45
     env:
       CI: "true"
@@ -47,13 +47,13 @@ jobs:
         run: python -m venv .venv
 
       - name: Upgrade pip
-        run: .venv/bin/python -m pip install --upgrade pip
+        run: node scripts/run-python.mjs -m pip install --upgrade pip
 
       - name: Install Python dependencies
         run: npm run python:install
 
       - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
 
       - name: Run full project verification
         run: npm run verify:local
