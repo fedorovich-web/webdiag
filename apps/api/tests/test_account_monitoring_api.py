@@ -449,6 +449,59 @@ def test_failed_audit_cannot_create_a_fake_run_after_pause(tmp_path: Path) -> No
     assert history.runs == ()
 
 
+def test_non_disabling_update_invalidates_running_lease_without_phantom_state(
+    tmp_path: Path,
+) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    audit = OverlapAuditService()
+    account, workspace, monitoring, _ = build_services(database, audit_service=audit)
+    user_id, _ = register(account)
+    project = workspace.create_project(
+        user_id=user_id,
+        request=ProjectCreateRequest(name="Main", origin="https://example.com"),
+    )
+    monitoring.create_monitor(
+        user_id=user_id,
+        project_id=project.id,
+        request=MonitorCreateRequest(cadence="daily", timezone="UTC"),
+    )
+    execution_errors: list[BaseException] = []
+
+    def run_audit() -> None:
+        try:
+            monitoring.run_monitor(user_id=user_id, project_id=project.id)
+        except BaseException as error:
+            execution_errors.append(error)
+
+    execution = threading.Thread(target=run_audit)
+    execution.start()
+    try:
+        assert audit.first_started.wait(timeout=5)
+        updated = monitoring.update_monitor(
+            user_id=user_id,
+            project_id=project.id,
+            request=MonitorUpdateRequest(cadence="hourly", timezone="Europe/Berlin"),
+        )
+        assert updated.enabled is True
+        assert updated.status == "pending"
+        assert updated.cadence == "hourly"
+        assert updated.timezone == "Europe/Berlin"
+    finally:
+        audit.release_first.set()
+        execution.join(timeout=10)
+
+    assert not execution.is_alive()
+    assert len(execution_errors) == 1
+    error = execution_errors[0]
+    assert isinstance(error, MonitoringServiceError)
+    assert error.code == "account_monitor_run_lease_lost"
+    history = monitoring.get_history(user_id=user_id, project_id=project.id)
+    assert history.monitor.status == "pending"
+    assert history.monitor.cadence == "hourly"
+    assert history.monitor.timezone == "Europe/Berlin"
+    assert history.runs == ()
+
+
 def test_failed_manual_audit_completes_through_its_claimed_lease(tmp_path: Path) -> None:
     database = tmp_path / "accounts.sqlite3"
     audit = FailedAuditService()

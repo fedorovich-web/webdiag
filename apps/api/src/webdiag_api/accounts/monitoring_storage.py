@@ -267,7 +267,7 @@ class SqliteMonitoringStore:
         new_enabled = current.enabled if enabled is None else enabled
         now = int(time.time())
         next_run = now + CADENCE_SECONDS[new_cadence] if new_enabled else None
-        status = current.status if new_enabled else "pending"
+        status = "pending"
         with self._connect() as connection:
             connection.execute(
                 """
