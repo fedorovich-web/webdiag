@@ -418,4 +418,4 @@ docs(ai): document closed beta foundation
 
 - [ ] **Step 6: Push the feature branch and update existing Draft PR #3**
 
-Keep the PR target `recovery/a11.5-github-baseline`, append A12.0 architecture/security/database/test evidence and remaining A12.1-A12.5 risks, and do not mark ready, merge, tag, release, or deploy.
+Keep the PR target `recovery/a11.5-github-baseline`, append A12.0 architecture/security/database/test evidence and remaining A12.1-A13.0 risks, and do not mark ready, merge, tag, release, or deploy. Lava.top remains deferred until all 15 tools, RU/EN product polish, security/privacy/cost/load review, and production-domain verification are complete.

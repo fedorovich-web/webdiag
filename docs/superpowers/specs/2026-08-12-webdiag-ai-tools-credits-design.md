@@ -4,7 +4,7 @@ Date: 2026-08-12
 
 Status: approved design; implementation is not started by this document
 
-Target program: A12.0-A12.5
+Target program: A12.0-A13.0
 
 ## 1. Objective
 
@@ -30,6 +30,7 @@ This document defines the program architecture and the boundaries of its impleme
 - The first real payment provider is Lava.top.
 - The first payment currency is RUB. RU and EN change presentation language, not prices or ledger currency.
 - Real payments remain disabled until the Lava.top product is moderated and the integration passes a real end-to-end test.
+- Payment integration starts only after all 15 AI tools are implemented, the RU/EN product is polished, the complete security/privacy/cost/load gates pass, and the production domain and infrastructure are verified.
 
 ## 3. Existing-system alignment
 
@@ -340,17 +341,21 @@ Content Brief, Content Optimizer, Search Intent & Page Fit, Competitor Gap Repor
 
 Redirect Migration Mapper, Localization Workbench, Regex Workbench, Image Studio, and Image Edit Studio. This adds bounded tabular input and private binary artifacts.
 
-### A12.4: Lava.top
+### A12.4: integrated product polish
 
-Invoice creation, payment event handling, reconciliation, refunds, provider fixtures, and production activation gates.
+Unify the 15 tools into the authenticated RU/EN product: consistent saved-result contracts, history, artifact access, loading/failure states, accessibility, content boundaries, quotas, and cross-tool UX. This is functional integration and polish, not a visual redesign shortcut.
 
-### A12.5: hardening
+### A12.5: security and production hardening
 
-Per-tool cost/eval reports, final credit prices, quota tuning, reservation cleanup, backup/restore verification, claim and webhook load tests, OpenAPI checks, and RU/EN integration verification.
+Run the complete security/privacy review, per-tool cost/eval reports, final credit-price approval, quota tuning, reservation cleanup, artifact-storage verification, backup/restore, claim/load tests, OpenAPI checks, dependency audit, and RU/EN integration verification. Configure and verify the production domain and infrastructure. No payment endpoint is enabled in this wave.
+
+### A13.0: Lava.top payments
+
+Only after A12.5 passes: create invoices, handle and reconcile payment events, implement refunds, validate provider fixtures, complete legal/product moderation gates, and perform a real minimal-value payment/refund test. The browser redirect never grants credits, and payment activation remains a separate owner-approved decision.
 
 ## 16. Frontend boundary
 
-Frontend work is limited to authenticated API integration: catalog state, balance, launch confirmation with fixed price, progress/error state, history, artifact access, and Lava.top redirect handling.
+Frontend work through A12.5 is limited to authenticated AI API integration: catalog state, balance, launch confirmation with fixed price, progress/error state, history, and artifact access. Lava.top redirect handling belongs only to A13.0 after the production-readiness gates pass.
 
 Homepage design, typography, color, layout, marketing redesign, animations, and visual baseline approval are excluded.
 
