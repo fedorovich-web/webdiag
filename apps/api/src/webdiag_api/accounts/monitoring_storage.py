@@ -207,15 +207,15 @@ class SqliteMonitoringStore:
                         );
                     """
                 )
-                columns = {
-                    str(row[1])
-                    for row in connection.execute(
-                        "PRAGMA table_info(account_workspace_monitor_runs)"
-                    ).fetchall()
-                }
-                if "payload_sha256" not in columns:
-                    try:
-                        connection.execute("BEGIN IMMEDIATE")
+                connection.execute("BEGIN IMMEDIATE")
+                try:
+                    columns = {
+                        str(row[1])
+                        for row in connection.execute(
+                            "PRAGMA table_info(account_workspace_monitor_runs)"
+                        ).fetchall()
+                    }
+                    if "payload_sha256" not in columns:
                         connection.execute(
                             """
                             ALTER TABLE account_workspace_monitor_runs
@@ -248,10 +248,10 @@ class SqliteMonitoringStore:
                                 """,
                                 (_payload_digest(payload_json), str(row["id"])),
                             )
-                        connection.execute("COMMIT")
-                    except Exception:
-                        connection.execute("ROLLBACK")
-                        raise
+                    connection.execute("COMMIT")
+                except Exception:
+                    connection.execute("ROLLBACK")
+                    raise
             self._schema_ready = True
 
     def create_monitor(

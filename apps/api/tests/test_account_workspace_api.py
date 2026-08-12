@@ -1,6 +1,8 @@
 import asyncio
 import hashlib
 import sqlite3
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -329,6 +331,58 @@ def test_saved_audit_hash_migration_detects_tampering_without_reblessing(
         )
     assert unavailable.value.status_code == 500
     assert unavailable.value.code == "account_saved_audit_unavailable"
+
+
+def test_saved_audit_hash_migration_is_safe_across_store_instances(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    SqliteWorkspaceStore(str(database_path)).ensure_schema()
+    with sqlite3.connect(database_path) as connection:
+        connection.execute(
+            "ALTER TABLE account_workspace_saved_audits DROP COLUMN payload_sha256"
+        )
+        connection.commit()
+
+    migration_barrier = threading.Barrier(2)
+
+    class BarrierConnection(sqlite3.Connection):
+        def execute(self, sql: str, parameters=(), /):  # type: ignore[no-untyped-def]
+            if sql.strip() == "BEGIN IMMEDIATE":
+                migration_barrier.wait(timeout=5)
+            return super().execute(sql, parameters)
+
+    def connect_with_barrier(store: SqliteWorkspaceStore) -> sqlite3.Connection:
+        connection = sqlite3.connect(
+            store._path,  # noqa: SLF001 - test-only connection factory
+            timeout=10,
+            isolation_level=None,
+            factory=BarrierConnection,
+        )
+        connection.row_factory = sqlite3.Row
+        connection.execute("PRAGMA foreign_keys = ON")
+        connection.execute("PRAGMA journal_mode = WAL")
+        connection.execute("PRAGMA busy_timeout = 10000")
+        return connection
+
+    monkeypatch.setattr(SqliteWorkspaceStore, "_connect", connect_with_barrier)
+    stores = (
+        SqliteWorkspaceStore(str(database_path)),
+        SqliteWorkspaceStore(str(database_path)),
+    )
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [executor.submit(store.ensure_schema) for store in stores]
+        for future in futures:
+            future.result(timeout=15)
+
+    with sqlite3.connect(database_path) as connection:
+        columns = {
+            row[1]
+            for row in connection.execute(
+                "PRAGMA table_info(account_workspace_saved_audits)"
+            ).fetchall()
+        }
+    assert "payload_sha256" in columns
 
 
 def test_saved_audit_rejects_summary_payload_mismatch(tmp_path: Path) -> None:

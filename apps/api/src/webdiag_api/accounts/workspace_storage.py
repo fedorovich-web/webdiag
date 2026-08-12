@@ -158,15 +158,15 @@ class SqliteWorkspaceStore:
                         );
                     """
                 )
-                columns = {
-                    str(row[1])
-                    for row in connection.execute(
-                        "PRAGMA table_info(account_workspace_saved_audits)"
-                    ).fetchall()
-                }
-                if "payload_sha256" not in columns:
-                    try:
-                        connection.execute("BEGIN IMMEDIATE")
+                connection.execute("BEGIN IMMEDIATE")
+                try:
+                    columns = {
+                        str(row[1])
+                        for row in connection.execute(
+                            "PRAGMA table_info(account_workspace_saved_audits)"
+                        ).fetchall()
+                    }
+                    if "payload_sha256" not in columns:
                         connection.execute(
                             """
                             ALTER TABLE account_workspace_saved_audits
@@ -186,10 +186,10 @@ class SqliteWorkspaceStore:
                                 """,
                                 (_payload_digest(payload_json), str(row["id"])),
                             )
-                        connection.execute("COMMIT")
-                    except Exception:
-                        connection.execute("ROLLBACK")
-                        raise
+                    connection.execute("COMMIT")
+                except Exception:
+                    connection.execute("ROLLBACK")
+                    raise
             self._schema_ready = True
 
     def create_project(self, *, user_id: str, name: str, origin: str) -> StoredProject:
