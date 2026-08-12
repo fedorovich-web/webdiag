@@ -959,3 +959,44 @@ npm --workspace @webdiag/web exec -- `
 ```
 
 The backend test pins the exact SHA-256 of a deterministic, self-contained HTML artifact and verifies that public report responses do not contain account, project, audit, session, token, or raw-evidence fields.
+
+## A12.0 AI execution and credit foundation
+
+Fresh verification on 2026-08-12:
+
+```text
+npm run verify:local
+PASS — exit code 0
+
+registry
+PASS — 125 unique tools
+
+workspace tests
+PASS — 49/49
+
+browser tests
+PASS — 51/51
+
+Python API and worker tests
+PASS — 324/324
+
+Python lint
+PASS — Ruff reported no findings
+
+Python lock
+PASS — 31 locked packages match the installed win32 environment
+```
+
+The same gate also completed web tests, ESLint, TypeScript, the production Next.js build, release verification, and built-site verification successfully. No visual baseline, frontend design, OpenAI call, Lava.top call, release, deployment, or external side effect was performed.
+
+A12.0-specific TDD evidence before the full gate:
+
+```text
+AI catalog and configuration: 17 passed
+credit ledger and operator CLI: 5 passed
+account AI API: 4 passed
+internal lease API and storage: 5 passed
+worker bridge and actor: 11 passed
+```
+
+These tests cover the internal-only 15-tool catalog, distinct production bearer configuration, immutable ledger and reconciliation, idempotent run reservation, ownership-scoped access, pending-run release, hashed renewable claims, stale completion rejection, safe and unknown failure settlement, bounded internal HTTP, and disabled real-provider behavior.

@@ -208,6 +208,33 @@ http://localhost:15672
 
 Локальные логин и пароль берутся из `.env`.
 
+### Закрытая AI-бета A12.0
+
+A12.0 содержит только backend foundation. Все 15 AI-инструментов остаются `internal`, а реальный OpenAI adapter отсутствует. Команда worker `run_pending_ai` поэтому не должна планироваться до A12.1.
+
+API и worker используют отдельный секрет длиной не менее 32 видимых ASCII-символов:
+
+```text
+WEBDIAG_AI_INTERNAL_TOKEN
+WEBDIAG_AI_API_INTERNAL_URL
+```
+
+В production `WEBDIAG_AI_INTERNAL_TOKEN` обязателен и не может совпадать с `WEBDIAG_MONITORING_INTERNAL_TOKEN`. Секреты не добавляются в репозиторий и не передаются frontend.
+
+Операторское начисление тестовых кредитов выполняется только на сервере. Для защиты от ошибки ID пользователя указывается дважды:
+
+```powershell
+node scripts/run-python.mjs -m webdiag_api.ai.cli grant-credits `
+  --database-path .webdiag/accounts.sqlite3 `
+  --user-id 00000000-0000-0000-0000-000000000000 `
+  --confirm-user-id 00000000-0000-0000-0000-000000000000 `
+  --quantity 100 `
+  --reason "closed beta" `
+  --correlation-id beta-2026-0001
+```
+
+Повтор той же команды с теми же данными идемпотентен. Повтор correlation ID с другими данными отклоняется. CLI не заменяет operator RBAC и не должен быть доступен через публичный HTTP endpoint.
+
 ## 8. Запуск всего окружения через Docker Compose
 
 Docker Compose использует исходный код и собирает web, API и worker, а также запускает PostgreSQL, RabbitMQ и Valkey.

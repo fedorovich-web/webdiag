@@ -1,5 +1,13 @@
 # Changelog
 
+## A12.0 — AI execution and credit foundation
+
+- Added exactly 15 internal AI catalog definitions; none is public or executable until its real-provider, evaluation, cost, security, and fixed-credit gates pass.
+- Added a transactional non-expiring integer credit balance and append-only SQLite ledger with idempotent operator beta grants, conservation checks, and tamper detection.
+- Added account-owned AI run APIs with atomic credit reservation, idempotent creation, no-store responses, ownership-scoped `404`, saved state, and deletion that preserves financial history.
+- Added bearer-protected internal claim, lease renewal, submission, completion, and failure contracts. Only the current unexpired hashed lease can capture or release a reservation.
+- Added a bounded Dramatiq worker bridge and provider protocol with redirect rejection and no database/session access. No OpenAI adapter, Lava.top payment flow, GPU workload, or fabricated result is included in A12.0.
+
 ## A11.5 — Saved reports and expiring share links
 
 - Added immutable ownership-scoped reports generated only from persisted `webdiag.account.saved_audit_payload.v1` data.

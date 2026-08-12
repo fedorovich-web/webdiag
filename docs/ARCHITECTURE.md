@@ -17,3 +17,8 @@
 - Production verification checks all 32 rendered HTML pages for one H1, title, description, canonical, reciprocal language alternates, social metadata, valid JSON-LD, and unpublished-registry leakage.
 - Public catalog client assets receive a minimal projection and are separately checked for internal fields and definitions.
 - All current public routes remain statically prerendered.
+- A12.0 adds an account-owned AI foundation without enabling a public AI tool: the 15 catalog entries remain `internal` until their provider, evaluation, cost, and fixed-credit gates pass.
+- The FastAPI service is the only writer to AI runs and the append-only credit ledger in the account SQLite database. This SQLite topology supports one API writer; horizontal API replicas require a future PostgreSQL storage adapter.
+- AI workers use a dedicated bearer-protected internal HTTP contract. Run attempts use renewable hashed lease tokens, and a stale worker cannot complete, fail, or charge a run.
+- The A12.0 Dramatiq AI actor is deliberately disabled because no real OpenAI adapter is included yet. It cannot return placeholder or fabricated AI output.
+- Credits are non-expiring integers. Run creation and reservation, completion and capture, or failure and release occur in the same SQLite transaction.
