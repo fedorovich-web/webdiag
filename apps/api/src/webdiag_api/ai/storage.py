@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
 import secrets
 import sqlite3
 import threading
@@ -867,7 +868,7 @@ class SqliteAIStore:
         ).fetchone()
         if (
             attempt is None
-            or str(attempt["lease_token_hash"]) != token_hash
+            or not hmac.compare_digest(str(attempt["lease_token_hash"]), token_hash)
             or int(attempt["lease_expires_at"]) <= now
             or attempt["completed_at"] is not None
         ):
