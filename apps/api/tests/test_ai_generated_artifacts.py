@@ -1,6 +1,7 @@
 import asyncio
 import hashlib
 import io
+import sqlite3
 from pathlib import Path
 
 import httpx
@@ -117,10 +118,16 @@ def test_generated_artifact_completion_is_private_owned_and_integrity_checked(
     )
     claim = service.claim_pending()
     assert claim is not None
+    assert claim.artifact_reservation is not None
     service.mark_submitted(run_id=run.id, lease_token=claim.lease_token)
     image = _png()
-    artifact_id = "22222222-2222-4222-8222-222222222222"
-    stored = storage.put(artifact_id=artifact_id, data=image, media_type="image/png")
+    artifact_id = claim.artifact_reservation.artifact_id
+    stored = storage.put_reserved(
+        artifact_id=artifact_id,
+        object_key=claim.artifact_reservation.object_key,
+        data=image,
+        media_type="image/png",
+    )
     digest = hashlib.sha256(image).hexdigest()
 
     app.dependency_overrides[get_account_service] = lambda: account
@@ -189,6 +196,57 @@ def test_generated_artifact_completion_is_private_owned_and_integrity_checked(
     assert foreign.status_code == 404
     assert foreign.json()["detail"]["code"] == "ai_artifact_not_found"
 
+    repeated = service.complete_run(
+        run_id=run.id,
+        lease_token=claim.lease_token,
+        output={
+            "artifact_id": artifact_id,
+            "media_type": "image/png",
+            "byte_size": len(image),
+            "sha256": digest,
+        },
+        provider_request_id=None,
+        input_units=10,
+        output_units=20,
+        artifact=AIWorkerArtifact(
+            artifact_id=artifact_id,
+            object_key=stored.object_key,
+            media_type="image/png",
+            byte_size=len(image),
+            sha256=digest,
+        ),
+        artifact_storage=storage,
+    )
+    assert repeated.state == "succeeded"
+    assert service.cleanup_artifacts(artifact_storage=storage, limit=10) == (0, 0)
+    assert (tmp_path / "objects" / stored.object_key).exists()
+    try:
+        service.complete_run(
+            run_id=run.id,
+            lease_token=claim.lease_token,
+            output={
+                "artifact_id": artifact_id,
+                "media_type": "image/png",
+                "byte_size": len(image),
+                "sha256": digest,
+            },
+            provider_request_id=None,
+            input_units=11,
+            output_units=20,
+            artifact=AIWorkerArtifact(
+                artifact_id=artifact_id,
+                object_key=stored.object_key,
+                media_type="image/png",
+                byte_size=len(image),
+                sha256=digest,
+            ),
+            artifact_storage=storage,
+        )
+    except Exception as error:
+        assert error.__class__.__name__ == "AILeaseLostError"
+    else:
+        raise AssertionError("completion retry with changed usage must fail")
+
     (tmp_path / "objects" / stored.object_key).write_bytes(b"tampered")
     app.dependency_overrides[get_account_service] = lambda: account
     app.dependency_overrides[get_ai_service] = lambda: service
@@ -253,6 +311,96 @@ def test_image_completion_rejects_missing_or_mismatched_private_artifact(tmp_pat
         raise AssertionError("image completion without an artifact must fail")
 
     assert service.get_run(user_id=owner.response.user.id, run_id=run.id).state == "failed"
+
+
+def test_image_claim_reserves_exact_object_before_write_and_failed_run_is_reconciled(
+    tmp_path: Path,
+) -> None:
+    _account, service, storage, owner, _other = _context(tmp_path)
+    run, _created = service.create_run(
+        user_id=owner.response.user.id,
+        request=AIRunCreateRequest(
+            tool_id="ai_image_studio",
+            input={
+                "locale": "en",
+                "prompt": "A bounded diagram showing a secure artifact lifecycle.",
+                "aspect_ratio": "1:1",
+                "quality": "medium",
+                "background": "opaque",
+            },
+        ),
+        idempotency_key="image-staging-0001",
+    )
+
+    first = service.claim_pending()
+    assert first is not None and first.artifact_reservation is not None
+    reservation = first.artifact_reservation
+    with sqlite3.connect(tmp_path / "generated.sqlite3") as connection:
+        row = connection.execute(
+            """
+            SELECT artifact_id, object_key, deletion_state
+            FROM ai_artifact_reservations WHERE run_id = ?
+            """,
+            (run.id,),
+        ).fetchone()
+    assert row == (reservation.artifact_id, reservation.object_key, "reserved")
+    assert not (tmp_path / "objects" / reservation.object_key).exists()
+
+    image = _png()
+    storage.put_reserved(
+        artifact_id=reservation.artifact_id,
+        object_key=reservation.object_key,
+        data=image,
+        media_type="image/png",
+    )
+    service.fail_run(
+        run_id=run.id,
+        lease_token=first.lease_token,
+        error_code="ai_provider_outcome_unknown",
+        provider_unknown=True,
+    )
+
+    assert service.cleanup_artifacts(artifact_storage=storage, limit=1) == (1, 0)
+    assert not (tmp_path / "objects" / reservation.object_key).exists()
+    with sqlite3.connect(tmp_path / "generated.sqlite3") as connection:
+        state = connection.execute(
+            "SELECT deletion_state FROM ai_artifact_reservations WHERE run_id = ?",
+            (run.id,),
+        ).fetchone()
+    assert state == ("deleted",)
+
+
+def test_expired_unsubmitted_image_claim_reuses_one_reservation(tmp_path: Path) -> None:
+    _account, service, _storage, owner, _other = _context(tmp_path)
+    run, _created = service.create_run(
+        user_id=owner.response.user.id,
+        request=AIRunCreateRequest(
+            tool_id="ai_image_studio",
+            input={
+                "locale": "en",
+                "prompt": "A bounded illustration of an idempotent worker lease.",
+                "aspect_ratio": "1:1",
+                "quality": "medium",
+                "background": "opaque",
+            },
+        ),
+        idempotency_key="image-staging-reclaim",
+    )
+    store = SqliteAIStore(str(tmp_path / "generated.sqlite3"), lease_seconds=60)
+
+    first = store.claim_pending(now=100)
+    second = store.claim_pending(now=160)
+
+    assert first is not None and second is not None
+    assert first.run_id == second.run_id == run.id
+    assert first.artifact_reservation == second.artifact_reservation
+    assert first.lease_token != second.lease_token
+    with sqlite3.connect(tmp_path / "generated.sqlite3") as connection:
+        count = connection.execute(
+            "SELECT COUNT(*) FROM ai_artifact_reservations WHERE run_id = ?",
+            (run.id,),
+        ).fetchone()
+    assert count == (1,)
 
 
 def test_image_edit_binds_one_owned_normalized_upload(tmp_path: Path) -> None:
@@ -335,11 +483,20 @@ def test_deleted_run_artifact_cleanup_is_bounded_idempotent_and_retryable(
             idempotency_key=f"image-cleanup-{index}",
         )
         claim = service.claim_pending()
-        assert claim is not None and claim.run_id == run.id
+        assert (
+            claim is not None
+            and claim.run_id == run.id
+            and claim.artifact_reservation is not None
+        )
         service.mark_submitted(run_id=run.id, lease_token=claim.lease_token)
         image = _png()
-        artifact_id = f"22222222-2222-4222-8222-{index + 1:012d}"
-        stored = storage.put(artifact_id=artifact_id, data=image, media_type="image/png")
+        artifact_id = claim.artifact_reservation.artifact_id
+        stored = storage.put_reserved(
+            artifact_id=artifact_id,
+            object_key=claim.artifact_reservation.object_key,
+            data=image,
+            media_type="image/png",
+        )
         digest = hashlib.sha256(image).hexdigest()
         service.complete_run(
             run_id=run.id,

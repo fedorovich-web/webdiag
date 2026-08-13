@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import re
 import secrets
 import sqlite3
 import threading
@@ -105,6 +106,16 @@ class StoredAIRun:
 
 
 @dataclass(frozen=True, slots=True)
+class StoredAIArtifactReservation:
+    artifact_id: str
+    run_id: str
+    user_id: str
+    object_key: str
+    created_at: int
+    deletion_state: str
+
+
+@dataclass(frozen=True, slots=True)
 class StoredAIClaim:
     run_id: str
     attempt_number: int
@@ -115,6 +126,7 @@ class StoredAIClaim:
     model_policy: str
     user_id: str
     input_json: str
+    artifact_reservation: StoredAIArtifactReservation | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -281,6 +293,21 @@ class SqliteAIStore:
                     CREATE INDEX IF NOT EXISTS ai_artifacts_run_idx ON ai_artifacts(run_id, id);
                     CREATE INDEX IF NOT EXISTS ai_artifacts_cleanup_idx
                         ON ai_artifacts(deletion_state, created_at, id);
+                    CREATE TABLE IF NOT EXISTS ai_artifact_reservations (
+                        artifact_id TEXT PRIMARY KEY,
+                        run_id TEXT NOT NULL UNIQUE,
+                        user_id TEXT NOT NULL,
+                        object_key TEXT NOT NULL UNIQUE,
+                        created_at INTEGER NOT NULL,
+                        deletion_state TEXT NOT NULL DEFAULT 'reserved'
+                            CHECK(deletion_state IN (
+                                'reserved', 'pending', 'committed', 'deleted'
+                            )),
+                        FOREIGN KEY(run_id) REFERENCES ai_runs(id) ON DELETE CASCADE,
+                        FOREIGN KEY(user_id) REFERENCES account_users(id) ON DELETE CASCADE
+                    );
+                    CREATE INDEX IF NOT EXISTS ai_artifact_reservations_cleanup_idx
+                        ON ai_artifact_reservations(deletion_state, created_at, artifact_id);
                     CREATE TABLE IF NOT EXISTS credit_ledger (
                         id TEXT PRIMARY KEY,
                         user_id TEXT NOT NULL,
@@ -855,11 +882,28 @@ class SqliteAIStore:
                 """,
                 (run_id, user_id),
             )
+            connection.execute(
+                """
+                UPDATE ai_artifact_reservations SET deletion_state = 'pending'
+                WHERE run_id = ? AND user_id = ? AND deletion_state = 'reserved'
+                """,
+                (run_id, user_id),
+            )
             deleted = connection.execute("SELECT * FROM ai_runs WHERE id = ?", (run_id,)).fetchone()
             connection.execute("COMMIT")
         return self._run(deleted)
 
-    def claim_pending(self, *, now: int | None = None) -> StoredAIClaim | None:
+    def claim_pending(
+        self,
+        *,
+        now: int | None = None,
+        artifact_prefix: str = "ai-uploads",
+    ) -> StoredAIClaim | None:
+        if not re.fullmatch(
+            r"[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*",
+            artifact_prefix,
+        ):
+            raise ValueError("AI artifact prefix is invalid")
         self.ensure_schema()
         current = int(time.time()) if now is None else now
         lease_token = secrets.token_urlsafe(32)
@@ -911,6 +955,29 @@ class SqliteAIStore:
                 "UPDATE ai_runs SET state = 'running', updated_at = ? WHERE id = ?",
                 (self._clock_ns(), row["id"]),
             )
+            reservation_row = None
+            if row["tool_id"] in {"ai_image_studio", "ai_image_edit_studio"}:
+                reservation_row = connection.execute(
+                    "SELECT * FROM ai_artifact_reservations WHERE run_id = ?",
+                    (row["id"],),
+                ).fetchone()
+                if reservation_row is None:
+                    artifact_id = str(uuid.uuid4())
+                    token = secrets.token_hex(32)
+                    object_key = f"{artifact_prefix}/{token[:2]}/{token[2:]}"
+                    connection.execute(
+                        """
+                        INSERT INTO ai_artifact_reservations(
+                            artifact_id, run_id, user_id, object_key, created_at,
+                            deletion_state
+                        ) VALUES (?, ?, ?, ?, ?, 'reserved')
+                        """,
+                        (artifact_id, row["id"], row["user_id"], object_key, current),
+                    )
+                    reservation_row = connection.execute(
+                        "SELECT * FROM ai_artifact_reservations WHERE run_id = ?",
+                        (row["id"],),
+                    ).fetchone()
             connection.execute("COMMIT")
         return StoredAIClaim(
             run_id=str(row["id"]),
@@ -922,6 +989,11 @@ class SqliteAIStore:
             model_policy=str(row["model_policy"]),
             user_id=str(row["user_id"]),
             input_json=str(row["input_json"]),
+            artifact_reservation=(
+                self._artifact_reservation(reservation_row)
+                if reservation_row is not None
+                else None
+            ),
         )
 
     def renew_lease(
@@ -1005,6 +1077,47 @@ class SqliteAIStore:
         self.ensure_schema()
         with self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
+            existing = connection.execute(
+                "SELECT * FROM ai_runs WHERE id = ?",
+                (run_id,),
+            ).fetchone()
+            if existing is not None and existing["state"] == "succeeded":
+                attempt = connection.execute(
+                    """
+                    SELECT * FROM ai_run_attempts WHERE run_id = ?
+                    ORDER BY attempt_number DESC LIMIT 1
+                    """,
+                    (run_id,),
+                ).fetchone()
+                if (
+                    attempt is not None
+                    and attempt["completed_at"] is not None
+                    and hmac.compare_digest(str(attempt["lease_token_hash"]), token_hash)
+                    and hmac.compare_digest(str(existing["output_sha256"]), output_sha256)
+                    and attempt["provider_request_id"] == provider_request_id
+                    and int(attempt["input_units"]) == input_units
+                    and int(attempt["output_units"]) == output_units
+                ):
+                    persisted_artifact = connection.execute(
+                        "SELECT * FROM ai_artifacts WHERE run_id = ?",
+                        (run_id,),
+                    ).fetchone()
+                    artifact_matches = (
+                        artifact is None and persisted_artifact is None
+                    ) or (
+                        artifact is not None
+                        and persisted_artifact is not None
+                        and artifact.id == persisted_artifact["id"]
+                        and artifact.object_key == persisted_artifact["object_key"]
+                        and artifact.media_type == persisted_artifact["media_type"]
+                        and artifact.byte_size == persisted_artifact["byte_size"]
+                        and artifact.sha256 == persisted_artifact["sha256"]
+                    )
+                    if artifact_matches:
+                        connection.execute("COMMIT")
+                        return self._run(existing)
+                connection.execute("ROLLBACK")
+                raise AILeaseLostError
             attempt = self._current_attempt(
                 connection,
                 run_id=run_id,
@@ -1028,6 +1141,20 @@ class SqliteAIStore:
                 if artifact.run_id != run_id or artifact.user_id != run.user_id:
                     connection.execute("ROLLBACK")
                     raise CreditIntegrityError("AI artifact ownership does not match run")
+                reservation = connection.execute(
+                    """
+                    SELECT * FROM ai_artifact_reservations
+                    WHERE run_id = ? AND user_id = ? AND deletion_state = 'reserved'
+                    """,
+                    (run_id, run.user_id),
+                ).fetchone()
+                if (
+                    reservation is None
+                    or artifact.id != reservation["artifact_id"]
+                    or artifact.object_key != reservation["object_key"]
+                ):
+                    connection.execute("ROLLBACK")
+                    raise CreditIntegrityError("AI artifact does not match its reservation")
                 connection.execute(
                     """
                     INSERT INTO ai_artifacts(
@@ -1045,6 +1172,13 @@ class SqliteAIStore:
                         artifact.sha256,
                         artifact.created_at,
                     ),
+                )
+                connection.execute(
+                    """
+                    UPDATE ai_artifact_reservations SET deletion_state = 'committed'
+                    WHERE artifact_id = ? AND deletion_state = 'reserved'
+                    """,
+                    (artifact.id,),
                 )
             connection.execute(
                 """
@@ -1135,6 +1269,61 @@ class SqliteAIStore:
             connection.execute("COMMIT")
         return existing is not None
 
+    def get_artifact_reservation(
+        self,
+        *,
+        run_id: str,
+    ) -> StoredAIArtifactReservation | None:
+        self.ensure_schema()
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM ai_artifact_reservations WHERE run_id = ?",
+                (run_id,),
+            ).fetchone()
+        return self._artifact_reservation(row) if row is not None else None
+
+    def list_artifact_reservations_pending_deletion(
+        self,
+        *,
+        limit: int,
+    ) -> tuple[StoredAIArtifactReservation, ...]:
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 100:
+            raise ValueError("artifact cleanup limit must be between 1 and 100")
+        self.ensure_schema()
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT * FROM ai_artifact_reservations WHERE deletion_state = 'pending'
+                ORDER BY created_at, artifact_id LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
+        return tuple(self._artifact_reservation(row) for row in rows)
+
+    def mark_artifact_reservation_deleted(self, *, artifact_id: str) -> bool:
+        self.ensure_schema()
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            updated = connection.execute(
+                """
+                UPDATE ai_artifact_reservations SET deletion_state = 'deleted'
+                WHERE artifact_id = ? AND deletion_state = 'pending'
+                """,
+                (artifact_id,),
+            )
+            if updated.rowcount == 1:
+                connection.execute("COMMIT")
+                return True
+            existing = connection.execute(
+                """
+                SELECT artifact_id FROM ai_artifact_reservations
+                WHERE artifact_id = ? AND deletion_state = 'deleted'
+                """,
+                (artifact_id,),
+            ).fetchone()
+            connection.execute("COMMIT")
+        return existing is not None
+
     def fail_run(
         self,
         *,
@@ -1195,6 +1384,13 @@ class SqliteAIStore:
                 """
                 UPDATE ai_uploads SET deletion_state = 'pending'
                 WHERE bound_run_id = ? AND deletion_state = 'available'
+                """,
+                (run_id,),
+            )
+            connection.execute(
+                """
+                UPDATE ai_artifact_reservations SET deletion_state = 'pending'
+                WHERE run_id = ? AND deletion_state = 'reserved'
                 """,
                 (run_id,),
             )
@@ -1483,6 +1679,17 @@ class SqliteAIStore:
             media_type=str(row["media_type"]),
             byte_size=int(row["byte_size"]),
             sha256=str(row["sha256"]),
+            created_at=int(row["created_at"]),
+            deletion_state=str(row["deletion_state"]),
+        )
+
+    @staticmethod
+    def _artifact_reservation(row: sqlite3.Row) -> StoredAIArtifactReservation:
+        return StoredAIArtifactReservation(
+            artifact_id=str(row["artifact_id"]),
+            run_id=str(row["run_id"]),
+            user_id=str(row["user_id"]),
+            object_key=str(row["object_key"]),
             created_at=int(row["created_at"]),
             deletion_state=str(row["deletion_state"]),
         )

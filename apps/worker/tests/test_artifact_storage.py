@@ -82,6 +82,28 @@ def test_worker_local_storage_writes_private_bounded_artifact(tmp_path: Path) ->
         storage.put(artifact_id="x", data=b"x" * (4 * 1024 * 1024 + 1), media_type="image/png")
 
 
+def test_worker_local_storage_writes_only_to_exact_reserved_key(tmp_path: Path) -> None:
+    storage = LocalArtifactStorage(tmp_path)
+    object_key = "ai-uploads/ab/" + "c" * 62
+
+    stored = storage.put_reserved(
+        artifact_id="11111111-1111-4111-8111-111111111111",
+        object_key=object_key,
+        data=b"private",
+        media_type="image/png",
+    )
+
+    assert stored.object_key == object_key
+    assert (tmp_path / object_key).read_bytes() == b"private"
+    with pytest.raises(ArtifactKeyError):
+        storage.put_reserved(
+            artifact_id="11111111-1111-4111-8111-111111111111",
+            object_key="ai-uploads/../../escape",
+            data=b"private",
+            media_type="image/png",
+        )
+
+
 def test_worker_s3_storage_counts_fragmented_body_without_content_length() -> None:
     body = FakeStreamingBody([b"12", b"34", b"5", b""])
     client = FakeS3Client(body)

@@ -99,6 +99,13 @@ def test_settings_reject_insecure_production_and_unsafe_storage_paths() -> None:
     assert Settings(account_database_path=".webdiag/accounts.sqlite3").account_database_path
     assert Settings(account_database_path="/data/accounts.sqlite3").account_database_path
 
+    for unsafe_prefix in ("../outside", "ai uploads", "ai//generated"):
+        with pytest.raises(ValidationError):
+            Settings(ai_artifact_prefix=unsafe_prefix)
+    assert Settings(ai_artifact_prefix="/private/generated/").ai_artifact_prefix == (
+        "private/generated"
+    )
+
 
 def test_settings_bound_session_and_scrypt_parameters() -> None:
     defaults = Settings()

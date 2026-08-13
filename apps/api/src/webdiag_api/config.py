@@ -1,3 +1,4 @@
+import re
 from pathlib import PurePosixPath, PureWindowsPath
 from typing import Self
 
@@ -76,6 +77,7 @@ class Settings(BaseSettings):
     monitoring_scheduler_interval_seconds: int = Field(default=60, ge=30, le=300)
     ai_internal_token: str = ""
     ai_safety_identifier_secret: str = ""
+    ai_artifact_prefix: str = "ai-uploads"
     ai_lease_seconds: int = Field(default=900, ge=60, le=3600)
     ai_lease_renew_interval_seconds: int = Field(default=300, ge=10, le=1200)
     ai_input_max_bytes: int = Field(
@@ -153,6 +155,17 @@ class Settings(BaseSettings):
         if "\x00" in value or "\r" in value or "\n" in value:
             raise ValueError("AI safety identifier secret contains invalid characters")
         return value
+
+    @field_validator("ai_artifact_prefix")
+    @classmethod
+    def validate_ai_artifact_prefix(cls, value: str) -> str:
+        normalized = value.strip().strip("/")
+        if not normalized or not re.fullmatch(
+            r"[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*",
+            normalized,
+        ):
+            raise ValueError("AI artifact prefix is invalid")
+        return normalized
 
     @field_validator("account_scrypt_n")
     @classmethod

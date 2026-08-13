@@ -5,7 +5,6 @@ import hashlib
 import hmac
 import json
 import os
-import uuid
 from dataclasses import dataclass
 
 import httpx
@@ -325,6 +324,7 @@ class OpenRouterProvider:
             request.contract_version != "v1"
             or request.model_policy != _IMAGE_MODEL
             or request.safety_identifier is None
+            or request.artifact_reservation is None
         ):
             raise KnownSafeProviderError("AI provider request was rejected locally")
         payload = _image_request_payload(request)
@@ -346,9 +346,10 @@ class OpenRouterProvider:
             normalized = normalize_generated_image(data, declared_media_type=media_type)
             input_units, output_units = _provider_usage(body)
             storage = self._artifact_storage or artifact_storage_from_env()
-            artifact_id = str(uuid.uuid4())
-            stored = storage.put(
+            artifact_id = request.artifact_reservation.artifact_id
+            stored = storage.put_reserved(
                 artifact_id=artifact_id,
+                object_key=request.artifact_reservation.object_key,
                 data=normalized.data,
                 media_type=normalized.media_type,
             )
@@ -454,6 +455,7 @@ class OpenRouterProvider:
             model_policy=request.model_policy,
             input=prepared_input,
             safety_identifier=request.safety_identifier,
+            artifact_reservation=request.artifact_reservation,
         )
 
 

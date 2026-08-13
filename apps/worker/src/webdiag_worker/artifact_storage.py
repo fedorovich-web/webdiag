@@ -59,6 +59,15 @@ class S3Client(Protocol):
 class ArtifactStorage(Protocol):
     def put(self, *, artifact_id: str, data: bytes, media_type: str) -> StoredArtifact: ...
 
+    def put_reserved(
+        self,
+        *,
+        artifact_id: str,
+        object_key: str,
+        data: bytes,
+        media_type: str,
+    ) -> StoredArtifact: ...
+
     def read(self, *, object_key: str, max_bytes: int) -> bytes: ...
 
     def delete(self, *, object_key: str) -> None: ...
@@ -73,6 +82,23 @@ class LocalArtifactStorage:
     def put(self, *, artifact_id: str, data: bytes, media_type: str) -> StoredArtifact:
         _validate_put(artifact_id=artifact_id, data=data, media_type=media_type)
         object_key = _new_object_key(self._prefix)
+        return self.put_reserved(
+            artifact_id=artifact_id,
+            object_key=object_key,
+            data=data,
+            media_type=media_type,
+        )
+
+    def put_reserved(
+        self,
+        *,
+        artifact_id: str,
+        object_key: str,
+        data: bytes,
+        media_type: str,
+    ) -> StoredArtifact:
+        _validate_put(artifact_id=artifact_id, data=data, media_type=media_type)
+        _validate_object_key(object_key, self._prefix)
         target = self._resolve(object_key)
         target.parent.mkdir(parents=True, exist_ok=True)
         temporary_path: Path | None = None
@@ -126,6 +152,23 @@ class S3ArtifactStorage:
     def put(self, *, artifact_id: str, data: bytes, media_type: str) -> StoredArtifact:
         _validate_put(artifact_id=artifact_id, data=data, media_type=media_type)
         object_key = _new_object_key(self._prefix)
+        return self.put_reserved(
+            artifact_id=artifact_id,
+            object_key=object_key,
+            data=data,
+            media_type=media_type,
+        )
+
+    def put_reserved(
+        self,
+        *,
+        artifact_id: str,
+        object_key: str,
+        data: bytes,
+        media_type: str,
+    ) -> StoredArtifact:
+        _validate_put(artifact_id=artifact_id, data=data, media_type=media_type)
+        _validate_object_key(object_key, self._prefix)
         self._client.put_object(
             ACL="private",
             Body=data,

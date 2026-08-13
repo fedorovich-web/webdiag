@@ -98,7 +98,15 @@ class AIWorkerClaim(StrictAIModel):
     contract_version: str
     model_policy: str
     safety_identifier: str | None = Field(default=None, min_length=32, max_length=64)
+    artifact_reservation: "AIWorkerArtifactReservation | None" = None
     input: dict[str, object]
+
+
+class AIWorkerArtifactReservation(StrictAIModel):
+    artifact_id: str = Field(
+        pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    )
+    object_key: str = Field(min_length=1, max_length=512)
 
 
 class AIWorkerClaimResponse(StrictAIModel):

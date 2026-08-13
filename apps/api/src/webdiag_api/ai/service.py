@@ -17,6 +17,7 @@ from webdiag_api.ai.models import (
     AIRunResponse,
     AIToolResponse,
     AIWorkerArtifact,
+    AIWorkerArtifactReservation,
     AIWorkerClaim,
     CreditAccountResponse,
     CreditLedgerEntryResponse,
@@ -64,6 +65,7 @@ class AIService:
         output_max_bytes: int = 1_000_000,
         input_resolver: AIInputResolver | None = None,
         safety_identifier_secret: str = "",
+        artifact_prefix: str = "ai-uploads",
     ) -> None:
         self._store = store
         self._catalog = catalog
@@ -71,6 +73,7 @@ class AIService:
         self._output_max_bytes = output_max_bytes
         self._input_resolver = input_resolver
         self._safety_identifier_secret = safety_identifier_secret
+        self._artifact_prefix = artifact_prefix
 
     def catalog(self) -> AICatalogResponse:
         return AICatalogResponse(
@@ -360,7 +363,7 @@ class AIService:
             ) from error
 
     def claim_pending(self) -> AIWorkerClaim | None:
-        claim = self._store.claim_pending()
+        claim = self._store.claim_pending(artifact_prefix=self._artifact_prefix)
         return self._public_claim(claim) if claim is not None else None
 
     def renew_lease(self, *, run_id: str, lease_token: str) -> int:
@@ -388,6 +391,17 @@ class AIService:
         stored_artifact: StoredAIArtifact | None = None
         try:
             if run.tool_id in {"ai_image_studio", "ai_image_edit_studio"}:
+                reservation = self._store.get_artifact_reservation(run_id=run.id)
+                if (
+                    reservation is None
+                    or artifact is None
+                    or artifact.artifact_id != reservation.artifact_id
+                    or artifact.object_key != reservation.object_key
+                    or reservation.deletion_state not in {"reserved", "committed"}
+                ):
+                    raise AIToolContractError(
+                        "image artifact does not match its reservation"
+                    )
                 stored_artifact = self._validate_generated_artifact(
                     run=run,
                     output=output,
@@ -403,8 +417,6 @@ class AIService:
                 input_value = json.loads(run.input_json)
                 normalized_output = validate_output(run.tool_id, input_value, output)
         except (AIToolContractError, json.JSONDecodeError) as error:
-            if artifact is not None and artifact_storage is not None:
-                self._compensate_artifact(artifact_storage, artifact.object_key)
             self._store.fail_run(
                 run_id=run_id,
                 lease_token=lease_token,
@@ -558,9 +570,21 @@ class AIService:
         artifact_storage: ArtifactStorage,
         limit: int,
     ) -> tuple[int, int]:
-        pending = self._store.list_artifacts_pending_deletion(limit=limit)
+        reservations = self._store.list_artifact_reservations_pending_deletion(limit=limit)
         deleted = 0
         failed = 0
+        for reservation in reservations:
+            try:
+                artifact_storage.delete(object_key=reservation.object_key)
+            except Exception:
+                failed += 1
+                continue
+            if self._store.mark_artifact_reservation_deleted(
+                artifact_id=reservation.artifact_id
+            ):
+                deleted += 1
+        remaining = limit - deleted - failed
+        pending = self._store.list_artifacts_pending_deletion(limit=remaining) if remaining else ()
         for artifact in pending:
             try:
                 artifact_storage.delete(object_key=artifact.object_key)
@@ -627,6 +651,14 @@ class AIService:
             safety_identifier=(
                 derive_safety_identifier(self._safety_identifier_secret, claim.user_id)
                 if self._safety_identifier_secret
+                else None
+            ),
+            artifact_reservation=(
+                AIWorkerArtifactReservation(
+                    artifact_id=claim.artifact_reservation.artifact_id,
+                    object_key=claim.artifact_reservation.object_key,
+                )
+                if claim.artifact_reservation is not None
                 else None
             ),
             input=json.loads(claim.input_json),

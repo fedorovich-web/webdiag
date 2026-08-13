@@ -9,6 +9,7 @@ from PIL import Image, PngImagePlugin
 
 from webdiag_worker.ai import (
     KnownSafeProviderError,
+    ProviderArtifactReservation,
     ProviderOutcomeUnknownError,
     ProviderRequest,
 )
@@ -21,7 +22,7 @@ class FakeArtifactStorage:
     def __init__(self, data: bytes | BaseException) -> None:
         self.data = data
         self.reads: list[tuple[str, int]] = []
-        self.writes: list[tuple[str, bytes, str]] = []
+        self.writes: list[tuple[str, str, bytes, str]] = []
 
     def read(self, *, object_key: str, max_bytes: int) -> bytes:
         self.reads.append((object_key, max_bytes))
@@ -32,12 +33,19 @@ class FakeArtifactStorage:
     def delete(self, *, object_key: str) -> None:
         raise AssertionError(object_key)
 
-    def put(self, *, artifact_id: str, data: bytes, media_type: str):
+    def put_reserved(
+        self,
+        *,
+        artifact_id: str,
+        object_key: str,
+        data: bytes,
+        media_type: str,
+    ):
         from webdiag_worker.artifact_storage import StoredArtifact
 
-        self.writes.append((artifact_id, data, media_type))
+        self.writes.append((artifact_id, object_key, data, media_type))
         return StoredArtifact(
-            object_key="ai-uploads/ab/" + "c" * 62,
+            object_key=object_key,
             media_type=media_type,
             byte_size=len(data),
             sha256=hashlib.sha256(data).hexdigest(),
@@ -99,6 +107,12 @@ def _request(
     model: str = "openai/gpt-5.6-luna",
     input_value: dict[str, object] | None = None,
 ) -> ProviderRequest:
+    reservation = None
+    if tool_id in {"ai_image_studio", "ai_image_edit_studio"}:
+        reservation = ProviderArtifactReservation(
+            artifact_id="22222222-2222-4222-8222-222222222222",
+            object_key="ai-uploads/ab/" + "c" * 62,
+        )
     return ProviderRequest(
         run_id="11111111-1111-4111-8111-111111111111",
         tool_id=tool_id,
@@ -111,6 +125,7 @@ def _request(
             "content": "WebDiag reports deterministic technical findings for this page.",
         },
         safety_identifier="opaque-safety-identifier-value-1234567890",
+        artifact_reservation=reservation,
     )
 
 
@@ -284,7 +299,8 @@ def test_image_studio_uses_dedicated_gpt_image_2_api_and_stores_private_output()
         "provider": {"only": ["openai"], "allow_fallbacks": False},
     }
     assert len(storage.writes) == 1
-    artifact_id, stored_bytes, media_type = storage.writes[0]
+    artifact_id, object_key, stored_bytes, media_type = storage.writes[0]
+    assert object_key == "ai-uploads/ab/" + "c" * 62
     expected = normalize_generated_image(image, declared_media_type="image/png")
     assert stored_bytes == expected.data and media_type == "image/png"
     assert result.output == {
@@ -296,6 +312,33 @@ def test_image_studio_uses_dedicated_gpt_image_2_api_and_stores_private_output()
     assert result.artifact is not None
     assert result.artifact.object_key == "ai-uploads/ab/" + "c" * 62
     assert (result.input_units, result.output_units) == (11, 27)
+
+
+def test_image_provider_rejects_missing_artifact_reservation_before_request() -> None:
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(500)
+
+    with pytest.raises(KnownSafeProviderError):
+        _provider(handler, artifact_storage=FakeArtifactStorage(b"")).execute(
+            ProviderRequest(
+                run_id="11111111-1111-4111-8111-111111111111",
+                tool_id="ai_image_studio",
+                contract_version="v1",
+                model_policy="openai/gpt-image-2",
+                input={
+                    "locale": "en",
+                    "prompt": "A bounded image prompt.",
+                    "aspect_ratio": "1:1",
+                    "quality": "medium",
+                    "background": "opaque",
+                },
+                safety_identifier="opaque-safety-identifier-value-1234567890",
+            )
+        )
+    assert requests == []
 
 
 def test_image_edit_reads_owned_upload_and_sends_one_data_url_reference() -> None:

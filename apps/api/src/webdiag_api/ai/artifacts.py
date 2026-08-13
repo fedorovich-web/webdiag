@@ -13,6 +13,15 @@ class StoredArtifact:
 class ArtifactStorage(Protocol):
     def put(self, *, artifact_id: str, data: bytes, media_type: str) -> StoredArtifact: ...
 
+    def put_reserved(
+        self,
+        *,
+        artifact_id: str,
+        object_key: str,
+        data: bytes,
+        media_type: str,
+    ) -> StoredArtifact: ...
+
     def read(self, *, object_key: str, max_bytes: int) -> bytes: ...
 
     def delete(self, *, object_key: str) -> None: ...

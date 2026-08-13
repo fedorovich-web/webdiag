@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import threading
 from dataclasses import dataclass
 from types import TracebackType
@@ -35,6 +36,24 @@ def urlopen(request: Request, *, timeout: int) -> Any:
 
 
 @dataclass(frozen=True, slots=True)
+class ProviderArtifactReservation:
+    artifact_id: str
+    object_key: str
+
+    def __post_init__(self) -> None:
+        if not re.fullmatch(
+            r"[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}",
+            self.artifact_id,
+        ):
+            raise ValueError("provider artifact reservation ID is invalid")
+        if not re.fullmatch(
+            r"[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*/[0-9a-f]{2}/[0-9a-f]{62}",
+            self.object_key,
+        ):
+            raise ValueError("provider artifact reservation key is invalid")
+
+
+@dataclass(frozen=True, slots=True)
 class ProviderRequest:
     run_id: str
     tool_id: str
@@ -42,6 +61,7 @@ class ProviderRequest:
     model_policy: str
     input: dict[str, object]
     safety_identifier: str | None = None
+    artifact_reservation: ProviderArtifactReservation | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -288,21 +308,33 @@ def run_one_ai_job(
             "byte_size": result.artifact.byte_size,
             "sha256": result.artifact.sha256,
         }
-    completed = _request_json(
-        "POST",
-        f"/v1/internal/ai/runs/{claim.run_id}/complete",
-        {
-            "lease_token": lease_token,
-            "output": result.output,
-            "provider_request_id": result.provider_request_id,
-            "input_units": result.input_units,
-            "output_units": result.output_units,
-            "artifact": artifact_payload,
-        },
-    )
-    _validate_contract(completed)
-    if completed.get("state") != "succeeded":
-        raise RuntimeError("AI complete API returned an invalid state")
+    try:
+        completed = _request_json(
+            "POST",
+            f"/v1/internal/ai/runs/{claim.run_id}/complete",
+            {
+                "lease_token": lease_token,
+                "output": result.output,
+                "provider_request_id": result.provider_request_id,
+                "input_units": result.input_units,
+                "output_units": result.output_units,
+                "artifact": artifact_payload,
+            },
+        )
+        _validate_contract(completed)
+        if completed.get("state") != "succeeded":
+            raise RuntimeError("AI complete API returned an invalid state")
+    except Exception:
+        try:
+            _fail(
+                claim.run_id,
+                lease_token,
+                "ai_completion_outcome_unknown",
+                "provider_unknown",
+            )
+        except Exception:
+            pass
+        return True
     return True
 
 
@@ -361,6 +393,25 @@ def _provider_request(raw: object) -> ProviderRequest:
         or any(not 0x21 <= ord(character) <= 0x7E for character in safety_identifier)
     ):
         raise RuntimeError("AI claim returned invalid work")
+    raw_reservation = raw.get("artifact_reservation")
+    artifact_reservation = None
+    if raw_reservation is not None:
+        if not isinstance(raw_reservation, dict):
+            raise RuntimeError("AI claim returned invalid work")
+        artifact_id = raw_reservation.get("artifact_id")
+        object_key = raw_reservation.get("object_key")
+        if not isinstance(artifact_id, str) or not isinstance(object_key, str):
+            raise RuntimeError("AI claim returned invalid work")
+        try:
+            artifact_reservation = ProviderArtifactReservation(
+                artifact_id=artifact_id,
+                object_key=object_key,
+            )
+        except ValueError as error:
+            raise RuntimeError("AI claim returned invalid work") from error
+    is_image_tool = raw["tool_id"] in {"ai_image_studio", "ai_image_edit_studio"}
+    if is_image_tool != (artifact_reservation is not None):
+        raise RuntimeError("AI claim returned invalid work")
     return ProviderRequest(
         run_id=raw["run_id"],
         tool_id=raw["tool_id"],
@@ -368,4 +419,5 @@ def _provider_request(raw: object) -> ProviderRequest:
         model_policy=raw["model_policy"],
         input=input_value,
         safety_identifier=safety_identifier,
+        artifact_reservation=artifact_reservation,
     )

@@ -128,6 +128,10 @@ def test_worker_sends_private_artifact_descriptor_only_to_internal_completion(
                     "contract_version": "v1",
                     "model_policy": "openai/gpt-image-2",
                     "safety_identifier": "opaque-safety-identifier-value-1234567890",
+                    "artifact_reservation": {
+                        "artifact_id": "22222222-2222-4222-8222-222222222222",
+                        "object_key": "ai-uploads/ab/" + "c" * 62,
+                    },
                     "input": {"prompt": "A bounded image prompt."},
                 },
             }
@@ -147,6 +151,79 @@ def test_worker_sends_private_artifact_descriptor_only_to_internal_completion(
         "sha256": "d" * 64,
     }
     assert "object_key" not in calls[-1][1]["output"]
+
+
+def test_worker_reconciles_ambiguous_completion_without_repeating_provider(
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("WEBDIAG_AI_INTERNAL_TOKEN", "a" * 32)
+    monkeypatch.setenv("WEBDIAG_AI_API_INTERNAL_URL", "http://api:8000")
+    paths: list[str] = []
+    provider = FakeProvider()
+
+    def request_json(_method: str, path: str, payload=None):
+        paths.append(path)
+        if path.endswith("/claim"):
+            return {
+                "contract_version": "webdiag.ai.worker.v1",
+                "claim": {
+                    "run_id": "11111111-1111-4111-8111-111111111111",
+                    "attempt_number": 1,
+                    "lease_token": "lease-token-value-with-at-least-32-chars",
+                    "lease_expires_at": 1_900_000_000,
+                    "tool_id": "test_text_tool",
+                    "contract_version": "v1",
+                    "model_policy": "test-only",
+                    "input": {"content": "source"},
+                },
+            }
+        if path.endswith("/complete"):
+            raise RuntimeError("completion response was lost")
+        if path.endswith("/fail"):
+            assert payload["outcome"] == "provider_unknown"
+            assert payload["error_code"] == "ai_completion_outcome_unknown"
+            return {"contract_version": "webdiag.ai.worker.v1", "state": "provider_unknown"}
+        return {"contract_version": "webdiag.ai.worker.v1", "state": "running"}
+
+    with patch("webdiag_worker.ai._request_json", side_effect=request_json):
+        assert run_one_ai_job(provider, lease_renew_interval_seconds=30)
+
+    assert len(provider.requests) == 1
+    assert paths[-2].endswith("/complete")
+    assert paths[-1].endswith("/fail")
+
+
+def test_worker_rejects_image_claim_without_valid_reservation(monkeypatch) -> None:
+    monkeypatch.setenv("WEBDIAG_AI_INTERNAL_TOKEN", "a" * 32)
+    monkeypatch.setenv("WEBDIAG_AI_API_INTERNAL_URL", "http://api:8000")
+
+    def request_json(_method: str, path: str, payload=None):
+        assert path.endswith("/claim")
+        return {
+            "contract_version": "webdiag.ai.worker.v1",
+            "claim": {
+                "run_id": "11111111-1111-4111-8111-111111111111",
+                "attempt_number": 1,
+                "lease_token": "lease-token-value-with-at-least-32-chars",
+                "lease_expires_at": 1_900_000_000,
+                "tool_id": "ai_image_studio",
+                "contract_version": "v1",
+                "model_policy": "openai/gpt-image-2",
+                "artifact_reservation": {
+                    "artifact_id": "not-a-uuid",
+                    "object_key": "../outside",
+                },
+                "input": {"prompt": "A bounded image prompt."},
+            },
+        }
+
+    provider = FakeProvider()
+    with (
+        patch("webdiag_worker.ai._request_json", side_effect=request_json),
+        pytest.raises(RuntimeError, match="invalid work"),
+    ):
+        run_one_ai_job(provider)
+    assert provider.requests == []
 
 
 def test_worker_prepares_private_input_before_marking_provider_submitted(monkeypatch) -> None:
