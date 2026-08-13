@@ -16,4 +16,8 @@ describe("tool renderer registry contract", () => {
   it("renders the responsive srcset generator", () => {
     expect(SUPPORTED_TOOL_SLUGS).toContain("responsive-image-srcset-generator");
   });
+
+  it("renders the existing single-page audit engine", () => {
+    expect(SUPPORTED_TOOL_SLUGS).toContain("single-page-audit");
+  });
 });

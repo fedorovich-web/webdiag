@@ -131,6 +131,7 @@ import {
   HtmlEntitiesConverterTool,
 } from "./text-encoding-diff-tools";
 import { PemCertificateViewerTool } from "./pem-certificate-tool";
+import { SinglePageAuditTool } from "./single-page-audit-tool";
 import { dictionary } from "../../lib/i18n";
 
 interface ToolRendererProps {
@@ -270,6 +271,7 @@ function AspectRatioTool({ locale }: { locale: Locale }) {
 }
 
 export const SUPPORTED_TOOL_SLUGS = [
+  "single-page-audit",
   "uuid-generator",
   "ulid-generator",
   "unix-timestamp-converter",
@@ -383,6 +385,7 @@ export const SUPPORTED_TOOL_SLUGS = [
 
 export function ToolRenderer({ slug, locale }: ToolRendererProps) {
   switch (slug) {
+    case "single-page-audit": return <SinglePageAuditTool locale={locale} />;
     case "uuid-generator": return <Generator locale={locale} kind="uuid" />;
     case "ulid-generator": return <Generator locale={locale} kind="ulid" />;
     case "unix-timestamp-converter": return <UnixTimestampTool locale={locale} />;

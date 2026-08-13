@@ -3,6 +3,48 @@ import { toolPage } from "./shared";
 export const seoAuditToolPages = [
 
   toolPage({
+    slug: "single-page-audit",
+    seoTitle: { ru: "Технический аудит одной страницы сайта", en: "Single Page Technical Audit" },
+    metaDescription: { ru: "Проверьте один публичный URL: HTTP, редиректы, метаданные, indexability, JSON-LD, security headers, robots.txt и sitemap.xml с порядком исправлений.", en: "Audit one public URL for HTTP, redirects, metadata, indexability, JSON-LD, security headers, robots.txt, and sitemap.xml with a clear fix order." },
+    h1: { ru: "Технический аудит страницы", en: "Single Page Technical Audit" },
+    lead: { ru: "WebDiag безопасно загружает один публичный URL и два origin-level ресурса, выполняет набор статических проверок и возвращает приоритетный список проблем с рекомендациями. Это аудит одной страницы, а не обход сайта или browser performance test.", en: "WebDiag safely fetches one public URL and two origin-level resources, runs a static check set, and returns prioritized issues with recommendations. This is a single-page audit, not a site crawl or browser performance test." },
+    quickFacts: [
+      { ru: "13 статических проверок", en: "13 static checks" },
+      { ru: "Один URL без обхода", en: "One URL without crawling" },
+      { ru: "SSRF-safe bounded fetch", en: "SSRF-safe bounded fetch" },
+    ],
+    howToSteps: [
+      { ru: "Введите публичный HTTP(S) URL конкретной страницы.", en: "Enter the public HTTP(S) URL of one page." },
+      { ru: "Дождитесь bounded fetch страницы, robots.txt и одного sitemap.xml.", en: "Wait for the bounded fetch of the page, robots.txt, and one sitemap.xml." },
+      { ru: "Исправляйте проблемы в порядке P0-P3 и повторите аудит после изменений.", en: "Fix issues in P0-P3 order and rerun the audit after changes." },
+    ],
+    supportedFeatures: [
+      { ru: "HTTP status, redirect chain и HTML content type.", en: "HTTP status, redirect chain, and HTML content type." },
+      { ru: "Title, description, H1, canonical, robots meta, Open Graph и JSON-LD.", en: "Title, description, H1, canonical, robots meta, Open Graph, and JSON-LD." },
+      { ru: "Security headers, robots.txt и discovery одного sitemap.xml.", en: "Security headers, robots.txt, and discovery of one sitemap.xml." },
+    ],
+    limitations: [
+      { ru: "Статический fetch не исполняет JavaScript и не измеряет layout, accessibility tree, Core Web Vitals или Lighthouse.", en: "The static fetch does not execute JavaScript or measure layout, the accessibility tree, Core Web Vitals, or Lighthouse." },
+      { ru: "Проверяется один URL; ссылки и страницы из sitemap не обходятся.", en: "Only one URL is audited; links and sitemap pages are not crawled." },
+    ],
+    useCases: [
+      { ru: "Проверить страницу перед публикацией или после релиза.", en: "Review a page before publishing or after a release." },
+      { ru: "Получить единый порядок исправления технических проблем.", en: "Get one ordered list of technical fixes." },
+      { ru: "Сравнить повторный результат после исправлений вручную.", en: "Manually compare a rerun after fixes." },
+    ],
+    technicalNotes: [
+      { ru: "Backend валидирует URL, DNS и фактический peer IP на каждом redirect и ограничивает redirects, timeout, compressed и decoded body.", en: "The backend validates the URL, DNS, and connected peer IP at every redirect and bounds redirects, timeouts, compressed bodies, and decoded bodies." },
+      { ru: "Публичный frontend получает checks, issues, affected URLs и рекомендации без raw evidence, response headers и внутренних metadata.", en: "The public frontend receives checks, issues, affected URLs, and recommendations without raw evidence, response headers, or internal metadata." },
+    ],
+    faq: [
+      { question: { ru: "Это полный аудит сайта?", en: "Is this a full-site audit?" }, answer: { ru: "Нет. Инструмент проверяет один URL и не обходит внутренние ссылки или sitemap entries.", en: "No. The tool audits one URL and does not crawl internal links or sitemap entries." } },
+      { question: { ru: "Что означает оценка?", en: "What does the score mean?" }, answer: { ru: "Это детерминированная оценка найденных проблем по severity в текущем наборе проверок. Она не предсказывает позиции, трафик или uptime.", en: "It is a deterministic severity-based score for issues in the current check set. It does not predict rankings, traffic, or uptime." } },
+    ],
+    relatedToolSlugs: ["meta-tags-checker", "indexability-checker", "security-headers-checker"],
+    sourceUrls: ["https://developer.mozilla.org/docs/Web/HTTP", "https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag"],
+  }),
+
+  toolPage({
     slug: "javascript-bundle-surface-analyzer",
     seoTitle: { ru: "Анализ JavaScript-бандлов страницы", en: "JavaScript Bundle Surface Analyzer" },
     metaDescription: { ru: "Проверьте bounded static JavaScript delivery surface: script src, status, MIME, Content-Length, compression, cache, redirects и parser-blocking candidates.", en: "Check a bounded static JavaScript delivery surface: script src, status, MIME, Content-Length, compression, cache, redirects, and parser-blocking candidates." },

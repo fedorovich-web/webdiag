@@ -11,8 +11,11 @@
     "riskTier": "R2",
     "access": "optional",
     "implementationWave": "W4",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Выполняет ограниченный технический аудит одного публичного URL: HTTP, редиректы, HTML, метаданные, indexability, Open Graph, JSON-LD, security headers, robots.txt и sitemap.xml.",
+      "en": "Runs a bounded technical audit of one public URL: HTTP, redirects, HTML, metadata, indexability, Open Graph, JSON-LD, security headers, robots.txt, and sitemap.xml."
+    }
   },
   {
     "id": "WD-002",

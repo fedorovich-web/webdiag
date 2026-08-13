@@ -14,7 +14,7 @@ export function ToolPage({ locale, slug }: { locale: Locale; slug: string }) {
   const category = getCategoryTitle(tool.category, locale);
   const related = content.relatedToolSlugs.map((relatedSlug) => getPublicTool(relatedSlug)).filter(Boolean);
   const t = <T extends { readonly ru: string; readonly en: string }>(value: T) => localizeContent(value, locale);
-  const isServerBackedTool = tool.executorClass === "safe_fetch";
+  const isServerBackedTool = ["safe_fetch", "composite", "crawler", "chromium"].includes(tool.executorClass);
   const text = locale === "ru"
     ? {
         home: "Главная",
