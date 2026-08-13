@@ -195,7 +195,69 @@ class SqliteAccountStore:
         with self._connect() as connection:
             connection.execute("DELETE FROM account_sessions WHERE token_hash = ?", (token_hash,))
 
-    def active_session_count(self, *, user_id: str, now: int | None = None) -> int:
+    def create_session_if_password_hash(
+        self,
+        *,
+        token_hash: str,
+        user_id: str,
+        expected_password_hash: str,
+        replacement_password_hash: str | None,
+        expires_at: int,
+        active_session_limit: int,
+    ) -> bool:
+        self.ensure_schema()
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            if replacement_password_hash is None:
+                current = connection.execute(
+                    """
+                    SELECT 1 FROM account_users
+                    WHERE id = ? AND password_hash = ?
+                    """,
+                    (user_id, expected_password_hash),
+                ).fetchone()
+                matched = current is not None
+            else:
+                cursor = connection.execute(
+                    """
+                    UPDATE account_users SET password_hash = ?
+                    WHERE id = ? AND password_hash = ?
+                    """,
+                    (replacement_password_hash, user_id, expected_password_hash),
+                )
+                matched = cursor.rowcount == 1
+            if not matched:
+                connection.execute("ROLLBACK")
+                return False
+            connection.execute(
+                """
+                INSERT INTO account_sessions(token_hash, user_id, created_at, expires_at)
+                VALUES (?, ?, ?, ?)
+                """,
+                (token_hash, user_id, time.time_ns(), expires_at),
+            )
+            connection.execute(
+                """
+                DELETE FROM account_sessions
+                WHERE token_hash IN (
+                    SELECT token_hash
+                    FROM account_sessions
+                    WHERE user_id = ?
+                    ORDER BY created_at DESC, token_hash DESC
+                    LIMIT -1 OFFSET ?
+                )
+                """,
+                (user_id, active_session_limit),
+            )
+            connection.execute("COMMIT")
+        return True
+
+    def active_session_count_for_token(
+        self,
+        *,
+        current_token_hash: str,
+        now: int | None = None,
+    ) -> int | None:
         self.ensure_schema()
         current_time = int(time.time()) if now is None else now
         with self._connect() as connection:
@@ -204,20 +266,26 @@ class SqliteAccountStore:
                 "DELETE FROM account_sessions WHERE expires_at <= ?",
                 (current_time,),
             )
+            session = connection.execute(
+                "SELECT user_id FROM account_sessions WHERE token_hash = ?",
+                (current_token_hash,),
+            ).fetchone()
+            if session is None:
+                connection.execute("COMMIT")
+                return None
             row = connection.execute(
                 "SELECT COUNT(*) FROM account_sessions WHERE user_id = ?",
-                (user_id,),
+                (str(session["user_id"]),),
             ).fetchone()
             connection.execute("COMMIT")
         return int(row[0]) if row is not None else 0
 
-    def delete_other_sessions(
+    def delete_other_sessions_for_token(
         self,
         *,
-        user_id: str,
         current_token_hash: str,
         now: int | None = None,
-    ) -> int:
+    ) -> int | None:
         self.ensure_schema()
         current_time = int(time.time()) if now is None else now
         with self._connect() as connection:
@@ -226,12 +294,19 @@ class SqliteAccountStore:
                 "DELETE FROM account_sessions WHERE expires_at <= ?",
                 (current_time,),
             )
+            session = connection.execute(
+                "SELECT user_id FROM account_sessions WHERE token_hash = ?",
+                (current_token_hash,),
+            ).fetchone()
+            if session is None:
+                connection.execute("COMMIT")
+                return None
             cursor = connection.execute(
                 """
                 DELETE FROM account_sessions
                 WHERE user_id = ? AND token_hash <> ?
                 """,
-                (user_id, current_token_hash),
+                (str(session["user_id"]), current_token_hash),
             )
             connection.execute("COMMIT")
         return max(0, cursor.rowcount)

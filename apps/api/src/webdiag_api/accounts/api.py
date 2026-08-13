@@ -8,7 +8,10 @@ from fastapi import APIRouter, Cookie, Depends, HTTPException, Response
 from webdiag_api.accounts.models import (
     AccountLogoutResponse,
     AccountSessionResponse,
+    AccountSessionsRevokedResponse,
+    AccountSessionSummaryResponse,
     LoginRequest,
+    PasswordChangeRequest,
     RegisterRequest,
 )
 from webdiag_api.accounts.security import ScryptParameters
@@ -137,3 +140,47 @@ def logout(
     )
     response.headers["cache-control"] = "no-store"
     return AccountLogoutResponse()
+
+
+@router.post("/password", response_model=AccountSessionResponse)
+def change_password(
+    request: PasswordChangeRequest,
+    response: Response,
+    service: AccountServiceDependency,
+    webdiag_session: SessionCookie = None,
+) -> AccountSessionResponse:
+    try:
+        session = service.change_password(webdiag_session, request)
+    except AccountServiceError as error:
+        raise _http_error(error) from error
+    _set_session_cookie(response, session.token)
+    return session.response
+
+
+@router.get("/sessions", response_model=AccountSessionSummaryResponse)
+def sessions(
+    response: Response,
+    service: AccountServiceDependency,
+    webdiag_session: SessionCookie = None,
+) -> AccountSessionSummaryResponse:
+    response.headers["cache-control"] = "no-store"
+    try:
+        return service.session_summary(webdiag_session)
+    except AccountServiceError as error:
+        raise _http_error(error) from error
+
+
+@router.post(
+    "/sessions/revoke-others",
+    response_model=AccountSessionsRevokedResponse,
+)
+def revoke_other_sessions(
+    response: Response,
+    service: AccountServiceDependency,
+    webdiag_session: SessionCookie = None,
+) -> AccountSessionsRevokedResponse:
+    response.headers["cache-control"] = "no-store"
+    try:
+        return service.revoke_other_sessions(webdiag_session)
+    except AccountServiceError as error:
+        raise _http_error(error) from error

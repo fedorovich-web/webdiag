@@ -105,11 +105,10 @@ def test_account_credential_injection_payloads_remain_bound(tmp_path: Path) -> N
     ) is True
     assert accounts.get_user_by_id(owner.id).password_hash == SQL_PAYLOAD
     assert accounts.get_user_id_for_session(token_hash=SQL_PAYLOAD, now=now) == owner.id
-    assert accounts.delete_other_sessions(
-        user_id=BOOLEAN_PAYLOAD,
+    assert accounts.delete_other_sessions_for_token(
         current_token_hash=BOOLEAN_PAYLOAD,
         now=now,
-    ) == 0
+    ) is None
 
     with sqlite3.connect(database_path) as connection:
         assert connection.execute("SELECT COUNT(*) FROM account_users").fetchone()[0] == 2

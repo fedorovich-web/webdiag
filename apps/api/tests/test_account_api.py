@@ -1,6 +1,8 @@
 import asyncio
 import sqlite3
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import httpx
@@ -8,7 +10,7 @@ import pytest
 from pydantic import ValidationError
 
 from webdiag_api.accounts.api import _http_error, get_account_service
-from webdiag_api.accounts.models import LoginRequest, RegisterRequest
+from webdiag_api.accounts.models import LoginRequest, PasswordChangeRequest, RegisterRequest
 from webdiag_api.accounts.security import (
     ScryptParameters,
     hash_password,
@@ -498,18 +500,20 @@ def test_account_session_count_and_revoke_others_are_bounded_and_idempotent(
         active_session_limit=10,
     )
 
-    assert store.active_session_count(user_id=user.id, now=now) == 2
-    assert store.delete_other_sessions(
-        user_id=user.id,
+    assert store.active_session_count_for_token(
+        current_token_hash="current", now=now
+    ) == 2
+    assert store.delete_other_sessions_for_token(
         current_token_hash="current",
         now=now,
     ) == 1
-    assert store.delete_other_sessions(
-        user_id=user.id,
+    assert store.delete_other_sessions_for_token(
         current_token_hash="current",
         now=now,
     ) == 0
-    assert store.active_session_count(user_id=user.id, now=now) == 1
+    assert store.active_session_count_for_token(
+        current_token_hash="current", now=now
+    ) == 1
     assert store.get_user_id_for_session(token_hash="current", now=now) == user.id
 
 
@@ -539,7 +543,9 @@ def test_rotate_password_and_session_is_atomic_and_compare_and_swap_safe(
         expires_at=now + 1200,
     ) is True
     assert store.get_user_by_id(user.id).password_hash == "scrypt$replacement"
-    assert store.active_session_count(user_id=user.id, now=now) == 1
+    assert store.active_session_count_for_token(
+        current_token_hash="fresh", now=now
+    ) == 1
     assert store.get_user_id_for_session(token_hash="fresh", now=now) == user.id
     assert store.get_user_id_for_session(token_hash="first", now=now) is None
 
@@ -553,6 +559,293 @@ def test_rotate_password_and_session_is_atomic_and_compare_and_swap_safe(
     assert store.get_user_by_id(user.id).password_hash == "scrypt$replacement"
     assert store.get_user_id_for_session(token_hash="fresh", now=now) == user.id
     assert store.get_user_id_for_session(token_hash="stale", now=now) is None
+
+
+def test_change_password_rotates_all_sessions_and_rejects_unsafe_replacements(
+    tmp_path: Path,
+) -> None:
+    service = build_service(tmp_path)
+    current_token, current_password = register_user(service)
+    other_token = service.login(
+        LoginRequest(email="user@example.com", password=current_password)
+    ).token
+
+    with pytest.raises(AccountServiceError) as weak:
+        service.change_password(
+            current_token,
+            PasswordChangeRequest(
+                current_password=current_password,
+                new_password="short",
+            ),
+        )
+    assert (weak.value.status_code, weak.value.code) == (400, "account_weak_password")
+
+    with pytest.raises(AccountServiceError) as unchanged:
+        service.change_password(
+            current_token,
+            PasswordChangeRequest(
+                current_password=current_password,
+                new_password=current_password,
+            ),
+        )
+    assert (unchanged.value.status_code, unchanged.value.code) == (
+        409,
+        "account_password_unchanged",
+    )
+
+    rotated = service.change_password(
+        current_token,
+        PasswordChangeRequest(
+            current_password=current_password,
+            new_password="replacement horse battery staple",
+        ),
+    )
+    assert rotated.token not in {current_token, other_token}
+    assert rotated.response.user.email == "user@example.com"
+    assert service.get_session(rotated.token).user.id == rotated.response.user.id
+    assert service.session_summary(rotated.token).active_session_count == 1
+    for invalidated in (current_token, other_token):
+        with pytest.raises(AccountServiceError) as invalid:
+            service.get_session(invalidated)
+        assert invalid.value.code == "account_unauthenticated"
+    with pytest.raises(AccountServiceError) as old_login:
+        service.login(LoginRequest(email="user@example.com", password=current_password))
+    assert old_login.value.code == "account_invalid_credentials"
+    assert service.login(
+        LoginRequest(
+            email="user@example.com",
+            password="replacement horse battery staple",
+        )
+    ).response.user.id == rotated.response.user.id
+
+
+def test_change_password_wrong_current_value_is_persistently_rate_limited(
+    tmp_path: Path,
+) -> None:
+    service = build_service(tmp_path)
+    token, _ = register_user(service)
+    request_payload = PasswordChangeRequest(
+        current_password="wrong current password",
+        new_password="replacement horse battery staple",
+    )
+
+    for _ in range(4):
+        with pytest.raises(AccountServiceError) as invalid:
+            service.change_password(token, request_payload)
+        assert invalid.value.code == "account_invalid_current_password"
+    with pytest.raises(AccountServiceError) as limited:
+        service.change_password(token, request_payload)
+    assert limited.value.status_code == 429
+    assert limited.value.code == "account_credential_rate_limited"
+    assert limited.value.retry_after == 900
+
+    replacement = build_service(tmp_path)
+    with pytest.raises(AccountServiceError) as persisted:
+        replacement.change_password(token, request_payload)
+    assert persisted.value.code == "account_credential_rate_limited"
+
+
+def test_account_sessions_summary_and_revoke_others(tmp_path: Path) -> None:
+    service = build_service(tmp_path)
+    current_token, password = register_user(service)
+    other_tokens = [
+        service.login(LoginRequest(email="user@example.com", password=password)).token
+        for _ in range(2)
+    ]
+
+    summary = service.session_summary(current_token)
+    assert summary.model_dump() == {
+        "contract_version": "webdiag.account.sessions.v1",
+        "active_session_count": 3,
+    }
+    revoked = service.revoke_other_sessions(current_token)
+    assert revoked.model_dump() == {
+        "contract_version": "webdiag.account.sessions_revoked.v1",
+        "active_session_count": 1,
+        "revoked_session_count": 2,
+    }
+    assert service.revoke_other_sessions(current_token).revoked_session_count == 0
+    assert service.get_session(current_token).authenticated is True
+    for other_token in other_tokens:
+        with pytest.raises(AccountServiceError):
+            service.get_session(other_token)
+
+
+def test_login_verified_before_password_rotation_cannot_create_a_stale_session(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    service = build_service(tmp_path)
+    current_token, current_password = register_user(service)
+    verified = threading.Event()
+    release = threading.Event()
+    original_verify = verify_password
+
+    def controlled_verify(password: str, encoded: str) -> bool:
+        result = original_verify(password, encoded)
+        if threading.current_thread().name.startswith("stale-login"):
+            verified.set()
+            assert release.wait(timeout=5)
+        return result
+
+    monkeypatch.setattr("webdiag_api.accounts.service.verify_password", controlled_verify)
+    with ThreadPoolExecutor(max_workers=1, thread_name_prefix="stale-login") as executor:
+        stale_login = executor.submit(
+            service.login,
+            LoginRequest(email="user@example.com", password=current_password),
+        )
+        assert verified.wait(timeout=5)
+        rotated = service.change_password(
+            current_token,
+            PasswordChangeRequest(
+                current_password=current_password,
+                new_password="replacement horse battery staple",
+            ),
+        )
+        release.set()
+        with pytest.raises(AccountServiceError) as conflict:
+            stale_login.result(timeout=5)
+
+    assert conflict.value.code == "account_credentials_changed"
+    assert service.session_summary(rotated.token).active_session_count == 1
+
+
+def test_concurrent_revoke_others_cannot_delete_both_current_sessions(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    service = build_service(tmp_path)
+    first_token, password = register_user(service)
+    second_token = service.login(
+        LoginRequest(email="user@example.com", password=password)
+    ).token
+    barrier = threading.Barrier(2)
+    original_resolve = service._resolve_session
+
+    def synchronized_resolve(token: str | None):
+        result = original_resolve(token)
+        barrier.wait(timeout=5)
+        return result
+
+    monkeypatch.setattr(service, "_resolve_session", synchronized_resolve)
+
+    def revoke(token: str) -> str:
+        try:
+            service.revoke_other_sessions(token)
+        except AccountServiceError as error:
+            return error.code
+        return "success"
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        outcomes = list(executor.map(revoke, (first_token, second_token)))
+    monkeypatch.setattr(service, "_resolve_session", original_resolve)
+
+    assert sorted(outcomes) == ["account_unauthenticated", "success"]
+    valid = 0
+    for token in (first_token, second_token):
+        try:
+            service.get_session(token)
+        except AccountServiceError:
+            continue
+        valid += 1
+    assert valid == 1
+
+
+def test_account_lifecycle_api_rotates_cookie_and_returns_exact_no_store_contracts(
+    tmp_path: Path,
+) -> None:
+    service = build_service(tmp_path)
+    app.dependency_overrides[get_account_service] = lambda: service
+    try:
+        registered, cookies = asyncio.run(
+            request(
+                "POST",
+                "/v1/account/register",
+                json={
+                    "email": "user@example.com",
+                    "display_name": "Roman User",
+                    "password": "correct horse battery staple",
+                },
+            )
+        )
+        assert registered.status_code == 201
+        old_token = cookies.get("webdiag_session")
+        service.login(
+            LoginRequest(
+                email="user@example.com",
+                password="correct horse battery staple",
+            )
+        )
+
+        sessions, cookies = asyncio.run(
+            request("GET", "/v1/account/sessions", cookies=cookies)
+        )
+        assert sessions.status_code == 200
+        assert sessions.headers["cache-control"] == "no-store"
+        assert sessions.json() == {
+            "contract_version": "webdiag.account.sessions.v1",
+            "active_session_count": 2,
+        }
+
+        invalid, _ = asyncio.run(
+            request(
+                "POST",
+                "/v1/account/password",
+                cookies=cookies,
+                json={
+                    "current_password": "correct horse battery staple",
+                    "new_password": "replacement horse battery staple",
+                    "unexpected": True,
+                },
+            )
+        )
+        assert invalid.status_code == 422
+        assert invalid.headers["cache-control"] == "no-store"
+
+        changed, cookies = asyncio.run(
+            request(
+                "POST",
+                "/v1/account/password",
+                cookies=cookies,
+                json={
+                    "current_password": "correct horse battery staple",
+                    "new_password": "replacement horse battery staple",
+                },
+            )
+        )
+        assert changed.status_code == 200
+        assert changed.headers["cache-control"] == "no-store"
+        assert set(changed.json()) == {"contract_version", "authenticated", "user"}
+        assert "password" not in changed.text.lower()
+        assert "HttpOnly" in changed.headers["set-cookie"]
+        assert "SameSite=lax" in changed.headers["set-cookie"]
+        new_token = cookies.get("webdiag_session")
+        assert new_token and new_token != old_token
+        with pytest.raises(AccountServiceError):
+            service.get_session(old_token)
+
+        service.login(
+            LoginRequest(
+                email="user@example.com",
+                password="replacement horse battery staple",
+            )
+        )
+        revoked, cookies = asyncio.run(
+            request(
+                "POST",
+                "/v1/account/sessions/revoke-others",
+                cookies=cookies,
+            )
+        )
+        assert revoked.status_code == 200
+        assert revoked.headers["cache-control"] == "no-store"
+        assert revoked.json() == {
+            "contract_version": "webdiag.account.sessions_revoked.v1",
+            "active_session_count": 1,
+            "revoked_session_count": 1,
+        }
+    finally:
+        app.dependency_overrides.clear()
 
 
 def test_account_api_register_me_logout_and_validation_envelope(tmp_path: Path) -> None:
