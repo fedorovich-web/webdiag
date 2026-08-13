@@ -1041,3 +1041,31 @@ cases, and RU/EN fixtures for Content Brief, Content Optimizer, and Search Inten
 One additional regression confirms that query strings and fragments are removed from content
 page URLs before persistence or provider submission. No frontend source, visual baseline,
 OpenRouter endpoint, object storage, payment system, release, or deployment was touched.
+
+GitHub Actions `Full verification` run 31677113866 subsequently passed on the pushed A12.1c
+head, including the complete workspace, frontend, build, browser, Python, Ruff, and lock gates.
+
+## A12.1d grounded planning tools
+
+Fresh backend verification on 2026-08-13:
+
+```text
+npm run test:python
+PASS — 453/453
+
+npm run lint:python
+PASS — Ruff reported no findings
+
+npm run verify:python-lock
+PASS — 39 locked packages match the installed win32 environment
+
+git diff --check
+PASS
+```
+
+The package adds a route-specific 300,000-byte AI run request limit with a 262,144-byte service
+payload ceiling while ordinary account routes remain at 16,384 bytes. New tests cover exact
+Competitor Gap evidence, comparison-page indexes, duplicate page rejection, Internal Linking
+self/existing/duplicate pair rejection, exact source/target evidence, strict OpenRouter request
+policies, and RU/EN fixtures. No real provider, crawler, site mutation, payment, release, or
+deployment action occurred.
