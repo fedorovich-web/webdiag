@@ -360,6 +360,37 @@ class SqliteWorkspaceStore:
             ).fetchall()
         return tuple(self._audit(row) for row in rows)
 
+    def list_latest_audits(self, *, user_id: str) -> tuple[StoredAudit, ...]:
+        self.ensure_schema()
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT audit.id, audit.project_id, audit.user_id, audit.status,
+                       audit.score, audit.check_count, audit.issue_count,
+                       audit.completed_at, audit.created_at, audit.payload_json,
+                       audit.payload_sha256
+                FROM account_workspace_saved_audits AS audit
+                WHERE audit.user_id = ?
+                  AND NOT EXISTS (
+                    SELECT 1
+                    FROM account_workspace_saved_audits AS newer
+                    WHERE newer.user_id = audit.user_id
+                      AND newer.project_id = audit.project_id
+                      AND (
+                        newer.completed_at > audit.completed_at
+                        OR (
+                          newer.completed_at = audit.completed_at
+                          AND newer.id > audit.id
+                        )
+                      )
+                  )
+                ORDER BY audit.completed_at DESC, audit.id DESC
+                LIMIT ?
+                """,
+                (user_id, MAX_PROJECTS_PER_ACCOUNT),
+            ).fetchall()
+        return tuple(self._audit(row) for row in rows)
+
     def get_audit(
         self,
         *,
