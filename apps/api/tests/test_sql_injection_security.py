@@ -83,3 +83,34 @@ def test_sql_metacharacters_remain_bound_ai_run_data(tmp_path: Path) -> None:
         assert connection.execute("SELECT COUNT(*) FROM account_users").fetchone()[0] == 2
         assert connection.execute("SELECT COUNT(*) FROM ai_runs").fetchone()[0] == 1
         assert connection.execute("SELECT COUNT(*) FROM credit_ledger").fetchone()[0] == 2
+
+
+def test_account_credential_injection_payloads_remain_bound(tmp_path: Path) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    accounts, owner, _ = _create_users(database_path)
+    now = 2_000_000_000
+    accounts.create_session(
+        token_hash=BOOLEAN_PAYLOAD,
+        user_id=owner.id,
+        expires_at=now + 600,
+        active_session_limit=10,
+    )
+
+    assert accounts.rotate_password_and_session(
+        user_id=owner.id,
+        expected_password_hash="scrypt$owner",
+        password_hash=SQL_PAYLOAD,
+        token_hash=SQL_PAYLOAD,
+        expires_at=now + 1200,
+    ) is True
+    assert accounts.get_user_by_id(owner.id).password_hash == SQL_PAYLOAD
+    assert accounts.get_user_id_for_session(token_hash=SQL_PAYLOAD, now=now) == owner.id
+    assert accounts.delete_other_sessions(
+        user_id=BOOLEAN_PAYLOAD,
+        current_token_hash=BOOLEAN_PAYLOAD,
+        now=now,
+    ) == 0
+
+    with sqlite3.connect(database_path) as connection:
+        assert connection.execute("SELECT COUNT(*) FROM account_users").fetchone()[0] == 2
+        assert connection.execute("SELECT COUNT(*) FROM account_sessions").fetchone()[0] == 1

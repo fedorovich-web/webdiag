@@ -195,6 +195,83 @@ class SqliteAccountStore:
         with self._connect() as connection:
             connection.execute("DELETE FROM account_sessions WHERE token_hash = ?", (token_hash,))
 
+    def active_session_count(self, *, user_id: str, now: int | None = None) -> int:
+        self.ensure_schema()
+        current_time = int(time.time()) if now is None else now
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            connection.execute(
+                "DELETE FROM account_sessions WHERE expires_at <= ?",
+                (current_time,),
+            )
+            row = connection.execute(
+                "SELECT COUNT(*) FROM account_sessions WHERE user_id = ?",
+                (user_id,),
+            ).fetchone()
+            connection.execute("COMMIT")
+        return int(row[0]) if row is not None else 0
+
+    def delete_other_sessions(
+        self,
+        *,
+        user_id: str,
+        current_token_hash: str,
+        now: int | None = None,
+    ) -> int:
+        self.ensure_schema()
+        current_time = int(time.time()) if now is None else now
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            connection.execute(
+                "DELETE FROM account_sessions WHERE expires_at <= ?",
+                (current_time,),
+            )
+            cursor = connection.execute(
+                """
+                DELETE FROM account_sessions
+                WHERE user_id = ? AND token_hash <> ?
+                """,
+                (user_id, current_token_hash),
+            )
+            connection.execute("COMMIT")
+        return max(0, cursor.rowcount)
+
+    def rotate_password_and_session(
+        self,
+        *,
+        user_id: str,
+        expected_password_hash: str,
+        password_hash: str,
+        token_hash: str,
+        expires_at: int,
+    ) -> bool:
+        self.ensure_schema()
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            cursor = connection.execute(
+                """
+                UPDATE account_users SET password_hash = ?
+                WHERE id = ? AND password_hash = ?
+                """,
+                (password_hash, user_id, expected_password_hash),
+            )
+            if cursor.rowcount != 1:
+                connection.execute("ROLLBACK")
+                return False
+            connection.execute(
+                "DELETE FROM account_sessions WHERE user_id = ?",
+                (user_id,),
+            )
+            connection.execute(
+                """
+                INSERT INTO account_sessions(token_hash, user_id, created_at, expires_at)
+                VALUES (?, ?, ?, ?)
+                """,
+                (token_hash, user_id, time.time_ns(), expires_at),
+            )
+            connection.execute("COMMIT")
+        return True
+
     def get_login_retry_after(self, *, identity_hash: str, now: int) -> int | None:
         self.ensure_schema()
         with self._connect() as connection:

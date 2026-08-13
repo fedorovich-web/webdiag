@@ -469,6 +469,92 @@ def test_expired_session_is_rejected_and_deleted(tmp_path: Path) -> None:
         assert connection.execute("SELECT COUNT(*) FROM account_sessions").fetchone()[0] == 0
 
 
+def test_account_session_count_and_revoke_others_are_bounded_and_idempotent(
+    tmp_path: Path,
+) -> None:
+    store = SqliteAccountStore(str(tmp_path / "accounts.sqlite3"))
+    user = store.create_user(
+        email="user@example.com",
+        display_name="User",
+        password_hash="scrypt$current",
+    )
+    now = int(time.time())
+    store.create_session(
+        token_hash="expired",
+        user_id=user.id,
+        expires_at=now - 1,
+        active_session_limit=10,
+    )
+    store.create_session(
+        token_hash="current",
+        user_id=user.id,
+        expires_at=now + 600,
+        active_session_limit=10,
+    )
+    store.create_session(
+        token_hash="other",
+        user_id=user.id,
+        expires_at=now + 600,
+        active_session_limit=10,
+    )
+
+    assert store.active_session_count(user_id=user.id, now=now) == 2
+    assert store.delete_other_sessions(
+        user_id=user.id,
+        current_token_hash="current",
+        now=now,
+    ) == 1
+    assert store.delete_other_sessions(
+        user_id=user.id,
+        current_token_hash="current",
+        now=now,
+    ) == 0
+    assert store.active_session_count(user_id=user.id, now=now) == 1
+    assert store.get_user_id_for_session(token_hash="current", now=now) == user.id
+
+
+def test_rotate_password_and_session_is_atomic_and_compare_and_swap_safe(
+    tmp_path: Path,
+) -> None:
+    store = SqliteAccountStore(str(tmp_path / "accounts.sqlite3"))
+    user = store.create_user(
+        email="user@example.com",
+        display_name="User",
+        password_hash="scrypt$current",
+    )
+    now = int(time.time())
+    for token_hash in ("first", "second"):
+        store.create_session(
+            token_hash=token_hash,
+            user_id=user.id,
+            expires_at=now + 600,
+            active_session_limit=10,
+        )
+
+    assert store.rotate_password_and_session(
+        user_id=user.id,
+        expected_password_hash="scrypt$current",
+        password_hash="scrypt$replacement",
+        token_hash="fresh",
+        expires_at=now + 1200,
+    ) is True
+    assert store.get_user_by_id(user.id).password_hash == "scrypt$replacement"
+    assert store.active_session_count(user_id=user.id, now=now) == 1
+    assert store.get_user_id_for_session(token_hash="fresh", now=now) == user.id
+    assert store.get_user_id_for_session(token_hash="first", now=now) is None
+
+    assert store.rotate_password_and_session(
+        user_id=user.id,
+        expected_password_hash="scrypt$current",
+        password_hash="scrypt$stale",
+        token_hash="stale",
+        expires_at=now + 1200,
+    ) is False
+    assert store.get_user_by_id(user.id).password_hash == "scrypt$replacement"
+    assert store.get_user_id_for_session(token_hash="fresh", now=now) == user.id
+    assert store.get_user_id_for_session(token_hash="stale", now=now) is None
+
+
 def test_account_api_register_me_logout_and_validation_envelope(tmp_path: Path) -> None:
     service = build_service(tmp_path)
     app.dependency_overrides[get_account_service] = lambda: service
