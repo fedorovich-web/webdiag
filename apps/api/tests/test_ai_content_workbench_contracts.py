@@ -24,7 +24,7 @@ def _brief_input(locale: str = "ru") -> dict[str, object]:
 def _optimizer_input(locale: str = "en") -> dict[str, object]:
     return {
         "locale": locale,
-        "page_url": "HTTPS://Example.COM:443/guides/seo",
+        "page_url": "HTTPS://Example.COM:443/guides/seo?token=secret#private-note",
         "content": "WebDiag checks crawl directives. Reports keep the audit evidence.",
         "target_query": "technical SEO audit",
         "objective": "Make the explanation clearer.",

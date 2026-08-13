@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Annotated, Literal
+from urllib.parse import urlsplit
 
 from pydantic import (
     BaseModel,
@@ -37,6 +38,11 @@ def _normalize_public_url(value: str) -> str:
         return validate_url(value).normalized
     except UrlPolicyError as error:
         raise ValueError("URL must be a canonical public HTTP(S) URL") from error
+
+
+def _normalize_content_page_url(value: str) -> str:
+    parsed = urlsplit(_normalize_public_url(value))
+    return parsed._replace(query="", fragment="").geturl()
 
 
 class AuditActionPlanInput(_StrictModel):
@@ -129,7 +135,7 @@ class ContentOptimizerInput(_StrictModel):
     @field_validator("page_url")
     @classmethod
     def normalize_page_url(cls, value: str) -> str:
-        return _normalize_public_url(value)
+        return _normalize_content_page_url(value)
 
 
 PageType = Literal[
@@ -154,7 +160,7 @@ class SearchIntentPageFitInput(_StrictModel):
     @field_validator("page_url")
     @classmethod
     def normalize_page_url(cls, value: str) -> str:
-        return _normalize_public_url(value)
+        return _normalize_content_page_url(value)
 
 
 class ActionPlanAction(_StrictModel):
