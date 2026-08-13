@@ -550,3 +550,43 @@ def test_audit_api_uses_stable_no_store_contracts() -> None:
                 "message": "Invalid audit request.",
             }
         }
+
+
+def test_audit_query_is_fetched_but_not_persisted_or_returned(tmp_path) -> None:
+    database = tmp_path / "audits.sqlite3"
+    requested_urls: list[str] = []
+    requested_hosts: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requested_urls.append(str(request.url))
+        requested_hosts.append(request.headers["host"])
+        return healthy_resource_response(request)
+
+    store = SqliteAuditStore(str(database))
+    with_service(build_service(handler, store=store))
+    try:
+        created = asyncio.run(
+            request(
+                "POST",
+                "/v1/audits",
+                json={"url": "https://example.com/page?token=secret#private"},
+            )
+        )
+        fetched = asyncio.run(
+            request("GET", f"/v1/audits/{created.json()['job']['job_id']}")
+        )
+    finally:
+        clear_overrides()
+
+    assert requested_urls[0].endswith("/page?token=secret#private")
+    assert requested_hosts[0] == "example.com"
+    assert created.status_code == 201
+    assert fetched.status_code == 200
+    assert "token=secret" not in created.text
+    assert "token=secret" not in fetched.text
+    with sqlite3.connect(database) as connection:
+        payloads = connection.execute(
+            "SELECT payload_json FROM audit_jobs UNION ALL SELECT payload_json FROM audit_runs"
+        ).fetchall()
+    assert payloads
+    assert all("token=secret" not in payload for (payload,) in payloads)

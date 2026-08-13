@@ -11,6 +11,7 @@ from uuid import UUID
 from pydantic import ValidationError
 
 from webdiag_api.audit.models import AuditJob, AuditRun
+from webdiag_api.audit.redaction import public_audit_job, public_audit_run
 
 if TYPE_CHECKING:
     from webdiag_api.audit.service import AuditSnapshot
@@ -73,6 +74,7 @@ class SqliteAuditStore:
 
     def save_job(self, job: AuditJob) -> AuditJob:
         self.ensure_schema()
+        job = public_audit_job(job)
         payload, digest = _payload(job)
         with self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
@@ -83,6 +85,7 @@ class SqliteAuditStore:
 
     def save_run(self, run: AuditRun) -> AuditRun:
         self.ensure_schema()
+        run = public_audit_run(run)
         payload, digest = _payload(run)
         with self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
@@ -92,6 +95,8 @@ class SqliteAuditStore:
 
     def save_snapshot(self, job: AuditJob, run: AuditRun) -> None:
         self.ensure_schema()
+        job = public_audit_job(job)
+        run = public_audit_run(run)
         job_payload, job_digest = _payload(job)
         run_payload, run_digest = _payload(run)
         with self._connect() as connection:
@@ -120,11 +125,15 @@ class SqliteAuditStore:
             return None
         try:
             self._verify(str(row["job_payload"]), str(row["job_digest"]))
-            job = AuditJob.model_validate_json(str(row["job_payload"]), strict=True)
+            job = public_audit_job(
+                AuditJob.model_validate_json(str(row["job_payload"]), strict=True)
+            )
             run = None
             if row["run_payload"] is not None:
                 self._verify(str(row["run_payload"]), str(row["run_digest"]))
-                run = AuditRun.model_validate_json(str(row["run_payload"]), strict=True)
+                run = public_audit_run(
+                    AuditRun.model_validate_json(str(row["run_payload"]), strict=True)
+                )
         except (ValidationError, ValueError) as error:
             raise AuditStoreIntegrityError("persisted audit data is invalid") from error
         return AuditSnapshot(job=job, run=run)
