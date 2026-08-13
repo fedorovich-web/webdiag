@@ -453,6 +453,11 @@ textarea { resize: vertical; }
 .code-input, .output { font-family: var(--font-mono); }
 .output-wrap { display: grid; gap: 12px; }
 .output { min-height: 150px; max-height: 430px; margin: 0; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; padding: 16px; border: 1px solid var(--code-line); border-radius: var(--radius-md); background: var(--code-bg); color: var(--code-text); font-size: 13px; line-height: 1.7; }
+.data-uri-results { min-width: 0; display: grid; gap: 18px; }
+.data-uri-results article { min-width: 0; display: grid; gap: 10px; }
+.data-uri-results .result-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.data-uri-results .result-heading h3 { min-width: 0; margin: 0; }
+.data-uri-results .output { width: 100%; min-height: 112px; resize: vertical; }
 .form-error { grid-column: 1 / -1; margin: 0; color: var(--danger); font-weight: 700; }
 .calculated-value { margin: 0; font-size: 30px; font-weight: 700; letter-spacing: -0.035em; }
 .contrast-preview { min-height: 150px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: var(--radius-md); padding: 20px; font-size: 23px; font-weight: 700; }
@@ -1028,9 +1033,9 @@ main.catalog-page.page-main{
 .tool-workspace,
 .processing-note,
 .use-case-grid li{
-  border-color:var(--wd-catalog-line);
+  border-color:var(--line);
   border-radius:var(--wd-catalog-card-radius);
-  background:var(--wd-catalog-surface);
+  background:var(--surface);
   box-shadow:var(--wd-catalog-card-shadow);
 }
 .workspace-heading h2,

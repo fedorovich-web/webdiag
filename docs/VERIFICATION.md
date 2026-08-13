@@ -1312,6 +1312,45 @@ inspected before the two catalog baselines were updated; the diff contained only
 the new UI/CSS card and downstream row movement. No dependency, remote image
 service, provider call, release, or deployment was added.
 
+## A10.40 browser-local image Data URI workbench
+
+Fresh affected-package verification on 2026-08-13:
+
+```text
+registry
+PASS — 125 total / 108 ready / 17 internal
+
+web unit tests
+PASS — 383/383
+
+Python tests
+PASS — 531/531
+
+browser tests
+PASS — 63/63 after the sole expected mobile catalog baseline change was
+inspected and regenerated
+
+production build
+PASS — 257 pages; 222 public routes; 220 localized HTML routes
+
+ESLint / TypeScript / git diff
+PASS — no errors; one pre-existing site-brand img warning; diff check clean
+```
+
+WD-107 now creates an exact Data URI from the byte-signature-identified source
+and a separate aspect-preserving PNG placeholder with no side larger than 24
+pixels. One JPEG, PNG, WebP, or AVIF up to 1 MiB is processed locally; output is
+shown only in read-only text controls. Browser coverage confirms that source
+bytes are not uploaded and that long outputs do not overflow 390 pixels.
+
+WD-108 remains internal because its bounded placeholder capability is already
+included in WD-107. Desktop and mobile results were inspected before the only
+changed catalog baseline was approved. Dark-theme inspection also exposed and
+fixed a late catalog-token override that left editorial cards on a light
+surface; the regression test now asserts the existing dark surface token's
+computed color. No dependency, remote image service, provider call, release,
+or deployment was added.
+
 ## A12.1e final grounded text contracts
 
 Fresh backend verification on 2026-08-13:

@@ -375,6 +375,50 @@ export const mediaUtilityToolPages = [
     ],
   }),
   toolPage({
+    slug: "image-data-uri-converter",
+    seoTitle: { ru: "Data URI и PNG placeholder для изображения", en: "Image Data URI Workbench" },
+    metaDescription: { ru: "Создайте точный Data URI для JPEG, PNG, WebP или AVIF до 1 МиБ и отдельный PNG placeholder до 24 px локально в браузере.", en: "Create an exact Data URI for a JPEG, PNG, WebP, or AVIF up to 1 MiB and a separate PNG placeholder up to 24 px locally in your browser." },
+    h1: { ru: "Data URI и placeholder для изображения", en: "Image Data URI Workbench" },
+    lead: { ru: "Получите точное base64-представление исходного файла и отдельную миниатюрную PNG-заглушку без загрузки изображения на сервер.", en: "Get an exact base64 representation of the source file and a separate tiny PNG placeholder without uploading the image." },
+    quickFacts: [
+      { ru: "До 1 МиБ", en: "Up to 1 MiB" },
+      { ru: "Placeholder до 24 px", en: "Placeholder up to 24 px" },
+      { ru: "Локальная обработка", en: "Local processing" },
+    ],
+    howToSteps: [
+      { ru: "Выберите один JPEG, PNG, WebP или AVIF.", en: "Choose one JPEG, PNG, WebP, or AVIF file." },
+      { ru: "Создайте точный Data URI исходника и миниатюрный PNG placeholder.", en: "Create the exact source Data URI and a tiny PNG placeholder." },
+      { ru: "Скопируйте нужный Data URI или готовое CSS-свойство.", en: "Copy the required Data URI or the ready-to-use CSS declaration." },
+    ],
+    supportedFeatures: [
+      { ru: "Определение формата по сигнатуре байтов, а не по заявленному MIME type.", en: "Format detection from the byte signature rather than the declared MIME type." },
+      { ru: "Точное base64-кодирование всех байтов исходного файла.", en: "Exact base64 encoding of every source-file byte." },
+      { ru: "PNG placeholder с сохранением пропорций и стороной не более 24 px.", en: "An aspect-preserving PNG placeholder with no side larger than 24 px." },
+    ],
+    limitations: [
+      { ru: "Data URI увеличивает текстовый размер и не оптимизирует исходное изображение.", en: "A Data URI increases text size and does not optimize the source image." },
+      { ru: "Placeholder не является BlurHash или рекомендацией по загрузке изображения.", en: "The placeholder is not BlurHash or an image-loading recommendation." },
+    ],
+    useCases: [
+      { ru: "Встраивание небольшого локального изображения в CSS или HTML.", en: "Embedding a small local image in CSS or HTML." },
+      { ru: "Подготовка отдельной миниатюрной заглушки для ручной интеграции.", en: "Preparing a separate tiny placeholder for manual integration." },
+      { ru: "Проверка фактического MIME type по содержимому файла.", en: "Checking the effective MIME type from file content." },
+    ],
+    technicalNotes: [
+      { ru: "Исходный Data URI строится непосредственно из прочитанных байтов и показывается только как текст.", en: "The source Data URI is built directly from the read bytes and displayed only as text." },
+      { ru: "Placeholder декодируется и кодируется через Canvas API текущего браузера.", en: "The placeholder is decoded and encoded through the current browser's Canvas API." },
+    ],
+    faq: [
+      { question: { ru: "Файл отправляется на сервер?", en: "Is the file uploaded?" }, answer: { ru: "Нет. Чтение, декодирование и кодирование выполняются локально в браузере.", en: "No. Reading, decoding, and encoding happen locally in the browser." } },
+      { question: { ru: "Это оптимизатор изображений?", en: "Is this an image optimizer?" }, answer: { ru: "Нет. Точный Data URI сохраняет все байты исходника, а PNG placeholder создаётся отдельно.", en: "No. The exact Data URI preserves every source byte, while the PNG placeholder is generated separately." } },
+    ],
+    relatedToolSlugs: ["image-optimizer", "responsive-image-srcset-generator", "color-palette-extractor"],
+    sourceUrls: [
+      "https://developer.mozilla.org/docs/Web/API/FileReader/readAsDataURL",
+      "https://developer.mozilla.org/docs/Web/API/Canvas_API",
+    ],
+  }),
+  toolPage({
     slug: "responsive-image-srcset-generator",
     seoTitle: { ru: "Генератор srcset для адаптивных изображений", en: "Responsive Image Srcset Generator" },
     metaDescription: { ru: "Соберите srcset и экранированный img-фрагмент из существующих HTTPS или root-relative URL и фактической ширины файлов.", en: "Build a srcset and escaped img fragment from existing HTTPS or root-relative URLs and the files' actual intrinsic widths." },

@@ -41,6 +41,7 @@ import {
 import { AddWatermarkImageTool, FaviconGeneratorTool, ImageMetadataViewerTool, SvgOptimizerTool } from "./image-advanced-tools";
 import { ImageCropperTool, ImageFormatConverterTool, ImageOptimizerTool, ImageResizerTool } from "./image-tools";
 import { ImagePaletteExtractorTool } from "./image-palette-extractor";
+import { ImageDataUriWorkbenchTool } from "./image-data-uri-workbench";
 import { BrokenImageCheckerTool, BrokenLinkCheckerTool, LinkAnalyzerTool } from "./link-health-tools";
 import { HeadingStructureTool, KeywordFrequencyTool, ReadabilityAnalyzerTool } from "./content-analysis-tools";
 import { FaviconCheckerTool, ImagePerformanceCheckerTool, ImageSeoAuditTool } from "./image-audit-tools";
@@ -308,6 +309,7 @@ export const SUPPORTED_TOOL_SLUGS = [
   "image-cropper",
   "favicon-generator",
   "responsive-image-srcset-generator",
+  "image-data-uri-converter",
   "svg-optimizer",
   "add-watermark-to-image",
   "image-metadata-viewer",
@@ -419,6 +421,7 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "image-cropper": return <ImageCropperTool locale={locale} />;
     case "favicon-generator": return <FaviconGeneratorTool locale={locale} />;
     case "responsive-image-srcset-generator": return <ResponsiveSrcsetGeneratorTool locale={locale} />;
+    case "image-data-uri-converter": return <ImageDataUriWorkbenchTool locale={locale} />;
     case "svg-optimizer": return <SvgOptimizerTool locale={locale} />;
     case "add-watermark-to-image": return <AddWatermarkImageTool locale={locale} />;
     case "image-metadata-viewer": return <ImageMetadataViewerTool locale={locale} />;

@@ -32,4 +32,11 @@ describe("tool registry", () => {
     expect(tool?.description?.ru).toContain("выборки");
     expect(tool?.description?.en).toContain("sampled");
   });
+
+  it("publishes one bounded image Data URI workbench", () => {
+    const tool = tools.find((item) => item.slug === "image-data-uri-converter");
+    expect(tool?.state).toBe("ready");
+    expect(tool?.description?.en).toContain("1 MiB");
+    expect(tools.find((item) => item.slug === "image-placeholder-generator")?.state).toBe("internal");
+  });
 });
