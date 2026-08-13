@@ -216,6 +216,73 @@ class InternalLinkingInput(_StrictModel):
         return self
 
 
+class RedirectMigrationInput(_StrictModel):
+    locale: Locale
+    old_pages: list[EvidencePageInput] = Field(min_length=1, max_length=50)
+    new_pages: list[EvidencePageInput] = Field(min_length=1, max_length=50)
+
+    @model_validator(mode="after")
+    def reject_duplicate_pages(self):
+        urls = [page.page_url for page in self.old_pages + self.new_pages]
+        if len(set(urls)) != len(urls):
+            raise ValueError("migration page URLs must be unique")
+        return self
+
+
+class GlossaryInput(_StrictModel):
+    source_term: str = Field(min_length=1, max_length=200)
+    target_term: str = Field(min_length=1, max_length=200)
+
+
+class LocalizationInput(_StrictModel):
+    locale: Locale
+    source_locale: Locale
+    target_locale: Locale
+    source_content: str = Field(min_length=20, max_length=80_000)
+    glossary: list[GlossaryInput] = Field(default_factory=list, max_length=100)
+    verbatim_constraints: list[
+        Annotated[str, Field(min_length=1, max_length=1_000)]
+    ] = Field(default_factory=list, max_length=100)
+
+    @model_validator(mode="after")
+    def validate_language_evidence(self):
+        if self.source_locale == self.target_locale:
+            raise ValueError("source and target locales must differ")
+        source_terms = [entry.source_term.casefold() for entry in self.glossary]
+        if len(set(source_terms)) != len(source_terms):
+            raise ValueError("glossary source terms must be unique")
+        if any(entry.source_term not in self.source_content for entry in self.glossary):
+            raise ValueError("glossary source term is absent from source content")
+        if len(set(self.verbatim_constraints)) != len(self.verbatim_constraints):
+            raise ValueError("verbatim constraints must be unique")
+        if any(value not in self.source_content for value in self.verbatim_constraints):
+            raise ValueError("verbatim constraint is absent from source content")
+        return self
+
+
+class RegexCaseInput(_StrictModel):
+    text: str = Field(min_length=1, max_length=2_000)
+    expected_match: bool
+
+
+class RegexWorkbenchInput(_StrictModel):
+    locale: Locale
+    dialect: Literal["python", "javascript", "re2"]
+    task: str = Field(min_length=1, max_length=2_000)
+    cases: list[RegexCaseInput] = Field(min_length=1, max_length=40)
+    constraints: list[Annotated[str, Field(min_length=1, max_length=1_000)]] = Field(
+        default_factory=list,
+        max_length=20,
+    )
+
+    @model_validator(mode="after")
+    def reject_duplicate_cases(self):
+        texts = [case.text for case in self.cases]
+        if len(set(texts)) != len(texts):
+            raise ValueError("regex cases must be unique")
+        return self
+
+
 class ActionPlanAction(_StrictModel):
     issue_ids: list[Annotated[str, Field(min_length=1, max_length=200)]] = Field(
         min_length=1,
@@ -370,6 +437,62 @@ class InternalLinkingOutput(_StrictModel):
     )
 
 
+class RedirectMapping(_StrictModel):
+    old_page_index: int = Field(ge=0, le=49)
+    action: Literal["redirect", "no_match"]
+    target_page_index: int | None = Field(default=None, ge=0, le=49)
+    confidence: Literal["low", "medium", "high"]
+    old_evidence: str = Field(min_length=1, max_length=1_000)
+    target_evidence: str | None = Field(default=None, min_length=1, max_length=1_000)
+    rationale: str = Field(min_length=1, max_length=1_000)
+
+
+class RedirectMigrationOutput(_StrictModel):
+    summary: str = Field(min_length=1, max_length=4_000)
+    mappings: list[RedirectMapping] = Field(min_length=1, max_length=50)
+    warnings: list[Annotated[str, Field(min_length=1, max_length=1_000)]] = Field(
+        max_length=20
+    )
+
+
+class GlossaryUsage(_StrictModel):
+    glossary_index: int = Field(ge=0, le=99)
+    source_excerpt: str = Field(min_length=1, max_length=1_000)
+    target_excerpt: str = Field(min_length=1, max_length=1_000)
+
+
+class LocalizationOutput(_StrictModel):
+    localized_content: str = Field(min_length=20, max_length=100_000)
+    glossary_usages: list[GlossaryUsage] = Field(max_length=100)
+    preserved_constraint_indexes: list[int] = Field(max_length=100)
+    warnings: list[Annotated[str, Field(min_length=1, max_length=1_000)]] = Field(
+        max_length=20
+    )
+
+
+class RegexCasePlan(_StrictModel):
+    case_index: int = Field(ge=0, le=39)
+    expected_match: bool
+
+
+class RegexWorkbenchOutput(_StrictModel):
+    dialect: Literal["python", "javascript", "re2"]
+    pattern: str = Field(min_length=1, max_length=2_000)
+    validation_status: Literal["unverified"]
+    case_plan: list[RegexCasePlan] = Field(min_length=1, max_length=40)
+    explanation: str = Field(min_length=1, max_length=4_000)
+    warnings: list[Annotated[str, Field(min_length=1, max_length=1_000)]] = Field(
+        max_length=20
+    )
+
+    @field_validator("pattern")
+    @classmethod
+    def reject_null_pattern(cls, value: str) -> str:
+        if "\x00" in value:
+            raise ValueError("regex pattern contains a null byte")
+        return value
+
+
 _INPUT_MODELS: dict[str, type[_StrictModel]] = {
     "ai_audit_action_plan": AuditActionPlanInput,
     "ai_meta_serp_studio": MetaSerpInput,
@@ -381,6 +504,9 @@ _INPUT_MODELS: dict[str, type[_StrictModel]] = {
     "ai_search_intent_page_fit": SearchIntentPageFitInput,
     "ai_competitor_gap_report": CompetitorGapInput,
     "ai_internal_linking_planner": InternalLinkingInput,
+    "ai_redirect_migration_mapper": RedirectMigrationInput,
+    "ai_localization_workbench": LocalizationInput,
+    "ai_regex_workbench": RegexWorkbenchInput,
 }
 
 
@@ -697,6 +823,116 @@ def _validate_internal_linking(
     return output
 
 
+def _validate_redirect_migration(
+    input_value: object,
+    output_value: object,
+) -> dict[str, object]:
+    output = _validate(RedirectMigrationOutput, output_value)
+    if not isinstance(input_value, dict):
+        raise AIToolContractError("redirect-migration provider input is invalid")
+    old_pages = input_value.get("old_pages")
+    new_pages = input_value.get("new_pages")
+    if not isinstance(old_pages, list) or not isinstance(new_pages, list):
+        raise AIToolContractError("redirect-migration provider input is invalid")
+    old_sources = [_page_sources(page) for page in old_pages]
+    new_sources = [_page_sources(page) for page in new_pages]
+    old_indexes = [mapping["old_page_index"] for mapping in output["mappings"]]
+    if sorted(old_indexes) != list(range(len(old_sources))):
+        raise AIToolContractError("redirect mappings must cover every old page exactly once")
+    for mapping in output["mappings"]:
+        old_index = mapping["old_page_index"]
+        old_evidence = _normalize_newlines(mapping["old_evidence"])
+        if not any(old_evidence in source for source in old_sources[old_index]):
+            raise AIToolContractError("redirect evidence is absent from old page")
+        target_index = mapping["target_page_index"]
+        target_evidence = mapping["target_evidence"]
+        if mapping["action"] == "no_match":
+            if target_index is not None or target_evidence is not None:
+                raise AIToolContractError("no-match mapping must not have a target")
+            continue
+        if target_index is None or target_evidence is None:
+            raise AIToolContractError("redirect mapping must have a target")
+        if target_index >= len(new_sources):
+            raise AIToolContractError("redirect mapping references an unknown new page")
+        normalized_target_evidence = _normalize_newlines(target_evidence)
+        if not any(
+            normalized_target_evidence in source for source in new_sources[target_index]
+        ):
+            raise AIToolContractError("redirect evidence is absent from target page")
+    return output
+
+
+def _validate_localization(
+    input_value: object,
+    output_value: object,
+) -> dict[str, object]:
+    output = _validate(LocalizationOutput, output_value)
+    if not isinstance(input_value, dict):
+        raise AIToolContractError("localization provider input is invalid")
+    source_content = input_value.get("source_content")
+    glossary = input_value.get("glossary")
+    constraints = input_value.get("verbatim_constraints")
+    if (
+        not isinstance(source_content, str)
+        or not isinstance(glossary, list)
+        or not isinstance(constraints, list)
+        or not all(isinstance(item, str) for item in constraints)
+    ):
+        raise AIToolContractError("localization provider input is invalid")
+    usages = output["glossary_usages"]
+    usage_indexes = [usage["glossary_index"] for usage in usages]
+    if sorted(usage_indexes) != list(range(len(glossary))):
+        raise AIToolContractError("localization output does not cover the glossary")
+    localized = _normalize_newlines(output["localized_content"])
+    source = _normalize_newlines(source_content)
+    for usage in usages:
+        index = usage["glossary_index"]
+        entry = glossary[index]
+        if not isinstance(entry, dict):
+            raise AIToolContractError("localization provider input is invalid")
+        source_term = entry.get("source_term")
+        target_term = entry.get("target_term")
+        if not isinstance(source_term, str) or not isinstance(target_term, str):
+            raise AIToolContractError("localization provider input is invalid")
+        source_excerpt = _normalize_newlines(usage["source_excerpt"])
+        target_excerpt = _normalize_newlines(usage["target_excerpt"])
+        if source_excerpt not in source or source_term not in source_excerpt:
+            raise AIToolContractError("localization glossary source evidence is invalid")
+        if target_excerpt not in localized or target_term not in target_excerpt:
+            raise AIToolContractError("localization glossary target evidence is invalid")
+    expected_constraints = list(range(len(constraints)))
+    if sorted(output["preserved_constraint_indexes"]) != expected_constraints:
+        raise AIToolContractError("localization output does not preserve verbatim constraints")
+    if any(_normalize_newlines(value) not in localized for value in constraints):
+        raise AIToolContractError("localization output does not preserve verbatim constraints")
+    return output
+
+
+def _validate_regex_workbench(
+    input_value: object,
+    output_value: object,
+) -> dict[str, object]:
+    output = _validate(RegexWorkbenchOutput, output_value)
+    if not isinstance(input_value, dict):
+        raise AIToolContractError("regex provider input is invalid")
+    dialect = input_value.get("dialect")
+    cases = input_value.get("cases")
+    if not isinstance(dialect, str) or not isinstance(cases, list):
+        raise AIToolContractError("regex provider input is invalid")
+    if output["dialect"] != dialect:
+        raise AIToolContractError("regex output dialect does not match the request")
+    plan_indexes = [item["case_index"] for item in output["case_plan"]]
+    if sorted(plan_indexes) != list(range(len(cases))):
+        raise AIToolContractError("regex case plan must cover every case exactly once")
+    for item in output["case_plan"]:
+        case = cases[item["case_index"]]
+        if not isinstance(case, dict) or not isinstance(case.get("expected_match"), bool):
+            raise AIToolContractError("regex provider input is invalid")
+        if item["expected_match"] is not case["expected_match"]:
+            raise AIToolContractError("regex case plan changes an expected result")
+    return output
+
+
 def validate_output(
     tool_id: str,
     input_value: object,
@@ -722,4 +958,10 @@ def validate_output(
         return _validate_competitor_gap(input_value, output_value)
     if tool_id == "ai_internal_linking_planner":
         return _validate_internal_linking(input_value, output_value)
+    if tool_id == "ai_redirect_migration_mapper":
+        return _validate_redirect_migration(input_value, output_value)
+    if tool_id == "ai_localization_workbench":
+        return _validate_localization(input_value, output_value)
+    if tool_id == "ai_regex_workbench":
+        return _validate_regex_workbench(input_value, output_value)
     raise AIToolContractError("unsupported AI tool contract")
