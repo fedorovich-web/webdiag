@@ -48,8 +48,12 @@ services:
       dockerfile: apps/api/Dockerfile
     environment:
       WEBDIAG_ENVIRONMENT: development
+      WEBDIAG_AI_ARTIFACT_STORAGE: local
+      WEBDIAG_AI_ARTIFACT_LOCAL_ROOT: /var/lib/webdiag-ai-artifacts
     ports:
       - "127.0.0.1:8000:8000"
+    volumes:
+      - ai_artifacts:/var/lib/webdiag-ai-artifacts
 
   worker:
     build:
@@ -57,9 +61,14 @@ services:
       dockerfile: apps/worker/Dockerfile
     environment:
       WEBDIAG_BROKER_URL: amqp://${RABBITMQ_DEFAULT_USER:-webdiag}:${RABBITMQ_DEFAULT_PASS:-change-me}@rabbitmq:5672/
+      WEBDIAG_ENVIRONMENT: development
+      WEBDIAG_AI_ARTIFACT_STORAGE: local
+      WEBDIAG_AI_ARTIFACT_LOCAL_ROOT: /var/lib/webdiag-ai-artifacts
     depends_on:
       rabbitmq:
         condition: service_healthy
+    volumes:
+      - ai_artifacts:/var/lib/webdiag-ai-artifacts
 
   web:
     build:
@@ -71,5 +80,6 @@ services:
       - "127.0.0.1:3000:3000"
 
 volumes:
+  ai_artifacts:
   postgres_data:
   valkey_data:

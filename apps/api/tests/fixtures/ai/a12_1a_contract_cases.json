@@ -128,5 +128,39 @@
         }
       ]
     }
+  },
+  {
+    "tool_id": "ai_alt_text_studio",
+    "public_input": {
+      "locale": "ru",
+      "upload_id": "11111111-1111-4111-8111-111111111111",
+      "page_context": "Карточка технической проверки WebDiag",
+      "surrounding_text": "Список найденных проблем сайта",
+      "purpose": "informative"
+    },
+    "provider_input": {
+      "locale": "ru"
+    },
+    "output": {
+      "alt_text": "Панель WebDiag со списком технических проблем сайта",
+      "decorative": false,
+      "rationale": "Описывает видимую панель и не добавляет неподтверждённых деталей."
+    }
+  },
+  {
+    "tool_id": "ai_alt_text_studio",
+    "public_input": {
+      "locale": "en",
+      "upload_id": "22222222-2222-4222-8222-222222222222",
+      "purpose": "decorative"
+    },
+    "provider_input": {
+      "locale": "en"
+    },
+    "output": {
+      "alt_text": "",
+      "decorative": true,
+      "rationale": "The image adds no information beyond the surrounding text."
+    }
   }
 ]

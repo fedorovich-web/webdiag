@@ -26,7 +26,7 @@ def seeded_run(database_path: Path, *, correlation: str = "grant"):
     )
     store = SqliteAIStore(str(database_path), lease_seconds=60)
     ready = replace(
-        DEFAULT_AI_CATALOG.all()[0],
+        next(tool for tool in DEFAULT_AI_CATALOG.all() if tool.id == "ai_content_brief"),
         state=AIToolState.READY,
         credit_price=7,
     )

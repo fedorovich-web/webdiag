@@ -92,6 +92,24 @@ def test_image_upload_requires_authentication_and_content_type(upload_context) -
     assert not list(artifact_root.rglob("*.*"))
 
 
+def test_image_upload_authentication_precedes_storage_configuration(
+    upload_context,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _token, _store, _artifact_root = upload_context
+    storage_override = app.dependency_overrides.pop(get_ai_artifact_storage)
+    get_ai_artifact_storage.cache_clear()
+    monkeypatch.delenv("WEBDIAG_AI_ARTIFACT_STORAGE", raising=False)
+    try:
+        response = asyncio.run(_call(token=None, data=_png(), content_type="image/png"))
+    finally:
+        app.dependency_overrides[get_ai_artifact_storage] = storage_override
+        get_ai_artifact_storage.cache_clear()
+
+    assert response.status_code == 401
+    assert response.headers["cache-control"] == "no-store"
+
+
 def test_image_upload_detects_format_normalizes_and_hides_storage_key(upload_context) -> None:
     token, store, artifact_root = upload_context
 

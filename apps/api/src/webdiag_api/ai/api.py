@@ -88,6 +88,29 @@ def _user_id(account_service: AccountServiceDependency, token: SessionCookie) ->
         ) from error
 
 
+def get_ai_user_id(
+    account_service: AccountServiceDependency,
+    webdiag_session: SessionCookie = None,
+) -> str:
+    return _user_id(account_service, webdiag_session)
+
+
+AIUserIdDependency = Annotated[str, Depends(get_ai_user_id)]
+
+
+def get_authenticated_ai_artifact_context(
+    user_id: AIUserIdDependency,
+    artifact_storage: AIArtifactStorageDependency,
+) -> tuple[str, ArtifactStorage]:
+    return user_id, artifact_storage
+
+
+AIArtifactContextDependency = Annotated[
+    tuple[str, ArtifactStorage],
+    Depends(get_authenticated_ai_artifact_context),
+]
+
+
 def _error(error: AIServiceError) -> HTTPException:
     return HTTPException(
         status_code=error.status_code,
@@ -127,11 +150,9 @@ def catalog(
 async def upload_image(
     request: Request,
     ai: AIServiceDependency,
-    artifact_storage: AIArtifactStorageDependency,
-    account_service: AccountServiceDependency,
-    webdiag_session: SessionCookie = None,
+    artifact_context: AIArtifactContextDependency,
 ):
-    user_id = _user_id(account_service, webdiag_session)
+    user_id, artifact_storage = artifact_context
     try:
         upload = ai.create_image_upload(
             user_id=user_id,

@@ -14,6 +14,7 @@ def test_a12_1a_ru_en_contract_fixtures_are_valid_and_grounded() -> None:
         "ai_meta_serp_studio",
         "ai_schema_studio",
         "ai_faq_studio",
+        "ai_alt_text_studio",
     }
     assert {case["provider_input"]["locale"] for case in cases} == {"ru", "en"}
     for case in cases:
