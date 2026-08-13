@@ -6,7 +6,10 @@ from urllib.parse import urlsplit, urlunsplit
 from webdiag_api.accounts.workspace_models import (
     AccountProjectDetailResponse,
     AccountProjectListResponse,
+    ArchivedAccountProject,
+    ArchivedAccountProjectListResponse,
     ProjectCreateRequest,
+    ProjectRenameRequest,
     SavedAuditCheck,
     SavedAuditDetailResponse,
     SavedAuditIssue,
@@ -163,6 +166,55 @@ class WorkspaceService:
         return AccountProjectListResponse(
             projects=tuple(project.public() for project in projects)
         )
+
+    def rename_project(
+        self,
+        *,
+        user_id: str,
+        project_id: str,
+        request: ProjectRenameRequest,
+    ):
+        project = self._store.rename_project(
+            user_id=user_id,
+            project_id=project_id,
+            name=normalize_project_name(request.name),
+        )
+        if project is None:
+            raise WorkspaceServiceError(
+                404, "account_project_not_found", "Project was not found."
+            )
+        return project.public()
+
+    def list_archived_projects(
+        self,
+        *,
+        user_id: str,
+    ) -> ArchivedAccountProjectListResponse:
+        projects = self._store.list_archived_projects(user_id=user_id)
+        return ArchivedAccountProjectListResponse(
+            projects=tuple(project.archived_public() for project in projects)
+        )
+
+    def archive_project(
+        self,
+        *,
+        user_id: str,
+        project_id: str,
+    ) -> ArchivedAccountProject:
+        project = self._store.archive_project(user_id=user_id, project_id=project_id)
+        if project is None:
+            raise WorkspaceServiceError(
+                404, "account_project_not_found", "Project was not found."
+            )
+        return project.archived_public()
+
+    def restore_project(self, *, user_id: str, project_id: str):
+        project = self._store.restore_project(user_id=user_id, project_id=project_id)
+        if project is None:
+            raise WorkspaceServiceError(
+                404, "account_project_not_found", "Project was not found."
+            )
+        return project.public()
 
     def get_project(self, *, user_id: str, project_id: str) -> AccountProjectDetailResponse:
         project = self._owned_project(user_id=user_id, project_id=project_id)

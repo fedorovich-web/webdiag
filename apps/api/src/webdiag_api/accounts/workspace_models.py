@@ -15,6 +15,12 @@ class ProjectCreateRequest(BaseModel):
     origin: str = Field(min_length=1, max_length=2_048)
 
 
+class ProjectRenameRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=2, max_length=80)
+
+
 class AccountProject(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -32,6 +38,29 @@ class AccountProjectListResponse(BaseModel):
         "webdiag.account.project_list.v1"
     )
     projects: tuple[AccountProject, ...]
+
+
+class ArchivedAccountProject(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    contract_version: Literal["webdiag.account.archived_project.v1"] = (
+        "webdiag.account.archived_project.v1"
+    )
+    id: str
+    name: str
+    origin: str
+    created_at: datetime
+    updated_at: datetime
+    archived_at: datetime
+
+
+class ArchivedAccountProjectListResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    contract_version: Literal["webdiag.account.archived_project_list.v1"] = (
+        "webdiag.account.archived_project_list.v1"
+    )
+    projects: tuple[ArchivedAccountProject, ...]
 
 
 class SavedAuditSummary(BaseModel):

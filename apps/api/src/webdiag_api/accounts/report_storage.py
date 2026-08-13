@@ -230,6 +230,7 @@ class SqliteReportStore:
                   ON project.id = audit.project_id
                 WHERE audit.id = ? AND audit.project_id = ?
                   AND audit.user_id = ? AND project.user_id = ?
+                  AND project.archived_at IS NULL
                 """,
                 (audit_id, project_id, user_id, user_id),
             ).fetchone()

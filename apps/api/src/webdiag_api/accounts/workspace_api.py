@@ -27,7 +27,10 @@ from webdiag_api.accounts.workspace_models import (
     AccountProject,
     AccountProjectDetailResponse,
     AccountProjectListResponse,
+    ArchivedAccountProject,
+    ArchivedAccountProjectListResponse,
     ProjectCreateRequest,
+    ProjectRenameRequest,
     SavedAuditDetailResponse,
 )
 from webdiag_api.accounts.workspace_service import WorkspaceService, WorkspaceServiceError
@@ -97,6 +100,71 @@ def list_projects(
     response.headers["cache-control"] = "no-store"
     user_id = _current_user_id(account_service, webdiag_session)
     return workspace.list_projects(user_id=user_id)
+
+
+@router.get("/projects/archived", response_model=ArchivedAccountProjectListResponse)
+def list_archived_projects(
+    response: Response,
+    workspace: WorkspaceServiceDependency,
+    account_service: AccountServiceDependency,
+    webdiag_session: SessionCookie = None,
+) -> ArchivedAccountProjectListResponse:
+    response.headers["cache-control"] = "no-store"
+    user_id = _current_user_id(account_service, webdiag_session)
+    return workspace.list_archived_projects(user_id=user_id)
+
+
+@router.patch("/projects/{project_id}", response_model=AccountProject)
+def rename_project(
+    project_id: UUID,
+    request: ProjectRenameRequest,
+    response: Response,
+    workspace: WorkspaceServiceDependency,
+    account_service: AccountServiceDependency,
+    webdiag_session: SessionCookie = None,
+) -> AccountProject:
+    response.headers["cache-control"] = "no-store"
+    user_id = _current_user_id(account_service, webdiag_session)
+    try:
+        return workspace.rename_project(
+            user_id=user_id,
+            project_id=str(project_id),
+            request=request,
+        )
+    except WorkspaceServiceError as error:
+        raise _workspace_error(error) from error
+
+
+@router.post("/projects/{project_id}/archive", response_model=ArchivedAccountProject)
+def archive_project(
+    project_id: UUID,
+    response: Response,
+    workspace: WorkspaceServiceDependency,
+    account_service: AccountServiceDependency,
+    webdiag_session: SessionCookie = None,
+) -> ArchivedAccountProject:
+    response.headers["cache-control"] = "no-store"
+    user_id = _current_user_id(account_service, webdiag_session)
+    try:
+        return workspace.archive_project(user_id=user_id, project_id=str(project_id))
+    except WorkspaceServiceError as error:
+        raise _workspace_error(error) from error
+
+
+@router.post("/projects/{project_id}/restore", response_model=AccountProject)
+def restore_project(
+    project_id: UUID,
+    response: Response,
+    workspace: WorkspaceServiceDependency,
+    account_service: AccountServiceDependency,
+    webdiag_session: SessionCookie = None,
+) -> AccountProject:
+    response.headers["cache-control"] = "no-store"
+    user_id = _current_user_id(account_service, webdiag_session)
+    try:
+        return workspace.restore_project(user_id=user_id, project_id=str(project_id))
+    except WorkspaceServiceError as error:
+        raise _workspace_error(error) from error
 
 
 @router.get("/projects/{project_id}", response_model=AccountProjectDetailResponse)

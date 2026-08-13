@@ -14,6 +14,7 @@ from pydantic import ValidationError
 from webdiag_api.accounts.models import utc_datetime
 from webdiag_api.accounts.workspace_models import (
     AccountProject,
+    ArchivedAccountProject,
     SavedAuditPayload,
     SavedAuditSummary,
 )
@@ -47,6 +48,18 @@ class StoredProject:
             origin=self.origin,
             created_at=utc_datetime(self.created_at),
             updated_at=utc_datetime(self.updated_at),
+        )
+
+    def archived_public(self) -> ArchivedAccountProject:
+        if self.archived_at is None:
+            raise ValueError("account_project_not_archived")
+        return ArchivedAccountProject(
+            id=self.id,
+            name=self.name,
+            origin=self.origin,
+            created_at=utc_datetime(self.created_at),
+            updated_at=utc_datetime(self.updated_at),
+            archived_at=utc_datetime(self.archived_at),
         )
 
 

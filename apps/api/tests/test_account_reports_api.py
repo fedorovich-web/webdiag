@@ -133,6 +133,41 @@ def seed_report(database_path: Path):
     return account, workspace, reports, user_id, token, project, audit, report
 
 
+def test_report_creation_race_cannot_cross_project_archive(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    account, workspace, reports = build_services(database_path)
+    user_id, _ = register(account, "owner@example.com")
+    project = workspace.create_project(
+        user_id=user_id,
+        request=ProjectCreateRequest(name="Main", origin="https://example.com"),
+    )
+    audit = workspace.run_and_save_audit(user_id=user_id, project_id=project.id)
+    original_get_saved_audit = workspace.get_saved_audit
+
+    def archive_after_audit_read(*, user_id: str, project_id: str, audit_id: str):
+        detail = original_get_saved_audit(
+            user_id=user_id,
+            project_id=project_id,
+            audit_id=audit_id,
+        )
+        workspace.archive_project(user_id=user_id, project_id=project_id)
+        return detail
+
+    monkeypatch.setattr(workspace, "get_saved_audit", archive_after_audit_read)
+    with pytest.raises(ReportServiceError) as error:
+        reports.create_report(
+            user_id=user_id,
+            project_id=project.id,
+            audit_id=audit.audit.id,
+            request=ReportCreateRequest(title="Archived race", locale="en"),
+        )
+    assert error.value.status_code == 404
+    assert error.value.code == "account_saved_audit_not_found"
+
+
 async def request(
     method: str,
     path: str,

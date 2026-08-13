@@ -610,3 +610,143 @@ def test_workspace_api_create_run_history_and_detail(tmp_path: Path) -> None:
         assert invalid.json()["detail"]["code"] == "account_invalid_request"
     finally:
         app.dependency_overrides.clear()
+
+
+def test_project_lifecycle_api_is_versioned_owned_idempotent_and_no_store(
+    tmp_path: Path,
+) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    account = build_account_service(database_path)
+    _, owner_token = register(account, "owner@example.com")
+    _, other_token = register(account, "other@example.com")
+    workspace = build_workspace(database_path)
+    app.dependency_overrides[get_account_service] = lambda: account
+    app.dependency_overrides[get_workspace_service] = lambda: workspace
+    try:
+        created = asyncio.run(
+            request(
+                "POST",
+                "/v1/account/projects",
+                json={"name": "Main", "origin": "https://example.com"},
+                cookie=owner_token,
+            )
+        )
+        project_id = created.json()["id"]
+
+        invalid = asyncio.run(
+            request(
+                "PATCH",
+                f"/v1/account/projects/{project_id}",
+                json={"name": "Renamed", "origin": "https://attacker.example"},
+                cookie=owner_token,
+            )
+        )
+        assert invalid.status_code == 422
+        assert invalid.headers["cache-control"] == "no-store"
+
+        renamed = asyncio.run(
+            request(
+                "PATCH",
+                f"/v1/account/projects/{project_id}",
+                json={"name": "  Client's   project  "},
+                cookie=owner_token,
+            )
+        )
+        assert renamed.status_code == 200
+        assert renamed.headers["cache-control"] == "no-store"
+        assert renamed.json()["name"] == "Client's project"
+        assert set(renamed.json()) == {
+            "id",
+            "name",
+            "origin",
+            "created_at",
+            "updated_at",
+        }
+
+        hidden = asyncio.run(
+            request(
+                "POST",
+                f"/v1/account/projects/{project_id}/archive",
+                cookie=other_token,
+            )
+        )
+        assert hidden.status_code == 404
+        assert hidden.json()["detail"]["code"] == "account_project_not_found"
+
+        archived = asyncio.run(
+            request(
+                "POST",
+                f"/v1/account/projects/{project_id}/archive",
+                cookie=owner_token,
+            )
+        )
+        assert archived.status_code == 200
+        assert archived.headers["cache-control"] == "no-store"
+        assert archived.json()["contract_version"] == "webdiag.account.archived_project.v1"
+        assert archived.json()["archived_at"] is not None
+        assert set(archived.json()) == {
+            "contract_version",
+            "id",
+            "name",
+            "origin",
+            "created_at",
+            "updated_at",
+            "archived_at",
+        }
+
+        repeated_archive = asyncio.run(
+            request(
+                "POST",
+                f"/v1/account/projects/{project_id}/archive",
+                cookie=owner_token,
+            )
+        )
+        assert repeated_archive.status_code == 200
+        assert repeated_archive.json()["archived_at"] == archived.json()["archived_at"]
+
+        active_list = asyncio.run(
+            request("GET", "/v1/account/projects", cookie=owner_token)
+        )
+        assert active_list.json()["projects"] == []
+        detail = asyncio.run(
+            request("GET", f"/v1/account/projects/{project_id}", cookie=owner_token)
+        )
+        assert detail.status_code == 404
+
+        archived_list = asyncio.run(
+            request("GET", "/v1/account/projects/archived", cookie=owner_token)
+        )
+        assert archived_list.status_code == 200
+        assert archived_list.headers["cache-control"] == "no-store"
+        assert archived_list.json() == {
+            "contract_version": "webdiag.account.archived_project_list.v1",
+            "projects": [archived.json()],
+        }
+
+        restored = asyncio.run(
+            request(
+                "POST",
+                f"/v1/account/projects/{project_id}/restore",
+                cookie=owner_token,
+            )
+        )
+        assert restored.status_code == 200
+        assert restored.headers["cache-control"] == "no-store"
+        assert set(restored.json()) == {
+            "id",
+            "name",
+            "origin",
+            "created_at",
+            "updated_at",
+        }
+        repeated_restore = asyncio.run(
+            request(
+                "POST",
+                f"/v1/account/projects/{project_id}/restore",
+                cookie=owner_token,
+            )
+        )
+        assert repeated_restore.status_code == 200
+        assert repeated_restore.json() == restored.json()
+    finally:
+        app.dependency_overrides.clear()
