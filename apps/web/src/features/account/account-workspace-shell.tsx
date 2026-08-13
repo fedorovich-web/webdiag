@@ -336,6 +336,7 @@ export function AccountWorkspaceShell({
               locale={locale}
               session={session}
               projects={projects}
+              overview={overview}
               onProjectCreated={addProject}
             />
           ) : children}
