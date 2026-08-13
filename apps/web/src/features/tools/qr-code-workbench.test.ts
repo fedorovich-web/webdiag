@@ -2,12 +2,19 @@ import { describe, expect, it } from "vitest";
 import encodeQR from "qr";
 import decodeQR from "qr/decode.js";
 import {
+  base64DataUriByteLength,
   qrMatrixToImage,
   validateQrImageGeometry,
   validateQrText,
 } from "./qr-code-workbench";
 
 describe("QR code workbench boundaries", () => {
+  it("reports the exact decoded byte length of a base64 data URI", () => {
+    expect(base64DataUriByteLength("data:image/png;base64,AQ==")).toBe(1);
+    expect(base64DataUriByteLength("data:image/png;base64,AQI=")).toBe(2);
+    expect(base64DataUriByteLength("data:image/png;base64,AQID")).toBe(3);
+  });
+
   it("counts UTF-8 bytes and preserves inert text", () => {
     expect(validateQrText("<script>alert('x')</script>")).toEqual({
       text: "<script>alert('x')</script>",

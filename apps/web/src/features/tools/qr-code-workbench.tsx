@@ -15,6 +15,13 @@ const MAX_PIXELS = 25_000_000;
 
 type Ecc = "low" | "medium" | "quartile" | "high";
 
+export function base64DataUriByteLength(uri: string): number {
+  const comma = uri.indexOf(",");
+  const payload = uri.slice(comma + 1);
+  const padding = payload.endsWith("==") ? 2 : payload.endsWith("=") ? 1 : 0;
+  return payload.length * 3 / 4 - padding;
+}
+
 export function validateQrText(value: string): { text: string; byteLength: number } {
   if (!value.trim()) throw new RangeError("QR text is empty.");
   if (value.length > MAX_CHARACTERS) throw new RangeError("QR text must not exceed 2,000 characters.");
@@ -83,7 +90,7 @@ export function QrCodeWorkbenchTool({ locale }: { locale: Locale }) {
       const valid = validateQrText(text);
       const matrix = encodeQR(valid.text, "raw", { border: 4, ecc, scale: 1 });
       const uri = pngDataUri(matrix, size);
-      setGenerated({ uri, bytes: Math.floor((uri.length - uri.indexOf(",") - 1) * 3 / 4), textBytes: valid.byteLength });
+      setGenerated({ uri, bytes: base64DataUriByteLength(uri), textBytes: valid.byteLength });
       setError("");
     } catch (caught) { setGenerated(null); setError(caught instanceof Error ? caught.message : "QR generation failed."); }
   }
