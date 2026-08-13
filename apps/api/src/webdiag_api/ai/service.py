@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import time
 import uuid
 
 from webdiag_api.ai.artifacts import ArtifactStorage
@@ -15,6 +16,7 @@ from webdiag_api.ai.models import (
     AIRunCreateRequest,
     AIRunResponse,
     AIToolResponse,
+    AIWorkerArtifact,
     AIWorkerClaim,
     CreditAccountResponse,
     CreditLedgerEntryResponse,
@@ -31,6 +33,7 @@ from webdiag_api.ai.storage import (
     CreditAccount,
     CreditLedgerEntry,
     SqliteAIStore,
+    StoredAIArtifact,
     StoredAIClaim,
     StoredAIRun,
     StoredAIUpload,
@@ -216,7 +219,7 @@ class AIService:
             except AIInputResolutionError as error:
                 raise AIServiceError(error.status_code, error.code, error.message) from error
         source_upload_id: str | None = None
-        if definition.id == "ai_alt_text_studio":
+        if definition.id in {"ai_alt_text_studio", "ai_image_edit_studio"}:
             source_upload_id = str(input_value["upload_id"])
             upload = self._store.resolve_upload_for_run(
                 user_id=user_id,
@@ -375,30 +378,44 @@ class AIService:
         provider_request_id: str | None,
         input_units: int,
         output_units: int,
+        artifact: AIWorkerArtifact | None = None,
+        artifact_storage: ArtifactStorage | None = None,
     ) -> StoredAIRun:
         run = self._store.get_run(run_id=run_id)
         if run is None:
             raise AIServiceError(404, "ai_run_not_found", "AI run not found.")
         normalized_output = output
-        if has_tool_contract(run.tool_id):
-            try:
+        stored_artifact: StoredAIArtifact | None = None
+        try:
+            if run.tool_id in {"ai_image_studio", "ai_image_edit_studio"}:
+                stored_artifact = self._validate_generated_artifact(
+                    run=run,
+                    output=output,
+                    artifact=artifact,
+                    artifact_storage=artifact_storage,
+                )
+            elif artifact is not None:
+                raise AIToolContractError("non-image run cannot contain an artifact")
+            if has_tool_contract(run.tool_id):
                 actual_input_sha256 = hashlib.sha256(run.input_json.encode()).hexdigest()
                 if not hmac.compare_digest(actual_input_sha256, run.input_sha256):
                     raise AIToolContractError("persisted AI input digest does not match")
                 input_value = json.loads(run.input_json)
                 normalized_output = validate_output(run.tool_id, input_value, output)
-            except (AIToolContractError, json.JSONDecodeError) as error:
-                self._store.fail_run(
-                    run_id=run_id,
-                    lease_token=lease_token,
-                    error_code="ai_invalid_provider_output",
-                    provider_unknown=False,
-                )
-                raise AIServiceError(
-                    422,
-                    "ai_invalid_provider_output",
-                    "Invalid AI provider output.",
-                ) from error
+        except (AIToolContractError, json.JSONDecodeError) as error:
+            if artifact is not None and artifact_storage is not None:
+                self._compensate_artifact(artifact_storage, artifact.object_key)
+            self._store.fail_run(
+                run_id=run_id,
+                lease_token=lease_token,
+                error_code="ai_invalid_provider_output",
+                provider_unknown=False,
+            )
+            raise AIServiceError(
+                422,
+                "ai_invalid_provider_output",
+                "Invalid AI provider output.",
+            ) from error
         output_json = json.dumps(
             normalized_output,
             ensure_ascii=False,
@@ -416,6 +433,89 @@ class AIService:
             provider_request_id=provider_request_id,
             input_units=input_units,
             output_units=output_units,
+            artifact=stored_artifact,
+        )
+
+    def read_artifact(
+        self,
+        *,
+        user_id: str,
+        run_id: str,
+        artifact_id: str,
+        artifact_storage: ArtifactStorage,
+    ) -> tuple[bytes, str]:
+        artifact = self._store.get_artifact_for_user(
+            user_id=user_id,
+            run_id=run_id,
+            artifact_id=artifact_id,
+        )
+        if artifact is None:
+            raise AIServiceError(404, "ai_artifact_not_found", "AI artifact not found.")
+        try:
+            data = artifact_storage.read(
+                object_key=artifact.object_key,
+                max_bytes=artifact.byte_size,
+            )
+            digest = hashlib.sha256(data).hexdigest()
+            normalized = normalize_image(data)
+            if (
+                len(data) != artifact.byte_size
+                or not hmac.compare_digest(digest, artifact.sha256)
+                or normalized.data != data
+                or normalized.media_type != artifact.media_type
+            ):
+                raise ValueError("stored AI artifact failed integrity validation")
+        except Exception as error:
+            raise AIServiceError(
+                500,
+                "ai_artifact_unavailable",
+                "AI artifact is temporarily unavailable.",
+            ) from error
+        return data, artifact.media_type
+
+    @staticmethod
+    def _validate_generated_artifact(
+        *,
+        run: StoredAIRun,
+        output: dict[str, object],
+        artifact: AIWorkerArtifact | None,
+        artifact_storage: ArtifactStorage | None,
+    ) -> StoredAIArtifact:
+        if artifact is None or artifact_storage is None:
+            raise AIToolContractError("image run requires a private artifact")
+        expected = {
+            "artifact_id": artifact.artifact_id,
+            "media_type": artifact.media_type,
+            "byte_size": artifact.byte_size,
+            "sha256": artifact.sha256,
+        }
+        if output != expected:
+            raise AIToolContractError("image output does not match its private artifact")
+        try:
+            data = artifact_storage.read(
+                object_key=artifact.object_key,
+                max_bytes=artifact.byte_size,
+            )
+            normalized = normalize_image(data)
+        except Exception as error:
+            raise AIToolContractError("image artifact is unavailable") from error
+        if (
+            len(data) != artifact.byte_size
+            or not hmac.compare_digest(hashlib.sha256(data).hexdigest(), artifact.sha256)
+            or normalized.data != data
+            or normalized.media_type != artifact.media_type
+        ):
+            raise AIToolContractError("image artifact failed integrity validation")
+        return StoredAIArtifact(
+            id=artifact.artifact_id,
+            run_id=run.id,
+            user_id=run.user_id,
+            object_key=artifact.object_key,
+            media_type=artifact.media_type,
+            byte_size=artifact.byte_size,
+            sha256=artifact.sha256,
+            created_at=time.time_ns(),
+            deletion_state="available",
         )
 
     def fail_run(

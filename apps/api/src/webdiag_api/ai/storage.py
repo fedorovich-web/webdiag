@@ -134,6 +134,19 @@ class StoredAIUpload:
     deleted_at: int | None
 
 
+@dataclass(frozen=True, slots=True)
+class StoredAIArtifact:
+    id: str
+    run_id: str
+    user_id: str
+    object_key: str
+    media_type: str
+    byte_size: int
+    sha256: str
+    created_at: int
+    deletion_state: str
+
+
 class SqliteAIStore:
     def __init__(
         self,
@@ -833,6 +846,13 @@ class SqliteAIStore:
                 """,
                 (now, now, run_id, user_id),
             )
+            connection.execute(
+                """
+                UPDATE ai_artifacts SET deletion_state = 'pending'
+                WHERE run_id = ? AND user_id = ? AND deletion_state = 'available'
+                """,
+                (run_id, user_id),
+            )
             deleted = connection.execute("SELECT * FROM ai_runs WHERE id = ?", (run_id,)).fetchone()
             connection.execute("COMMIT")
         return self._run(deleted)
@@ -968,6 +988,7 @@ class SqliteAIStore:
         provider_request_id: str | None = None,
         input_units: int = 0,
         output_units: int = 0,
+        artifact: StoredAIArtifact | None = None,
         now: int | None = None,
     ) -> StoredAIRun:
         self._validate_provider_usage(
@@ -1001,6 +1022,28 @@ class SqliteAIStore:
                 created_at=self._clock_ns(),
             )
             updated_at = self._clock_ns()
+            if artifact is not None:
+                if artifact.run_id != run_id or artifact.user_id != run.user_id:
+                    connection.execute("ROLLBACK")
+                    raise CreditIntegrityError("AI artifact ownership does not match run")
+                connection.execute(
+                    """
+                    INSERT INTO ai_artifacts(
+                        id, run_id, user_id, object_key, media_type,
+                        byte_size, sha256, created_at, deletion_state
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'available')
+                    """,
+                    (
+                        artifact.id,
+                        run_id,
+                        run.user_id,
+                        artifact.object_key,
+                        artifact.media_type,
+                        artifact.byte_size,
+                        artifact.sha256,
+                        artifact.created_at,
+                    ),
+                )
             connection.execute(
                 """
                 UPDATE ai_runs SET state = 'succeeded', output_json = ?, output_sha256 = ?,
@@ -1034,6 +1077,26 @@ class SqliteAIStore:
             row = connection.execute("SELECT * FROM ai_runs WHERE id = ?", (run_id,)).fetchone()
             connection.execute("COMMIT")
         return self._run(row)
+
+    def get_artifact_for_user(
+        self,
+        *,
+        user_id: str,
+        run_id: str,
+        artifact_id: str,
+    ) -> StoredAIArtifact | None:
+        self.ensure_schema()
+        with self._connect() as connection:
+            row = connection.execute(
+                """
+                SELECT artifact.* FROM ai_artifacts AS artifact
+                JOIN ai_runs AS run ON run.id = artifact.run_id
+                WHERE artifact.id = ? AND artifact.run_id = ? AND run.user_id = ?
+                    AND run.state = 'succeeded' AND artifact.deletion_state = 'available'
+                """,
+                (artifact_id, run_id, user_id),
+            ).fetchone()
+        return self._artifact(row) if row is not None else None
 
     def fail_run(
         self,
@@ -1371,6 +1434,20 @@ class SqliteAIStore:
             ),
             deletion_state=str(row["deletion_state"]),
             deleted_at=int(row["deleted_at"]) if row["deleted_at"] is not None else None,
+        )
+
+    @staticmethod
+    def _artifact(row: sqlite3.Row) -> StoredAIArtifact:
+        return StoredAIArtifact(
+            id=str(row["id"]),
+            run_id=str(row["run_id"]),
+            user_id=str(row["user_id"]),
+            object_key=str(row["object_key"]),
+            media_type=str(row["media_type"]),
+            byte_size=int(row["byte_size"]),
+            sha256=str(row["sha256"]),
+            created_at=int(row["created_at"]),
+            deletion_state=str(row["deletion_state"]),
         )
 
     @staticmethod

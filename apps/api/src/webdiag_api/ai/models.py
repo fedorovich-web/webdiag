@@ -120,6 +120,17 @@ class AIWorkerCompleteRequest(AIWorkerLeaseRequest):
     provider_request_id: str | None = Field(default=None, min_length=1, max_length=200)
     input_units: int = Field(default=0, ge=0, le=1_000_000_000)
     output_units: int = Field(default=0, ge=0, le=1_000_000_000)
+    artifact: "AIWorkerArtifact | None" = None
+
+
+class AIWorkerArtifact(StrictAIModel):
+    artifact_id: str = Field(
+        pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    )
+    object_key: str = Field(min_length=1, max_length=512)
+    media_type: Literal["image/jpeg", "image/png", "image/webp"]
+    byte_size: int = Field(ge=1, le=4 * 1024 * 1024)
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
 
 
 class AIWorkerFailRequest(AIWorkerLeaseRequest):

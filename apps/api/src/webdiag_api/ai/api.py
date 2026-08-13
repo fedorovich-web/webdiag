@@ -77,6 +77,19 @@ def get_ai_artifact_storage() -> ArtifactStorage:
 AIArtifactStorageDependency = Annotated[ArtifactStorage, Depends(get_ai_artifact_storage)]
 
 
+def get_optional_ai_artifact_storage() -> ArtifactStorage | None:
+    try:
+        return artifact_storage_from_env()
+    except ArtifactConfigurationError:
+        return None
+
+
+OptionalAIArtifactStorageDependency = Annotated[
+    ArtifactStorage | None,
+    Depends(get_optional_ai_artifact_storage),
+]
+
+
 def _user_id(account_service: AccountServiceDependency, token: SessionCookie) -> str:
     try:
         return account_service.get_session(token).user.id
@@ -235,6 +248,40 @@ def get_run(
         raise _error(error) from error
 
 
+@router.get("/ai/runs/{run_id}/artifacts/{artifact_id}")
+def download_artifact(
+    run_id: UUID,
+    artifact_id: UUID,
+    ai: AIServiceDependency,
+    artifact_context: AIArtifactContextDependency,
+) -> Response:
+    user_id, artifact_storage = artifact_context
+    try:
+        data, media_type = ai.read_artifact(
+            user_id=user_id,
+            run_id=str(run_id),
+            artifact_id=str(artifact_id),
+            artifact_storage=artifact_storage,
+        )
+    except AIServiceError as error:
+        raise _error(error) from error
+    return Response(
+        content=data,
+        media_type=media_type,
+        headers={
+            "Cache-Control": "no-store",
+            "Content-Disposition": (
+                f'attachment; filename="webdiag-{artifact_id}.{_image_extension(media_type)}"'
+            ),
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
+def _image_extension(media_type: str) -> str:
+    return {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}[media_type]
+
+
 @router.delete("/ai/runs/{run_id}", status_code=204)
 def delete_run(
     run_id: UUID,
@@ -339,10 +386,20 @@ def complete_run_internal(
     request: AIWorkerCompleteRequest,
     response: Response,
     ai: AIServiceDependency,
+    artifact_storage: OptionalAIArtifactStorageDependency,
     authorization: Annotated[str | None, Header()] = None,
 ) -> AIWorkerRunResponse:
     _no_store(response)
     _authorize_internal(authorization)
+    if request.artifact is not None and artifact_storage is None:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "ai_artifact_storage_unavailable",
+                "message": "AI artifact storage is unavailable.",
+            },
+            headers={"Cache-Control": "no-store"},
+        )
     try:
         run = ai.complete_run(
             run_id=str(run_id),
@@ -351,6 +408,8 @@ def complete_run_internal(
             provider_request_id=request.provider_request_id,
             input_units=request.input_units,
             output_units=request.output_units,
+            artifact=request.artifact,
+            artifact_storage=artifact_storage,
         )
     except AIServiceError as error:
         raise _error(error) from error
