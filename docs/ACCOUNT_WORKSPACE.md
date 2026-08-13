@@ -56,7 +56,17 @@ account_workspace_monitor_runs
 account_workspace_reports
 ```
 
-Projects are limited to 100 per account. Saved audits are limited to 100 per project. A11.2 does not change storage or introduce delete/archive behavior.
+Projects are limited to 100 per account, including archived projects. Saved audits are limited to 100 per project. Project storage has a nullable `archived_at` lifecycle field; the ownership-scoped origin uniqueness constraint remains active while a project is archived.
+
+Project lifecycle is recoverable:
+
+- the project name can be changed, but its canonical origin cannot;
+- archiving removes the project from active project/detail queries;
+- archiving atomically disables its monitor and clears the next run and active lease;
+- saved audits, reports, report artifacts, and public share links are retained;
+- existing public share links remain valid until their normal expiry or explicit revocation;
+- restoring returns the project to the active list but does not re-enable monitoring;
+- there is no permanent project deletion endpoint.
 
 The saved payload contract is:
 
@@ -71,6 +81,10 @@ It contains only the target origin, score, safe check summaries, safe issue fiel
 ```text
 POST /v1/account/projects
 GET  /v1/account/projects
+GET  /v1/account/projects/archived
+PATCH /v1/account/projects/{projectId}
+POST /v1/account/projects/{projectId}/archive
+POST /v1/account/projects/{projectId}/restore
 GET  /v1/account/projects/{projectId}
 POST /v1/account/projects/{projectId}/audits
 GET  /v1/account/projects/{projectId}/audits/{auditId}
@@ -97,7 +111,7 @@ All account workspace responses use `Cache-Control: no-store`.
 /en/account/projects/{projectId}/audits/{auditId}/issues/{issueId}
 ```
 
-The shell loads the current session and project list once per route. Project and saved-audit detail components continue to use their ownership-scoped detail endpoints.
+The shell loads the current session and active project list once per route. The archived list is fetched only when the user opens the archive section. Rename updates the owned project identity in the shell; restore reloads the authoritative active project list and overview so retained audit, monitor, and report state is not replaced with synthetic values. A lifecycle response that reports lost authentication clears the cached shell state and returns to the sign-in state.
 
 ## Local environment
 
@@ -167,7 +181,7 @@ npm run verify:local
 
 ## Deliberately deferred
 
-- archive/delete semantics;
+- permanent project deletion;
 - password recovery, email verification, billing, and operator administration.
 
 ## A11.4 monitoring foundation
