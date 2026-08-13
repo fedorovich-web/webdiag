@@ -39,7 +39,7 @@ Cover expired-session cleanup before counts, idempotent revoke-others preserving
 
 - [ ] **Step 2: Run the exact RED tests**
 
-Run: `npm run python:run -- -m pytest apps/api/tests/test_account_api.py apps/api/tests/test_sql_injection_security.py -q -k "session_count or revoke_other or rotate_password or account_credential_injection"`
+Run: `node scripts/run-python.mjs -m pytest apps/api/tests/test_account_api.py apps/api/tests/test_sql_injection_security.py -q -k "session_count or revoke_other or rotate_password or account_credential_injection"`
 
 Expected: FAIL because the three store methods do not exist.
 
@@ -79,7 +79,7 @@ Cover missing/expired cookie, exact request keys, wrong current password with pe
 
 - [ ] **Step 2: Run the exact RED tests**
 
-Run: `npm run python:run -- -m pytest apps/api/tests/test_account_api.py -q -k "change_password or account_sessions"`
+Run: `node scripts/run-python.mjs -m pytest apps/api/tests/test_account_api.py -q -k "change_password or account_sessions"`
 
 Expected: FAIL because models, service methods, and routes do not exist.
 
@@ -93,7 +93,7 @@ Reuse `_set_session_cookie` for successful password change. Every route uses `_h
 
 - [ ] **Step 5: Run targeted tests and Ruff**
 
-Run: `npm run python:run -- -m pytest apps/api/tests/test_account_api.py -q -k "change_password or account_sessions"`
+Run: `node scripts/run-python.mjs -m pytest apps/api/tests/test_account_api.py -q -k "change_password or account_sessions"`
 
 Run: `npm run lint:python`
 
@@ -211,7 +211,7 @@ git commit -m "feat(account): add secure account settings"
 
 - [ ] **Step 1: Run backend lifecycle and injection tests once**
 
-Run: `npm run python:run -- -m pytest apps/api/tests/test_account_api.py apps/api/tests/test_sql_injection_security.py -q`
+Run: `node scripts/run-python.mjs -m pytest apps/api/tests/test_account_api.py apps/api/tests/test_sql_injection_security.py -q`
 
 Run: `npm run lint:python`
 
