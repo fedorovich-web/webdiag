@@ -105,6 +105,58 @@ class AltTextInput(_StrictModel):
         return normalized
 
 
+class ContentBriefInput(_StrictModel):
+    locale: Locale
+    audience: str = Field(min_length=1, max_length=300)
+    objective: str = Field(min_length=1, max_length=1_000)
+    working_title: str | None = Field(default=None, min_length=1, max_length=300)
+    facts: list[Annotated[str, Field(min_length=1, max_length=2_000)]] = Field(
+        min_length=1,
+        max_length=50,
+    )
+
+
+class ContentOptimizerInput(_StrictModel):
+    locale: Locale
+    page_url: str = Field(min_length=8, max_length=2_048)
+    content: str = Field(min_length=20, max_length=40_000)
+    target_query: str | None = Field(default=None, min_length=1, max_length=300)
+    objective: str | None = Field(default=None, min_length=1, max_length=1_000)
+    factual_constraints: list[
+        Annotated[str, Field(min_length=1, max_length=2_000)]
+    ] = Field(default_factory=list, max_length=30)
+
+    @field_validator("page_url")
+    @classmethod
+    def normalize_page_url(cls, value: str) -> str:
+        return _normalize_public_url(value)
+
+
+PageType = Literal[
+    "informational",
+    "commercial",
+    "transactional",
+    "navigational",
+    "local",
+    "unknown",
+]
+
+
+class SearchIntentPageFitInput(_StrictModel):
+    locale: Locale
+    page_url: str = Field(min_length=8, max_length=2_048)
+    primary_query: str = Field(min_length=1, max_length=300)
+    intended_page_type: PageType
+    page_title: str | None = Field(default=None, min_length=1, max_length=300)
+    h1: str | None = Field(default=None, min_length=1, max_length=500)
+    content: str = Field(min_length=20, max_length=40_000)
+
+    @field_validator("page_url")
+    @classmethod
+    def normalize_page_url(cls, value: str) -> str:
+        return _normalize_public_url(value)
+
+
 class ActionPlanAction(_StrictModel):
     issue_ids: list[Annotated[str, Field(min_length=1, max_length=200)]] = Field(
         min_length=1,
@@ -167,12 +219,68 @@ class AltTextOutput(_StrictModel):
         return self
 
 
+class BriefCoverage(_StrictModel):
+    source_fact_index: int = Field(ge=0, le=49)
+    excerpt: str = Field(min_length=1, max_length=1_000)
+
+
+class BriefSection(_StrictModel):
+    heading: str = Field(min_length=1, max_length=300)
+    purpose: str = Field(min_length=1, max_length=1_000)
+    coverage: list[BriefCoverage] = Field(min_length=1, max_length=10)
+
+
+class ContentBriefOutput(_StrictModel):
+    suggested_title: str = Field(min_length=1, max_length=300)
+    sections: list[BriefSection] = Field(min_length=1, max_length=20)
+    warnings: list[Annotated[str, Field(min_length=1, max_length=1_000)]] = Field(
+        max_length=20
+    )
+
+
+class ContentChange(_StrictModel):
+    kind: Literal["clarity", "structure", "relevance", "style"]
+    before_excerpt: str = Field(min_length=1, max_length=2_000)
+    after_excerpt: str = Field(min_length=1, max_length=2_000)
+    rationale: str = Field(min_length=1, max_length=1_000)
+
+
+class ContentOptimizerOutput(_StrictModel):
+    revised_content: str = Field(min_length=20, max_length=50_000)
+    changes: list[ContentChange] = Field(max_length=30)
+    preserved_fact_indexes: list[int] = Field(max_length=30)
+    warnings: list[Annotated[str, Field(min_length=1, max_length=1_000)]] = Field(
+        max_length=20
+    )
+
+
+class SearchIntentPageFitOutput(_StrictModel):
+    inferred_intent: PageType
+    confidence: Literal["low", "medium", "high"]
+    fit: Literal["aligned", "partial", "misaligned", "insufficient_evidence"]
+    evidence: list[Annotated[str, Field(min_length=1, max_length=1_000)]] = Field(
+        max_length=10
+    )
+    gaps: list[Annotated[str, Field(min_length=1, max_length=1_000)]] = Field(
+        max_length=20
+    )
+    recommendations: list[
+        Annotated[str, Field(min_length=1, max_length=1_000)]
+    ] = Field(max_length=20)
+    warnings: list[Annotated[str, Field(min_length=1, max_length=1_000)]] = Field(
+        max_length=20
+    )
+
+
 _INPUT_MODELS: dict[str, type[_StrictModel]] = {
     "ai_audit_action_plan": AuditActionPlanInput,
     "ai_meta_serp_studio": MetaSerpInput,
     "ai_schema_studio": SchemaStudioInput,
     "ai_faq_studio": FAQStudioInput,
     "ai_alt_text_studio": AltTextInput,
+    "ai_content_brief": ContentBriefInput,
+    "ai_content_optimizer": ContentOptimizerInput,
+    "ai_search_intent_page_fit": SearchIntentPageFitInput,
 }
 
 
@@ -314,6 +422,90 @@ def _validate_faq(input_value: object, output_value: object) -> dict[str, object
     return output
 
 
+def _validate_content_brief(
+    input_value: object,
+    output_value: object,
+) -> dict[str, object]:
+    output = _validate(ContentBriefOutput, output_value)
+    if not isinstance(input_value, dict):
+        raise AIToolContractError("content-brief provider input is invalid")
+    facts = input_value.get("facts")
+    if not isinstance(facts, list) or not all(isinstance(fact, str) for fact in facts):
+        raise AIToolContractError("content-brief provider input is invalid")
+    normalized_facts = [_normalize_newlines(fact) for fact in facts]
+    for section in output["sections"]:
+        for coverage in section["coverage"]:
+            index = coverage["source_fact_index"]
+            if index >= len(normalized_facts):
+                raise AIToolContractError("content brief references an unknown source fact")
+            if _normalize_newlines(coverage["excerpt"]) not in normalized_facts[index]:
+                raise AIToolContractError("content brief excerpt is absent from its source fact")
+    return output
+
+
+def _validate_content_optimizer(
+    input_value: object,
+    output_value: object,
+) -> dict[str, object]:
+    output = _validate(ContentOptimizerOutput, output_value)
+    if not isinstance(input_value, dict):
+        raise AIToolContractError("content-optimizer provider input is invalid")
+    original = input_value.get("content")
+    constraints = input_value.get("factual_constraints")
+    if not isinstance(original, str) or not isinstance(constraints, list):
+        raise AIToolContractError("content-optimizer provider input is invalid")
+    if not all(isinstance(fact, str) for fact in constraints):
+        raise AIToolContractError("content-optimizer provider input is invalid")
+    normalized_original = _normalize_newlines(original)
+    normalized_revision = _normalize_newlines(output["revised_content"])
+    for change in output["changes"]:
+        before = _normalize_newlines(change["before_excerpt"])
+        after = _normalize_newlines(change["after_excerpt"])
+        if before not in normalized_original:
+            raise AIToolContractError("change excerpt is absent from original content")
+        if after not in normalized_revision:
+            raise AIToolContractError("change excerpt is absent from revised content")
+        if before == after:
+            raise AIToolContractError("change excerpts must be different")
+    expected_indexes = list(range(len(constraints)))
+    if sorted(output["preserved_fact_indexes"]) != expected_indexes:
+        raise AIToolContractError("output does not preserve all factual constraints")
+    if any(_normalize_newlines(fact) not in normalized_revision for fact in constraints):
+        raise AIToolContractError("output does not preserve all factual constraints")
+    return output
+
+
+def _validate_search_intent_page_fit(
+    input_value: object,
+    output_value: object,
+) -> dict[str, object]:
+    output = _validate(SearchIntentPageFitOutput, output_value)
+    if not isinstance(input_value, dict):
+        raise AIToolContractError("search-intent provider input is invalid")
+    sources = [
+        input_value.get("primary_query"),
+        input_value.get("page_title"),
+        input_value.get("h1"),
+        input_value.get("content"),
+    ]
+    if not all(source is None or isinstance(source, str) for source in sources):
+        raise AIToolContractError("search-intent provider input is invalid")
+    normalized_sources = [
+        _normalize_newlines(source) for source in sources if isinstance(source, str)
+    ]
+    evidence = [_normalize_newlines(item) for item in output["evidence"]]
+    if len(set(evidence)) != len(evidence):
+        raise AIToolContractError("search-intent evidence must be unique")
+    if any(not any(item in source for source in normalized_sources) for item in evidence):
+        raise AIToolContractError("search-intent evidence is absent from supplied page data")
+    if output["inferred_intent"] == "unknown":
+        if output["fit"] != "insufficient_evidence":
+            raise AIToolContractError("search intent and fit are inconsistent")
+    elif output["fit"] == "insufficient_evidence" or not evidence:
+        raise AIToolContractError("search intent and fit are inconsistent")
+    return output
+
+
 def validate_output(
     tool_id: str,
     input_value: object,
@@ -329,4 +521,10 @@ def validate_output(
         return _validate_faq(input_value, output_value)
     if tool_id == "ai_alt_text_studio":
         return _validate(AltTextOutput, output_value)
+    if tool_id == "ai_content_brief":
+        return _validate_content_brief(input_value, output_value)
+    if tool_id == "ai_content_optimizer":
+        return _validate_content_optimizer(input_value, output_value)
+    if tool_id == "ai_search_intent_page_fit":
+        return _validate_search_intent_page_fit(input_value, output_value)
     raise AIToolContractError("unsupported AI tool contract")
