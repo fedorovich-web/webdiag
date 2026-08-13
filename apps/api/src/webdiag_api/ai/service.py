@@ -27,6 +27,7 @@ from webdiag_api.ai.storage import (
     AIInsufficientCreditsError,
     AIRunStateError,
     AIUploadQuotaError,
+    AIUploadUnavailableError,
     CreditAccount,
     CreditLedgerEntry,
     SqliteAIStore,
@@ -214,6 +215,27 @@ class AIService:
                 )
             except AIInputResolutionError as error:
                 raise AIServiceError(error.status_code, error.code, error.message) from error
+        source_upload_id: str | None = None
+        if definition.id == "ai_alt_text_studio":
+            source_upload_id = str(input_value["upload_id"])
+            upload = self._store.resolve_upload_for_run(
+                user_id=user_id,
+                upload_id=source_upload_id,
+                idempotency_key=key,
+            )
+            if upload is None:
+                raise AIServiceError(404, "ai_upload_not_found", "Image upload not found.")
+            input_value = {
+                key: value for key, value in input_value.items() if key != "upload_id"
+            }
+            input_value["image"] = {
+                "object_key": upload.object_key,
+                "media_type": upload.media_type,
+                "byte_size": upload.byte_size,
+                "width": upload.width,
+                "height": upload.height,
+                "sha256": upload.sha256,
+            }
         input_json = json.dumps(
             input_value,
             ensure_ascii=False,
@@ -233,6 +255,7 @@ class AIService:
                 idempotency_key=key,
                 input_json=input_json,
                 input_sha256=hashlib.sha256(encoded).hexdigest(),
+                source_upload_id=source_upload_id,
             )
         except AIInsufficientCreditsError as error:
             raise AIServiceError(402, "ai_insufficient_credits", "Insufficient credits.") from error
@@ -242,6 +265,8 @@ class AIService:
                 "ai_idempotency_conflict",
                 "Idempotency key was already used for another request.",
             ) from error
+        except AIUploadUnavailableError as error:
+            raise AIServiceError(404, "ai_upload_not_found", "Image upload not found.") from error
         return self._public_run(run), created
 
     def get_run(self, *, user_id: str, run_id: str) -> AIRunResponse:

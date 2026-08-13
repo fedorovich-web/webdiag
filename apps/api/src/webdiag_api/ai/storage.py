@@ -531,6 +531,27 @@ class SqliteAIStore:
             ).fetchone()
         return self._upload(row) if row is not None else None
 
+    def resolve_upload_for_run(
+        self,
+        *,
+        user_id: str,
+        upload_id: str,
+        idempotency_key: str,
+    ) -> StoredAIUpload | None:
+        self.ensure_schema()
+        with self._connect() as connection:
+            row = connection.execute(
+                """
+                SELECT u.* FROM ai_uploads AS u
+                LEFT JOIN ai_runs AS r ON r.id = u.bound_run_id
+                WHERE u.id = ? AND u.user_id = ? AND u.deletion_state = 'available'
+                    AND u.expires_at > ?
+                    AND (u.bound_run_id IS NULL OR r.idempotency_key = ?)
+                """,
+                (upload_id, user_id, self._clock_ns(), idempotency_key),
+            ).fetchone()
+        return self._upload(row) if row is not None else None
+
     def get_upload(self, *, upload_id: str) -> StoredAIUpload | None:
         self.ensure_schema()
         with self._connect() as connection:

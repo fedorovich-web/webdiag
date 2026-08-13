@@ -33,7 +33,7 @@ def services(tmp_path: Path) -> tuple[AccountService, AIService, str, str, str]:
         )
     )
     ready = replace(
-        DEFAULT_AI_CATALOG.all()[0],
+        next(tool for tool in DEFAULT_AI_CATALOG.all() if tool.id == "ai_content_brief"),
         state=AIToolState.READY,
         credit_price=7,
     )

@@ -2,13 +2,26 @@ from __future__ import annotations
 
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
 from webdiag_api.security.url_policy import UrlPolicyError, validate_url
 
 Locale = Literal["ru", "en"]
 NonEmptyText = Annotated[str, Field(min_length=1, max_length=2_000)]
 ShortText = Annotated[str, Field(min_length=1, max_length=300)]
+CanonicalUUID = Annotated[
+    str,
+    Field(
+        pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    ),
+]
 
 
 class AIToolContractError(ValueError):
@@ -74,6 +87,24 @@ class FAQStudioInput(_StrictModel):
     question_count: int = Field(default=5, ge=3, le=10)
 
 
+class AltTextInput(_StrictModel):
+    locale: Locale
+    upload_id: CanonicalUUID
+    page_context: str | None = Field(default=None, min_length=1, max_length=2_000)
+    surrounding_text: str | None = Field(default=None, min_length=1, max_length=2_000)
+    purpose: Literal["informative", "decorative", "unknown"]
+
+    @field_validator("page_context", "surrounding_text")
+    @classmethod
+    def normalize_context(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = _normalize_newlines(value).strip()
+        if not normalized:
+            raise ValueError("context must not be empty")
+        return normalized
+
+
 class ActionPlanAction(_StrictModel):
     issue_ids: list[Annotated[str, Field(min_length=1, max_length=200)]] = Field(
         min_length=1,
@@ -122,11 +153,26 @@ class FAQStudioOutput(_StrictModel):
     items: list[FAQItem] = Field(min_length=3, max_length=10)
 
 
+class AltTextOutput(_StrictModel):
+    alt_text: str = Field(max_length=300)
+    decorative: bool
+    rationale: str = Field(min_length=1, max_length=500)
+
+    @model_validator(mode="after")
+    def enforce_decorative_invariant(self):
+        if self.decorative and self.alt_text:
+            raise ValueError("decorative image alt text must be empty")
+        if not self.decorative and not self.alt_text:
+            raise ValueError("informative image alt text must not be empty")
+        return self
+
+
 _INPUT_MODELS: dict[str, type[_StrictModel]] = {
     "ai_audit_action_plan": AuditActionPlanInput,
     "ai_meta_serp_studio": MetaSerpInput,
     "ai_schema_studio": SchemaStudioInput,
     "ai_faq_studio": FAQStudioInput,
+    "ai_alt_text_studio": AltTextInput,
 }
 
 
@@ -281,4 +327,6 @@ def validate_output(
         return _validate_schema(input_value, output_value)
     if tool_id == "ai_faq_studio":
         return _validate_faq(input_value, output_value)
+    if tool_id == "ai_alt_text_studio":
+        return _validate(AltTextOutput, output_value)
     raise AIToolContractError("unsupported AI tool contract")
