@@ -2,14 +2,13 @@ import asyncio
 import hashlib
 import sqlite3
 import threading
-from dataclasses import replace
 from pathlib import Path
 
 import httpx
 import pytest
 
 from webdiag_api.accounts.storage import SqliteAccountStore
-from webdiag_api.ai.catalog import DEFAULT_AI_CATALOG, AIToolCatalog, AIToolState
+from webdiag_api.ai.catalog import AIToolCatalog, AIToolDefinition, AIToolState
 from webdiag_api.ai.models import AIRunCreateRequest
 from webdiag_api.ai.safety import derive_safety_identifier
 from webdiag_api.ai.service import AIService
@@ -25,14 +24,12 @@ def seeded_run(database_path: Path, *, correlation: str = "grant"):
         password_hash="test-only-password-hash",
     )
     store = SqliteAIStore(str(database_path), lease_seconds=60)
-    ready = replace(
-        next(
-            tool
-            for tool in DEFAULT_AI_CATALOG.all()
-            if tool.id == "ai_redirect_migration_mapper"
-        ),
+    ready = AIToolDefinition(
+        id="test_text_tool",
+        contract_version="test.v1",
         state=AIToolState.READY,
         credit_price=7,
+        model_policy="test-only",
     )
     service = AIService(store, catalog=AIToolCatalog((ready,)), input_max_bytes=1024)
     service.grant_beta_credits(
@@ -86,10 +83,12 @@ def test_only_one_concurrent_claim_wins_and_plaintext_token_is_not_stored(
 def test_claim_uses_stable_opaque_safety_identifier_without_account_identity(tmp_path) -> None:
     database_path = tmp_path / "accounts.sqlite3"
     store, user_id, _run_id = seeded_run(database_path)
-    ready = replace(
-        DEFAULT_AI_CATALOG.all()[0],
+    ready = AIToolDefinition(
+        id="test_text_tool",
+        contract_version="test.v1",
         state=AIToolState.READY,
         credit_price=7,
+        model_policy="test-only",
     )
     service = AIService(
         store,

@@ -1,5 +1,12 @@
 # Changelog
 
+## A12.1e — Final grounded text contracts
+
+- Added strict RU/EN contracts for Redirect Migration Mapper, Localization Workbench, and Regex Workbench. All 13 text/vision-analysis catalog entries now have executable contracts on the fixed `openai/gpt-5.6-luna` OpenRouter path and remain internal pending real evaluation and pricing.
+- Redirect mappings cover every supplied old page exactly once and require exact old/new evidence. Localization requires complete glossary usage and verbatim-constraint preservation. Neither tool claims crawling, deployment, certified translation quality, rankings, traffic, or measured impact.
+- Regex Workbench returns only a dialect-specific draft with fixed `validation_status: unverified` and a one-to-one plan for caller-declared cases. The backend deliberately does not compile or execute model-generated regex and makes no passing, safety, engine-compatibility, or ReDoS-resistance claim.
+- Image Studio and Image Edit Studio remain disabled because the selected GPT-5.6 model has text output. No fake image capability or fallback model was added.
+
 ## A12.1d — Grounded comparison and linking planners
 
 - Added strict RU/EN contracts for Competitor Gap Report and Internal Linking Planner on the existing `openai/gpt-5.6-luna` OpenRouter path. Both remain internal pending real provider evaluation and measured pricing.

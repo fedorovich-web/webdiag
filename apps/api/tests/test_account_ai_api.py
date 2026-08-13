@@ -1,5 +1,4 @@
 import asyncio
-from dataclasses import replace
 from pathlib import Path
 
 import httpx
@@ -11,7 +10,7 @@ from webdiag_api.accounts.security import ScryptParameters
 from webdiag_api.accounts.service import AccountService
 from webdiag_api.accounts.storage import SqliteAccountStore
 from webdiag_api.ai.api import get_ai_service
-from webdiag_api.ai.catalog import DEFAULT_AI_CATALOG, AIToolCatalog, AIToolState
+from webdiag_api.ai.catalog import AIToolCatalog, AIToolDefinition, AIToolState
 from webdiag_api.ai.service import AIService
 from webdiag_api.ai.storage import SqliteAIStore
 from webdiag_api.main import app
@@ -32,14 +31,12 @@ def services(tmp_path: Path) -> tuple[AccountService, AIService, str, str, str]:
             password="correct horse battery staple",
         )
     )
-    ready = replace(
-        next(
-            tool
-            for tool in DEFAULT_AI_CATALOG.all()
-            if tool.id == "ai_redirect_migration_mapper"
-        ),
+    ready = AIToolDefinition(
+        id="test_text_tool",
+        contract_version="test.v1",
         state=AIToolState.READY,
         credit_price=7,
+        model_policy="test-only",
     )
     ai = AIService(
         SqliteAIStore(str(database_path)),

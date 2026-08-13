@@ -10,6 +10,9 @@ CONTENT_FIXTURE_PATH = (
 PLANNING_FIXTURE_PATH = (
     Path(__file__).parent / "fixtures" / "ai" / "a12_1d_planning_contract_cases.json"
 )
+FINAL_TEXT_FIXTURE_PATH = (
+    Path(__file__).parent / "fixtures" / "ai" / "a12_1e_final_text_contract_cases.json"
+)
 
 
 def test_a12_1a_ru_en_contract_fixtures_are_valid_and_grounded() -> None:
@@ -53,6 +56,22 @@ def test_a12_1d_planning_tool_ru_en_fixtures_are_valid_and_grounded() -> None:
     assert {case["tool_id"] for case in cases} == {
         "ai_competitor_gap_report",
         "ai_internal_linking_planner",
+    }
+    assert {case["public_input"]["locale"] for case in cases} == {"ru", "en"}
+    for case in cases:
+        provider_input = validate_public_input(case["tool_id"], case["public_input"])
+        assert validate_output(case["tool_id"], provider_input, case["output"]) == case[
+            "output"
+        ]
+
+
+def test_a12_1e_final_text_tool_ru_en_fixtures_are_valid_and_grounded() -> None:
+    cases = json.loads(FINAL_TEXT_FIXTURE_PATH.read_text(encoding="utf-8"))
+
+    assert {case["tool_id"] for case in cases} == {
+        "ai_redirect_migration_mapper",
+        "ai_localization_workbench",
+        "ai_regex_workbench",
     }
     assert {case["public_input"]["locale"] for case in cases} == {"ru", "en"}
     for case in cases:

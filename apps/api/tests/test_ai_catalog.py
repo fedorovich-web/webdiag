@@ -3,6 +3,7 @@ from dataclasses import replace
 import pytest
 
 from webdiag_api.ai.catalog import DEFAULT_AI_CATALOG, AIToolCatalog, AIToolState
+from webdiag_api.ai.tool_contracts import has_tool_contract
 
 EXPECTED_TOOL_IDS = {
     "ai_alt_text_studio",
@@ -52,6 +53,16 @@ def test_initial_catalog_exposes_no_unevaluated_tools() -> None:
         for definition in definitions
         if definition.state is AIToolState.DISABLED
     } == {"none"}
+    assert all(
+        has_tool_contract(definition.id)
+        for definition in definitions
+        if definition.state is AIToolState.INTERNAL
+    )
+    assert all(
+        not has_tool_contract(definition.id)
+        for definition in definitions
+        if definition.state is AIToolState.DISABLED
+    )
 
 
 def test_ready_tool_requires_positive_integer_price() -> None:
