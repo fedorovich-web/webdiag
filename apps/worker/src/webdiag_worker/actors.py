@@ -1,7 +1,9 @@
 import dramatiq
 
+from webdiag_worker.ai import run_one_ai_job
 from webdiag_worker.broker import create_broker
 from webdiag_worker.monitoring import run_due_monitors
+from webdiag_worker.openai_provider import OpenAIProvider
 
 broker = create_broker()
 dramatiq.set_broker(broker)
@@ -19,4 +21,4 @@ def run_due_monitoring() -> int:
 
 @dramatiq.actor(queue_name="ai")
 def run_pending_ai() -> bool:
-    raise RuntimeError("AI provider adapter is not configured; A12.0 cannot execute real AI work")
+    return run_one_ai_job(OpenAIProvider.from_env())
