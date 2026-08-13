@@ -133,6 +133,7 @@ import {
 import { PemCertificateViewerTool } from "./pem-certificate-tool";
 import { SinglePageAuditTool } from "./single-page-audit-tool";
 import { dictionary } from "../../lib/i18n";
+import { AccountCrawlerEntry } from "./account-crawler-entry";
 
 interface ToolRendererProps {
   slug: string;
@@ -272,6 +273,9 @@ function AspectRatioTool({ locale }: { locale: Locale }) {
 
 export const SUPPORTED_TOOL_SLUGS = [
   "single-page-audit",
+  "whole-site-audit",
+  "duplicate-meta-checker",
+  "orphan-page-finder",
   "uuid-generator",
   "ulid-generator",
   "unix-timestamp-converter",
@@ -386,6 +390,9 @@ export const SUPPORTED_TOOL_SLUGS = [
 export function ToolRenderer({ slug, locale }: ToolRendererProps) {
   switch (slug) {
     case "single-page-audit": return <SinglePageAuditTool locale={locale} />;
+    case "whole-site-audit": return <AccountCrawlerEntry slug={slug} locale={locale} />;
+    case "duplicate-meta-checker": return <AccountCrawlerEntry slug={slug} locale={locale} />;
+    case "orphan-page-finder": return <AccountCrawlerEntry slug={slug} locale={locale} />;
     case "uuid-generator": return <Generator locale={locale} kind="uuid" />;
     case "ulid-generator": return <Generator locale={locale} kind="ulid" />;
     case "unix-timestamp-converter": return <UnixTimestampTool locale={locale} />;

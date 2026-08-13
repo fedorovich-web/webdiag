@@ -20,4 +20,12 @@ describe("tool renderer registry contract", () => {
   it("renders the existing single-page audit engine", () => {
     expect(SUPPORTED_TOOL_SLUGS).toContain("single-page-audit");
   });
+
+  it("renders the three authenticated views of one bounded project crawl", () => {
+    expect(SUPPORTED_TOOL_SLUGS).toEqual(expect.arrayContaining([
+      "whole-site-audit",
+      "duplicate-meta-checker",
+      "orphan-page-finder",
+    ]));
+  });
 });

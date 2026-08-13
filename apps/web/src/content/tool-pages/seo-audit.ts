@@ -3,6 +3,138 @@ import { toolPage } from "./shared";
 export const seoAuditToolPages = [
 
   toolPage({
+    slug: "whole-site-audit",
+    lastReviewedAt: "2026-08-13",
+    reviewDueAt: "2027-02-13",
+    seoTitle: { ru: "Ограниченный аудит сайта по проекту", en: "Bounded Project Site Audit" },
+    metaDescription: { ru: "Запустите из проекта ограниченный обход одного origin: до 25 публичных HTML-страниц, статусы, метаданные, ссылки, robots.txt и sitemap без обещания полного покрытия.", en: "Run a project-bound crawl of one origin: up to 25 public HTML pages with status, metadata, links, robots.txt, and sitemap evidence without claiming complete coverage." },
+    h1: { ru: "Ограниченный аудит сайта", en: "Bounded Site Audit" },
+    lead: { ru: "Авторизованный обход проекта получает до 25 публичных HTML-страниц одного origin и сохраняет результат в истории. Он показывает фактически собранную выборку, а не притворяется полным аудитом каждого URL.", en: "The authenticated project crawl fetches up to 25 public HTML pages on one origin and stores the result in project history. It reports the sample actually collected instead of presenting it as a complete audit of every URL." },
+    quickFacts: [
+      { ru: "До 25 HTML-страниц", en: "Up to 25 HTML pages" },
+      { ru: "Один origin", en: "One origin" },
+      { ru: "История в проекте", en: "Project history" },
+    ],
+    howToSteps: [
+      { ru: "Авторизуйтесь и откройте проект с подтверждённым origin.", en: "Sign in and open a project with the intended origin." },
+      { ru: "Запустите ограниченный обход из обзора проекта.", en: "Start the bounded crawl from the project overview." },
+      { ru: "Проверьте полученные страницы, частичные ошибки, повторы и кандидатов без ссылок с учётом лимита выборки.", en: "Review fetched pages, partial failures, duplicates, and unlinked candidates in the context of the sample limit." },
+    ],
+    supportedFeatures: [
+      { ru: "Собирает HTTP status, title, description и внутренние ссылки из статического HTML.", en: "Collects HTTP status, title, description, and internal links from static HTML." },
+      { ru: "Остаётся в пределах одного origin и применяет SSRF/DNS/IP policy к переходам.", en: "Stays on one origin and applies SSRF and DNS/IP policy to navigation." },
+      { ru: "Учитывает robots.txt и пытается прочитать один sitemap urlset для сопоставления URL.", en: "Handles robots.txt and attempts to read one sitemap urlset for URL comparison." },
+    ],
+    limitations: [
+      { ru: "Лимит — 25 HTML-страниц; это не доказательство полного покрытия сайта.", en: "The limit is 25 HTML pages; this does not prove complete site coverage." },
+      { ru: "JavaScript, авторизованные страницы, формы, sitemap index и вложенные sitemap не исполняются и не обходятся.", en: "JavaScript, authenticated pages, forms, sitemap indexes, and nested sitemaps are not executed or crawled." },
+    ],
+    useCases: [
+      { ru: "Получить ограниченную техническую выборку небольшого публичного сайта.", en: "Collect a bounded technical sample of a small public site." },
+      { ru: "Зафиксировать состояние доступных страниц перед изменением шаблона.", en: "Record the state of reachable pages before a template change." },
+      { ru: "Использовать один результат для проверки повторов и кандидатов без ссылок.", en: "Use one result to review duplicates and unlinked candidates." },
+    ],
+    technicalNotes: [
+      { ru: "Запуск привязан к сессии и owned project; browser не передаёт произвольный origin обходчику.", en: "A run is bound to the session and owned project; the browser does not provide an arbitrary crawl origin." },
+      { ru: "Результат хранится как ограниченный versioned DTO; ошибки отдельных страниц не подменяются успешными данными.", en: "Results are stored as a bounded, versioned DTO; individual page failures are not replaced with successful data." },
+    ],
+    faq: [
+      { question: { ru: "Это полный аудит сайта?", en: "Is this a complete site audit?" }, answer: { ru: "Нет. Обход ограничен 25 HTML-страницами и показывает только фактически полученную выборку.", en: "No. The crawl is capped at 25 HTML pages and reports only the sample actually fetched." } },
+      { question: { ru: "Обход видит страницы, отрисованные JavaScript?", en: "Does the crawl see JavaScript-rendered pages?" }, answer: { ru: "Нет. Он анализирует полученный HTML без исполнения JavaScript. Для runtime-страниц нужен отдельный browser-инструмент.", en: "No. It analyzes fetched HTML without executing JavaScript. Runtime pages need a separate browser tool." } },
+    ],
+    relatedToolSlugs: ["duplicate-meta-checker", "orphan-page-finder", "single-page-audit"],
+    sourceUrls: ["https://developers.google.com/search/docs/crawling-indexing/robots/intro", "https://www.sitemaps.org/protocol.html"],
+  }),
+
+  toolPage({
+    slug: "duplicate-meta-checker",
+    lastReviewedAt: "2026-08-13",
+    reviewDueAt: "2027-02-13",
+    seoTitle: { ru: "Повторяющиеся title и description в обходе", en: "Duplicate Titles and Descriptions in a Crawl" },
+    metaDescription: { ru: "Найдите одинаковые непустые title и description в выборке до 25 HTML-страниц одного авторизованного обхода проекта без заявления о проверке всего сайта.", en: "Find identical non-empty titles and descriptions within a sample of up to 25 HTML pages from one authenticated project crawl without claiming a full-site check." },
+    h1: { ru: "Повторы title и description", en: "Duplicate Titles and Descriptions" },
+    lead: { ru: "Представление группирует одинаковые непустые title и meta description среди страниц, фактически полученных одним ограниченным обходом проекта. URL вне выборки в вывод не попадают.", en: "This view groups identical non-empty titles and meta descriptions among pages actually fetched by one bounded project crawl. URLs outside the sample are not represented." },
+    quickFacts: [
+      { ru: "Один результат обхода", en: "One crawl result" },
+      { ru: "Title + description", en: "Title + description" },
+      { ru: "До 25 HTML-страниц", en: "Up to 25 HTML pages" },
+    ],
+    howToSteps: [
+      { ru: "Откройте авторизованный проект и запустите ограниченный обход.", en: "Open an authenticated project and run a bounded crawl." },
+      { ru: "Дождитесь сохранённого результата и откройте группы повторов.", en: "Wait for the stored result and open the duplicate groups." },
+      { ru: "Проверьте смысл каждой группы вручную: одинаковые метаданные не всегда являются дефектом.", en: "Review the intent of each group manually: identical metadata is not always a defect." },
+    ],
+    supportedFeatures: [
+      { ru: "Отдельно группирует точные совпадения непустых title и description.", en: "Groups exact matches of non-empty titles and descriptions separately." },
+      { ru: "Показывает URL из сохранённого результата без повторного сетевого запроса.", en: "Shows URLs from the stored result without making another network request." },
+      { ru: "Использует тот же ownership-protected результат, что и обзор обхода проекта.", en: "Uses the same ownership-protected result as the project crawl overview." },
+    ],
+    limitations: [
+      { ru: "Сравнение ограничено полученной выборкой до 25 HTML-страниц и не охватывает неизвестные URL.", en: "Comparison is limited to the fetched sample of up to 25 HTML pages and does not cover unknown URLs." },
+      { ru: "Инструмент не определяет поисковый intent и не решает, когда повтор допустим.", en: "The tool does not determine search intent or decide when a duplicate is acceptable." },
+    ],
+    useCases: [
+      { ru: "Найти шаблонные title в полученной выборке категорий или услуг.", en: "Find template-level title duplication in the fetched category or service sample." },
+      { ru: "Проверить повторяющиеся descriptions после изменения CMS-шаблона.", en: "Review repeated descriptions after a CMS template change." },
+      { ru: "Подготовить список URL для ручной редакционной проверки.", en: "Prepare a URL list for manual editorial review." },
+    ],
+    technicalNotes: [
+      { ru: "Группировка выполняется по точному сохранённому тексту; семантическое сходство и AI-классификация не используются.", en: "Grouping uses exact stored text; semantic similarity and AI classification are not used." },
+      { ru: "Пустые значения не считаются группой повторов и должны оцениваться как отдельная проблема наличия метаданных.", en: "Empty values are not duplicate groups and should be reviewed separately as missing metadata." },
+    ],
+    faq: [
+      { question: { ru: "Проверяются все страницы сайта?", en: "Does it check every page on the site?" }, answer: { ru: "Нет. Группы строятся только по страницам одного ограниченного обхода, максимум по 25 HTML-страницам.", en: "No. Groups are built only from one bounded crawl, with at most 25 HTML pages." } },
+      { question: { ru: "Похожий, но не идентичный текст считается повтором?", en: "Is similar but non-identical text considered a duplicate?" }, answer: { ru: "Нет. Текущая реализация группирует точные совпадения и не выдаёт эвристику или AI-оценку за факт.", en: "No. The current implementation groups exact matches and does not present heuristics or AI judgment as fact." } },
+    ],
+    relatedToolSlugs: ["whole-site-audit", "meta-tags-checker", "orphan-page-finder"],
+    sourceUrls: ["https://developers.google.com/search/docs/appearance/title-link", "https://developers.google.com/search/docs/appearance/snippet"],
+  }),
+
+  toolPage({
+    slug: "orphan-page-finder",
+    lastReviewedAt: "2026-08-13",
+    reviewDueAt: "2027-02-13",
+    seoTitle: { ru: "Кандидаты без внутренних ссылок по sitemap", en: "Sitemap URLs Without Discovered Internal Links" },
+    metaDescription: { ru: "Сравните URL из одного sitemap urlset с внутренними ссылками в выборке до 25 HTML-страниц и получите кандидатов для ручной проверки, а не недоказанный список сирот.", en: "Compare URLs from one sitemap urlset with internal links in a sample of up to 25 HTML pages and get review candidates rather than an unproven orphan list." },
+    h1: { ru: "Кандидаты без внутренних ссылок", en: "Unlinked Page Candidates" },
+    lead: { ru: "Представление показывает URL из одного sitemap urlset, на которые не найдены внутренние ссылки в ограниченной выборке обхода. Это кандидаты для проверки: лимит и неполный link graph не позволяют доказать, что страница является сиротой на всём сайте.", en: "This view shows URLs from one sitemap urlset for which no internal links were found in the bounded crawl sample. These are review candidates: the limit and incomplete link graph cannot prove that a page is orphaned across the full site." },
+    quickFacts: [
+      { ru: "Sitemap vs links", en: "Sitemap vs links" },
+      { ru: "Только кандидаты", en: "Candidates only" },
+      { ru: "До 25 HTML-страниц", en: "Up to 25 HTML pages" },
+    ],
+    howToSteps: [
+      { ru: "Убедитесь, что проект использует нужный origin и публичный sitemap urlset.", en: "Confirm that the project uses the intended origin and a public sitemap urlset." },
+      { ru: "Запустите ограниченный обход и дождитесь сохранённого результата.", en: "Run the bounded crawl and wait for the stored result." },
+      { ru: "Проверьте каждый кандидат по навигации, контекстным ссылкам и более полным данным до изменения сайта.", en: "Review each candidate against navigation, contextual links, and broader evidence before changing the site." },
+    ],
+    supportedFeatures: [
+      { ru: "Сравнивает нормализованные URL одного sitemap urlset с обнаруженными внутренними ссылками.", en: "Compares normalized URLs from one sitemap urlset with discovered internal links." },
+      { ru: "Остаётся в пределах одного origin и не принимает cross-origin URL за часть проекта.", en: "Stays on one origin and does not treat cross-origin URLs as part of the project." },
+      { ru: "Показывает кандидатов из сохранённого обхода вместе с размером sitemap-выборки.", en: "Shows candidates from the stored crawl together with the sitemap sample size." },
+    ],
+    limitations: [
+      { ru: "До 25 HTML-страниц недостаточно для доказательства отсутствия ссылки на всём сайте.", en: "A sample of up to 25 HTML pages cannot prove the absence of a link across the full site." },
+      { ru: "Поддерживается один sitemap urlset; sitemap index и вложенные sitemap не разворачиваются.", en: "One sitemap urlset is supported; sitemap indexes and nested sitemaps are not expanded." },
+    ],
+    useCases: [
+      { ru: "Найти URL для ручной проверки внутренней перелинковки.", en: "Find URLs for manual internal-link review." },
+      { ru: "Сопоставить небольшую sitemap-выборку с фактически обнаруженными ссылками.", en: "Compare a small sitemap sample with links actually discovered." },
+      { ru: "Проверить кандидатов после изменения меню или структуры разделов.", en: "Review candidates after changing navigation or section structure." },
+    ],
+    technicalNotes: [
+      { ru: "Кандидат — это разность URL sitemap и обнаруженного link graph после нормализации в пределах origin.", en: "A candidate is the difference between sitemap URLs and the discovered link graph after same-origin normalization." },
+      { ru: "Термин orphan намеренно не используется как подтверждённый статус без полного графа и дополнительных источников.", en: "The term orphan is intentionally not used as a confirmed status without a complete graph and additional evidence." },
+    ],
+    faq: [
+      { question: { ru: "Кандидат точно является страницей-сиротой?", en: "Is a candidate definitely an orphan page?" }, answer: { ru: "Нет. Это означает только, что ссылка не найдена в ограниченной выборке. Нужна ручная или более полная проверка.", en: "No. It only means no link was found in the bounded sample. Manual or broader verification is required." } },
+      { question: { ru: "Почему sitemap index не разворачивается?", en: "Why is a sitemap index not expanded?" }, answer: { ru: "Текущий контур намеренно ограничен одним urlset и 25 HTML-страницами. Поддержка индексов потребует отдельного безопасного лимита и контракта.", en: "The current scope is intentionally bounded to one urlset and 25 HTML pages. Index support needs a separate safe limit and contract." } },
+    ],
+    relatedToolSlugs: ["whole-site-audit", "duplicate-meta-checker", "sitemap-validator"],
+    sourceUrls: ["https://www.sitemaps.org/protocol.html", "https://developers.google.com/search/docs/crawling-indexing/links-crawlable"],
+  }),
+
+  toolPage({
     slug: "single-page-audit",
     seoTitle: { ru: "Технический аудит одной страницы сайта", en: "Single Page Technical Audit" },
     metaDescription: { ru: "Проверьте один публичный URL: HTTP, редиректы, метаданные, indexability, JSON-LD, security headers, robots.txt и sitemap.xml с порядком исправлений.", en: "Audit one public URL for HTTP, redirects, metadata, indexability, JSON-LD, security headers, robots.txt, and sitemap.xml with a clear fix order." },

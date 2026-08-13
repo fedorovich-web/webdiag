@@ -82,4 +82,12 @@ describe("tool editorial content", () => {
     expect(page?.state).toBe("published");
     expect(JSON.stringify(page)).toContain("does not create image files");
   });
+
+  it("publishes the bounded crawler pages with the current technical review date", () => {
+    for (const slug of ["whole-site-audit", "duplicate-meta-checker", "orphan-page-finder"]) {
+      const page = toolPageContents.find((item) => item.slug === slug);
+      expect(page?.lastReviewedAt).toBe("2026-08-13");
+      expect(JSON.stringify(page)).toContain("25 HTML");
+    }
+  });
 });

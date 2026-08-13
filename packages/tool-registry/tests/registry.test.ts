@@ -68,4 +68,26 @@ describe("tool registry", () => {
       expect(replacement?.state).toBe("ready");
     }
   });
+
+  it("publishes the three bounded project crawler views without whole-site claims", () => {
+    const crawlerTools = [
+      "whole-site-audit",
+      "duplicate-meta-checker",
+      "orphan-page-finder",
+    ].map((slug) => tools.find((tool) => tool.slug === slug));
+
+    for (const tool of crawlerTools) {
+      expect(tool).toMatchObject({
+        executorClass: "crawler",
+        riskTier: "R3",
+        access: "required",
+        state: "ready",
+      });
+      expect(tool?.description?.ru).toContain("25");
+      expect(tool?.description?.en).toContain("25");
+    }
+
+    expect(crawlerTools[0]?.title.en).toBe("Bounded Site Audit");
+    expect(crawlerTools[2]?.title.en).toBe("Unlinked Page Candidates");
+  });
 });
