@@ -8,7 +8,7 @@ from types import TracebackType
 from typing import Any, Protocol
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
-from urllib.request import HTTPRedirectHandler, Request, build_opener
+from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
 
 MAX_RESPONSE_BYTES = 1_000_000
 
@@ -26,7 +26,8 @@ class _RejectRedirects(HTTPRedirectHandler):
         raise HTTPError(req.full_url, code, "AI API redirect rejected", headers, fp)
 
 
-_NO_REDIRECT_OPENER = build_opener(_RejectRedirects())
+_NO_PROXY_HANDLER = ProxyHandler({})
+_NO_REDIRECT_OPENER = build_opener(_NO_PROXY_HANDLER, _RejectRedirects())
 
 
 def urlopen(request: Request, *, timeout: int) -> Any:

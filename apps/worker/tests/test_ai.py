@@ -2,6 +2,7 @@ import json
 from unittest.mock import patch
 
 import pytest
+import webdiag_worker.ai as ai_module
 
 from webdiag_worker.ai import (
     KnownSafeProviderError,
@@ -25,6 +26,10 @@ class FakeProvider:
             input_units=12,
             output_units=4,
         )
+
+
+def test_internal_ai_opener_disables_ambient_proxies() -> None:
+    assert ai_module._NO_PROXY_HANDLER.proxies == {}
 
 
 def test_worker_claims_marks_submitted_and_completes_typed_result(monkeypatch) -> None:

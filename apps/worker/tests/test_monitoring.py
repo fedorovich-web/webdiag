@@ -4,6 +4,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from unittest.mock import patch
 
 import pytest
+import webdiag_worker.monitoring as monitoring_module
 
 from webdiag_worker.monitoring import run_due_monitors
 
@@ -20,6 +21,10 @@ class Response:
             "contract_version": "webdiag.monitoring.run_due.v1",
             "processed": 3,
         }).encode()
+
+
+def test_internal_monitoring_opener_disables_ambient_proxies() -> None:
+    assert monitoring_module._NO_PROXY_HANDLER.proxies == {}
 
 
 def test_worker_monitoring_bridge_uses_bearer_and_validates_contract(monkeypatch) -> None:

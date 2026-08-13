@@ -1,5 +1,39 @@
 # Verification Notes
 
+# A12.7 — direct internal worker bearer transport
+
+## Scope
+
+- both the AI and monitoring worker bridges now construct `urllib` openers with
+  an explicit empty `ProxyHandler`;
+- ambient `HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`, Windows proxy settings, and
+  macOS system proxy settings cannot become an unreviewed bearer-token route;
+- the existing clean-origin validation, redirect rejection, response bounds,
+  timeout bounds, and stable internal contracts are unchanged;
+- added regressions for the explicit no-proxy handler in both worker bridges.
+
+## Fresh verification
+
+```text
+affected worker pytest                         PASS — 27/27
+full API/worker pytest                         PASS — 524/524
+full API/worker Ruff                           PASS
+Python lock verification                       PASS — 39 packages
+git diff --check                               PASS
+```
+
+## Remaining artifact lifecycle blocker
+
+A generated image is written to private object storage before the internal
+completion transaction registers it. If that completion request succeeds but
+its response is lost, immediate worker-side deletion would corrupt a successful
+run; if it fails before commit, the object is not in the database cleanup set.
+Production activation therefore still requires a two-phase artifact staging or
+bounded orphan reconciliation design. No unsafe best-effort deletion was added.
+
+No real provider, object-storage, marketplace, payment, release, or deployment
+request was made.
+
 # A12.6 — explicit OpenRouter transport environment boundary
 
 ## Scope
