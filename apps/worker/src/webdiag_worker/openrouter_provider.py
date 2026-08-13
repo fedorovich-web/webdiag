@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import base64
+import hashlib
+import hmac
 import json
 import os
 from dataclasses import dataclass
@@ -13,7 +16,9 @@ from webdiag_worker.ai import (
     ProviderRequest,
     ProviderResult,
 )
+from webdiag_worker.artifact_storage import ArtifactStorage, artifact_storage_from_env
 from webdiag_worker.tool_contracts import (
+    AltTextOutput,
     AuditActionPlanOutput,
     FAQStudioOutput,
     MetaSerpOutput,
@@ -74,14 +79,32 @@ _TOOL_POLICIES = {
             "Write in the locale requested by the input data."
         ),
     ),
+    "ai_alt_text_studio": _ToolPolicy(
+        model=_MODEL,
+        output_model=AltTextOutput,
+        max_output_tokens=1_000,
+        instructions=(
+            "Write one concise alt text grounded only in the supplied image and context. "
+            "Never identify unknown people, infer protected traits, invent context, describe "
+            "hidden metadata, or promise SEO or ranking results. If the image is decorative, "
+            "set decorative to true and alt_text to an empty string. Write in the requested "
+            "locale."
+        ),
+    ),
 }
 
 _KNOWN_REJECTED_STATUS_CODES = frozenset({400, 401, 402, 403, 404, 413, 422})
 
 
 class OpenRouterProvider:
-    def __init__(self, client: httpx.Client) -> None:
+    def __init__(
+        self,
+        client: httpx.Client,
+        *,
+        artifact_storage: ArtifactStorage | None = None,
+    ) -> None:
         self._client = client
+        self._artifact_storage = artifact_storage
 
     @classmethod
     def from_env(cls) -> OpenRouterProvider:
@@ -130,18 +153,7 @@ class OpenRouterProvider:
                 _OPENROUTER_CHAT_URL,
                 json={
                     "model": policy.model,
-                    "messages": [
-                        {"role": "system", "content": policy.instructions},
-                        {
-                            "role": "user",
-                            "content": json.dumps(
-                                request.input,
-                                ensure_ascii=False,
-                                sort_keys=True,
-                                separators=(",", ":"),
-                            ),
-                        },
-                    ],
+                    "messages": _messages(request, policy),
                     "response_format": {
                         "type": "json_schema",
                         "json_schema": {
@@ -187,6 +199,64 @@ class OpenRouterProvider:
             output_units=output_units,
         )
 
+    def prepare(self, request: ProviderRequest) -> ProviderRequest:
+        if request.tool_id != "ai_alt_text_studio":
+            return request
+        descriptor = request.input.get("image")
+        if not isinstance(descriptor, dict) or set(descriptor) != {
+            "object_key",
+            "media_type",
+            "byte_size",
+            "width",
+            "height",
+            "sha256",
+        }:
+            raise KnownSafeProviderError("AI image descriptor is invalid")
+        object_key = descriptor.get("object_key")
+        media_type = descriptor.get("media_type")
+        byte_size = descriptor.get("byte_size")
+        width = descriptor.get("width")
+        height = descriptor.get("height")
+        digest = descriptor.get("sha256")
+        if (
+            not isinstance(object_key, str)
+            or media_type not in {"image/jpeg", "image/png", "image/webp"}
+            or isinstance(byte_size, bool)
+            or not isinstance(byte_size, int)
+            or not 1 <= byte_size <= 4 * 1024 * 1024
+            or any(
+                isinstance(value, bool)
+                or not isinstance(value, int)
+                or not 1 <= value <= 8192
+                for value in (width, height)
+            )
+            or width * height > 8_000_000
+            or not isinstance(digest, str)
+            or len(digest) != 64
+            or any(character not in "0123456789abcdef" for character in digest)
+        ):
+            raise KnownSafeProviderError("AI image descriptor is invalid")
+        try:
+            storage = self._artifact_storage or artifact_storage_from_env()
+            data = storage.read(object_key=object_key, max_bytes=byte_size)
+        except Exception as error:
+            raise KnownSafeProviderError("AI image object is unavailable") from error
+        if len(data) != byte_size or not hmac.compare_digest(
+            hashlib.sha256(data).hexdigest(), digest
+        ):
+            raise KnownSafeProviderError("AI image object integrity check failed")
+        prepared_input = {key: value for key, value in request.input.items() if key != "image"}
+        encoded = base64.b64encode(data).decode("ascii")
+        prepared_input["_image_data_url"] = f"data:{media_type};base64,{encoded}"
+        return ProviderRequest(
+            run_id=request.run_id,
+            tool_id=request.tool_id,
+            contract_version=request.contract_version,
+            model_policy=request.model_policy,
+            input=prepared_input,
+            safety_identifier=request.safety_identifier,
+        )
+
 
 def _bounded_timeout(name: str, default: int) -> int:
     raw = os.getenv(name, str(default))
@@ -197,6 +267,55 @@ def _bounded_timeout(name: str, default: int) -> int:
     if not 1 <= value <= 600:
         raise RuntimeError(f"{name} must be between 1 and 600 seconds")
     return value
+
+
+def _messages(request: ProviderRequest, policy: _ToolPolicy) -> list[dict[str, object]]:
+    if request.tool_id != "ai_alt_text_studio":
+        return [
+            {"role": "system", "content": policy.instructions},
+            {
+                "role": "user",
+                "content": json.dumps(
+                    request.input,
+                    ensure_ascii=False,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ),
+            },
+        ]
+    image_data_url = request.input.get("_image_data_url")
+    if (
+        not isinstance(image_data_url, str)
+        or not image_data_url.startswith(
+            ("data:image/jpeg;base64,", "data:image/png;base64,", "data:image/webp;base64,")
+        )
+        or len(image_data_url) > 6_000_000
+    ):
+        raise KnownSafeProviderError("AI image input is not prepared")
+    context = {
+        key: value for key, value in request.input.items() if key != "_image_data_url"
+    }
+    return [
+        {"role": "system", "content": policy.instructions},
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": json.dumps(
+                        context,
+                        ensure_ascii=False,
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    ),
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {"url": image_data_url, "detail": "low"},
+                },
+            ],
+        },
+    ]
 
 
 def _parsed_output(body: object, output_model: type[BaseModel]) -> BaseModel:

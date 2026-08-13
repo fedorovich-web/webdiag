@@ -4,6 +4,7 @@ from unittest.mock import patch
 import pytest
 
 from webdiag_worker.ai import (
+    KnownSafeProviderError,
     ProviderRequest,
     ProviderResult,
     run_one_ai_job,
@@ -77,6 +78,83 @@ def test_worker_claims_marks_submitted_and_completes_typed_result(monkeypatch) -
         "input_units": 12,
         "output_units": 4,
     }
+
+
+def test_worker_prepares_private_input_before_marking_provider_submitted(monkeypatch) -> None:
+    monkeypatch.setenv("WEBDIAG_AI_INTERNAL_TOKEN", "a" * 32)
+    monkeypatch.setenv("WEBDIAG_AI_API_INTERNAL_URL", "http://api:8000")
+    events: list[str] = []
+
+    class PreparingProvider(FakeProvider):
+        def prepare(self, request: ProviderRequest) -> ProviderRequest:
+            events.append("prepare")
+            return request
+
+        def execute(self, request: ProviderRequest) -> ProviderResult:
+            events.append("execute")
+            return super().execute(request)
+
+    def request_json(_method: str, path: str, payload=None):
+        if path.endswith("/claim"):
+            return {
+                "contract_version": "webdiag.ai.worker.v1",
+                "claim": {
+                    "run_id": "11111111-1111-4111-8111-111111111111",
+                    "attempt_number": 1,
+                    "lease_token": "lease-token-value-with-at-least-32-chars",
+                    "lease_expires_at": 1_900_000_000,
+                    "tool_id": "test_text_tool",
+                    "contract_version": "v1",
+                    "model_policy": "test-only",
+                    "input": {"content": "source"},
+                },
+            }
+        events.append("mark" if path.endswith("/mark-submitted") else "complete")
+        return {
+            "contract_version": "webdiag.ai.worker.v1",
+            "state": "succeeded" if path.endswith("/complete") else "running",
+        }
+
+    with patch("webdiag_worker.ai._request_json", side_effect=request_json):
+        assert run_one_ai_job(PreparingProvider(), lease_renew_interval_seconds=30)
+
+    assert events == ["prepare", "mark", "execute", "complete"]
+
+
+def test_known_safe_prepare_failure_releases_without_marking_submitted(monkeypatch) -> None:
+    monkeypatch.setenv("WEBDIAG_AI_INTERNAL_TOKEN", "a" * 32)
+    monkeypatch.setenv("WEBDIAG_AI_API_INTERNAL_URL", "http://api:8000")
+    paths: list[str] = []
+
+    class UnavailableInputProvider(FakeProvider):
+        def prepare(self, _request: ProviderRequest) -> ProviderRequest:
+            raise KnownSafeProviderError("private detail")
+
+    def request_json(_method: str, path: str, payload=None):
+        paths.append(path)
+        if path.endswith("/claim"):
+            return {
+                "contract_version": "webdiag.ai.worker.v1",
+                "claim": {
+                    "run_id": "11111111-1111-4111-8111-111111111111",
+                    "attempt_number": 1,
+                    "lease_token": "lease-token-value-with-at-least-32-chars",
+                    "lease_expires_at": 1_900_000_000,
+                    "tool_id": "ai_alt_text_studio",
+                    "contract_version": "v1",
+                    "model_policy": "openai/gpt-5.6-luna",
+                    "input": {"image": {}},
+                },
+            }
+        assert payload["outcome"] == "known_safe"
+        assert payload["error_code"] == "ai_input_unavailable"
+        return {"contract_version": "webdiag.ai.worker.v1", "state": "failed"}
+
+    with patch("webdiag_worker.ai._request_json", side_effect=request_json):
+        assert run_one_ai_job(UnavailableInputProvider())
+
+    assert len(paths) == 2
+    assert paths[1].endswith("/fail")
 
 
 def test_worker_returns_false_when_no_claim(monkeypatch) -> None:

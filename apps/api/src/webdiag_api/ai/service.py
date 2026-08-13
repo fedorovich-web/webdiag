@@ -433,6 +433,25 @@ class AIService:
             provider_unknown=provider_unknown,
         )
 
+    def cleanup_uploads(
+        self,
+        *,
+        artifact_storage: ArtifactStorage,
+        limit: int,
+    ) -> tuple[int, int]:
+        pending = self._store.list_uploads_pending_deletion(limit=limit)
+        deleted = 0
+        failed = 0
+        for upload in pending:
+            try:
+                artifact_storage.delete(object_key=upload.object_key)
+            except Exception:
+                failed += 1
+                continue
+            if self._store.mark_upload_deleted(upload_id=upload.id):
+                deleted += 1
+        return deleted, failed
+
     @staticmethod
     def public_credit(account: CreditAccount) -> CreditAccountResponse:
         return CreditAccountResponse(available=account.available, reserved=account.reserved)

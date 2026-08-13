@@ -1,4 +1,5 @@
 import json
+import hashlib
 
 import httpx
 import pytest
@@ -9,6 +10,21 @@ from webdiag_worker.ai import (
     ProviderRequest,
 )
 from webdiag_worker.openrouter_provider import OpenRouterProvider
+
+
+class FakeArtifactStorage:
+    def __init__(self, data: bytes | BaseException) -> None:
+        self.data = data
+        self.reads: list[tuple[str, int]] = []
+
+    def read(self, *, object_key: str, max_bytes: int) -> bytes:
+        self.reads.append((object_key, max_bytes))
+        if isinstance(self.data, BaseException):
+            raise self.data
+        return self.data
+
+    def delete(self, *, object_key: str) -> None:
+        raise AssertionError(object_key)
 
 
 def _response(
@@ -41,13 +57,13 @@ def _response(
     }
 
 
-def _provider(handler) -> OpenRouterProvider:
+def _provider(handler, *, artifact_storage=None) -> OpenRouterProvider:
     client = httpx.Client(
         transport=httpx.MockTransport(handler),
         timeout=httpx.Timeout(connect=2, read=5, write=2, pool=2),
         headers={"Authorization": "Bearer test-openrouter-key"},
     )
-    return OpenRouterProvider(client)
+    return OpenRouterProvider(client, artifact_storage=artifact_storage)
 
 
 def _request(
@@ -118,6 +134,101 @@ def test_provider_sends_private_strict_openrouter_request_and_maps_usage() -> No
     assert "example.com" not in sent["messages"][0]["content"]
     assert "test-openrouter-key" not in requests[0].content.decode()
     assert "http-referer" not in requests[0].headers
+
+
+def test_alt_text_preparation_checks_private_object_and_sends_one_low_detail_image() -> None:
+    image_data = b"normalized-png"
+    storage = FakeArtifactStorage(image_data)
+    requests: list[httpx.Request] = []
+    output = {
+        "alt_text": "Панель WebDiag со списком технических проблем",
+        "decorative": False,
+        "rationale": "Описание основано на видимом содержимом.",
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(200, json=_response(output))
+
+    request = _request(
+        "ai_alt_text_studio",
+        input_value={
+            "locale": "ru",
+            "page_context": "Карточка проверки",
+            "surrounding_text": None,
+            "purpose": "informative",
+            "image": {
+                "object_key": "ai-uploads/aa/" + "b" * 62,
+                "media_type": "image/png",
+                "byte_size": len(image_data),
+                "width": 3,
+                "height": 2,
+                "sha256": hashlib.sha256(image_data).hexdigest(),
+            },
+        },
+    )
+    provider = _provider(handler, artifact_storage=storage)
+
+    prepared = provider.prepare(request)
+    result = provider.execute(prepared)
+
+    assert result.output == output
+    assert storage.reads == [("ai-uploads/aa/" + "b" * 62, len(image_data))]
+    sent = json.loads(requests[0].content)
+    assert sent["model"] == "openai/gpt-5.6-luna"
+    assert len(sent["messages"][1]["content"]) == 2
+    assert sent["messages"][1]["content"][0]["type"] == "text"
+    image_part = sent["messages"][1]["content"][1]
+    assert image_part["type"] == "image_url"
+    assert image_part["image_url"]["detail"] == "low"
+    assert image_part["image_url"]["url"].startswith("data:image/png;base64,")
+    assert "object_key" not in requests[0].content.decode()
+    assert "unknown people" in sent["messages"][0]["content"]
+
+
+@pytest.mark.parametrize("failure", ("missing", "size", "digest"))
+def test_alt_text_preparation_fails_known_safe_before_openrouter(failure: str) -> None:
+    expected = b"image"
+    actual: bytes | BaseException = expected
+    descriptor_size = len(expected)
+    descriptor_digest = hashlib.sha256(expected).hexdigest()
+    if failure == "missing":
+        actual = FileNotFoundError("private path")
+    elif failure == "size":
+        actual = b"different-size"
+    else:
+        descriptor_digest = "0" * 64
+    storage = FakeArtifactStorage(actual)
+    calls = 0
+
+    def handler(_request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        return httpx.Response(500)
+
+    provider = _provider(handler, artifact_storage=storage)
+    request = _request(
+        "ai_alt_text_studio",
+        input_value={
+            "locale": "en",
+            "page_context": None,
+            "surrounding_text": None,
+            "purpose": "unknown",
+            "image": {
+                "object_key": "ai-uploads/aa/" + "b" * 62,
+                "media_type": "image/png",
+                "byte_size": descriptor_size,
+                "width": 3,
+                "height": 2,
+                "sha256": descriptor_digest,
+            },
+        },
+    )
+
+    with pytest.raises(KnownSafeProviderError):
+        provider.prepare(request)
+
+    assert calls == 0
 
 
 @pytest.mark.parametrize(

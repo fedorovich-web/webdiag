@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class StrictProviderOutput(BaseModel):
@@ -49,6 +49,20 @@ class FAQItem(StrictProviderOutput):
 
 class FAQStudioOutput(StrictProviderOutput):
     items: list[FAQItem] = Field(min_length=3, max_length=10)
+
+
+class AltTextOutput(StrictProviderOutput):
+    alt_text: str = Field(max_length=300)
+    decorative: bool
+    rationale: str = Field(min_length=1, max_length=500)
+
+    @model_validator(mode="after")
+    def enforce_decorative_invariant(self):
+        if self.decorative and self.alt_text:
+            raise ValueError("decorative image alt text must be empty")
+        if not self.decorative and not self.alt_text:
+            raise ValueError("informative image alt text must not be empty")
+        return self
 
 
 class SchemaProperty(StrictProviderOutput):

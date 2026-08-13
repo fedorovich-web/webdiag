@@ -216,6 +216,19 @@ def run_one_ai_job(
         if lease_renew_interval_seconds is not None
         else float(os.getenv("WEBDIAG_AI_LEASE_RENEW_INTERVAL_SECONDS", "300"))
     )
+    prepare = getattr(provider, "prepare", None)
+    if callable(prepare):
+        try:
+            claim = prepare(claim)
+        except KnownSafeProviderError:
+            _fail(claim.run_id, lease_token, "ai_input_unavailable", "known_safe")
+            return True
+        except ProviderOutcomeUnknownError:
+            _fail(claim.run_id, lease_token, "ai_input_outcome_unknown", "provider_unknown")
+            return True
+        except Exception:
+            _fail(claim.run_id, lease_token, "ai_input_outcome_unknown", "provider_unknown")
+            return True
     _validate_contract(
         _request_json(
             "POST",

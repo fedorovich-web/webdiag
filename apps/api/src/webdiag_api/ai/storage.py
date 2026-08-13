@@ -1024,6 +1024,13 @@ class SqliteAIStore:
                     attempt["attempt_number"],
                 ),
             )
+            connection.execute(
+                """
+                UPDATE ai_uploads SET deletion_state = 'pending'
+                WHERE bound_run_id = ? AND deletion_state = 'available'
+                """,
+                (run_id,),
+            )
             row = connection.execute("SELECT * FROM ai_runs WHERE id = ?", (run_id,)).fetchone()
             connection.execute("COMMIT")
         return self._run(row)
@@ -1083,6 +1090,13 @@ class SqliteAIStore:
                 WHERE run_id = ? AND attempt_number = ?
                 """,
                 (current, run_id, attempt["attempt_number"]),
+            )
+            connection.execute(
+                """
+                UPDATE ai_uploads SET deletion_state = 'pending'
+                WHERE bound_run_id = ? AND deletion_state = 'available'
+                """,
+                (run_id,),
             )
             row = connection.execute("SELECT * FROM ai_runs WHERE id = ?", (run_id,)).fetchone()
             connection.execute("COMMIT")
