@@ -93,7 +93,7 @@ export function isAccountProject(value: unknown): value is AccountProject {
     && string(value.created_at) && string(value.updated_at);
 }
 
-function isSummary(value: unknown): value is SavedAuditSummary {
+export function isSavedAuditSummary(value: unknown): value is SavedAuditSummary {
   return record(value)
     && only(value, [
       "id", "project_id", "status", "score", "check_count", "issue_count",
@@ -151,13 +151,13 @@ export function isAccountProjectDetailResponse(value: unknown): value is Account
   return record(value) && only(value, ["contract_version", "project", "saved_audits"])
     && value.contract_version === "webdiag.account.project_detail.v1"
     && isAccountProject(value.project) && Array.isArray(value.saved_audits)
-    && value.saved_audits.every(isSummary);
+    && value.saved_audits.every(isSavedAuditSummary);
 }
 
 export function isSavedAuditDetailResponse(value: unknown): value is SavedAuditDetailResponse {
   return record(value) && only(value, ["contract_version", "project", "audit", "payload"])
     && value.contract_version === "webdiag.account.saved_audit_detail.v1"
-    && isAccountProject(value.project) && isSummary(value.audit) && isPayload(value.payload)
+    && isAccountProject(value.project) && isSavedAuditSummary(value.audit) && isPayload(value.payload)
     && value.audit.project_id === value.project.id
     && value.audit.check_count === value.payload.checks.length
     && value.audit.issue_count === value.payload.issues.length

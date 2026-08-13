@@ -56,6 +56,11 @@ function record(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
+function only(value: Record<string, unknown>, keys: readonly string[]): boolean {
+  const actual = Object.keys(value);
+  return actual.length === keys.length && actual.every((key) => keys.includes(key));
+}
+
 function string(value: unknown): value is string {
   return typeof value === "string";
 }
@@ -73,6 +78,11 @@ const statuses = new Set(["pending", "running", "passed", "changed", "failed"]);
 
 export function isAccountMonitor(value: unknown): value is AccountMonitor {
   return record(value)
+    && only(value, [
+      "contract_version", "id", "project_id", "cadence", "timezone", "enabled",
+      "status", "next_run_at", "last_run_at", "consecutive_failures", "created_at",
+      "updated_at",
+    ])
     && value.contract_version === "webdiag.account.monitor.v1"
     && string(value.id) && string(value.project_id) && cadences.has(String(value.cadence))
     && string(value.timezone) && typeof value.enabled === "boolean"
