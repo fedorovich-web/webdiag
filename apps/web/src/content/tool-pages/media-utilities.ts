@@ -375,6 +375,50 @@ export const mediaUtilityToolPages = [
     ],
   }),
   toolPage({
+    slug: "qr-code-generator",
+    seoTitle: { ru: "Генератор и чтение QR-кодов", en: "QR Code Workbench" },
+    metaDescription: { ru: "Создавайте QR-коды из текста и читайте один QR-код из локального JPEG, PNG, WebP или AVIF без загрузки файла.", en: "Generate QR codes from text and read one QR code from a local JPEG, PNG, WebP, or AVIF without uploading the file." },
+    h1: { ru: "Генератор и чтение QR-кодов", en: "QR Code Workbench" },
+    lead: { ru: "Создайте PNG с выбранным уровнем коррекции или прочитайте текст из локального изображения. Результат не открывается автоматически.", en: "Create a PNG with the selected error-correction level or read text from a local image. Decoded content is never opened automatically." },
+    quickFacts: [
+      { ru: "До 2 000 символов", en: "Up to 2,000 characters" },
+      { ru: "PNG 256–512 px", en: "256–512 px PNG" },
+      { ru: "Локальная обработка", en: "Local processing" },
+    ],
+    howToSteps: [
+      { ru: "Введите текст, выберите коррекцию ошибок и размер PNG.", en: "Enter text, choose error correction, and select the PNG size." },
+      { ru: "Создайте и скачайте QR-код либо выберите локальное изображение.", en: "Generate and download the QR code or choose a local image." },
+      { ru: "Прочитайте результат и проверьте текст перед использованием.", en: "Read the result and inspect the text before using it." },
+    ],
+    supportedFeatures: [
+      { ru: "Уровни коррекции L, M, Q и H и quiet zone в четыре модуля.", en: "L, M, Q, and H error-correction levels with a four-module quiet zone." },
+      { ru: "UTF-8 text, PNG export и чтение одного QR-кода из raster image.", en: "UTF-8 text, PNG export, and reading one QR code from a raster image." },
+      { ru: "JPEG, PNG, WebP и AVIF при поддержке декодирования браузером.", en: "JPEG, PNG, WebP, and AVIF when the browser can decode the format." },
+    ],
+    limitations: [
+      { ru: "Камера, пакетное чтение, barcode formats и проверка безопасности URL не поддерживаются.", en: "Camera scanning, batch reading, barcode formats, and URL safety validation are not included." },
+      { ru: "Фактическая ёмкость зависит от текста и уровня коррекции; неподходящее содержимое возвращает ошибку.", en: "Actual capacity depends on content and error correction; content that does not fit returns an error." },
+    ],
+    useCases: [
+      { ru: "Передать короткий URL или текст между устройствами.", en: "Transfer a short URL or text between devices." },
+      { ru: "Подготовить QR PNG для ручной вставки в документ.", en: "Prepare a QR PNG for manual placement in a document." },
+      { ru: "Проверить содержимое QR-кода из локального скриншота.", en: "Inspect QR content from a local screenshot." },
+    ],
+    technicalNotes: [
+      { ru: "QR matrix создаётся локально и растеризуется в Canvas PNG с чёрными и белыми модулями.", en: "The QR matrix is generated locally and rasterized into a black-and-white Canvas PNG." },
+      { ru: "Изображение декодируется в RGBA pixels; найденный текст показывается только в read-only textarea.", en: "The image is decoded to RGBA pixels; found text is shown only in a read-only textarea." },
+    ],
+    faq: [
+      { question: { ru: "Инструмент открывает найденную ссылку?", en: "Does the tool open a decoded link?" }, answer: { ru: "Нет. Любое содержимое остаётся обычным текстом и требует ручной проверки.", en: "No. All decoded content remains plain text and requires manual inspection." } },
+      { question: { ru: "Файл отправляется на сервер?", en: "Is the image uploaded?" }, answer: { ru: "Нет. Генерация, декодирование и PNG export выполняются локально в браузере.", en: "No. Generation, decoding, and PNG export happen locally in the browser." } },
+    ],
+    relatedToolSlugs: ["image-data-uri-converter", "image-optimizer", "responsive-image-srcset-generator"],
+    sourceUrls: [
+      "https://github.com/paulmillr/qr",
+      "https://developer.mozilla.org/docs/Web/API/Canvas_API",
+    ],
+  }),
+  toolPage({
     slug: "image-data-uri-converter",
     seoTitle: { ru: "Data URI и PNG placeholder для изображения", en: "Image Data URI Workbench" },
     metaDescription: { ru: "Создайте точный Data URI для JPEG, PNG, WebP или AVIF до 1 МиБ и отдельный PNG placeholder до 24 px локально в браузере.", en: "Create an exact Data URI for a JPEG, PNG, WebP, or AVIF up to 1 MiB and a separate PNG placeholder up to 24 px locally in your browser." },

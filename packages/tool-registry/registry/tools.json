@@ -1772,8 +1772,11 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Создаёт QR-код из bounded text и читает один QR-код из локального JPEG, PNG, WebP или AVIF без загрузки файла на сервер.",
+      "en": "Generates a QR code from bounded text and reads one QR code from a local JPEG, PNG, WebP, or AVIF without uploading the file."
+    }
   },
   {
     "id": "WD-100",

@@ -30,8 +30,8 @@ def test_public_tools_are_limited_to_ready_entries() -> None:
     response = asyncio.run(get("/v1/tools"))
     assert response.status_code == 200
     payload = response.json()
-    assert payload["count"] == 108
-    assert len(payload["items"]) == 108
+    assert payload["count"] == 109
+    assert len(payload["items"]) == 109
 
 
 async def call_asgi(

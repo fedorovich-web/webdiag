@@ -1355,6 +1355,49 @@ The subsequent root workspace gate also confirmed that shipped declarations
 stay within the self-hosted Manrope 400–700 range. The palette hex label now
 uses the loaded 700 weight rather than requesting synthetic 750 weight.
 
+## A10.41 browser-local QR code workbench
+
+Fresh affected-package verification on 2026-08-13:
+
+```text
+registry
+PASS — 125 total / 109 ready / 16 internal
+
+web unit tests
+PASS — 387/387
+
+workspace tests
+PASS — 49/49
+
+Python tests
+PASS — 531/531
+
+browser tests
+PASS — 65/65 after both expected catalog baselines were inspected and updated
+
+production build
+PASS — 259 pages; 224 public routes; 222 localized HTML routes
+
+dependency audit
+PASS — qr@0.6.0 has zero runtime dependencies; npm audit reports 0 known vulnerabilities
+
+ESLint / TypeScript / git diff
+PASS — no errors; one pre-existing site-brand img warning; diff check clean
+```
+
+WD-099 now combines bounded QR generation and local raster decoding. It accepts
+at most 2,000 characters and 2,953 UTF-8 bytes, creates a 256–512 pixel PNG with
+four error-correction levels, and reads one QR symbol from a signature-checked
+JPEG, PNG, WebP, or AVIF up to 5 MiB and 25 million pixels. WD-101 remains
+internal because a separate decoder would duplicate this workflow.
+
+Unit coverage includes a real encoder/decoder round trip. Browser coverage
+decodes the generated PNG, proves script-like payloads remain inert text, proves
+the payload is not uploaded, and checks RU dark mode at 390 pixels. Desktop and
+mobile screenshots were inspected before the two catalog baselines were
+updated. No camera, automatic navigation, provider call, release, or deployment
+was added.
+
 ## A12.1e final grounded text contracts
 
 Fresh backend verification on 2026-08-13:

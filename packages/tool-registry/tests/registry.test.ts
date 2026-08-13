@@ -39,4 +39,11 @@ describe("tool registry", () => {
     expect(tool?.description?.en).toContain("1 MiB");
     expect(tools.find((item) => item.slug === "image-placeholder-generator")?.state).toBe("internal");
   });
+
+  it("publishes one bounded QR code workbench", () => {
+    const tool = tools.find((item) => item.slug === "qr-code-generator");
+    expect(tool?.state).toBe("ready");
+    expect(tool?.description?.en).toContain("reads");
+    expect(tools.find((item) => item.slug === "qr-code-decoder")?.state).toBe("internal");
+  });
 });

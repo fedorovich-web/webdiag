@@ -458,6 +458,10 @@ textarea { resize: vertical; }
 .data-uri-results .result-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .data-uri-results .result-heading h3 { min-width: 0; margin: 0; }
 .data-uri-results .output { width: 100%; min-height: 112px; resize: vertical; }
+.qr-result { display: grid; gap: 12px; justify-items: start; }
+.qr-result canvas { width: min(100%, 384px); height: auto; border: 1px solid var(--line); border-radius: var(--radius-md); background: #fff; image-rendering: pixelated; }
+.qr-workbench .result-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.qr-workbench .result-heading h3 { margin: 0; }
 .form-error { grid-column: 1 / -1; margin: 0; color: var(--danger); font-weight: 700; }
 .calculated-value { margin: 0; font-size: 30px; font-weight: 700; letter-spacing: -0.035em; }
 .contrast-preview { min-height: 150px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: var(--radius-md); padding: 20px; font-size: 23px; font-weight: 700; }
