@@ -546,7 +546,6 @@
   }
 }
 
-/* A11.3 — persisted audit issues and deterministic priorities */
 .wd-account-issues-page,
 .wd-issue-detail-page {
   display: grid;
@@ -856,6 +855,367 @@
 
   .wd-report-actions > * {
     grid-column: 1;
+  }
+}
+
+.wd-account-workspace-page .wd-account-issues-page,
+.wd-account-workspace-page .wd-issue-detail-page {
+  gap: 18px;
+}
+
+.wd-account-workspace-page .wd-account-issues-page > .wd-account-section-head,
+.wd-account-workspace-page .wd-issue-detail-page > .wd-account-section-head {
+  min-height: 180px;
+  align-items: flex-end;
+  padding: 28px;
+  border: 1px solid var(--wd-account-border);
+  border-radius: var(--wd-account-radius);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--brand-soft) 54%, var(--surface)) 0%, var(--surface) 64%);
+  box-shadow: var(--shadow-sm);
+}
+
+.wd-account-workspace-page .wd-account-section-head h1 {
+  max-width: 760px;
+  margin: 8px 0 10px;
+  font-size: clamp(28px, 3vw, 42px);
+  letter-spacing: -.035em;
+}
+
+.wd-account-workspace-page .wd-account-section-head p {
+  max-width: 720px;
+  margin: 0;
+  color: var(--text-soft);
+  line-height: 1.65;
+}
+
+.wd-account-workspace-page .wd-issue-result-count {
+  min-width: 86px;
+  display: grid;
+  gap: 2px;
+  padding: 13px 16px;
+  border: 1px solid color-mix(in srgb, var(--brand) 20%, var(--line));
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--brand-soft) 44%, var(--surface));
+  box-shadow: none;
+  color: var(--text);
+  text-align: left;
+}
+
+.wd-account-workspace-page .wd-issue-result-count span {
+  font-size: 24px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.wd-account-workspace-page .wd-issue-result-count small {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.wd-issue-filter-panel {
+  padding: 20px;
+  border: 1px solid var(--wd-account-border);
+  border-radius: var(--wd-account-radius);
+  background: var(--wd-account-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.wd-issue-filter-heading,
+.wd-issue-card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.wd-issue-filter-heading {
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.wd-issue-filter-heading h2,
+.wd-issue-card-heading h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.wd-issue-filter-heading p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.wd-issue-reset {
+  min-height: 44px;
+  padding: 9px 13px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-muted);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.wd-account-workspace-page .wd-issue-filters {
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.wd-account-workspace-page .wd-issue-filters label {
+  gap: 6px;
+  color: var(--muted);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.wd-account-workspace-page .wd-issue-filters select {
+  min-height: 46px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-muted);
+  box-shadow: none;
+  color: var(--text);
+  font-weight: 700;
+  text-transform: none;
+}
+
+.wd-issue-refreshing {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.wd-account-workspace-page .wd-priority-issue-list {
+  gap: 10px;
+}
+
+.wd-account-workspace-page .wd-priority-issue-list article {
+  position: relative;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 16px;
+  padding: 20px;
+  overflow: hidden;
+  border: 1px solid var(--wd-account-border);
+  border-left: 3px solid var(--brand);
+  border-radius: var(--wd-account-radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.wd-account-workspace-page .wd-priority-issue-list article[data-priority="p0"] {
+  border-left-color: var(--danger);
+}
+
+.wd-account-workspace-page .wd-priority-issue-list article[data-priority="p1"] {
+  border-left-color: var(--warning);
+}
+
+.wd-account-workspace-page .wd-priority-issue-list article[data-priority="p3"] {
+  border-left-color: var(--muted);
+}
+
+.wd-account-workspace-page .wd-priority-order {
+  width: 44px;
+  height: 44px;
+  border: 1px solid color-mix(in srgb, var(--brand) 24%, var(--line));
+  background: color-mix(in srgb, var(--brand-soft) 52%, var(--surface));
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.wd-account-workspace-page .wd-priority-meta {
+  gap: 6px;
+}
+
+.wd-account-workspace-page .wd-priority-meta span {
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  background: var(--surface-muted);
+  color: var(--muted);
+  font-size: 9px;
+  letter-spacing: .03em;
+}
+
+.wd-account-workspace-page .wd-priority-meta .wd-priority-label {
+  border-color: color-mix(in srgb, var(--brand) 20%, var(--line));
+  background: color-mix(in srgb, var(--brand-soft) 42%, var(--surface));
+  color: var(--text);
+}
+
+.wd-account-workspace-page .wd-priority-issue-list h2 {
+  margin: 12px 0 7px;
+  font-size: clamp(18px, 2vw, 23px);
+  letter-spacing: -.02em;
+}
+
+.wd-account-workspace-page .wd-priority-issue-list h2 a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.wd-account-workspace-page .wd-priority-issue-list h2 a:hover {
+  color: var(--brand-strong);
+}
+
+.wd-account-workspace-page .wd-priority-issue-list article > div > p {
+  max-width: 760px;
+  margin: 0;
+  color: var(--text-soft);
+  line-height: 1.6;
+}
+
+.wd-issue-next-action {
+  display: grid;
+  gap: 4px;
+  margin-top: 15px;
+  padding-top: 13px;
+  border-top: 1px solid var(--line);
+}
+
+.wd-issue-next-action span {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.wd-issue-next-action strong {
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.wd-account-workspace-page .wd-issue-detail-page > .wd-account-card {
+  margin: 0;
+  padding: 22px;
+  border: 1px solid var(--wd-account-border);
+  border-radius: var(--wd-account-radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.wd-issue-impact,
+.wd-issue-recommendation,
+.wd-issue-affected {
+  display: grid;
+  gap: 10px;
+}
+
+.wd-account-workspace-page .wd-issue-detail-page h2 {
+  margin: 0;
+  font-size: 19px;
+}
+
+.wd-account-workspace-page .wd-issue-detail-page :is(p, ol, ul) {
+  margin-block: 0;
+}
+
+.wd-account-workspace-page .wd-issue-detail-page :is(p, li) {
+  color: var(--text-soft);
+  line-height: 1.65;
+}
+
+.wd-account-workspace-page .wd-issue-recommendation ol {
+  display: grid;
+  gap: 8px;
+  padding-left: 22px;
+}
+
+.wd-issue-card-heading > strong {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.wd-account-workspace-page .wd-affected-url-list {
+  padding: 0;
+  list-style: none;
+}
+
+.wd-account-workspace-page .wd-affected-url-list li {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface-muted);
+}
+
+.wd-account-workspace-page .wd-affected-url-list code,
+.wd-account-workspace-page .wd-issue-facts code {
+  overflow-wrap: anywhere;
+  color: var(--text);
+}
+
+.wd-account-workspace-page .wd-issue-expert {
+  padding: 0;
+}
+
+.wd-account-workspace-page .wd-issue-expert > summary {
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  padding: 0 22px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.wd-account-workspace-page .wd-issue-expert[open] > summary {
+  border-bottom: 1px solid var(--line);
+}
+
+.wd-account-workspace-page .wd-issue-expert .wd-issue-facts {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 18px 22px 22px;
+}
+
+.wd-account-workspace-page .wd-issue-facts div {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+@media (max-width: 900px) {
+  .wd-account-workspace-page .wd-issue-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .wd-account-workspace-page .wd-account-issues-page > .wd-account-section-head,
+  .wd-account-workspace-page .wd-issue-detail-page > .wd-account-section-head {
+    min-height: 0;
+    align-items: stretch;
+    padding: 20px;
+  }
+
+  .wd-account-workspace-page .wd-issue-filters,
+  .wd-account-workspace-page .wd-issue-expert .wd-issue-facts {
+    grid-template-columns: 1fr;
+  }
+
+  .wd-account-workspace-page .wd-priority-issue-list article {
+    grid-template-columns: 1fr;
+    padding: 18px;
+  }
+
+  .wd-account-workspace-page .wd-priority-order {
+    width: 40px;
+    height: 40px;
+  }
+
+  .wd-issue-filter-heading,
+  .wd-issue-card-heading {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 

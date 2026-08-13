@@ -8,6 +8,11 @@ import {
   getAccountIssue,
   type AccountIssueDetailResponse,
 } from "./account-issues-contract";
+import {
+  formatAffectedUrlCount,
+  issueCategoryLabel,
+  issuePriorityLabel,
+} from "./account-issues-presentation";
 import { savedAuditIssuesPath } from "../../lib/routes";
 
 export function AccountIssueDetail({
@@ -54,17 +59,18 @@ export function AccountIssueDetail({
       </nav>
       <header className="wd-account-section-head">
         <div>
-          <span className="eyebrow">#{issue.fix_order} · {issue.priority.toUpperCase()}</span>
+          <span className="eyebrow">#{issue.fix_order} · {issuePriorityLabel(locale, issue.priority)}</span>
           <h1>{issue.title}</h1>
-          <p>{issue.description}</p>
+          <p>{issueCategoryLabel(locale, issue.category)} · {formatAffectedUrlCount(locale, issue.affected_urls.length)}</p>
         </div>
       </header>
-      <dl className="wd-issue-facts">
-        <div><dt>{ru ? "Категория" : "Category"}</dt><dd>{issue.category}</dd></div>
-        <div><dt>{ru ? "Критичность" : "Severity"}</dt><dd>{issue.severity}</dd></div>
-        <div><dt>{ru ? "Источник" : "Source"}</dt><dd>{issue.source_category}</dd></div>
-      </dl>
-      <section className="wd-account-card">
+      <section className="wd-account-card wd-issue-impact">
+        <span className="eyebrow">{ru ? "Почему это важно" : "Why this matters"}</span>
+        <h2>{ru ? "Что обнаружено" : "What was found"}</h2>
+        <p>{issue.description}</p>
+      </section>
+      <section className="wd-account-card wd-issue-recommendation">
+        <span className="eyebrow">{ru ? "Рекомендация из аудита" : "Recommendation from the audit"}</span>
         <h2>{ru ? "Что исправить" : "What to fix"}</h2>
         <p><strong>{issue.recommendation.summary}</strong></p>
         {issue.recommendation.steps.length > 0 && (
@@ -74,14 +80,27 @@ export function AccountIssueDetail({
           <p><strong>{ru ? "Ожидаемый эффект:" : "Expected impact:"}</strong> {issue.recommendation.expected_impact}</p>
         )}
       </section>
-      {issue.affected_urls.length > 0 && (
-        <section className="wd-account-card">
+      <section className="wd-account-card wd-issue-affected">
+        <div className="wd-issue-card-heading">
           <h2>{ru ? "Затронутые страницы" : "Affected pages"}</h2>
+          <strong>{formatAffectedUrlCount(locale, issue.affected_urls.length)}</strong>
+        </div>
+        {issue.affected_urls.length > 0 ? (
           <ul className="wd-affected-url-list">
             {issue.affected_urls.map((url) => <li key={url}><code>{url}</code></li>)}
           </ul>
-        </section>
-      )}
+        ) : <p>{ru ? "В сохранённом результате страницы не указаны." : "No pages are listed in the saved result."}</p>}
+      </section>
+      <details className="wd-account-card wd-issue-expert">
+        <summary>{ru ? "Технические данные" : "Technical details"}</summary>
+        <dl className="wd-issue-facts">
+          <div><dt>{ru ? "Категория" : "Category"}</dt><dd>{issueCategoryLabel(locale, issue.category)}</dd></div>
+          <div><dt>{ru ? "Исходная категория" : "Source category"}</dt><dd><code>{issue.source_category}</code></dd></div>
+          <div><dt>{ru ? "Критичность" : "Severity"}</dt><dd><code>{issue.severity}</code></dd></div>
+          <div><dt>{ru ? "ID проверки" : "Check ID"}</dt><dd><code>{issue.check_id ?? (ru ? "не указан" : "not provided")}</code></dd></div>
+          <div><dt>{ru ? "ID проблемы" : "Issue ID"}</dt><dd><code>{issue.issue_id}</code></dd></div>
+        </dl>
+      </details>
     </article>
   );
 }

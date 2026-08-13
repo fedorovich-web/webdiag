@@ -30,6 +30,7 @@ interface AccountWorkspaceShellProps {
   readonly locale: Locale;
   readonly section: AccountWorkspaceSection;
   readonly currentProjectId?: string;
+  readonly currentAuditId?: string;
   readonly children?: ReactNode;
 }
 
@@ -128,6 +129,7 @@ export function AccountWorkspaceShell({
   locale,
   section,
   currentProjectId,
+  currentAuditId,
   children,
 }: AccountWorkspaceShellProps) {
   const ru = locale === "ru";
@@ -291,7 +293,7 @@ export function AccountWorkspaceShell({
     section,
     projects,
     currentProjectId,
-    latestAuditId: overview?.projects.find(
+    latestAuditId: currentAuditId ?? overview?.projects.find(
       (item) => item.project.id === currentProjectId,
     )?.latest_audit?.id,
   };

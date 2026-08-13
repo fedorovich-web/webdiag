@@ -334,15 +334,28 @@ test.describe("account workspace", () => {
     });
 
     await page.goto(`/account/projects/${firstProject.id}/audits/${auditId}/issues`);
-    await expect(page.getByRole("heading", { level: 1, name: "Проблемы и приоритеты" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Очередь исправлений" })).toBeVisible();
+    await expect(page.getByRole("article").getByText("P0 — исправить первым")).toBeVisible();
+    await expect(page.getByText("1 страница")).toBeVisible();
+    await expect(page.getByText("Следующее действие")).toBeVisible();
     await expect(page.getByRole("link", { name: issue.title })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Проблемы", exact: true })).toHaveAttribute("aria-current", "page");
     await page.locator(".wd-issue-filters label").filter({ hasText: /^Категория/ }).locator("select").selectOption("security");
     await expect.poll(() => filteredRequest).toContain("category=security");
+    await expect(page.getByRole("button", { name: "Сбросить" })).toBeVisible();
 
     await page.getByRole("link", { name: issue.title }).click();
     await expect(page.getByRole("heading", { level: 1, name: issue.title })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Что обнаружено" })).toBeVisible();
+    await expect(page.getByText(issue.description)).toBeVisible();
     await expect(page.getByText("Configure the required headers.")).toBeVisible();
     await expect(page.getByText("https://example.com/")).toBeVisible();
+    await expect(page.getByText("critical", { exact: true })).toBeHidden();
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.getByText("Технические данные").click();
+    await expect(page.getByText("critical", { exact: true })).toBeVisible();
+    await expect(page.getByText(issue.issue_id, { exact: true })).toBeVisible();
   });
 
 });
