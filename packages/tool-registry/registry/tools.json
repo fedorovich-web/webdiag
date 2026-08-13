@@ -99,6 +99,7 @@
     "access": "none",
     "implementationWave": "W2",
     "state": "internal",
+    "supersededBy": "open-graph-preview",
     "description": null
   },
   {

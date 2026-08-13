@@ -20,6 +20,7 @@ microtools indistinguishable from real crawler and Chromium capability gaps.
 
 ## Initial Verified Mappings
 
+- `twitter-card-preview` -> `open-graph-preview`
 - `csv-validator` -> `csv-json-converter`
 - `cron-parser` -> `cron-expression-workbench`
 - `url-parser` -> `url-normalization-analyzer`
@@ -27,5 +28,5 @@ microtools indistinguishable from real crawler and Chromium capability gaps.
 - `image-metadata-remover` -> `image-metadata-viewer`
 - `image-placeholder-generator` -> `image-data-uri-converter`
 
-The nine remaining internal crawler and Chromium definitions continue to block public
+The eight remaining internal crawler and Chromium definitions continue to block public
 release.
