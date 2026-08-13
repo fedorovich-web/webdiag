@@ -13,6 +13,7 @@ from webdiag_worker.ai import (
     ProviderRequest,
 )
 from webdiag_worker.openrouter_provider import OpenRouterProvider
+import webdiag_worker.openrouter_provider as openrouter_provider
 from webdiag_worker.image_output import normalize_generated_image
 
 
@@ -366,6 +367,52 @@ def test_image_provider_rejects_invalid_success_without_retry(payload: dict[str,
                 },
             )
         )
+    assert calls == 1
+
+
+@pytest.mark.parametrize(
+    ("tool_id", "model", "input_value", "limit_name"),
+    (
+        (
+            "ai_meta_serp_studio",
+            "openai/gpt-5.6-luna",
+            None,
+            "_CHAT_RESPONSE_MAX_BYTES",
+        ),
+        (
+            "ai_image_studio",
+            "openai/gpt-image-2",
+            {
+                "locale": "en",
+                "prompt": "A bounded image generation prompt.",
+                "aspect_ratio": "auto",
+                "quality": "medium",
+                "background": "opaque",
+            },
+            "_IMAGE_RESPONSE_MAX_BYTES",
+        ),
+    ),
+)
+def test_provider_rejects_oversized_success_response_before_json_parsing(
+    monkeypatch: pytest.MonkeyPatch,
+    tool_id: str,
+    model: str,
+    input_value: dict[str, object] | None,
+    limit_name: str,
+) -> None:
+    monkeypatch.setattr(openrouter_provider, limit_name, 32)
+    calls = 0
+
+    def handler(_request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        return httpx.Response(200, content=b'{"padding":"' + b"x" * 64 + b'"}')
+
+    with pytest.raises(ProviderOutcomeUnknownError):
+        _provider(handler, artifact_storage=FakeArtifactStorage(b"")).execute(
+            _request(tool_id, model=model, input_value=input_value)
+        )
+
     assert calls == 1
 
 

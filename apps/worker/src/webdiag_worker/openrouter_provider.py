@@ -48,6 +48,9 @@ class _ToolPolicy:
 _MODEL = "openai/gpt-5.6-luna"
 _OPENROUTER_CHAT_URL = "https://openrouter.ai/api/v1/chat/completions"
 _OPENROUTER_IMAGE_URL = "https://openrouter.ai/api/v1/images"
+_CHAT_RESPONSE_MAX_BYTES = 2 * 1024 * 1024
+_IMAGE_RESPONSE_MAX_BYTES = 6 * 1024 * 1024
+_RESPONSE_CHUNK_BYTES = 64 * 1024
 _IMAGE_MODEL = "openai/gpt-image-2"
 _IMAGE_TOOL_IDS = frozenset({"ai_image_studio", "ai_image_edit_studio"})
 _TOOL_POLICIES = {
@@ -265,9 +268,9 @@ class OpenRouterProvider:
         ):
             raise KnownSafeProviderError("AI provider request was rejected locally")
         try:
-            response = self._client.post(
+            status_code, response_content = self._post_bounded(
                 _OPENROUTER_CHAT_URL,
-                json={
+                payload={
                     "model": policy.model,
                     "messages": _messages(request, policy),
                     "response_format": {
@@ -289,15 +292,16 @@ class OpenRouterProvider:
                         "zdr": True,
                     },
                 },
+                max_response_bytes=_CHAT_RESPONSE_MAX_BYTES,
             )
         except (httpx.TimeoutException, httpx.TransportError) as error:
             raise ProviderOutcomeUnknownError("AI provider outcome is unknown") from error
-        if response.status_code in _KNOWN_REJECTED_STATUS_CODES:
+        if status_code in _KNOWN_REJECTED_STATUS_CODES:
             raise KnownSafeProviderError("AI provider rejected the request")
-        if response.status_code != 200:
+        if status_code != 200 or response_content is None:
             raise ProviderOutcomeUnknownError("AI provider outcome is unknown")
         try:
-            body = response.json()
+            body = json.loads(response_content)
             parsed = _parsed_output(body, policy.output_model)
             provider_request_id = _provider_request_id(body)
             input_units, output_units = _provider_usage(body)
@@ -324,15 +328,19 @@ class OpenRouterProvider:
             raise KnownSafeProviderError("AI provider request was rejected locally")
         payload = _image_request_payload(request)
         try:
-            response = self._client.post(_OPENROUTER_IMAGE_URL, json=payload)
+            status_code, response_content = self._post_bounded(
+                _OPENROUTER_IMAGE_URL,
+                payload=payload,
+                max_response_bytes=_IMAGE_RESPONSE_MAX_BYTES,
+            )
         except (httpx.TimeoutException, httpx.TransportError) as error:
             raise ProviderOutcomeUnknownError("AI provider outcome is unknown") from error
-        if response.status_code in _KNOWN_REJECTED_STATUS_CODES:
+        if status_code in _KNOWN_REJECTED_STATUS_CODES:
             raise KnownSafeProviderError("AI provider rejected the request")
-        if response.status_code != 200:
+        if status_code != 200 or response_content is None:
             raise ProviderOutcomeUnknownError("AI provider outcome is unknown")
         try:
-            body = response.json()
+            body = json.loads(response_content)
             data, media_type = _image_output(body)
             normalized = normalize_generated_image(data, declared_media_type=media_type)
             input_units, output_units = _provider_usage(body)
@@ -371,6 +379,23 @@ class OpenRouterProvider:
             output_units=output_units,
             artifact=artifact,
         )
+
+    def _post_bounded(
+        self,
+        url: str,
+        *,
+        payload: dict[str, object],
+        max_response_bytes: int,
+    ) -> tuple[int, bytes | None]:
+        with self._client.stream("POST", url, json=payload) as response:
+            if response.status_code != 200:
+                return response.status_code, None
+            content = bytearray()
+            for chunk in response.iter_bytes(chunk_size=_RESPONSE_CHUNK_BYTES):
+                if len(content) + len(chunk) > max_response_bytes:
+                    raise ProviderOutcomeUnknownError("AI provider response is too large")
+                content.extend(chunk)
+            return response.status_code, bytes(content)
 
     def prepare(self, request: ProviderRequest) -> ProviderRequest:
         if request.tool_id not in {"ai_alt_text_studio", "ai_image_edit_studio"}:
