@@ -9,7 +9,7 @@ describe("tool registry", () => {
   });
 
   it("exposes only definitions backed by an implemented tool", () => {
-    expect(publicTools).toHaveLength(103);
+    expect(publicTools).toEqual(tools.filter((tool) => tool.state === "ready"));
     expect(publicTools.every((tool) => tool.description?.ru && tool.description.en)).toBe(true);
   });
 });
