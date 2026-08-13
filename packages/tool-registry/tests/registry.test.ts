@@ -12,4 +12,11 @@ describe("tool registry", () => {
     expect(publicTools).toEqual(tools.filter((tool) => tool.state === "ready"));
     expect(publicTools.every((tool) => tool.description?.ru && tool.description.en)).toBe(true);
   });
+
+  it("publishes the bounded browser-local favicon generator", () => {
+    const tool = tools.find((item) => item.slug === "favicon-generator");
+    expect(tool?.state).toBe("ready");
+    expect(tool?.description?.ru).toContain("PNG");
+    expect(tool?.description?.en).toContain("PNG");
+  });
 });

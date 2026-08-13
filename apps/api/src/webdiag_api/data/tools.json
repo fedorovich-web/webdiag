@@ -234,10 +234,13 @@
     "category": "seo-audit",
     "executorClass": "safe_fetch",
     "riskTier": "R2",
-    "access": "optional",
+    "access": "none",
     "implementationWave": "W3",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет HTTP-статусы и редиректы для списка до 50 URL через безопасный WebDiag API с отдельным результатом для каждого адреса.",
+      "en": "Checks HTTP statuses and redirects for up to 50 URLs through the safe WebDiag API with an isolated result for each address."
+    }
   },
   {
     "id": "WD-015",
@@ -1748,8 +1751,11 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Создаёт пять PNG favicon и web app icon файлов из центральной квадратной области одного JPEG, PNG, WebP или AVIF локально в браузере.",
+      "en": "Creates five PNG favicon and web app icon files from the centered square crop of one JPEG, PNG, WebP, or AVIF locally in the browser."
+    }
   },
   {
     "id": "WD-099",

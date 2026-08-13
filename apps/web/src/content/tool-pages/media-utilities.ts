@@ -330,4 +330,48 @@ export const mediaUtilityToolPages = [
     relatedToolSlugs: ["image-optimizer", "image-format-converter", "add-watermark-to-image"],
     sourceUrls: ["https://developer.mozilla.org/docs/Web/API/Canvas_API"],
   }),
+  toolPage({
+    slug: "favicon-generator",
+    seoTitle: { ru: "Генератор PNG favicon и web app icons", en: "PNG Favicon and Web App Icon Generator" },
+    metaDescription: { ru: "Создайте пять PNG favicon и web app icons из центральной квадратной области JPEG, PNG, WebP или AVIF локально в браузере.", en: "Create five PNG favicon and web app icons from the centered square crop of a JPEG, PNG, WebP, or AVIF locally in your browser." },
+    h1: { ru: "Генератор PNG favicon и web app icons", en: "PNG Favicon and Web App Icon Generator" },
+    lead: { ru: "Подготовьте пять PNG-файлов и точные HTML/manifest фрагменты без серверной загрузки исходного изображения.", en: "Prepare five PNG files and exact HTML/manifest snippets without uploading the source image to a server." },
+    quickFacts: [
+      { ru: "5 PNG-файлов", en: "5 PNG files" },
+      { ru: "32–512 px", en: "32–512 px" },
+      { ru: "Локальная обработка", en: "Local processing" },
+    ],
+    howToSteps: [
+      { ru: "Выберите JPEG, PNG, WebP или AVIF.", en: "Choose a JPEG, PNG, WebP, or AVIF file." },
+      { ru: "Проверьте, подходит ли центральная квадратная область.", en: "Confirm that the centered square crop fits your composition." },
+      { ru: "Создайте файлы, скачайте их и скопируйте фрагменты подключения.", en: "Generate and download the files, then copy the integration snippets." },
+    ],
+    supportedFeatures: [
+      { ru: "favicon-32x32.png и favicon-48x48.png для favicon.", en: "favicon-32x32.png and favicon-48x48.png for favicon." },
+      { ru: "PNG 180 × 180 для apple-touch-icon.", en: "180 × 180 PNG for apple-touch-icon." },
+      { ru: "PNG 192 × 192 и 512 × 512 и manifest icons fragment.", en: "192 × 192 and 512 × 512 PNG files plus a manifest icons fragment." },
+    ],
+    limitations: [
+      { ru: "Инструмент не создаёт .ico, ZIP, SVG и maskable padding.", en: "The tool does not create .ico, ZIP, SVG, or maskable padding." },
+      { ru: "Используется только центральная квадратная область; автоматическая установка на сайт не выполняется.", en: "Only a centered square crop is used; the generated assets are not installed on a site automatically." },
+    ],
+    useCases: [
+      { ru: "Подготовка базового набора PNG favicon.", en: "Preparing a basic PNG favicon set." },
+      { ru: "Создание apple-touch-icon из квадратного логотипа.", en: "Creating an apple-touch-icon from a square logo." },
+      { ru: "Подготовка двух размеров web app icon для manifest.", en: "Preparing two web app icon sizes for a manifest." },
+    ],
+    technicalNotes: [
+      { ru: "Canvas drawImage применяет центральную квадратную обрезку и масштабирование.", en: "Canvas drawImage applies the centered square crop and scaling." },
+      { ru: "Каждый результат кодируется отдельно через Canvas PNG encoder браузера.", en: "Each result is encoded separately through the browser Canvas PNG encoder." },
+    ],
+    faq: [
+      { question: { ru: "Генератор создаёт favicon.ico?", en: "Does it create favicon.ico?" }, answer: { ru: "Нет. Текущий инструмент создаёт только пять явно перечисленных PNG-файлов.", en: "No. The current tool creates only the five explicitly listed PNG files; it does not create .ico." } },
+      { question: { ru: "Файл отправляется на сервер?", en: "Is the file uploaded?" }, answer: { ru: "Нет. Декодирование, обрезка и PNG-кодирование происходят в браузере.", en: "No. Decoding, cropping, and PNG encoding happen in the browser." } },
+    ],
+    relatedToolSlugs: ["favicon-checker", "image-cropper", "image-resizer"],
+    sourceUrls: [
+      "https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/rel/icon",
+      "https://developer.mozilla.org/docs/Web/Progressive_web_apps/Manifest/Reference/icons",
+    ],
+  }),
 ] as const;

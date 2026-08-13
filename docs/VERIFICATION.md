@@ -1,5 +1,42 @@
 # Verification Notes
 
+# A10.37 — browser-local favicon generator
+
+## Scope
+
+- promoted `WD-098` as `favicon-generator` with five fixed PNG outputs:
+  32 × 32, 48 × 48, 180 × 180, 192 × 192, and 512 × 512;
+- applies a documented centered square crop to one bounded JPEG, PNG, WebP, or
+  AVIF source entirely in the browser;
+- emits only the matching HTML and manifest snippets and does not claim ICO,
+  ZIP, SVG, maskable padding, deployment, or website validation;
+- added deterministic geometry/asset/snippet tests plus real desktop/mobile
+  browser generation and overflow coverage;
+- synchronized the API registry mirror with the already public
+  `bulk-http-status-checker` contract found during byte-parity verification;
+- public tool count is now 105; registry entry count remains 125.
+
+## Fresh verification
+
+```text
+registry verification                         PASS — 125 unique tools
+web targeted Vitest                           PASS — 15/15
+tool-registry Vitest                          PASS — 3/3
+API registry/API pytest                       PASS — 14/14
+affected ESLint                               PASS
+web TypeScript                                PASS
+production build                              PASS — 251 generated pages
+built-site verification                       PASS — 216 public routes / 214 HTML routes
+focused Playwright                            PASS — 8/8
+registry/API mirror byte parity               PASS
+git diff --check                              PASS
+temporary screenshot/debug hook search        PASS — absent
+```
+
+The browser test used the repository's local `logo.webp` as a controlled
+fixture. No marketplace, provider, OpenRouter, object-storage, payment, release,
+or deployment request was made.
+
 Patch scope: A10.36 HTML entity and bounded text diff tools. No commit or push was performed by the assistant.
 
 ## Scope

@@ -1751,8 +1751,11 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Создаёт пять PNG favicon и web app icon файлов из центральной квадратной области одного JPEG, PNG, WebP или AVIF локально в браузере.",
+      "en": "Creates five PNG favicon and web app icon files from the centered square crop of one JPEG, PNG, WebP, or AVIF locally in the browser."
+    }
   },
   {
     "id": "WD-099",

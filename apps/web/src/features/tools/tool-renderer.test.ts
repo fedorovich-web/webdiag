@@ -8,4 +8,8 @@ describe("tool renderer registry contract", () => {
     const supported = [...SUPPORTED_TOOL_SLUGS].sort();
     expect(supported).toEqual(ready);
   });
+
+  it("renders the favicon generator", () => {
+    expect(SUPPORTED_TOOL_SLUGS).toContain("favicon-generator");
+  });
 });

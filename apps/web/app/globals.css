@@ -463,6 +463,16 @@ textarea { resize: vertical; }
 .result-meta dt { color: var(--muted); font-size: 11px; font-weight: 600; }
 .result-meta dd { margin: 3px 0 0; font-weight: 700; }
 .muted-text { color: var(--muted); }
+.favicon-asset-grid { display: grid; gap: 10px; }
+.favicon-asset { min-width: 0; display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface-muted); }
+.favicon-asset img { width: 56px; height: 56px; object-fit: contain; image-rendering: auto; border-radius: 10px; background: repeating-conic-gradient(color-mix(in srgb, var(--line) 70%, transparent) 0 25%, transparent 0 50%) 50% / 12px 12px; }
+.favicon-asset div { min-width: 0; display: grid; gap: 3px; }
+.favicon-asset strong { overflow-wrap: anywhere; font-size: 12px; }
+.favicon-asset small { color: var(--muted); }
+.favicon-snippet { display: grid; gap: 10px; }
+.favicon-snippet-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.favicon-snippet-heading h3 { margin: 0; font-size: 13px; }
+.favicon-snippet .output { min-height: 0; max-height: 220px; }
 .check-field { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; }
 .check-field input { width: 18px; height: 18px; accent-color: var(--brand); }
 
@@ -518,6 +528,8 @@ textarea { resize: vertical; }
 }
 
 @media (max-width: 620px) {
+  .favicon-asset { grid-template-columns: 56px minmax(0, 1fr); }
+  .favicon-asset .button { grid-column: 1 / -1; width: 100%; }
   .shell { width: min(var(--shell), calc(100% - 24px)); }
   .header-inner { min-height: 66px; grid-template-columns: auto 1fr; gap: 10px; }
   .header-actions { justify-self: end; gap: 4px; }
