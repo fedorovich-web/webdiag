@@ -7,6 +7,7 @@ import sqlite3
 import threading
 import time
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -51,6 +52,15 @@ class AIRunStateError(RuntimeError):
 
 class AILeaseLostError(RuntimeError):
     pass
+
+
+class AIUploadQuotaError(RuntimeError):
+    pass
+
+
+class AIUploadUnavailableError(RuntimeError):
+    def __init__(self) -> None:
+        super().__init__("AI upload is unavailable")
 
 
 @dataclass(frozen=True, slots=True)
@@ -107,12 +117,44 @@ class StoredAIClaim:
     input_json: str
 
 
+@dataclass(frozen=True, slots=True)
+class StoredAIUpload:
+    id: str
+    user_id: str
+    object_key: str
+    media_type: str
+    byte_size: int
+    width: int
+    height: int
+    sha256: str
+    created_at: int
+    expires_at: int
+    bound_run_id: str | None
+    deletion_state: str
+    deleted_at: int | None
+
+
 class SqliteAIStore:
-    def __init__(self, database_path: str, *, lease_seconds: int = 900) -> None:
+    def __init__(
+        self,
+        database_path: str,
+        *,
+        lease_seconds: int = 900,
+        upload_ttl_seconds: int = 24 * 60 * 60,
+        upload_limit: int = 10,
+        clock_ns: Callable[[], int] = time.time_ns,
+    ) -> None:
         if not 60 <= lease_seconds <= 3600:
             raise ValueError("AI lease seconds must be between 60 and 3600")
+        if not 1 <= upload_ttl_seconds <= 7 * 24 * 60 * 60:
+            raise ValueError("AI upload TTL must be between 1 second and 7 days")
+        if not 1 <= upload_limit <= 100:
+            raise ValueError("AI upload limit must be between 1 and 100")
         self._path = Path(database_path)
         self._lease_seconds = lease_seconds
+        self._upload_ttl_ns = upload_ttl_seconds * 1_000_000_000
+        self._upload_limit = upload_limit
+        self._clock_ns = clock_ns
         self._schema_lock = threading.Lock()
         self._schema_ready = False
 
@@ -166,6 +208,31 @@ class SqliteAIStore:
                         ON ai_runs(user_id, created_at DESC, id DESC);
                     CREATE INDEX IF NOT EXISTS ai_runs_state_created_idx
                         ON ai_runs(state, created_at, id);
+                    CREATE TABLE IF NOT EXISTS ai_uploads (
+                        id TEXT PRIMARY KEY CHECK(length(id) = 36),
+                        user_id TEXT NOT NULL,
+                        object_key TEXT NOT NULL UNIQUE,
+                        media_type TEXT NOT NULL
+                            CHECK(media_type IN ('image/jpeg', 'image/png', 'image/webp')),
+                        byte_size INTEGER NOT NULL CHECK(byte_size BETWEEN 1 AND 4194304),
+                        width INTEGER NOT NULL CHECK(width BETWEEN 1 AND 8192),
+                        height INTEGER NOT NULL CHECK(height BETWEEN 1 AND 8192),
+                        sha256 TEXT NOT NULL CHECK(length(sha256) = 64),
+                        created_at INTEGER NOT NULL,
+                        expires_at INTEGER NOT NULL CHECK(expires_at > created_at),
+                        bound_run_id TEXT UNIQUE,
+                        deletion_state TEXT NOT NULL DEFAULT 'available'
+                            CHECK(deletion_state IN ('available', 'pending', 'deleted')),
+                        deleted_at INTEGER,
+                        CHECK(width * height <= 8000000),
+                        CHECK((deletion_state = 'deleted') = (deleted_at IS NOT NULL)),
+                        FOREIGN KEY(user_id) REFERENCES account_users(id) ON DELETE CASCADE,
+                        FOREIGN KEY(bound_run_id) REFERENCES ai_runs(id) ON DELETE CASCADE
+                    );
+                    CREATE INDEX IF NOT EXISTS ai_uploads_owner_active_idx
+                        ON ai_uploads(user_id, deletion_state, bound_run_id, expires_at);
+                    CREATE INDEX IF NOT EXISTS ai_uploads_cleanup_idx
+                        ON ai_uploads(deletion_state, expires_at, id);
                     CREATE TABLE IF NOT EXISTS ai_run_attempts (
                         run_id TEXT NOT NULL,
                         attempt_number INTEGER NOT NULL CHECK(attempt_number > 0),
@@ -312,7 +379,7 @@ class SqliteAIStore:
                 run_id=None,
                 correlation_id=normalized_correlation,
                 reason=normalized_reason,
-                created_at=time.time_ns(),
+                created_at=self._clock_ns(),
             )
             connection.execute(
                 """
@@ -358,6 +425,193 @@ class SqliteAIStore:
             return CreditAccount(user_id=user_id, available=0, reserved=0, version=0)
         return self._credit_account(row)
 
+    def create_upload(
+        self,
+        *,
+        user_id: str,
+        upload_id: str,
+        object_key: str,
+        media_type: str,
+        byte_size: int,
+        width: int,
+        height: int,
+        sha256: str,
+    ) -> StoredAIUpload:
+        self._validate_upload(
+            upload_id=upload_id,
+            object_key=object_key,
+            media_type=media_type,
+            byte_size=byte_size,
+            width=width,
+            height=height,
+            sha256=sha256,
+        )
+        self.ensure_schema()
+        now = self._clock_ns()
+        expires_at = now + self._upload_ttl_ns
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            user = connection.execute(
+                "SELECT id FROM account_users WHERE id = ?",
+                (user_id,),
+            ).fetchone()
+            if user is None:
+                connection.execute("ROLLBACK")
+                raise ValueError("account not found")
+            connection.execute(
+                """
+                UPDATE ai_uploads SET deletion_state = 'pending'
+                WHERE user_id = ? AND deletion_state = 'available'
+                    AND bound_run_id IS NULL AND expires_at <= ?
+                """,
+                (user_id, now),
+            )
+            active = connection.execute(
+                """
+                SELECT COUNT(*) FROM ai_uploads
+                WHERE user_id = ? AND deletion_state = 'available'
+                    AND bound_run_id IS NULL AND expires_at > ?
+                """,
+                (user_id, now),
+            ).fetchone()[0]
+            if int(active) >= self._upload_limit:
+                connection.execute("ROLLBACK")
+                raise AIUploadQuotaError("AI upload quota exceeded")
+            connection.execute(
+                """
+                INSERT INTO ai_uploads(
+                    id, user_id, object_key, media_type, byte_size, width, height,
+                    sha256, created_at, expires_at, deletion_state
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'available')
+                """,
+                (
+                    upload_id,
+                    user_id,
+                    object_key,
+                    media_type,
+                    byte_size,
+                    width,
+                    height,
+                    sha256,
+                    now,
+                    expires_at,
+                ),
+            )
+            row = connection.execute(
+                "SELECT * FROM ai_uploads WHERE id = ?",
+                (upload_id,),
+            ).fetchone()
+            connection.execute("COMMIT")
+        return self._upload(row)
+
+    def get_upload_for_user(self, *, user_id: str, upload_id: str) -> StoredAIUpload | None:
+        self.ensure_schema()
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM ai_uploads WHERE id = ? AND user_id = ?",
+                (upload_id, user_id),
+            ).fetchone()
+        return self._upload(row) if row is not None else None
+
+    def get_active_upload_for_user(
+        self,
+        *,
+        user_id: str,
+        upload_id: str,
+    ) -> StoredAIUpload | None:
+        self.ensure_schema()
+        with self._connect() as connection:
+            row = connection.execute(
+                """
+                SELECT * FROM ai_uploads
+                WHERE id = ? AND user_id = ? AND deletion_state = 'available'
+                    AND bound_run_id IS NULL AND expires_at > ?
+                """,
+                (upload_id, user_id, self._clock_ns()),
+            ).fetchone()
+        return self._upload(row) if row is not None else None
+
+    def get_upload(self, *, upload_id: str) -> StoredAIUpload | None:
+        self.ensure_schema()
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM ai_uploads WHERE id = ?",
+                (upload_id,),
+            ).fetchone()
+        return self._upload(row) if row is not None else None
+
+    def mark_upload_deletion_pending(self, *, user_id: str, upload_id: str) -> bool:
+        self.ensure_schema()
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            updated = connection.execute(
+                """
+                UPDATE ai_uploads SET deletion_state = 'pending'
+                WHERE id = ? AND user_id = ? AND deletion_state = 'available'
+                    AND bound_run_id IS NULL
+                """,
+                (upload_id, user_id),
+            )
+            if updated.rowcount == 1:
+                connection.execute("COMMIT")
+                return True
+            existing = connection.execute(
+                """
+                SELECT id FROM ai_uploads
+                WHERE id = ? AND user_id = ? AND deletion_state IN ('pending', 'deleted')
+                    AND bound_run_id IS NULL
+                """,
+                (upload_id, user_id),
+            ).fetchone()
+            connection.execute("COMMIT")
+        return existing is not None
+
+    def list_uploads_pending_deletion(self, *, limit: int) -> tuple[StoredAIUpload, ...]:
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 100:
+            raise ValueError("upload cleanup limit must be between 1 and 100")
+        self.ensure_schema()
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            connection.execute(
+                """
+                UPDATE ai_uploads SET deletion_state = 'pending'
+                WHERE deletion_state = 'available' AND bound_run_id IS NULL
+                    AND expires_at <= ?
+                """,
+                (self._clock_ns(),),
+            )
+            rows = connection.execute(
+                """
+                SELECT * FROM ai_uploads WHERE deletion_state = 'pending'
+                ORDER BY expires_at, id LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
+            connection.execute("COMMIT")
+        return tuple(self._upload(row) for row in rows)
+
+    def mark_upload_deleted(self, *, upload_id: str) -> bool:
+        self.ensure_schema()
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            updated = connection.execute(
+                """
+                UPDATE ai_uploads
+                SET deletion_state = 'deleted', deleted_at = ?
+                WHERE id = ? AND deletion_state = 'pending'
+                """,
+                (self._clock_ns(), upload_id),
+            )
+            if updated.rowcount == 1:
+                connection.execute("COMMIT")
+                return True
+            existing = connection.execute(
+                "SELECT id FROM ai_uploads WHERE id = ? AND deletion_state = 'deleted'",
+                (upload_id,),
+            ).fetchone()
+            connection.execute("COMMIT")
+        return existing is not None
+
     def create_run(
         self,
         *,
@@ -369,6 +623,7 @@ class SqliteAIStore:
         idempotency_key: str,
         input_json: str,
         input_sha256: str,
+        source_upload_id: str | None = None,
     ) -> tuple[StoredAIRun, bool]:
         self.ensure_schema()
         with self._connect() as connection:
@@ -382,10 +637,18 @@ class SqliteAIStore:
                 if run.tool_id != tool_id or run.input_sha256 != input_sha256:
                     connection.execute("ROLLBACK")
                     raise AIIdempotencyConflictError
+                bound_upload = connection.execute(
+                    "SELECT id FROM ai_uploads WHERE bound_run_id = ? AND user_id = ?",
+                    (run.id, user_id),
+                ).fetchone()
+                bound_upload_id = str(bound_upload["id"]) if bound_upload is not None else None
+                if bound_upload_id != source_upload_id:
+                    connection.execute("ROLLBACK")
+                    raise AIIdempotencyConflictError
                 connection.execute("COMMIT")
                 return run, False
             run_id = str(uuid.uuid4())
-            now = time.time_ns()
+            now = self._clock_ns()
             connection.execute(
                 """
                 INSERT INTO ai_runs(
@@ -407,6 +670,18 @@ class SqliteAIStore:
                     now,
                 ),
             )
+            if source_upload_id is not None:
+                bound = connection.execute(
+                    """
+                    UPDATE ai_uploads SET bound_run_id = ?
+                    WHERE id = ? AND user_id = ? AND bound_run_id IS NULL
+                        AND deletion_state = 'available' AND expires_at > ?
+                    """,
+                    (run_id, source_upload_id, user_id, now),
+                )
+                if bound.rowcount != 1:
+                    connection.execute("ROLLBACK")
+                    raise AIUploadUnavailableError
             updated = connection.execute(
                 """
                 UPDATE credit_accounts
@@ -503,7 +778,7 @@ class SqliteAIStore:
             if run.state == "deleted":
                 connection.execute("COMMIT")
                 return run
-            now = time.time_ns()
+            now = self._clock_ns()
             if run.state == "pending":
                 updated = connection.execute(
                     """
@@ -591,7 +866,7 @@ class SqliteAIStore:
             )
             connection.execute(
                 "UPDATE ai_runs SET state = 'running', updated_at = ? WHERE id = ?",
-                (time.time_ns(), row["id"]),
+                (self._clock_ns(), row["id"]),
             )
             connection.execute("COMMIT")
         return StoredAIClaim(
@@ -702,9 +977,9 @@ class SqliteAIStore:
                 available_delta=0,
                 reserved_delta=-run.credit_price,
                 reason="Completed AI run",
-                created_at=time.time_ns(),
+                created_at=self._clock_ns(),
             )
-            updated_at = time.time_ns()
+            updated_at = self._clock_ns()
             connection.execute(
                 """
                 UPDATE ai_runs SET state = 'succeeded', output_json = ?, output_sha256 = ?,
@@ -772,14 +1047,14 @@ class SqliteAIStore:
                 available_delta=run.credit_price,
                 reserved_delta=-run.credit_price,
                 reason=f"AI run ended as {state}",
-                created_at=time.time_ns(),
+                created_at=self._clock_ns(),
             )
             connection.execute(
                 """
                 UPDATE ai_runs SET state = ?, public_error_code = ?, updated_at = ?
                 WHERE id = ?
                 """,
-                (state, error_code, time.time_ns(), run_id),
+                (state, error_code, self._clock_ns(), run_id),
             )
             connection.execute(
                 """
@@ -930,6 +1205,46 @@ class SqliteAIStore:
         )
 
     @staticmethod
+    def _validate_upload(
+        *,
+        upload_id: str,
+        object_key: str,
+        media_type: str,
+        byte_size: int,
+        width: int,
+        height: int,
+        sha256: str,
+    ) -> None:
+        try:
+            canonical_id = str(uuid.UUID(upload_id))
+        except (ValueError, AttributeError) as error:
+            raise ValueError("upload ID is invalid") from error
+        if canonical_id != upload_id:
+            raise ValueError("upload ID is invalid")
+        if (
+            object_key != object_key.strip()
+            or not object_key
+            or len(object_key) > 512
+            or any(ord(character) < 0x21 or ord(character) > 0x7E for character in object_key)
+        ):
+            raise ValueError("upload object key is invalid")
+        if media_type not in {"image/jpeg", "image/png", "image/webp"}:
+            raise ValueError("upload media type is invalid")
+        if (
+            isinstance(byte_size, bool)
+            or not isinstance(byte_size, int)
+            or not 1 <= byte_size <= 4 * 1024 * 1024
+        ):
+            raise ValueError("upload byte size is invalid")
+        if any(
+            isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= 8192
+            for value in (width, height)
+        ) or width * height > 8_000_000:
+            raise ValueError("upload dimensions are invalid")
+        if len(sha256) != 64 or any(character not in "0123456789abcdef" for character in sha256):
+            raise ValueError("upload SHA-256 is invalid")
+
+    @staticmethod
     def _validate_provider_usage(
         *,
         provider_request_id: str | None,
@@ -1000,6 +1315,26 @@ class SqliteAIStore:
             ),
             created_at=int(row["created_at"]),
             updated_at=int(row["updated_at"]),
+            deleted_at=int(row["deleted_at"]) if row["deleted_at"] is not None else None,
+        )
+
+    @staticmethod
+    def _upload(row: sqlite3.Row) -> StoredAIUpload:
+        return StoredAIUpload(
+            id=str(row["id"]),
+            user_id=str(row["user_id"]),
+            object_key=str(row["object_key"]),
+            media_type=str(row["media_type"]),
+            byte_size=int(row["byte_size"]),
+            width=int(row["width"]),
+            height=int(row["height"]),
+            sha256=str(row["sha256"]),
+            created_at=int(row["created_at"]),
+            expires_at=int(row["expires_at"]),
+            bound_run_id=(
+                str(row["bound_run_id"]) if row["bound_run_id"] is not None else None
+            ),
+            deletion_state=str(row["deletion_state"]),
             deleted_at=int(row["deleted_at"]) if row["deleted_at"] is not None else None,
         )
 
