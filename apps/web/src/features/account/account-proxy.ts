@@ -10,7 +10,14 @@ const REQUEST_TIMEOUT_MS = 12_000;
 const MAX_BODY_BYTES = 16_384;
 
 type AccountMethod = "GET" | "POST";
-type AccountPath = "/v1/account/register" | "/v1/account/login" | "/v1/account/logout" | "/v1/account/me";
+type AccountPath =
+  | "/v1/account/register"
+  | "/v1/account/login"
+  | "/v1/account/logout"
+  | "/v1/account/me"
+  | "/v1/account/password"
+  | "/v1/account/sessions"
+  | "/v1/account/sessions/revoke-others";
 
 interface ProxyOptions {
   readonly method: AccountMethod;
