@@ -42,6 +42,7 @@ def test_worker_claims_marks_submitted_and_completes_typed_result(monkeypatch) -
                     "tool_id": "test_text_tool",
                     "contract_version": "v1",
                     "model_policy": "test-only",
+                    "safety_identifier": "opaque-safety-identifier-value-1234567890",
                     "input": {"content": "source"},
                 },
             }
@@ -60,6 +61,7 @@ def test_worker_claims_marks_submitted_and_completes_typed_result(monkeypatch) -
             tool_id="test_text_tool",
             contract_version="v1",
             model_policy="test-only",
+            safety_identifier="opaque-safety-identifier-value-1234567890",
             input={"content": "source"},
         )
     ]

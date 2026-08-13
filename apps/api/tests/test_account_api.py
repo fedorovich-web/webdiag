@@ -78,6 +78,7 @@ def test_settings_reject_insecure_production_and_unsafe_storage_paths() -> None:
         account_cookie_secure=True,
         monitoring_internal_token="x" * 32,
         ai_internal_token="y" * 32,
+        ai_safety_identifier_secret="z" * 32,
     )
     assert production.account_cookie_secure is True
 
@@ -161,11 +162,30 @@ def test_settings_require_bounded_distinct_ai_worker_credentials() -> None:
             account_cookie_secure=True,
             monitoring_internal_token="x" * 32,
             ai_internal_token="x" * 32,
+            ai_safety_identifier_secret="z" * 32,
+        )
+
+    with pytest.raises(ValidationError, match="safety identifier secret is required"):
+        Settings(
+            environment="production",
+            account_cookie_secure=True,
+            monitoring_internal_token="m" * 32,
+            ai_internal_token="a" * 32,
+        )
+
+    with pytest.raises(ValidationError, match="must be distinct"):
+        Settings(
+            environment="production",
+            account_cookie_secure=True,
+            monitoring_internal_token="m" * 32,
+            ai_internal_token="a" * 32,
+            ai_safety_identifier_secret="a" * 32,
         )
 
     for payload in (
         {"ai_internal_token": "short"},
         {"ai_internal_token": "x" * 16 + "\n" + "y" * 16},
+        {"ai_safety_identifier_secret": "short"},
         {"ai_lease_seconds": 59},
         {"ai_lease_seconds": 3_601},
         {"ai_lease_renew_interval_seconds": 9},

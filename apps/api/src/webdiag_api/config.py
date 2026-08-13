@@ -63,6 +63,7 @@ class Settings(BaseSettings):
     monitoring_internal_token: str = ""
     monitoring_scheduler_interval_seconds: int = Field(default=60, ge=30, le=300)
     ai_internal_token: str = ""
+    ai_safety_identifier_secret: str = ""
     ai_lease_seconds: int = Field(default=900, ge=60, le=3600)
     ai_lease_renew_interval_seconds: int = Field(default=300, ge=10, le=1200)
     ai_input_max_bytes: int = Field(
@@ -130,6 +131,17 @@ class Settings(BaseSettings):
             raise ValueError("AI internal token must not use a documented placeholder")
         return normalized
 
+    @field_validator("ai_safety_identifier_secret")
+    @classmethod
+    def validate_ai_safety_identifier_secret(cls, value: str) -> str:
+        if value and (len(value) < 32 or len(value) > 256):
+            raise ValueError(
+                "AI safety identifier secret must contain between 32 and 256 characters"
+            )
+        if "\x00" in value or "\r" in value or "\n" in value:
+            raise ValueError("AI safety identifier secret contains invalid characters")
+        return value
+
     @field_validator("account_scrypt_n")
     @classmethod
     def validate_scrypt_n(cls, value: int) -> int:
@@ -146,7 +158,15 @@ class Settings(BaseSettings):
                 raise ValueError("production monitoring internal token is required")
             if not self.ai_internal_token:
                 raise ValueError("production AI internal token is required")
-            if self.ai_internal_token == self.monitoring_internal_token:
+            if not self.ai_safety_identifier_secret:
+                raise ValueError("production AI safety identifier secret is required")
+            if len(
+                {
+                    self.monitoring_internal_token,
+                    self.ai_internal_token,
+                    self.ai_safety_identifier_secret,
+                }
+            ) != 3:
                 raise ValueError("production internal tokens must be distinct")
         if self.account_request_body_max_bytes > self.http_request_body_max_bytes:
             raise ValueError("account request body max must not exceed HTTP request body max")

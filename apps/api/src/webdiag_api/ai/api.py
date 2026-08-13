@@ -46,6 +46,7 @@ def get_ai_service() -> AIService:
         input_max_bytes=settings.ai_input_max_bytes,
         output_max_bytes=settings.ai_output_max_bytes,
         input_resolver=AIInputResolver(SqliteWorkspaceStore(settings.account_database_path)),
+        safety_identifier_secret=settings.ai_safety_identifier_secret,
     )
 
 

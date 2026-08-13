@@ -11,6 +11,7 @@ import pytest
 from webdiag_api.accounts.storage import SqliteAccountStore
 from webdiag_api.ai.catalog import DEFAULT_AI_CATALOG, AIToolCatalog, AIToolState
 from webdiag_api.ai.models import AIRunCreateRequest
+from webdiag_api.ai.safety import derive_safety_identifier
 from webdiag_api.ai.service import AIService
 from webdiag_api.ai.storage import AILeaseLostError, SqliteAIStore
 from webdiag_api.config import settings
@@ -76,6 +77,30 @@ def test_only_one_concurrent_claim_wins_and_plaintext_token_is_not_stored(
         ).fetchone()[0]
     assert stored_hash == hashlib.sha256(winner.lease_token.encode()).hexdigest()
     assert winner.lease_token not in stored_hash
+
+
+def test_claim_uses_stable_opaque_safety_identifier_without_account_identity(tmp_path) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    store, user_id, _run_id = seeded_run(database_path)
+    ready = replace(
+        DEFAULT_AI_CATALOG.all()[0],
+        state=AIToolState.READY,
+        credit_price=7,
+    )
+    service = AIService(
+        store,
+        catalog=AIToolCatalog((ready,)),
+        input_max_bytes=1024,
+        safety_identifier_secret="s" * 32,
+    )
+
+    claim = service.claim_pending()
+
+    assert claim is not None
+    assert claim.safety_identifier == derive_safety_identifier("s" * 32, user_id)
+    assert len(claim.safety_identifier) == 43
+    assert user_id not in claim.safety_identifier
+    assert "@" not in claim.safety_identifier
 
 
 def test_expired_claim_is_replaced_and_stale_completion_cannot_capture(tmp_path: Path) -> None:

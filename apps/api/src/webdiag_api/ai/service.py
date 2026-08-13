@@ -17,6 +17,7 @@ from webdiag_api.ai.models import (
     utc_from_ns,
 )
 from webdiag_api.ai.pagination import AICursorError, decode_cursor, encode_cursor
+from webdiag_api.ai.safety import derive_safety_identifier
 from webdiag_api.ai.storage import (
     AIIdempotencyConflictError,
     AIInsufficientCreditsError,
@@ -52,12 +53,14 @@ class AIService:
         input_max_bytes: int,
         output_max_bytes: int = 1_000_000,
         input_resolver: AIInputResolver | None = None,
+        safety_identifier_secret: str = "",
     ) -> None:
         self._store = store
         self._catalog = catalog
         self._input_max_bytes = input_max_bytes
         self._output_max_bytes = output_max_bytes
         self._input_resolver = input_resolver
+        self._safety_identifier_secret = safety_identifier_secret
 
     def catalog(self) -> AICatalogResponse:
         return AICatalogResponse(
@@ -343,8 +346,7 @@ class AIService:
             updated_at=utc_from_ns(run.updated_at),
         )
 
-    @staticmethod
-    def _public_claim(claim: StoredAIClaim) -> AIWorkerClaim:
+    def _public_claim(self, claim: StoredAIClaim) -> AIWorkerClaim:
         return AIWorkerClaim(
             run_id=claim.run_id,
             attempt_number=claim.attempt_number,
@@ -353,5 +355,10 @@ class AIService:
             tool_id=claim.tool_id,
             contract_version=claim.contract_version,
             model_policy=claim.model_policy,
+            safety_identifier=(
+                derive_safety_identifier(self._safety_identifier_secret, claim.user_id)
+                if self._safety_identifier_secret
+                else None
+            ),
             input=json.loads(claim.input_json),
         )

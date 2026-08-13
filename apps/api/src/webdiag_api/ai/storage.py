@@ -103,6 +103,7 @@ class StoredAIClaim:
     tool_id: str
     contract_version: str
     model_policy: str
+    user_id: str
     input_json: str
 
 
@@ -601,6 +602,7 @@ class SqliteAIStore:
             tool_id=str(row["tool_id"]),
             contract_version=str(row["contract_version"]),
             model_policy=str(row["model_policy"]),
+            user_id=str(row["user_id"]),
             input_json=str(row["input_json"]),
         )
 

@@ -40,6 +40,7 @@ class ProviderRequest:
     contract_version: str
     model_policy: str
     input: dict[str, object]
+    safety_identifier: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -282,10 +283,18 @@ def _provider_request(raw: object) -> ProviderRequest:
         isinstance(key, str) for key in input_value
     ):
         raise RuntimeError("AI claim returned invalid work")
+    safety_identifier = raw.get("safety_identifier")
+    if safety_identifier is not None and (
+        not isinstance(safety_identifier, str)
+        or not 32 <= len(safety_identifier) <= 64
+        or any(not 0x21 <= ord(character) <= 0x7E for character in safety_identifier)
+    ):
+        raise RuntimeError("AI claim returned invalid work")
     return ProviderRequest(
         run_id=raw["run_id"],
         tool_id=raw["tool_id"],
         contract_version=raw["contract_version"],
         model_policy=raw["model_policy"],
         input=input_value,
+        safety_identifier=safety_identifier,
     )

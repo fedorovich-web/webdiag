@@ -81,6 +81,7 @@ class AIWorkerClaim(StrictAIModel):
     tool_id: str
     contract_version: str
     model_policy: str
+    safety_identifier: str | None = Field(default=None, min_length=32, max_length=64)
     input: dict[str, object]
 
 
