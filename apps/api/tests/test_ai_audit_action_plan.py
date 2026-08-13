@@ -165,7 +165,7 @@ def test_service_persists_resolved_snapshot_instead_of_client_references(tmp_pat
         contract_version="v1",
         state=AIToolState.READY,
         credit_price=5,
-        model_policy="gpt-5.6-terra",
+        model_policy="openai/gpt-5.6-luna",
     )
     service = AIService(
         SqliteAIStore(str(database_path), lease_seconds=60),

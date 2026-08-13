@@ -3,7 +3,7 @@ import dramatiq
 from webdiag_worker.ai import run_one_ai_job
 from webdiag_worker.broker import create_broker
 from webdiag_worker.monitoring import run_due_monitors
-from webdiag_worker.openai_provider import OpenAIProvider
+from webdiag_worker.openrouter_provider import OpenRouterProvider
 
 broker = create_broker()
 dramatiq.set_broker(broker)
@@ -21,4 +21,5 @@ def run_due_monitoring() -> int:
 
 @dramatiq.actor(queue_name="ai")
 def run_pending_ai() -> bool:
-    return run_one_ai_job(OpenAIProvider.from_env())
+    with OpenRouterProvider.from_env() as provider:
+        return run_one_ai_job(provider)

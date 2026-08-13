@@ -2,6 +2,7 @@ import importlib
 
 import pytest
 
+
 def test_actor_is_registered_with_stub_broker(monkeypatch) -> None:
     monkeypatch.setenv("WEBDIAG_BROKER_BACKEND", "stub")
     actors = importlib.import_module("webdiag_worker.actors")
@@ -24,20 +25,30 @@ def test_ai_actor_import_is_lazy_and_invocation_without_provider_key_fails_close
     monkeypatch,
 ) -> None:
     monkeypatch.setenv("WEBDIAG_BROKER_BACKEND", "stub")
-    monkeypatch.delenv("WEBDIAG_OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("WEBDIAG_OPENROUTER_API_KEY", raising=False)
     actors = importlib.import_module("webdiag_worker.actors")
 
-    with pytest.raises(RuntimeError, match="WEBDIAG_OPENAI_API_KEY"):
+    with pytest.raises(RuntimeError, match="WEBDIAG_OPENROUTER_API_KEY"):
         actors.run_pending_ai.fn()
 
 
 def test_ai_actor_executes_one_job_with_lazily_created_provider(monkeypatch) -> None:
     monkeypatch.setenv("WEBDIAG_BROKER_BACKEND", "stub")
     actors = importlib.import_module("webdiag_worker.actors")
-    provider = object()
+
+    class Provider:
+        exited = False
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            self.exited = True
+
+    provider = Provider()
     seen = []
 
-    monkeypatch.setattr(actors.OpenAIProvider, "from_env", lambda: provider)
+    monkeypatch.setattr(actors.OpenRouterProvider, "from_env", lambda: provider)
 
     def run_one(value):
         seen.append(value)
@@ -47,3 +58,4 @@ def test_ai_actor_executes_one_job_with_lazily_created_provider(monkeypatch) -> 
 
     assert actors.run_pending_ai.fn() is True
     assert seen == [provider]
+    assert provider.exited is True

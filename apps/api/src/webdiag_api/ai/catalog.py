@@ -67,22 +67,32 @@ def _internal(tool_id: str, model_policy: str) -> AIToolDefinition:
     )
 
 
+def _disabled(tool_id: str) -> AIToolDefinition:
+    return AIToolDefinition(
+        id=tool_id,
+        contract_version="v1",
+        state=AIToolState.DISABLED,
+        credit_price=None,
+        model_policy="none",
+    )
+
+
 DEFAULT_AI_CATALOG = AIToolCatalog(
     (
-        _internal("ai_audit_action_plan", "gpt-5.6-terra"),
-        _internal("ai_meta_serp_studio", "gpt-5.6-luna"),
-        _internal("ai_schema_studio", "gpt-5.6-luna"),
-        _internal("ai_faq_studio", "gpt-5.6-luna"),
-        _internal("ai_alt_text_studio", "gpt-5.6-luna"),
-        _internal("ai_content_brief", "gpt-5.6-terra"),
-        _internal("ai_content_optimizer", "gpt-5.6-terra"),
-        _internal("ai_search_intent_page_fit", "gpt-5.6-terra"),
-        _internal("ai_competitor_gap_report", "gpt-5.6-terra"),
-        _internal("ai_internal_linking_planner", "gpt-5.6-terra"),
-        _internal("ai_redirect_migration_mapper", "gpt-5.6-terra"),
-        _internal("ai_localization_workbench", "gpt-5.6-luna"),
-        _internal("ai_regex_workbench", "gpt-5.6-luna"),
-        _internal("ai_image_studio", "gpt-image-2"),
-        _internal("ai_image_edit_studio", "gpt-image-2"),
+        _internal("ai_audit_action_plan", "openai/gpt-5.6-luna"),
+        _internal("ai_meta_serp_studio", "openai/gpt-5.6-luna"),
+        _internal("ai_schema_studio", "openai/gpt-5.6-luna"),
+        _internal("ai_faq_studio", "openai/gpt-5.6-luna"),
+        _internal("ai_alt_text_studio", "openai/gpt-5.6-luna"),
+        _internal("ai_content_brief", "openai/gpt-5.6-luna"),
+        _internal("ai_content_optimizer", "openai/gpt-5.6-luna"),
+        _internal("ai_search_intent_page_fit", "openai/gpt-5.6-luna"),
+        _internal("ai_competitor_gap_report", "openai/gpt-5.6-luna"),
+        _internal("ai_internal_linking_planner", "openai/gpt-5.6-luna"),
+        _internal("ai_redirect_migration_mapper", "openai/gpt-5.6-luna"),
+        _internal("ai_localization_workbench", "openai/gpt-5.6-luna"),
+        _internal("ai_regex_workbench", "openai/gpt-5.6-luna"),
+        _disabled("ai_image_studio"),
+        _disabled("ai_image_edit_studio"),
     )
 )

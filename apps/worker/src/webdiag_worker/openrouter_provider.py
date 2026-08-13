@@ -3,16 +3,8 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import dataclass
-from typing import Any
 
 import httpx
-from openai import (
-    APIConnectionError,
-    APIResponseValidationError,
-    APIStatusError,
-    APITimeoutError,
-    OpenAI,
-)
 from pydantic import BaseModel
 
 from webdiag_worker.ai import (
@@ -37,9 +29,11 @@ class _ToolPolicy:
     instructions: str
 
 
+_MODEL = "openai/gpt-5.6-luna"
+_OPENROUTER_CHAT_URL = "https://openrouter.ai/api/v1/chat/completions"
 _TOOL_POLICIES = {
     "ai_audit_action_plan": _ToolPolicy(
-        model="gpt-5.6-terra",
+        model=_MODEL,
         output_model=AuditActionPlanOutput,
         max_output_tokens=4_000,
         instructions=(
@@ -50,7 +44,7 @@ _TOOL_POLICIES = {
         ),
     ),
     "ai_meta_serp_studio": _ToolPolicy(
-        model="gpt-5.6-luna",
+        model=_MODEL,
         output_model=MetaSerpOutput,
         max_output_tokens=2_000,
         instructions=(
@@ -60,7 +54,7 @@ _TOOL_POLICIES = {
         ),
     ),
     "ai_schema_studio": _ToolPolicy(
-        model="gpt-5.6-luna",
+        model=_MODEL,
         output_model=SchemaProviderOutput,
         max_output_tokens=3_000,
         instructions=(
@@ -70,7 +64,7 @@ _TOOL_POLICIES = {
         ),
     ),
     "ai_faq_studio": _ToolPolicy(
-        model="gpt-5.6-luna",
+        model=_MODEL,
         output_model=FAQStudioOutput,
         max_output_tokens=3_000,
         instructions=(
@@ -82,36 +76,45 @@ _TOOL_POLICIES = {
     ),
 }
 
-_KNOWN_REJECTED_STATUS_CODES = frozenset({400, 401, 403, 404, 422})
+_KNOWN_REJECTED_STATUS_CODES = frozenset({400, 401, 402, 403, 404, 413, 422})
 
 
-class OpenAIProvider:
-    def __init__(self, client: OpenAI) -> None:
+class OpenRouterProvider:
+    def __init__(self, client: httpx.Client) -> None:
         self._client = client
 
     @classmethod
-    def from_env(cls, *, http_client: httpx.Client | None = None) -> OpenAIProvider:
-        api_key = os.getenv("WEBDIAG_OPENAI_API_KEY", "")
+    def from_env(cls) -> OpenRouterProvider:
+        api_key = os.getenv("WEBDIAG_OPENROUTER_API_KEY", "")
         if (
             not api_key
             or len(api_key) > 512
             or any(character.isspace() or not character.isascii() for character in api_key)
         ):
-            raise RuntimeError("WEBDIAG_OPENAI_API_KEY is required and must be visible ASCII")
+            raise RuntimeError(
+                "WEBDIAG_OPENROUTER_API_KEY is required and must be visible ASCII"
+            )
         timeout = httpx.Timeout(
-            connect=_bounded_timeout("WEBDIAG_OPENAI_CONNECT_TIMEOUT_SECONDS", 5),
-            read=_bounded_timeout("WEBDIAG_OPENAI_READ_TIMEOUT_SECONDS", 120),
-            write=_bounded_timeout("WEBDIAG_OPENAI_WRITE_TIMEOUT_SECONDS", 10),
-            pool=_bounded_timeout("WEBDIAG_OPENAI_POOL_TIMEOUT_SECONDS", 5),
+            connect=_bounded_timeout("WEBDIAG_OPENROUTER_CONNECT_TIMEOUT_SECONDS", 5),
+            read=_bounded_timeout("WEBDIAG_OPENROUTER_READ_TIMEOUT_SECONDS", 120),
+            write=_bounded_timeout("WEBDIAG_OPENROUTER_WRITE_TIMEOUT_SECONDS", 10),
+            pool=_bounded_timeout("WEBDIAG_OPENROUTER_POOL_TIMEOUT_SECONDS", 5),
         )
         return cls(
-            OpenAI(
-                api_key=api_key,
+            httpx.Client(
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
                 timeout=timeout,
-                max_retries=0,
-                http_client=http_client,
             )
         )
+
+    def __enter__(self) -> OpenRouterProvider:
+        return self
+
+    def __exit__(self, *_args: object) -> None:
+        self._client.close()
 
     def execute(self, request: ProviderRequest) -> ProviderResult:
         policy = _TOOL_POLICIES.get(request.tool_id)
@@ -123,65 +126,63 @@ class OpenAIProvider:
         ):
             raise KnownSafeProviderError("AI provider request was rejected locally")
         try:
-            response = self._client.responses.create(
-                model=policy.model,
-                instructions=policy.instructions,
-                input=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "input_text",
-                                "text": json.dumps(
-                                    request.input,
-                                    ensure_ascii=False,
-                                    sort_keys=True,
-                                    separators=(",", ":"),
-                                ),
-                            }
-                        ],
-                    }
-                ],
-                text={
-                    "format": {
+            response = self._client.post(
+                _OPENROUTER_CHAT_URL,
+                json={
+                    "model": policy.model,
+                    "messages": [
+                        {"role": "system", "content": policy.instructions},
+                        {
+                            "role": "user",
+                            "content": json.dumps(
+                                request.input,
+                                ensure_ascii=False,
+                                sort_keys=True,
+                                separators=(",", ":"),
+                            ),
+                        },
+                    ],
+                    "response_format": {
                         "type": "json_schema",
-                        "name": request.tool_id,
-                        "strict": True,
-                        "schema": policy.output_model.model_json_schema(),
-                    }
+                        "json_schema": {
+                            "name": request.tool_id,
+                            "strict": True,
+                            "schema": policy.output_model.model_json_schema(),
+                        },
+                    },
+                    "max_tokens": policy.max_output_tokens,
+                    "reasoning_effort": "low",
+                    "stream": False,
+                    "user": request.safety_identifier,
+                    "provider": {
+                        "allow_fallbacks": False,
+                        "data_collection": "deny",
+                        "require_parameters": True,
+                        "zdr": True,
+                    },
                 },
-                max_output_tokens=policy.max_output_tokens,
-                reasoning={"effort": "low"},
-                safety_identifier=request.safety_identifier,
-                store=False,
-                parallel_tool_calls=False,
             )
-        except APIStatusError as error:
-            if error.status_code in _KNOWN_REJECTED_STATUS_CODES:
-                raise KnownSafeProviderError("AI provider rejected the request") from error
+        except (httpx.TimeoutException, httpx.TransportError) as error:
             raise ProviderOutcomeUnknownError("AI provider outcome is unknown") from error
-        except (APITimeoutError, APIConnectionError, APIResponseValidationError) as error:
-            raise ProviderOutcomeUnknownError("AI provider outcome is unknown") from error
-        except (ValueError, TypeError) as error:
-            raise ProviderOutcomeUnknownError("AI provider response is invalid") from error
-
-        if response.status != "completed":
-            raise KnownSafeProviderError("AI provider did not complete the response")
+        if response.status_code in _KNOWN_REJECTED_STATUS_CODES:
+            raise KnownSafeProviderError("AI provider rejected the request")
+        if response.status_code != 200:
+            raise ProviderOutcomeUnknownError("AI provider outcome is unknown")
         try:
-            parsed = _parsed_output(response, policy.output_model)
+            body = response.json()
+            parsed = _parsed_output(body, policy.output_model)
+            provider_request_id = _provider_request_id(body)
+            input_units, output_units = _provider_usage(body)
         except KnownSafeProviderError:
             raise
-        except (ValueError, TypeError) as error:
+        except (ValueError, TypeError, KeyError, IndexError, json.JSONDecodeError) as error:
             raise ProviderOutcomeUnknownError("AI provider response is invalid") from error
         output = parsed.model_dump(mode="json")
         if request.tool_id == "ai_schema_studio":
             output = _schema_output(request.input, output)
-        usage = response.usage
-        input_units = usage.input_tokens if usage is not None else 0
-        output_units = usage.output_tokens if usage is not None else 0
         return ProviderResult(
             output=output,
-            provider_request_id=getattr(response, "_request_id", None),
+            provider_request_id=provider_request_id,
             input_units=input_units,
             output_units=output_units,
         )
@@ -198,16 +199,51 @@ def _bounded_timeout(name: str, default: int) -> int:
     return value
 
 
-def _parsed_output(response: Any, output_model: type[BaseModel]) -> BaseModel:
-    for item in response.output:
-        if item.type != "message":
-            continue
-        for content in item.content:
-            if content.type == "refusal":
-                raise KnownSafeProviderError("AI provider refused the request")
-            if content.type == "output_text":
-                return output_model.model_validate_json(content.text)
-    raise ProviderOutcomeUnknownError("AI provider response is invalid")
+def _parsed_output(body: object, output_model: type[BaseModel]) -> BaseModel:
+    if not isinstance(body, dict):
+        raise ValueError("invalid provider response")
+    choices = body.get("choices")
+    if not isinstance(choices, list) or len(choices) != 1:
+        raise ValueError("invalid provider choices")
+    choice = choices[0]
+    if not isinstance(choice, dict):
+        raise ValueError("invalid provider choice")
+    message = choice.get("message")
+    if not isinstance(message, dict):
+        raise ValueError("invalid provider message")
+    refusal = message.get("refusal")
+    if isinstance(refusal, str) and refusal:
+        raise KnownSafeProviderError("AI provider refused the request")
+    if choice.get("finish_reason") != "stop":
+        raise ValueError("invalid provider finish reason")
+    content = message.get("content")
+    if not isinstance(content, str) or not content:
+        raise ValueError("invalid provider content")
+    return output_model.model_validate_json(content)
+
+
+def _provider_request_id(body: object) -> str:
+    if not isinstance(body, dict):
+        raise ValueError("invalid provider response")
+    value = body.get("id")
+    if not isinstance(value, str) or not 1 <= len(value) <= 200:
+        raise ValueError("invalid provider generation ID")
+    return value
+
+
+def _provider_usage(body: object) -> tuple[int, int]:
+    if not isinstance(body, dict):
+        raise ValueError("invalid provider response")
+    usage = body.get("usage")
+    if not isinstance(usage, dict):
+        raise ValueError("invalid provider usage")
+    values = (usage.get("prompt_tokens"), usage.get("completion_tokens"))
+    if any(
+        isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 1_000_000_000
+        for value in values
+    ):
+        raise ValueError("invalid provider usage")
+    return values
 
 
 def _schema_output(

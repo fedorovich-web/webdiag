@@ -2,79 +2,58 @@ import json
 
 import httpx
 import pytest
-from openai import OpenAI
 
 from webdiag_worker.ai import (
     KnownSafeProviderError,
     ProviderOutcomeUnknownError,
     ProviderRequest,
 )
-from webdiag_worker.openai_provider import OpenAIProvider
+from webdiag_worker.openrouter_provider import OpenRouterProvider
 
 
-def _response(output: dict[str, object], *, model: str = "gpt-5.6-luna") -> dict[str, object]:
+def _response(
+    output: dict[str, object],
+    *,
+    model: str = "openai/gpt-5.6-luna",
+) -> dict[str, object]:
     return {
-        "id": "resp_123",
-        "object": "response",
-        "created_at": 1_786_000_000,
-        "status": "completed",
-        "error": None,
-        "incomplete_details": None,
-        "instructions": None,
-        "max_output_tokens": 2_000,
+        "id": "gen_123",
+        "object": "chat.completion",
+        "created": 1_786_000_000,
         "model": model,
-        "output": [
+        "choices": [
             {
-                "id": "msg_123",
-                "type": "message",
-                "status": "completed",
-                "role": "assistant",
-                "content": [
-                    {
-                        "type": "output_text",
-                        "text": json.dumps(output),
-                        "annotations": [],
-                        "logprobs": [],
-                    }
-                ],
+                "finish_reason": "stop",
+                "index": 0,
+                "message": {
+                    "content": json.dumps(output),
+                    "refusal": None,
+                    "role": "assistant",
+                },
             }
         ],
-        "parallel_tool_calls": False,
-        "previous_response_id": None,
-        "reasoning": {"effort": "low", "summary": None},
-        "store": False,
-        "temperature": 1.0,
-        "text": {"format": {"type": "text"}},
-        "tool_choice": "none",
-        "tools": [],
-        "top_p": 1.0,
-        "truncation": "disabled",
         "usage": {
-            "input_tokens": 12,
-            "input_tokens_details": {"cached_tokens": 0},
-            "output_tokens": 4,
-            "output_tokens_details": {"reasoning_tokens": 0},
+            "prompt_tokens": 12,
+            "completion_tokens": 4,
             "total_tokens": 16,
+            "cost": 0.000012,
         },
     }
 
 
-def _provider(handler) -> OpenAIProvider:
-    http_client = httpx.Client(transport=httpx.MockTransport(handler))
-    client = OpenAI(
-        api_key="test-openai-key",
-        base_url="https://api.openai.test/v1",
-        http_client=http_client,
-        max_retries=0,
+def _provider(handler) -> OpenRouterProvider:
+    client = httpx.Client(
+        transport=httpx.MockTransport(handler),
         timeout=httpx.Timeout(connect=2, read=5, write=2, pool=2),
+        headers={"Authorization": "Bearer test-openrouter-key"},
     )
-    return OpenAIProvider(client)
+    return OpenRouterProvider(client)
 
 
 def _request(
     tool_id: str = "ai_meta_serp_studio",
     *,
-    model: str = "gpt-5.6-luna",
+    model: str = "openai/gpt-5.6-luna",
     input_value: dict[str, object] | None = None,
 ) -> ProviderRequest:
     return ProviderRequest(
@@ -92,7 +71,7 @@ def _request(
     )
 
 
-def test_provider_sends_bounded_strict_responses_request_and_maps_usage() -> None:
+def test_provider_sends_private_strict_openrouter_request_and_maps_usage() -> None:
     requests: list[httpx.Request] = []
     output = {
         "variants": [
@@ -109,29 +88,36 @@ def test_provider_sends_bounded_strict_responses_request_and_maps_usage() -> Non
         requests.append(request)
         return httpx.Response(
             200,
-            headers={"x-request-id": "req_header_123"},
             json=_response(output),
         )
 
     result = _provider(handler).execute(_request())
 
     assert result.output == output
-    assert result.provider_request_id == "req_header_123"
+    assert result.provider_request_id == "gen_123"
     assert (result.input_units, result.output_units) == (12, 4)
     assert len(requests) == 1
     sent = json.loads(requests[0].content)
-    assert requests[0].url == "https://api.openai.test/v1/responses"
-    assert sent["model"] == "gpt-5.6-luna"
-    assert sent["store"] is False
-    assert sent["safety_identifier"] == "opaque-safety-identifier-value-1234567890"
-    assert sent["max_output_tokens"] == 2_000
-    assert sent["text"]["format"]["type"] == "json_schema"
-    assert sent["text"]["format"]["strict"] is True
-    assert sent["text"]["format"]["schema"]["additionalProperties"] is False
-    assert sent["input"][0]["content"][0]["type"] == "input_text"
-    assert json.loads(sent["input"][0]["content"][0]["text"]) == _request().input
-    assert "example.com" not in sent["instructions"]
-    assert "test-openai-key" not in requests[0].content.decode()
+    assert requests[0].url == "https://openrouter.ai/api/v1/chat/completions"
+    assert requests[0].headers["authorization"] == "Bearer test-openrouter-key"
+    assert sent["model"] == "openai/gpt-5.6-luna"
+    assert sent["stream"] is False
+    assert sent["user"] == "opaque-safety-identifier-value-1234567890"
+    assert sent["max_tokens"] == 2_000
+    assert sent["provider"] == {
+        "allow_fallbacks": False,
+        "data_collection": "deny",
+        "require_parameters": True,
+        "zdr": True,
+    }
+    output_format = sent["response_format"]
+    assert output_format["type"] == "json_schema"
+    assert output_format["json_schema"]["strict"] is True
+    assert output_format["json_schema"]["schema"]["additionalProperties"] is False
+    assert json.loads(sent["messages"][1]["content"]) == _request().input
+    assert "example.com" not in sent["messages"][0]["content"]
+    assert "test-openrouter-key" not in requests[0].content.decode()
+    assert "http-referer" not in requests[0].headers
 
 
 @pytest.mark.parametrize(
@@ -139,7 +125,7 @@ def test_provider_sends_bounded_strict_responses_request_and_maps_usage() -> Non
     (
         (
             "ai_audit_action_plan",
-            "gpt-5.6-terra",
+            "openai/gpt-5.6-luna",
             {
                 "locale": "en",
                 "target_origin": "https://example.com",
@@ -179,7 +165,7 @@ def test_provider_sends_bounded_strict_responses_request_and_maps_usage() -> Non
         ),
         (
             "ai_faq_studio",
-            "gpt-5.6-luna",
+            "openai/gpt-5.6-luna",
             {
                 "locale": "ru",
                 "source_content": "WebDiag проверяет технические сигналы страницы.",
@@ -200,7 +186,7 @@ def test_provider_sends_bounded_strict_responses_request_and_maps_usage() -> Non
         ),
         (
             "ai_schema_studio",
-            "gpt-5.6-luna",
+            "openai/gpt-5.6-luna",
             {
                 "locale": "en",
                 "schema_type": "Organization",
@@ -249,7 +235,7 @@ def test_provider_uses_tool_specific_contracts(
     assert result.output == (expected_output or provider_output)
 
 
-@pytest.mark.parametrize("status_code", (400, 401, 403, 404, 422))
+@pytest.mark.parametrize("status_code", (400, 401, 402, 403, 404, 413, 422))
 def test_rejected_provider_request_is_known_safe(status_code: int) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(
@@ -301,33 +287,29 @@ def test_timeout_is_unknown_and_not_retried() -> None:
     assert "provider timeout" not in str(error.value)
 
 
-@pytest.mark.parametrize(
-    "body",
-    (
-        {
-            **_response({"variants": []}),
-            "status": "incomplete",
-            "incomplete_details": {"reason": "max_output_tokens"},
-        },
-        {
-            **_response({"variants": []}),
-            "output": [
-                {
-                    "id": "msg_refusal",
-                    "type": "message",
-                    "status": "completed",
-                    "role": "assistant",
-                    "content": [{"type": "refusal", "refusal": "Cannot comply."}],
-                }
-            ],
-        },
-    ),
-)
-def test_incomplete_and_refusal_are_known_safe(body: dict[str, object]) -> None:
+def test_typed_refusal_is_known_safe() -> None:
+    body = _response({"variants": []})
+    body["choices"][0]["message"] = {
+        "content": None,
+        "refusal": "Cannot comply.",
+        "role": "assistant",
+    }
+
     def handler(_request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json=body)
 
     with pytest.raises(KnownSafeProviderError):
+        _provider(handler).execute(_request())
+
+
+def test_truncated_success_response_is_unknown() -> None:
+    body = _response({"variants": []})
+    body["choices"][0]["finish_reason"] = "length"
+
+    def handler(_request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=body)
+
+    with pytest.raises(ProviderOutcomeUnknownError):
         _provider(handler).execute(_request())
 
 
@@ -342,12 +324,12 @@ def test_unknown_tool_model_or_missing_safety_id_is_rejected_before_http() -> No
     provider = _provider(handler)
     invalid_requests = (
         _request("ai_unknown"),
-        _request(model="gpt-5.6-terra"),
+        _request(model="openai/gpt-5.6-terra"),
         ProviderRequest(
             run_id="11111111-1111-4111-8111-111111111111",
             tool_id="ai_meta_serp_studio",
             contract_version="v1",
-            model_policy="gpt-5.6-luna",
+            model_policy="openai/gpt-5.6-luna",
             input={"locale": "en"},
             safety_identifier=None,
         ),
