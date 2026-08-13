@@ -26,6 +26,8 @@ const copy = {
     loading: "Проверяем страницу…",
     invalid: "Введите публичный HTTP(S) URL с доменом.",
     unknownError: "Проверку не удалось завершить.",
+    rateLimited: "Достигнут лимит публичных проверок. Повторите попытку позже.",
+    capacityUnavailable: "Все слоты публичной проверки заняты. Повторите попытку позже.",
     result: "Результат технического аудита",
     score: "Оценка",
     issues: "Проблемы",
@@ -49,6 +51,8 @@ const copy = {
     loading: "Auditing page…",
     invalid: "Enter a public HTTP(S) URL with a domain.",
     unknownError: "The audit could not be completed.",
+    rateLimited: "The public audit limit has been reached. Try again later.",
+    capacityUnavailable: "All public audit slots are busy. Try again later.",
     result: "Technical audit result",
     score: "Score",
     issues: "Issues",
@@ -134,7 +138,11 @@ export function SinglePageAuditTool({ locale }: { locale: Locale }) {
     if (!parsed) { setError(t.invalid); setResult(null); return; }
     setUrl(parsed.href); setLoading(true); setError(""); setResult(null);
     try { setResult(await startAuditSnapshot(parsed.href)); }
-    catch (caught) { setError(caught instanceof AuditClientError ? caught.message : t.unknownError); }
+    catch (caught) {
+      if (caught instanceof AuditClientError && caught.code === "audit_rate_limited") setError(t.rateLimited);
+      else if (caught instanceof AuditClientError && caught.code === "audit_capacity_unavailable") setError(t.capacityUnavailable);
+      else setError(caught instanceof AuditClientError ? caught.message : t.unknownError);
+    }
     finally { setLoading(false); }
   }
 

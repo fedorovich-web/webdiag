@@ -6,7 +6,8 @@ import httpx
 import pytest
 
 from webdiag_api.audit import service as audit_service_module
-from webdiag_api.audit.api import get_audit_service
+from webdiag_api.audit.admission import AuditAdmissionError
+from webdiag_api.audit.api import get_audit_admission, get_audit_service
 from webdiag_api.audit.fetcher import SafeHttpFetcher
 from webdiag_api.audit.models import AuditJob, AuditJobStatus
 from webdiag_api.audit.service import (
@@ -76,10 +77,33 @@ async def request(
 
 def with_service(service: AuditExecutionService) -> None:
     app.dependency_overrides[get_audit_service] = lambda: service
+    app.dependency_overrides.setdefault(get_audit_admission, lambda: StubAdmission())
 
 
 def clear_overrides() -> None:
     app.dependency_overrides.clear()
+
+
+class StubAdmission:
+    def __init__(
+        self,
+        error: AuditAdmissionError | None = None,
+        *,
+        release_error: Exception | None = None,
+    ) -> None:
+        self.error = error
+        self.release_error = release_error
+        self.released: list[str] = []
+
+    def acquire(self) -> str:
+        if self.error:
+            raise self.error
+        return "lease-fixture"
+
+    def release(self, lease_id: str) -> None:
+        self.released.append(lease_id)
+        if self.release_error:
+            raise self.release_error
 
 
 def healthy_html() -> bytes:
@@ -169,6 +193,79 @@ def test_start_audit_runs_single_url_check_and_returns_snapshot() -> None:
     }
 
 
+@pytest.mark.parametrize(
+    ("error", "status_code", "code"),
+    [
+        (
+            AuditAdmissionError(
+                429, "audit_rate_limited", "Public audit rate limit reached.", 37
+            ),
+            429,
+            "audit_rate_limited",
+        ),
+        (
+            AuditAdmissionError(
+                503,
+                "audit_capacity_unavailable",
+                "Public audit capacity is temporarily unavailable.",
+                12,
+            ),
+            503,
+            "audit_capacity_unavailable",
+        ),
+    ],
+)
+def test_public_audit_admission_returns_stable_bounded_error(error, status_code, code) -> None:
+    admission = StubAdmission(error)
+    app.dependency_overrides[get_audit_admission] = lambda: admission
+    with_service(build_service(healthy_resource_response))
+    try:
+        response = asyncio.run(request("POST", "/v1/audits", json={"url": "https://example.com/"}))
+    finally:
+        clear_overrides()
+
+    assert response.status_code == status_code
+    assert response.headers["retry-after"] == str(error.retry_after)
+    assert response.headers["cache-control"] == "no-store"
+    assert response.json() == {"detail": {"code": code, "message": error.message}}
+
+
+def test_public_audit_releases_admission_lease_after_execution_error() -> None:
+    admission = StubAdmission()
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.TimeoutException("timeout", request=request)
+
+    app.dependency_overrides[get_audit_admission] = lambda: admission
+    with_service(build_service(handler))
+    try:
+        response = asyncio.run(request("POST", "/v1/audits", json={"url": "https://example.com/"}))
+    finally:
+        clear_overrides()
+
+    assert response.status_code == 502
+    assert admission.released == ["lease-fixture"]
+
+
+def test_admission_release_failure_does_not_expose_or_replace_audit_result(
+    caplog,
+) -> None:
+    admission = StubAdmission(release_error=RuntimeError("private database detail"))
+    app.dependency_overrides[get_audit_admission] = lambda: admission
+    with_service(build_service(healthy_resource_response))
+    try:
+        response = asyncio.run(
+            request("POST", "/v1/audits", json={"url": "https://example.com/"})
+        )
+    finally:
+        clear_overrides()
+
+    assert response.status_code == 201
+    assert response.json()["summary"]["status"] == "succeeded"
+    assert "private database detail" not in response.text
+    assert "private database detail" not in caplog.text
+
+
 def test_get_audit_returns_stored_snapshot() -> None:
     service = build_service(healthy_resource_response)
     with_service(service)
@@ -216,6 +313,10 @@ def test_default_audit_database_configuration_is_file_backed() -> None:
     configured = Settings()
     assert configured.audit_database_path == ".webdiag/audits.sqlite3"
     assert configured.audit_history_limit == 1_000
+    assert configured.audit_public_request_limit == 60
+    assert configured.audit_public_window_seconds == 60
+    assert configured.audit_public_concurrency_limit == 4
+    assert configured.audit_public_lease_seconds == 45
 
 
 def test_sqlite_audit_store_rejects_tampered_payload(tmp_path) -> None:

@@ -23,7 +23,14 @@ const result = {
 
 test.describe("single-page technical audit", () => {
   let assertBrowserClean: ReturnType<typeof installBrowserGuard>;
-  test.beforeEach(async ({ page }) => { assertBrowserClean = installBrowserGuard(page); });
+  let expectsAdmissionRejection = false;
+  test.beforeEach(async ({ page }) => {
+    expectsAdmissionRejection = false;
+    assertBrowserClean = installBrowserGuard(page, (error) => expectsAdmissionRejection && (
+      error === "console.error: Failed to load resource: the server responded with a status of 429 (Too Many Requests)"
+      || (error.startsWith("http 429:") && error.endsWith("/api/audits"))
+    ));
+  });
   test.afterEach(async ({}, testInfo) => { await assertBrowserClean(testInfo); });
 
   test("renders the bounded audit result in fix order and keeps API text inert", async ({ page }) => {
@@ -50,5 +57,20 @@ test.describe("single-page technical audit", () => {
     await expect(page.getByRole("heading", { name: "Результат технического аудита" })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
     await expect(page.getByText("Отсутствует title")).toBeVisible();
+  });
+
+  test("localizes the bounded admission error without exposing backend detail", async ({ page }) => {
+    expectsAdmissionRejection = true;
+    await page.route("**/api/audits", (route) => route.fulfill({
+      status: 429,
+      contentType: "application/json",
+      headers: { "retry-after": "37" },
+      body: JSON.stringify({ detail: { code: "audit_rate_limited", message: "Public audit rate limit reached." } }),
+    }));
+    await page.goto("/tools/single-page-audit");
+    await page.getByLabel("URL страницы").fill("https://example.com/page");
+    await page.getByRole("button", { name: "Проверить страницу" }).click();
+    await expect(page.locator(".tool-error[role=alert]")).toHaveText("Достигнут лимит публичных проверок. Повторите попытку позже.");
+    await expect(page.getByText("Public audit rate limit reached.")).toHaveCount(0);
   });
 });

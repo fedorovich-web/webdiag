@@ -39,6 +39,10 @@ class Settings(BaseSettings):
     account_database_path: str = ".webdiag/accounts.sqlite3"
     audit_database_path: str = ".webdiag/audits.sqlite3"
     audit_history_limit: int = Field(default=1_000, ge=1, le=100_000)
+    audit_public_request_limit: int = Field(default=60, ge=1, le=10_000)
+    audit_public_window_seconds: int = Field(default=60, ge=10, le=3_600)
+    audit_public_concurrency_limit: int = Field(default=4, ge=1, le=64)
+    audit_public_lease_seconds: int = Field(default=45, ge=10, le=300)
     account_session_ttl_seconds: int = Field(
         default=60 * 60 * 24 * 30,
         ge=_MIN_SESSION_TTL_SECONDS,
