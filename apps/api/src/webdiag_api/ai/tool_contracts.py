@@ -163,6 +163,59 @@ class SearchIntentPageFitInput(_StrictModel):
         return _normalize_content_page_url(value)
 
 
+class EvidencePageInput(_StrictModel):
+    page_url: str = Field(min_length=8, max_length=2_048)
+    title: str | None = Field(default=None, min_length=1, max_length=300)
+    h1: str | None = Field(default=None, min_length=1, max_length=500)
+    content: str = Field(min_length=20, max_length=20_000)
+
+    @field_validator("page_url")
+    @classmethod
+    def normalize_page_url(cls, value: str) -> str:
+        return _normalize_content_page_url(value)
+
+
+class CompetitorGapInput(_StrictModel):
+    locale: Locale
+    objective: str | None = Field(default=None, min_length=1, max_length=1_000)
+    own_page: EvidencePageInput
+    competitor_pages: list[EvidencePageInput] = Field(min_length=1, max_length=3)
+
+    @model_validator(mode="after")
+    def reject_duplicate_pages(self):
+        urls = [self.own_page.page_url] + [page.page_url for page in self.competitor_pages]
+        if len(set(urls)) != len(urls):
+            raise ValueError("page URLs must be unique")
+        return self
+
+
+class ExistingLinkInput(_StrictModel):
+    source_page_index: int = Field(ge=0, le=49)
+    target_page_index: int = Field(ge=0, le=49)
+
+
+class InternalLinkingInput(_StrictModel):
+    locale: Locale
+    pages: list[EvidencePageInput] = Field(min_length=2, max_length=50)
+    existing_links: list[ExistingLinkInput] = Field(default_factory=list, max_length=500)
+
+    @model_validator(mode="after")
+    def validate_inventory(self):
+        urls = [page.page_url for page in self.pages]
+        if len(set(urls)) != len(urls):
+            raise ValueError("page URLs must be unique")
+        pairs = [
+            (link.source_page_index, link.target_page_index) for link in self.existing_links
+        ]
+        if any(source == target for source, target in pairs):
+            raise ValueError("existing links must not be self-links")
+        if any(source >= len(self.pages) or target >= len(self.pages) for source, target in pairs):
+            raise ValueError("existing link references an unknown page")
+        if len(set(pairs)) != len(pairs):
+            raise ValueError("existing links must be unique")
+        return self
+
+
 class ActionPlanAction(_StrictModel):
     issue_ids: list[Annotated[str, Field(min_length=1, max_length=200)]] = Field(
         min_length=1,
@@ -278,6 +331,45 @@ class SearchIntentPageFitOutput(_StrictModel):
     )
 
 
+class CompetitorEvidence(_StrictModel):
+    page_index: int = Field(ge=0, le=2)
+    excerpt: str = Field(min_length=1, max_length=1_000)
+
+
+class CompetitorGap(_StrictModel):
+    topic: str = Field(min_length=1, max_length=300)
+    own_evidence: list[Annotated[str, Field(min_length=1, max_length=1_000)]] = Field(
+        max_length=10
+    )
+    competitor_evidence: list[CompetitorEvidence] = Field(min_length=1, max_length=10)
+    recommendation: str = Field(min_length=1, max_length=2_000)
+
+
+class CompetitorGapOutput(_StrictModel):
+    summary: str = Field(min_length=1, max_length=4_000)
+    gaps: list[CompetitorGap] = Field(min_length=1, max_length=30)
+    warnings: list[Annotated[str, Field(min_length=1, max_length=1_000)]] = Field(
+        max_length=20
+    )
+
+
+class LinkProposal(_StrictModel):
+    source_page_index: int = Field(ge=0, le=49)
+    target_page_index: int = Field(ge=0, le=49)
+    suggested_anchor: str = Field(min_length=1, max_length=200)
+    source_evidence: str = Field(min_length=1, max_length=1_000)
+    target_evidence: str = Field(min_length=1, max_length=1_000)
+    rationale: str = Field(min_length=1, max_length=1_000)
+
+
+class InternalLinkingOutput(_StrictModel):
+    summary: str = Field(min_length=1, max_length=4_000)
+    proposals: list[LinkProposal] = Field(max_length=100)
+    warnings: list[Annotated[str, Field(min_length=1, max_length=1_000)]] = Field(
+        max_length=20
+    )
+
+
 _INPUT_MODELS: dict[str, type[_StrictModel]] = {
     "ai_audit_action_plan": AuditActionPlanInput,
     "ai_meta_serp_studio": MetaSerpInput,
@@ -287,6 +379,8 @@ _INPUT_MODELS: dict[str, type[_StrictModel]] = {
     "ai_content_brief": ContentBriefInput,
     "ai_content_optimizer": ContentOptimizerInput,
     "ai_search_intent_page_fit": SearchIntentPageFitInput,
+    "ai_competitor_gap_report": CompetitorGapInput,
+    "ai_internal_linking_planner": InternalLinkingInput,
 }
 
 
@@ -512,6 +606,97 @@ def _validate_search_intent_page_fit(
     return output
 
 
+def _page_sources(page: object) -> list[str]:
+    if not isinstance(page, dict):
+        raise AIToolContractError("page evidence input is invalid")
+    values = (page.get("title"), page.get("h1"), page.get("content"))
+    if not all(value is None or isinstance(value, str) for value in values):
+        raise AIToolContractError("page evidence input is invalid")
+    return [_normalize_newlines(value) for value in values if isinstance(value, str)]
+
+
+def _validate_competitor_gap(
+    input_value: object,
+    output_value: object,
+) -> dict[str, object]:
+    output = _validate(CompetitorGapOutput, output_value)
+    if not isinstance(input_value, dict):
+        raise AIToolContractError("competitor-gap provider input is invalid")
+    competitors = input_value.get("competitor_pages")
+    if not isinstance(competitors, list):
+        raise AIToolContractError("competitor-gap provider input is invalid")
+    own_sources = _page_sources(input_value.get("own_page"))
+    competitor_sources = [_page_sources(page) for page in competitors]
+    topics: set[str] = set()
+    for gap in output["gaps"]:
+        topic = gap["topic"].strip().casefold()
+        if topic in topics:
+            raise AIToolContractError("competitor gap topics must be unique")
+        topics.add(topic)
+        own_evidence = [_normalize_newlines(item) for item in gap["own_evidence"]]
+        if len(set(own_evidence)) != len(own_evidence):
+            raise AIToolContractError("own-page evidence must be unique")
+        if any(not any(item in source for source in own_sources) for item in own_evidence):
+            raise AIToolContractError("gap evidence is absent from own page")
+        seen_competitor_evidence: set[tuple[int, str]] = set()
+        for evidence in gap["competitor_evidence"]:
+            index = evidence["page_index"]
+            excerpt = _normalize_newlines(evidence["excerpt"])
+            if index >= len(competitor_sources):
+                raise AIToolContractError("gap references an unknown comparison page")
+            pair = (index, excerpt)
+            if pair in seen_competitor_evidence:
+                raise AIToolContractError("comparison-page evidence must be unique")
+            seen_competitor_evidence.add(pair)
+            if not any(excerpt in source for source in competitor_sources[index]):
+                raise AIToolContractError("gap evidence is absent from comparison page")
+    return output
+
+
+def _validate_internal_linking(
+    input_value: object,
+    output_value: object,
+) -> dict[str, object]:
+    output = _validate(InternalLinkingOutput, output_value)
+    if not isinstance(input_value, dict):
+        raise AIToolContractError("internal-linking provider input is invalid")
+    pages = input_value.get("pages")
+    existing_links = input_value.get("existing_links")
+    if not isinstance(pages, list) or not isinstance(existing_links, list):
+        raise AIToolContractError("internal-linking provider input is invalid")
+    sources = [_page_sources(page) for page in pages]
+    existing_pairs: set[tuple[int, int]] = set()
+    for link in existing_links:
+        if not isinstance(link, dict):
+            raise AIToolContractError("internal-linking provider input is invalid")
+        source = link.get("source_page_index")
+        target = link.get("target_page_index")
+        if not isinstance(source, int) or not isinstance(target, int):
+            raise AIToolContractError("internal-linking provider input is invalid")
+        existing_pairs.add((source, target))
+    proposed_pairs: set[tuple[int, int]] = set()
+    for proposal in output["proposals"]:
+        source = proposal["source_page_index"]
+        target = proposal["target_page_index"]
+        pair = (source, target)
+        if source >= len(sources) or target >= len(sources):
+            raise AIToolContractError("link proposal references an unknown page")
+        if source == target:
+            raise AIToolContractError("link proposal must not be a self-link")
+        if pair in existing_pairs:
+            raise AIToolContractError("link proposal already exists")
+        if pair in proposed_pairs:
+            raise AIToolContractError("link proposals must be unique")
+        proposed_pairs.add(pair)
+        source_evidence = _normalize_newlines(proposal["source_evidence"])
+        target_evidence = _normalize_newlines(proposal["target_evidence"])
+        if not any(source_evidence in item for item in sources[source]):
+            raise AIToolContractError("link evidence is absent from source page")
+        if not any(target_evidence in item for item in sources[target]):
+            raise AIToolContractError("link evidence is absent from target page")
+    return output
+
+
 def validate_output(
     tool_id: str,
     input_value: object,
@@ -533,4 +718,8 @@ def validate_output(
         return _validate_content_optimizer(input_value, output_value)
     if tool_id == "ai_search_intent_page_fit":
         return _validate_search_intent_page_fit(input_value, output_value)
+    if tool_id == "ai_competitor_gap_report":
+        return _validate_competitor_gap(input_value, output_value)
+    if tool_id == "ai_internal_linking_planner":
+        return _validate_internal_linking(input_value, output_value)
     raise AIToolContractError("unsupported AI tool contract")
