@@ -1261,6 +1261,25 @@ objects use exact-key local/S3 writes, and public run output still excludes the
 object key. No real provider, object storage, payment, release, or deployment
 action occurred.
 
+## A13.0 production-readiness aggregate
+
+Fresh repository-wide verification on 2026-08-13 reached the browser gate with
+registry, workspace, registry/core/web unit tests, ESLint, TypeScript, release
+verification, the production build, and built-site verification passing. The
+first browser run reported 55/59 because four approved PNG baselines still
+represented the prior home and 123-tool catalog.
+
+The four actual/diff pairs were inspected before any snapshot update. Light and
+dark home renders had no overflow or broken sections and matched the previously
+approved home redesign. Catalog desktop/mobile changes were confined to the two
+new ready image tools. Only those four baselines were regenerated; a fresh full
+browser run then passed 59/59. The backend gate passed 531/531, Ruff reported no
+findings, and all 39 locked packages matched the installed win32 environment.
+
+No visual threshold was loosened, no failing screenshot was hidden, and no
+release, provider call, object-storage call, payment, merge, or deployment was
+performed.
+
 ## A12.1e final grounded text contracts
 
 Fresh backend verification on 2026-08-13:
