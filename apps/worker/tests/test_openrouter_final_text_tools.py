@@ -152,6 +152,12 @@ def test_final_text_tools_use_strict_honest_openrouter_policies(
     assert sent["model"] == "openai/gpt-5.6-luna"
     assert sent["response_format"]["json_schema"]["strict"] is True
     assert sent["response_format"]["json_schema"]["schema"]["additionalProperties"] is False
+    if tool_id == "ai_redirect_migration_mapper":
+        mapping_schema = sent["response_format"]["json_schema"]["schema"]["$defs"][
+            "RedirectMapping"
+        ]
+        assert "target_page_index" in mapping_schema["required"]
+        assert "target_evidence" in mapping_schema["required"]
     assert sent["provider"] == {
         "allow_fallbacks": False,
         "data_collection": "deny",

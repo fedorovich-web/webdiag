@@ -183,10 +183,10 @@ class InternalLinkingOutput(StrictProviderOutput):
 class RedirectMapping(StrictProviderOutput):
     old_page_index: int = Field(ge=0, le=49)
     action: Literal["redirect", "no_match"]
-    target_page_index: int | None = Field(default=None, ge=0, le=49)
+    target_page_index: int | None = Field(ge=0, le=49)
     confidence: Literal["low", "medium", "high"]
     old_evidence: str = Field(min_length=1, max_length=1_000)
-    target_evidence: str | None = Field(default=None, min_length=1, max_length=1_000)
+    target_evidence: str | None = Field(min_length=1, max_length=1_000)
     rationale: str = Field(min_length=1, max_length=1_000)
 
 

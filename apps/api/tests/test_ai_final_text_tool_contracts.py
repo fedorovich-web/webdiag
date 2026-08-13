@@ -180,6 +180,10 @@ def test_redirect_output_maps_every_old_page_once_with_exact_evidence() -> None:
     no_match_target["mappings"][1]["target_page_index"] = 1
     no_match_target["mappings"][1]["target_evidence"] = "Technical audit"
     invalid_cases.append(no_match_target)
+    implicit_no_match = deepcopy(output)
+    del implicit_no_match["mappings"][1]["target_page_index"]
+    del implicit_no_match["mappings"][1]["target_evidence"]
+    invalid_cases.append(implicit_no_match)
     fabricated = deepcopy(output)
     fabricated["mappings"][0]["target_evidence"] = "Measured ranking gain"
     invalid_cases.append(fabricated)
