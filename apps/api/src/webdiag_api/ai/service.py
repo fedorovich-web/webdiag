@@ -5,6 +5,7 @@ import hmac
 import json
 
 from webdiag_api.ai.catalog import AIToolCatalog, AIToolState
+from webdiag_api.ai.input_resolver import AIInputResolutionError, AIInputResolver
 from webdiag_api.ai.models import (
     AICatalogResponse,
     AIRunCreateRequest,
@@ -50,11 +51,13 @@ class AIService:
         catalog: AIToolCatalog,
         input_max_bytes: int,
         output_max_bytes: int = 1_000_000,
+        input_resolver: AIInputResolver | None = None,
     ) -> None:
         self._store = store
         self._catalog = catalog
         self._input_max_bytes = input_max_bytes
         self._output_max_bytes = output_max_bytes
+        self._input_resolver = input_resolver
 
     def catalog(self) -> AICatalogResponse:
         return AICatalogResponse(
@@ -111,6 +114,21 @@ class AIService:
                     "ai_invalid_tool_input",
                     "Invalid AI tool input.",
                 ) from error
+        if definition.id == "ai_audit_action_plan":
+            if self._input_resolver is None:
+                raise AIServiceError(
+                    503,
+                    "ai_tool_unavailable",
+                    "AI tool is unavailable.",
+                )
+            try:
+                input_value = self._input_resolver.resolve(
+                    user_id=user_id,
+                    tool_id=definition.id,
+                    validated_input=input_value,
+                )
+            except AIInputResolutionError as error:
+                raise AIServiceError(error.status_code, error.code, error.message) from error
         input_json = json.dumps(
             input_value,
             ensure_ascii=False,

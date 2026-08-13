@@ -10,7 +10,9 @@ from fastapi.responses import JSONResponse
 
 from webdiag_api.accounts.api import AccountServiceDependency, SessionCookie
 from webdiag_api.accounts.service import AccountServiceError
+from webdiag_api.accounts.workspace_storage import SqliteWorkspaceStore
 from webdiag_api.ai.catalog import DEFAULT_AI_CATALOG
+from webdiag_api.ai.input_resolver import AIInputResolver
 from webdiag_api.ai.models import (
     AICatalogResponse,
     AIRunCreateRequest,
@@ -43,6 +45,7 @@ def get_ai_service() -> AIService:
         catalog=DEFAULT_AI_CATALOG,
         input_max_bytes=settings.ai_input_max_bytes,
         output_max_bytes=settings.ai_output_max_bytes,
+        input_resolver=AIInputResolver(SqliteWorkspaceStore(settings.account_database_path)),
     )
 
 
