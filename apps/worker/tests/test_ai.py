@@ -8,6 +8,7 @@ from webdiag_worker.ai import (
     ProviderArtifact,
     ProviderRequest,
     ProviderResult,
+    cleanup_ai_artifacts,
     run_one_ai_job,
 )
 
@@ -227,6 +228,30 @@ def test_worker_returns_false_when_no_claim(monkeypatch) -> None:
 
     with patch("webdiag_worker.ai._request_json", return_value=response):
         assert run_one_ai_job(FakeProvider()) is False
+
+
+def test_worker_requests_bounded_artifact_cleanup_and_validates_contract() -> None:
+    response = {
+        "contract_version": "webdiag.ai.artifact_cleanup.v1",
+        "deleted": 3,
+        "failed": 1,
+    }
+    with patch("webdiag_worker.ai._request_json", return_value=response) as request_json:
+        assert cleanup_ai_artifacts(limit=25) == (3, 1)
+
+    request_json.assert_called_once_with(
+        "POST",
+        "/v1/internal/ai/artifacts/cleanup?limit=25",
+    )
+
+    with (
+        patch(
+            "webdiag_worker.ai._request_json",
+            return_value={**response, "deleted": True},
+        ),
+        pytest.raises(RuntimeError, match="invalid cleanup contract"),
+    ):
+        cleanup_ai_artifacts(limit=1)
 
 
 def test_unclassified_provider_exception_is_recorded_as_unknown(monkeypatch) -> None:

@@ -19,7 +19,7 @@ from webdiag_api.ai.api import (
 from webdiag_api.ai.artifact_storage import LocalArtifactStorage
 from webdiag_api.ai.catalog import AIToolCatalog, AIToolDefinition, AIToolState
 from webdiag_api.ai.images import normalize_image
-from webdiag_api.ai.models import AIRunCreateRequest
+from webdiag_api.ai.models import AIRunCreateRequest, AIWorkerArtifact
 from webdiag_api.ai.service import AIService
 from webdiag_api.ai.storage import SqliteAIStore
 from webdiag_api.config import settings
@@ -312,3 +312,100 @@ def test_image_edit_binds_one_owned_normalized_upload(tmp_path: Path) -> None:
         assert getattr(error, "code", None) == "ai_upload_not_found"
     else:
         raise AssertionError("foreign image upload must not be usable")
+
+
+def test_deleted_run_artifact_cleanup_is_bounded_idempotent_and_retryable(
+    tmp_path: Path,
+) -> None:
+    _account, service, storage, owner, _other = _context(tmp_path)
+    object_keys: list[str] = []
+    for index in range(2):
+        run, _created = service.create_run(
+            user_id=owner.response.user.id,
+            request=AIRunCreateRequest(
+                tool_id="ai_image_studio",
+                input={
+                    "locale": "en",
+                    "prompt": f"A bounded generated technical illustration number {index}.",
+                    "aspect_ratio": "1:1",
+                    "quality": "medium",
+                    "background": "opaque",
+                },
+            ),
+            idempotency_key=f"image-cleanup-{index}",
+        )
+        claim = service.claim_pending()
+        assert claim is not None and claim.run_id == run.id
+        service.mark_submitted(run_id=run.id, lease_token=claim.lease_token)
+        image = _png()
+        artifact_id = f"22222222-2222-4222-8222-{index + 1:012d}"
+        stored = storage.put(artifact_id=artifact_id, data=image, media_type="image/png")
+        digest = hashlib.sha256(image).hexdigest()
+        service.complete_run(
+            run_id=run.id,
+            lease_token=claim.lease_token,
+            output={
+                "artifact_id": artifact_id,
+                "media_type": "image/png",
+                "byte_size": len(image),
+                "sha256": digest,
+            },
+            provider_request_id=None,
+            input_units=1,
+            output_units=1,
+            artifact=AIWorkerArtifact(
+                artifact_id=artifact_id,
+                object_key=stored.object_key,
+                media_type="image/png",
+                byte_size=len(image),
+                sha256=digest,
+            ),
+            artifact_storage=storage,
+        )
+        service.delete_run(user_id=owner.response.user.id, run_id=run.id)
+        object_keys.append(stored.object_key)
+
+    class FailingDeleteStorage:
+        def delete(self, *, object_key: str) -> None:
+            raise OSError(object_key)
+
+    assert service.cleanup_artifacts(
+        artifact_storage=FailingDeleteStorage(),
+        limit=1,
+    ) == (0, 1)
+    assert service.cleanup_artifacts(artifact_storage=storage, limit=1) == (1, 0)
+    assert sum((tmp_path / "objects" / key).exists() for key in object_keys) == 1
+    assert service.cleanup_artifacts(artifact_storage=storage, limit=10) == (1, 0)
+    assert service.cleanup_artifacts(artifact_storage=storage, limit=10) == (0, 0)
+    assert all(not (tmp_path / "objects" / key).exists() for key in object_keys)
+
+
+def test_internal_artifact_cleanup_requires_bearer_and_is_no_store(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    _account, service, storage, _owner, _other = _context(tmp_path)
+    app.dependency_overrides[get_ai_service] = lambda: service
+    app.dependency_overrides[get_optional_ai_artifact_storage] = lambda: storage
+    monkeypatch.setattr(settings, "ai_internal_token", "a" * 32)
+    try:
+        missing = asyncio.run(_call("POST", "/v1/internal/ai/artifacts/cleanup?limit=1"))
+        authorized = asyncio.run(
+            _call(
+                "POST",
+                "/v1/internal/ai/artifacts/cleanup?limit=1",
+                headers={"Authorization": f"Bearer {'a' * 32}"},
+            )
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert missing.status_code == 401
+    assert missing.headers["cache-control"] == "no-store"
+    assert authorized.status_code == 200
+    assert authorized.headers["cache-control"] == "no-store"
+    assert authorized.json() == {
+        "contract_version": "webdiag.ai.artifact_cleanup.v1",
+        "deleted": 0,
+        "failed": 0,
+    }

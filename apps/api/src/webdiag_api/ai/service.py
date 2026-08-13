@@ -552,6 +552,25 @@ class AIService:
                 deleted += 1
         return deleted, failed
 
+    def cleanup_artifacts(
+        self,
+        *,
+        artifact_storage: ArtifactStorage,
+        limit: int,
+    ) -> tuple[int, int]:
+        pending = self._store.list_artifacts_pending_deletion(limit=limit)
+        deleted = 0
+        failed = 0
+        for artifact in pending:
+            try:
+                artifact_storage.delete(object_key=artifact.object_key)
+            except Exception:
+                failed += 1
+                continue
+            if self._store.mark_artifact_deleted(artifact_id=artifact.id):
+                deleted += 1
+        return deleted, failed
+
     @staticmethod
     def public_credit(account: CreditAccount) -> CreditAccountResponse:
         return CreditAccountResponse(available=account.available, reserved=account.reserved)

@@ -143,5 +143,13 @@ class AIWorkerRunResponse(StrictAIModel):
     state: Literal["running", "succeeded", "failed", "provider_unknown"]
 
 
+class AIArtifactCleanupResponse(StrictAIModel):
+    contract_version: Literal["webdiag.ai.artifact_cleanup.v1"] = (
+        "webdiag.ai.artifact_cleanup.v1"
+    )
+    deleted: int = Field(ge=0, le=100)
+    failed: int = Field(ge=0, le=100)
+
+
 def utc_from_ns(value: int) -> datetime:
     return datetime.fromtimestamp(value / 1_000_000_000, tz=UTC)

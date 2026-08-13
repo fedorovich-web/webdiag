@@ -279,6 +279,8 @@ class SqliteAIStore:
                         FOREIGN KEY(user_id) REFERENCES account_users(id) ON DELETE CASCADE
                     );
                     CREATE INDEX IF NOT EXISTS ai_artifacts_run_idx ON ai_artifacts(run_id, id);
+                    CREATE INDEX IF NOT EXISTS ai_artifacts_cleanup_idx
+                        ON ai_artifacts(deletion_state, created_at, id);
                     CREATE TABLE IF NOT EXISTS credit_ledger (
                         id TEXT PRIMARY KEY,
                         user_id TEXT NOT NULL,
@@ -1097,6 +1099,41 @@ class SqliteAIStore:
                 (artifact_id, run_id, user_id),
             ).fetchone()
         return self._artifact(row) if row is not None else None
+
+    def list_artifacts_pending_deletion(self, *, limit: int) -> tuple[StoredAIArtifact, ...]:
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 100:
+            raise ValueError("artifact cleanup limit must be between 1 and 100")
+        self.ensure_schema()
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT * FROM ai_artifacts WHERE deletion_state = 'pending'
+                ORDER BY created_at, id LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
+        return tuple(self._artifact(row) for row in rows)
+
+    def mark_artifact_deleted(self, *, artifact_id: str) -> bool:
+        self.ensure_schema()
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            updated = connection.execute(
+                """
+                UPDATE ai_artifacts SET deletion_state = 'deleted'
+                WHERE id = ? AND deletion_state = 'pending'
+                """,
+                (artifact_id,),
+            )
+            if updated.rowcount == 1:
+                connection.execute("COMMIT")
+                return True
+            existing = connection.execute(
+                "SELECT id FROM ai_artifacts WHERE id = ? AND deletion_state = 'deleted'",
+                (artifact_id,),
+            ).fetchone()
+            connection.execute("COMMIT")
+        return existing is not None
 
     def fail_run(
         self,

@@ -19,6 +19,7 @@ from webdiag_api.ai.artifacts import ArtifactStorage
 from webdiag_api.ai.catalog import DEFAULT_AI_CATALOG
 from webdiag_api.ai.input_resolver import AIInputResolver
 from webdiag_api.ai.models import (
+    AIArtifactCleanupResponse,
     AICatalogResponse,
     AIImageUploadResponse,
     AIRunCreateRequest,
@@ -438,6 +439,32 @@ def fail_run_internal(
     except AILeaseLostError as error:
         raise _internal_lease_error() from error
     return AIWorkerRunResponse(state=run.state)
+
+
+@internal_router.post("/artifacts/cleanup", response_model=AIArtifactCleanupResponse)
+def cleanup_artifacts_internal(
+    response: Response,
+    ai: AIServiceDependency,
+    artifact_storage: OptionalAIArtifactStorageDependency,
+    authorization: Annotated[str | None, Header()] = None,
+    limit: Annotated[int, Query(ge=1, le=100)] = 100,
+) -> AIArtifactCleanupResponse:
+    _no_store(response)
+    _authorize_internal(authorization)
+    if artifact_storage is None:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "ai_artifact_storage_unavailable",
+                "message": "AI artifact storage is unavailable.",
+            },
+            headers={"Cache-Control": "no-store"},
+        )
+    deleted, failed = ai.cleanup_artifacts(
+        artifact_storage=artifact_storage,
+        limit=limit,
+    )
+    return AIArtifactCleanupResponse(deleted=deleted, failed=failed)
 
 
 def _internal_lease_error() -> HTTPException:

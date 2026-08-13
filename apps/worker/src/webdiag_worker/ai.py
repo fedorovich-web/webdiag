@@ -305,6 +305,29 @@ def run_one_ai_job(
     return True
 
 
+def cleanup_ai_artifacts(*, limit: int = 100) -> tuple[int, int]:
+    if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 100:
+        raise ValueError("AI artifact cleanup limit must be between 1 and 100")
+    response = _request_json(
+        "POST",
+        f"/v1/internal/ai/artifacts/cleanup?limit={limit}",
+    )
+    deleted = response.get("deleted")
+    failed = response.get("failed")
+    if (
+        response.get("contract_version") != "webdiag.ai.artifact_cleanup.v1"
+        or isinstance(deleted, bool)
+        or not isinstance(deleted, int)
+        or isinstance(failed, bool)
+        or not isinstance(failed, int)
+        or not 0 <= deleted <= limit
+        or not 0 <= failed <= limit
+        or deleted + failed > limit
+    ):
+        raise RuntimeError("AI internal API returned an invalid cleanup contract")
+    return deleted, failed
+
+
 def _fail(run_id: str, lease_token: str, error_code: str, outcome: str) -> None:
     response = _request_json(
         "POST",
