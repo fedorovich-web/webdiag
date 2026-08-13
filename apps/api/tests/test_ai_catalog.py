@@ -30,39 +30,23 @@ def test_initial_catalog_exposes_no_unevaluated_tools() -> None:
     assert {definition.id for definition in definitions} == EXPECTED_TOOL_IDS
     assert len(definitions) == 15
     assert DEFAULT_AI_CATALOG.available() == ()
-    assert {
-        definition.id
-        for definition in definitions
-        if definition.state is AIToolState.DISABLED
-    } == {"ai_image_studio", "ai_image_edit_studio"}
-    assert all(
-        definition.state is AIToolState.INTERNAL
-        for definition in definitions
-        if definition.id not in {"ai_image_studio", "ai_image_edit_studio"}
-    )
+    assert all(definition.state is AIToolState.INTERNAL for definition in definitions)
     assert all(definition.credit_price is None for definition in definitions)
     assert {
         definition.model_policy
         for definition in definitions
         if definition.state is AIToolState.INTERNAL
-    } == {
-        "openai/gpt-5.6-luna"
-    }
-    assert {
-        definition.model_policy
-        for definition in definitions
-        if definition.state is AIToolState.DISABLED
-    } == {"none"}
+    } == {"openai/gpt-5.6-luna", "openai/gpt-image-2"}
     assert all(
         has_tool_contract(definition.id)
         for definition in definitions
         if definition.state is AIToolState.INTERNAL
     )
-    assert all(
-        not has_tool_contract(definition.id)
+    assert {
+        definition.id
         for definition in definitions
-        if definition.state is AIToolState.DISABLED
-    )
+        if definition.model_policy == "openai/gpt-image-2"
+    } == {"ai_image_studio", "ai_image_edit_studio"}
 
 
 def test_ready_tool_requires_positive_integer_price() -> None:

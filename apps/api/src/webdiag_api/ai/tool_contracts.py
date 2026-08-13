@@ -283,6 +283,39 @@ class RegexWorkbenchInput(_StrictModel):
         return self
 
 
+ImageAspectRatio = Literal[
+    "auto",
+    "1:1",
+    "3:2",
+    "2:3",
+    "4:3",
+    "3:4",
+    "16:9",
+    "9:16",
+    "21:9",
+]
+
+
+class ImageStudioInput(_StrictModel):
+    locale: Locale
+    prompt: str = Field(min_length=10, max_length=4_000)
+    aspect_ratio: ImageAspectRatio = "auto"
+    quality: Literal["auto", "low", "medium", "high"] = "medium"
+    background: Literal["auto", "opaque"] = "auto"
+
+    @field_validator("prompt")
+    @classmethod
+    def normalize_prompt(cls, value: str) -> str:
+        normalized = _normalize_newlines(value).strip()
+        if not normalized or "\x00" in normalized:
+            raise ValueError("image prompt is invalid")
+        return normalized
+
+
+class ImageEditStudioInput(ImageStudioInput):
+    upload_id: CanonicalUUID
+
+
 class ActionPlanAction(_StrictModel):
     issue_ids: list[Annotated[str, Field(min_length=1, max_length=200)]] = Field(
         min_length=1,
@@ -493,6 +526,13 @@ class RegexWorkbenchOutput(_StrictModel):
         return value
 
 
+class ImageStudioOutput(_StrictModel):
+    artifact_id: CanonicalUUID
+    media_type: Literal["image/jpeg", "image/png", "image/webp"]
+    byte_size: int = Field(ge=1, le=4 * 1024 * 1024)
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+
 _INPUT_MODELS: dict[str, type[_StrictModel]] = {
     "ai_audit_action_plan": AuditActionPlanInput,
     "ai_meta_serp_studio": MetaSerpInput,
@@ -507,6 +547,8 @@ _INPUT_MODELS: dict[str, type[_StrictModel]] = {
     "ai_redirect_migration_mapper": RedirectMigrationInput,
     "ai_localization_workbench": LocalizationInput,
     "ai_regex_workbench": RegexWorkbenchInput,
+    "ai_image_studio": ImageStudioInput,
+    "ai_image_edit_studio": ImageEditStudioInput,
 }
 
 
@@ -964,4 +1006,6 @@ def validate_output(
         return _validate_localization(input_value, output_value)
     if tool_id == "ai_regex_workbench":
         return _validate_regex_workbench(input_value, output_value)
+    if tool_id in {"ai_image_studio", "ai_image_edit_studio"}:
+        return _validate(ImageStudioOutput, output_value)
     raise AIToolContractError("unsupported AI tool contract")

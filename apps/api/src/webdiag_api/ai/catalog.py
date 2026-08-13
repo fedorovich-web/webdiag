@@ -67,16 +67,6 @@ def _internal(tool_id: str, model_policy: str) -> AIToolDefinition:
     )
 
 
-def _disabled(tool_id: str) -> AIToolDefinition:
-    return AIToolDefinition(
-        id=tool_id,
-        contract_version="v1",
-        state=AIToolState.DISABLED,
-        credit_price=None,
-        model_policy="none",
-    )
-
-
 DEFAULT_AI_CATALOG = AIToolCatalog(
     (
         _internal("ai_audit_action_plan", "openai/gpt-5.6-luna"),
@@ -92,7 +82,7 @@ DEFAULT_AI_CATALOG = AIToolCatalog(
         _internal("ai_redirect_migration_mapper", "openai/gpt-5.6-luna"),
         _internal("ai_localization_workbench", "openai/gpt-5.6-luna"),
         _internal("ai_regex_workbench", "openai/gpt-5.6-luna"),
-        _disabled("ai_image_studio"),
-        _disabled("ai_image_edit_studio"),
+        _internal("ai_image_studio", "openai/gpt-image-2"),
+        _internal("ai_image_edit_studio", "openai/gpt-image-2"),
     )
 )
