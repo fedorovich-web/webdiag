@@ -14,14 +14,17 @@ import { AccountDashboard } from "./account-dashboard";
 import { AccountClientError, getAccountSession, logoutAccount } from "./account-client";
 import type { AccountSessionResponse } from "./account-contract";
 import { accountErrorMessage } from "./account-messages";
+import { getAccountOverview } from "./account-overview-client";
+import type { AccountOverviewResponse } from "./account-overview-contract";
 import { listAccountProjects } from "./account-workspace-client";
 import type { AccountProject } from "./account-workspace-contract";
 import {
   buildAccountWorkspaceNavigation,
+  projectLandingAfterSwitch,
   resolveActiveAccountProject,
   type AccountWorkspaceSection,
 } from "./account-workspace-shell-contract";
-import { loginPath, projectPath } from "../../lib/routes";
+import { loginPath } from "../../lib/routes";
 
 interface AccountWorkspaceShellProps {
   readonly locale: Locale;
@@ -35,6 +38,7 @@ interface WorkspaceNavigationProps {
   readonly section: AccountWorkspaceSection;
   readonly projects: readonly AccountProject[];
   readonly currentProjectId?: string;
+  readonly latestAuditId?: string;
   readonly onNavigate?: () => void;
 }
 
@@ -51,31 +55,52 @@ function WorkspaceNavigation({
   section,
   projects,
   currentProjectId,
+  latestAuditId,
   onNavigate,
 }: WorkspaceNavigationProps) {
   const ru = locale === "ru";
-  const navigation = buildAccountWorkspaceNavigation(locale, section);
+  const navigation = buildAccountWorkspaceNavigation(
+    locale,
+    section,
+    currentProjectId,
+    latestAuditId,
+  );
   const activeProject = resolveActiveAccountProject(projects, currentProjectId);
 
   function selectProject(projectId: string) {
     if (!projectId) return;
     onNavigate?.();
-    window.location.assign(projectPath(locale, projectId));
+    window.location.assign(projectLandingAfterSwitch(locale, projectId));
+  }
+
+  function items(values: ReturnType<typeof buildAccountWorkspaceNavigation>["portfolio"]) {
+    return values.map((item) => item.href ? (
+      <Link
+        key={item.id}
+        href={item.href}
+        aria-current={item.active ? "page" : undefined}
+        onClick={onNavigate}
+      >
+        {item.label}
+      </Link>
+    ) : (
+      <span key={item.id} aria-disabled="true">{item.label}</span>
+    ));
   }
 
   return (
     <>
       <nav className="wd-workspace-navigation" aria-label={ru ? "Навигация кабинета" : "Workspace navigation"}>
-        {navigation.map((item) => (
-          <Link
-            key={item.id}
-            href={item.href}
-            aria-current={item.active ? "page" : undefined}
-            onClick={onNavigate}
-          >
-            {item.label}
-          </Link>
-        ))}
+        <div className="wd-workspace-navigation-group">
+          <span>{ru ? "Рабочая область" : "Workspace"}</span>
+          {items(navigation.portfolio)}
+        </div>
+        {navigation.project && (
+          <div className="wd-workspace-navigation-group">
+            <span>{ru ? "Текущий проект" : "Current project"}</span>
+            {items(navigation.project)}
+          </div>
+        )}
       </nav>
 
       <div className="wd-workspace-project-switcher">
@@ -108,6 +133,8 @@ export function AccountWorkspaceShell({
   const ru = locale === "ru";
   const [session, setSession] = useState<AccountSessionResponse | null>(null);
   const [projects, setProjects] = useState<readonly AccountProject[]>([]);
+  const [overview, setOverview] = useState<AccountOverviewResponse | null>(null);
+  const [overviewError, setOverviewError] = useState("");
   const [loadedToken, setLoadedToken] = useState<number | null>(null);
   const [loadState, setLoadState] = useState<"ready" | "unauthenticated" | "unavailable">("ready");
   const [reloadToken, setReloadToken] = useState(0);
@@ -121,30 +148,42 @@ export function AccountWorkspaceShell({
 
   useEffect(() => {
     let active = true;
-    Promise.all([getAccountSession(), listAccountProjects()])
-      .then(([sessionValue, projectValue]) => {
+    Promise.allSettled([getAccountSession(), listAccountProjects(), getAccountOverview()])
+      .then(([sessionResult, projectResult, overviewResult]) => {
         if (!active) return;
-        setSession(sessionValue);
-        setProjects(projectValue.projects);
+        if (sessionResult.status === "rejected" || projectResult.status === "rejected") {
+          const caught = sessionResult.status === "rejected"
+            ? sessionResult.reason
+            : projectResult.reason;
+          setSession(null);
+          setProjects([]);
+          setOverview(null);
+          setOverviewError("");
+          setLoadState(
+            caught instanceof AccountClientError && caught.status === 401
+              ? "unauthenticated"
+              : "unavailable",
+          );
+          setLoadedToken(reloadToken);
+          return;
+        }
+        setSession(sessionResult.value);
+        setProjects(projectResult.value.projects);
         setLoadState("ready");
         setError("");
-        setLoadedToken(reloadToken);
-      })
-      .catch((caught) => {
-        if (!active) return;
-        setSession(null);
-        setProjects([]);
-        setLoadState(
-          caught instanceof AccountClientError && caught.status === 401
-            ? "unauthenticated"
-            : "unavailable",
-        );
+        if (overviewResult.status === "fulfilled") {
+          setOverview(overviewResult.value);
+          setOverviewError("");
+        } else {
+          setOverview(null);
+          setOverviewError(accountErrorMessage(locale, overviewResult.reason));
+        }
         setLoadedToken(reloadToken);
       });
     return () => {
       active = false;
     };
-  }, [reloadToken]);
+  }, [locale, reloadToken]);
 
   useEffect(() => {
     if (!drawerOpen) return;
@@ -200,6 +239,20 @@ export function AccountWorkspaceShell({
 
   function addProject(project: AccountProject) {
     setProjects((current) => [project, ...current.filter((item) => item.id !== project.id)]);
+    setOverview((current) => current ? {
+      ...current,
+      projects: [
+        {
+          project,
+          latest_audit: null,
+          monitor: null,
+          report_count: 0,
+          shared_report_count: 0,
+          latest_report_created_at: null,
+        },
+        ...current.projects.filter((item) => item.project.id !== project.id),
+      ],
+    } : current);
   }
 
   if (loading) {
@@ -234,6 +287,9 @@ export function AccountWorkspaceShell({
     section,
     projects,
     currentProjectId,
+    latestAuditId: overview?.projects.find(
+      (item) => item.project.id === currentProjectId,
+    )?.latest_audit?.id,
   };
 
   return (
@@ -267,6 +323,14 @@ export function AccountWorkspaceShell({
 
         <section className="wd-workspace-content" aria-label={ru ? "Содержимое кабинета" : "Workspace content"}>
           {error && <p className="wd-account-error" role="alert">{error}</p>}
+          {overviewError && section === "overview" && (
+            <div className="wd-account-error" role="alert">
+              <span>{overviewError}</span>
+              <button type="button" onClick={() => setReloadToken((value) => value + 1)}>
+                {ru ? "Повторить загрузку обзора" : "Retry overview"}
+              </button>
+            </div>
+          )}
           {section === "overview" || section === "projects" ? (
             <AccountDashboard
               locale={locale}

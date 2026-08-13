@@ -5,5 +5,5 @@ export const metadata = { title: "Мониторинг проекта" };
 
 export default async function MonitoringPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params;
-  return <AccountWorkspaceShell locale="ru" section="project" currentProjectId={projectId}><AccountMonitoring locale="ru" projectId={projectId} /></AccountWorkspaceShell>;
+  return <AccountWorkspaceShell locale="ru" section="monitoring" currentProjectId={projectId}><AccountMonitoring locale="ru" projectId={projectId} /></AccountWorkspaceShell>;
 }

@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Issues and priorities", robots: { in
 export default async function Page({ params }: { readonly params: Promise<{ readonly projectId: string; readonly auditId: string }> }) {
   const { projectId, auditId } = await params;
   return (
-    <AccountWorkspaceShell locale="en" section="audit" currentProjectId={projectId}>
+    <AccountWorkspaceShell locale="en" section="issues" currentProjectId={projectId}>
       <AccountIssuesList locale="en" projectId={projectId} auditId={auditId} />
     </AccountWorkspaceShell>
   );

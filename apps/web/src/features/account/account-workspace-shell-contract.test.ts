@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildAccountWorkspaceNavigation,
+  projectLandingAfterSwitch,
   recentAccountProjects,
   resolveActiveAccountProject,
 } from "./account-workspace-shell-contract";
@@ -33,18 +34,53 @@ const projects: readonly AccountProject[] = [
 describe("account workspace shell contract", () => {
   it("builds localized navigation for the real account routes", () => {
     const ru = buildAccountWorkspaceNavigation("ru", "overview");
-    expect(ru).toHaveLength(3);
-    expect(ru[0]?.label).toBe("Обзор");
-    expect(ru[0]?.active).toBe(true);
-    expect(ru[1]?.href).toBe("/account#projects");
-    expect(ru[2]?.href).toBe("/account/reports");
+    expect(ru.portfolio).toHaveLength(3);
+    expect(ru.portfolio[0]?.label).toBe("Обзор");
+    expect(ru.portfolio[0]?.active).toBe(true);
+    expect(ru.portfolio[1]?.href).toBe("/account#projects");
+    expect(ru.portfolio[2]?.href).toBe("/account/reports");
+    expect(ru.project).toBeNull();
 
     const en = buildAccountWorkspaceNavigation("en", "projects");
-    expect(en[0]?.href).toBe("/en/account");
-    expect(en[1]?.label).toBe("Projects");
-    expect(en[1]?.active).toBe(true);
-    expect(en[2]?.label).toBe("Reports");
-    expect(en[2]?.active).toBe(false);
+    expect(en.portfolio[0]?.href).toBe("/en/account");
+    expect(en.portfolio[1]?.label).toBe("Projects");
+    expect(en.portfolio[1]?.active).toBe(true);
+    expect(en.portfolio[2]?.label).toBe("Reports");
+    expect(en.portfolio[2]?.active).toBe(false);
+  });
+
+  it("builds project task navigation only from live routes and known audit context", () => {
+    const projectId = projects[0]!.id;
+    const auditId = "44444444-4444-4444-8444-444444444444";
+    const navigation = buildAccountWorkspaceNavigation(
+      "ru",
+      "monitoring",
+      projectId,
+      auditId,
+    );
+
+    expect(navigation.project?.map((item) => item.id)).toEqual([
+      "project_overview",
+      "audits",
+      "issues",
+      "monitoring",
+      "project_reports",
+    ]);
+    expect(navigation.project?.find((item) => item.id === "monitoring")).toMatchObject({
+      href: `/account/projects/${projectId}/monitoring`,
+      active: true,
+      disabled: false,
+    });
+    expect(navigation.project?.find((item) => item.id === "issues")?.href).toBe(
+      `/account/projects/${projectId}/audits/${auditId}/issues`,
+    );
+    expect(navigation.project?.find((item) => item.id === "project_reports")).toMatchObject({
+      href: null,
+      disabled: true,
+    });
+    expect(projectLandingAfterSwitch("en", projects[1]!.id)).toBe(
+      `/en/account/projects/${projects[1]!.id}`,
+    );
   });
 
   it("orders recent projects and resolves the active project by UUID", () => {
