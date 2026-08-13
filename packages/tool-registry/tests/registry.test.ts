@@ -19,4 +19,10 @@ describe("tool registry", () => {
     expect(tool?.description?.ru).toContain("PNG");
     expect(tool?.description?.en).toContain("PNG");
   });
+
+  it("publishes the browser-only responsive srcset generator", () => {
+    const tool = tools.find((item) => item.slug === "responsive-image-srcset-generator");
+    expect(tool?.state).toBe("ready");
+    expect(tool?.description?.en).toContain("does not create");
+  });
 });

@@ -1,5 +1,37 @@
 # Verification Notes
 
+# A10.38 — responsive srcset text workbench
+
+## Scope
+
+- promoted `WD-105` as `responsive-image-srcset-generator`;
+- parses 1–20 HTTPS or root-relative `URL | width` candidates, rejects grammar
+  ambiguity and unsafe URL forms, enforces unique 1–8192 width descriptors, and
+  sorts output deterministically;
+- emits plain srcset plus an HTML-escaped img fragment with explicit fallback,
+  sizes, and alt fields;
+- does not create, upload, probe, transform, or validate image files and does not
+  execute the generated HTML;
+- public tool count is now 106; registry entry count remains 125.
+
+## Fresh verification
+
+```text
+registry verification                         PASS — 125 unique tools
+web targeted Vitest                           PASS — 22/22
+tool-registry Vitest                          PASS — 4/4
+API registry/API pytest                       PASS — 14/14
+affected ESLint                               PASS
+web TypeScript                                PASS
+production build                              PASS — 253 generated pages
+built-site verification                       PASS — 218 public routes / 216 HTML routes
+focused Playwright                            PASS — 8/8
+registry/API mirror byte parity               PASS
+```
+
+Controlled desktop/mobile visual review passed. No external URL, provider,
+object-storage, marketplace, payment, release, or deployment request was made.
+
 # A12.7 — direct internal worker bearer transport
 
 ## Scope

@@ -12,4 +12,8 @@ describe("tool renderer registry contract", () => {
   it("renders the favicon generator", () => {
     expect(SUPPORTED_TOOL_SLUGS).toContain("favicon-generator");
   });
+
+  it("renders the responsive srcset generator", () => {
+    expect(SUPPORTED_TOOL_SLUGS).toContain("responsive-image-srcset-generator");
+  });
 });

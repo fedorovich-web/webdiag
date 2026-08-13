@@ -76,4 +76,10 @@ describe("tool editorial content", () => {
     expect(JSON.stringify(page)).toContain("favicon-32x32.png");
     expect(JSON.stringify(page)).toContain("does not create .ico");
   });
+
+  it("publishes honest responsive srcset content", () => {
+    const page = toolPageContents.find((item) => item.slug === "responsive-image-srcset-generator");
+    expect(page?.state).toBe("published");
+    expect(JSON.stringify(page)).toContain("does not create image files");
+  });
 });

@@ -60,6 +60,7 @@ import {
 import { RedirectChainTool } from "./redirect-chain-tool";
 import { BulkHttpStatusTool } from "./bulk-http-status-tool";
 import { RobotsTxtTool } from "./robots-txt-tool";
+import { ResponsiveSrcsetGeneratorTool } from "./responsive-srcset";
 import { SecurityHeadersTool } from "./security-headers-tool";
 import { FaqSchemaGeneratorTool, RobotsTxtGeneratorTool, SitemapGeneratorTool } from "./seo-generator-tools";
 import {
@@ -304,6 +305,7 @@ export const SUPPORTED_TOOL_SLUGS = [
   "image-resizer",
   "image-cropper",
   "favicon-generator",
+  "responsive-image-srcset-generator",
   "svg-optimizer",
   "add-watermark-to-image",
   "image-metadata-viewer",
@@ -413,6 +415,7 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "image-resizer": return <ImageResizerTool locale={locale} />;
     case "image-cropper": return <ImageCropperTool locale={locale} />;
     case "favicon-generator": return <FaviconGeneratorTool locale={locale} />;
+    case "responsive-image-srcset-generator": return <ResponsiveSrcsetGeneratorTool locale={locale} />;
     case "svg-optimizer": return <SvgOptimizerTool locale={locale} />;
     case "add-watermark-to-image": return <AddWatermarkImageTool locale={locale} />;
     case "image-metadata-viewer": return <ImageMetadataViewerTool locale={locale} />;

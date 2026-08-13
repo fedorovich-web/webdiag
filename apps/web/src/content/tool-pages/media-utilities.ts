@@ -374,4 +374,48 @@ export const mediaUtilityToolPages = [
       "https://developer.mozilla.org/docs/Web/Progressive_web_apps/Manifest/Reference/icons",
     ],
   }),
+  toolPage({
+    slug: "responsive-image-srcset-generator",
+    seoTitle: { ru: "Генератор srcset для адаптивных изображений", en: "Responsive Image Srcset Generator" },
+    metaDescription: { ru: "Соберите srcset и экранированный img-фрагмент из существующих HTTPS или root-relative URL и фактической ширины файлов.", en: "Build a srcset and escaped img fragment from existing HTTPS or root-relative URLs and the files' actual intrinsic widths." },
+    h1: { ru: "Генератор srcset для адаптивных изображений", en: "Responsive Image Srcset Generator" },
+    lead: { ru: "Упорядочьте до 20 существующих ресурсов по width descriptor и получите текст для безопасного ручного подключения.", en: "Order up to 20 existing resources by width descriptor and get text for safe manual integration." },
+    quickFacts: [
+      { ru: "1–20 URL", en: "1–20 URLs" },
+      { ru: "Width descriptors", en: "Width descriptors" },
+      { ru: "HTML escaping", en: "HTML escaping" },
+    ],
+    howToSteps: [
+      { ru: "Введите URL и фактическую ширину через разделитель |.", en: "Enter each URL and actual intrinsic width separated by |." },
+      { ru: "Укажите резервный src, sizes и осмысленный alt.", en: "Provide the fallback src, sizes value, and meaningful alt text." },
+      { ru: "Создайте и скопируйте srcset или экранированный img-фрагмент.", en: "Generate and copy the srcset or escaped img fragment." },
+    ],
+    supportedFeatures: [
+      { ru: "HTTPS и root-relative URL без credentials и fragments.", en: "HTTPS and root-relative URLs without credentials or fragments." },
+      { ru: "Уникальные width descriptors от 1 до 8192.", en: "Unique width descriptors from 1 through 8192." },
+      { ru: "Сортировка кандидатов и экранирование HTML attributes.", en: "Candidate sorting and HTML attribute escaping." },
+    ],
+    limitations: [
+      { ru: "Инструмент не создаёт, не загружает и не проверяет image-файлы или их размеры.", en: "The tool does not create image files, upload them, or verify their dimensions." },
+      { ru: "Нет picture art direction, DPR descriptors, CDN transforms и полного парсера media conditions.", en: "Picture art direction, DPR descriptors, CDN transforms, and full media-condition parsing are not included." },
+    ],
+    useCases: [
+      { ru: "Подготовка srcset для заранее созданных WebP-файлов.", en: "Preparing a srcset for pre-generated WebP files." },
+      { ru: "Сортировка набора изображений по фактической ширине.", en: "Sorting an image set by intrinsic width." },
+      { ru: "Безопасная вставка пользовательского alt в HTML-фрагмент.", en: "Safely placing user-supplied alt text in an HTML fragment." },
+    ],
+    technicalNotes: [
+      { ru: "URL с raw comma или whitespace блокируются, чтобы не менять грамматику srcset.", en: "URLs containing raw commas or whitespace are blocked so they cannot alter srcset grammar." },
+      { ru: "Результат показывается как текст и не исполняется в DOM.", en: "The result is rendered as text and is not executed in the DOM." },
+    ],
+    faq: [
+      { question: { ru: "Инструмент создаёт изображения нужных размеров?", en: "Does it create images at the requested widths?" }, answer: { ru: "Нет. Все файлы должны существовать заранее, а ширину вводит пользователь.", en: "No. The tool does not create image files; every file must already exist and the user supplies its intrinsic width." } },
+      { question: { ru: "URL проверяются по сети?", en: "Are URLs checked over the network?" }, answer: { ru: "Нет. Инструмент проверяет только форму введённых данных локально в браузере.", en: "No. It validates only the entered text locally in the browser." } },
+    ],
+    relatedToolSlugs: ["image-resizer", "image-format-converter", "image-performance-checker"],
+    sourceUrls: [
+      "https://developer.mozilla.org/docs/Web/API/HTMLImageElement/srcset",
+      "https://developer.mozilla.org/docs/Web/API/HTMLImageElement/sizes",
+    ],
+  }),
 ] as const;

@@ -1868,8 +1868,11 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Собирает проверенный srcset и экранированный img-фрагмент из 1–20 существующих URL и width descriptors; не создаёт и не загружает файлы.",
+      "en": "Builds a validated srcset and escaped img fragment from 1–20 existing URLs and width descriptors; it does not create or upload image files."
+    }
   },
   {
     "id": "WD-106",
