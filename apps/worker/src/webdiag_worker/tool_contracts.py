@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class StrictProviderOutput(BaseModel):
@@ -178,3 +178,59 @@ class InternalLinkingOutput(StrictProviderOutput):
     warnings: list[Annotated[str, Field(min_length=1, max_length=1_000)]] = Field(
         max_length=20
     )
+
+
+class RedirectMapping(StrictProviderOutput):
+    old_page_index: int = Field(ge=0, le=49)
+    action: Literal["redirect", "no_match"]
+    target_page_index: int | None = Field(default=None, ge=0, le=49)
+    confidence: Literal["low", "medium", "high"]
+    old_evidence: str = Field(min_length=1, max_length=1_000)
+    target_evidence: str | None = Field(default=None, min_length=1, max_length=1_000)
+    rationale: str = Field(min_length=1, max_length=1_000)
+
+
+class RedirectMigrationOutput(StrictProviderOutput):
+    summary: str = Field(min_length=1, max_length=4_000)
+    mappings: list[RedirectMapping] = Field(min_length=1, max_length=50)
+    warnings: list[Annotated[str, Field(min_length=1, max_length=1_000)]] = Field(
+        max_length=20
+    )
+
+
+class GlossaryUsage(StrictProviderOutput):
+    glossary_index: int = Field(ge=0, le=99)
+    source_excerpt: str = Field(min_length=1, max_length=1_000)
+    target_excerpt: str = Field(min_length=1, max_length=1_000)
+
+
+class LocalizationOutput(StrictProviderOutput):
+    localized_content: str = Field(min_length=20, max_length=100_000)
+    glossary_usages: list[GlossaryUsage] = Field(max_length=100)
+    preserved_constraint_indexes: list[int] = Field(max_length=100)
+    warnings: list[Annotated[str, Field(min_length=1, max_length=1_000)]] = Field(
+        max_length=20
+    )
+
+
+class RegexCasePlan(StrictProviderOutput):
+    case_index: int = Field(ge=0, le=39)
+    expected_match: bool
+
+
+class RegexWorkbenchOutput(StrictProviderOutput):
+    dialect: Literal["python", "javascript", "re2"]
+    pattern: str = Field(min_length=1, max_length=2_000)
+    validation_status: Literal["unverified"]
+    case_plan: list[RegexCasePlan] = Field(min_length=1, max_length=40)
+    explanation: str = Field(min_length=1, max_length=4_000)
+    warnings: list[Annotated[str, Field(min_length=1, max_length=1_000)]] = Field(
+        max_length=20
+    )
+
+    @field_validator("pattern")
+    @classmethod
+    def reject_null_pattern(cls, value: str) -> str:
+        if "\x00" in value:
+            raise ValueError("regex pattern contains a null byte")
+        return value
