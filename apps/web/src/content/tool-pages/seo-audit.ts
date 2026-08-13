@@ -910,6 +910,48 @@ export const seoAuditToolPages = [
     sourceUrls: ["https://www.sitemaps.org/protocol.html", "https://developers.google.com/search/docs/crawling-indexing/sitemaps/overview"],
   }),
   toolPage({
+    slug: "bulk-http-status-checker",
+    seoTitle: { ru: "Массовая проверка HTTP-статусов до 50 URL", en: "Bulk HTTP Status Checker for Up to 50 URLs" },
+    metaDescription: { ru: "Проверьте HTTP-статусы, финальные URL и ошибки для списка до 50 адресов через backend WebDiag с SSRF-защитой.", en: "Check HTTP statuses, final URLs, and per-address errors for up to 50 URLs through the SSRF-protected WebDiag backend." },
+    h1: { ru: "Массовая проверка HTTP-статусов", en: "Bulk HTTP Status Checker" },
+    lead: { ru: "Вставьте до 50 HTTP(S) URL, чтобы получить упорядоченный результат по каждому адресу без скрытого сканирования сайта.", en: "Paste up to 50 HTTP(S) URLs to get an ordered result for each address without a hidden site crawl." },
+    quickFacts: [
+      { ru: "До 50 URL", en: "Up to 50 URLs" },
+      { ru: "Пять одновременных запросов", en: "Five concurrent requests" },
+      { ru: "Отдельные ошибки", en: "Isolated errors" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте URL по одному в строке.", en: "Paste one URL per line." },
+      { ru: "Запустите проверку и дождитесь завершения ограниченной пачки.", en: "Run the check and wait for the bounded batch to finish." },
+      { ru: "Разберите успешные статусы, редиректы и ошибки отдельных адресов.", en: "Review successful statuses, redirects, and per-address errors." },
+    ],
+    supportedFeatures: [
+      { ru: "Сохраняет исходный порядок и возвращает результат для каждого введённого URL.", en: "Preserves input order and returns one result for every submitted URL." },
+      { ru: "Показывает финальный URL, HTTP-статус, количество редиректов и доступные заголовки ответа.", en: "Shows the final URL, HTTP status, redirect count, and available response headers." },
+      { ru: "Изолирует ошибки URL: один недоступный или запрещённый адрес не отменяет всю пачку.", en: "Isolates URL failures so one unavailable or rejected address does not cancel the batch." },
+    ],
+    limitations: [
+      { ru: "Инструмент проверяет только явно введённые URL и не ищет ссылки на сайте.", en: "The tool checks only submitted URLs and does not discover links across a site." },
+      { ru: "Тело страницы не скачивается и содержимое HTML не анализируется.", en: "Page bodies are not downloaded and HTML content is not analyzed." },
+    ],
+    useCases: [
+      { ru: "Проверить список посадочных страниц после миграции или релиза.", en: "Check a list of landing pages after a migration or release." },
+      { ru: "Найти 404 и 5xx в подготовленном наборе важных URL.", en: "Find 404 and 5xx responses in a prepared set of important URLs." },
+      { ru: "Сверить финальные адреса после настройки массовых редиректов.", en: "Verify final destinations after configuring a redirect batch." },
+    ],
+    technicalNotes: [
+      { ru: "Каждый URL проходит backend-проверку публичного HTTP(S) адреса, DNS/IP policy и peer verification.", en: "Every URL passes backend public HTTP(S), DNS/IP policy, and connected-peer verification." },
+      { ru: "Backend выполняет не более пяти проверок одновременно и ограничивает пачку 50 URL.", en: "The backend runs no more than five checks concurrently and caps each batch at 50 URLs." },
+    ],
+    faq: [
+      { question: { ru: "Это crawler всего сайта?", en: "Is this a full-site crawler?" }, answer: { ru: "Нет. Проверяются только URL, которые вы ввели. Поиск и обход ссылок относится к отдельному crawler-инструменту.", en: "No. Only submitted URLs are checked. Link discovery and traversal belong to a separate crawler tool." } },
+      { question: { ru: "Почему один URL может завершиться ошибкой, а остальные — успешно?", en: "Why can one URL fail while the others succeed?" }, answer: { ru: "Каждый адрес проверяется независимо. Ошибка сети, SSRF policy или недоступный хост фиксируются для конкретного элемента и не скрывают результаты остальных.", en: "Each address is checked independently. A network error, SSRF policy rejection, or unavailable host is recorded for that item without hiding other results." } },
+    ],
+    relatedToolSlugs: ["redirect-chain-checker", "broken-link-checker", "redirect-map-validator"],
+    sourceUrls: ["https://developer.mozilla.org/docs/Web/HTTP/Status", "https://developer.mozilla.org/docs/Web/HTTP/Redirections"],
+  }),
+
+  toolPage({
     slug: "redirect-chain-checker",
     seoTitle: { ru: "Проверка HTTP-статуса и цепочки редиректов", en: "HTTP Status & Redirect Chain Checker" },
     metaDescription: { ru: "Проверьте HTTP-статус, финальный URL, content-type и цепочку редиректов для одной страницы через безопасный WebDiag API.", en: "Check the HTTP status, final URL, content type, and redirect chain for a single page through the safe WebDiag API." },
@@ -945,7 +987,7 @@ export const seoAuditToolPages = [
     ],
     faq: [
       { question: { ru: "Почему проверка идёт через сервер, а не локально в браузере?", en: "Why does this check run through the server instead of locally in the browser?" }, answer: { ru: "Браузер ограничен CORS и не даёт надёжно прочитать redirect chain и заголовки чужого сайта. Поэтому проверка выполняется через безопасный backend WebDiag.", en: "Browsers are limited by CORS and cannot reliably read another site's redirect chain and headers. The check therefore runs through the safe WebDiag backend." } },
-      { question: { ru: "Это массовая проверка статусов?", en: "Is this a bulk status checker?" }, answer: { ru: "Нет. Текущий инструмент проверяет один URL. Массовая проверка должна идти отдельным этапом с лимитами, очередью и защитой от злоупотреблений.", en: "No. This tool checks one URL. Bulk checking needs a separate stage with limits, queueing, and abuse protection." } },
+      { question: { ru: "Это массовая проверка статусов?", en: "Is this a bulk status checker?" }, answer: { ru: "Нет. Этот инструмент подробно проверяет один URL. Для подготовленного списка используйте отдельную массовую проверку с лимитом 50 адресов.", en: "No. This tool inspects one URL in detail. Use the separate bulk checker for a prepared list of up to 50 addresses." } },
     ],
     relatedToolSlugs: ["url-encoder-decoder", "json-formatter-validator", "hash-generator"],
     sourceUrls: ["https://developer.mozilla.org/docs/Web/HTTP/Status", "https://developer.mozilla.org/docs/Web/HTTP/Redirections"],

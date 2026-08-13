@@ -58,6 +58,7 @@ import {
   TlsConfigurationCheckerTool,
 } from "./protocol-security-tools";
 import { RedirectChainTool } from "./redirect-chain-tool";
+import { BulkHttpStatusTool } from "./bulk-http-status-tool";
 import { RobotsTxtTool } from "./robots-txt-tool";
 import { SecurityHeadersTool } from "./security-headers-tool";
 import { FaqSchemaGeneratorTool, RobotsTxtGeneratorTool, SitemapGeneratorTool } from "./seo-generator-tools";
@@ -306,6 +307,7 @@ export const SUPPORTED_TOOL_SLUGS = [
   "add-watermark-to-image",
   "image-metadata-viewer",
   "redirect-chain-checker",
+  "bulk-http-status-checker",
   "robots-txt-tester",
   "sitemap-validator",
   "canonical-checker",
@@ -413,6 +415,7 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "add-watermark-to-image": return <AddWatermarkImageTool locale={locale} />;
     case "image-metadata-viewer": return <ImageMetadataViewerTool locale={locale} />;
     case "redirect-chain-checker": return <RedirectChainTool locale={locale} />;
+    case "bulk-http-status-checker": return <BulkHttpStatusTool locale={locale} />;
     case "robots-txt-tester": return <RobotsTxtTool locale={locale} />;
     case "sitemap-validator": return <SitemapValidatorTool locale={locale} />;
     case "canonical-checker": return <CanonicalCheckerTool locale={locale} />;
