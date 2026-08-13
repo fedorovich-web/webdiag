@@ -209,3 +209,4 @@ def test_storage_factory_builds_bounded_https_s3_client() -> None:
     assert config.connect_timeout == 5
     assert config.read_timeout == 30
     assert config.retries["total_max_attempts"] == 3
+    assert config.proxies == {}

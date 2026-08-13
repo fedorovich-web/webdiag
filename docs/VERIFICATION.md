@@ -1,5 +1,30 @@
 # Verification Notes
 
+# A12.8 — direct private S3 artifact transport
+
+## Scope
+
+- API and worker S3 artifact factories now set Botocore `Config.proxies={}`;
+- explicit private HTTPS artifact endpoints and bearer/provider traffic no
+  longer inherit ambient HTTP(S) proxy routes;
+- SigV4, explicit credentials, bounded timeouts/retries, private ACL, object-key
+  validation, streaming bounds, and production S3-only policy are unchanged;
+- both factories have regression coverage for the exact no-proxy configuration.
+
+## Targeted verification
+
+```text
+artifact/provider pytest                        PASS — 66/66
+full API/worker pytest                          PASS — 525/525
+affected Ruff                                   PASS
+full API/worker Ruff                            PASS
+Python lock verification                        PASS — 39 packages
+git diff --check                                PASS
+```
+
+No real S3, provider, marketplace, payment, release, or deployment request was
+made.
+
 # A10.38 — responsive srcset text workbench
 
 ## Scope

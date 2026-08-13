@@ -176,6 +176,7 @@ def artifact_storage_from_env(
         "aws_secret_access_key": secret_key,
         "config": Config(
             connect_timeout=5,
+            proxies={},
             read_timeout=30,
             retries={"total_max_attempts": 3, "mode": "standard"},
             signature_version="s3v4",

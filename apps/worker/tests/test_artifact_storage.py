@@ -7,6 +7,7 @@ from webdiag_worker.artifact_storage import (
     ArtifactTooLargeError,
     LocalArtifactStorage,
     S3ArtifactStorage,
+    artifact_storage_from_env,
 )
 
 
@@ -123,3 +124,29 @@ def test_worker_s3_storage_writes_private_object() -> None:
             "Key": stored.object_key,
         }
     ]
+
+
+def test_worker_s3_factory_disables_ambient_proxies() -> None:
+    calls: list[tuple[str, dict[str, object]]] = []
+    client = FakeS3Client(FakeStreamingBody([]))
+
+    def client_factory(service: str, **kwargs: object) -> FakeS3Client:
+        calls.append((service, kwargs))
+        return client
+
+    storage = artifact_storage_from_env(
+        {
+            "WEBDIAG_ENVIRONMENT": "production",
+            "WEBDIAG_AI_ARTIFACT_STORAGE": "s3",
+            "WEBDIAG_AI_ARTIFACT_S3_ENDPOINT_URL": "https://storage.example",
+            "WEBDIAG_AI_ARTIFACT_S3_BUCKET": "private-bucket",
+            "WEBDIAG_AI_ARTIFACT_S3_REGION": "eu-central-1",
+            "WEBDIAG_AI_ARTIFACT_S3_ACCESS_KEY_ID": "access",
+            "WEBDIAG_AI_ARTIFACT_S3_SECRET_ACCESS_KEY": "secret",
+        },
+        client_factory=client_factory,
+    )
+
+    assert isinstance(storage, S3ArtifactStorage)
+    config = calls[0][1]["config"]
+    assert config.proxies == {}
