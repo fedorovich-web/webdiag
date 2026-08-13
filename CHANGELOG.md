@@ -1,5 +1,12 @@
 # Changelog
 
+## A12.1d — Grounded comparison and linking planners
+
+- Added strict RU/EN contracts for Competitor Gap Report and Internal Linking Planner on the existing `openai/gpt-5.6-luna` OpenRouter path. Both remain internal pending real provider evaluation and measured pricing.
+- Competitor Gap compares only caller-supplied page snapshots and requires every comparison claim to cite an exact excerpt and page index. Internal Linking proposes only reviewable directed pairs from the supplied inventory and rejects self-links, existing links, duplicates, unknown indexes, and ungrounded excerpts.
+- Explicitly excluded crawling, site mutation, live competitor research, backlinks, authority, search volume, difficulty, rankings, traffic, and guaranteed results.
+- Added a dedicated bounded 300,000-byte HTTP limit only for AI run creation so the existing 262,144-byte service input limit is reachable without widening ordinary account endpoints beyond 16,384 bytes.
+
 ## A12.1c — Grounded content workbench contracts
 
 - Added strict RU/EN contracts for Content Brief, Content Optimizer, and Search Intent/Page Fit. All three use the existing `openai/gpt-5.6-luna` OpenRouter path and remain internal pending real provider evaluation and measured pricing.

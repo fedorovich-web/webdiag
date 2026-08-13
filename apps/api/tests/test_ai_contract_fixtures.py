@@ -7,6 +7,9 @@ FIXTURE_PATH = Path(__file__).parent / "fixtures" / "ai" / "a12_1a_contract_case
 CONTENT_FIXTURE_PATH = (
     Path(__file__).parent / "fixtures" / "ai" / "a12_1c_content_contract_cases.json"
 )
+PLANNING_FIXTURE_PATH = (
+    Path(__file__).parent / "fixtures" / "ai" / "a12_1d_planning_contract_cases.json"
+)
 
 
 def test_a12_1a_ru_en_contract_fixtures_are_valid_and_grounded() -> None:
@@ -42,3 +45,18 @@ def test_a12_1c_content_workbench_ru_en_fixtures_are_valid_and_grounded() -> Non
         provider_input = validate_public_input(case["tool_id"], case["public_input"])
         result = validate_output(case["tool_id"], provider_input, case["output"])
         assert result == case["output"]
+
+
+def test_a12_1d_planning_tool_ru_en_fixtures_are_valid_and_grounded() -> None:
+    cases = json.loads(PLANNING_FIXTURE_PATH.read_text(encoding="utf-8"))
+
+    assert {case["tool_id"] for case in cases} == {
+        "ai_competitor_gap_report",
+        "ai_internal_linking_planner",
+    }
+    assert {case["public_input"]["locale"] for case in cases} == {"ru", "en"}
+    for case in cases:
+        provider_input = validate_public_input(case["tool_id"], case["public_input"])
+        assert validate_output(case["tool_id"], provider_input, case["output"]) == case[
+            "output"
+        ]
