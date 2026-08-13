@@ -469,6 +469,13 @@ textarea { resize: vertical; }
 .favicon-asset div { min-width: 0; display: grid; gap: 3px; }
 .favicon-asset strong { overflow-wrap: anywhere; font-size: 12px; }
 .favicon-asset small { color: var(--muted); }
+.palette-grid { display: grid; gap: 10px; }
+.palette-swatch { min-width: 0; display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface-muted); }
+.palette-color { width: 76px; height: 64px; border: 1px solid var(--line); border-radius: 12px; box-shadow: inset 0 0 0 1px color-mix(in srgb, #fff 22%, transparent); }
+.palette-swatch > div:not(.palette-color) { min-width: 0; display: grid; gap: 3px; }
+.palette-swatch code, .palette-swatch span, .palette-swatch small { overflow-wrap: anywhere; }
+.palette-swatch code { font-weight: 750; }
+.palette-swatch span, .palette-swatch small { color: var(--muted); }
 .favicon-snippet { display: grid; gap: 10px; }
 .favicon-snippet-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .favicon-snippet-heading h3 { margin: 0; font-size: 13px; }
@@ -530,6 +537,9 @@ textarea { resize: vertical; }
 @media (max-width: 620px) {
   .favicon-asset { grid-template-columns: 56px minmax(0, 1fr); }
   .favicon-asset .button { grid-column: 1 / -1; width: 100%; }
+  .palette-swatch { grid-template-columns: 64px minmax(0, 1fr); }
+  .palette-color { width: 64px; height: 58px; }
+  .palette-swatch .button { grid-column: 1 / -1; width: 100%; }
   .shell { width: min(var(--shell), calc(100% - 24px)); }
   .header-inner { min-height: 66px; grid-template-columns: auto 1fr; gap: 10px; }
   .header-actions { justify-self: end; gap: 4px; }

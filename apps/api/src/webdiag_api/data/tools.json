@@ -1484,8 +1484,11 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Извлекает детерминированную палитру из уменьшенной выборки одного JPEG, PNG, WebP или AVIF локально в браузере и показывает HEX, RGB и долю выборки.",
+      "en": "Extracts a deterministic sampled palette from one JPEG, PNG, WebP, or AVIF locally in the browser and reports HEX, RGB, and sample share."
+    }
   },
   {
     "id": "WD-084",

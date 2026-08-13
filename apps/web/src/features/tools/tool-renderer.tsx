@@ -40,6 +40,7 @@ import {
 } from "./client-delivery-tools";
 import { AddWatermarkImageTool, FaviconGeneratorTool, ImageMetadataViewerTool, SvgOptimizerTool } from "./image-advanced-tools";
 import { ImageCropperTool, ImageFormatConverterTool, ImageOptimizerTool, ImageResizerTool } from "./image-tools";
+import { ImagePaletteExtractorTool } from "./image-palette-extractor";
 import { BrokenImageCheckerTool, BrokenLinkCheckerTool, LinkAnalyzerTool } from "./link-health-tools";
 import { HeadingStructureTool, KeywordFrequencyTool, ReadabilityAnalyzerTool } from "./content-analysis-tools";
 import { FaviconCheckerTool, ImagePerformanceCheckerTool, ImageSeoAuditTool } from "./image-audit-tools";
@@ -290,6 +291,7 @@ export const SUPPORTED_TOOL_SLUGS = [
   "px-rem-converter",
   "color-contrast-checker",
   "color-converter",
+  "color-palette-extractor",
   "css-specificity-calculator",
   "typography-scale-generator",
   "clip-path-generator",
@@ -400,6 +402,7 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "px-rem-converter": return <PxRemTool locale={locale} />;
     case "color-contrast-checker": return <ContrastTool locale={locale} />;
     case "color-converter": return <ColorConverterTool locale={locale} />;
+    case "color-palette-extractor": return <ImagePaletteExtractorTool locale={locale} />;
     case "css-specificity-calculator": return <CssSpecificityCalculatorTool locale={locale} />;
     case "typography-scale-generator": return <TypographyScaleGeneratorTool locale={locale} />;
     case "clip-path-generator": return <ClipPathGeneratorTool locale={locale} />;

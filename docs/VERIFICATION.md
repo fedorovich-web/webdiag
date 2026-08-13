@@ -1280,6 +1280,38 @@ No visual threshold was loosened, no failing screenshot was hidden, and no
 release, provider call, object-storage call, payment, merge, or deployment was
 performed.
 
+## A10.39 browser-local sampled image palette
+
+Fresh affected-package verification on 2026-08-13:
+
+```text
+registry
+PASS — 125 total / 107 ready / 18 internal
+
+web unit tests
+PASS — 379/379
+
+API registry parity
+PASS — 14/14
+
+browser tests
+PASS — 61/61
+
+production build
+PASS — 255 pages; 220 public routes; 218 localized HTML routes
+
+ESLint / TypeScript / git diff
+PASS — no errors; one pre-existing site-brand img warning; diff check clean
+```
+
+WD-083 now extracts four to eight colors from a bounded 160-pixel sample of one
+local raster image. Unit coverage fixes alpha compositing, five-bit quantization,
+stable ordering, percentages, transparent input, and count bounds. Browser tests
+confirm no file upload and no 390-pixel overflow. Desktop/mobile screenshots were
+inspected before the two catalog baselines were updated; the diff contained only
+the new UI/CSS card and downstream row movement. No dependency, remote image
+service, provider call, release, or deployment was added.
+
 ## A12.1e final grounded text contracts
 
 Fresh backend verification on 2026-08-13:

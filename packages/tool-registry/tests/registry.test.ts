@@ -25,4 +25,11 @@ describe("tool registry", () => {
     expect(tool?.state).toBe("ready");
     expect(tool?.description?.en).toContain("does not create");
   });
+
+  it("publishes the deterministic browser-local image palette extractor", () => {
+    const tool = tools.find((item) => item.slug === "color-palette-extractor");
+    expect(tool?.state).toBe("ready");
+    expect(tool?.description?.ru).toContain("выборки");
+    expect(tool?.description?.en).toContain("sampled");
+  });
 });
