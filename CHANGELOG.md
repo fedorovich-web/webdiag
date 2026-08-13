@@ -1,5 +1,12 @@
 # Changelog
 
+## A12.1c — Grounded content workbench contracts
+
+- Added strict RU/EN contracts for Content Brief, Content Optimizer, and Search Intent/Page Fit. All three use the existing `openai/gpt-5.6-luna` OpenRouter path and remain internal pending real provider evaluation and measured pricing.
+- Content Brief requires exact source-fact excerpts and valid fact indexes. Content Optimizer records exact before/after excerpts and preserves every caller-supplied factual constraint verbatim. Search Intent/Page Fit requires exact evidence from the supplied query and page content.
+- Explicitly excluded live SERP observation, competitor research, search volume, keyword difficulty, rankings, traffic predictions, and guaranteed results. User content is treated as untrusted data rather than provider instructions.
+- Added bounded strict schemas, public-URL validation, semantic output validation, and stable RU/EN fixtures without making real OpenRouter calls.
+
 ## A12.1b — Private Alt Text Studio foundation
 
 - Added authenticated raw image intake with a dedicated 4 MiB route limit, JPEG/PNG/WebP detection, one-frame and 8,000,000-pixel bounds, metadata removal, deterministic re-encoding, and no filename or remote-URL trust.

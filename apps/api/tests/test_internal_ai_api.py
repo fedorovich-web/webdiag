@@ -26,7 +26,11 @@ def seeded_run(database_path: Path, *, correlation: str = "grant"):
     )
     store = SqliteAIStore(str(database_path), lease_seconds=60)
     ready = replace(
-        next(tool for tool in DEFAULT_AI_CATALOG.all() if tool.id == "ai_content_brief"),
+        next(
+            tool
+            for tool in DEFAULT_AI_CATALOG.all()
+            if tool.id == "ai_redirect_migration_mapper"
+        ),
         state=AIToolState.READY,
         credit_price=7,
     )
