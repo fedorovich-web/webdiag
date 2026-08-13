@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -73,6 +73,69 @@ class SchemaProperty(StrictProviderOutput):
 
 class SchemaProviderOutput(StrictProviderOutput):
     properties: list[SchemaProperty] = Field(max_length=30)
+    warnings: list[Annotated[str, Field(min_length=1, max_length=1_000)]] = Field(
+        max_length=20
+    )
+
+
+class BriefCoverage(StrictProviderOutput):
+    source_fact_index: int = Field(ge=0, le=49)
+    excerpt: str = Field(min_length=1, max_length=1_000)
+
+
+class BriefSection(StrictProviderOutput):
+    heading: str = Field(min_length=1, max_length=300)
+    purpose: str = Field(min_length=1, max_length=1_000)
+    coverage: list[BriefCoverage] = Field(min_length=1, max_length=10)
+
+
+class ContentBriefOutput(StrictProviderOutput):
+    suggested_title: str = Field(min_length=1, max_length=300)
+    sections: list[BriefSection] = Field(min_length=1, max_length=20)
+    warnings: list[Annotated[str, Field(min_length=1, max_length=1_000)]] = Field(
+        max_length=20
+    )
+
+
+class ContentChange(StrictProviderOutput):
+    kind: Literal["clarity", "structure", "relevance", "style"]
+    before_excerpt: str = Field(min_length=1, max_length=2_000)
+    after_excerpt: str = Field(min_length=1, max_length=2_000)
+    rationale: str = Field(min_length=1, max_length=1_000)
+
+
+class ContentOptimizerOutput(StrictProviderOutput):
+    revised_content: str = Field(min_length=20, max_length=50_000)
+    changes: list[ContentChange] = Field(max_length=30)
+    preserved_fact_indexes: list[int] = Field(max_length=30)
+    warnings: list[Annotated[str, Field(min_length=1, max_length=1_000)]] = Field(
+        max_length=20
+    )
+
+
+PageType = Literal[
+    "informational",
+    "commercial",
+    "transactional",
+    "navigational",
+    "local",
+    "unknown",
+]
+
+
+class SearchIntentPageFitOutput(StrictProviderOutput):
+    inferred_intent: PageType
+    confidence: Literal["low", "medium", "high"]
+    fit: Literal["aligned", "partial", "misaligned", "insufficient_evidence"]
+    evidence: list[Annotated[str, Field(min_length=1, max_length=1_000)]] = Field(
+        max_length=10
+    )
+    gaps: list[Annotated[str, Field(min_length=1, max_length=1_000)]] = Field(
+        max_length=20
+    )
+    recommendations: list[
+        Annotated[str, Field(min_length=1, max_length=1_000)]
+    ] = Field(max_length=20)
     warnings: list[Annotated[str, Field(min_length=1, max_length=1_000)]] = Field(
         max_length=20
     )
