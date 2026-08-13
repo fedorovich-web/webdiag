@@ -858,3 +858,601 @@
     grid-column: 1;
   }
 }
+
+.wd-account-workspace-page {
+  --wd-account-canvas: color-mix(in srgb, var(--brand-soft) 34%, var(--surface-muted));
+  --wd-account-surface: var(--surface);
+  --wd-account-border: var(--line);
+  --wd-account-accent: var(--brand);
+  --wd-account-radius: 16px;
+  --wd-account-rail-width: 264px;
+  width: min(1440px, calc(100% - 32px));
+  min-height: calc(100vh - 7rem);
+  margin-block: 16px 40px;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--wd-account-border) 78%, transparent);
+  border-radius: 24px;
+  background: var(--wd-account-canvas);
+}
+
+.wd-account-workspace-page .wd-workspace-layout {
+  grid-template-columns: var(--wd-account-rail-width) minmax(0, 1fr);
+  gap: 16px;
+}
+
+.wd-account-workspace-page .wd-workspace-sidebar,
+.wd-account-workspace-page .wd-workspace-drawer-panel {
+  gap: 16px;
+  border-color: var(--wd-account-border);
+  border-radius: 18px;
+  background: var(--wd-account-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.wd-account-workspace-page .wd-workspace-sidebar {
+  top: 88px;
+  min-height: min(700px, calc(100vh - 120px));
+  padding: 14px;
+}
+
+.wd-account-workspace-page .wd-workspace-identity {
+  padding: 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--brand-soft) 62%, var(--surface));
+}
+
+.wd-account-workspace-page .wd-workspace-identity .eyebrow {
+  margin-bottom: 5px;
+  font-size: 10px;
+}
+
+.wd-account-workspace-page .wd-workspace-identity strong {
+  font-size: 14px;
+}
+
+.wd-account-workspace-page .wd-workspace-identity small {
+  font-size: 11px;
+}
+
+.wd-account-workspace-page .wd-workspace-navigation {
+  gap: 18px;
+}
+
+.wd-workspace-navigation-group {
+  display: grid;
+  gap: 4px;
+}
+
+.wd-workspace-navigation-group > span:first-child {
+  padding: 0 10px 5px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.wd-account-workspace-page .wd-workspace-navigation a,
+.wd-account-workspace-page .wd-workspace-navigation [aria-disabled="true"] {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  padding: 9px 11px;
+  color: var(--text-soft);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.wd-account-workspace-page .wd-workspace-navigation [aria-disabled="true"] {
+  color: var(--muted);
+  cursor: not-allowed;
+  opacity: .58;
+}
+
+.wd-account-workspace-page .wd-workspace-navigation a:hover {
+  border-color: color-mix(in srgb, var(--brand) 20%, var(--line));
+  background: color-mix(in srgb, var(--brand-soft) 42%, var(--surface));
+  color: var(--text);
+}
+
+.wd-account-workspace-page .wd-workspace-navigation a[aria-current="page"] {
+  border-color: color-mix(in srgb, var(--brand) 22%, var(--line));
+  background: var(--brand-soft);
+  box-shadow: none;
+  color: var(--brand);
+}
+
+.wd-account-workspace-page .wd-workspace-project-switcher {
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.wd-account-workspace-page .wd-workspace-project-switcher label {
+  font-size: 11px;
+}
+
+.wd-account-workspace-page .wd-workspace-project-switcher select {
+  min-height: 44px;
+  border-color: var(--line);
+  border-radius: 11px;
+  background: var(--surface-muted);
+  font-size: 12px;
+}
+
+.wd-account-workspace-page .wd-workspace-sidebar > .wd-button:last-child {
+  align-self: end;
+  margin-top: auto;
+}
+
+.wd-account-workspace-page .wd-workspace-content {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+
+.wd-account-workspace-page .wd-account-overview {
+  gap: 16px;
+}
+
+.wd-account-workspace-page .wd-account-overview > .wd-account-dashboard-head {
+  min-height: 154px;
+  align-items: flex-end;
+  border-color: var(--wd-account-border);
+  border-radius: var(--wd-account-radius);
+  padding: clamp(22px, 3vw, 34px);
+  background: linear-gradient(135deg, var(--surface) 58%, color-mix(in srgb, var(--brand-soft) 58%, var(--surface)));
+  box-shadow: var(--shadow-sm);
+}
+
+.wd-account-workspace-page .wd-operation-heading h1,
+.wd-account-workspace-page .is-first-use h1 {
+  margin: 4px 0 0;
+  font-size: clamp(32px, 4vw, 46px);
+  line-height: 1.05;
+  letter-spacing: -.045em;
+}
+
+.wd-account-workspace-page .wd-operation-heading p,
+.wd-account-workspace-page .is-first-use p {
+  max-width: 700px;
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.wd-operation-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.wd-operation-metrics article {
+  min-height: 124px;
+  display: grid;
+  align-content: space-between;
+  padding: 18px;
+  border: 1px solid var(--wd-account-border);
+  border-radius: var(--wd-account-radius);
+  background: var(--wd-account-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.wd-operation-metrics strong {
+  font-size: clamp(30px, 4vw, 42px);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: -.04em;
+}
+
+.wd-operation-metrics span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.wd-operation-actions {
+  display: grid;
+  grid-template-columns: minmax(210px, .72fr) minmax(0, 2fr);
+  gap: 24px;
+  align-items: start;
+  padding: 22px;
+  border: 1px solid var(--wd-account-border);
+  border-radius: var(--wd-account-radius);
+  background: var(--wd-account-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.wd-operation-actions h2,
+.wd-operation-projects h2,
+.wd-operation-project-card h3 {
+  margin: 0;
+}
+
+.wd-operation-action-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.wd-operation-action-list a {
+  min-width: 0;
+  min-height: 98px;
+  display: grid;
+  align-content: space-between;
+  gap: 12px;
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--surface-muted);
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color var(--transition-fast), background var(--transition-fast), transform var(--transition-fast);
+}
+
+.wd-operation-action-list a:hover {
+  border-color: color-mix(in srgb, var(--brand) 34%, var(--line));
+  background: color-mix(in srgb, var(--brand-soft) 44%, var(--surface));
+  transform: translateY(-1px);
+}
+
+.wd-operation-action-list span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wd-operation-action-list strong {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.wd-operation-projects {
+  display: grid;
+  gap: 14px;
+  padding: 22px;
+  border: 1px solid var(--wd-account-border);
+  border-radius: var(--wd-account-radius);
+  background: var(--wd-account-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.wd-account-workspace-page .wd-project-list-head > strong {
+  min-width: 48px;
+  min-height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.wd-operation-project-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 12px;
+}
+
+.wd-operation-project-card {
+  min-width: 0;
+  display: grid;
+  gap: 18px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-muted);
+}
+
+.wd-operation-project-card > header,
+.wd-operation-project-footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.wd-operation-project-card h3 a {
+  color: var(--text);
+  font-size: 17px;
+  text-decoration: none;
+}
+
+.wd-operation-project-card h3 a:hover {
+  color: var(--brand);
+}
+
+.wd-operation-project-card header p {
+  overflow: hidden;
+  max-width: 36ch;
+  margin: 3px 0 0;
+  color: var(--muted);
+  font: 11px var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wd-operation-status {
+  flex: none;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.wd-operation-status[data-tone="warning"] {
+  border-color: color-mix(in srgb, var(--warning) 30%, var(--line));
+  background: color-mix(in srgb, var(--warning-soft) 72%, var(--surface));
+  color: var(--warning);
+}
+
+.wd-operation-status[data-tone="danger"] {
+  border-color: color-mix(in srgb, var(--danger) 30%, var(--line));
+  background: color-mix(in srgb, var(--danger-soft) 72%, var(--surface));
+  color: var(--danger);
+}
+
+.wd-operation-project-card dl {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--line);
+}
+
+.wd-operation-project-card dl div {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+  padding: 11px;
+  background: var(--surface);
+}
+
+.wd-operation-project-card dt {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.wd-operation-project-card dd {
+  overflow: hidden;
+  margin: 0;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wd-operation-project-footer {
+  align-items: center;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.wd-operation-project-footer > span {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.wd-operation-project-footer .wd-button {
+  min-height: 44px;
+  padding: 9px 13px;
+  font-size: 11px;
+}
+
+.wd-operation-add-project {
+  border: 1px solid var(--wd-account-border);
+  border-radius: var(--wd-account-radius);
+  background: var(--wd-account-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.wd-operation-add-project > summary {
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  color: var(--text-soft);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.wd-operation-add-project[open] > summary {
+  border-bottom: 1px solid var(--line);
+}
+
+.wd-operation-add-project .wd-project-create {
+  margin: 0;
+  border-radius: 0 0 var(--wd-account-radius) var(--wd-account-radius);
+  background: transparent;
+}
+
+.wd-account-workspace-page .wd-project-create.is-primary {
+  margin-top: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--wd-account-radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.wd-account-workspace-page .wd-project-create-form input {
+  min-height: 46px;
+  border-color: var(--line);
+  border-radius: 11px;
+  background: var(--surface-muted);
+}
+
+.wd-account-workspace-page .wd-account-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  border-radius: 12px;
+}
+
+.wd-account-workspace-page .wd-account-error button {
+  min-height: 44px;
+  border: 1px solid currentColor;
+  border-radius: 10px;
+  padding: 8px 12px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.wd-account-workspace-page :is(a, button, summary, select, input):focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (max-width: 1180px) {
+  .wd-account-workspace-page {
+    --wd-account-rail-width: 236px;
+  }
+
+  .wd-operation-action-list {
+    grid-template-columns: 1fr;
+  }
+
+  .wd-operation-project-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .wd-account-workspace-page {
+    width: min(100% - 20px, 820px);
+    margin-block: 10px 28px;
+    padding: 10px;
+    border-radius: 18px;
+  }
+
+  .wd-account-workspace-page .wd-workspace-mobile-bar {
+    min-height: 60px;
+    margin-bottom: 10px;
+    border-radius: 14px;
+    box-shadow: none;
+  }
+
+  .wd-account-workspace-page .wd-workspace-menu-trigger {
+    min-height: 44px;
+  }
+
+  .wd-account-workspace-page .wd-workspace-drawer-panel {
+    border-radius: 0 18px 18px 0;
+  }
+
+  .wd-operation-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .wd-operation-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .wd-operation-action-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .wd-account-workspace-page {
+    width: 100%;
+    margin-top: 0;
+    padding: 8px;
+    border-inline: 0;
+    border-radius: 0 0 18px 18px;
+  }
+
+  .wd-account-workspace-page .wd-workspace-mobile-bar {
+    align-items: center;
+    flex-direction: row;
+  }
+
+  .wd-account-workspace-page .wd-workspace-menu-trigger {
+    width: auto;
+  }
+
+  .wd-account-workspace-page .wd-account-overview > .wd-account-dashboard-head {
+    min-height: 0;
+    align-items: stretch;
+    padding: 22px 18px;
+  }
+
+  .wd-operation-metrics,
+  .wd-operation-action-list,
+  .wd-operation-project-card dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .wd-operation-actions,
+  .wd-operation-projects {
+    padding: 18px;
+  }
+
+  .wd-operation-project-card > header,
+  .wd-operation-project-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .wd-operation-status {
+    align-self: flex-start;
+  }
+
+  .wd-operation-project-footer .wd-button {
+    width: 100%;
+  }
+
+  .wd-account-workspace-page .wd-project-create {
+    padding: 18px;
+  }
+
+  .wd-account-workspace-page .wd-account-error {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wd-account-workspace-page *,
+  .wd-account-workspace-page *::before,
+  .wd-account-workspace-page *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+body:has(.wd-account-workspace-page) .wd-site-header .wd-main-nav,
+body:has(.wd-account-workspace-page) .wd-site-header .wd-header-login,
+body:has(.wd-account-workspace-page) .wd-site-header .wd-header-cta,
+body:has(.wd-account-workspace-page) .wd-site-header .mobile-menu,
+body:has(.wd-account-workspace-page) .site-footer {
+  display: none !important;
+}
+
+@media (max-width: 760px) {
+  body:has(.wd-account-workspace-page) .wd-site-header .wd-header-actions .language-switcher-desktop {
+    display: grid !important;
+  }
+
+  body:has(.wd-account-workspace-page) .wd-site-header .wd-header-inner.header-inner {
+    width: calc(100% - 24px) !important;
+    gap: 10px;
+  }
+}

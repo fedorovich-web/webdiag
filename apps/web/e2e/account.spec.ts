@@ -28,6 +28,45 @@ const secondProject = {
   updated_at: "2026-07-30T10:00:00Z",
 };
 
+const emptyOverview = {
+  contract_version: "webdiag.account.overview.v1",
+  projects: [],
+};
+
+const operationsOverview = {
+  contract_version: "webdiag.account.overview.v1",
+  projects: [{
+    project: firstProject,
+    latest_audit: {
+      id: "33333333-3333-4333-8333-333333333333",
+      project_id: firstProject.id,
+      status: "succeeded",
+      score: 82,
+      check_count: 14,
+      issue_count: 3,
+      completed_at: "2026-08-12T10:00:00Z",
+      created_at: "2026-08-12T10:00:00Z",
+    },
+    monitor: {
+      contract_version: "webdiag.account.monitor.v1",
+      id: "44444444-4444-4444-8444-444444444444",
+      project_id: firstProject.id,
+      cadence: "daily",
+      timezone: "Europe/Berlin",
+      enabled: true,
+      status: "changed",
+      next_run_at: "2026-08-13T10:00:00Z",
+      last_run_at: "2026-08-12T10:00:00Z",
+      consecutive_failures: 0,
+      created_at: "2026-08-11T10:00:00Z",
+      updated_at: "2026-08-12T10:00:00Z",
+    },
+    report_count: 2,
+    shared_report_count: 1,
+    latest_report_created_at: "2026-08-12T11:00:00Z",
+  }],
+};
+
 test.describe("account workspace", () => {
   let assertBrowserClean: ReturnType<typeof installBrowserGuard>;
   let expectedBrowserErrors: RegExp[];
@@ -38,6 +77,7 @@ test.describe("account workspace", () => {
       page,
       (error) => expectedBrowserErrors.some((pattern) => pattern.test(error)),
     );
+    await page.route("**/api/account/overview", (route) => route.fulfill({ json: emptyOverview }));
   });
 
   test.afterEach(async ({}, testInfo) => {
@@ -95,11 +135,11 @@ test.describe("account workspace", () => {
     await page.goto("/account");
     await expect(page.getByRole("complementary", { name: "Панель кабинета" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Обзор" })).toHaveAttribute("aria-current", "page");
-    await expect(page.getByRole("heading", { level: 1, name: "Обзор аккаунта Roman User" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Создайте первый проект" })).toBeVisible();
     await expect(page.getByLabel("Текущий проект")).toBeDisabled();
 
     await page.getByLabel("Название проекта").fill("Основной сайт");
-    await page.getByLabel("Домен или origin").fill("example.com");
+    await page.getByLabel("Домен").fill("example.com");
     await page.getByRole("button", { name: "Создать проект" }).click();
     await expect(page.getByRole("heading", { name: "Основной сайт" }).first()).toBeVisible();
     await expect(page.getByLabel("Текущий проект")).toHaveValue("");
@@ -109,6 +149,36 @@ test.describe("account workspace", () => {
     await page.getByRole("button", { name: "Выйти" }).click();
     await expect(page).toHaveURL(/\/account$/);
     await expect(page.locator(".wd-account-workspace-page .wd-account-error")).toContainText("Сервис аккаунтов временно недоступен");
+  });
+
+  test("operations overview renders only persisted states and keeps desktop geometry", async ({ page }) => {
+    await page.unroute("**/api/account/overview");
+    await page.route("**/api/account/me", (route) => route.fulfill({ json: session }));
+    await page.route("**/api/account/projects", (route) => route.fulfill({
+      json: {
+        contract_version: "webdiag.account.project_list.v1",
+        projects: [firstProject],
+      },
+    }));
+    await page.route("**/api/account/overview", (route) => route.fulfill({ json: operationsOverview }));
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/account");
+
+    await expect(page.getByRole("heading", { level: 1, name: "Обзор" })).toBeVisible();
+    await expect(page.getByText("Требуют внимания")).toBeVisible();
+    await expect(page.getByText("Есть изменения")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Проверить изменения" })).toBeVisible();
+    await expect(page.getByText(/uptime|доступност.*%/i)).toHaveCount(0);
+    await expect(page.locator(".wd-header-login")).toBeHidden();
+    await expect(page.locator(".wd-header-cta").first()).toBeHidden();
+    await expect(page.locator(".site-footer")).toBeHidden();
+
+    const rail = await page.getByRole("complementary", { name: "Панель кабинета" }).boundingBox();
+    const content = await page.locator(".wd-workspace-content").boundingBox();
+    expect(rail).not.toBeNull();
+    expect(content).not.toBeNull();
+    expect((rail?.x ?? 0) + (rail?.width ?? 0)).toBeLessThan(content?.x ?? 0);
   });
 
   test("project route keeps the real project selected in the shell", async ({ page }) => {
@@ -149,6 +219,8 @@ test.describe("account workspace", () => {
     const trigger = page.getByRole("button", { name: "Меню кабинета" });
     await expect(trigger).toBeVisible();
     await trigger.click();
+    const triggerBox = await trigger.boundingBox();
+    expect(triggerBox?.height).toBeGreaterThanOrEqual(44);
 
     const dialog = page.getByRole("dialog", { name: "Меню кабинета" });
     await expect(dialog).toBeVisible();
@@ -192,7 +264,7 @@ test.describe("account workspace", () => {
     await page.goto("/account");
     await expect(page.getByRole("button", { name: "Повторить" })).toBeVisible();
     await page.getByRole("button", { name: "Повторить" }).click();
-    await expect(page.getByRole("heading", { name: "Обзор аккаунта Roman User" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Создайте первый проект" })).toBeVisible();
   });
 
   test("English login page and header sign-in use live routes", async ({ page }) => {

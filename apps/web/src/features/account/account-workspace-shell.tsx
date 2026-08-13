@@ -151,10 +151,7 @@ export function AccountWorkspaceShell({
     Promise.allSettled([getAccountSession(), listAccountProjects(), getAccountOverview()])
       .then(([sessionResult, projectResult, overviewResult]) => {
         if (!active) return;
-        if (sessionResult.status === "rejected" || projectResult.status === "rejected") {
-          const caught = sessionResult.status === "rejected"
-            ? sessionResult.reason
-            : projectResult.reason;
+        function failRequiredLoad(caught: unknown) {
           setSession(null);
           setProjects([]);
           setOverview(null);
@@ -165,6 +162,13 @@ export function AccountWorkspaceShell({
               : "unavailable",
           );
           setLoadedToken(reloadToken);
+        }
+        if (sessionResult.status === "rejected") {
+          failRequiredLoad(sessionResult.reason);
+          return;
+        }
+        if (projectResult.status === "rejected") {
+          failRequiredLoad(projectResult.reason);
           return;
         }
         setSession(sessionResult.value);
