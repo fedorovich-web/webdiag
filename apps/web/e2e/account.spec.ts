@@ -60,6 +60,18 @@ test.describe("account workspace", () => {
     ).toHaveAttribute("href", "/login");
   });
 
+  test("native auth fallback never places credentials in the URL", async ({ browser }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false });
+    const page = await context.newPage();
+    await page.goto("/login");
+    await page.getByLabel("Электронная почта").fill("secret-user@example.com");
+    await page.getByLabel("Пароль").fill("secret-password-value");
+    await page.getByRole("button", { name: "Войти" }).click();
+    expect(page.url()).not.toContain("secret-user");
+    expect(page.url()).not.toContain("secret-password");
+    await context.close();
+  });
+
   test("desktop shell creates a project without reloading the project list and keeps failed logout on the page", async ({ page }) => {
     expectedBrowserErrors.push(
       /^console\.error: Failed to load resource: the server responded with a status of 502\b/,
