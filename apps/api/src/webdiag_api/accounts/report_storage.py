@@ -15,6 +15,7 @@ from webdiag_api.accounts.models import utc_datetime
 from webdiag_api.accounts.report_artifact import artifact_sha256
 from webdiag_api.accounts.report_models import (
     AccountReportDetailResponse,
+    AccountReportListItem,
     AccountReportSummary,
     PublicReportResponse,
     PublicReportSummary,
@@ -81,6 +82,15 @@ class StoredReport:
         ):
             raise ReportIntegrityError("stored_report_artifact_hash_mismatch")
         return snapshot
+
+    def list_item(self, *, now: int | None = None) -> AccountReportListItem:
+        snapshot = self.snapshot()
+        return AccountReportListItem(
+            **self.summary(now=now).model_dump(),
+            project_name=snapshot.project_name,
+            target_origin=snapshot.target_origin,
+            audit_completed_at=snapshot.audit_completed_at,
+        )
 
     def detail(self, *, now: int | None = None) -> AccountReportDetailResponse:
         return AccountReportDetailResponse(report=self.summary(now=now), snapshot=self.snapshot())
@@ -274,21 +284,40 @@ class SqliteReportStore:
             connection.execute("COMMIT")
         return report
 
-    def list_reports(self, *, user_id: str) -> tuple[StoredReport, ...]:
+    def list_reports(
+        self,
+        *,
+        user_id: str,
+        project_id: str | None = None,
+    ) -> tuple[StoredReport, ...]:
         self.ensure_schema()
         with self._connect() as connection:
-            rows = connection.execute(
-                """
-                SELECT id, user_id, project_id, audit_id, title, locale,
-                       snapshot_json, artifact_sha256, created_at, updated_at,
-                       share_token_hash, share_expires_at
-                FROM account_workspace_reports
-                WHERE user_id = ?
-                ORDER BY created_at DESC, id DESC
-                LIMIT ?
-                """,
-                (user_id, MAX_REPORTS_PER_ACCOUNT),
-            ).fetchall()
+            if project_id is None:
+                rows = connection.execute(
+                    """
+                    SELECT id, user_id, project_id, audit_id, title, locale,
+                           snapshot_json, artifact_sha256, created_at, updated_at,
+                           share_token_hash, share_expires_at
+                    FROM account_workspace_reports
+                    WHERE user_id = ?
+                    ORDER BY created_at DESC, id DESC
+                    LIMIT ?
+                    """,
+                    (user_id, MAX_REPORTS_PER_ACCOUNT),
+                ).fetchall()
+            else:
+                rows = connection.execute(
+                    """
+                    SELECT id, user_id, project_id, audit_id, title, locale,
+                           snapshot_json, artifact_sha256, created_at, updated_at,
+                           share_token_hash, share_expires_at
+                    FROM account_workspace_reports
+                    WHERE user_id = ? AND project_id = ?
+                    ORDER BY created_at DESC, id DESC
+                    LIMIT ?
+                    """,
+                    (user_id, project_id, MAX_REPORTS_PER_ACCOUNT),
+                ).fetchall()
         return tuple(self._report(row) for row in rows)
 
     def get_report(self, *, user_id: str, report_id: str) -> StoredReport | None:

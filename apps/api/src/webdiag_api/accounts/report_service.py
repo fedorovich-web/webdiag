@@ -82,11 +82,20 @@ class ReportService:
             raise ReportServiceError(status, code, message) from error
         return detail
 
-    def list_reports(self, *, user_id: str) -> AccountReportListResponse:
+    def list_reports(
+        self,
+        *,
+        user_id: str,
+        project_id: str | None = None,
+    ) -> AccountReportListResponse:
         try:
             return AccountReportListResponse(
                 reports=tuple(
-                    report.summary() for report in self._store.list_reports(user_id=user_id)
+                    report.list_item()
+                    for report in self._store.list_reports(
+                        user_id=user_id,
+                        project_id=project_id,
+                    )
                 )
             )
         except ReportIntegrityError as error:

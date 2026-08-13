@@ -1,5 +1,6 @@
 import asyncio
 import hashlib
+import json
 import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
@@ -501,6 +502,90 @@ def test_report_list_api_maps_legacy_integrity_failure_to_unavailable(
         app.dependency_overrides.clear()
 
     assert response.headers["content-type"].startswith("application/json")
+    assert_private_report_unavailable(response)
+
+
+def test_report_list_v2_supports_owner_scoped_project_context(tmp_path: Path) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    account, workspace, reports, user_id, token, project, audit, report = seed_report(database)
+    _, other_token = register(account, "other@example.com")
+    second_project = workspace.create_project(
+        user_id=user_id,
+        request=ProjectCreateRequest(name="Second site", origin="https://second.example"),
+    )
+    second_audit = workspace.run_and_save_audit(
+        user_id=user_id,
+        project_id=second_project.id,
+    )
+    reports.create_report(
+        user_id=user_id,
+        project_id=second_project.id,
+        audit_id=second_audit.audit.id,
+        request=ReportCreateRequest(title="Second report", locale="ru"),
+    )
+
+    app.dependency_overrides[get_account_service] = lambda: account
+    app.dependency_overrides[get_workspace_service] = lambda: workspace
+    app.dependency_overrides[get_report_service] = lambda: reports
+    try:
+        all_reports = asyncio.run(request("GET", "/v1/account/reports", cookie=token))
+        filtered = asyncio.run(
+            request("GET", f"/v1/account/reports?project_id={project.id}", cookie=token)
+        )
+        hidden = asyncio.run(
+            request("GET", f"/v1/account/reports?project_id={project.id}", cookie=other_token)
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert all_reports.status_code == 200
+    assert all_reports.headers["cache-control"] == "no-store"
+    assert all_reports.json()["contract_version"] == "webdiag.account.report_list.v2"
+    assert len(all_reports.json()["reports"]) == 2
+    assert filtered.status_code == 200
+    assert filtered.json() == {
+        "contract_version": "webdiag.account.report_list.v2",
+        "reports": [
+            {
+                **report.report.model_dump(mode="json"),
+                "project_name": project.name,
+                "target_origin": project.origin,
+                "audit_completed_at": audit.audit.completed_at.isoformat().replace("+00:00", "Z"),
+            }
+        ],
+    }
+    assert hidden.status_code == 200
+    assert hidden.json() == {
+        "contract_version": "webdiag.account.report_list.v2",
+        "reports": [],
+    }
+
+
+def test_report_list_v2_rejects_tampered_snapshot_metadata(tmp_path: Path) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    account, workspace, reports, _, token, _, _, report = seed_report(database)
+    with sqlite3.connect(database) as connection:
+        snapshot_json = connection.execute(
+            "SELECT snapshot_json FROM account_workspace_reports WHERE id = ?",
+            (report.report.id,),
+        ).fetchone()[0]
+        snapshot = json.loads(snapshot_json)
+        snapshot["project_name"] = "Tampered"
+        connection.execute(
+            "UPDATE account_workspace_reports SET snapshot_json = ? WHERE id = ?",
+            (json.dumps(snapshot), report.report.id),
+        )
+
+    app.dependency_overrides[get_account_service] = lambda: account
+    app.dependency_overrides[get_workspace_service] = lambda: workspace
+    app.dependency_overrides[get_report_service] = lambda: reports
+    try:
+        response = asyncio.run(
+            request("GET", "/v1/account/reports", cookie=token, raise_app_exceptions=False)
+        )
+    finally:
+        app.dependency_overrides.clear()
+
     assert_private_report_unavailable(response)
 
 

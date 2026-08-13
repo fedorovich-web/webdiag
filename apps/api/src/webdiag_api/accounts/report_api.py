@@ -4,7 +4,7 @@ from functools import lru_cache
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
 from webdiag_api.accounts.api import AccountServiceDependency, SessionCookie
 from webdiag_api.accounts.report_models import (
@@ -110,12 +110,16 @@ def list_reports(
     response: Response,
     reports: ReportServiceDependency,
     account_service: AccountServiceDependency,
+    project_id: Annotated[UUID | None, Query()] = None,
     webdiag_session: SessionCookie = None,
 ) -> AccountReportListResponse:
     response.headers["cache-control"] = "no-store"
     user_id = _current_user_id(account_service, webdiag_session)
     try:
-        return reports.list_reports(user_id=user_id)
+        return reports.list_reports(
+            user_id=user_id,
+            project_id=str(project_id) if project_id is not None else None,
+        )
     except ReportServiceError as error:
         raise _report_error(error) from error
 

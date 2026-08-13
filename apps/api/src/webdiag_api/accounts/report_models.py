@@ -8,7 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from webdiag_api.accounts.workspace_models import SavedAuditCheck, SavedAuditIssue
 
 REPORT_SNAPSHOT_VERSION = "webdiag.account.report_snapshot.v1"
-REPORT_LIST_VERSION = "webdiag.account.report_list.v1"
+REPORT_LIST_VERSION = "webdiag.account.report_list.v2"
 REPORT_DETAIL_VERSION = "webdiag.account.report_detail.v1"
 REPORT_SHARE_VERSION = "webdiag.account.report_share.v1"
 PUBLIC_REPORT_VERSION = "webdiag.public.report.v1"
@@ -59,11 +59,17 @@ class AccountReportSummary(BaseModel):
     share_expires_at: datetime | None = None
 
 
+class AccountReportListItem(AccountReportSummary):
+    project_name: str
+    target_origin: str
+    audit_completed_at: datetime
+
+
 class AccountReportListResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     contract_version: Literal[REPORT_LIST_VERSION] = REPORT_LIST_VERSION
-    reports: tuple[AccountReportSummary, ...]
+    reports: tuple[AccountReportListItem, ...]
 
 
 class AccountReportDetailResponse(BaseModel):
