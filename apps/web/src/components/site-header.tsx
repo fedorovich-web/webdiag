@@ -130,6 +130,7 @@ export function SiteHeader({ locale }: SiteHeaderProps) {
         <NavigationLinks locale={locale} />
 
         <div className="header-actions wd-header-actions">
+          <div id="account-workspace-menu-slot" className="wd-account-menu-slot" />
           <LanguageSwitcher locale={locale} className="language-switcher-desktop" />
           <ThemeSwitcher locale={locale} />
           <Link className="wd-header-login" href={loginPath(locale)}>{login}</Link>

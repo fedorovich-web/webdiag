@@ -7,6 +7,7 @@ import {
   orderedReportIssues,
   reportPriorityDistribution,
   reportPriorityLabel,
+  reportSeverityLabel,
   reportSummary,
 } from "./account-report-presentation";
 
@@ -81,14 +82,14 @@ export function AccountReportSnapshotView({
         <div className="wd-report-section-heading"><div><span className="eyebrow">{ru ? "Порядок исправления" : "Fix order"}</span><h2 id="report-issues-title">{ru ? "Проблемы и рекомендации" : "Issues and recommendations"}</h2></div><strong>{issues.length}</strong></div>
         {issues.length === 0 ? <p>{ru ? "В этом snapshot проблемы не зафиксированы." : "No issues are recorded in this snapshot."}</p> : (
           <div className="wd-report-issue-groups">
-            {issueGroups.map((group) => <section key={group.priority} className="wd-report-issue-group"><h3>{reportPriorityLabel(locale, group.priority)} <span>{group.issues.length}</span></h3><div className="wd-report-issue-list">
+            {issueGroups.map((group) => <section key={group.priority} className="wd-report-issue-group" data-priority={group.priority}><h3>{reportPriorityLabel(locale, group.priority)} <span>{group.issues.length}</span></h3><div className="wd-report-issue-list">
             {group.issues.map((issue) => {
               const index = issues.findIndex((item) => item.issue_id === issue.issue_id);
               return (
-              <article key={issue.issue_id}>
+              <article key={issue.issue_id} data-severity={issue.severity}>
                 <div className="wd-report-issue-order">{index + 1}</div>
                 <div>
-                  <div className="wd-report-issue-meta"><span>{reportPriorityLabel(locale, issue.priority)}</span><span>{issue.category}</span><span>{issue.affected_urls.length} {ru ? "стр." : "pages"}</span></div>
+                  <div className="wd-report-issue-meta"><span data-kind="priority">{reportPriorityLabel(locale, issue.priority)}</span><span data-kind="severity">{reportSeverityLabel(locale, issue.severity)}</span><span>{issue.category}</span><span>{issue.affected_urls.length} {ru ? "стр." : "pages"}</span></div>
                   <h3>{issue.title}</h3>
                   <p>{issue.description}</p>
                   <div className="wd-report-recommendation"><span>{ru ? "Рекомендация" : "Recommendation"}</span><strong>{issue.recommendation.summary}</strong></div>

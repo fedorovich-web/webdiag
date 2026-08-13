@@ -1,11 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { Menu, X } from "lucide-react";
+import { createPortal } from "react-dom";
 import {
   useEffect,
   useCallback,
   useRef,
   useState,
+  useSyncExternalStore,
   type ChangeEvent,
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
@@ -54,6 +57,18 @@ const focusableSelector = [
   "input:not([disabled])",
   "[tabindex]:not([tabindex='-1'])",
 ].join(",");
+
+function subscribeToHeaderMenuSlot() {
+  return () => undefined;
+}
+
+function getHeaderMenuSlot() {
+  return document.getElementById("account-workspace-menu-slot");
+}
+
+function getServerHeaderMenuSlot() {
+  return null;
+}
 
 function WorkspaceNavigation({
   locale,
@@ -148,6 +163,11 @@ export function AccountWorkspaceShell({
   const [logoutPending, setLogoutPending] = useState(false);
   const [error, setError] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const headerMenuSlot = useSyncExternalStore(
+    subscribeToHeaderMenuSlot,
+    getHeaderMenuSlot,
+    getServerHeaderMenuSlot,
+  );
   const drawerTriggerRef = useRef<HTMLButtonElement>(null);
   const drawerCloseRef = useRef<HTMLButtonElement>(null);
   const drawerPanelRef = useRef<HTMLElement>(null);
@@ -333,21 +353,26 @@ export function AccountWorkspaceShell({
     )?.latest_audit?.id,
   };
 
+  const menuLabel = ru ? "Меню кабинета" : "Workspace menu";
+
   return (
-    <main className="shell wd-account-workspace-page">
-      <div className="wd-workspace-mobile-bar">
+    <>
+      {headerMenuSlot && createPortal(
         <button
           ref={drawerTriggerRef}
-          className="wd-button wd-button-secondary wd-workspace-menu-trigger"
+          className="wd-account-menu-trigger"
           type="button"
+          aria-label={menuLabel}
           aria-expanded={drawerOpen}
           aria-controls="account-workspace-drawer"
           onClick={() => setDrawerOpen(true)}
         >
-          {ru ? "Меню кабинета" : "Workspace menu"}
-        </button>
-        <strong>{session.user.display_name}</strong>
-      </div>
+          <Menu aria-hidden="true" />
+        </button>,
+        headerMenuSlot,
+      )}
+
+      <main className="shell wd-account-workspace-page">
 
       <div className="wd-workspace-layout">
         <aside className="wd-workspace-sidebar" aria-label={ru ? "Панель кабинета" : "Workspace panel"}>
@@ -400,7 +425,7 @@ export function AccountWorkspaceShell({
             className="wd-workspace-drawer-panel"
             role="dialog"
             aria-modal="true"
-            aria-label={ru ? "Меню кабинета" : "Workspace menu"}
+            aria-label={menuLabel}
             onKeyDown={handleDrawerKeyDown}
           >
             <div className="wd-workspace-drawer-head">
@@ -410,11 +435,12 @@ export function AccountWorkspaceShell({
               </div>
               <button
                 ref={drawerCloseRef}
-                className="wd-button wd-button-secondary"
+                className="wd-account-drawer-close"
                 type="button"
+                aria-label={ru ? "Закрыть" : "Close"}
                 onClick={() => closeDrawer()}
               >
-                {ru ? "Закрыть" : "Close"}
+                <X aria-hidden="true" />
               </button>
             </div>
             <WorkspaceNavigation {...navigationProps} onNavigate={() => closeDrawer(false)} />
@@ -424,6 +450,7 @@ export function AccountWorkspaceShell({
           </aside>
         </div>
       )}
-    </main>
+      </main>
+    </>
   );
 }

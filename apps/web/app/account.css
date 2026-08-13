@@ -2836,3 +2836,481 @@ body:has(.wd-account-workspace-page) .site-footer {
     gap: 10px;
   }
 }
+
+/* Account production polish: compact operations hierarchy */
+.wd-account-menu-slot {
+  display: none;
+}
+
+.wd-account-menu-trigger,
+.wd-account-drawer-close {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.wd-account-menu-trigger:hover,
+.wd-account-drawer-close:hover {
+  border-color: color-mix(in srgb, var(--brand) 34%, var(--line));
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
+.wd-account-menu-trigger svg,
+.wd-account-drawer-close svg {
+  width: 20px;
+  height: 20px;
+}
+
+.wd-account-workspace-page {
+  padding: 12px;
+}
+
+.wd-account-workspace-page .wd-workspace-layout,
+.wd-account-workspace-page .wd-workspace-content,
+.wd-account-workspace-page .wd-account-overview {
+  gap: 12px;
+}
+
+.wd-account-workspace-page .wd-workspace-sidebar,
+.wd-account-workspace-page .wd-workspace-drawer-panel,
+.wd-account-workspace-page .wd-account-overview > .wd-account-dashboard-head,
+.wd-operation-metrics,
+.wd-operation-actions,
+.wd-operation-projects,
+.wd-operation-add-project,
+.wd-project-management,
+.wd-project-archive-list,
+.wd-account-workspace-page .wd-account-settings-grid > .wd-account-card {
+  box-shadow: none;
+}
+
+.wd-account-workspace-page .wd-account-dashboard {
+  width: 100%;
+  display: grid;
+  gap: 12px;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.wd-account-workspace-page .wd-account-dashboard > .wd-account-dashboard-head,
+.wd-account-workspace-page .wd-account-overview > .wd-account-dashboard-head {
+  min-height: 128px;
+  align-items: flex-end;
+  border: 1px solid var(--wd-account-border);
+  border-radius: var(--wd-account-radius);
+  padding: 24px;
+  background: linear-gradient(135deg, var(--surface) 62%, color-mix(in srgb, var(--brand-soft) 58%, var(--surface)));
+}
+
+.wd-account-workspace-page .wd-account-dashboard > .wd-account-dashboard-head h1,
+.wd-account-workspace-page .wd-operation-heading h1,
+.wd-account-workspace-page .is-first-use h1 {
+  margin: 4px 0 0;
+  font-size: clamp(30px, 3.4vw, 42px);
+  line-height: 1.08;
+  letter-spacing: -.035em;
+}
+
+.wd-account-workspace-page .wd-account-dashboard > .wd-account-dashboard-head p {
+  max-width: 70ch;
+  margin: 9px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.wd-account-workspace-page .wd-account-breadcrumb {
+  margin: 0;
+  font-size: 12px;
+}
+
+.wd-operation-metrics {
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--wd-account-border);
+  border-radius: var(--wd-account-radius);
+  background: var(--line);
+}
+
+.wd-operation-metrics article {
+  min-height: 96px;
+  border: 0;
+  border-radius: 0;
+  padding: 15px 17px;
+  box-shadow: none;
+}
+
+.wd-operation-metrics strong {
+  font-size: clamp(27px, 3vw, 36px);
+}
+
+.wd-operation-actions {
+  grid-template-columns: minmax(190px, .58fr) minmax(0, 2fr);
+  gap: 18px;
+  padding: 18px;
+  background: color-mix(in srgb, var(--brand-soft) 46%, var(--surface));
+}
+
+.wd-operation-action-list {
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+
+.wd-operation-action-list a {
+  min-height: 76px;
+  padding: 13px 14px;
+  background: var(--surface);
+}
+
+.wd-operation-action-list a:first-child {
+  border-color: color-mix(in srgb, var(--brand) 28%, var(--line));
+}
+
+.wd-operation-projects,
+.wd-project-management,
+.wd-project-archive-list {
+  padding: 18px;
+}
+
+.wd-operation-project-card {
+  gap: 14px;
+  padding: 16px;
+}
+
+.wd-operation-add-project > summary {
+  min-height: 50px;
+}
+
+.wd-account-workspace-page .wd-account-settings-grid {
+  gap: 12px;
+}
+
+.wd-account-workspace-page .wd-account-settings-grid > .wd-account-card {
+  width: 100%;
+  border-radius: var(--wd-account-radius);
+  padding: 20px;
+}
+
+.wd-account-workspace-page .wd-account-settings-grid > .wd-account-card h2 {
+  margin-top: 6px;
+}
+
+.wd-account-workspace-page .wd-audit-history,
+.wd-account-workspace-page .wd-saved-checks,
+.wd-account-workspace-page .wd-saved-issues,
+.wd-account-workspace-page .wd-create-report-card {
+  box-shadow: none;
+}
+
+.wd-account-workspace-page .wd-report-detail-page,
+.wd-account-workspace-page .wd-report-detail-page > .wd-account-breadcrumb,
+.wd-account-workspace-page .wd-report-actions,
+.wd-public-report-page .wd-report-snapshot,
+.wd-public-report-page .wd-public-report-actions {
+  width: min(100%, 1080px);
+  margin-inline: auto;
+}
+
+.wd-account-workspace-page .wd-report-detail-page {
+  gap: 12px;
+}
+
+.wd-report-snapshot,
+.wd-public-report-page .wd-report-snapshot {
+  display: grid;
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.wd-account-workspace-page .wd-report-snapshot-head,
+.wd-public-report-page .wd-report-snapshot-head {
+  min-height: 174px;
+  border: 0;
+  border-radius: 0;
+  padding: 24px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--brand-soft) 58%, var(--surface)) 0%, var(--surface) 70%);
+}
+
+.wd-report-snapshot-head h1 {
+  margin: 6px 0 7px;
+  font-size: clamp(28px, 3.4vw, 42px);
+}
+
+.wd-report-snapshot-head > strong {
+  font-size: clamp(34px, 4.4vw, 50px);
+}
+
+.wd-account-workspace-page .wd-report-meta,
+.wd-public-report-page .wd-report-meta {
+  border: 0;
+  border-block: 1px solid var(--line);
+  border-radius: 0;
+}
+
+.wd-account-workspace-page .wd-report-meta > div,
+.wd-public-report-page .wd-report-meta > div {
+  min-height: 72px;
+  padding: 12px 16px;
+}
+
+.wd-report-executive,
+.wd-report-issues,
+.wd-report-checks,
+.wd-report-methodology {
+  border: 0;
+  border-radius: 0;
+  padding: 22px 24px;
+  background: var(--surface);
+}
+
+.wd-report-snapshot > section + section {
+  border-top: 1px solid var(--line);
+}
+
+.wd-report-executive {
+  grid-template-columns: minmax(0, 1.35fr) minmax(250px, .65fr);
+  gap: 18px 24px;
+}
+
+.wd-report-executive .wd-report-first-actions {
+  grid-column: 1 / -1;
+}
+
+.wd-report-executive h2,
+.wd-report-section-heading h2,
+.wd-report-methodology h2,
+.wd-report-actions h2,
+.wd-public-report-actions h2 {
+  font-size: clamp(19px, 2vw, 24px);
+}
+
+.wd-report-executive > div:first-child > p,
+.wd-report-methodology p,
+.wd-report-delivery-head p,
+.wd-public-report-actions p {
+  line-height: 1.55;
+}
+
+.wd-report-priority-grid {
+  align-self: start;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.wd-report-priority-grid > div {
+  min-height: 60px;
+  align-content: space-between;
+  padding: 10px 12px;
+}
+
+.wd-report-first-actions {
+  padding-top: 14px;
+}
+
+.wd-report-first-actions ol {
+  gap: 5px;
+}
+
+.wd-report-issue-groups {
+  gap: 16px;
+}
+
+.wd-report-issue-list > article {
+  padding: 16px;
+  background: var(--surface-muted);
+}
+
+.wd-report-issue-list h3 {
+  margin: 9px 0 5px;
+  font-size: 18px;
+}
+
+.wd-report-issue-list p,
+.wd-report-issue-list li {
+  line-height: 1.5;
+}
+
+.wd-report-issue-meta [data-kind="priority"] {
+  color: var(--text-soft);
+}
+
+.wd-report-issue-list > article[data-severity="critical"] .wd-report-issue-meta [data-kind="severity"],
+.wd-report-issue-list > article[data-severity="high"] .wd-report-issue-meta [data-kind="severity"] {
+  border-color: color-mix(in srgb, var(--danger) 32%, var(--line));
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.wd-report-issue-list > article[data-severity="medium"] .wd-report-issue-meta [data-kind="severity"],
+.wd-report-issue-list > article[data-severity="warning"] .wd-report-issue-meta [data-kind="severity"] {
+  border-color: color-mix(in srgb, var(--warning) 32%, var(--line));
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.wd-report-issue-list > article[data-severity="low"] .wd-report-issue-meta [data-kind="severity"],
+.wd-report-issue-list > article[data-severity="info"] .wd-report-issue-meta [data-kind="severity"] {
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--line));
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.wd-report-issue-group[data-priority="p0"] > h3 {
+  color: var(--danger);
+}
+
+.wd-report-issue-group[data-priority="p1"] > h3 {
+  color: var(--warning);
+}
+
+.wd-report-issue-group[data-priority="p2"] > h3 {
+  color: var(--brand);
+}
+
+.wd-account-workspace-page .wd-report-actions,
+.wd-public-report-actions {
+  gap: 14px;
+  border-radius: var(--wd-account-radius, 16px);
+  padding: 20px;
+  box-shadow: none;
+}
+
+@media (max-width: 900px) {
+  body:has(.wd-account-workspace-page) .wd-account-menu-slot {
+    display: block;
+  }
+
+  .wd-account-workspace-page {
+    padding: 8px;
+  }
+
+  .wd-account-workspace-page .wd-workspace-drawer-panel {
+    width: min(86vw, 340px);
+    border-radius: 0 16px 16px 0;
+  }
+
+  .wd-operation-actions,
+  .wd-operation-action-list {
+    grid-template-columns: 1fr;
+  }
+
+  .wd-report-executive {
+    grid-template-columns: 1fr;
+  }
+
+  .wd-report-executive .wd-report-first-actions {
+    grid-column: 1;
+  }
+}
+
+@media (max-width: 680px) {
+  .wd-account-workspace-page .wd-account-dashboard > .wd-account-dashboard-head,
+  .wd-account-workspace-page .wd-account-overview > .wd-account-dashboard-head {
+    min-height: 0;
+    padding: 18px;
+  }
+
+  .wd-account-workspace-page .wd-account-dashboard > .wd-account-dashboard-head .wd-account-actions {
+    display: grid;
+    width: 100%;
+  }
+
+  .wd-account-workspace-page .wd-account-dashboard > .wd-account-dashboard-head .wd-button {
+    width: 100%;
+  }
+
+  .wd-operation-action-list {
+    grid-template-columns: 1fr;
+  }
+
+  .wd-operation-actions,
+  .wd-operation-projects,
+  .wd-project-management,
+  .wd-project-archive-list {
+    padding: 16px;
+  }
+
+  .wd-operation-action-list a {
+    min-height: 72px;
+  }
+
+  .wd-account-workspace-page .wd-report-snapshot-head,
+  .wd-public-report-page .wd-report-snapshot-head {
+    min-height: 0;
+    padding: 20px;
+  }
+
+  .wd-report-executive,
+  .wd-report-issues,
+  .wd-report-checks,
+  .wd-report-methodology {
+    padding: 18px;
+  }
+
+  .wd-report-priority-grid,
+  .wd-account-workspace-page .wd-report-meta,
+  .wd-public-report-page .wd-report-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .wd-report-meta > div:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  .wd-account-workspace-page .wd-report-actions,
+  .wd-public-report-actions {
+    padding: 18px;
+  }
+}
+
+@media (max-width: 520px) {
+  body:has(.wd-account-workspace-page) .wd-site-header .wd-brand .brand-picture {
+    display: none;
+  }
+
+  body:has(.wd-account-workspace-page) .wd-site-header .wd-brand .brand-mark {
+    display: block;
+  }
+
+  body:has(.wd-account-workspace-page) .wd-site-header .wd-header-actions.header-actions {
+    gap: 6px;
+  }
+
+  .wd-operation-metrics,
+  .wd-operation-project-card dl,
+  .wd-report-priority-grid,
+  .wd-account-workspace-page .wd-report-meta,
+  .wd-public-report-page .wd-report-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .wd-report-issue-list > article {
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: 10px;
+    padding: 14px;
+  }
+
+  .wd-report-issue-order {
+    width: 34px;
+    height: 34px;
+  }
+
+  .wd-report-section-heading {
+    align-items: flex-start;
+    flex-direction: row;
+  }
+}

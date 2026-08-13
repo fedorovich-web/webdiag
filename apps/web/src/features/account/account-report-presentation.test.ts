@@ -7,6 +7,7 @@ import {
   orderedReportIssues,
   reportPriorityLabel,
   reportPriorityDistribution,
+  reportSeverityLabel,
   reportShareState,
   reportSummary,
 } from "./account-report-presentation";
@@ -92,5 +93,13 @@ describe("account report presentation", () => {
       label: "Shared",
       expiry: "2026-08-20T10:00:00Z",
     });
+  });
+
+  it("localizes known stored severities without reclassifying unknown values", () => {
+    expect(reportSeverityLabel("ru", "critical")).toBe("Критическая");
+    expect(reportSeverityLabel("ru", "high")).toBe("Высокая");
+    expect(reportSeverityLabel("en", "medium")).toBe("Medium");
+    expect(reportSeverityLabel("en", "warning")).toBe("Warning");
+    expect(reportSeverityLabel("ru", "provider-specific")).toBe("provider-specific");
   });
 });

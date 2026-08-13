@@ -179,6 +179,13 @@ test.describe("account workspace", () => {
     expect(rail).not.toBeNull();
     expect(content).not.toBeNull();
     expect((rail?.x ?? 0) + (rail?.width ?? 0)).toBeLessThan(content?.x ?? 0);
+    await page.setViewportSize({ width: 390, height: 844 });
+    const nextAction = page.getByRole("link", { name: "Проверить изменения" });
+    await expect(nextAction).toBeVisible();
+    const nextActionBox = await nextAction.boundingBox();
+    expect(nextActionBox?.width).toBeGreaterThan(300);
+    expect(nextActionBox?.height).toBeGreaterThanOrEqual(44);
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   });
 
   test("project route keeps the real project selected in the shell", async ({ page }) => {
@@ -319,7 +326,12 @@ test.describe("account workspace", () => {
     await page.goto("/account");
     const trigger = page.getByRole("button", { name: "Меню кабинета" });
     await expect(trigger).toBeVisible();
+    await expect(
+      page.locator(".wd-site-header").getByRole("button", { name: "Меню кабинета" }),
+    ).toBeVisible();
+    await expect(page.locator(".wd-workspace-mobile-bar")).toHaveCount(0);
     await trigger.click();
+    await expect.poll(() => page.evaluate(() => document.body.style.overflow)).toBe("hidden");
     const triggerBox = await trigger.boundingBox();
     expect(triggerBox?.height).toBeGreaterThanOrEqual(44);
 
@@ -334,6 +346,7 @@ test.describe("account workspace", () => {
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden();
     await expect(trigger).toBeFocused();
+    await expect.poll(() => page.evaluate(() => document.body.style.overflow)).toBe("");
 
     const dimensions = await page.evaluate(() => ({
       viewport: document.documentElement.clientWidth,
@@ -692,6 +705,8 @@ test.describe("account reports", () => {
     await expect(page.getByRole("link", { name: "Отчёты проекта" })).toHaveAttribute("aria-current", "page");
     await expect(page.getByRole("heading", { name: "Результат сохранённого аудита" })).toBeVisible();
     await expect(page.getByText("Зафиксировано проблем: 1.", { exact: false })).toBeVisible();
+    await expect(page.getByText("Высокая", { exact: true })).toBeVisible();
+    await expect(page.getByText("P0 — исправить первым", { exact: true }).first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "Что содержит этот отчёт" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Скачать HTML" })).toHaveAttribute(
       "href",
@@ -729,6 +744,9 @@ test.describe("account reports", () => {
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 
     await page.goto(`/account/reports/${reportId}`);
+    await expect(page.getByRole("heading", { level: 1, name: snapshot.title })).toBeVisible();
+    const mobileReportLastMeta = await page.locator(".wd-report-meta > div").last().boundingBox();
+    expect(mobileReportLastMeta?.width).toBeGreaterThan(300);
     page.once("dialog", (dialog) => dialog.accept());
     await page.getByRole("button", { name: "Отозвать ссылку" }).click();
     await expect(page.getByRole("button", { name: "Включить общий доступ" })).toBeVisible();

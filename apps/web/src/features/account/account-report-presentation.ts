@@ -91,6 +91,28 @@ export function reportPriorityLabel(locale: Locale, priority: string): string {
     : locale === "ru" ? "Не классифицировано" : "Not classified";
 }
 
+export function reportSeverityLabel(locale: Locale, severity: string): string {
+  const labels: Readonly<Record<Locale, Readonly<Record<string, string>>>> = {
+    ru: {
+      critical: "Критическая",
+      high: "Высокая",
+      medium: "Средняя",
+      low: "Низкая",
+      info: "Информационная",
+      warning: "Предупреждение",
+    },
+    en: {
+      critical: "Critical",
+      high: "High",
+      medium: "Medium",
+      low: "Low",
+      info: "Informational",
+      warning: "Warning",
+    },
+  };
+  return labels[locale][severity] ?? severity;
+}
+
 export function formatReportDate(locale: Locale, value: string | null): string {
   if (!value) return "—";
   const date = new Date(value);
