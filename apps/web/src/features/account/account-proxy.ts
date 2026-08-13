@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   AccountProxyConfigurationError,
   resolveAccountApiBaseUrl,
+  selectAccountRetryAfter,
   selectAccountSessionCookie,
   selectAccountSetCookie,
 } from "./account-proxy-contract";
@@ -25,13 +26,20 @@ interface ProxyOptions {
   readonly body: boolean;
 }
 
-function toResponse(payload: unknown, status: number, setCookie?: string | null) {
+function toResponse(
+  payload: unknown,
+  status: number,
+  setCookie?: string | null,
+  retryAfter?: string | null,
+) {
   const response = NextResponse.json(payload, {
     status,
     headers: { "cache-control": "no-store" },
   });
   const sessionCookie = selectAccountSetCookie(setCookie ?? null);
   if (sessionCookie) response.headers.set("set-cookie", sessionCookie);
+  const selectedRetryAfter = selectAccountRetryAfter(status, retryAfter ?? null);
+  if (selectedRetryAfter) response.headers.set("retry-after", selectedRetryAfter);
   return response;
 }
 
@@ -90,7 +98,12 @@ export function createAccountProxy(options: ProxyOptions) {
           502,
         );
       }
-      return toResponse(payload, upstream.status, upstream.headers.get("set-cookie"));
+      return toResponse(
+        payload,
+        upstream.status,
+        upstream.headers.get("set-cookie"),
+        upstream.headers.get("retry-after"),
+      );
     } catch (error) {
       const timedOut = error instanceof Error && error.name === "AbortError";
       return toResponse(

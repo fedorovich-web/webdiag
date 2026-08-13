@@ -24,6 +24,10 @@ export function reportsPath(locale: Locale): string {
   return `${accountPath(locale)}/reports`;
 }
 
+export function accountSettingsPath(locale: Locale): string {
+  return `${accountPath(locale)}/settings`;
+}
+
 export function reportPath(locale: Locale, reportId: string): string {
   return `${reportsPath(locale)}/${reportId}`;
 }

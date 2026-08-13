@@ -1,6 +1,7 @@
 import type { Locale } from "@webdiag/tool-registry";
 import {
   accountPath,
+  accountSettingsPath,
   projectMonitoringPath,
   projectPath,
   reportsPath,
@@ -16,12 +17,14 @@ export type AccountWorkspaceSection =
   | "issues"
   | "monitoring"
   | "reports"
-  | "report";
+  | "report"
+  | "settings";
 
 export type AccountWorkspaceNavigationId =
   | "overview"
   | "projects"
   | "reports"
+  | "account"
   | "project_overview"
   | "audits"
   | "issues"
@@ -72,6 +75,13 @@ export function buildAccountWorkspaceNavigation(
       label: ru ? "Отчёты" : "Reports",
       href: reportsPath(locale),
       active: (section === "reports" || section === "report") && !projectId,
+      disabled: false,
+    },
+    {
+      id: "account",
+      label: ru ? "Аккаунт" : "Account",
+      href: accountSettingsPath(locale),
+      active: section === "settings",
       disabled: false,
     },
   ];

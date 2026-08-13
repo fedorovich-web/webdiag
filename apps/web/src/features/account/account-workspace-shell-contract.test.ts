@@ -35,11 +35,17 @@ const projects: readonly AccountProject[] = [
 describe("account workspace shell contract", () => {
   it("builds localized navigation for the real account routes", () => {
     const ru = buildAccountWorkspaceNavigation("ru", "overview");
-    expect(ru.portfolio).toHaveLength(3);
+    expect(ru.portfolio).toHaveLength(4);
     expect(ru.portfolio[0]?.label).toBe("Обзор");
     expect(ru.portfolio[0]?.active).toBe(true);
     expect(ru.portfolio[1]?.href).toBe("/account#projects");
     expect(ru.portfolio[2]?.href).toBe("/account/reports");
+    expect(ru.portfolio[3]).toMatchObject({
+      id: "account",
+      label: "Аккаунт",
+      href: "/account/settings",
+      active: false,
+    });
     expect(ru.project).toBeNull();
 
     const en = buildAccountWorkspaceNavigation("en", "projects");
@@ -48,6 +54,10 @@ describe("account workspace shell contract", () => {
     expect(en.portfolio[1]?.active).toBe(true);
     expect(en.portfolio[2]?.label).toBe("Reports");
     expect(en.portfolio[2]?.active).toBe(false);
+    expect(en.portfolio[3]?.href).toBe("/en/account/settings");
+
+    const settings = buildAccountWorkspaceNavigation("ru", "settings");
+    expect(settings.portfolio[3]?.active).toBe(true);
   });
 
   it("builds project task navigation only from live routes and known audit context", () => {

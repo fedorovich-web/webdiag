@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {
   useEffect,
+  useCallback,
   useRef,
   useState,
   type ChangeEvent,
@@ -11,6 +12,7 @@ import {
 } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { AccountDashboard } from "./account-dashboard";
+import { AccountSettings } from "./account-settings";
 import { AccountClientError, getAccountSession, logoutAccount } from "./account-client";
 import type { AccountSessionResponse } from "./account-contract";
 import { accountErrorMessage } from "./account-messages";
@@ -149,6 +151,15 @@ export function AccountWorkspaceShell({
   const drawerCloseRef = useRef<HTMLButtonElement>(null);
   const drawerPanelRef = useRef<HTMLElement>(null);
   const loading = loadedToken !== reloadToken;
+
+  const handleUnauthenticated = useCallback(() => {
+    setSession(null);
+    setProjects([]);
+    setOverview(null);
+    setOverviewError("");
+    setLoadState("unauthenticated");
+    setDrawerOpen(false);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -346,6 +357,12 @@ export function AccountWorkspaceShell({
               projects={projects}
               overview={overview}
               onProjectCreated={addProject}
+            />
+          ) : section === "settings" ? (
+            <AccountSettings
+              locale={locale}
+              session={session}
+              onUnauthenticated={handleUnauthenticated}
             />
           ) : children}
         </section>
