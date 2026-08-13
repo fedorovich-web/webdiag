@@ -441,6 +441,15 @@ class SqliteAIStore:
             ).fetchone()
         return self._run(row) if row is not None else None
 
+    def get_run(self, *, run_id: str) -> StoredAIRun | None:
+        self.ensure_schema()
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM ai_runs WHERE id = ?",
+                (run_id,),
+            ).fetchone()
+        return self._run(row) if row is not None else None
+
     def list_runs_for_user(
         self,
         *,

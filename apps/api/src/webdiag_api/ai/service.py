@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
 
 from webdiag_api.ai.catalog import AIToolCatalog, AIToolState
@@ -24,6 +25,12 @@ from webdiag_api.ai.storage import (
     SqliteAIStore,
     StoredAIClaim,
     StoredAIRun,
+)
+from webdiag_api.ai.tool_contracts import (
+    AIToolContractError,
+    has_tool_contract,
+    validate_output,
+    validate_public_input,
 )
 
 
@@ -94,8 +101,18 @@ class AIService:
             raise AIServiceError(503, "ai_tool_unavailable", "AI tool is unavailable.")
         if definition.credit_price is None:
             raise AIServiceError(503, "ai_tool_unavailable", "AI tool is unavailable.")
+        input_value = request.input
+        if has_tool_contract(definition.id):
+            try:
+                input_value = validate_public_input(definition.id, input_value)
+            except AIToolContractError as error:
+                raise AIServiceError(
+                    422,
+                    "ai_invalid_tool_input",
+                    "Invalid AI tool input.",
+                ) from error
         input_json = json.dumps(
-            request.input,
+            input_value,
             ensure_ascii=False,
             sort_keys=True,
             separators=(",", ":"),
@@ -220,8 +237,31 @@ class AIService:
         input_units: int,
         output_units: int,
     ) -> StoredAIRun:
+        run = self._store.get_run(run_id=run_id)
+        if run is None:
+            raise AIServiceError(404, "ai_run_not_found", "AI run not found.")
+        normalized_output = output
+        if has_tool_contract(run.tool_id):
+            try:
+                actual_input_sha256 = hashlib.sha256(run.input_json.encode()).hexdigest()
+                if not hmac.compare_digest(actual_input_sha256, run.input_sha256):
+                    raise AIToolContractError("persisted AI input digest does not match")
+                input_value = json.loads(run.input_json)
+                normalized_output = validate_output(run.tool_id, input_value, output)
+            except (AIToolContractError, json.JSONDecodeError) as error:
+                self._store.fail_run(
+                    run_id=run_id,
+                    lease_token=lease_token,
+                    error_code="ai_invalid_provider_output",
+                    provider_unknown=False,
+                )
+                raise AIServiceError(
+                    422,
+                    "ai_invalid_provider_output",
+                    "Invalid AI provider output.",
+                ) from error
         output_json = json.dumps(
-            output,
+            normalized_output,
             ensure_ascii=False,
             sort_keys=True,
             separators=(",", ":"),
