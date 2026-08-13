@@ -1069,3 +1069,37 @@ Competitor Gap evidence, comparison-page indexes, duplicate page rejection, Inte
 self/existing/duplicate pair rejection, exact source/target evidence, strict OpenRouter request
 policies, and RU/EN fixtures. No real provider, crawler, site mutation, payment, release, or
 deployment action occurred.
+
+GitHub Actions `Full verification` run 31677797031 subsequently passed on the pushed A12.1d
+head, including the complete workspace, frontend, build, browser, Python, Ruff, and lock gates.
+
+## A12.1e final grounded text contracts
+
+Fresh backend verification on 2026-08-13:
+
+```text
+npm run test:python
+PASS — 467/467
+
+npm run lint:python
+PASS — Ruff reported no findings
+
+npm run verify:python-lock
+PASS — 39 locked packages match the installed win32 environment
+
+git diff --check
+PASS
+```
+
+The first full attempt found one test-only contract-version mismatch after generic infrastructure
+tests were decoupled from production catalog IDs: 466 passed and one assertion failed. The
+single failing test then passed after the fixture correction, and the complete gate above was
+rerun successfully.
+
+The final package adds ten API contract cases, three worker policy cases, three RU/EN fixtures,
+and a catalog invariant proving every one of the 13 internal text/vision-analysis entries has an
+executable contract while both text-incompatible image-generation entries remain disabled.
+Redirect outputs require explicit nullable targets under strict JSON Schema. Regex outputs are
+always `unverified`; no model-produced pattern is compiled or executed. No real provider,
+translation certification, crawler, redirect mutation, payment, release, or deployment action
+occurred.
