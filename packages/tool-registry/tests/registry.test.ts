@@ -46,4 +46,23 @@ describe("tool registry", () => {
     expect(tool?.description?.en).toContain("reads");
     expect(tools.find((item) => item.slug === "qr-code-decoder")?.state).toBe("internal");
   });
+
+  it("keeps duplicate legacy definitions explicitly superseded by ready aggregates", () => {
+    const expected = new Map([
+      ["csv-validator", "csv-json-converter"],
+      ["cron-parser", "cron-expression-workbench"],
+      ["url-parser", "url-normalization-analyzer"],
+      ["qr-code-decoder", "qr-code-generator"],
+      ["image-metadata-remover", "image-metadata-viewer"],
+      ["image-placeholder-generator", "image-data-uri-converter"],
+    ]);
+
+    for (const [slug, supersededBy] of expected) {
+      const tool = tools.find((item) => item.slug === slug);
+      const replacement = tools.find((item) => item.slug === supersededBy);
+      expect(tool?.state).toBe("internal");
+      expect(tool?.supersededBy).toBe(supersededBy);
+      expect(replacement?.state).toBe("ready");
+    }
+  });
 });

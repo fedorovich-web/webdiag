@@ -14,6 +14,15 @@ for (const tool of tools) {
   if (tool.state === "ready" && (!tool.description?.ru || !tool.description?.en)) {
     failures.push(`${tool.id}: ready tool has no localized public description.`);
   }
+  if (tool.state === "ready" && tool.supersededBy !== undefined) {
+    failures.push(`${tool.id}: ready tool cannot declare supersededBy.`);
+  }
+  if (tool.state === "internal" && tool.supersededBy !== undefined) {
+    const replacement = tools.find((candidate) => candidate.slug === tool.supersededBy);
+    if (!replacement || replacement.state !== "ready" || replacement.slug === tool.slug) {
+      failures.push(`${tool.id}: supersededBy must reference another ready tool.`);
+    }
+  }
 }
 
 if (failures.length) {

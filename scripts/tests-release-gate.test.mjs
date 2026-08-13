@@ -83,3 +83,38 @@ test("rejects a registry with an entry that is not ready", () => {
 
   assert.equal(isReleaseRegistryReady(registry), false);
 });
+
+test("accepts an internal legacy definition superseded by a ready aggregate tool", () => {
+  const registry = [
+    readyTool(1),
+    { ...readyTool(2), state: "internal", supersededBy: "tool-001" },
+  ];
+
+  assert.equal(isReleaseRegistryReady(registry), true);
+});
+
+test("rejects an internal definition superseded by a missing or internal tool", () => {
+  const missing = [
+    readyTool(1),
+    { ...readyTool(2), state: "internal", supersededBy: "missing-tool" },
+  ];
+  const internalTarget = [
+    readyTool(1),
+    { ...readyTool(2), state: "internal", supersededBy: "tool-003" },
+    { ...readyTool(3), state: "internal" },
+  ];
+
+  assert.equal(isReleaseRegistryReady(missing), false);
+  assert.equal(isReleaseRegistryReady(internalTarget), false);
+});
+
+test("rejects supersededBy on ready definitions and self references", () => {
+  const readyAlias = [{ ...readyTool(1), supersededBy: "tool-002" }, readyTool(2)];
+  const selfReference = [
+    readyTool(1),
+    { ...readyTool(2), state: "internal", supersededBy: "tool-002" },
+  ];
+
+  assert.equal(isReleaseRegistryReady(readyAlias), false);
+  assert.equal(isReleaseRegistryReady(selfReference), false);
+});

@@ -17,5 +17,6 @@ export interface ToolDefinition {
   readonly access: string;
   readonly implementationWave: string;
   readonly state: ToolState;
+  readonly supersededBy?: string;
   readonly description?: LocalizedText | null;
 }
