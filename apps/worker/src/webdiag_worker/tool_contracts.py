@@ -139,3 +139,42 @@ class SearchIntentPageFitOutput(StrictProviderOutput):
     warnings: list[Annotated[str, Field(min_length=1, max_length=1_000)]] = Field(
         max_length=20
     )
+
+
+class CompetitorEvidence(StrictProviderOutput):
+    page_index: int = Field(ge=0, le=2)
+    excerpt: str = Field(min_length=1, max_length=1_000)
+
+
+class CompetitorGap(StrictProviderOutput):
+    topic: str = Field(min_length=1, max_length=300)
+    own_evidence: list[Annotated[str, Field(min_length=1, max_length=1_000)]] = Field(
+        max_length=10
+    )
+    competitor_evidence: list[CompetitorEvidence] = Field(min_length=1, max_length=10)
+    recommendation: str = Field(min_length=1, max_length=2_000)
+
+
+class CompetitorGapOutput(StrictProviderOutput):
+    summary: str = Field(min_length=1, max_length=4_000)
+    gaps: list[CompetitorGap] = Field(min_length=1, max_length=30)
+    warnings: list[Annotated[str, Field(min_length=1, max_length=1_000)]] = Field(
+        max_length=20
+    )
+
+
+class LinkProposal(StrictProviderOutput):
+    source_page_index: int = Field(ge=0, le=49)
+    target_page_index: int = Field(ge=0, le=49)
+    suggested_anchor: str = Field(min_length=1, max_length=200)
+    source_evidence: str = Field(min_length=1, max_length=1_000)
+    target_evidence: str = Field(min_length=1, max_length=1_000)
+    rationale: str = Field(min_length=1, max_length=1_000)
+
+
+class InternalLinkingOutput(StrictProviderOutput):
+    summary: str = Field(min_length=1, max_length=4_000)
+    proposals: list[LinkProposal] = Field(max_length=100)
+    warnings: list[Annotated[str, Field(min_length=1, max_length=1_000)]] = Field(
+        max_length=20
+    )
