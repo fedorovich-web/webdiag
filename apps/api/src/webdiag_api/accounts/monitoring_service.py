@@ -16,6 +16,7 @@ from webdiag_api.accounts.monitoring_models import (
 from webdiag_api.accounts.monitoring_storage import (
     MONITOR_LEASE_SECONDS,
     MonitorLeaseLostError,
+    MonitorProjectInactiveError,
     MonitorRunIntegrityError,
     SqliteMonitoringStore,
     StoredMonitor,
@@ -107,6 +108,8 @@ class MonitoringService:
                 cadence=request.cadence,
                 timezone=request.timezone,
             ).public()
+        except MonitorProjectInactiveError as error:
+            raise self._project_not_found() from error
         except ValueError as error:
             if str(error) == "account_monitor_exists":
                 raise MonitoringServiceError(
@@ -130,13 +133,16 @@ class MonitoringService:
         request: MonitorUpdateRequest,
     ) -> AccountMonitor:
         self._owned_monitor(user_id=user_id, project_id=project_id)
-        updated = self._store.update_monitor(
-            user_id=user_id,
-            project_id=project_id,
-            cadence=request.cadence,
-            timezone=request.timezone,
-            enabled=request.enabled,
-        )
+        try:
+            updated = self._store.update_monitor(
+                user_id=user_id,
+                project_id=project_id,
+                cadence=request.cadence,
+                timezone=request.timezone,
+                enabled=request.enabled,
+            )
+        except MonitorProjectInactiveError as error:
+            raise self._project_not_found() from error
         if updated is None:
             raise MonitoringServiceError(404, "account_monitor_not_found", "Monitor not found.")
         return updated.public()
@@ -144,7 +150,10 @@ class MonitoringService:
     def run_monitor(self, *, user_id: str, project_id: str) -> MonitorRunResponse:
         self._owned_monitor(user_id=user_id, project_id=project_id)
         project = self._owned_project(user_id=user_id, project_id=project_id)
-        monitor = self._store.claim_manual(user_id=user_id, project_id=project_id)
+        try:
+            monitor = self._store.claim_manual(user_id=user_id, project_id=project_id)
+        except MonitorProjectInactiveError as error:
+            raise self._project_not_found() from error
         if monitor is None:
             raise MonitoringServiceError(
                 409,
@@ -250,6 +259,10 @@ class MonitoringService:
         if project is None:
             raise MonitoringServiceError(404, "account_project_not_found", "Project not found.")
         return project
+
+    @staticmethod
+    def _project_not_found() -> MonitoringServiceError:
+        return MonitoringServiceError(404, "account_project_not_found", "Project not found.")
 
     def _owned_monitor(self, *, user_id: str, project_id: str) -> StoredMonitor:
         monitor = self._store.get_monitor(user_id=user_id, project_id=project_id)

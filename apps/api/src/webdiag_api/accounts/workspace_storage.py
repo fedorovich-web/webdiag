@@ -38,6 +38,7 @@ class StoredProject:
     origin: str
     created_at: int
     updated_at: int
+    archived_at: int | None
 
     def public(self) -> AccountProject:
         return AccountProject(
@@ -129,6 +130,7 @@ class SqliteWorkspaceStore:
                         origin TEXT NOT NULL,
                         created_at INTEGER NOT NULL,
                         updated_at INTEGER NOT NULL,
+                        archived_at INTEGER,
                         UNIQUE(user_id, origin),
                         FOREIGN KEY(user_id) REFERENCES account_users(id) ON DELETE CASCADE
                     );
@@ -160,6 +162,27 @@ class SqliteWorkspaceStore:
                 )
                 connection.execute("BEGIN IMMEDIATE")
                 try:
+                    project_columns = {
+                        str(row[1])
+                        for row in connection.execute(
+                            "PRAGMA table_info(account_workspace_projects)"
+                        ).fetchall()
+                    }
+                    if "archived_at" not in project_columns:
+                        connection.execute(
+                            """
+                            ALTER TABLE account_workspace_projects
+                            ADD COLUMN archived_at INTEGER
+                            """
+                        )
+                    connection.execute(
+                        """
+                        CREATE INDEX IF NOT EXISTS account_workspace_projects_archive_idx
+                        ON account_workspace_projects(
+                            user_id, archived_at, updated_at DESC, id DESC
+                        )
+                        """
+                    )
                     columns = {
                         str(row[1])
                         for row in connection.execute(
@@ -202,6 +225,7 @@ class SqliteWorkspaceStore:
             origin=origin,
             created_at=now,
             updated_at=now,
+            archived_at=None,
         )
         with self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
@@ -218,8 +242,8 @@ class SqliteWorkspaceStore:
                 connection.execute(
                     """
                     INSERT INTO account_workspace_projects(
-                        id, user_id, name, origin, created_at, updated_at
-                    ) VALUES (?, ?, ?, ?, ?, ?)
+                        id, user_id, name, origin, created_at, updated_at, archived_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         project.id,
@@ -228,6 +252,7 @@ class SqliteWorkspaceStore:
                         project.origin,
                         project.created_at,
                         project.updated_at,
+                        project.archived_at,
                     ),
                 )
             except sqlite3.IntegrityError as error:
@@ -241,10 +266,25 @@ class SqliteWorkspaceStore:
         with self._connect() as connection:
             rows = connection.execute(
                 """
-                SELECT id, user_id, name, origin, created_at, updated_at
+                SELECT id, user_id, name, origin, created_at, updated_at, archived_at
                 FROM account_workspace_projects
-                WHERE user_id = ?
+                WHERE user_id = ? AND archived_at IS NULL
                 ORDER BY updated_at DESC, id DESC
+                LIMIT ?
+                """,
+                (user_id, MAX_PROJECTS_PER_ACCOUNT),
+            ).fetchall()
+        return tuple(self._project(row) for row in rows)
+
+    def list_archived_projects(self, *, user_id: str) -> tuple[StoredProject, ...]:
+        self.ensure_schema()
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT id, user_id, name, origin, created_at, updated_at, archived_at
+                FROM account_workspace_projects
+                WHERE user_id = ? AND archived_at IS NOT NULL
+                ORDER BY archived_at DESC, id DESC
                 LIMIT ?
                 """,
                 (user_id, MAX_PROJECTS_PER_ACCOUNT),
@@ -256,13 +296,162 @@ class SqliteWorkspaceStore:
         with self._connect() as connection:
             row = connection.execute(
                 """
-                SELECT id, user_id, name, origin, created_at, updated_at
+                SELECT id, user_id, name, origin, created_at, updated_at, archived_at
+                FROM account_workspace_projects
+                WHERE user_id = ? AND id = ? AND archived_at IS NULL
+                """,
+                (user_id, project_id),
+            ).fetchone()
+        return self._project(row) if row else None
+
+    def get_archived_project(
+        self,
+        *,
+        user_id: str,
+        project_id: str,
+    ) -> StoredProject | None:
+        self.ensure_schema()
+        with self._connect() as connection:
+            row = connection.execute(
+                """
+                SELECT id, user_id, name, origin, created_at, updated_at, archived_at
+                FROM account_workspace_projects
+                WHERE user_id = ? AND id = ? AND archived_at IS NOT NULL
+                """,
+                (user_id, project_id),
+            ).fetchone()
+        return self._project(row) if row else None
+
+    def rename_project(
+        self,
+        *,
+        user_id: str,
+        project_id: str,
+        name: str,
+    ) -> StoredProject | None:
+        self.ensure_schema()
+        now = int(time.time())
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            cursor = connection.execute(
+                """
+                UPDATE account_workspace_projects
+                SET name = ?, updated_at = ?
+                WHERE user_id = ? AND id = ? AND archived_at IS NULL
+                """,
+                (name, now, user_id, project_id),
+            )
+            if cursor.rowcount != 1:
+                connection.execute("ROLLBACK")
+                return None
+            row = connection.execute(
+                """
+                SELECT id, user_id, name, origin, created_at, updated_at, archived_at
                 FROM account_workspace_projects
                 WHERE user_id = ? AND id = ?
                 """,
                 (user_id, project_id),
             ).fetchone()
-        return self._project(row) if row else None
+            connection.execute("COMMIT")
+        return self._project(row)
+
+    def archive_project(
+        self,
+        *,
+        user_id: str,
+        project_id: str,
+    ) -> StoredProject | None:
+        self.ensure_schema()
+        now = int(time.time())
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                """
+                SELECT id, user_id, name, origin, created_at, updated_at, archived_at
+                FROM account_workspace_projects
+                WHERE user_id = ? AND id = ?
+                """,
+                (user_id, project_id),
+            ).fetchone()
+            if row is None:
+                connection.execute("ROLLBACK")
+                return None
+            if row["archived_at"] is None:
+                connection.execute(
+                    """
+                    UPDATE account_workspace_projects
+                    SET archived_at = ?, updated_at = ?
+                    WHERE user_id = ? AND id = ? AND archived_at IS NULL
+                    """,
+                    (now, now, user_id, project_id),
+                )
+            monitor_table = connection.execute(
+                """
+                SELECT 1 FROM sqlite_master
+                WHERE type = 'table' AND name = 'account_workspace_monitors'
+                """
+            ).fetchone()
+            if monitor_table is not None:
+                connection.execute(
+                    """
+                    UPDATE account_workspace_monitors
+                    SET enabled = 0, status = 'pending', next_run_at = NULL,
+                        lease_token = NULL, lease_expires_at = NULL, updated_at = ?
+                    WHERE user_id = ? AND project_id = ?
+                    """,
+                    (now, user_id, project_id),
+                )
+            archived = connection.execute(
+                """
+                SELECT id, user_id, name, origin, created_at, updated_at, archived_at
+                FROM account_workspace_projects
+                WHERE user_id = ? AND id = ?
+                """,
+                (user_id, project_id),
+            ).fetchone()
+            connection.execute("COMMIT")
+        return self._project(archived)
+
+    def restore_project(
+        self,
+        *,
+        user_id: str,
+        project_id: str,
+    ) -> StoredProject | None:
+        self.ensure_schema()
+        now = int(time.time())
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                """
+                SELECT id, user_id, name, origin, created_at, updated_at, archived_at
+                FROM account_workspace_projects
+                WHERE user_id = ? AND id = ?
+                """,
+                (user_id, project_id),
+            ).fetchone()
+            if row is None:
+                connection.execute("ROLLBACK")
+                return None
+            if row["archived_at"] is not None:
+                connection.execute(
+                    """
+                    UPDATE account_workspace_projects
+                    SET archived_at = NULL, updated_at = ?
+                    WHERE user_id = ? AND id = ? AND archived_at IS NOT NULL
+                    """,
+                    (now, user_id, project_id),
+                )
+            restored = connection.execute(
+                """
+                SELECT id, user_id, name, origin, created_at, updated_at, archived_at
+                FROM account_workspace_projects
+                WHERE user_id = ? AND id = ?
+                """,
+                (user_id, project_id),
+            ).fetchone()
+            connection.execute("COMMIT")
+        return self._project(restored)
 
     def save_audit(
         self,
@@ -295,7 +484,7 @@ class SqliteWorkspaceStore:
             owned = connection.execute(
                 """
                 SELECT 1 FROM account_workspace_projects
-                WHERE id = ? AND user_id = ?
+                WHERE id = ? AND user_id = ? AND archived_at IS NULL
                 """,
                 (project_id, user_id),
             ).fetchone()
@@ -420,6 +609,9 @@ class SqliteWorkspaceStore:
             origin=str(row["origin"]),
             created_at=int(row["created_at"]),
             updated_at=int(row["updated_at"]),
+            archived_at=(
+                int(row["archived_at"]) if row["archived_at"] is not None else None
+            ),
         )
 
     @staticmethod

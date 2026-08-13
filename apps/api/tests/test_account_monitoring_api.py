@@ -4,6 +4,7 @@ import sqlite3
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import suppress
 from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
@@ -23,7 +24,11 @@ from webdiag_api.accounts.monitoring_models import (
     MonitorUpdateRequest,
 )
 from webdiag_api.accounts.monitoring_service import MonitoringService, MonitoringServiceError
-from webdiag_api.accounts.monitoring_storage import SqliteMonitoringStore, StoredMonitor
+from webdiag_api.accounts.monitoring_storage import (
+    MonitorProjectInactiveError,
+    SqliteMonitoringStore,
+    StoredMonitor,
+)
 from webdiag_api.accounts.security import ScryptParameters
 from webdiag_api.accounts.service import AccountService
 from webdiag_api.accounts.storage import SqliteAccountStore
@@ -140,6 +145,282 @@ def save_passed_run(store: SqliteMonitoringStore, monitor: StoredMonitor):
         change=MonitorChange(kind="baseline", current_score=90, current_issue_count=0),
         payload=None,
     )
+
+
+def test_archived_project_cannot_reenable_create_or_claim_monitor(tmp_path: Path) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    account, workspace, monitoring, _ = build_services(database)
+    user_id, _ = register(account)
+    project = workspace.create_project(
+        user_id=user_id,
+        request=ProjectCreateRequest(name="Main", origin="https://example.com"),
+    )
+    monitoring.create_monitor(
+        user_id=user_id,
+        project_id=project.id,
+        request=MonitorCreateRequest(cadence="daily", timezone="UTC"),
+    )
+    workspace_store = SqliteWorkspaceStore(str(database))
+    assert workspace_store.archive_project(user_id=user_id, project_id=project.id)
+    monitor_store = SqliteMonitoringStore(str(database))
+
+    with pytest.raises(MonitorProjectInactiveError):
+        monitor_store.update_monitor(
+            user_id=user_id,
+            project_id=project.id,
+            cadence=None,
+            timezone=None,
+            enabled=True,
+        )
+    with pytest.raises(MonitorProjectInactiveError):
+        monitor_store.claim_manual(user_id=user_id, project_id=project.id)
+    assert monitor_store.claim_due(now=2_000_000_000) is None
+
+    second = workspace.create_project(
+        user_id=user_id,
+        request=ProjectCreateRequest(name="Second", origin="https://second.example.com"),
+    )
+    assert workspace_store.archive_project(user_id=user_id, project_id=second.id)
+    with pytest.raises(MonitorProjectInactiveError):
+        monitor_store.create_monitor(
+            user_id=user_id,
+            project_id=second.id,
+            cadence="daily",
+            timezone="UTC",
+        )
+
+
+def test_archive_and_monitor_create_race_cannot_schedule_archived_project(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    account, workspace, _, _ = build_services(database)
+    user_id, _ = register(account)
+    project = workspace.create_project(
+        user_id=user_id,
+        request=ProjectCreateRequest(name="Main", origin="https://example.com"),
+    )
+    workspace_store = SqliteWorkspaceStore(str(database))
+    monitor_store = SqliteMonitoringStore(str(database))
+    workspace_store.ensure_schema()
+    monitor_store.ensure_schema()
+    begin_barrier = threading.Barrier(2)
+
+    class BarrierConnection(sqlite3.Connection):
+        def execute(self, sql: str, parameters=(), /):  # type: ignore[no-untyped-def]
+            if sql.strip() == "BEGIN IMMEDIATE":
+                begin_barrier.wait(timeout=5)
+            return super().execute(sql, parameters)
+
+    def connect_with_barrier(store: object) -> sqlite3.Connection:
+        connection = sqlite3.connect(
+            store._path,  # type: ignore[attr-defined]  # noqa: SLF001
+            timeout=10,
+            isolation_level=None,
+            factory=BarrierConnection,
+        )
+        connection.row_factory = sqlite3.Row
+        connection.execute("PRAGMA foreign_keys = ON")
+        connection.execute("PRAGMA journal_mode = WAL")
+        connection.execute("PRAGMA busy_timeout = 10000")
+        return connection
+
+    monkeypatch.setattr(SqliteWorkspaceStore, "_connect", connect_with_barrier)
+    monkeypatch.setattr(SqliteMonitoringStore, "_connect", connect_with_barrier)
+
+    def create() -> str:
+        try:
+            monitor_store.create_monitor(
+                user_id=user_id,
+                project_id=project.id,
+                cadence="daily",
+                timezone="UTC",
+            )
+        except (MonitorProjectInactiveError, ValueError) as error:
+            return str(error)
+        return "created"
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        create_future = executor.submit(create)
+        archive_future = executor.submit(
+            workspace_store.archive_project,
+            user_id=user_id,
+            project_id=project.id,
+        )
+        create_outcome = create_future.result(timeout=15)
+        archived = archive_future.result(timeout=15)
+
+    assert archived is not None and archived.archived_at is not None
+    assert create_outcome in {"created", "account_project_not_found"}
+    monitor = monitor_store.get_monitor(user_id=user_id, project_id=project.id)
+    assert monitor is None or (
+        monitor.enabled is False
+        and monitor.next_run_at is None
+        and monitor.lease_token is None
+    )
+
+
+def test_archive_and_manual_claim_race_always_clears_the_lease(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    account, workspace, monitoring, _ = build_services(database)
+    user_id, _ = register(account)
+    project = workspace.create_project(
+        user_id=user_id,
+        request=ProjectCreateRequest(name="Main", origin="https://example.com"),
+    )
+    monitoring.create_monitor(
+        user_id=user_id,
+        project_id=project.id,
+        request=MonitorCreateRequest(cadence="daily", timezone="UTC"),
+    )
+    workspace_store = SqliteWorkspaceStore(str(database))
+    monitor_store = SqliteMonitoringStore(str(database))
+    workspace_store.ensure_schema()
+    monitor_store.ensure_schema()
+    begin_barrier = threading.Barrier(2)
+
+    class BarrierConnection(sqlite3.Connection):
+        def execute(self, sql: str, parameters=(), /):  # type: ignore[no-untyped-def]
+            if sql.strip() == "BEGIN IMMEDIATE":
+                begin_barrier.wait(timeout=5)
+            return super().execute(sql, parameters)
+
+    def connect_with_barrier(store: object) -> sqlite3.Connection:
+        connection = sqlite3.connect(
+            store._path,  # type: ignore[attr-defined]  # noqa: SLF001
+            timeout=10,
+            isolation_level=None,
+            factory=BarrierConnection,
+        )
+        connection.row_factory = sqlite3.Row
+        connection.execute("PRAGMA foreign_keys = ON")
+        connection.execute("PRAGMA journal_mode = WAL")
+        connection.execute("PRAGMA busy_timeout = 10000")
+        return connection
+
+    monkeypatch.setattr(SqliteWorkspaceStore, "_connect", connect_with_barrier)
+    monkeypatch.setattr(SqliteMonitoringStore, "_connect", connect_with_barrier)
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        claim_future = executor.submit(
+            monitor_store.claim_manual,
+            user_id=user_id,
+            project_id=project.id,
+            now=2_000_000_000,
+        )
+        archive_future = executor.submit(
+            workspace_store.archive_project,
+            user_id=user_id,
+            project_id=project.id,
+        )
+        with suppress(MonitorProjectInactiveError):
+            claim_future.result(timeout=15)
+        archived = archive_future.result(timeout=15)
+
+    assert archived is not None and archived.archived_at is not None
+    monitor = monitor_store.get_monitor(user_id=user_id, project_id=project.id)
+    assert monitor is not None
+    assert monitor.enabled is False
+    assert monitor.next_run_at is None
+    assert monitor.lease_token is None
+    assert monitor.lease_expires_at is None
+
+
+def test_scheduler_migrates_legacy_project_schema_before_due_claim(tmp_path: Path) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    account = AccountService(
+        SqliteAccountStore(str(database)),
+        session_ttl_seconds=3600,
+        active_session_limit=10,
+        scrypt_parameters=ScryptParameters(n=2**12),
+    )
+    user_id, _ = register(account)
+    with sqlite3.connect(database) as connection:
+        connection.execute(
+            """
+            CREATE TABLE account_workspace_projects (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                origin TEXT NOT NULL,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL,
+                UNIQUE(user_id, origin),
+                FOREIGN KEY(user_id) REFERENCES account_users(id) ON DELETE CASCADE
+            )
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO account_workspace_projects(
+                id, user_id, name, origin, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            ("project-1", user_id, "Legacy", "https://example.com", 1, 1),
+        )
+        connection.commit()
+
+    monitoring = MonitoringService(
+        SqliteMonitoringStore(str(database)),
+        workspace_store=SqliteWorkspaceStore(str(database)),
+        audit_service=StubAuditService(),
+    )
+    assert monitoring.run_due() == 0
+    with sqlite3.connect(database) as connection:
+        columns = {
+            row[1]
+            for row in connection.execute(
+                "PRAGMA table_info(account_workspace_projects)"
+            ).fetchall()
+        }
+    assert "archived_at" in columns
+
+
+def test_monitor_service_maps_archive_races_to_hidden_project_error(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    account, workspace, monitoring, _ = build_services(database)
+    user_id, _ = register(account)
+    project = workspace.create_project(
+        user_id=user_id,
+        request=ProjectCreateRequest(name="Main", origin="https://example.com"),
+    )
+    workspace_store = SqliteWorkspaceStore(str(database))
+    original_owned_project = monitoring._owned_project  # noqa: SLF001
+
+    def archive_after_ownership_check(*, user_id: str, project_id: str):
+        owned = original_owned_project(user_id=user_id, project_id=project_id)
+        workspace_store.archive_project(user_id=user_id, project_id=project_id)
+        return owned
+
+    monkeypatch.setattr(monitoring, "_owned_project", archive_after_ownership_check)
+    with pytest.raises(MonitoringServiceError) as create_error:
+        monitoring.create_monitor(
+            user_id=user_id,
+            project_id=project.id,
+            request=MonitorCreateRequest(cadence="daily", timezone="UTC"),
+        )
+    assert create_error.value.status_code == 404
+    assert create_error.value.code == "account_project_not_found"
+
+    workspace_store.restore_project(user_id=user_id, project_id=project.id)
+    monkeypatch.setattr(monitoring, "_owned_project", original_owned_project)
+    monitoring.create_monitor(
+        user_id=user_id,
+        project_id=project.id,
+        request=MonitorCreateRequest(cadence="daily", timezone="UTC"),
+    )
+    monkeypatch.setattr(monitoring, "_owned_project", archive_after_ownership_check)
+    with pytest.raises(MonitoringServiceError) as run_error:
+        monitoring.run_monitor(user_id=user_id, project_id=project.id)
+    assert run_error.value.status_code == 404
+    assert run_error.value.code == "account_project_not_found"
 
 
 def _capture_monitor_run(

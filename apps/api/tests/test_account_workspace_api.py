@@ -9,8 +9,10 @@ from pathlib import Path
 import httpx
 import pytest
 
+import webdiag_api.accounts.workspace_storage as workspace_storage_module
 from webdiag_api.accounts.api import get_account_service
 from webdiag_api.accounts.models import RegisterRequest
+from webdiag_api.accounts.monitoring_storage import SqliteMonitoringStore
 from webdiag_api.accounts.security import ScryptParameters
 from webdiag_api.accounts.service import AccountService
 from webdiag_api.accounts.storage import SqliteAccountStore
@@ -193,6 +195,145 @@ def test_project_origin_normalization_and_duplicate_limit(tmp_path: Path) -> Non
     assert duplicate.value.code == "account_project_origin_exists"
     assert project.origin == "https://example.com"
     assert workspace.list_projects(user_id=user_id).projects == (project,)
+
+
+def test_project_lifecycle_storage_is_owned_idempotent_and_cancels_monitor_lease(
+    tmp_path: Path,
+) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    account = build_account_service(database_path)
+    owner_id, _ = register(account, "owner@example.com")
+    other_id, _ = register(account, "other@example.com")
+    store = SqliteWorkspaceStore(str(database_path))
+    project = store.create_project(
+        user_id=owner_id,
+        name="Main",
+        origin="https://example.com",
+    )
+    monitoring = SqliteMonitoringStore(str(database_path))
+    monitoring.create_monitor(
+        user_id=owner_id,
+        project_id=project.id,
+        cadence="daily",
+        timezone="Europe/Berlin",
+    )
+    claimed = monitoring.claim_manual(
+        user_id=owner_id,
+        project_id=project.id,
+        now=2_000_000_000,
+    )
+    assert claimed is not None and claimed.lease_token is not None
+
+    assert store.rename_project(
+        user_id=other_id,
+        project_id=project.id,
+        name="Cross account",
+    ) is None
+    renamed = store.rename_project(
+        user_id=owner_id,
+        project_id=project.id,
+        name="Client's \"); DROP TABLE account_users; --",
+    )
+    assert renamed is not None
+    assert renamed.name == "Client's \"); DROP TABLE account_users; --"
+
+    archived = store.archive_project(user_id=owner_id, project_id=project.id)
+    assert archived is not None and archived.archived_at is not None
+    repeated = store.archive_project(user_id=owner_id, project_id=project.id)
+    assert repeated is not None and repeated.archived_at == archived.archived_at
+    assert store.get_project(user_id=owner_id, project_id=project.id) is None
+    assert store.list_projects(user_id=owner_id) == ()
+    assert store.list_archived_projects(user_id=owner_id) == (archived,)
+    assert store.archive_project(user_id=other_id, project_id=project.id) is None
+
+    paused = monitoring.get_monitor(user_id=owner_id, project_id=project.id)
+    assert paused is not None
+    assert paused.enabled is False
+    assert paused.status == "pending"
+    assert paused.next_run_at is None
+    assert paused.lease_token is None
+    assert paused.lease_expires_at is None
+
+    restored = store.restore_project(user_id=owner_id, project_id=project.id)
+    assert restored is not None and restored.archived_at is None
+    repeated_restore = store.restore_project(user_id=owner_id, project_id=project.id)
+    assert repeated_restore == restored
+    assert store.list_archived_projects(user_id=owner_id) == ()
+    assert store.get_project(user_id=owner_id, project_id=project.id) == restored
+    still_paused = monitoring.get_monitor(user_id=owner_id, project_id=project.id)
+    assert still_paused is not None and still_paused.enabled is False
+
+
+def test_archived_projects_remain_within_total_project_limit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    account = build_account_service(database_path)
+    user_id, _ = register(account, "owner@example.com")
+    monkeypatch.setattr(workspace_storage_module, "MAX_PROJECTS_PER_ACCOUNT", 2)
+    store = SqliteWorkspaceStore(str(database_path))
+    first = store.create_project(
+        user_id=user_id,
+        name="First",
+        origin="https://first.example.com",
+    )
+    store.create_project(
+        user_id=user_id,
+        name="Second",
+        origin="https://second.example.com",
+    )
+    assert store.archive_project(user_id=user_id, project_id=first.id) is not None
+
+    with pytest.raises(ValueError, match="account_project_limit_reached"):
+        store.create_project(
+            user_id=user_id,
+            name="Third",
+            origin="https://third.example.com",
+        )
+
+
+def test_project_schema_adds_archived_timestamp_to_existing_database(tmp_path: Path) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    account = build_account_service(database_path)
+    user_id, _ = register(account, "owner@example.com")
+    with sqlite3.connect(database_path) as connection:
+        connection.execute(
+            """
+            CREATE TABLE account_workspace_projects (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                origin TEXT NOT NULL,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL,
+                UNIQUE(user_id, origin),
+                FOREIGN KEY(user_id) REFERENCES account_users(id) ON DELETE CASCADE
+            )
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO account_workspace_projects(
+                id, user_id, name, origin, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            ("project-1", user_id, "Legacy", "https://example.com", 1, 1),
+        )
+        connection.commit()
+
+    store = SqliteWorkspaceStore(str(database_path))
+    store.ensure_schema()
+
+    with sqlite3.connect(database_path) as connection:
+        columns = {
+            row[1]
+            for row in connection.execute(
+                "PRAGMA table_info(account_workspace_projects)"
+            ).fetchall()
+        }
+    assert "archived_at" in columns
+    assert store.get_project(user_id=user_id, project_id="project-1") is not None
 
 
 def test_project_and_audit_ownership_are_hidden(tmp_path: Path) -> None:

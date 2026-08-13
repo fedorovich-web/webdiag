@@ -21,6 +21,7 @@ from webdiag_api.accounts.monitoring_models import (
     MonitorRun,
 )
 from webdiag_api.accounts.workspace_models import SavedAuditPayload
+from webdiag_api.accounts.workspace_storage import SqliteWorkspaceStore
 
 MAX_MONITOR_RUNS = 100
 MONITOR_LEASE_SECONDS = 900
@@ -81,6 +82,11 @@ def _validated_payload(
 class MonitorLeaseLostError(RuntimeError):
     def __init__(self) -> None:
         super().__init__("account_monitor_lease_lost")
+
+
+class MonitorProjectInactiveError(RuntimeError):
+    def __init__(self) -> None:
+        super().__init__("account_project_not_found")
 
 
 @dataclass(frozen=True, slots=True)
@@ -181,6 +187,7 @@ class SqliteMonitoringStore:
         with self._schema_lock:
             if self._schema_ready:
                 return
+            SqliteWorkspaceStore(str(self._path)).ensure_schema()
             with self._connect() as connection:
                 connection.executescript(
                     """
@@ -305,8 +312,19 @@ class SqliteMonitoringStore:
             created_at=now,
             updated_at=now,
         )
-        try:
-            with self._connect() as connection:
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            active_project = connection.execute(
+                """
+                SELECT 1 FROM account_workspace_projects
+                WHERE id = ? AND user_id = ? AND archived_at IS NULL
+                """,
+                (project_id, user_id),
+            ).fetchone()
+            if active_project is None:
+                connection.execute("ROLLBACK")
+                raise MonitorProjectInactiveError
+            try:
                 connection.execute(
                     """
                     INSERT INTO account_workspace_monitors(
@@ -332,8 +350,10 @@ class SqliteMonitoringStore:
                         now,
                     ),
                 )
-        except sqlite3.IntegrityError as error:
-            raise ValueError("account_monitor_exists") from error
+            except sqlite3.IntegrityError as error:
+                connection.execute("ROLLBACK")
+                raise ValueError("account_monitor_exists") from error
+            connection.execute("COMMIT")
         return monitor
 
     def get_monitor(self, *, user_id: str, project_id: str) -> StoredMonitor | None:
@@ -369,22 +389,50 @@ class SqliteMonitoringStore:
         timezone: str | None,
         enabled: bool | None,
     ) -> StoredMonitor | None:
-        current = self.get_monitor(user_id=user_id, project_id=project_id)
-        if current is None:
-            return None
-        new_cadence = cadence or current.cadence
-        new_timezone = timezone or current.timezone
-        new_enabled = current.enabled if enabled is None else enabled
-        now = int(time.time())
-        schedule_changed = cadence is not None or timezone is not None
-        if not new_enabled:
-            next_run = None
-        elif not current.enabled or schedule_changed or current.next_run_at is None:
-            next_run = _next_scheduled_run(new_cadence, new_timezone, after=now)
-        else:
-            next_run = current.next_run_at
-        status = "pending" if current.status == "running" or not new_enabled else current.status
+        self.ensure_schema()
         with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                """
+                SELECT monitor.*
+                FROM account_workspace_monitors AS monitor
+                JOIN account_workspace_projects AS project
+                  ON project.id = monitor.project_id
+                 AND project.user_id = monitor.user_id
+                WHERE monitor.user_id = ? AND monitor.project_id = ?
+                  AND project.archived_at IS NULL
+                """,
+                (user_id, project_id),
+            ).fetchone()
+            if row is None:
+                active_project = connection.execute(
+                    """
+                    SELECT 1 FROM account_workspace_projects
+                    WHERE id = ? AND user_id = ? AND archived_at IS NULL
+                    """,
+                    (project_id, user_id),
+                ).fetchone()
+                connection.execute("ROLLBACK")
+                if active_project is None:
+                    raise MonitorProjectInactiveError
+                return None
+            current = self._monitor(row)
+            new_cadence = cadence or current.cadence
+            new_timezone = timezone or current.timezone
+            new_enabled = current.enabled if enabled is None else enabled
+            now = int(time.time())
+            schedule_changed = cadence is not None or timezone is not None
+            if not new_enabled:
+                next_run = None
+            elif not current.enabled or schedule_changed or current.next_run_at is None:
+                next_run = _next_scheduled_run(new_cadence, new_timezone, after=now)
+            else:
+                next_run = current.next_run_at
+            status = (
+                "pending"
+                if current.status == "running" or not new_enabled
+                else current.status
+            )
             connection.execute(
                 """
                 UPDATE account_workspace_monitors
@@ -403,7 +451,15 @@ class SqliteMonitoringStore:
                     project_id,
                 ),
             )
-        return self.get_monitor(user_id=user_id, project_id=project_id)
+            updated = connection.execute(
+                """
+                SELECT * FROM account_workspace_monitors
+                WHERE user_id = ? AND project_id = ?
+                """,
+                (user_id, project_id),
+            ).fetchone()
+            connection.execute("COMMIT")
+        return self._monitor(updated)
 
     def latest_successful_payload(
         self, *, user_id: str, monitor_id: str
@@ -573,10 +629,17 @@ class SqliteMonitoringStore:
             connection.execute("BEGIN IMMEDIATE")
             row = connection.execute(
                 """
-                SELECT * FROM account_workspace_monitors
-                WHERE enabled = 1 AND next_run_at IS NOT NULL AND next_run_at <= ?
-                    AND (lease_expires_at IS NULL OR lease_expires_at <= ?)
-                ORDER BY next_run_at ASC, id ASC LIMIT 1
+                SELECT monitor.*
+                FROM account_workspace_monitors AS monitor
+                JOIN account_workspace_projects AS project
+                  ON project.id = monitor.project_id
+                 AND project.user_id = monitor.user_id
+                WHERE monitor.enabled = 1
+                  AND monitor.next_run_at IS NOT NULL
+                  AND monitor.next_run_at <= ?
+                  AND (monitor.lease_expires_at IS NULL OR monitor.lease_expires_at <= ?)
+                  AND project.archived_at IS NULL
+                ORDER BY monitor.next_run_at ASC, monitor.id ASC LIMIT 1
                 """,
                 (current, current),
             ).fetchone()
@@ -610,11 +673,26 @@ class SqliteMonitoringStore:
         token = str(uuid.uuid4())
         with self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
+            active_project = connection.execute(
+                """
+                SELECT 1 FROM account_workspace_projects
+                WHERE id = ? AND user_id = ? AND archived_at IS NULL
+                """,
+                (project_id, user_id),
+            ).fetchone()
+            if active_project is None:
+                connection.execute("ROLLBACK")
+                raise MonitorProjectInactiveError
             row = connection.execute(
                 """
-                SELECT * FROM account_workspace_monitors
-                WHERE user_id = ? AND project_id = ?
-                    AND (lease_expires_at IS NULL OR lease_expires_at <= ?)
+                SELECT monitor.*
+                FROM account_workspace_monitors AS monitor
+                JOIN account_workspace_projects AS project
+                  ON project.id = monitor.project_id
+                 AND project.user_id = monitor.user_id
+                WHERE monitor.user_id = ? AND monitor.project_id = ?
+                  AND (monitor.lease_expires_at IS NULL OR monitor.lease_expires_at <= ?)
+                  AND project.archived_at IS NULL
                 """,
                 (user_id, project_id, current),
             ).fetchone()
