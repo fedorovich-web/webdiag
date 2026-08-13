@@ -938,8 +938,8 @@
     "implementationWave": "W4",
     "state": "ready",
     "description": {
-      "ru": "Проверяет Core Web Vitals и PageSpeed через backend-интеграцию с Google PageSpeed API: mobile/desktop, lab metrics, field data и Lighthouse opportunities.",
-      "en": "Checks Core Web Vitals and PageSpeed through a backend Google PageSpeed API integration: mobile/desktop, lab metrics, field data, and Lighthouse opportunities."
+      "ru": "Проверяет Core Web Vitals и PageSpeed через backend-интеграцию с Google PageSpeed API: mobile/desktop, lab и field data, оценки четырёх категорий Lighthouse и ограниченный список проверок для исправления.",
+      "en": "Checks Core Web Vitals and PageSpeed through a backend Google PageSpeed API integration: mobile/desktop, lab and field data, four Lighthouse category scores, and a bounded fix list."
     }
   },
   {
@@ -955,6 +955,7 @@
     "access": "optional",
     "implementationWave": "W4",
     "state": "internal",
+    "supersededBy": "core-web-vitals-checker",
     "description": null
   },
   {
@@ -1087,6 +1088,7 @@
     "access": "optional",
     "implementationWave": "W4",
     "state": "internal",
+    "supersededBy": "core-web-vitals-checker",
     "description": null
   },
   {

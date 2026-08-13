@@ -6,14 +6,32 @@ const generated_at = "2026-07-21T00:00:00Z";
 describe("performance tool contracts", () => {
   it("validates Core Web Vitals responses", () => {
     expect(isPageSpeedResponse({
-      contract_version: "webdiag.tool.core_web_vitals.v1",
+      contract_version: "webdiag.tool.core_web_vitals.v2",
       generated_at,
       requested_url: "https://example.com/",
       normalized_url: "https://example.com/",
       strategy: "mobile",
-      results: [{ strategy: "mobile", available: true, performance_score: 92, field_data_available: true, field_overall_category: "FAST", lighthouse_version: "13", analysis_fetch_time: generated_at, metrics: [{ id: "lcp", title: "LCP", value: 1200, unit: "ms", display_value: "1.2 s", source: "lab", status: "pass" }], opportunities: [{ id: "images", title: "Optimize images", display_value: "450 ms", savings_ms: 450, score: 0.5 }], fetch_error: null }],
+      results: [{ strategy: "mobile", available: true, performance_score: 92, field_data_available: true, field_overall_category: "FAST", lighthouse_version: "13", analysis_fetch_time: generated_at, category_scores: { performance: 92, accessibility: 88, "best-practices": 100, seo: 91 }, audit_findings: [{ id: "color-contrast", category: "accessibility", title: "Color contrast", score: 0, score_display_mode: "binary", display_value: null, weight: 7 }], metrics: [{ id: "lcp", title: "LCP", value: 1200, unit: "ms", display_value: "1.2 s", source: "lab", status: "pass" }], opportunities: [{ id: "images", title: "Optimize images", display_value: "450 ms", savings_ms: 450, score: 0.5 }], fetch_error: null }],
       recommendation: "OK",
     })).toBe(true);
+    expect(isPageSpeedResponse({
+      contract_version: "webdiag.tool.core_web_vitals.v2",
+      generated_at,
+      requested_url: "https://example.com/",
+      normalized_url: "https://example.com/",
+      strategy: "mobile",
+      results: [{ strategy: "mobile", available: true, performance_score: 92, field_data_available: true, field_overall_category: "FAST", lighthouse_version: "13", analysis_fetch_time: generated_at, category_scores: { performance: 92 }, audit_findings: [], metrics: [], opportunities: [], fetch_error: null }],
+      recommendation: "Incomplete category contract",
+    })).toBe(false);
+    expect(isPageSpeedResponse({
+      contract_version: "webdiag.tool.core_web_vitals.v2",
+      generated_at,
+      requested_url: "https://example.com/",
+      normalized_url: "https://example.com/",
+      strategy: "mobile",
+      results: [{ strategy: "mobile", available: true, performance_score: 92, field_data_available: false, field_overall_category: null, lighthouse_version: "13", analysis_fetch_time: generated_at, category_scores: { performance: 92, accessibility: 88, "best-practices": 100, seo: 91, injected: 100 }, audit_findings: [], metrics: [], opportunities: [], fetch_error: null }],
+      recommendation: "Unexpected provider category",
+    })).toBe(false);
   });
 
   it("validates cache policy responses", () => {

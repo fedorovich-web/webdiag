@@ -57,6 +57,8 @@ export function pageSpeedResultText(result: PageSpeedResponse): string {
       `Strategy: ${item.strategy}`,
       `Available: ${item.available}`,
       `Performance score: ${item.performance_score ?? "—"}`,
+      ...Object.entries(item.category_scores).map(([category, score]) => `Lighthouse ${category}: ${score ?? "—"}`),
+      ...item.audit_findings.map((finding) => `Lighthouse finding: ${finding.category} / ${finding.title} — ${Math.round(finding.score * 100)}`),
       ...item.metrics.map((metric) => `${metric.title}: ${metric.display_value ?? metric.value ?? "—"} — ${metric.status}`),
       ...item.opportunities.map((opportunity) => `Opportunity: ${opportunity.title} — ${opportunity.display_value ?? opportunity.savings_ms ?? "—"}`),
       item.fetch_error ? `Error: ${item.fetch_error}` : "",
@@ -97,6 +99,8 @@ const dictionary = {
     score: "Оценка",
     finalUrl: "Финальный URL",
     checks: "Проверки",
+    categories: "Категории Lighthouse",
+    findings: "Что исправить по Lighthouse",
   },
   en: {
     url: "Page URL",
@@ -108,7 +112,14 @@ const dictionary = {
     score: "Score",
     finalUrl: "Final URL",
     checks: "Checks",
+    categories: "Lighthouse categories",
+    findings: "Lighthouse fix order",
   },
+} as const;
+
+const lighthouseCategoryLabels = {
+  ru: { performance: "Производительность", accessibility: "Доступность", "best-practices": "Практики", seo: "SEO" },
+  en: { performance: "Performance", accessibility: "Accessibility", "best-practices": "Best practices", seo: "SEO" },
 } as const;
 
 function UrlField({ url, setUrl, locale }: { url: string; setUrl: (value: string) => void; locale: Locale }) {
@@ -152,14 +163,14 @@ export function CoreWebVitalsTool({ locale }: { locale: Locale }) {
     } finally { setLoading(false); }
   }
 
-  return <form className="tool-grid" onSubmit={onSubmit}>
+  return <form className="tool-grid pagespeed-tool" onSubmit={onSubmit}>
     <section className="tool-panel">
       <UrlField url={url} setUrl={setUrl} locale={locale} />
       <label className="field"><span>{locale === "ru" ? "Стратегия" : "Strategy"}</span><select value={strategy} onChange={(event) => setStrategy(event.target.value as "mobile" | "desktop" | "both")}><option value="mobile">Mobile</option><option value="desktop">Desktop</option><option value="both">Mobile + Desktop</option></select></label>
       <button className="button" type="submit" disabled={loading}>{loading ? dictionary[locale].loading : dictionary[locale].run}</button>
       <ErrorMessage value={error} />
     </section>
-    {result && <section className="tool-panel tool-panel-wide"><h2>{dictionary[locale].result}</h2><div className="result-grid">{result.results.map((item) => <article className="result-card" key={item.strategy}><h3>{item.strategy.toUpperCase()}</h3><p className="calculated-value">{item.performance_score === null ? "—" : item.performance_score}</p><p>{item.available ? (item.field_data_available ? (locale === "ru" ? "Есть field data" : "Field data available") : (locale === "ru" ? "Только lab data" : "Lab data only")) : item.fetch_error}</p>{item.metrics.length > 0 && <ul className="result-list">{item.metrics.map((metric) => <li key={metric.id}><span className={badgeClass(metric.status)}>{statusLabel(metric.status, locale)}</span> {metric.title}: <strong>{metric.display_value ?? metric.value ?? "—"}</strong></li>)}</ul>}{item.opportunities.length > 0 && <><h4>{locale === "ru" ? "Возможности" : "Opportunities"}</h4><ul className="result-list">{item.opportunities.map((opportunity) => <li key={opportunity.id}>{opportunity.title}: {opportunity.display_value ?? `${Math.round(opportunity.savings_ms ?? 0)} ms`}</li>)}</ul></>}</article>)}</div><Recommendation value={result.recommendation} locale={locale} /></section>}
+    {result && <section className="tool-panel tool-panel-wide"><h2>{dictionary[locale].result}</h2><div className="result-grid">{result.results.map((item) => <article className="result-card" key={item.strategy}><h3>{item.strategy.toUpperCase()}</h3><p>{item.available ? (item.field_data_available ? (locale === "ru" ? "Есть field data" : "Field data available") : (locale === "ru" ? "Только lab data" : "Lab data only")) : item.fetch_error}</p><h4>{dictionary[locale].categories}</h4><div className="single-audit-metrics">{Object.entries(item.category_scores).map(([category, score]) => <article key={category}><span>{lighthouseCategoryLabels[locale][category as keyof typeof lighthouseCategoryLabels.ru]}</span><strong>{score ?? "—"}</strong><small>/100</small></article>)}</div>{item.audit_findings.length > 0 && <><h4>{dictionary[locale].findings}</h4><ol className="result-list">{item.audit_findings.map((finding) => <li key={finding.id}><span className={badgeClass(finding.score === 0 ? "fail" : "warning")}>{lighthouseCategoryLabels[locale][finding.category]}</span> <strong>{finding.title}</strong>{finding.display_value ? ` · ${finding.display_value}` : ""}</li>)}</ol></>}{item.metrics.length > 0 && <ul className="result-list">{item.metrics.map((metric) => <li key={metric.id}><span className={badgeClass(metric.status)}>{statusLabel(metric.status, locale)}</span> {metric.title}: <strong>{metric.display_value ?? metric.value ?? "—"}</strong></li>)}</ul>}{item.opportunities.length > 0 && <><h4>{locale === "ru" ? "Возможности" : "Opportunities"}</h4><ul className="result-list">{item.opportunities.map((opportunity) => <li key={opportunity.id}>{opportunity.title}: {opportunity.display_value ?? `${Math.round(opportunity.savings_ms ?? 0)} ms`}</li>)}</ul></>}</article>)}</div><Recommendation value={result.recommendation} locale={locale} /></section>}
   </form>;
 }
 

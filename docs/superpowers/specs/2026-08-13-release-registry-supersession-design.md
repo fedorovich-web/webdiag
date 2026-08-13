@@ -28,5 +28,5 @@ microtools indistinguishable from real crawler and Chromium capability gaps.
 - `image-metadata-remover` -> `image-metadata-viewer`
 - `image-placeholder-generator` -> `image-data-uri-converter`
 
-The eight remaining internal crawler and Chromium definitions continue to block public
+The six remaining internal crawler and dedicated Chromium definitions continue to block public
 release.

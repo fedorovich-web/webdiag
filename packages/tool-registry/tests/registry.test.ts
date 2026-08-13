@@ -49,6 +49,8 @@ describe("tool registry", () => {
 
   it("keeps duplicate legacy definitions explicitly superseded by ready aggregates", () => {
     const expected = new Map([
+      ["lighthouse-audit", "core-web-vitals-checker"],
+      ["accessibility-quick-audit", "core-web-vitals-checker"],
       ["twitter-card-preview", "open-graph-preview"],
       ["csv-validator", "csv-json-converter"],
       ["cron-parser", "cron-expression-workbench"],

@@ -23,6 +23,18 @@ export interface PageSpeedOpportunityResponse {
   readonly score: number | null;
 }
 
+export type LighthouseCategory = "performance" | "accessibility" | "best-practices" | "seo";
+
+export interface LighthouseAuditFindingResponse {
+  readonly id: string;
+  readonly category: LighthouseCategory;
+  readonly title: string;
+  readonly score: number;
+  readonly score_display_mode: string;
+  readonly display_value: string | null;
+  readonly weight: number;
+}
+
 export interface PageSpeedStrategyResponse {
   readonly strategy: "mobile" | "desktop";
   readonly available: boolean;
@@ -31,13 +43,15 @@ export interface PageSpeedStrategyResponse {
   readonly field_overall_category: string | null;
   readonly lighthouse_version: string | null;
   readonly analysis_fetch_time: string | null;
+  readonly category_scores: Readonly<Record<LighthouseCategory, number | null>>;
+  readonly audit_findings: readonly LighthouseAuditFindingResponse[];
   readonly metrics: readonly PageSpeedMetricResponse[];
   readonly opportunities: readonly PageSpeedOpportunityResponse[];
   readonly fetch_error: string | null;
 }
 
 export interface PageSpeedResponse {
-  readonly contract_version: "webdiag.tool.core_web_vitals.v1";
+  readonly contract_version: "webdiag.tool.core_web_vitals.v2";
   readonly generated_at: string;
   readonly requested_url: string;
   readonly normalized_url: string;
@@ -148,6 +162,29 @@ function isPageSpeedOpportunity(payload: unknown): payload is PageSpeedOpportuni
     (typeof payload.score === "number" || payload.score === null);
 }
 
+function isLighthouseCategory(value: unknown): value is LighthouseCategory {
+  return value === "performance" || value === "accessibility" || value === "best-practices" || value === "seo";
+}
+
+function isCategoryScores(payload: unknown): payload is PageSpeedStrategyResponse["category_scores"] {
+  if (!isRecord(payload)) return false;
+  const categories = ["performance", "accessibility", "best-practices", "seo"];
+  return Object.keys(payload).length === categories.length && categories.every((category) => (
+    category in payload && (typeof payload[category] === "number" || payload[category] === null)
+  ));
+}
+
+function isLighthouseAuditFinding(payload: unknown): payload is LighthouseAuditFindingResponse {
+  return isRecord(payload) &&
+    typeof payload.id === "string" &&
+    isLighthouseCategory(payload.category) &&
+    typeof payload.title === "string" &&
+    typeof payload.score === "number" && payload.score >= 0 && payload.score < 1 &&
+    typeof payload.score_display_mode === "string" &&
+    (typeof payload.display_value === "string" || payload.display_value === null) &&
+    typeof payload.weight === "number" && payload.weight >= 0;
+}
+
 function isPageSpeedStrategy(payload: unknown): payload is PageSpeedStrategyResponse {
   return isRecord(payload) &&
     (payload.strategy === "mobile" || payload.strategy === "desktop") &&
@@ -157,6 +194,8 @@ function isPageSpeedStrategy(payload: unknown): payload is PageSpeedStrategyResp
     (typeof payload.field_overall_category === "string" || payload.field_overall_category === null) &&
     (typeof payload.lighthouse_version === "string" || payload.lighthouse_version === null) &&
     (typeof payload.analysis_fetch_time === "string" || payload.analysis_fetch_time === null) &&
+    isCategoryScores(payload.category_scores) &&
+    Array.isArray(payload.audit_findings) && payload.audit_findings.length <= 20 && payload.audit_findings.every(isLighthouseAuditFinding) &&
     Array.isArray(payload.metrics) && payload.metrics.every(isPageSpeedMetric) &&
     Array.isArray(payload.opportunities) && payload.opportunities.every(isPageSpeedOpportunity) &&
     (typeof payload.fetch_error === "string" || payload.fetch_error === null);
@@ -164,7 +203,7 @@ function isPageSpeedStrategy(payload: unknown): payload is PageSpeedStrategyResp
 
 export function isPageSpeedResponse(payload: unknown): payload is PageSpeedResponse {
   return isRecord(payload) &&
-    payload.contract_version === "webdiag.tool.core_web_vitals.v1" &&
+    payload.contract_version === "webdiag.tool.core_web_vitals.v2" &&
     typeof payload.generated_at === "string" &&
     typeof payload.requested_url === "string" &&
     typeof payload.normalized_url === "string" &&

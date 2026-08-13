@@ -18,10 +18,17 @@ from webdiag_api.security.url_policy import UrlPolicyError, validate_url
 router = APIRouter(tags=["tools"])
 
 Strategy = Literal["mobile", "desktop"]
+LighthouseCategory = Literal["performance", "accessibility", "best-practices", "seo"]
 MetricStatus = Literal["pass", "warning", "fail", "unavailable"]
 CheckStatus = Literal["pass", "warning", "fail"]
 Severity = Literal["info", "medium", "high"]
 ResourceType = Literal["document", "image", "script", "style", "font", "video", "other"]
+LIGHTHOUSE_CATEGORIES: tuple[LighthouseCategory, ...] = (
+    "performance",
+    "accessibility",
+    "best-practices",
+    "seo",
+)
 
 
 class PageSpeedRequest(BaseModel):
@@ -53,6 +60,18 @@ class PageSpeedOpportunityResponse(BaseModel):
     score: float | None = Field(default=None, ge=0, le=1)
 
 
+class LighthouseAuditFindingResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(min_length=1, max_length=120)
+    category: LighthouseCategory
+    title: str = Field(min_length=1, max_length=240)
+    score: float = Field(ge=0, lt=1)
+    score_display_mode: str = Field(min_length=1, max_length=80)
+    display_value: str | None = Field(default=None, max_length=240)
+    weight: float = Field(ge=0)
+
+
 class PageSpeedStrategyResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -63,6 +82,8 @@ class PageSpeedStrategyResponse(BaseModel):
     field_overall_category: str | None = Field(default=None, max_length=80)
     lighthouse_version: str | None = Field(default=None, max_length=80)
     analysis_fetch_time: str | None = Field(default=None, max_length=80)
+    category_scores: dict[LighthouseCategory, int | None]
+    audit_findings: tuple[LighthouseAuditFindingResponse, ...]
     metrics: tuple[PageSpeedMetricResponse, ...]
     opportunities: tuple[PageSpeedOpportunityResponse, ...]
     fetch_error: str | None = Field(default=None, max_length=500)
@@ -71,7 +92,7 @@ class PageSpeedStrategyResponse(BaseModel):
 class PageSpeedResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    contract_version: Literal["webdiag.tool.core_web_vitals.v1"] = "webdiag.tool.core_web_vitals.v1"
+    contract_version: Literal["webdiag.tool.core_web_vitals.v2"] = "webdiag.tool.core_web_vitals.v2"
     generated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     requested_url: str = Field(min_length=1, max_length=2_048)
     normalized_url: str = Field(min_length=1, max_length=2_048)
@@ -175,26 +196,38 @@ class PageSpeedApiError(RuntimeError):
 
 
 class PageSpeedClient(Protocol):
-    def run(self, *, url: str, strategy: Strategy) -> dict[str, Any]: ...
+    def run(
+        self,
+        *,
+        url: str,
+        strategy: Strategy,
+        categories: tuple[LighthouseCategory, ...],
+    ) -> dict[str, Any]: ...
 
 
 class GooglePageSpeedClient:
     def __init__(self, *, api_key: str | None = None) -> None:
         self._api_key = api_key if api_key is not None else os.getenv("GOOGLE_PAGESPEED_API_KEY")
 
-    def run(self, *, url: str, strategy: Strategy) -> dict[str, Any]:
+    def run(
+        self,
+        *,
+        url: str,
+        strategy: Strategy,
+        categories: tuple[LighthouseCategory, ...],
+    ) -> dict[str, Any]:
         if not self._api_key:
             raise MissingPageSpeedApiKeyError("Google PageSpeed API key is not configured.")
         try:
             with httpx.Client(timeout=35.0, trust_env=False) as client:
                 response = client.get(
                     "https://www.googleapis.com/pagespeedonline/v5/runPagespeed",
-                    params={
-                        "url": url,
-                        "strategy": strategy,
-                        "category": "performance",
-                        "key": self._api_key,
-                    },
+                    params=[
+                        ("url", url),
+                        ("strategy", strategy),
+                        *(("category", category) for category in categories),
+                        ("key", self._api_key),
+                    ],
                     headers={"accept": "application/json"},
                 )
         except httpx.TimeoutException as exc:
@@ -368,7 +401,11 @@ def _run_pagespeed_strategy(
     strategy: Strategy,
 ) -> PageSpeedStrategyResponse:
     try:
-        payload = client.run(url=url, strategy=strategy)
+        payload = client.run(
+            url=url,
+            strategy=strategy,
+            categories=LIGHTHOUSE_CATEGORIES,
+        )
     except MissingPageSpeedApiKeyError as exc:
         return _unavailable_pagespeed(strategy, str(exc))
     except PageSpeedApiError as exc:
@@ -391,6 +428,8 @@ def _unavailable_pagespeed(strategy: Strategy, message: str) -> PageSpeedStrateg
         field_overall_category=None,
         lighthouse_version=None,
         analysis_fetch_time=None,
+        category_scores={category: None for category in LIGHTHOUSE_CATEGORIES},
+        audit_findings=(),
         metrics=(),
         opportunities=(),
         fetch_error=message,
@@ -426,6 +465,11 @@ def _parse_pagespeed_payload(
     if inp is not None:
         metrics.append(inp)
 
+    category_scores = {
+        category: _category_score(_as_dict(categories.get(category)))
+        for category in LIGHTHOUSE_CATEGORIES
+    }
+
     return PageSpeedStrategyResponse(
         strategy=strategy,
         available=True,
@@ -434,10 +478,69 @@ def _parse_pagespeed_payload(
         field_overall_category=_optional_str(loading_experience.get("overall_category")),
         lighthouse_version=_optional_str(lighthouse.get("lighthouseVersion")),
         analysis_fetch_time=_optional_str(lighthouse.get("fetchTime")),
+        category_scores=category_scores,
+        audit_findings=tuple(_lighthouse_audit_findings(categories, audits)),
         metrics=tuple(metrics),
         opportunities=tuple(_opportunities(audits)),
         fetch_error=None,
     )
+
+
+def _category_score(category: dict[str, Any]) -> int | None:
+    raw_score = category.get("score")
+    if not isinstance(raw_score, int | float) or isinstance(raw_score, bool):
+        return None
+    score = float(raw_score)
+    if not 0 <= score <= 1:
+        return None
+    return round(score * 100)
+
+
+def _lighthouse_audit_findings(
+    categories: dict[str, Any], audits: dict[str, Any]
+) -> list[LighthouseAuditFindingResponse]:
+    findings: list[LighthouseAuditFindingResponse] = []
+    seen: set[str] = set()
+    for category in LIGHTHOUSE_CATEGORIES:
+        references = _as_list(_as_dict(categories.get(category)).get("auditRefs"))
+        for raw_reference in references:
+            reference = _as_dict(raw_reference)
+            audit_id = reference.get("id")
+            weight = reference.get("weight")
+            if (
+                not isinstance(audit_id, str)
+                or not 1 <= len(audit_id) <= 120
+                or audit_id in seen
+                or not isinstance(weight, int | float)
+                or isinstance(weight, bool)
+                or weight < 0
+            ):
+                continue
+            audit = _as_dict(audits.get(audit_id))
+            raw_score = audit.get("score")
+            if (
+                not isinstance(raw_score, int | float)
+                or isinstance(raw_score, bool)
+                or not 0 <= float(raw_score) < 1
+            ):
+                continue
+            title = _bounded_text(audit.get("title"), 240) or audit_id
+            score_display_mode = _bounded_text(audit.get("scoreDisplayMode"), 80)
+            if not score_display_mode:
+                continue
+            findings.append(
+                LighthouseAuditFindingResponse(
+                    id=audit_id,
+                    category=category,
+                    title=title,
+                    score=float(raw_score),
+                    score_display_mode=score_display_mode,
+                    display_value=_bounded_text(audit.get("displayValue"), 240),
+                    weight=float(weight),
+                )
+            )
+            seen.add(audit_id)
+    return sorted(findings, key=lambda item: (item.score, -item.weight, item.id))[:20]
 
 
 def _lab_metric(
@@ -948,6 +1051,17 @@ def _pagespeed_recommendation(results: tuple[PageSpeedStrategyResponse, ...]) ->
 
 def _as_dict(value: Any) -> dict[str, Any]:
     return value if isinstance(value, dict) else {}
+
+
+def _as_list(value: Any) -> list[Any]:
+    return value if isinstance(value, list) else []
+
+
+def _bounded_text(value: Any, maximum: int) -> str | None:
+    if not isinstance(value, str):
+        return None
+    normalized = " ".join(value.split())
+    return normalized[:maximum] if normalized else None
 
 
 def _optional_str(value: Any) -> str | None:

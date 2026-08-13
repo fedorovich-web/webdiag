@@ -171,27 +171,30 @@ export const seoAuditToolPages = [
   toolPage({
     slug: "core-web-vitals-checker",
     seoTitle: { ru: "Проверка Core Web Vitals и PageSpeed", en: "Core Web Vitals and PageSpeed Checker" },
-    metaDescription: { ru: "Проверьте PageSpeed, Core Web Vitals, Lighthouse lab metrics, field data и opportunities через backend-интеграцию Google PageSpeed API.", en: "Check PageSpeed, Core Web Vitals, Lighthouse lab metrics, field data, and opportunities through the backend Google PageSpeed API integration." },
+    metaDescription: { ru: "Проверьте Core Web Vitals, lab и field data, четыре категории Lighthouse и порядок исправлений через Google PageSpeed API.", en: "Check Core Web Vitals, lab and field data, four Lighthouse categories, and a fix order through the Google PageSpeed API." },
     h1: { ru: "Проверка Core Web Vitals", en: "Core Web Vitals Checker" },
-    lead: { ru: "Запустите mobile, desktop или обе стратегии PageSpeed, чтобы увидеть performance score, LCP, FCP, CLS, TBT, INP field data и главные Lighthouse opportunities.", en: "Run mobile, desktop, or both PageSpeed strategies to see performance score, LCP, FCP, CLS, TBT, INP field data, and key Lighthouse opportunities." },
+    lead: { ru: "Запустите mobile, desktop или обе стратегии PageSpeed, чтобы увидеть Core Web Vitals, оценки Performance, Accessibility, Best Practices и SEO, а также приоритетные проверки для исправления.", en: "Run mobile, desktop, or both PageSpeed strategies to review Core Web Vitals, Performance, Accessibility, Best Practices, and SEO scores, plus prioritized checks to fix." },
     quickFacts: [
       { ru: "Google PageSpeed API", en: "Google PageSpeed API" },
       { ru: "Mobile/Desktop", en: "Mobile/Desktop" },
       { ru: "Lab + Field data", en: "Lab + Field data" },
+      { ru: "4 категории Lighthouse", en: "4 Lighthouse categories" },
     ],
     howToSteps: [
       { ru: "Вставьте публичный URL страницы.", en: "Paste a public page URL." },
       { ru: "Выберите mobile, desktop или обе стратегии.", en: "Choose mobile, desktop, or both strategies." },
-      { ru: "Проверьте score, lab metrics, field data availability и top opportunities.", en: "Review score, lab metrics, field data availability, and top opportunities." },
+      { ru: "Проверьте оценки категорий, lab metrics, field data и порядок исправления проверок.", en: "Review category scores, lab metrics, field data, and the ordered checks to fix." },
     ],
     supportedFeatures: [
       { ru: "Backend-интеграция с Google PageSpeed API через env GOOGLE_PAGESPEED_API_KEY.", en: "Backend Google PageSpeed API integration through GOOGLE_PAGESPEED_API_KEY env." },
       { ru: "Разделяет Lighthouse lab metrics и Chrome UX field data, если field data доступна.", en: "Separates Lighthouse lab metrics from Chrome UX field data when field data is available." },
+      { ru: "Показывает оценки четырёх категорий и до 20 failed или partial проверок из их auditRefs.", en: "Shows four category scores and up to 20 failed or partial checks from their auditRefs." },
       { ru: "Graceful unavailable state: отсутствие ключа или ошибка провайдера не превращается в fake score.", en: "Graceful unavailable state: missing key or provider errors never become a fake score." },
     ],
     limitations: [
       { ru: "PageSpeed проверяет только публично доступные URL и не работает для закрытого localhost/staging без отдельной инфраструктуры.", en: "PageSpeed checks only publicly accessible URLs and does not work for private localhost/staging without separate infrastructure." },
       { ru: "Результат зависит от Google API, лимитов, региона и доступности field data.", en: "The result depends on Google API, quotas, region, and field data availability." },
+      { ru: "Инструмент не отдаёт raw audit details, trace, screenshot или network waterfall.", en: "The tool does not expose raw audit details, traces, screenshots, or a network waterfall." },
     ],
     useCases: [
       { ru: "Оценить релиз landing page перед запуском трафика.", en: "Evaluate a landing page release before driving traffic." },
