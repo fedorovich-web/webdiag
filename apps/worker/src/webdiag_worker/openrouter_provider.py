@@ -247,6 +247,7 @@ class OpenRouterProvider:
                     "Content-Type": "application/json",
                 },
                 timeout=timeout,
+                trust_env=False,
             )
         )
 

@@ -1,5 +1,32 @@
 # Verification Notes
 
+# A12.6 — explicit OpenRouter transport environment boundary
+
+## Scope
+
+- configured the production OpenRouter HTTPX client with `trust_env=False`;
+- the worker no longer inherits ambient `HTTP_PROXY`, `HTTPS_PROXY`,
+  `ALL_PROXY`, `SSL_CERT_FILE`, or `SSL_CERT_DIR` settings for provider traffic;
+- the fixed OpenRouter endpoints, bearer header, timeouts, model policies,
+  structured outputs, ZDR/data-collection controls, disabled fallbacks, and
+  provider outcome classification are unchanged;
+- added a factory regression that captures and proves the exact HTTPX client
+  configuration without making a provider request.
+
+## Targeted verification
+
+```text
+provider/worker/API AI and injection pytest    PASS — 128/128
+full API/worker pytest                         PASS — 522/522
+Ruff affected files                            PASS
+full API/worker Ruff                           PASS
+Python lock verification                       PASS — 39 packages
+git diff --check                               PASS
+```
+
+No real OpenRouter, object-storage, marketplace, payment, release, or deployment
+request was made.
+
 # A10.37 — browser-local favicon generator
 
 ## Scope

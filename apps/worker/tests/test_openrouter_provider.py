@@ -114,6 +114,29 @@ def _request(
     )
 
 
+def test_from_env_disables_ambient_proxy_and_ca_configuration(monkeypatch) -> None:
+    monkeypatch.setenv("WEBDIAG_OPENROUTER_API_KEY", "test-openrouter-key")
+    captured: dict[str, object] = {}
+
+    class CapturedClient:
+        def __init__(self, **kwargs: object) -> None:
+            captured.update(kwargs)
+
+        def close(self) -> None:
+            return None
+
+    monkeypatch.setattr(openrouter_provider.httpx, "Client", CapturedClient)
+
+    with OpenRouterProvider.from_env():
+        pass
+
+    assert captured["trust_env"] is False
+    assert captured["headers"] == {
+        "Authorization": "Bearer test-openrouter-key",
+        "Content-Type": "application/json",
+    }
+
+
 def test_provider_sends_private_strict_openrouter_request_and_maps_usage() -> None:
     requests: list[httpx.Request] = []
     output = {
