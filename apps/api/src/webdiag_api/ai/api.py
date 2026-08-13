@@ -5,16 +5,22 @@ from functools import lru_cache
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response
 from fastapi.responses import JSONResponse
 
 from webdiag_api.accounts.api import AccountServiceDependency, SessionCookie
 from webdiag_api.accounts.service import AccountServiceError
 from webdiag_api.accounts.workspace_storage import SqliteWorkspaceStore
+from webdiag_api.ai.artifact_storage import (
+    ArtifactConfigurationError,
+    artifact_storage_from_env,
+)
+from webdiag_api.ai.artifacts import ArtifactStorage
 from webdiag_api.ai.catalog import DEFAULT_AI_CATALOG
 from webdiag_api.ai.input_resolver import AIInputResolver
 from webdiag_api.ai.models import (
     AICatalogResponse,
+    AIImageUploadResponse,
     AIRunCreateRequest,
     AIRunDetailResponse,
     AIRunListResponse,
@@ -51,6 +57,24 @@ def get_ai_service() -> AIService:
 
 
 AIServiceDependency = Annotated[AIService, Depends(get_ai_service)]
+
+
+@lru_cache(maxsize=1)
+def get_ai_artifact_storage() -> ArtifactStorage:
+    try:
+        return artifact_storage_from_env()
+    except ArtifactConfigurationError as error:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "ai_upload_storage_unavailable",
+                "message": "Image upload storage is unavailable.",
+            },
+            headers={"Cache-Control": "no-store"},
+        ) from error
+
+
+AIArtifactStorageDependency = Annotated[ArtifactStorage, Depends(get_ai_artifact_storage)]
 
 
 def _user_id(account_service: AccountServiceDependency, token: SessionCookie) -> str:
@@ -97,6 +121,32 @@ def catalog(
     _no_store(response)
     _user_id(account_service, webdiag_session)
     return ai.catalog()
+
+
+@router.post("/ai/uploads/image", response_model=AIImageUploadResponse, status_code=201)
+async def upload_image(
+    request: Request,
+    ai: AIServiceDependency,
+    artifact_storage: AIArtifactStorageDependency,
+    account_service: AccountServiceDependency,
+    webdiag_session: SessionCookie = None,
+):
+    user_id = _user_id(account_service, webdiag_session)
+    try:
+        upload = ai.create_image_upload(
+            user_id=user_id,
+            data=await request.body(),
+            content_type_hint=request.headers.get("content-type"),
+            artifact_storage=artifact_storage,
+        )
+    except AIServiceError as error:
+        raise _error(error) from error
+    body = AIImageUploadResponse(upload=upload).model_dump(mode="json")
+    return JSONResponse(
+        status_code=201,
+        content=body,
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 @router.post("/ai/runs", response_model=AIRunDetailResponse)

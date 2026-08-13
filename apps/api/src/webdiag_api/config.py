@@ -12,6 +12,8 @@ _MIN_HTTP_REQUEST_BODY_MAX_BYTES = 16_384
 _MAX_HTTP_REQUEST_BODY_MAX_BYTES = 10_000_000
 _MIN_ACCOUNT_REQUEST_BODY_MAX_BYTES = 1_024
 _MAX_ACCOUNT_REQUEST_BODY_MAX_BYTES = 10_000_000
+_MIN_AI_IMAGE_UPLOAD_BODY_MAX_BYTES = 1_024
+_MAX_AI_IMAGE_UPLOAD_BODY_MAX_BYTES = 4 * 1024 * 1024
 _MIN_AI_PAYLOAD_MAX_BYTES = 1_024
 _MAX_AI_PAYLOAD_MAX_BYTES = 2_000_000
 _MONITORING_TOKEN_PLACEHOLDERS = frozenset(
@@ -52,6 +54,11 @@ class Settings(BaseSettings):
         default=16_384,
         ge=_MIN_ACCOUNT_REQUEST_BODY_MAX_BYTES,
         le=_MAX_ACCOUNT_REQUEST_BODY_MAX_BYTES,
+    )
+    ai_image_upload_body_max_bytes: int = Field(
+        default=4 * 1024 * 1024,
+        ge=_MIN_AI_IMAGE_UPLOAD_BODY_MAX_BYTES,
+        le=_MAX_AI_IMAGE_UPLOAD_BODY_MAX_BYTES,
     )
     account_scrypt_n: int = Field(default=2**15, ge=_MIN_SCRYPT_N, le=_MAX_SCRYPT_N)
     account_scrypt_r: int = Field(default=8, ge=1, le=16)

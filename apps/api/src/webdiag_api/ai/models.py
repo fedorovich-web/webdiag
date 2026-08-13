@@ -19,6 +19,22 @@ class AICatalogResponse(StrictAIModel):
     tools: tuple[AIToolResponse, ...]
 
 
+class AIImageUploadResponseItem(StrictAIModel):
+    id: str
+    media_type: Literal["image/jpeg", "image/png", "image/webp"]
+    byte_size: int = Field(ge=1, le=4 * 1024 * 1024)
+    width: int = Field(ge=1, le=8192)
+    height: int = Field(ge=1, le=8192)
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    created_at: datetime
+    expires_at: datetime
+
+
+class AIImageUploadResponse(StrictAIModel):
+    contract_version: Literal["webdiag.ai.upload.v1"] = "webdiag.ai.upload.v1"
+    upload: AIImageUploadResponseItem
+
+
 class AIRunCreateRequest(StrictAIModel):
     tool_id: str = Field(min_length=1, max_length=80)
     input: dict[str, object]

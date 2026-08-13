@@ -143,6 +143,62 @@ def test_request_limit_rejects_streamed_account_body_with_account_envelope() -> 
     )
 
 
+def test_request_limit_gives_only_ai_image_upload_the_larger_account_limit() -> None:
+    assert RequestBodyLimitMiddleware is not None, "request body limit middleware is missing"
+    replayed: list[bytes] = []
+
+    async def downstream(
+        scope: dict[str, object],
+        receive: object,
+        send: object,
+    ) -> None:
+        message = await receive()  # type: ignore[operator]
+        replayed.append(message["body"])
+
+    middleware = RequestBodyLimitMiddleware(
+        downstream,
+        http_request_body_max_bytes=10,
+        account_request_body_max_bytes=2,
+        ai_image_upload_body_max_bytes=4,
+    )
+    accepted = asyncio.run(
+        call_asgi(
+            middleware,
+            {
+                "type": "http",
+                "path": "/v1/account/ai/uploads/image",
+                "headers": [],
+            },
+            [{"type": "http.request", "body": b"1234", "more_body": False}],
+        )
+    )
+    oversized = asyncio.run(
+        call_asgi(
+            middleware,
+            {
+                "type": "http",
+                "path": "/v1/account/ai/uploads/image",
+                "headers": [],
+            },
+            [{"type": "http.request", "body": b"12345", "more_body": False}],
+        )
+    )
+    ordinary_account = asyncio.run(
+        call_asgi(
+            middleware,
+            {"type": "http", "path": "/v1/account/login", "headers": []},
+            [{"type": "http.request", "body": b"123", "more_body": False}],
+        )
+    )
+
+    assert accepted == []
+    assert replayed == [b"1234"]
+    assert oversized[0]["status"] == 413
+    assert b'ai_image_upload_too_large' in oversized[1]["body"]
+    assert ordinary_account[0]["status"] == 413
+    assert b'account_request_too_large' in ordinary_account[1]["body"]
+
+
 def test_request_limit_rejects_oversized_stream_before_downstream_that_never_reads() -> None:
     assert RequestBodyLimitMiddleware is not None, "request body limit middleware is missing"
     downstream_started = False

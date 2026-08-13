@@ -45,6 +45,7 @@ app.add_middleware(
     RequestBodyLimitMiddleware,
     http_request_body_max_bytes=settings.http_request_body_max_bytes,
     account_request_body_max_bytes=settings.account_request_body_max_bytes,
+    ai_image_upload_body_max_bytes=settings.ai_image_upload_body_max_bytes,
 )
 app.add_exception_handler(RequestValidationError, api_validation_exception_handler)
 app.include_router(account_router)

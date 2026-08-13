@@ -3,11 +3,15 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import uuid
 
+from webdiag_api.ai.artifacts import ArtifactStorage
 from webdiag_api.ai.catalog import AIToolCatalog, AIToolState
+from webdiag_api.ai.images import ImageValidationError, normalize_image
 from webdiag_api.ai.input_resolver import AIInputResolutionError, AIInputResolver
 from webdiag_api.ai.models import (
     AICatalogResponse,
+    AIImageUploadResponseItem,
     AIRunCreateRequest,
     AIRunResponse,
     AIToolResponse,
@@ -22,11 +26,13 @@ from webdiag_api.ai.storage import (
     AIIdempotencyConflictError,
     AIInsufficientCreditsError,
     AIRunStateError,
+    AIUploadQuotaError,
     CreditAccount,
     CreditLedgerEntry,
     SqliteAIStore,
     StoredAIClaim,
     StoredAIRun,
+    StoredAIUpload,
 )
 from webdiag_api.ai.tool_contracts import (
     AIToolContractError,
@@ -74,6 +80,82 @@ class AIService:
                 if tool.credit_price is not None
             )
         )
+
+    def create_image_upload(
+        self,
+        *,
+        user_id: str,
+        data: bytes,
+        content_type_hint: str | None,
+        artifact_storage: ArtifactStorage,
+    ) -> AIImageUploadResponseItem:
+        if (
+            content_type_hint is None
+            or content_type_hint != content_type_hint.strip()
+            or not 1 <= len(content_type_hint) <= 200
+            or any(
+                ord(character) < 0x20 or ord(character) > 0x7E
+                for character in content_type_hint
+            )
+        ):
+            raise AIServiceError(
+                415,
+                "ai_image_content_type_required",
+                "Image Content-Type is required.",
+            )
+        try:
+            normalized = normalize_image(data)
+        except ImageValidationError as error:
+            if error.code in {"image_too_large", "image_normalized_too_large"}:
+                raise AIServiceError(413, "ai_image_too_large", "Image is too large.") from error
+            raise AIServiceError(422, "ai_invalid_image", "Invalid image.") from error
+
+        upload_id = str(uuid.uuid4())
+        try:
+            artifact = artifact_storage.put(
+                artifact_id=upload_id,
+                data=normalized.data,
+                media_type=normalized.media_type,
+            )
+        except Exception as error:
+            raise AIServiceError(
+                503,
+                "ai_upload_storage_unavailable",
+                "Image upload storage is unavailable.",
+            ) from error
+        if (
+            artifact.media_type != normalized.media_type
+            or artifact.byte_size != normalized.byte_size
+            or not hmac.compare_digest(artifact.sha256, normalized.sha256)
+        ):
+            self._compensate_artifact(artifact_storage, artifact.object_key)
+            raise AIServiceError(
+                503,
+                "ai_upload_storage_unavailable",
+                "Image upload storage is unavailable.",
+            )
+        try:
+            upload = self._store.create_upload(
+                user_id=user_id,
+                upload_id=upload_id,
+                object_key=artifact.object_key,
+                media_type=artifact.media_type,
+                byte_size=artifact.byte_size,
+                width=normalized.width,
+                height=normalized.height,
+                sha256=artifact.sha256,
+            )
+        except AIUploadQuotaError as error:
+            self._compensate_artifact(artifact_storage, artifact.object_key)
+            raise AIServiceError(
+                409,
+                "ai_upload_limit_reached",
+                "Active image upload limit reached.",
+            ) from error
+        except Exception:
+            self._compensate_artifact(artifact_storage, artifact.object_key)
+            raise
+        return self._public_upload(upload)
 
     def grant_beta_credits(
         self,
@@ -238,6 +320,17 @@ class AIService:
         except AICursorError as error:
             raise AIServiceError(422, "ai_invalid_cursor", "Invalid pagination cursor.") from error
 
+    @staticmethod
+    def _compensate_artifact(artifact_storage: ArtifactStorage, object_key: str) -> None:
+        try:
+            artifact_storage.delete(object_key=object_key)
+        except Exception as error:
+            raise AIServiceError(
+                503,
+                "ai_upload_storage_unavailable",
+                "Image upload storage is unavailable.",
+            ) from error
+
     def claim_pending(self) -> AIWorkerClaim | None:
         claim = self._store.claim_pending()
         return self._public_claim(claim) if claim is not None else None
@@ -344,6 +437,19 @@ class AIService:
             error_code=run.public_error_code,
             created_at=utc_from_ns(run.created_at),
             updated_at=utc_from_ns(run.updated_at),
+        )
+
+    @staticmethod
+    def _public_upload(upload: StoredAIUpload) -> AIImageUploadResponseItem:
+        return AIImageUploadResponseItem(
+            id=upload.id,
+            media_type=upload.media_type,
+            byte_size=upload.byte_size,
+            width=upload.width,
+            height=upload.height,
+            sha256=upload.sha256,
+            created_at=utc_from_ns(upload.created_at),
+            expires_at=utc_from_ns(upload.expires_at),
         )
 
     def _public_claim(self, claim: StoredAIClaim) -> AIWorkerClaim:
