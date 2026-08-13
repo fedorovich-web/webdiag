@@ -133,6 +133,7 @@ def test_settings_bound_request_body_limits() -> None:
     defaults = Settings()
     assert defaults.http_request_body_max_bytes == 2_000_000
     assert defaults.account_request_body_max_bytes == 16_384
+    assert defaults.ai_text_request_body_max_bytes == 300_000
     assert defaults.ai_image_upload_body_max_bytes == 4 * 1024 * 1024
 
     for payload in (
@@ -140,11 +141,21 @@ def test_settings_bound_request_body_limits() -> None:
         {"http_request_body_max_bytes": 10_000_001},
         {"account_request_body_max_bytes": 1_023},
         {"account_request_body_max_bytes": 10_000_001},
+        {"ai_text_request_body_max_bytes": 1_023},
+        {"ai_text_request_body_max_bytes": 2_000_001},
         {"ai_image_upload_body_max_bytes": 1_023},
         {"ai_image_upload_body_max_bytes": 4 * 1024 * 1024 + 1},
         {
             "http_request_body_max_bytes": 16_384,
             "account_request_body_max_bytes": 16_385,
+        },
+        {
+            "http_request_body_max_bytes": 299_999,
+            "ai_text_request_body_max_bytes": 300_000,
+        },
+        {
+            "ai_input_max_bytes": 299_000,
+            "ai_text_request_body_max_bytes": 300_000,
         },
     ):
         with pytest.raises(ValidationError):

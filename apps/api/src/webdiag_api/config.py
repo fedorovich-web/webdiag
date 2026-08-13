@@ -55,6 +55,11 @@ class Settings(BaseSettings):
         ge=_MIN_ACCOUNT_REQUEST_BODY_MAX_BYTES,
         le=_MAX_ACCOUNT_REQUEST_BODY_MAX_BYTES,
     )
+    ai_text_request_body_max_bytes: int = Field(
+        default=300_000,
+        ge=_MIN_AI_PAYLOAD_MAX_BYTES,
+        le=_MAX_AI_PAYLOAD_MAX_BYTES,
+    )
     ai_image_upload_body_max_bytes: int = Field(
         default=4 * 1024 * 1024,
         ge=_MIN_AI_IMAGE_UPLOAD_BODY_MAX_BYTES,
@@ -177,6 +182,10 @@ class Settings(BaseSettings):
                 raise ValueError("production internal tokens must be distinct")
         if self.account_request_body_max_bytes > self.http_request_body_max_bytes:
             raise ValueError("account request body max must not exceed HTTP request body max")
+        if self.ai_text_request_body_max_bytes > self.http_request_body_max_bytes:
+            raise ValueError("AI text request body max must not exceed HTTP request body max")
+        if self.ai_input_max_bytes + 1_024 > self.ai_text_request_body_max_bytes:
+            raise ValueError("AI text request body max must include bounded envelope overhead")
         if self.ai_lease_renew_interval_seconds >= self.ai_lease_seconds:
             raise ValueError("AI lease renew interval must be shorter than the AI lease")
         return self

@@ -13,11 +13,17 @@ class RequestBodyLimitMiddleware:
         *,
         http_request_body_max_bytes: int,
         account_request_body_max_bytes: int,
+        ai_text_request_body_max_bytes: int | None = None,
         ai_image_upload_body_max_bytes: int = 4 * 1024 * 1024,
     ) -> None:
         self.app = app
         self.http_request_body_max_bytes = http_request_body_max_bytes
         self.account_request_body_max_bytes = account_request_body_max_bytes
+        self.ai_text_request_body_max_bytes = (
+            account_request_body_max_bytes
+            if ai_text_request_body_max_bytes is None
+            else ai_text_request_body_max_bytes
+        )
         self.ai_image_upload_body_max_bytes = ai_image_upload_body_max_bytes
 
     async def __call__(self, scope: dict[str, Any], receive: Receive, send: Send) -> None:
@@ -25,7 +31,10 @@ class RequestBodyLimitMiddleware:
             await self.app(scope, receive, send)
             return
 
-        limit, code = self._limit_for_path(scope.get("path", ""))
+        limit, code = self._limit_for_path(
+            scope.get("path", ""),
+            scope.get("method", ""),
+        )
         if _declared_content_length_exceeds_limit(scope.get("headers", ()), limit):
             await _send_request_too_large(send, code)
             return
@@ -48,9 +57,11 @@ class RequestBodyLimitMiddleware:
 
         await self.app(scope, receive_replay, send)
 
-    def _limit_for_path(self, path: str) -> tuple[int, str]:
+    def _limit_for_path(self, path: str, method: str) -> tuple[int, str]:
         if path == "/v1/account/ai/uploads/image":
             return self.ai_image_upload_body_max_bytes, "ai_image_upload_too_large"
+        if method == "POST" and path == "/v1/account/ai/runs":
+            return self.ai_text_request_body_max_bytes, "ai_request_too_large"
         if path == "/v1/account" or path.startswith("/v1/account/"):
             return self.account_request_body_max_bytes, "account_request_too_large"
         return self.http_request_body_max_bytes, "request_too_large"

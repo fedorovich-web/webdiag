@@ -143,6 +143,65 @@ def test_request_limit_rejects_streamed_account_body_with_account_envelope() -> 
     )
 
 
+def test_request_limit_scopes_larger_ai_run_body_without_widening_account_limit() -> None:
+    assert RequestBodyLimitMiddleware is not None, "request body limit middleware is missing"
+    replayed: list[bytes] = []
+
+    async def downstream(
+        scope: dict[str, object],
+        receive: object,
+        send: object,
+    ) -> None:
+        message = await receive()  # type: ignore[operator]
+        replayed.append(message["body"])
+
+    middleware = RequestBodyLimitMiddleware(
+        downstream,
+        http_request_body_max_bytes=8,
+        account_request_body_max_bytes=2,
+        ai_text_request_body_max_bytes=6,
+    )
+
+    accepted = asyncio.run(
+        call_asgi(
+            middleware,
+            {
+                "type": "http",
+                "method": "POST",
+                "path": "/v1/account/ai/runs",
+                "headers": [],
+            },
+            [{"type": "http.request", "body": b"123456", "more_body": False}],
+        )
+    )
+    rejected_ai = asyncio.run(
+        call_asgi(
+            middleware,
+            {
+                "type": "http",
+                "method": "POST",
+                "path": "/v1/account/ai/runs",
+                "headers": [],
+            },
+            [{"type": "http.request", "body": b"1234567", "more_body": False}],
+        )
+    )
+    rejected_account = asyncio.run(
+        call_asgi(
+            middleware,
+            {"type": "http", "path": "/v1/account/projects", "headers": []},
+            [{"type": "http.request", "body": b"123", "more_body": False}],
+        )
+    )
+
+    assert accepted == []
+    assert replayed == [b"123456"]
+    assert rejected_ai[0]["status"] == 413
+    assert b'"code":"ai_request_too_large"' in rejected_ai[1]["body"]
+    assert rejected_account[0]["status"] == 413
+    assert b'"code":"account_request_too_large"' in rejected_account[1]["body"]
+
+
 def test_request_limit_gives_only_ai_image_upload_the_larger_account_limit() -> None:
     assert RequestBodyLimitMiddleware is not None, "request body limit middleware is missing"
     replayed: list[bytes] = []
