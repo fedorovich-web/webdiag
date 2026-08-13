@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+import asyncio
 import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+import httpx
+
+from webdiag_api.accounts.api import get_account_service
 from webdiag_api.accounts.models import RegisterRequest
 from webdiag_api.accounts.monitoring_storage import SqliteMonitoringStore
+from webdiag_api.accounts.overview_api import get_account_overview_service
 from webdiag_api.accounts.overview_service import AccountOverviewService
 from webdiag_api.accounts.report_models import ReportSnapshot
 from webdiag_api.accounts.report_storage import SqliteReportStore
@@ -14,9 +19,10 @@ from webdiag_api.accounts.service import AccountService
 from webdiag_api.accounts.storage import SqliteAccountStore
 from webdiag_api.accounts.workspace_models import SavedAuditPayload
 from webdiag_api.accounts.workspace_storage import SqliteWorkspaceStore
+from webdiag_api.main import app
 
 
-def _register(database: Path, email: str) -> str:
+def _register_with_token(database: Path, email: str) -> tuple[str, str]:
     service = AccountService(
         SqliteAccountStore(str(database)),
         session_ttl_seconds=3_600,
@@ -30,7 +36,11 @@ def _register(database: Path, email: str) -> str:
             password="correct horse battery staple",
         )
     )
-    return result.response.user.id
+    return result.response.user.id, result.token
+
+
+def _register(database: Path, email: str) -> str:
+    return _register_with_token(database, email)[0]
 
 
 def _audit_payload(*, completed_at: datetime, score: int) -> SavedAuditPayload:
@@ -205,3 +215,72 @@ def test_overview_is_owned_and_uses_only_persisted_state(tmp_path: Path) -> None
     assert item.report_count == 1
     assert item.shared_report_count == 1
     assert item.latest_report_created_at == report.summary().created_at
+
+
+async def _request(path: str, *, token: str | None = None) -> httpx.Response:
+    headers = {"cookie": f"webdiag_session={token}"} if token else None
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        return await client.get(path, headers=headers)
+
+
+def test_overview_api_requires_session_is_owned_and_no_store(tmp_path: Path) -> None:
+    database = tmp_path / "overview-api.sqlite3"
+    account = AccountService(
+        SqliteAccountStore(str(database)),
+        session_ttl_seconds=3_600,
+        active_session_limit=10,
+        scrypt_parameters=ScryptParameters(n=2**12),
+    )
+    owner_result = account.register(
+        RegisterRequest(
+            email="owner@example.com",
+            display_name="Owner",
+            password="correct horse battery staple",
+        )
+    )
+    foreign_result = account.register(
+        RegisterRequest(
+            email="foreign@example.com",
+            display_name="Foreign",
+            password="correct horse battery staple",
+        )
+    )
+    workspace = SqliteWorkspaceStore(str(database))
+    monitoring = SqliteMonitoringStore(str(database))
+    reports = SqliteReportStore(str(database))
+    overview = AccountOverviewService(
+        workspace_store=workspace,
+        monitoring_store=monitoring,
+        report_store=reports,
+    )
+    owner_project = workspace.create_project(
+        user_id=owner_result.response.user.id,
+        name="Owner project",
+        origin="https://owner.example.com",
+    )
+    foreign_project = workspace.create_project(
+        user_id=foreign_result.response.user.id,
+        name="Foreign project",
+        origin="https://foreign.example.com",
+    )
+    app.dependency_overrides[get_account_service] = lambda: account
+    app.dependency_overrides[get_account_overview_service] = lambda: overview
+    try:
+        unauthenticated = asyncio.run(_request("/v1/account/overview"))
+        response = asyncio.run(
+            _request("/v1/account/overview", token=owner_result.token)
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert unauthenticated.status_code == 401
+    assert unauthenticated.headers["cache-control"] == "no-store"
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "no-store"
+    assert response.json()["contract_version"] == "webdiag.account.overview.v1"
+    project_ids = {
+        item["project"]["id"] for item in response.json()["projects"]
+    }
+    assert project_ids == {owner_project.id}
+    assert foreign_project.id not in project_ids

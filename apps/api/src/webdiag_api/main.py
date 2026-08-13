@@ -6,6 +6,7 @@ from webdiag_api.accounts.api import (
     router as account_router,
 )
 from webdiag_api.accounts.monitoring_api import router as monitoring_router
+from webdiag_api.accounts.overview_api import router as overview_router
 from webdiag_api.accounts.report_api import (
     account_router as report_account_router,
 )
@@ -50,6 +51,7 @@ app.add_middleware(
 )
 app.add_exception_handler(RequestValidationError, api_validation_exception_handler)
 app.include_router(account_router)
+app.include_router(overview_router)
 app.include_router(ai_router)
 app.include_router(ai_internal_router)
 app.include_router(workspace_router)

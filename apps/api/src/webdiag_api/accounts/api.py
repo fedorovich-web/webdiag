@@ -57,6 +57,16 @@ def _http_error(error: AccountServiceError) -> HTTPException:
     )
 
 
+def current_account_user_id(
+    service: AccountService,
+    session_token: str | None,
+) -> str:
+    try:
+        return service.get_session(session_token).user.id
+    except AccountServiceError as error:
+        raise _http_error(error) from error
+
+
 def _set_session_cookie(response: Response, token: str) -> None:
     response.set_cookie(
         key=SESSION_COOKIE_NAME,
