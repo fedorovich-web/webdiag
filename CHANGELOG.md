@@ -1,5 +1,13 @@
 # Changelog
 
+## A12.1a — First four grounded AI tool contracts
+
+- Added strict RU/EN input and output contracts for Audit Action Plan, Meta & SERP Studio, Schema Studio, and FAQ Studio. Outputs are schema-validated and checked against saved audit issue/URL references, supplied facts, or exact source excerpts before credit capture.
+- Added ownership-scoped immutable saved-audit snapshots for Action Plan without hidden audit reruns, client-supplied audit payloads, or provider access to project/audit/account identifiers.
+- Added a bounded OpenAI Responses API adapter with strict JSON Schema, server-owned prompts, `store=false`, zero SDK retries, explicit timeouts, provider request/usage accounting, conservative unknown-outcome handling, and privacy-preserving safety identifiers.
+- Kept all four tools internal pending real opt-in provider smoke tests, RU/EN semantic evaluation, measured cost, and owner-approved fixed credit prices. Added no Lava.top/payment code and no fabricated AI result.
+- Split Alt Text Studio into A12.1b so image inputs use a private validated upload/artifact path instead of client URLs or base64 persisted in SQLite.
+
 ## A12.0 — AI execution and credit foundation
 
 - Added exactly 15 internal AI catalog definitions; none is public or executable until its real-provider, evaluation, cost, security, and fixed-credit gates pass.

@@ -2,7 +2,7 @@
 
 Date: 2026-08-12
 
-Status: approved continuation of the A12 program design
+Status: A12.1a implemented for internal evaluation; A12.1b remains next
 
 Parent design: `2026-08-12-webdiag-ai-tools-credits-design.md`
 
@@ -170,3 +170,28 @@ activation remains a separate evidence-backed change.
 These references were checked against current official documentation and
 Context7 on 2026-08-12. Provider behavior not established by those sources is
 treated as unverified rather than assumed.
+
+## 9. A12.1a implementation evidence
+
+Implementation completed on 2026-08-13 without public catalog activation.
+
+- Official SDK pinned: `openai==2.54.0`; the newly published 3.0.0 major was not
+  adopted without matching interface evidence and regression coverage.
+- OSV queries for `openai==2.54.0`, `distro==1.9.0`, `jiter==0.16.0`,
+  `sniffio==1.3.1`, and `tqdm==4.70.0` returned zero known vulnerabilities at
+  the time checked.
+- Targeted provider tests: 18 passed.
+- Targeted worker/actor tests: 31 passed.
+- Targeted API contract and ownership groups passed before the final package
+  run; RU/EN fixture gate: 1 passed.
+- Full Python suite: 364 passed in 13.35 seconds.
+- Ruff: passed after one import-only autofix; the passing Python suite was not
+  repeated because runtime behavior did not change.
+- Python lock: 36 locked packages matched the Windows environment.
+- `git diff --check`: passed.
+
+Ordinary verification made no OpenAI request and required no API key. A real
+provider smoke run, semantic/cost evaluation, fixed credit-price approval, and
+catalog activation remain explicit blockers. Lava.top remains excluded until
+after all 15 tools, product polish, A12.5 hardening, and production-domain
+verification.
