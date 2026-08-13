@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildAccountWorkspaceNavigation,
+  ownedAccountProjectContextId,
   projectLandingAfterSwitch,
   recentAccountProjects,
   resolveActiveAccountProject,
@@ -75,8 +76,8 @@ describe("account workspace shell contract", () => {
       `/account/projects/${projectId}/audits/${auditId}/issues`,
     );
     expect(navigation.project?.find((item) => item.id === "project_reports")).toMatchObject({
-      href: null,
-      disabled: true,
+      href: `/account/reports?project_id=${projectId}`,
+      disabled: false,
     });
     expect(projectLandingAfterSwitch("en", projects[1]!.id)).toBe(
       `/en/account/projects/${projects[1]!.id}`,
@@ -88,5 +89,7 @@ describe("account workspace shell contract", () => {
     expect(recent.map((project) => project.name)).toEqual(["Newest", "Middle"]);
     expect(resolveActiveAccountProject(projects, projects[1]!.id)?.name).toBe("Newest");
     expect(resolveActiveAccountProject(projects, "not-a-project")).toBeNull();
+    expect(ownedAccountProjectContextId(projects, projects[1]!.id)).toBe(projects[1]!.id);
+    expect(ownedAccountProjectContextId(projects, "44444444-4444-4444-8444-444444444444")).toBeUndefined();
   });
 });

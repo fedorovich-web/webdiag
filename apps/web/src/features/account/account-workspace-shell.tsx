@@ -20,6 +20,7 @@ import { listAccountProjects } from "./account-workspace-client";
 import type { AccountProject } from "./account-workspace-contract";
 import {
   buildAccountWorkspaceNavigation,
+  ownedAccountProjectContextId,
   projectLandingAfterSwitch,
   resolveActiveAccountProject,
   type AccountWorkspaceSection,
@@ -60,10 +61,11 @@ function WorkspaceNavigation({
   onNavigate,
 }: WorkspaceNavigationProps) {
   const ru = locale === "ru";
+  const activeProjectId = ownedAccountProjectContextId(projects, currentProjectId);
   const navigation = buildAccountWorkspaceNavigation(
     locale,
     section,
-    currentProjectId,
+    activeProjectId,
     latestAuditId,
   );
   const activeProject = resolveActiveAccountProject(projects, currentProjectId);

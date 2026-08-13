@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { getPublicReport } from "./account-report-client";
 import type { PublicReportResponse } from "./account-report-contract";
+import { formatReportDate } from "./account-report-presentation";
 import { AccountReportSnapshotView } from "./account-report-view";
 
 export function PublicReport({ shareToken }: { readonly shareToken: string }) {
@@ -17,16 +18,25 @@ export function PublicReport({ shareToken }: { readonly shareToken: string }) {
     return () => { active = false; };
   }, [shareToken]);
 
-  if (failed) return <main className="shell wd-public-report-page"><section className="wd-account-card wd-account-empty"><h1>Report unavailable</h1><p>The share link is invalid, revoked, or expired.</p></section></main>;
+  if (failed) return <main className="shell wd-public-report-page"><section className="wd-account-card wd-account-empty"><h1>Report unavailable</h1><p>The link is invalid, revoked, expired, or unavailable.</p></section></main>;
   if (!report) return <main className="shell wd-public-report-page"><section className="wd-account-card" aria-busy="true"><p>Loading report…</p></section></main>;
 
+  const locale = report.snapshot.locale;
+  const ru = locale === "ru";
   return (
     <main className="shell wd-public-report-page">
-      <div className="wd-report-action-buttons">
-        <a className="wd-button wd-button-secondary" href={`/api/reports/share/${shareToken}/export.html`}>{report.snapshot.locale === "ru" ? "Скачать HTML" : "Download HTML"}</a>
-        <a className="wd-button wd-button-secondary" href={`/api/reports/share/${shareToken}/print`} target="_blank" rel="noreferrer">{report.snapshot.locale === "ru" ? "Печать / PDF" : "Print / PDF"}</a>
-      </div>
-      <AccountReportSnapshotView locale={report.snapshot.locale} snapshot={report.snapshot} />
+      <header className="wd-public-report-context">
+        <div><span>{ru ? "Общая ссылка WebDiag" : "WebDiag shared link"}</span><strong>{report.report.title}</strong></div>
+        <p>{ru ? "Доступ до" : "Available until"} {formatReportDate(locale, report.report.expires_at)}</p>
+      </header>
+      <AccountReportSnapshotView locale={locale} snapshot={report.snapshot} />
+      <section className="wd-public-report-actions" aria-label={ru ? "Экспорт отчёта" : "Report export"}>
+        <div><h2>{ru ? "Сохранить отчёт" : "Save the report"}</h2><p>{ru ? "Скачайте автономный HTML или сохраните печатную версию в PDF." : "Download the self-contained HTML or save the print view as PDF."}</p></div>
+        <div className="wd-report-action-buttons">
+          <a className="wd-button wd-button-secondary" href={`/api/reports/share/${shareToken}/export.html`}>{ru ? "Скачать HTML" : "Download HTML"}</a>
+          <a className="wd-button wd-button-secondary" href={`/api/reports/share/${shareToken}/print`} target="_blank" rel="noreferrer">{ru ? "Печать / PDF" : "Print / PDF"}</a>
+        </div>
+      </section>
     </main>
   );
 }

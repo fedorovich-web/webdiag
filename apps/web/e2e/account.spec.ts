@@ -456,8 +456,25 @@ test.describe("account reports", () => {
       target_origin: firstProject.origin,
       audit_completed_at: "2026-07-31T12:00:00Z",
       score: 88,
-      checks: [],
-      issues: [],
+      checks: [
+        { check_id: "security.headers", name: "Security headers", category: "security", status: "failed" },
+        { check_id: "http.status", name: "HTTP status", category: "http", status: "passed" },
+      ],
+      issues: [{
+        issue_id: "security.headers.missing",
+        check_id: "security.headers",
+        category: "security",
+        severity: "high",
+        priority: "p0",
+        title: "Security headers are missing",
+        description: "Required response headers are not present.",
+        affected_urls: [firstProject.origin],
+        recommendation: {
+          summary: "Configure the required headers.",
+          steps: ["Add the headers at the edge or origin server."],
+          expected_impact: "Reduced browser-side exposure.",
+        },
+      }],
       generated_at: "2026-08-01T10:00:00Z",
     };
     const summary = {
@@ -476,6 +493,12 @@ test.describe("account reports", () => {
       contract_version: "webdiag.account.report_detail.v1",
       report: summary,
       snapshot,
+    };
+    const listItem = {
+      ...summary,
+      project_name: snapshot.project_name,
+      target_origin: snapshot.target_origin,
+      audit_completed_at: snapshot.audit_completed_at,
     };
     const auditDetail = {
       contract_version: "webdiag.account.saved_audit_detail.v1",
@@ -507,16 +530,57 @@ test.describe("account reports", () => {
     }));
     await page.route(`**/api/account/projects/${firstProject.id}/audits/${auditId}`, (route) => route.fulfill({ json: auditDetail }));
     await page.route(`**/api/account/projects/${firstProject.id}/audits/${auditId}/reports`, (route) => route.fulfill({ status: 201, json: reportDetail }));
-    await page.route(`**/api/account/reports/${reportId}`, (route) => route.fulfill({ json: reportDetail }));
-    await page.route(`**/api/account/reports/${reportId}/share`, (route) => route.fulfill({
+    await page.route("**/api/account/reports?*", (route) => route.fulfill({
+      json: { contract_version: "webdiag.account.report_list.v2", reports: [listItem] },
+    }));
+    let shared = false;
+    let shareRequests = 0;
+    let activeShareToken = "A".repeat(43);
+    const currentDetail = () => ({
+      ...reportDetail,
+      report: {
+        ...summary,
+        shared,
+        share_expires_at: shared ? "2026-08-08T10:00:00Z" : null,
+      },
+    });
+    await page.route(`**/api/account/reports/${reportId}`, (route) => route.fulfill({ json: currentDetail() }));
+    await page.route(`**/api/account/reports/${reportId}/share`, (route) => {
+      if (route.request().method() === "DELETE") {
+        shared = false;
+        return route.fulfill({ json: currentDetail() });
+      }
+      shared = true;
+      shareRequests += 1;
+      activeShareToken = (shareRequests === 1 ? "A" : "B").repeat(43);
+      return route.fulfill({
+        json: {
+          contract_version: "webdiag.account.report_share.v1",
+          report_id: reportId,
+          share_token: activeShareToken,
+          share_path: `/reports/share/${activeShareToken}`,
+          expires_at: "2026-08-08T10:00:00Z",
+        },
+      });
+    });
+    await page.route("**/api/reports/share/*", (route) => route.fulfill({
       json: {
-        contract_version: "webdiag.account.report_share.v1",
-        report_id: reportId,
-        share_token: "A".repeat(43),
-        share_path: `/reports/share/${"A".repeat(43)}`,
-        expires_at: "2026-08-08T10:00:00Z",
+        contract_version: "webdiag.public.report.v1",
+        report: {
+          title: snapshot.title,
+          locale: snapshot.locale,
+          created_at: summary.created_at,
+          expires_at: "2026-08-08T10:00:00Z",
+        },
+        snapshot,
       },
     }));
+
+    await page.goto(`/account/reports?project_id=${firstProject.id}`);
+    await expect(page.getByRole("heading", { level: 1, name: "Сохранённые отчёты" })).toBeVisible();
+    await expect(page.locator(".wd-report-list article").getByText(firstProject.origin, { exact: false })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Отчёты проекта" })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByText("31 июл. 2026 г.", { exact: false })).toBeVisible();
 
     await page.goto(`/account/projects/${firstProject.id}/audits/${auditId}`);
     await page.getByLabel("Название отчёта").fill(snapshot.title);
@@ -524,14 +588,50 @@ test.describe("account reports", () => {
     await page.getByRole("link", { name: "Открыть сохранённый отчёт" }).click();
 
     await expect(page.getByRole("heading", { level: 1, name: snapshot.title })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Отчёты проекта" })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("heading", { name: "Результат сохранённого аудита" })).toBeVisible();
+    await expect(page.getByText("Зафиксировано проблем: 1.", { exact: false })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Что содержит этот отчёт" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Скачать HTML" })).toHaveAttribute(
       "href",
       `/api/account/reports/${reportId}/export.html`,
     );
     await page.getByRole("button", { name: "Включить общий доступ" }).click();
-    await expect(page.getByLabel("Ссылка показывается один раз")).toHaveValue(
+    await expect(page.getByLabel(/показывается один раз/i)).toHaveValue(
       new RegExp(`/reports/share/${"A".repeat(43)}$`),
     );
-    await expect(page.getByText(/uptime/i)).toHaveCount(0);
+    await page.getByRole("button", { name: "Копировать ссылку" }).click();
+    await expect(page.getByRole("status")).toContainText(/Ссылка скопирована|Не удалось скопировать/);
+
+    page.once("dialog", (dialog) => dialog.dismiss());
+    await page.getByRole("button", { name: "Выпустить новую ссылку" }).click();
+    expect(shareRequests).toBe(1);
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.getByRole("button", { name: "Выпустить новую ссылку" }).click();
+    await expect.poll(() => shareRequests).toBe(2);
+    await expect(page.getByLabel(/показывается один раз/i)).toHaveValue(
+      new RegExp(`/reports/share/${"B".repeat(43)}$`),
+    );
+
+    const publicResponse = await page.goto(`/reports/share/${activeShareToken}`);
+    expect(publicResponse?.headers()["cache-control"]).toContain("no-store");
+    expect(publicResponse?.headers()["x-robots-tag"]).toBe("noindex, nofollow, noarchive");
+    expect(publicResponse?.headers()["referrer-policy"]).toBe("no-referrer");
+    await expect(page.getByRole("heading", { level: 1, name: snapshot.title })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Результат сохранённого аудита" })).toBeVisible();
+    await expect(page.getByText(firstProject.id)).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Скачать HTML" })).toHaveAttribute(
+      "href",
+      `/api/reports/share/${activeShareToken}/export.html`,
+    );
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+    await page.goto(`/account/reports/${reportId}`);
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.getByRole("button", { name: "Отозвать ссылку" }).click();
+    await expect(page.getByRole("button", { name: "Включить общий доступ" })).toBeVisible();
+    await expect(page.getByText("Отчёт не является измерением uptime и не подтверждает непрерывную доступность сайта.", { exact: true })).toBeVisible();
+    await expect(page.getByText(/\d+(?:[.,]\d+)?\s*%/)).toHaveCount(0);
   });
 });

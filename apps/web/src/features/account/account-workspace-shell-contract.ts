@@ -71,7 +71,7 @@ export function buildAccountWorkspaceNavigation(
       id: "reports",
       label: ru ? "Отчёты" : "Reports",
       href: reportsPath(locale),
-      active: section === "reports" || section === "report",
+      active: (section === "reports" || section === "report") && !projectId,
       disabled: false,
     },
   ];
@@ -110,9 +110,9 @@ export function buildAccountWorkspaceNavigation(
     {
       id: "project_reports",
       label: ru ? "Отчёты проекта" : "Project reports",
-      href: null,
-      active: false,
-      disabled: true,
+      href: `${reportsPath(locale)}?project_id=${projectId}`,
+      active: section === "reports" || section === "report",
+      disabled: false,
     },
   ];
   return { portfolio, project };
@@ -143,4 +143,11 @@ export function resolveActiveAccountProject(
 ): AccountProject | null {
   if (!projectId) return null;
   return projects.find((project) => project.id === projectId) ?? null;
+}
+
+export function ownedAccountProjectContextId(
+  projects: readonly AccountProject[],
+  projectId: string | null | undefined,
+): string | undefined {
+  return resolveActiveAccountProject(projects, projectId)?.id;
 }
