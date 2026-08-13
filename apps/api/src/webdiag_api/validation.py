@@ -18,6 +18,7 @@ async def api_validation_exception_handler(
             "Invalid internal AI request.",
         ),
         ("/v1/audits", "audit_invalid_request", "Invalid audit request."),
+        ("/v1/tools/", "tool_invalid_request", "Invalid tool request."),
     )
     for prefix, code, message in contracts:
         if request.url.path.startswith(prefix):
