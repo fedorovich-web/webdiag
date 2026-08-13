@@ -27,6 +27,15 @@ export function accountWorkspacePath(parts: readonly string[]): string | null {
   return null;
 }
 
+export function accountWorkspaceLifecyclePath(
+  projectId: string,
+  action: "archive" | "restore",
+): string | null {
+  return validAccountResourceId(projectId)
+    ? `/v1/account/projects/${projectId}/${action}`
+    : null;
+}
+
 export async function proxyAccountWorkspace(
   request: NextRequest,
   options: { readonly method: "GET" | "POST" | "PATCH"; readonly path: string; readonly body?: boolean },

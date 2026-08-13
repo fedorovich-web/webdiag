@@ -28,6 +28,16 @@ export interface AccountProjectDetailResponse {
   readonly saved_audits: readonly SavedAuditSummary[];
 }
 
+export interface ArchivedAccountProject extends AccountProject {
+  readonly contract_version: "webdiag.account.archived_project.v1";
+  readonly archived_at: string;
+}
+
+export interface ArchivedAccountProjectListResponse {
+  readonly contract_version: "webdiag.account.archived_project_list.v1";
+  readonly projects: readonly ArchivedAccountProject[];
+}
+
 export interface SavedAuditCheck {
   readonly check_id: string;
   readonly name: string;
@@ -83,6 +93,12 @@ function string(value: unknown): value is string {
   return typeof value === "string";
 }
 
+function dateTime(value: unknown): value is string {
+  return string(value)
+    && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/u.test(value)
+    && Number.isFinite(Date.parse(value));
+}
+
 function nullableNumber(value: unknown): value is number | null {
   return value === null || (typeof value === "number" && Number.isFinite(value));
 }
@@ -90,7 +106,7 @@ function nullableNumber(value: unknown): value is number | null {
 export function isAccountProject(value: unknown): value is AccountProject {
   return record(value) && only(value, ["id", "name", "origin", "created_at", "updated_at"])
     && string(value.id) && string(value.name) && string(value.origin)
-    && string(value.created_at) && string(value.updated_at);
+    && dateTime(value.created_at) && dateTime(value.updated_at);
 }
 
 export function isSavedAuditSummary(value: unknown): value is SavedAuditSummary {
@@ -152,6 +168,23 @@ export function isAccountProjectDetailResponse(value: unknown): value is Account
     && value.contract_version === "webdiag.account.project_detail.v1"
     && isAccountProject(value.project) && Array.isArray(value.saved_audits)
     && value.saved_audits.every(isSavedAuditSummary);
+}
+
+export function isArchivedAccountProject(value: unknown): value is ArchivedAccountProject {
+  return record(value) && only(value, [
+    "contract_version", "id", "name", "origin", "created_at", "updated_at", "archived_at",
+  ])
+    && value.contract_version === "webdiag.account.archived_project.v1"
+    && string(value.id) && string(value.name) && string(value.origin)
+    && dateTime(value.created_at) && dateTime(value.updated_at) && dateTime(value.archived_at);
+}
+
+export function isArchivedAccountProjectListResponse(
+  value: unknown,
+): value is ArchivedAccountProjectListResponse {
+  return record(value) && only(value, ["contract_version", "projects"])
+    && value.contract_version === "webdiag.account.archived_project_list.v1"
+    && Array.isArray(value.projects) && value.projects.every(isArchivedAccountProject);
 }
 
 export function isSavedAuditDetailResponse(value: unknown): value is SavedAuditDetailResponse {

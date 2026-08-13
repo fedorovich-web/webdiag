@@ -12,13 +12,18 @@ import {
   formatNullableScore,
 } from "./account-dashboard-contract";
 import { accountErrorMessage } from "./account-messages";
+import { announceAccountAuthenticationLost } from "./account-authentication-state";
 import {
   deriveAccountNextActions,
   type AccountOverviewProject,
   type AccountOverviewResponse,
 } from "./account-overview-contract";
-import { createAccountProject } from "./account-workspace-client";
-import type { AccountProject } from "./account-workspace-contract";
+import {
+  createAccountProject,
+  listArchivedAccountProjects,
+  restoreAccountProject,
+} from "./account-workspace-client";
+import type { AccountProject, ArchivedAccountProject } from "./account-workspace-contract";
 import { projectPath } from "../../lib/routes";
 
 interface AccountDashboardProps {
@@ -27,6 +32,7 @@ interface AccountDashboardProps {
   readonly projects: readonly AccountProject[];
   readonly overview: AccountOverviewResponse | null;
   readonly onProjectCreated: (project: AccountProject) => void;
+  readonly onProjectRestored: () => void;
 }
 
 export function AccountDashboard({
@@ -35,12 +41,16 @@ export function AccountDashboard({
   projects,
   overview,
   onProjectCreated,
+  onProjectRestored,
 }: AccountDashboardProps) {
   const ru = locale === "ru";
   const [error, setError] = useState("");
   const [createPending, setCreatePending] = useState(false);
   const [name, setName] = useState("");
   const [origin, setOrigin] = useState("");
+  const [archivedProjects, setArchivedProjects] = useState<readonly ArchivedAccountProject[]>([]);
+  const [archiveState, setArchiveState] = useState<"idle" | "loading" | "ready" | "failed">("idle");
+  const [restorePendingId, setRestorePendingId] = useState<string | null>(null);
   const createDetailsRef = useRef<HTMLDetailsElement>(null);
 
   function openProjectCreation() {
@@ -60,10 +70,62 @@ export function AccountDashboard({
       setName("");
       setOrigin("");
     } catch (caught) {
+      if (announceAccountAuthenticationLost(caught)) return;
       setError(accountErrorMessage(locale, caught));
     } finally {
       setCreatePending(false);
     }
+  }
+
+  async function loadArchivedProjects() {
+    if (archiveState === "loading" || archiveState === "ready") return;
+    setArchiveState("loading");
+    setError("");
+    try {
+      const response = await listArchivedAccountProjects();
+      setArchivedProjects(response.projects);
+      setArchiveState("ready");
+    } catch (caught) {
+      if (announceAccountAuthenticationLost(caught)) return;
+      setError(accountErrorMessage(locale, caught));
+      setArchiveState("failed");
+    }
+  }
+
+  async function restoreProject(projectId: string) {
+    setRestorePendingId(projectId);
+    setError("");
+    try {
+      await restoreAccountProject(projectId);
+      setArchivedProjects((current) => current.filter((item) => item.id !== projectId));
+      onProjectRestored();
+    } catch (caught) {
+      if (announceAccountAuthenticationLost(caught)) return;
+      setError(accountErrorMessage(locale, caught));
+    } finally {
+      setRestorePendingId(null);
+    }
+  }
+
+  function projectArchivePanel() {
+    return (
+      <section className="wd-project-archive-list" aria-labelledby="project-archive-title">
+        <div className="wd-project-list-head">
+          <div><span className="eyebrow">{ru ? "Восстановление" : "Recovery"}</span><h2 id="project-archive-title">{ru ? "Архив проектов" : "Project archive"}</h2></div>
+          {archiveState === "ready" && <strong>{archivedProjects.length}</strong>}
+        </div>
+        {archiveState === "idle" || archiveState === "failed" ? <button className="wd-button wd-button-secondary" type="button" onClick={loadArchivedProjects}>{ru ? "Показать архив" : "Show archive"}</button> : archiveState === "loading" ? <p aria-live="polite">{ru ? "Загружаем архив…" : "Loading archive…"}</p> : archivedProjects.length === 0 ? <p>{ru ? "В архиве нет проектов." : "There are no archived projects."}</p> : (
+          <div className="wd-project-archive-items">
+            {archivedProjects.map((project) => (
+              <article key={project.id}>
+                <div><strong>{project.name}</strong><p>{project.origin}</p><small>{ru ? "Архивирован" : "Archived"}: {formatAccountDate(project.archived_at, locale)}</small></div>
+                <button className="wd-button wd-button-secondary" type="button" onClick={() => restoreProject(project.id)} disabled={restorePendingId !== null} aria-busy={restorePendingId === project.id}>{restorePendingId === project.id ? (ru ? "Восстанавливаем…" : "Restoring…") : (ru ? "Восстановить" : "Restore")}</button>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+    );
   }
 
   function projectCreatePanel(primary: boolean) {
@@ -188,6 +250,7 @@ export function AccountDashboard({
         </header>
         {error && <p className="wd-account-error" role="alert">{error}</p>}
         {projectCreatePanel(true)}
+        {projectArchivePanel()}
       </div>
     );
   }
@@ -272,6 +335,7 @@ export function AccountDashboard({
         <summary>{ru ? "Добавить ещё один проект" : "Add another project"}</summary>
         {projectCreatePanel(false)}
       </details>
+      {projectArchivePanel()}
     </div>
   );
 }

@@ -4,17 +4,13 @@ import { useEffect, useState, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import type { AccountSessionResponse } from "./account-contract";
 import { AccountClientError } from "./account-client";
+import { accountAuthenticationWasLost } from "./account-authentication-state";
 import { accountErrorMessage } from "./account-messages";
 import {
   changeAccountPassword,
   getAccountSessions,
   revokeOtherAccountSessions,
 } from "./account-settings-client";
-
-function authenticationWasLost(caught: unknown): boolean {
-  return caught instanceof AccountClientError
-    && (caught.code === "account_unauthenticated" || caught.code === "account_credentials_changed");
-}
 
 export function AccountSettings({
   locale,
@@ -50,7 +46,7 @@ export function AccountSettings({
       })
       .catch((caught) => {
         if (!active) return;
-        if (authenticationWasLost(caught)) {
+        if (accountAuthenticationWasLost(caught)) {
           setCurrentPassword("");
           setNewPassword("");
           setConfirmPassword("");
@@ -86,7 +82,7 @@ export function AccountSettings({
     } catch (caught) {
       setNewPassword("");
       setConfirmPassword("");
-      if (authenticationWasLost(caught)) {
+      if (accountAuthenticationWasLost(caught)) {
         setCurrentPassword("");
         onUnauthenticated();
         return;
@@ -118,7 +114,7 @@ export function AccountSettings({
         ? (ru ? `Завершено сессий: ${value.revoked_session_count}.` : `Sessions ended: ${value.revoked_session_count}.`)
         : (ru ? "Других активных сессий нет." : "There are no other active sessions."));
     } catch (caught) {
-      if (authenticationWasLost(caught)) {
+      if (accountAuthenticationWasLost(caught)) {
         setCurrentPassword("");
         setNewPassword("");
         setConfirmPassword("");

@@ -16,10 +16,11 @@ import { AccountSettings } from "./account-settings";
 import { AccountClientError, getAccountSession, logoutAccount } from "./account-client";
 import type { AccountSessionResponse } from "./account-contract";
 import { accountErrorMessage } from "./account-messages";
+import { ACCOUNT_AUTHENTICATION_LOST_EVENT } from "./account-authentication-state";
 import { getAccountOverview } from "./account-overview-client";
 import type { AccountOverviewResponse } from "./account-overview-contract";
 import { listAccountProjects } from "./account-workspace-client";
-import type { AccountProject } from "./account-workspace-contract";
+import { isAccountProject, type AccountProject } from "./account-workspace-contract";
 import {
   buildAccountWorkspaceNavigation,
   ownedAccountProjectContextId,
@@ -205,6 +206,27 @@ export function AccountWorkspaceShell({
   }, [locale, reloadToken]);
 
   useEffect(() => {
+    function updateProject(event: Event) {
+      if (!(event instanceof CustomEvent) || !isAccountProject(event.detail)) return;
+      const project = event.detail;
+      setProjects((current) => current.map((item) => item.id === project.id ? project : item));
+      setOverview((current) => current ? {
+        ...current,
+        projects: current.projects.map((item) => item.project.id === project.id
+          ? { ...item, project }
+          : item),
+      } : current);
+    }
+    window.addEventListener("webdiag:account-project-updated", updateProject);
+    return () => window.removeEventListener("webdiag:account-project-updated", updateProject);
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener(ACCOUNT_AUTHENTICATION_LOST_EVENT, handleUnauthenticated);
+    return () => window.removeEventListener(ACCOUNT_AUTHENTICATION_LOST_EVENT, handleUnauthenticated);
+  }, [handleUnauthenticated]);
+
+  useEffect(() => {
     if (!drawerOpen) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -357,6 +379,7 @@ export function AccountWorkspaceShell({
               projects={projects}
               overview={overview}
               onProjectCreated={addProject}
+              onProjectRestored={() => setReloadToken((value) => value + 1)}
             />
           ) : section === "settings" ? (
             <AccountSettings

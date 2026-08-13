@@ -1,6 +1,8 @@
 import { AccountClientError } from "./account-client";
 import { isAccountErrorPayload } from "./account-contract";
 import {
+  isArchivedAccountProject,
+  isArchivedAccountProjectListResponse,
   isAccountProject,
   isAccountProjectDetailResponse,
   isAccountProjectListResponse,
@@ -8,6 +10,8 @@ import {
   type AccountProject,
   type AccountProjectDetailResponse,
   type AccountProjectListResponse,
+  type ArchivedAccountProject,
+  type ArchivedAccountProjectListResponse,
   type SavedAuditDetailResponse,
 } from "./account-workspace-contract";
 
@@ -63,6 +67,63 @@ export async function createAccountProject(
       method: "POST",
       headers: { accept: "application/json", "content-type": "application/json" },
       body: JSON.stringify(input),
+    }),
+    isAccountProject,
+  );
+}
+
+export async function renameAccountProject(
+  projectId: string,
+  name: string,
+  fetcher: Fetcher = fetch,
+): Promise<AccountProject> {
+  return parse(
+    await fetcher(`/api/account/projects/${projectId}`, {
+      ...common,
+      method: "PATCH",
+      headers: { accept: "application/json", "content-type": "application/json" },
+      body: JSON.stringify({ name }),
+    }),
+    isAccountProject,
+  );
+}
+
+export async function archiveAccountProject(
+  projectId: string,
+  fetcher: Fetcher = fetch,
+): Promise<ArchivedAccountProject> {
+  return parse(
+    await fetcher(`/api/account/projects/${projectId}/archive`, {
+      ...common,
+      method: "POST",
+      headers: { accept: "application/json" },
+    }),
+    isArchivedAccountProject,
+  );
+}
+
+export async function listArchivedAccountProjects(
+  fetcher: Fetcher = fetch,
+): Promise<ArchivedAccountProjectListResponse> {
+  return parse(
+    await fetcher("/api/account/projects/archived", {
+      ...common,
+      method: "GET",
+      headers: { accept: "application/json" },
+    }),
+    isArchivedAccountProjectListResponse,
+  );
+}
+
+export async function restoreAccountProject(
+  projectId: string,
+  fetcher: Fetcher = fetch,
+): Promise<AccountProject> {
+  return parse(
+    await fetcher(`/api/account/projects/${projectId}/restore`, {
+      ...common,
+      method: "POST",
+      headers: { accept: "application/json" },
     }),
     isAccountProject,
   );

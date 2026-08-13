@@ -205,6 +205,107 @@ test.describe("account workspace", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Основной сайт" })).toBeVisible();
   });
 
+  test("project lifecycle is explicit, recoverable, localized, and mobile-safe", async ({ page }) => {
+    let active = true;
+    let currentProject = firstProject;
+    const archived = () => ({
+      contract_version: "webdiag.account.archived_project.v1",
+      ...currentProject,
+      archived_at: "2026-08-13T10:00:00Z",
+    });
+
+    await page.route("**/api/account/me", (route) => route.fulfill({ json: session }));
+    await page.unroute("**/api/account/overview");
+    await page.route("**/api/account/overview", (route) => route.fulfill({
+      json: active ? {
+        contract_version: "webdiag.account.overview.v1",
+        projects: [{
+          project: currentProject,
+          latest_audit: operationsOverview.projects[0]?.latest_audit ?? null,
+          monitor: operationsOverview.projects[0]?.monitor ?? null,
+          report_count: 2,
+          shared_report_count: 1,
+          latest_report_created_at: "2026-08-12T11:00:00Z",
+        }],
+      } : emptyOverview,
+    }));
+    await page.route("**/api/account/projects/archived", (route) => route.fulfill({
+      json: {
+        contract_version: "webdiag.account.archived_project_list.v1",
+        projects: active ? [] : [archived()],
+      },
+    }));
+    await page.route(`**/api/account/projects/${firstProject.id}/archive`, (route) => {
+      active = false;
+      return route.fulfill({ json: archived() });
+    });
+    await page.route(`**/api/account/projects/${firstProject.id}/restore`, (route) => {
+      active = true;
+      return route.fulfill({ json: currentProject });
+    });
+    await page.route(`**/api/account/projects/${firstProject.id}`, async (route) => {
+      if (route.request().method() === "PATCH") {
+        const body = route.request().postDataJSON() as { name: string };
+        currentProject = { ...currentProject, name: body.name, updated_at: "2026-08-13T09:30:00Z" };
+        return route.fulfill({ json: currentProject });
+      }
+      return route.fulfill({
+        json: {
+          contract_version: "webdiag.account.project_detail.v1",
+          project: currentProject,
+          saved_audits: [],
+        },
+      });
+    });
+    await page.route("**/api/account/projects", (route) => route.fulfill({
+      json: {
+        contract_version: "webdiag.account.project_list.v1",
+        projects: active ? [currentProject] : [],
+      },
+    }));
+
+    await page.goto(`/account/projects/${firstProject.id}`);
+    await page.getByRole("button", { name: "Управление проектом" }).click();
+    await page.getByLabel("Название проекта").fill("Сайт клиента");
+    await page.getByRole("button", { name: "Сохранить название" }).click();
+    await expect(page.getByRole("heading", { level: 1, name: "Сайт клиента" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Архивировать проект" }).click();
+    await expect(page.getByText("Отчёты и ссылки останутся доступны")).toBeVisible();
+    await page.getByRole("button", { name: "Отмена" }).click();
+    await expect(page).toHaveURL(new RegExp(`/account/projects/${firstProject.id}$`));
+    await page.getByRole("button", { name: "Архивировать проект" }).click();
+    await page.getByRole("button", { name: "Подтвердить архивирование" }).click();
+    await expect(page).toHaveURL(/\/account$/);
+    await expect(page.getByRole("heading", { name: "Архив проектов" })).toBeVisible();
+    await page.getByRole("button", { name: "Показать архив" }).click();
+    await expect(page.getByText("Сайт клиента")).toBeVisible();
+    await expect(page.getByText(/удалить навсегда/i)).toHaveCount(0);
+    await page.getByRole("button", { name: "Восстановить" }).click();
+    await expect(page.getByRole("heading", { name: "Сайт клиента" })).toBeVisible();
+    await expect(page.getByText("2", { exact: true }).first()).toBeVisible();
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/en/account/projects/${firstProject.id}`);
+    await expect(page.getByRole("button", { name: "Manage project" })).toBeVisible();
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+    await page.unroute(`**/api/account/projects/${firstProject.id}/archive`);
+    expectedBrowserErrors.push(
+      /^console\.error: Failed to load resource: the server responded with a status of 401\b/u,
+      new RegExp(`^http 401: .*\\/api\\/account\\/projects\\/${firstProject.id}\\/archive$`, "u"),
+    );
+    await page.route(`**/api/account/projects/${firstProject.id}/archive`, (route) => route.fulfill({
+      status: 401,
+      json: { detail: { code: "account_unauthenticated", message: "Session expired." } },
+    }));
+    await page.getByRole("button", { name: "Manage project" }).click();
+    await page.getByRole("button", { name: "Archive project" }).click();
+    await page.getByRole("button", { name: "Confirm archive" }).click();
+    await expect(page.getByRole("heading", { level: 1, name: "Sign in to your account" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Manage project" })).toHaveCount(0);
+  });
+
   test("mobile drawer traps focus, closes with Escape, and restores the trigger", async ({ page }) => {
     await page.route("**/api/account/me", (route) => route.fulfill({ json: session }));
     await page.route("**/api/account/projects", (route) => route.fulfill({
