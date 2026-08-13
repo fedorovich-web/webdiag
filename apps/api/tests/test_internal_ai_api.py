@@ -26,7 +26,7 @@ def seeded_run(database_path: Path, *, correlation: str = "grant"):
     store = SqliteAIStore(str(database_path), lease_seconds=60)
     ready = AIToolDefinition(
         id="test_text_tool",
-        contract_version="test.v1",
+        contract_version="v1",
         state=AIToolState.READY,
         credit_price=7,
         model_policy="test-only",
@@ -85,7 +85,7 @@ def test_claim_uses_stable_opaque_safety_identifier_without_account_identity(tmp
     store, user_id, _run_id = seeded_run(database_path)
     ready = AIToolDefinition(
         id="test_text_tool",
-        contract_version="test.v1",
+        contract_version="v1",
         state=AIToolState.READY,
         credit_price=7,
         model_policy="test-only",

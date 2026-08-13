@@ -33,7 +33,7 @@ def services(tmp_path: Path) -> tuple[AccountService, AIService, str, str, str]:
     )
     ready = AIToolDefinition(
         id="test_text_tool",
-        contract_version="test.v1",
+        contract_version="v1",
         state=AIToolState.READY,
         credit_price=7,
         model_policy="test-only",
