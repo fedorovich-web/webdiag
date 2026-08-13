@@ -430,10 +430,17 @@ test.describe("account monitoring", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Мониторинг проекта" })).toBeVisible();
     await page.getByRole("button", { name: "Включить мониторинг" }).click();
     await expect(page.getByRole("heading", { level: 2, name: "История проверок" })).toBeVisible();
+    await expect(page.getByText("Включён", { exact: true })).toBeVisible();
+    await expect(page.getByText("Раз в день", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("Europe/Berlin", { exact: true }).first()).toBeVisible();
     await page.getByRole("button", { name: "Проверить сейчас" }).click();
-    await expect(page.getByText("Оценка: 88 · Проблем: 2")).toBeVisible();
+    await expect(page.getByText("Базовый результат")).toBeVisible();
+    await expect(page.getByText("88/100")).toBeVisible();
+    await expect(page.getByText("Проблем в сохранённом аудите: 2")).toBeVisible();
     await expect(page.getByText(/uptime/i)).toHaveCount(0);
     await expect(page.getByText(/уведомлен/i)).toHaveCount(0);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   });
 });
 
