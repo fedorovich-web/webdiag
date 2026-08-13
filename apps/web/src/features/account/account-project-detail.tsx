@@ -7,11 +7,14 @@ import { accountErrorMessage } from "./account-messages";
 import { announceAccountAuthenticationLost } from "./account-authentication-state";
 import {
   archiveAccountProject,
+  getAccountCrawl,
   getAccountProject,
+  listAccountCrawls,
   renameAccountProject,
   runAccountProjectAudit,
+  startAccountCrawl,
 } from "./account-workspace-client";
-import type { AccountProjectDetailResponse } from "./account-workspace-contract";
+import type { AccountCrawlDetail, AccountCrawlJob, AccountProjectDetailResponse } from "./account-workspace-contract";
 import { accountPath, projectMonitoringPath, savedAuditPath } from "../../lib/routes";
 
 export function AccountProjectDetail({ locale, projectId }: { readonly locale: Locale; readonly projectId: string }) {
@@ -19,6 +22,10 @@ export function AccountProjectDetail({ locale, projectId }: { readonly locale: L
   const [detail, setDetail] = useState<AccountProjectDetailResponse | null>(null);
   const [loadedKey, setLoadedKey] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
+  const [crawlDetail, setCrawlDetail] = useState<AccountCrawlDetail | null>(null);
+  const [crawlHistory, setCrawlHistory] = useState<readonly AccountCrawlJob[]>([]);
+  const [crawlPending, setCrawlPending] = useState(false);
+  const [crawlError, setCrawlError] = useState("");
   const [managementOpen, setManagementOpen] = useState(false);
   const [archiveConfirmationOpen, setArchiveConfirmationOpen] = useState(false);
   const [renamePending, setRenamePending] = useState(false);
@@ -50,6 +57,43 @@ export function AccountProjectDetail({ locale, projectId }: { readonly locale: L
     return () => { active = false; };
   }, [locale, projectId, requestKey]);
 
+  useEffect(() => {
+    let active = true;
+    listAccountCrawls(projectId)
+      .then((value) => {
+        if (!active) return;
+        setCrawlHistory(value.jobs);
+        const latest = value.jobs[0];
+        if (latest) return getAccountCrawl(projectId, latest.id);
+        return null;
+      })
+      .then((value) => {
+        if (active && value) setCrawlDetail(value);
+      })
+      .catch((caught) => {
+        if (!active || announceAccountAuthenticationLost(caught)) return;
+        setCrawlError(accountErrorMessage(locale, caught));
+      });
+    return () => { active = false; };
+  }, [locale, projectId]);
+
+  useEffect(() => {
+    const job = crawlDetail?.job;
+    if (!job || !["queued", "running"].includes(job.state)) return;
+    const timer = window.setTimeout(() => {
+      getAccountCrawl(projectId, job.id)
+        .then((value) => {
+          setCrawlDetail(value);
+          setCrawlHistory((current) => [value.job, ...current.filter((item) => item.id !== value.job.id)]);
+        })
+        .catch((caught) => {
+          if (announceAccountAuthenticationLost(caught)) return;
+          setCrawlError(accountErrorMessage(locale, caught));
+        });
+    }, 2500);
+    return () => window.clearTimeout(timer);
+  }, [crawlDetail, locale, projectId]);
+
   async function runAudit() {
     setRunning(true);
     setError("");
@@ -61,6 +105,21 @@ export function AccountProjectDetail({ locale, projectId }: { readonly locale: L
       setError(accountErrorMessage(locale, caught));
     } finally {
       setRunning(false);
+    }
+  }
+
+  async function runCrawl() {
+    setCrawlPending(true);
+    setCrawlError("");
+    try {
+      const created = await startAccountCrawl(projectId);
+      setCrawlDetail(created);
+      setCrawlHistory((current) => [created.job, ...current.filter((item) => item.id !== created.job.id)]);
+    } catch (caught) {
+      if (announceAccountAuthenticationLost(caught)) return;
+      setCrawlError(accountErrorMessage(locale, caught));
+    } finally {
+      setCrawlPending(false);
     }
   }
 
@@ -131,6 +190,30 @@ export function AccountProjectDetail({ locale, projectId }: { readonly locale: L
           </div>
         </section>
       )}
+      <section className="wd-crawl-console" aria-labelledby="crawl-console-title">
+        <div className="wd-crawl-console-head">
+          <div>
+            <span className="eyebrow">{ru ? "Сайт целиком" : "Whole site"}</span>
+            <h2 id="crawl-console-title">{ru ? "Ограниченный обход проекта" : "Bounded project crawl"}</h2>
+            <p>{ru ? "До 25 HTML-страниц одного origin. Без входа в закрытые разделы, выполнения JavaScript и отправки форм." : "Up to 25 HTML pages on one origin. No authenticated areas, JavaScript execution, or form submissions."}</p>
+          </div>
+          <button
+            className="wd-button wd-button-primary"
+            type="button"
+            onClick={runCrawl}
+            disabled={crawlPending || crawlDetail?.job.state === "queued" || crawlDetail?.job.state === "running"}
+            aria-busy={crawlPending}
+          >
+            {crawlPending ? (ru ? "Ставим в очередь…" : "Queuing…") : (ru ? "Обойти сайт" : "Crawl site")}
+          </button>
+        </div>
+        {crawlError && <p className="wd-account-error" role="alert">{crawlError}</p>}
+        {!crawlDetail ? (
+          <div className="wd-crawl-empty"><strong>{ru ? "Обходов пока нет" : "No crawls yet"}</strong><p>{ru ? "Запустите обход, чтобы проверить дубли метаданных и страницы из sitemap без внутренних ссылок." : "Start a crawl to inspect duplicate metadata and sitemap pages without internal links."}</p></div>
+        ) : (
+          <CrawlSummary locale={locale} detail={crawlDetail} historyCount={crawlHistory.length} />
+        )}
+      </section>
       <section className="wd-audit-history" aria-labelledby="audit-history-title">
         <div className="wd-project-list-head"><div><span className="eyebrow">{ru ? "Реальные результаты" : "Real results"}</span><h2 id="audit-history-title">{ru ? "История аудитов" : "Audit history"}</h2></div><strong>{detail.saved_audits.length}</strong></div>
         {detail.saved_audits.length === 0 ? <div className="wd-account-empty"><p>{ru ? "Сохранённых аудитов пока нет." : "No saved audits yet."}</p></div> : (
@@ -147,4 +230,54 @@ export function AccountProjectDetail({ locale, projectId }: { readonly locale: L
       </section>
     </section>
   );
+}
+
+function CrawlSummary({ locale, detail, historyCount }: { readonly locale: Locale; readonly detail: AccountCrawlDetail; readonly historyCount: number }) {
+  const ru = locale === "ru";
+  const { job, result } = detail;
+  const state = {
+    queued: ru ? "В очереди" : "Queued",
+    running: ru ? "Выполняется" : "Running",
+    succeeded: ru ? "Готово" : "Completed",
+    failed: ru ? "Не завершено" : "Not completed",
+  }[job.state];
+  if (!result) return (
+    <div className="wd-crawl-progress" aria-live="polite">
+      <span className="wd-crawl-state" data-state={job.state}>{state}</span>
+      <div><strong>{ru ? "Последний обход" : "Latest crawl"}</strong><p>{new Intl.DateTimeFormat(ru ? "ru-RU" : "en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(job.created_at))}</p></div>
+      {job.state === "failed" && <p>{ru ? "Корневая страница не прошла безопасную проверку или не вернула HTML. Подробности сети не раскрываются." : "The root page failed the safe-fetch checks or did not return HTML. Network internals are not exposed."}</p>}
+    </div>
+  );
+  const duplicatePages = new Set([...result.duplicate_titles, ...result.duplicate_descriptions].flatMap((group) => group.urls)).size;
+  return (
+    <div className="wd-crawl-result">
+      <div className="wd-crawl-result-meta"><span className="wd-crawl-state" data-state={job.state}>{state}</span><span>{ru ? `История: ${historyCount}` : `History: ${historyCount}`}</span><span>{new Intl.DateTimeFormat(ru ? "ru-RU" : "en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(result.completed_at))}</span></div>
+      <dl>
+        <div><dt>{ru ? "Получено HTML" : "HTML fetched"}</dt><dd>{result.pages.length}</dd></div>
+        <div><dt>{ru ? "Страниц с дублями" : "Pages with duplicates"}</dt><dd>{duplicatePages}</dd></div>
+        <div><dt>{ru ? "Без внутренних ссылок" : "No internal links"}</dt><dd>{result.orphan_urls.length}</dd></div>
+        <div><dt>{ru ? "Не проверено" : "Not checked"}</dt><dd>{result.page_failures.length}</dd></div>
+      </dl>
+      {result.page_budget_exhausted && <p className="wd-crawl-limit-note">{ru ? `Достигнут лимит ${result.page_limit} страниц. Результат не описывает весь сайт.` : `The ${result.page_limit}-page limit was reached. The result does not describe the entire site.`}</p>}
+      {(result.duplicate_titles.length > 0 || result.duplicate_descriptions.length > 0 || result.orphan_urls.length > 0) && (
+        <div className="wd-crawl-findings">
+          {result.duplicate_titles.length > 0 && <div><strong>{ru ? "Повторяющиеся title" : "Duplicate titles"}</strong><p>{formatGroupCount(result.duplicate_titles.length, locale)}</p></div>}
+          {result.duplicate_descriptions.length > 0 && <div><strong>{ru ? "Повторяющиеся description" : "Duplicate descriptions"}</strong><p>{formatGroupCount(result.duplicate_descriptions.length, locale)}</p></div>}
+          {result.orphan_urls.length > 0 && <div><strong>{ru ? "Кандидаты без внутренних ссылок" : "Unlinked candidates"}</strong><p>{ru ? `${result.orphan_urls.length} URL из sitemap` : `${result.orphan_urls.length} sitemap URLs`}</p></div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function formatGroupCount(count: number, locale: Locale): string {
+  if (locale === "en") return `${count} ${count === 1 ? "group" : "groups"}`;
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  const noun = mod10 === 1 && mod100 !== 11
+    ? "группа"
+    : mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)
+      ? "группы"
+      : "групп";
+  return `${count} ${noun}`;
 }

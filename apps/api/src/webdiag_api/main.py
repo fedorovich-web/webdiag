@@ -18,6 +18,8 @@ from webdiag_api.ai.api import internal_router as ai_internal_router
 from webdiag_api.ai.api import router as ai_router
 from webdiag_api.audit.api import router as audit_router
 from webdiag_api.config import settings
+from webdiag_api.crawl.api import account_router as crawl_account_router
+from webdiag_api.crawl.api import router as crawl_internal_router
 from webdiag_api.registry import public_tools
 from webdiag_api.security.request_limits import RequestBodyLimitMiddleware
 from webdiag_api.tools.accessibility_static import router as accessibility_static_tool_router
@@ -54,6 +56,8 @@ app.include_router(account_router)
 app.include_router(overview_router)
 app.include_router(ai_router)
 app.include_router(ai_internal_router)
+app.include_router(crawl_internal_router)
+app.include_router(crawl_account_router)
 app.include_router(workspace_router)
 app.include_router(monitoring_router)
 app.include_router(report_account_router)

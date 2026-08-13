@@ -3008,10 +3008,189 @@ body:has(.wd-account-workspace-page) .site-footer {
 }
 
 .wd-account-workspace-page .wd-audit-history,
+.wd-account-workspace-page .wd-crawl-console,
 .wd-account-workspace-page .wd-saved-checks,
 .wd-account-workspace-page .wd-saved-issues,
 .wd-account-workspace-page .wd-create-report-card {
   box-shadow: none;
+}
+
+.wd-crawl-console {
+  display: grid;
+  gap: 16px;
+  border: 1px solid var(--wd-account-border);
+  border-radius: var(--wd-account-radius);
+  padding: 20px;
+  background: color-mix(in srgb, var(--brand-soft) 30%, var(--surface));
+}
+
+.wd-crawl-console h2,
+.wd-crawl-console p {
+  margin: 0;
+}
+
+.wd-crawl-console h2 {
+  margin-top: 4px;
+}
+
+.wd-crawl-console-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.wd-crawl-console-head > div {
+  max-width: 66ch;
+}
+
+.wd-crawl-console-head p,
+.wd-crawl-empty p,
+.wd-crawl-progress p,
+.wd-crawl-result-meta,
+.wd-crawl-findings p {
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.wd-crawl-empty,
+.wd-crawl-progress,
+.wd-crawl-result {
+  border-top: 1px solid var(--wd-account-border);
+  padding-top: 16px;
+}
+
+.wd-crawl-progress {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.wd-crawl-progress > p {
+  margin-left: auto;
+  max-width: 48ch;
+}
+
+.wd-crawl-state {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  border-radius: 999px;
+  padding: 5px 10px;
+  background: var(--surface-muted);
+  color: var(--text-soft);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.wd-crawl-state[data-state="running"],
+.wd-crawl-state[data-state="queued"] {
+  background: color-mix(in srgb, var(--brand-soft) 72%, var(--surface));
+  color: var(--brand-strong);
+}
+
+.wd-crawl-state[data-state="succeeded"] {
+  background: color-mix(in srgb, var(--success) 14%, var(--surface));
+  color: var(--success);
+}
+
+.wd-crawl-state[data-state="failed"] {
+  background: color-mix(in srgb, var(--danger) 13%, var(--surface));
+  color: var(--danger);
+}
+
+.wd-crawl-result {
+  display: grid;
+  gap: 14px;
+}
+
+.wd-crawl-result-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin: 0;
+}
+
+.wd-crawl-result dl {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  margin: 0;
+  border: 1px solid var(--wd-account-border);
+  border-radius: 12px;
+  background: var(--wd-account-border);
+}
+
+.wd-crawl-result dl > div {
+  display: grid;
+  gap: 5px;
+  min-height: 78px;
+  padding: 13px 14px;
+  background: var(--surface);
+}
+
+.wd-crawl-result dt {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.wd-crawl-result dd {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 850;
+}
+
+.wd-crawl-limit-note {
+  border-left: 3px solid var(--warning);
+  padding-left: 11px;
+  color: var(--text-soft);
+  font-size: 13px;
+}
+
+.wd-crawl-findings {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.wd-crawl-findings > div {
+  border: 1px solid var(--wd-account-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: var(--surface);
+}
+
+@media (max-width: 760px) {
+  .wd-crawl-console-head,
+  .wd-crawl-progress {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .wd-crawl-console-head .wd-button {
+    width: 100%;
+  }
+
+  .wd-crawl-progress > p {
+    margin-left: 0;
+  }
+
+  .wd-crawl-result dl,
+  .wd-crawl-findings {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 440px) {
+  .wd-crawl-result dl,
+  .wd-crawl-findings {
+    grid-template-columns: 1fr;
+  }
 }
 
 .wd-account-workspace-page .wd-report-detail-page,

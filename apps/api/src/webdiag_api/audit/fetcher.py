@@ -128,8 +128,19 @@ class SafeHttpFetcher:
         self._peer_address_provider = peer_address_provider or default_peer_address_provider
         self._transport = transport
 
-    def _validate_before_request(self, raw_url: str) -> _ValidatedFetchTarget:
+    def _validate_before_request(
+        self,
+        raw_url: str,
+        *,
+        allowed_origin: tuple[str, str, int] | None = None,
+    ) -> _ValidatedFetchTarget:
         validated = validate_url(raw_url)
+        if allowed_origin is not None and (
+            validated.scheme,
+            validated.hostname,
+            validated.port,
+        ) != allowed_origin:
+            raise UrlPolicyError("URL is outside the allowed origin.")
         resolved_addresses = self._resolver(validated.hostname, validated.port)
         validate_resolved_addresses(resolved_addresses)
         normalized_addresses = tuple(
@@ -148,8 +159,18 @@ class SafeHttpFetcher:
         *,
         read_body: bool = True,
         extra_headers: Mapping[str, str] | None = None,
+        allowed_origin: str | None = None,
+        redirect_validator: Callable[[str], None] | None = None,
     ) -> SafeFetchResult:
-        current_target = self._validate_before_request(raw_url)
+        origin_key: tuple[str, str, int] | None = None
+        if allowed_origin is not None:
+            validated_origin = validate_url(allowed_origin)
+            origin_key = (
+                validated_origin.scheme,
+                validated_origin.hostname,
+                validated_origin.port,
+            )
+        current_target = self._validate_before_request(raw_url, allowed_origin=origin_key)
         requested_url = current_target.logical_url
         redirect_chain: list[RedirectHop] = []
 
@@ -172,7 +193,12 @@ class SafeHttpFetcher:
                     if len(redirect_chain) >= self.config.max_redirects:
                         raise SafeFetchError("Redirect limit exceeded.")
                     target_url = urljoin(current_target.logical_url, location)
-                    next_target = self._validate_before_request(target_url)
+                    if redirect_validator is not None:
+                        redirect_validator(target_url)
+                    next_target = self._validate_before_request(
+                        target_url,
+                        allowed_origin=origin_key,
+                    )
                     redirect_chain.append(
                         RedirectHop(
                             source_url=current_target.logical_url,

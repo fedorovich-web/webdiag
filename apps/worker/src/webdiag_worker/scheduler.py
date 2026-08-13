@@ -4,6 +4,7 @@ import os
 import time
 
 from webdiag_worker.ai import cleanup_ai_artifacts
+from webdiag_worker.crawler import run_one_crawl
 from webdiag_worker.monitoring import run_due_monitors
 
 
@@ -17,6 +18,11 @@ def run_cycle() -> None:
             cleanup_ai_artifacts()
         except Exception as error:
             print(f"AI artifact cleanup error: {type(error).__name__}", flush=True)
+    if os.getenv("WEBDIAG_CRAWLER_INTERNAL_TOKEN"):
+        try:
+            run_one_crawl()
+        except Exception as error:
+            print(f"crawler scheduler error: {type(error).__name__}", flush=True)
 
 
 def main() -> None:

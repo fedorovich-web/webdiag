@@ -78,3 +78,15 @@ test("account compose requires an explicit monitoring token", () => {
     "WEBDIAG_MONITORING_INTERNAL_TOKEN:?set a random token of at least 32 characters",
   ]);
 });
+
+test("account compose exposes one distinct crawler token only to API and scheduler", () => {
+  const assignments = [
+    ...accountComposeOverride.matchAll(
+      /WEBDIAG_CRAWLER_INTERNAL_TOKEN:\s*["']?\$\{([^}]+)\}/g,
+    ),
+  ].map((match) => match[1]);
+  assert.deepEqual(assignments, [
+    "WEBDIAG_CRAWLER_INTERNAL_TOKEN:?set a distinct random token of at least 32 characters",
+    "WEBDIAG_CRAWLER_INTERNAL_TOKEN:?set a distinct random token of at least 32 characters",
+  ]);
+});

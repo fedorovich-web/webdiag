@@ -414,6 +414,35 @@ class SqliteWorkspaceStore:
                     """,
                     (now, user_id, project_id),
                 )
+            crawl_table = connection.execute(
+                """
+                SELECT 1 FROM sqlite_master
+                WHERE type = 'table' AND name = 'crawl_jobs'
+                """
+            ).fetchone()
+            if crawl_table is not None:
+                connection.execute(
+                    """
+                    UPDATE crawl_jobs
+                    SET state = 'failed', public_error_code = 'crawl_project_archived',
+                        updated_at = ?
+                    WHERE user_id = ? AND project_id = ?
+                        AND state IN ('queued', 'running')
+                    """,
+                    (now, user_id, project_id),
+                )
+                connection.execute(
+                    """
+                    UPDATE crawl_job_attempts
+                    SET completed_at = ?
+                    WHERE job_id IN (
+                        SELECT id FROM crawl_jobs
+                        WHERE user_id = ? AND project_id = ?
+                            AND public_error_code = 'crawl_project_archived'
+                    ) AND completed_at IS NULL
+                    """,
+                    (now, user_id, project_id),
+                )
             archived = connection.execute(
                 """
                 SELECT id, user_id, name, origin, created_at, updated_at, archived_at

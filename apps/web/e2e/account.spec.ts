@@ -203,6 +203,9 @@ test.describe("account workspace", () => {
         saved_audits: [],
       },
     }));
+    await page.route(`**/api/account/projects/${firstProject.id}/crawls`, (route) => route.fulfill({
+      json: { contract_version: "webdiag.account.crawl_list.v1", jobs: [] },
+    }));
 
     await page.goto(`/account/projects/${firstProject.id}`);
     await expect(
@@ -210,6 +213,63 @@ test.describe("account workspace", () => {
     ).toHaveAttribute("aria-current", "page");
     await expect(page.getByLabel("Текущий проект")).toHaveValue(firstProject.id);
     await expect(page.getByRole("heading", { level: 1, name: "Основной сайт" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 2, name: "Ограниченный обход проекта" })).toBeVisible();
+    await expect(page.getByText("До 25 HTML-страниц одного origin")).toBeVisible();
+  });
+
+  test("bounded crawl shows persisted findings without claiming full coverage", async ({ page }) => {
+    const job = {
+      id: "55555555-5555-4555-8555-555555555555",
+      project_id: firstProject.id,
+      origin: firstProject.origin,
+      state: "succeeded",
+      error_code: null,
+      created_at: "2026-08-13T12:00:00Z",
+      updated_at: "2026-08-13T12:01:00Z",
+    };
+    const result = {
+      contract_version: "webdiag.crawl.result.v1",
+      origin: firstProject.origin,
+      pages: [{
+        url: "https://example.com/",
+        status_code: 200,
+        title: "Example",
+        meta_description: null,
+        internal_links: ["https://example.com/about"],
+      }],
+      page_failures: [],
+      page_limit: 25,
+      page_budget_exhausted: true,
+      sitemap_url: "https://example.com/sitemap.xml",
+      sitemap_url_count: 3,
+      duplicate_titles: [{ value: "Duplicate", urls: ["https://example.com/a", "https://example.com/b"] }],
+      duplicate_descriptions: [],
+      orphan_urls: ["https://example.com/orphan"],
+      completed_at: "2026-08-13T12:01:00Z",
+    };
+    await page.route("**/api/account/me", (route) => route.fulfill({ json: session }));
+    await page.route("**/api/account/projects", (route) => route.fulfill({
+      json: { contract_version: "webdiag.account.project_list.v1", projects: [firstProject] },
+    }));
+    await page.route(`**/api/account/projects/${firstProject.id}`, (route) => route.fulfill({
+      json: { contract_version: "webdiag.account.project_detail.v1", project: firstProject, saved_audits: [] },
+    }));
+    await page.route(`**/api/account/projects/${firstProject.id}/crawls`, (route) => route.fulfill({
+      json: { contract_version: "webdiag.account.crawl_list.v1", jobs: [job] },
+    }));
+    await page.route(`**/api/account/projects/${firstProject.id}/crawls/${job.id}`, (route) => route.fulfill({
+      json: { contract_version: "webdiag.account.crawl_detail.v1", job, result },
+    }));
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`/account/projects/${firstProject.id}`);
+    await expect(page.getByText("Получено HTML")).toBeVisible();
+    await expect(page.getByText("Страниц с дублями")).toBeVisible();
+    await expect(page.getByText("Достигнут лимит 25 страниц. Результат не описывает весь сайт.")).toBeVisible();
+    await expect(page.getByText(/100%|полный охват|весь сайт проверен/i)).toHaveCount(0);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect.poll(() => page.getByRole("button", { name: "Обойти сайт" }).evaluate((button) => button.clientHeight >= 44)).toBe(true);
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   });
 
   test("project lifecycle is explicit, recoverable, localized, and mobile-safe", async ({ page }) => {
@@ -269,6 +329,9 @@ test.describe("account workspace", () => {
         contract_version: "webdiag.account.project_list.v1",
         projects: active ? [currentProject] : [],
       },
+    }));
+    await page.route(`**/api/account/projects/${firstProject.id}/crawls`, (route) => route.fulfill({
+      json: { contract_version: "webdiag.account.crawl_list.v1", jobs: [] },
     }));
 
     await page.goto(`/account/projects/${firstProject.id}`);

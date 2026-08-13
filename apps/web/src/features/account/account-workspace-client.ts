@@ -7,12 +7,16 @@ import {
   isAccountProjectDetailResponse,
   isAccountProjectListResponse,
   isSavedAuditDetailResponse,
+  isAccountCrawlDetail,
+  isAccountCrawlList,
   type AccountProject,
   type AccountProjectDetailResponse,
   type AccountProjectListResponse,
   type ArchivedAccountProject,
   type ArchivedAccountProjectListResponse,
   type SavedAuditDetailResponse,
+  type AccountCrawlDetail,
+  type AccountCrawlList,
 } from "./account-workspace-contract";
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
@@ -169,5 +173,48 @@ export async function getAccountSavedAudit(
       headers: { accept: "application/json" },
     }),
     isSavedAuditDetailResponse,
+  );
+}
+
+export async function startAccountCrawl(
+  projectId: string,
+  fetcher: Fetcher = fetch,
+): Promise<AccountCrawlDetail> {
+  return parse(
+    await fetcher(`/api/account/projects/${projectId}/crawls`, {
+      ...common,
+      method: "POST",
+      headers: { accept: "application/json" },
+    }),
+    isAccountCrawlDetail,
+  );
+}
+
+export async function listAccountCrawls(
+  projectId: string,
+  fetcher: Fetcher = fetch,
+): Promise<AccountCrawlList> {
+  return parse(
+    await fetcher(`/api/account/projects/${projectId}/crawls`, {
+      ...common,
+      method: "GET",
+      headers: { accept: "application/json" },
+    }),
+    isAccountCrawlList,
+  );
+}
+
+export async function getAccountCrawl(
+  projectId: string,
+  jobId: string,
+  fetcher: Fetcher = fetch,
+): Promise<AccountCrawlDetail> {
+  return parse(
+    await fetcher(`/api/account/projects/${projectId}/crawls/${jobId}`, {
+      ...common,
+      method: "GET",
+      headers: { accept: "application/json" },
+    }),
+    isAccountCrawlDetail,
   );
 }

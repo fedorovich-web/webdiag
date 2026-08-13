@@ -16,6 +16,7 @@ services:
       WEBDIAG_ACCOUNT_LOGIN_BLOCK_SECONDS: 900
       WEBDIAG_MONITORING_INTERNAL_TOKEN: "${WEBDIAG_MONITORING_INTERNAL_TOKEN:?set a random token of at least 32 characters}"
       WEBDIAG_AI_INTERNAL_TOKEN: "${WEBDIAG_AI_INTERNAL_TOKEN:-}"
+      WEBDIAG_CRAWLER_INTERNAL_TOKEN: "${WEBDIAG_CRAWLER_INTERNAL_TOKEN:?set a distinct random token of at least 32 characters}"
     volumes:
       - account_data:/data
 
@@ -30,6 +31,8 @@ services:
       WEBDIAG_MONITORING_SCHEDULER_INTERVAL_SECONDS: 60
       WEBDIAG_AI_API_INTERNAL_URL: http://api:8000
       WEBDIAG_AI_INTERNAL_TOKEN: "${WEBDIAG_AI_INTERNAL_TOKEN:-}"
+      WEBDIAG_CRAWLER_API_INTERNAL_URL: http://api:8000
+      WEBDIAG_CRAWLER_INTERNAL_TOKEN: "${WEBDIAG_CRAWLER_INTERNAL_TOKEN:?set a distinct random token of at least 32 characters}"
     depends_on:
       - api
 

@@ -36,6 +36,13 @@ export function accountWorkspaceLifecyclePath(
     : null;
 }
 
+export function accountCrawlPath(projectId: string, jobId?: string): string | null {
+  if (!validAccountResourceId(projectId) || (jobId && !validAccountResourceId(jobId))) {
+    return null;
+  }
+  return `/v1/account/projects/${projectId}/crawls${jobId ? `/${jobId}` : ""}`;
+}
+
 export async function proxyAccountWorkspace(
   request: NextRequest,
   options: { readonly method: "GET" | "POST" | "PATCH"; readonly path: string; readonly body?: boolean },

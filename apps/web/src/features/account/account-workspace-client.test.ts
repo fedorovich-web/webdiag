@@ -3,12 +3,15 @@ import {
   archiveAccountProject,
   createAccountProject,
   getAccountProject,
+  getAccountCrawl,
   getAccountSavedAudit,
   listArchivedAccountProjects,
   listAccountProjects,
+  listAccountCrawls,
   renameAccountProject,
   restoreAccountProject,
   runAccountProjectAudit,
+  startAccountCrawl,
 } from "./account-workspace-client";
 import {
   isArchivedAccountProject,
@@ -16,6 +19,8 @@ import {
   isAccountProject,
   isAccountProjectDetailResponse,
   isAccountProjectListResponse,
+  isAccountCrawlDetail,
+  isAccountCrawlList,
   isSavedAuditDetailResponse,
 } from "./account-workspace-contract";
 import { accountWorkspaceLifecyclePath } from "./account-workspace-proxy";
@@ -51,6 +56,15 @@ const payload = {
   issues: [],
   completed_at: "2026-07-31T10:01:00Z",
 };
+const crawlJob = {
+  id: "33333333-3333-4333-8333-333333333333",
+  project_id: project.id,
+  origin: project.origin,
+  state: "queued" as const,
+  error_code: null,
+  created_at: "2026-08-13T11:00:00Z",
+  updated_at: "2026-08-13T11:00:00Z",
+};
 
 describe("account workspace contracts", () => {
   it("allows only explicit lifecycle upstream paths", () => {
@@ -63,6 +77,31 @@ describe("account workspace contracts", () => {
     expect(isAccountProjectDetailResponse({ contract_version: "webdiag.account.project_detail.v1", project, saved_audits: [audit] })).toBe(true);
     expect(isSavedAuditDetailResponse({ contract_version: "webdiag.account.saved_audit_detail.v1", project, audit, payload })).toBe(true);
     expect(isSavedAuditDetailResponse({ contract_version: "webdiag.account.saved_audit_detail.v1", project, audit, payload: { ...payload, job_id: "internal" } })).toBe(false);
+    expect(isAccountCrawlList({ contract_version: "webdiag.account.crawl_list.v1", jobs: [crawlJob] })).toBe(true);
+    expect(isAccountCrawlDetail({ contract_version: "webdiag.account.crawl_detail.v1", job: crawlJob, result: null })).toBe(true);
+    expect(isAccountCrawlDetail({ contract_version: "webdiag.account.crawl_detail.v1", job: { ...crawlJob, lease_token: "internal" }, result: null })).toBe(false);
+  });
+
+  it("uses bodyless same-origin crawl endpoints and validates project binding", async () => {
+    const calls: Array<[string, RequestInit | undefined]> = [];
+    const fetcher = async (input: string, init?: RequestInit) => {
+      calls.push([input, init]);
+      const response = input.endsWith("/crawls") && init?.method === "GET"
+        ? { contract_version: "webdiag.account.crawl_list.v1", jobs: [crawlJob] }
+        : { contract_version: "webdiag.account.crawl_detail.v1", job: crawlJob, result: null };
+      return new Response(JSON.stringify(response), { status: init?.method === "POST" ? 201 : 200 });
+    };
+
+    await startAccountCrawl(project.id, fetcher);
+    await listAccountCrawls(project.id, fetcher);
+    await getAccountCrawl(project.id, crawlJob.id, fetcher);
+
+    expect(calls.map(([path, init]) => [path, init?.method, init?.body])).toEqual([
+      [`/api/account/projects/${project.id}/crawls`, "POST", undefined],
+      [`/api/account/projects/${project.id}/crawls`, "GET", undefined],
+      [`/api/account/projects/${project.id}/crawls/${crawlJob.id}`, "GET", undefined],
+    ]);
+    expect(calls.every(([, init]) => init?.credentials === "same-origin")).toBe(true);
   });
 
   it("accepts exact archived project contracts and rejects malformed snapshots", () => {

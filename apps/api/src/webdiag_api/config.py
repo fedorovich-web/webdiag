@@ -29,6 +29,13 @@ _AI_TOKEN_PLACEHOLDERS = frozenset(
         "replace-with-at-least-32-random-characters",
     }
 )
+_CRAWLER_TOKEN_PLACEHOLDERS = frozenset(
+    {
+        "change-this-crawler-token-32chars",
+        "replace-with-at-least-32-random-characters",
+        "replace-with-a-distinct-32-character-random-token",
+    }
+)
 
 
 class Settings(BaseSettings):
@@ -80,6 +87,11 @@ class Settings(BaseSettings):
     monitoring_internal_token: str = ""
     monitoring_scheduler_interval_seconds: int = Field(default=60, ge=30, le=300)
     ai_internal_token: str = ""
+    crawler_internal_token: str = ""
+    crawler_lease_seconds: int = Field(default=120, ge=30, le=300)
+    crawler_page_limit: int = Field(default=25, ge=1, le=25)
+    crawler_page_body_max_bytes: int = Field(default=500_000, ge=16_384, le=1_000_000)
+    crawler_deadline_seconds: int = Field(default=60, ge=10, le=120)
     ai_safety_identifier_secret: str = ""
     ai_artifact_prefix: str = "ai-uploads"
     ai_lease_seconds: int = Field(default=900, ge=60, le=3600)
@@ -149,6 +161,26 @@ class Settings(BaseSettings):
             raise ValueError("AI internal token must not use a documented placeholder")
         return normalized
 
+    @field_validator("crawler_internal_token")
+    @classmethod
+    def validate_crawler_internal_token(cls, value: str) -> str:
+        normalized = value.strip()
+        if value != normalized:
+            raise ValueError(
+                "crawler internal token must contain only visible ASCII characters "
+                "without spaces"
+            )
+        if normalized and len(normalized) < 32:
+            raise ValueError("crawler internal token must contain at least 32 characters")
+        if any(not 0x21 <= ord(character) <= 0x7E for character in normalized):
+            raise ValueError(
+                "crawler internal token must contain only visible ASCII characters "
+                "without spaces"
+            )
+        if normalized in _CRAWLER_TOKEN_PLACEHOLDERS:
+            raise ValueError("crawler internal token must not use a documented placeholder")
+        return normalized
+
     @field_validator("ai_safety_identifier_secret")
     @classmethod
     def validate_ai_safety_identifier_secret(cls, value: str) -> str:
@@ -187,15 +219,18 @@ class Settings(BaseSettings):
                 raise ValueError("production monitoring internal token is required")
             if not self.ai_internal_token:
                 raise ValueError("production AI internal token is required")
+            if not self.crawler_internal_token:
+                raise ValueError("production crawler internal token is required")
             if not self.ai_safety_identifier_secret:
                 raise ValueError("production AI safety identifier secret is required")
             if len(
                 {
                     self.monitoring_internal_token,
                     self.ai_internal_token,
+                    self.crawler_internal_token,
                     self.ai_safety_identifier_secret,
                 }
-            ) != 3:
+            ) != 4:
                 raise ValueError("production internal tokens must be distinct")
         if self.account_request_body_max_bytes > self.http_request_body_max_bytes:
             raise ValueError("account request body max must not exceed HTTP request body max")
