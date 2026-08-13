@@ -28,8 +28,12 @@ def _normalize_public_url(value: str) -> str:
 
 class AuditActionPlanInput(_StrictModel):
     locale: Locale
-    project_id: str = Field(min_length=36, max_length=36, pattern=r"^[0-9a-f-]{36}$")
-    audit_id: str = Field(min_length=36, max_length=36, pattern=r"^[0-9a-f-]{36}$")
+    project_id: str = Field(
+        pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    )
+    audit_id: str = Field(
+        pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    )
 
 
 class MetaSerpInput(_StrictModel):

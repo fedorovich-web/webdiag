@@ -48,6 +48,15 @@ def test_public_inputs_are_strict_bounded_and_canonical() -> None:
                 "unexpected": "not allowed",
             },
         )
+    with pytest.raises(AIToolContractError):
+        validate_public_input(
+            "ai_audit_action_plan",
+            {
+                "locale": "ru",
+                "project_id": "------------------------------------",
+                "audit_id": "00000000-0000-4000-8000-000000000000",
+            },
+        )
 
 
 def test_audit_action_plan_rejects_unknown_issue_and_url_references() -> None:
