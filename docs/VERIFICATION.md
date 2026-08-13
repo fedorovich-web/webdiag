@@ -1017,3 +1017,27 @@ PASS — 31 locked packages match the installed win32 environment
 ```
 
 Frontend sources were not changed in this follow-up, so the unchanged local frontend suites were not repeated. The push-triggered GitHub `Full verification` remains the complete repository gate.
+
+## A12.1c grounded content workbench
+
+Fresh backend verification on 2026-08-13:
+
+```text
+npm run test:python
+PASS — 441/441
+
+npm run lint:python
+PASS — Ruff reported no findings
+
+npm run verify:python-lock
+PASS — 39 locked packages match the installed win32 environment
+
+git diff --check
+PASS
+```
+
+The new coverage includes 15 API contract/security cases, three worker OpenRouter policy
+cases, and RU/EN fixtures for Content Brief, Content Optimizer, and Search Intent/Page Fit.
+One additional regression confirms that query strings and fragments are removed from content
+page URLs before persistence or provider submission. No frontend source, visual baseline,
+OpenRouter endpoint, object storage, payment system, release, or deployment was touched.
