@@ -31,6 +31,10 @@ class FakeS3Client:
         self.body = body
         self.content_length = content_length
         self.delete_calls: list[dict[str, object]] = []
+        self.put_calls: list[dict[str, object]] = []
+
+    def put_object(self, **kwargs: object) -> None:
+        self.put_calls.append(kwargs)
 
     def get_object(self, **_kwargs: object) -> dict[str, object]:
         response: dict[str, object] = {"Body": self.body}
@@ -60,6 +64,23 @@ def test_worker_local_storage_reads_api_object_with_bound_and_deletes(tmp_path: 
     assert not path.exists()
 
 
+def test_worker_local_storage_writes_private_bounded_artifact(tmp_path: Path) -> None:
+    storage = LocalArtifactStorage(tmp_path)
+
+    stored = storage.put(
+        artifact_id="11111111-1111-4111-8111-111111111111",
+        data=b"generated-image",
+        media_type="image/png",
+    )
+
+    assert stored.object_key.startswith("ai-uploads/")
+    assert storage.read(object_key=stored.object_key, max_bytes=15) == b"generated-image"
+    assert stored.byte_size == 15
+    assert len(stored.sha256) == 64
+    with pytest.raises(ArtifactTooLargeError):
+        storage.put(artifact_id="x", data=b"x" * (4 * 1024 * 1024 + 1), media_type="image/png")
+
+
 def test_worker_s3_storage_counts_fragmented_body_without_content_length() -> None:
     body = FakeStreamingBody([b"12", b"34", b"5", b""])
     client = FakeS3Client(body)
@@ -80,3 +101,25 @@ def test_worker_s3_storage_rejects_fragmented_oversize_and_closes_body() -> None
         storage.read(object_key=object_key, max_bytes=5)
 
     assert body.closed
+
+
+def test_worker_s3_storage_writes_private_object() -> None:
+    client = FakeS3Client(FakeStreamingBody([]))
+    storage = S3ArtifactStorage(client=client, bucket="private-bucket", prefix="ai-uploads")
+
+    stored = storage.put(
+        artifact_id="11111111-1111-4111-8111-111111111111",
+        data=b"image",
+        media_type="image/webp",
+    )
+
+    assert client.put_calls == [
+        {
+            "ACL": "private",
+            "Body": b"image",
+            "Bucket": "private-bucket",
+            "ContentLength": 5,
+            "ContentType": "image/webp",
+            "Key": stored.object_key,
+        }
+    ]

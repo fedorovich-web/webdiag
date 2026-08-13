@@ -1,8 +1,11 @@
 import json
 import hashlib
+import base64
+import io
 
 import httpx
 import pytest
+from PIL import Image, PngImagePlugin
 
 from webdiag_worker.ai import (
     KnownSafeProviderError,
@@ -10,12 +13,14 @@ from webdiag_worker.ai import (
     ProviderRequest,
 )
 from webdiag_worker.openrouter_provider import OpenRouterProvider
+from webdiag_worker.image_output import normalize_generated_image
 
 
 class FakeArtifactStorage:
     def __init__(self, data: bytes | BaseException) -> None:
         self.data = data
         self.reads: list[tuple[str, int]] = []
+        self.writes: list[tuple[str, bytes, str]] = []
 
     def read(self, *, object_key: str, max_bytes: int) -> bytes:
         self.reads.append((object_key, max_bytes))
@@ -25,6 +30,17 @@ class FakeArtifactStorage:
 
     def delete(self, *, object_key: str) -> None:
         raise AssertionError(object_key)
+
+    def put(self, *, artifact_id: str, data: bytes, media_type: str):
+        from webdiag_worker.artifact_storage import StoredArtifact
+
+        self.writes.append((artifact_id, data, media_type))
+        return StoredArtifact(
+            object_key="ai-uploads/ab/" + "c" * 62,
+            media_type=media_type,
+            byte_size=len(data),
+            sha256=hashlib.sha256(data).hexdigest(),
+        )
 
 
 def _response(
@@ -64,6 +80,16 @@ def _provider(handler, *, artifact_storage=None) -> OpenRouterProvider:
         headers={"Authorization": "Bearer test-openrouter-key"},
     )
     return OpenRouterProvider(client, artifact_storage=artifact_storage)
+
+
+def _png(*, metadata: bool = False) -> bytes:
+    output = io.BytesIO()
+    info = None
+    if metadata:
+        info = PngImagePlugin.PngInfo()
+        info.add_text("private", "provider-metadata")
+    Image.new("RGB", (3, 2), (12, 34, 56)).save(output, format="PNG", pnginfo=info)
+    return output.getvalue()
 
 
 def _request(
@@ -184,6 +210,163 @@ def test_alt_text_preparation_checks_private_object_and_sends_one_low_detail_ima
     assert image_part["image_url"]["url"].startswith("data:image/png;base64,")
     assert "object_key" not in requests[0].content.decode()
     assert "unknown people" in sent["messages"][0]["content"]
+
+
+def test_image_studio_uses_dedicated_gpt_image_2_api_and_stores_private_output() -> None:
+    image = _png()
+    storage = FakeArtifactStorage(b"")
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            200,
+            json={
+                "created": 1_786_000_000,
+                "data": [
+                    {
+                        "b64_json": base64.b64encode(image).decode("ascii"),
+                        "media_type": "image/png",
+                    }
+                ],
+                "usage": {"prompt_tokens": 11, "completion_tokens": 27, "total_tokens": 38},
+            },
+        )
+
+    result = _provider(handler, artifact_storage=storage).execute(
+        _request(
+            "ai_image_studio",
+            model="openai/gpt-image-2",
+            input_value={
+                "locale": "en",
+                "prompt": "A clean product photograph on a white background.",
+                "aspect_ratio": "1:1",
+                "quality": "high",
+                "background": "opaque",
+            },
+        )
+    )
+
+    assert len(requests) == 1
+    assert requests[0].url == "https://openrouter.ai/api/v1/images"
+    sent = json.loads(requests[0].content)
+    assert sent == {
+        "model": "openai/gpt-image-2",
+        "prompt": "A clean product photograph on a white background.",
+        "aspect_ratio": "1:1",
+        "quality": "high",
+        "background": "opaque",
+        "n": 1,
+        "provider": {"only": ["openai"], "allow_fallbacks": False},
+    }
+    assert len(storage.writes) == 1
+    artifact_id, stored_bytes, media_type = storage.writes[0]
+    expected = normalize_generated_image(image, declared_media_type="image/png")
+    assert stored_bytes == expected.data and media_type == "image/png"
+    assert result.output == {
+        "artifact_id": artifact_id,
+        "media_type": "image/png",
+        "byte_size": expected.byte_size,
+        "sha256": expected.sha256,
+    }
+    assert result.artifact is not None
+    assert result.artifact.object_key == "ai-uploads/ab/" + "c" * 62
+    assert (result.input_units, result.output_units) == (11, 27)
+
+
+def test_image_edit_reads_owned_upload_and_sends_one_data_url_reference() -> None:
+    source = b"normalized-source"
+    generated = _png()
+    storage = FakeArtifactStorage(source)
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            200,
+            json={
+                "created": 1,
+                "data": [{"b64_json": base64.b64encode(generated).decode(), "media_type": "image/png"}],
+                "usage": {"prompt_tokens": 3, "completion_tokens": 7, "total_tokens": 10},
+            },
+        )
+
+    request = _request(
+        "ai_image_edit_studio",
+        model="openai/gpt-image-2",
+        input_value={
+            "locale": "en",
+            "prompt": "Remove the background and keep the product unchanged.",
+            "aspect_ratio": "auto",
+            "quality": "medium",
+            "background": "opaque",
+            "image": {
+                "object_key": "ai-uploads/aa/" + "b" * 62,
+                "media_type": "image/webp",
+                "byte_size": len(source),
+                "width": 4,
+                "height": 3,
+                "sha256": hashlib.sha256(source).hexdigest(),
+            },
+        },
+    )
+    provider = _provider(handler, artifact_storage=storage)
+
+    result = provider.execute(provider.prepare(request))
+
+    assert result.output["byte_size"] == normalize_generated_image(
+        generated,
+        declared_media_type="image/png",
+    ).byte_size
+    sent = json.loads(requests[0].content)
+    assert sent["input_references"] == [
+        {
+            "type": "image_url",
+            "image_url": {
+                "url": "data:image/webp;base64," + base64.b64encode(source).decode("ascii")
+            },
+        }
+    ]
+    assert "object_key" not in requests[0].content.decode()
+
+
+@pytest.mark.parametrize(
+    "payload",
+    (
+        {"data": []},
+        {"data": [{"b64_json": "***", "media_type": "image/png"}]},
+        {"data": [{"b64_json": "aA==", "media_type": "image/svg+xml"}]},
+        {"data": [{"b64_json": base64.b64encode(b"not-an-image").decode(), "media_type": "image/png"}]},
+        {
+            "data": [
+                {"b64_json": base64.b64encode(b"x" * (4 * 1024 * 1024 + 1)).decode(), "media_type": "image/png"}
+            ]
+        },
+    ),
+)
+def test_image_provider_rejects_invalid_success_without_retry(payload: dict[str, object]) -> None:
+    calls = 0
+
+    def handler(_request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        return httpx.Response(200, json={**payload, "usage": {"prompt_tokens": 1, "completion_tokens": 1}})
+
+    with pytest.raises(ProviderOutcomeUnknownError):
+        _provider(handler, artifact_storage=FakeArtifactStorage(b"")).execute(
+            _request(
+                "ai_image_studio",
+                model="openai/gpt-image-2",
+                input_value={
+                    "locale": "en",
+                    "prompt": "A bounded image generation prompt.",
+                    "aspect_ratio": "auto",
+                    "quality": "medium",
+                    "background": "opaque",
+                },
+            )
+        )
+    assert calls == 1
 
 
 @pytest.mark.parametrize("failure", ("missing", "size", "digest"))

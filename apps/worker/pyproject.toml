@@ -10,6 +10,7 @@ dependencies = [
   "boto3==1.43.70",
   "dramatiq==2.2.0",
   "httpx==0.28.1",
+  "Pillow==12.3.0",
   "pydantic==2.13.4",
 ]
 

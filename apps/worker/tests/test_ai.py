@@ -5,6 +5,7 @@ import pytest
 
 from webdiag_worker.ai import (
     KnownSafeProviderError,
+    ProviderArtifact,
     ProviderRequest,
     ProviderResult,
     run_one_ai_job,
@@ -77,7 +78,69 @@ def test_worker_claims_marks_submitted_and_completes_typed_result(monkeypatch) -
         "provider_request_id": "req_test",
         "input_units": 12,
         "output_units": 4,
+        "artifact": None,
     }
+
+
+def test_worker_sends_private_artifact_descriptor_only_to_internal_completion(
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("WEBDIAG_AI_INTERNAL_TOKEN", "a" * 32)
+    monkeypatch.setenv("WEBDIAG_AI_API_INTERNAL_URL", "http://api:8000")
+    calls: list[tuple[str, dict[str, object] | None]] = []
+
+    class ImageProvider:
+        def execute(self, _request: ProviderRequest) -> ProviderResult:
+            artifact = ProviderArtifact(
+                artifact_id="22222222-2222-4222-8222-222222222222",
+                object_key="ai-uploads/ab/" + "c" * 62,
+                media_type="image/png",
+                byte_size=100,
+                sha256="d" * 64,
+            )
+            return ProviderResult(
+                output={
+                    "artifact_id": artifact.artifact_id,
+                    "media_type": artifact.media_type,
+                    "byte_size": artifact.byte_size,
+                    "sha256": artifact.sha256,
+                },
+                artifact=artifact,
+            )
+
+    def request_json(_method: str, path: str, payload=None):
+        calls.append((path, payload))
+        if path.endswith("/claim"):
+            return {
+                "contract_version": "webdiag.ai.worker.v1",
+                "claim": {
+                    "run_id": "11111111-1111-4111-8111-111111111111",
+                    "attempt_number": 1,
+                    "lease_token": "lease-token-value-with-at-least-32-chars",
+                    "lease_expires_at": 1_900_000_000,
+                    "tool_id": "ai_image_studio",
+                    "contract_version": "v1",
+                    "model_policy": "openai/gpt-image-2",
+                    "safety_identifier": "opaque-safety-identifier-value-1234567890",
+                    "input": {"prompt": "A bounded image prompt."},
+                },
+            }
+        return {
+            "contract_version": "webdiag.ai.worker.v1",
+            "state": "succeeded" if path.endswith("/complete") else "running",
+        }
+
+    with patch("webdiag_worker.ai._request_json", side_effect=request_json):
+        assert run_one_ai_job(ImageProvider(), lease_renew_interval_seconds=30)
+
+    assert calls[-1][1]["artifact"] == {
+        "artifact_id": "22222222-2222-4222-8222-222222222222",
+        "object_key": "ai-uploads/ab/" + "c" * 62,
+        "media_type": "image/png",
+        "byte_size": 100,
+        "sha256": "d" * 64,
+    }
+    assert "object_key" not in calls[-1][1]["output"]
 
 
 def test_worker_prepares_private_input_before_marking_provider_submitted(monkeypatch) -> None:

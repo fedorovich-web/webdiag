@@ -5,6 +5,7 @@ import hashlib
 import hmac
 import json
 import os
+import uuid
 from dataclasses import dataclass
 
 import httpx
@@ -12,11 +13,13 @@ from pydantic import BaseModel
 
 from webdiag_worker.ai import (
     KnownSafeProviderError,
+    ProviderArtifact,
     ProviderOutcomeUnknownError,
     ProviderRequest,
     ProviderResult,
 )
 from webdiag_worker.artifact_storage import ArtifactStorage, artifact_storage_from_env
+from webdiag_worker.image_output import normalize_generated_image
 from webdiag_worker.tool_contracts import (
     AltTextOutput,
     AuditActionPlanOutput,
@@ -44,6 +47,9 @@ class _ToolPolicy:
 
 _MODEL = "openai/gpt-5.6-luna"
 _OPENROUTER_CHAT_URL = "https://openrouter.ai/api/v1/chat/completions"
+_OPENROUTER_IMAGE_URL = "https://openrouter.ai/api/v1/images"
+_IMAGE_MODEL = "openai/gpt-image-2"
+_IMAGE_TOOL_IDS = frozenset({"ai_image_studio", "ai_image_edit_studio"})
 _TOOL_POLICIES = {
     "ai_audit_action_plan": _ToolPolicy(
         model=_MODEL,
@@ -248,6 +254,8 @@ class OpenRouterProvider:
         self._client.close()
 
     def execute(self, request: ProviderRequest) -> ProviderResult:
+        if request.tool_id in _IMAGE_TOOL_IDS:
+            return self._execute_image(request)
         policy = _TOOL_POLICIES.get(request.tool_id)
         if (
             policy is None
@@ -307,8 +315,65 @@ class OpenRouterProvider:
             output_units=output_units,
         )
 
+    def _execute_image(self, request: ProviderRequest) -> ProviderResult:
+        if (
+            request.contract_version != "v1"
+            or request.model_policy != _IMAGE_MODEL
+            or request.safety_identifier is None
+        ):
+            raise KnownSafeProviderError("AI provider request was rejected locally")
+        payload = _image_request_payload(request)
+        try:
+            response = self._client.post(_OPENROUTER_IMAGE_URL, json=payload)
+        except (httpx.TimeoutException, httpx.TransportError) as error:
+            raise ProviderOutcomeUnknownError("AI provider outcome is unknown") from error
+        if response.status_code in _KNOWN_REJECTED_STATUS_CODES:
+            raise KnownSafeProviderError("AI provider rejected the request")
+        if response.status_code != 200:
+            raise ProviderOutcomeUnknownError("AI provider outcome is unknown")
+        try:
+            body = response.json()
+            data, media_type = _image_output(body)
+            normalized = normalize_generated_image(data, declared_media_type=media_type)
+            input_units, output_units = _provider_usage(body)
+            storage = self._artifact_storage or artifact_storage_from_env()
+            artifact_id = str(uuid.uuid4())
+            stored = storage.put(
+                artifact_id=artifact_id,
+                data=normalized.data,
+                media_type=normalized.media_type,
+            )
+            if (
+                stored.media_type != normalized.media_type
+                or stored.byte_size != normalized.byte_size
+                or not hmac.compare_digest(stored.sha256, normalized.sha256)
+            ):
+                raise ValueError("stored image artifact does not match provider output")
+        except KnownSafeProviderError:
+            raise
+        except Exception as error:
+            raise ProviderOutcomeUnknownError("AI provider response is invalid") from error
+        artifact = ProviderArtifact(
+            artifact_id=artifact_id,
+            object_key=stored.object_key,
+            media_type=stored.media_type,
+            byte_size=stored.byte_size,
+            sha256=stored.sha256,
+        )
+        return ProviderResult(
+            output={
+                "artifact_id": artifact.artifact_id,
+                "media_type": artifact.media_type,
+                "byte_size": artifact.byte_size,
+                "sha256": artifact.sha256,
+            },
+            input_units=input_units,
+            output_units=output_units,
+            artifact=artifact,
+        )
+
     def prepare(self, request: ProviderRequest) -> ProviderRequest:
-        if request.tool_id != "ai_alt_text_studio":
+        if request.tool_id not in {"ai_alt_text_studio", "ai_image_edit_studio"}:
             return request
         descriptor = request.input.get("image")
         if not isinstance(descriptor, dict) or set(descriptor) != {
@@ -424,6 +489,65 @@ def _messages(request: ProviderRequest, policy: _ToolPolicy) -> list[dict[str, o
             ],
         },
     ]
+
+
+def _image_request_payload(request: ProviderRequest) -> dict[str, object]:
+    prompt = request.input.get("prompt")
+    aspect_ratio = request.input.get("aspect_ratio")
+    quality = request.input.get("quality")
+    background = request.input.get("background")
+    if (
+        not isinstance(prompt, str)
+        or not 10 <= len(prompt) <= 4_000
+        or aspect_ratio not in {"auto", "1:1", "3:2", "2:3", "4:3", "3:4", "16:9", "9:16", "21:9"}
+        or quality not in {"auto", "low", "medium", "high"}
+        or background not in {"auto", "opaque"}
+    ):
+        raise KnownSafeProviderError("AI image request is invalid")
+    payload: dict[str, object] = {
+        "model": _IMAGE_MODEL,
+        "prompt": prompt,
+        "aspect_ratio": aspect_ratio,
+        "quality": quality,
+        "background": background,
+        "n": 1,
+        "provider": {"only": ["openai"], "allow_fallbacks": False},
+    }
+    if request.tool_id == "ai_image_edit_studio":
+        image_data_url = request.input.get("_image_data_url")
+        if (
+            not isinstance(image_data_url, str)
+            or not image_data_url.startswith(
+                ("data:image/jpeg;base64,", "data:image/png;base64,", "data:image/webp;base64,")
+            )
+            or len(image_data_url) > 6_000_000
+        ):
+            raise KnownSafeProviderError("AI image input is not prepared")
+        payload["input_references"] = [
+            {"type": "image_url", "image_url": {"url": image_data_url}}
+        ]
+    return payload
+
+
+def _image_output(body: object) -> tuple[bytes, str]:
+    if not isinstance(body, dict):
+        raise ValueError("invalid image provider response")
+    values = body.get("data")
+    if not isinstance(values, list) or len(values) != 1 or not isinstance(values[0], dict):
+        raise ValueError("invalid image provider data")
+    encoded = values[0].get("b64_json")
+    media_type = values[0].get("media_type")
+    if (
+        not isinstance(encoded, str)
+        or not encoded
+        or len(encoded) > 5_600_000
+        or media_type not in {"image/jpeg", "image/png", "image/webp"}
+    ):
+        raise ValueError("invalid image provider output")
+    data = base64.b64decode(encoded, validate=True)
+    if not 1 <= len(data) <= 4 * 1024 * 1024:
+        raise ValueError("invalid image provider output size")
+    return data, media_type
 
 
 def _parsed_output(body: object, output_model: type[BaseModel]) -> BaseModel:

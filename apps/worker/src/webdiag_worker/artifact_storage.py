@@ -2,7 +2,11 @@ from __future__ import annotations
 
 import os
 import re
+import hashlib
+import secrets
+import tempfile
 from collections.abc import Callable, Mapping
+from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Protocol, cast
 from urllib.parse import urlsplit
@@ -30,6 +34,14 @@ class ArtifactTooLargeError(ArtifactStorageError):
     pass
 
 
+@dataclass(frozen=True, slots=True)
+class StoredArtifact:
+    object_key: str
+    media_type: str
+    byte_size: int
+    sha256: str
+
+
 class StreamingBody(Protocol):
     def read(self, amount: int) -> bytes: ...
 
@@ -37,12 +49,16 @@ class StreamingBody(Protocol):
 
 
 class S3Client(Protocol):
+    def put_object(self, **kwargs: object) -> object: ...
+
     def get_object(self, **kwargs: object) -> Mapping[str, object]: ...
 
     def delete_object(self, **kwargs: object) -> object: ...
 
 
 class ArtifactStorage(Protocol):
+    def put(self, *, artifact_id: str, data: bytes, media_type: str) -> StoredArtifact: ...
+
     def read(self, *, object_key: str, max_bytes: int) -> bytes: ...
 
     def delete(self, *, object_key: str) -> None: ...
@@ -52,6 +68,32 @@ class LocalArtifactStorage:
     def __init__(self, root: str | Path, *, prefix: str = "ai-uploads") -> None:
         self._root = Path(root).resolve()
         self._prefix = _normalize_prefix(prefix)
+        self._root.mkdir(parents=True, exist_ok=True)
+
+    def put(self, *, artifact_id: str, data: bytes, media_type: str) -> StoredArtifact:
+        _validate_put(artifact_id=artifact_id, data=data, media_type=media_type)
+        object_key = _new_object_key(self._prefix)
+        target = self._resolve(object_key)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        temporary_path: Path | None = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="wb",
+                dir=target.parent,
+                prefix=".artifact-",
+                suffix=".tmp",
+                delete=False,
+            ) as temporary:
+                temporary_path = Path(temporary.name)
+                os.chmod(temporary_path, 0o600)
+                temporary.write(data)
+                temporary.flush()
+                os.fsync(temporary.fileno())
+            os.replace(temporary_path, target)
+        finally:
+            if temporary_path is not None:
+                temporary_path.unlink(missing_ok=True)
+        return _stored_artifact(object_key=object_key, data=data, media_type=media_type)
 
     def read(self, *, object_key: str, max_bytes: int) -> bytes:
         _validate_max_bytes(max_bytes)
@@ -80,6 +122,19 @@ class S3ArtifactStorage:
         self._client = client
         self._bucket = _validate_bucket(bucket)
         self._prefix = _normalize_prefix(prefix)
+
+    def put(self, *, artifact_id: str, data: bytes, media_type: str) -> StoredArtifact:
+        _validate_put(artifact_id=artifact_id, data=data, media_type=media_type)
+        object_key = _new_object_key(self._prefix)
+        self._client.put_object(
+            ACL="private",
+            Body=data,
+            Bucket=self._bucket,
+            ContentLength=len(data),
+            ContentType=media_type,
+            Key=object_key,
+        )
+        return _stored_artifact(object_key=object_key, data=data, media_type=media_type)
 
     def read(self, *, object_key: str, max_bytes: int) -> bytes:
         _validate_max_bytes(max_bytes)
@@ -152,6 +207,29 @@ def artifact_storage_from_env(
 def _validate_object_key(object_key: str, prefix: str) -> None:
     if not re.fullmatch(rf"{re.escape(prefix)}/[0-9a-f]{{2}}/[0-9a-f]{{62}}", object_key):
         raise ArtifactKeyError("invalid artifact key")
+
+
+def _new_object_key(prefix: str) -> str:
+    token = secrets.token_hex(32)
+    return f"{prefix}/{token[:2]}/{token[2:]}"
+
+
+def _validate_put(*, artifact_id: str, data: bytes, media_type: str) -> None:
+    if not artifact_id or len(artifact_id) > 128 or "\x00" in artifact_id:
+        raise ArtifactKeyError("invalid artifact ID")
+    if not data or len(data) > MAX_ARTIFACT_BYTES:
+        raise ArtifactTooLargeError("artifact exceeds storage limit")
+    if media_type not in {"image/jpeg", "image/png", "image/webp"}:
+        raise ArtifactStorageError("unsupported artifact media type")
+
+
+def _stored_artifact(*, object_key: str, data: bytes, media_type: str) -> StoredArtifact:
+    return StoredArtifact(
+        object_key=object_key,
+        media_type=media_type,
+        byte_size=len(data),
+        sha256=hashlib.sha256(data).hexdigest(),
+    )
 
 
 def _normalize_prefix(prefix: str) -> str:

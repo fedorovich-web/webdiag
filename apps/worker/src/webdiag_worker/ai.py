@@ -44,11 +44,35 @@ class ProviderRequest:
 
 
 @dataclass(frozen=True, slots=True)
+class ProviderArtifact:
+    artifact_id: str
+    object_key: str
+    media_type: str
+    byte_size: int
+    sha256: str
+
+    def __post_init__(self) -> None:
+        if not 1 <= len(self.artifact_id) <= 128 or "\x00" in self.artifact_id:
+            raise ValueError("provider artifact ID is invalid")
+        if not 1 <= len(self.object_key) <= 512 or "\x00" in self.object_key:
+            raise ValueError("provider artifact key is invalid")
+        if self.media_type not in {"image/jpeg", "image/png", "image/webp"}:
+            raise ValueError("provider artifact media type is invalid")
+        if not 1 <= self.byte_size <= 4 * 1024 * 1024:
+            raise ValueError("provider artifact size is invalid")
+        if len(self.sha256) != 64 or any(
+            character not in "0123456789abcdef" for character in self.sha256
+        ):
+            raise ValueError("provider artifact digest is invalid")
+
+
+@dataclass(frozen=True, slots=True)
 class ProviderResult:
     output: dict[str, object]
     provider_request_id: str | None = None
     input_units: int = 0
     output_units: int = 0
+    artifact: ProviderArtifact | None = None
 
     def __post_init__(self) -> None:
         for value in (self.input_units, self.output_units):
@@ -254,6 +278,15 @@ def run_one_ai_job(
         return True
     if not isinstance(result, ProviderResult):
         raise RuntimeError("AI provider returned an invalid result")
+    artifact_payload = None
+    if result.artifact is not None:
+        artifact_payload = {
+            "artifact_id": result.artifact.artifact_id,
+            "object_key": result.artifact.object_key,
+            "media_type": result.artifact.media_type,
+            "byte_size": result.artifact.byte_size,
+            "sha256": result.artifact.sha256,
+        }
     completed = _request_json(
         "POST",
         f"/v1/internal/ai/runs/{claim.run_id}/complete",
@@ -263,6 +296,7 @@ def run_one_ai_job(
             "provider_request_id": result.provider_request_id,
             "input_units": result.input_units,
             "output_units": result.output_units,
+            "artifact": artifact_payload,
         },
     )
     _validate_contract(completed)
