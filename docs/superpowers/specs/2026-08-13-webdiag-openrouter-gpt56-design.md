@@ -7,8 +7,11 @@ Status: approved
 ## Objective
 
 Replace the direct OpenAI SDK integration with one private OpenRouter boundary.
-All current AI tools use the fixed model slug `openai/gpt-5.6-luna`. No client,
-account, or run input can select a provider or model.
+All text-generation and vision-analysis tools use the fixed model slug
+`openai/gpt-5.6-luna`. No client, account, or run input can select a provider or
+model. `ai_image_studio` and `ai_image_edit_studio` remain disabled because the
+OpenRouter model advertises text output, not image output; they cannot be
+represented as working GPT-5.6 tools.
 
 ## Request boundary
 
@@ -50,11 +53,12 @@ response. A typed refusal is a known-safe provider refusal.
 
 ## Model and pricing policy
 
-The catalog uses only `openai/gpt-5.6-luna`. Terra, Gemini, Ministral, model
-aliases, automatic routing, and automatic fallback are excluded. Tools remain
-internal with no credit price because current public OpenRouter price surfaces
-are inconsistent. A real RU/EN eval and billed-usage smoke test are required
-before assigning a public credit price.
+The active model policy uses only `openai/gpt-5.6-luna`. Terra, Gemini,
+Ministral, model aliases, automatic routing, and automatic fallback are
+excluded. Image-generation tools use the explicit non-executable policy
+`none`. Tools remain internal or disabled with no credit price because current
+public OpenRouter price surfaces are inconsistent. A real RU/EN eval and
+billed-usage smoke test are required before assigning a public credit price.
 
 ## Security verification
 

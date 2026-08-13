@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- The only model is `openai/gpt-5.6-luna`.
+- The only executable model is `openai/gpt-5.6-luna`; image generation/editing remains disabled with model policy `none`.
 - The only endpoint is `https://openrouter.ai/api/v1/chat/completions`.
 - No automatic retry, fallback, provider/model input, referer, secret logging, or real provider call in tests.
 - Requests require ZDR, denied data collection, required structured-output parameters, and disabled fallbacks.
@@ -72,7 +72,7 @@ class OpenRouterProvider:
         return _provider_result(response, request)
 ```
 
-Use one `_ToolPolicy` model value, `openai/gpt-5.6-luna`, for all four implemented tools. Parse exactly one `choices[0].message.content`, `usage.prompt_tokens`, `usage.completion_tokens`, and the body `id`. Map 400/401/402/403/404/413/422 to `KnownSafeProviderError`; map all ambiguous transport/status/200-shape failures to `ProviderOutcomeUnknownError`.
+Use one `_ToolPolicy` model value, `openai/gpt-5.6-luna`, for all four implemented tools. Keep `ai_image_studio` and `ai_image_edit_studio` disabled with model policy `none`. Parse exactly one `choices[0].message.content`, `usage.prompt_tokens`, `usage.completion_tokens`, and the body `id`. Map 400/401/402/403/404/413/422 to `KnownSafeProviderError`; map all ambiguous transport/status/200-shape failures to `ProviderOutcomeUnknownError`.
 
 - [ ] **Step 4: Run the targeted GREEN**
 

@@ -8,6 +8,10 @@
 
 **Tech Stack:** Python 3.13/3.14, FastAPI, SQLite, Pillow, Boto3, HTTPX, OpenRouter Chat Completions, Dramatiq, pytest, Ruff.
 
+**Implementation status:** Completed on 2026-08-13. Exact verification is recorded
+in the design document and `CHANGELOG.md`; public activation remains gated on a
+real provider evaluation, measured cost, and production S3 configuration.
+
 ## Global Constraints
 
 - 4 MiB encoded limit; one frame; maximum 8192 per side and 8,000,000 pixels.

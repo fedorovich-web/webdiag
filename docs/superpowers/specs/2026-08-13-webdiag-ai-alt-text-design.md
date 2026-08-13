@@ -130,7 +130,7 @@ makes no S3 or OpenRouter network request.
 
 ## 9. Verified references
 
-- Pillow 12.1.0 documentation and source via Context7:
+- Pillow documentation and source via Context7; implementation pin is 12.3.0:
   https://pillow.readthedocs.io/en/stable/reference/Image.html
 - Boto3 S3 documentation via Context7:
   https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html
@@ -138,3 +138,24 @@ makes no S3 or OpenRouter network request.
   https://openrouter.ai/docs/guides/features/structured-outputs
 - OpenRouter GPT-5.6 Luna model page:
   https://openrouter.ai/openai/gpt-5.6-luna-20260709
+
+## 10. Implementation verification
+
+Implemented on `feature/backend-production-readiness` with Alt Text Studio kept
+internal. Pillow 12.3.0, boto3 1.43.70, and their exact transitive packages were
+resolved from PyPI metadata, dry-run on Python 3.14, and queried by exact version
+through OSV before pinning; OSV returned no vulnerability records at the time of
+the query.
+
+Fresh local results on 2026-08-13:
+
+- A12.1b targeted aggregate: 101 passed;
+- complete API and worker Python suite: 422 passed;
+- Ruff: passed;
+- Python lock: 40 locked packages matched the Windows environment;
+- Docker Compose config: passed;
+- `git diff --check`: passed.
+
+No real OpenRouter or S3 request was made. Provider quality, RU/EN semantic
+quality, actual billed cost, and production S3 credentials remain unverified;
+therefore no credit price or public activation is claimed.

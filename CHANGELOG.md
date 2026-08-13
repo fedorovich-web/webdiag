@@ -1,10 +1,18 @@
 # Changelog
 
+## A12.1b — Private Alt Text Studio foundation
+
+- Added authenticated raw image intake with a dedicated 4 MiB route limit, JPEG/PNG/WebP detection, one-frame and 8,000,000-pixel bounds, metadata removal, deterministic re-encoding, and no filename or remote-URL trust.
+- Added ownership-scoped expiring uploads, a ten-upload quota, atomic one-run binding, private object descriptors, and bounded local/S3-compatible storage. Image bytes, filenames, account identity, and object keys are not exposed by the public API or stored in run responses.
+- Added the GPT-5.6 Luna vision path through OpenRouter with a single low-detail image, private object size/SHA-256 verification before provider submission, strict RU/EN output contracts, and unknown-person/protected-trait restrictions.
+- Added terminal deletion-pending transitions and bounded idempotent cleanup. Production configuration cannot use local artifact storage; ordinary tests make no S3 or OpenRouter request.
+- Kept Alt Text Studio internal pending a real opt-in OpenRouter smoke/evaluation, RU/EN semantic review, measured cost, fixed credit price, and production S3 configuration. Image generation and image editing remain disabled because the selected model has text output.
+
 ## A12.1a — First four grounded AI tool contracts
 
 - Added strict RU/EN input and output contracts for Audit Action Plan, Meta & SERP Studio, Schema Studio, and FAQ Studio. Outputs are schema-validated and checked against saved audit issue/URL references, supplied facts, or exact source excerpts before credit capture.
 - Added ownership-scoped immutable saved-audit snapshots for Action Plan without hidden audit reruns, client-supplied audit payloads, or provider access to project/audit/account identifiers.
-- Added a bounded OpenAI Responses API adapter with strict JSON Schema, server-owned prompts, `store=false`, zero SDK retries, explicit timeouts, provider request/usage accounting, conservative unknown-outcome handling, and privacy-preserving safety identifiers.
+- Replaced the direct OpenAI adapter with a bounded OpenRouter Chat Completions adapter pinned to `openai/gpt-5.6-luna`, strict JSON Schema, disabled provider fallback, denied data collection, required zero-data-retention routing, zero client retries, explicit timeouts, provider request/usage accounting, conservative unknown-outcome handling, and privacy-preserving safety identifiers.
 - Kept all four tools internal pending real opt-in provider smoke tests, RU/EN semantic evaluation, measured cost, and owner-approved fixed credit prices. Added no Lava.top/payment code and no fabricated AI result.
 - Split Alt Text Studio into A12.1b so image inputs use a private validated upload/artifact path instead of client URLs or base64 persisted in SQLite.
 
