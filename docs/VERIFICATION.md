@@ -1351,6 +1351,10 @@ surface; the regression test now asserts the existing dark surface token's
 computed color. No dependency, remote image service, provider call, release,
 or deployment was added.
 
+The subsequent root workspace gate also confirmed that shipped declarations
+stay within the self-hosted Manrope 400–700 range. The palette hex label now
+uses the loaded 700 weight rather than requesting synthetic 750 weight.
+
 ## A12.1e final grounded text contracts
 
 Fresh backend verification on 2026-08-13:
