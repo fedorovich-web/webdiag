@@ -116,6 +116,17 @@ def test_terminal_run_marks_bound_upload_pending_in_same_transition(
     assert store.get_upload(upload_id=upload.id).deletion_state == "pending"
 
 
+def test_expired_submitted_run_marks_bound_upload_pending(tmp_path: Path) -> None:
+    service, store, user_id = _context(tmp_path)
+    upload, _run_record, claim = _run(service, store, user_id, "expired-submitted")
+
+    assert store.claim_pending(now=claim.lease_expires_at) is None
+
+    assert store.get_upload(upload_id=upload.id).deletion_state == "pending"
+    account = store.get_credit_account(user_id=user_id)
+    assert (account.available, account.reserved) == (4, 0)
+
+
 def test_cleanup_is_bounded_idempotent_and_retries_failed_delete(tmp_path: Path) -> None:
     service, store, user_id = _context(tmp_path)
     uploads = []

@@ -438,6 +438,36 @@ def test_expired_unsubmitted_image_claim_reuses_one_reservation(tmp_path: Path) 
     assert count == (1,)
 
 
+def test_expired_submitted_image_claim_releases_reserved_object(tmp_path: Path) -> None:
+    _account, service, _storage, owner, _other = _context(tmp_path)
+    run, _created = service.create_run(
+        user_id=owner.response.user.id,
+        request=AIRunCreateRequest(
+            tool_id="ai_image_studio",
+            input={
+                "locale": "en",
+                "prompt": "A bounded illustration of reservation cleanup.",
+                "aspect_ratio": "1:1",
+                "quality": "medium",
+                "background": "opaque",
+            },
+        ),
+        idempotency_key="image-staging-expired-submitted",
+    )
+    store = SqliteAIStore(str(tmp_path / "generated.sqlite3"), lease_seconds=60)
+    claim = store.claim_pending(now=100)
+    assert claim is not None and claim.artifact_reservation is not None
+    store.mark_submitted(run_id=run.id, lease_token=claim.lease_token, now=101)
+
+    assert store.claim_pending(now=160) is None
+
+    reservation = store.get_artifact_reservation(run_id=run.id)
+    assert reservation is not None
+    assert reservation.deletion_state == "pending"
+    account = store.get_credit_account(user_id=owner.response.user.id)
+    assert (account.available, account.reserved) == (10, 0)
+
+
 def test_image_edit_binds_one_owned_normalized_upload(tmp_path: Path) -> None:
     _account, service, storage, owner, other = _context(tmp_path)
     upload = service.create_image_upload(

@@ -910,6 +910,7 @@ class SqliteAIStore:
         lease_hash = hashlib.sha256(lease_token.encode()).hexdigest()
         with self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
+            self._expire_stale_submitted_run(connection, now=current)
             row = connection.execute(
                 """
                 SELECT r.*
@@ -931,7 +932,7 @@ class SqliteAIStore:
                 (current,),
             ).fetchone()
             if row is None:
-                connection.execute("ROLLBACK")
+                connection.execute("COMMIT")
                 return None
             attempt_number = int(
                 connection.execute(
@@ -994,6 +995,73 @@ class SqliteAIStore:
                 if reservation_row is not None
                 else None
             ),
+        )
+
+    def _expire_stale_submitted_run(
+        self,
+        connection: sqlite3.Connection,
+        *,
+        now: int,
+    ) -> None:
+        row = connection.execute(
+            """
+            SELECT r.*, a.attempt_number AS stale_attempt_number
+            FROM ai_runs AS r
+            JOIN ai_run_attempts AS a ON a.run_id = r.id
+            WHERE r.state = 'running'
+                AND a.attempt_number = (
+                    SELECT MAX(latest.attempt_number)
+                    FROM ai_run_attempts AS latest WHERE latest.run_id = r.id
+                )
+                AND a.lease_expires_at <= ?
+                AND a.submitted_at IS NOT NULL
+                AND a.completed_at IS NULL
+            ORDER BY a.lease_expires_at ASC, r.id ASC LIMIT 1
+            """,
+            (now,),
+        ).fetchone()
+        if row is None:
+            return
+        run = self._run(row)
+        updated_at = self._clock_ns()
+        self._settle_reservation(
+            connection,
+            run=run,
+            operation_type="release",
+            available_delta=run.credit_price,
+            reserved_delta=-run.credit_price,
+            reason="AI run ended as provider_unknown",
+            created_at=updated_at,
+        )
+        connection.execute(
+            """
+            UPDATE ai_runs
+            SET state = 'provider_unknown',
+                public_error_code = 'ai_provider_outcome_unknown', updated_at = ?
+            WHERE id = ? AND state = 'running'
+            """,
+            (updated_at, run.id),
+        )
+        connection.execute(
+            """
+            UPDATE ai_run_attempts SET completed_at = ?
+            WHERE run_id = ? AND attempt_number = ? AND completed_at IS NULL
+            """,
+            (now, run.id, int(row["stale_attempt_number"])),
+        )
+        connection.execute(
+            """
+            UPDATE ai_uploads SET deletion_state = 'pending'
+            WHERE bound_run_id = ? AND deletion_state = 'available'
+            """,
+            (run.id,),
+        )
+        connection.execute(
+            """
+            UPDATE ai_artifact_reservations SET deletion_state = 'pending'
+            WHERE run_id = ? AND deletion_state = 'reserved'
+            """,
+            (run.id,),
         )
 
     def renew_lease(

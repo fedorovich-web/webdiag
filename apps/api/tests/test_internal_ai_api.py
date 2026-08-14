@@ -198,6 +198,32 @@ def test_provider_unknown_releases_without_requeue(tmp_path: Path) -> None:
     assert (account.available, account.reserved) == (10, 0)
 
 
+def test_expired_submitted_run_becomes_provider_unknown_and_releases_reservation(
+    tmp_path: Path,
+) -> None:
+    store, user_id, run_id = seeded_run(tmp_path / "accounts.sqlite3")
+    claim = store.claim_pending(now=100)
+    assert claim is not None
+    store.mark_submitted(run_id=run_id, lease_token=claim.lease_token, now=101)
+
+    assert store.claim_pending(now=160) is None
+
+    run = store.get_run(run_id=run_id)
+    assert run is not None
+    assert run.state == "provider_unknown"
+    assert run.public_error_code == "ai_provider_outcome_unknown"
+    account = store.get_credit_account(user_id=user_id)
+    assert (account.available, account.reserved) == (10, 0)
+    with pytest.raises(AILeaseLostError):
+        store.complete_run(
+            run_id=run_id,
+            lease_token=claim.lease_token,
+            output_json='{"text":"late"}',
+            output_sha256=hashlib.sha256(b'{"text":"late"}').hexdigest(),
+            now=161,
+        )
+
+
 def test_internal_claim_requires_dedicated_bearer(monkeypatch) -> None:
     monkeypatch.setattr(settings, "ai_internal_token", "a" * 32)
 

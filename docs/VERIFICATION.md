@@ -1435,13 +1435,19 @@ Fresh backend and dependency evidence on 2026-08-14:
 
 ```text
 npm run test:python
-PASS — 573/573
+PASS — 578/578
 
 npm run lint:python
 PASS — Ruff reported no findings
 
 affected AI/OpenAPI tests
 PASS — 54/54 OpenAPI/internal-route cases and 20/20 artifact/account cases
+
+affected monitoring/workspace tests
+PASS — 43/43, including lease migration and archive races
+
+affected AI lease/reservation/artifact tests
+PASS — 22/22, including expired submitted runs and cleanup state
 
 npm audit --audit-level=high --json
 PASS — 0 known vulnerabilities across 508 lockfile dependencies
@@ -1460,9 +1466,19 @@ and repeat the ownership check in the service before object reads. Public
 OpenAPI output omits eight worker-only routes while the existing bearer-protected
 runtime endpoints remain unchanged and directly tested.
 
+Monitoring worker leases are now stored only as SHA-256 digests. The nullable
+legacy plaintext column remains as an additive-migration shim and is cleared
+during migration; an already active worker can still renew with its in-memory
+token. A submitted AI run whose lease expires is atomically classified as
+`provider_unknown`, releases its credit reservation, schedules bound upload and
+reserved artifact cleanup, and cannot be completed by the stale worker. It is
+never resubmitted automatically.
+
 The npm audit covered production and development dependencies. The Python lock
 audit used `--no-deps` because the shared lock includes `uvloop`, which cannot be
 resolved in the Windows audit environment; every audited requirement is pinned
 to an exact version. `pip-audit` also reported that the lock has no hashes, so
 hash-based supply-chain verification remains unverified. No provider request,
 credit price, AI catalog activation, payment, release, or deployment occurred.
+Backup/restore remains unverified: the repository still has no database recovery
+command or runbook, and the production private-artifact topology is not configured.
