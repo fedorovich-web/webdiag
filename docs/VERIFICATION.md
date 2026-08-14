@@ -1428,3 +1428,41 @@ Redirect outputs require explicit nullable targets under strict JSON Schema. Reg
 always `unverified`; no model-produced pattern is compiled or executed. No real provider,
 translation certification, crawler, redirect mutation, payment, release, or deployment action
 occurred.
+
+## A12.5 AI/API boundary hardening
+
+Fresh backend and dependency evidence on 2026-08-14:
+
+```text
+npm run test:python
+PASS — 573/573
+
+npm run lint:python
+PASS — Ruff reported no findings
+
+affected AI/OpenAPI tests
+PASS — 54/54 OpenAPI/internal-route cases and 20/20 artifact/account cases
+
+npm audit --audit-level=high --json
+PASS — 0 known vulnerabilities across 508 lockfile dependencies
+
+pip-audit 2.10.1 -r requirements-dev.lock.txt --no-deps --disable-pip
+PASS — no known vulnerabilities in the 39 exact-pinned Python packages
+
+git diff --check
+PASS
+```
+
+Image uploads now fail closed until a ready image-input AI tool exists. A ready
+generation-only image tool does not enable upload storage. Artifact downloads
+verify `(user_id, run_id, artifact_id)` ownership before storage configuration
+and repeat the ownership check in the service before object reads. Public
+OpenAPI output omits eight worker-only routes while the existing bearer-protected
+runtime endpoints remain unchanged and directly tested.
+
+The npm audit covered production and development dependencies. The Python lock
+audit used `--no-deps` because the shared lock includes `uvloop`, which cannot be
+resolved in the Windows audit environment; every audited requirement is pinned
+to an exact version. `pip-audit` also reported that the lock has no hashes, so
+hash-based supply-chain verification remains unverified. No provider request,
+credit price, AI catalog activation, payment, release, or deployment occurred.
