@@ -17,4 +17,11 @@ describe("tool page chrome copy", () => {
     expect(copy.local).toBe("Checked through WebDiag API");
     expect(copy.note).toContain("Enter a URL");
   });
+
+  it("describes chromium-class tools as bounded PageSpeed provider checks", () => {
+    const copy = getToolPageChromeCopy("en", "chromium");
+    expect(copy.local).toContain("Google PageSpeed");
+    expect(copy.processingText).toContain("API key stays on the server");
+    expect(copy.processingText).toContain("without raw bodies");
+  });
 });

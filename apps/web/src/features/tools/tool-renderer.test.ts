@@ -28,4 +28,11 @@ describe("tool renderer registry contract", () => {
       "orphan-page-finder",
     ]));
   });
+
+  it("renders the two unique PageSpeed network evidence views", () => {
+    expect(SUPPORTED_TOOL_SLUGS).toEqual(expect.arrayContaining([
+      "resource-waterfall-analyzer",
+      "render-blocking-resources-checker",
+    ]));
+  });
 });

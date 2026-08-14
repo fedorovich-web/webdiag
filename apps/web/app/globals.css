@@ -2009,9 +2009,40 @@ body:has(.tool-heading) main.shell::before{
 .tool-badge-success { background: color-mix(in srgb, var(--success) 14%, transparent); color: var(--success); }
 .tool-badge-warning { background: color-mix(in srgb, var(--warning) 14%, transparent); color: var(--warning); }
 .tool-badge-danger { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); }
+.tool-input-note, .tool-state-note { margin: 0; color: var(--text-soft); font-size: 12px; line-height: 1.55; overflow-wrap: anywhere; }
+.tool-state-note { padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-muted); font-size: 13px; }
+.tool-state-note.is-warning { border-color: color-mix(in srgb, var(--warning) 34%, var(--line)); }
+.lighthouse-network-tool { align-items: start; }
+.lighthouse-network-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.lighthouse-network-heading > div { display: grid; gap: 8px; }
+.lighthouse-network-heading h2 { margin: 0; }
+.lighthouse-network-heading > span { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.lighthouse-network-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.lighthouse-network-summary article { min-width: 0; display: grid; gap: 4px; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface-muted); }
+.lighthouse-network-summary span, .lighthouse-network-summary small { color: var(--muted); font-size: 11px; }
+.lighthouse-network-summary strong { font-size: 19px; overflow-wrap: anywhere; }
+.lighthouse-network-list { display: grid; gap: 7px; }
+.lighthouse-network-list article { min-width: 0; display: grid; gap: 7px; padding: 11px 12px; border-bottom: 1px solid var(--line); }
+.lighthouse-network-list header { display: grid; grid-template-columns: minmax(72px, auto) 64px minmax(72px, 1fr); align-items: center; gap: 10px; font-size: 12px; }
+.lighthouse-network-list header > span:last-child { color: var(--muted); text-align: right; }
+.lighthouse-network-list p { margin: 0; color: var(--text-soft); font-size: 11px; line-height: 1.45; overflow-wrap: anywhere; }
+.lighthouse-network-track { position: relative; height: 6px; overflow: hidden; border-radius: 999px; background: var(--surface-muted); }
+.lighthouse-network-track i { position: absolute; inset-block: 0; border-radius: inherit; background: var(--brand); }
+.lighthouse-blocking-list { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.lighthouse-blocking-list li { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.lighthouse-blocking-list div { min-width: 0; display: grid; gap: 5px; }
+.lighthouse-blocking-list strong { font-size: 13px; overflow-wrap: anywhere; }
+.lighthouse-blocking-list span, .lighthouse-blocking-list b { color: var(--muted); font-size: 12px; font-weight: 500; }
 
 @media (max-width: 840px) {
   .result-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .lighthouse-network-summary { grid-template-columns: 1fr; }
+  .lighthouse-network-heading { display: grid; }
+  .lighthouse-network-list article { padding-inline: 0; }
+  .lighthouse-blocking-list li { grid-template-columns: 1fr; gap: 7px; }
 }
 
 .pem-certificate-tool { align-items: start; }

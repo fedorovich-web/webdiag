@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatBytes, isCachePolicyResponse, isPageSpeedResponse, isPageWeightResponse, parsePerformanceToolUrlInput } from "./performance-tool-contract";
+import { formatBytes, isCachePolicyResponse, isLighthouseNetworkResponse, isPageSpeedResponse, isPageWeightResponse, parsePerformanceToolUrlInput } from "./performance-tool-contract";
 
 const generated_at = "2026-07-21T00:00:00Z";
 
@@ -80,5 +80,35 @@ describe("performance tool contracts", () => {
   it("normalizes URL input", () => {
     expect(parsePerformanceToolUrlInput("example.com")?.toString()).toBe("https://example.com/");
     expect(parsePerformanceToolUrlInput("localhost")).toBeNull();
+  });
+
+  it("validates bounded redacted Lighthouse network evidence", () => {
+    const valid = {
+      contract_version: "webdiag.tool.lighthouse_network.v1",
+      generated_at,
+      requested_url: "https://example.com/",
+      normalized_url: "https://example.com/",
+      strategy: "mobile",
+      available: true,
+      lighthouse_version: "13",
+      analysis_fetch_time: generated_at,
+      fetch_error: null,
+      resources_available: true,
+      request_count: 1,
+      returned_request_count: 1,
+      total_transfer_bytes: 12000,
+      total_resource_bytes: 32000,
+      resources: [{ url: "https://example.com/", protocol: "h2", start_ms: 0, end_ms: 200, duration_ms: 200, transfer_bytes: 12000, resource_bytes: 32000, status_code: 200, mime_type: "text/html", resource_type: "document" }],
+      render_blocking_available: true,
+      render_blocking_score: 0.42,
+      render_blocking_display_value: "Potential savings of 350 ms",
+      render_blocking_savings_ms: 350,
+      render_blocking_items: [{ url: "https://example.com/app.css", total_bytes: 42000, wasted_bytes: 18000, wasted_ms: 350 }],
+      recommendation: "Review provider evidence.",
+    };
+    expect(isLighthouseNetworkResponse(valid)).toBe(true);
+    expect(isLighthouseNetworkResponse({ ...valid, resources: Array.from({ length: 41 }, () => valid.resources[0]) })).toBe(false);
+    expect(isLighthouseNetworkResponse({ ...valid, resources: [{ ...valid.resources[0], injected: true }] })).toBe(false);
+    expect(isLighthouseNetworkResponse({ ...valid, strategy: "both" })).toBe(false);
   });
 });

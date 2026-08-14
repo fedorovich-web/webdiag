@@ -427,6 +427,88 @@ export const seoAuditToolPages = [
     sourceUrls: ["https://web.dev/learn/performance/image-performance", "https://developer.chrome.com/docs/lighthouse/performance/uses-webp-images/"],
   }),
 
+  toolPage({
+    slug: "resource-waterfall-analyzer",
+    seoTitle: { ru: "Временная шкала загрузки ресурсов", en: "Resource Loading Timeline Analyzer" },
+    metaDescription: { ru: "Проверьте до 40 network-requests из Google PageSpeed Lighthouse: тип, начало, длительность и известный размер без raw trace.", en: "Inspect up to 40 Google PageSpeed Lighthouse network requests: type, start, duration, and known size without exposing a raw trace." },
+    h1: { ru: "Анализ загрузки ресурсов", en: "Resource Waterfall Analyzer" },
+    lead: { ru: "Введите публичный URL, чтобы получить ограниченную временную шкалу network-requests из Google PageSpeed Lighthouse. WebDiag показывает нормализованные строки, а не полный DevTools trace.", en: "Enter a public URL to get a bounded network-requests timeline from Google PageSpeed Lighthouse. WebDiag shows normalized rows, not a full DevTools trace." },
+    quickFacts: [{ ru: "До 40 запросов", en: "Up to 40 requests" }, { ru: "Mobile / Desktop", en: "Mobile / Desktop" }, { ru: "Query удаляется", en: "Query strings removed" }],
+    howToSteps: [
+      { ru: "Вставьте публичный http(s) URL.", en: "Paste a public http(s) URL." },
+      { ru: "Выберите mobile или desktop стратегию.", en: "Choose a mobile or desktop strategy." },
+      { ru: "Сравните начало, длительность и известный transfer size показанных ресурсов.", en: "Compare start time, duration, and known transfer size for the returned resources." },
+    ],
+    supportedFeatures: [
+      { ru: "Использует audit network-requests из ответа Google PageSpeed Lighthouse.", en: "Uses the network-requests audit from the Google PageSpeed Lighthouse response." },
+      { ru: "Показывает не более 40 строк и явно разделяет найденные и возвращённые запросы.", en: "Returns no more than 40 rows and explicitly separates found and returned requests." },
+      { ru: "Удаляет userinfo, query и fragment из URL ресурсов.", en: "Removes user info, query strings, and fragments from resource URLs." },
+    ],
+    limitations: [
+      { ru: "Это ограниченная визуализация provider evidence, а не полный Chrome DevTools waterfall или trace.", en: "This is a bounded view of provider evidence, not a complete Chrome DevTools waterfall or trace." },
+      { ru: "PageSpeed может не вернуть audit или отдельные размеры; такие поля остаются недоступными.", en: "PageSpeed may omit the audit or individual sizes; those fields remain unavailable." },
+      { ru: "Порядок и длительность зависят от конкретного provider run и не являются field data.", en: "Order and duration depend on the specific provider run and are not field data." },
+    ],
+    useCases: [
+      { ru: "Найти поздно стартующие или долгие ресурсы в конкретном Lighthouse run.", en: "Find late-starting or long-running resources in a specific Lighthouse run." },
+      { ru: "Сопоставить transfer size и resource type перед более глубоким профилированием.", en: "Compare transfer size and resource type before deeper profiling." },
+      { ru: "Проверить mobile и desktop стратегии без передачи PageSpeed API key в браузер.", en: "Check mobile and desktop strategies without exposing the PageSpeed API key to the browser." },
+    ],
+    technicalNotes: [
+      { ru: "Backend сначала валидирует URL, затем вызывает PageSpeed API с server-side key.", en: "The backend validates the URL before calling PageSpeed API with a server-side key." },
+      { ru: "Response bodies, request/response headers, cookies, screenshots и trace не входят в контракт.", en: "Response bodies, request/response headers, cookies, screenshots, and traces are excluded from the contract." },
+    ],
+    faq: [
+      { question: { ru: "Почему показано не больше 40 запросов?", en: "Why are no more than 40 requests shown?" }, answer: { ru: "Это явный лимит безопасного и читаемого ответа. Счётчик найденных запросов сохраняется отдельно.", en: "This is an explicit limit for a safe, readable response. The found request count is retained separately." } },
+      { question: { ru: "Почему URL не содержит query?", en: "Why does the URL not include a query string?" }, answer: { ru: "WebDiag удаляет query и fragment, чтобы не показывать токены и другие чувствительные параметры из provider payload.", en: "WebDiag removes query strings and fragments so tokens and other sensitive parameters from provider payloads are not displayed." } },
+    ],
+    relatedToolSlugs: ["core-web-vitals-checker", "page-weight-analyzer", "render-blocking-resources-checker"],
+    sourceUrls: ["https://developers.google.com/speed/docs/insights/rest/v5/pagespeedapi/runpagespeed", "https://github.com/GoogleChrome/lighthouse/blob/main/docs/understanding-results.md"],
+    lastReviewedAt: "2026-08-14",
+    reviewDueAt: "2027-02-14",
+  }),
+
+  toolPage({
+    slug: "render-blocking-resources-checker",
+    seoTitle: { ru: "Проверка блокирующих рендер ресурсов", en: "Render-Blocking Resources Checker" },
+    metaDescription: { ru: "Проверьте точный audit render-blocking-resources из Google PageSpeed Lighthouse с оценкой экономии и bounded rows.", en: "Inspect the exact Google PageSpeed Lighthouse render-blocking-resources audit with estimated savings and bounded rows." },
+    h1: { ru: "Поиск блокирующих рендер ресурсов", en: "Render-Blocking Resources Checker" },
+    lead: { ru: "Введите публичный URL, чтобы проверить точный legacy audit render-blocking-resources из PageSpeed. Если provider не вернул audit, WebDiag показывает unavailable state и не придумывает результат.", en: "Enter a public URL to inspect the exact legacy render-blocking-resources audit from PageSpeed. If the provider omits the audit, WebDiag shows an unavailable state instead of inventing a result." },
+    quickFacts: [{ ru: "Точный Lighthouse audit", en: "Exact Lighthouse audit" }, { ru: "До 20 строк", en: "Up to 20 rows" }, { ru: "Без эвристики", en: "No heuristic fallback" }],
+    howToSteps: [
+      { ru: "Вставьте публичный URL и выберите mobile или desktop.", en: "Paste a public URL and choose mobile or desktop." },
+      { ru: "Запустите provider check через WebDiag backend.", en: "Run the provider check through the WebDiag backend." },
+      { ru: "Проверьте audit score, provider display value, estimated savings и возвращённые строки.", en: "Review the audit score, provider display value, estimated savings, and returned rows." },
+    ],
+    supportedFeatures: [
+      { ru: "Читает только audit с ID render-blocking-resources и не выводит догадки по CSS/JS.", en: "Reads only the audit with the render-blocking-resources ID and does not infer results from CSS or JavaScript." },
+      { ru: "Показывает до 20 нормализованных строк с known bytes и estimated wasted time.", en: "Shows up to 20 normalized rows with known bytes and estimated wasted time." },
+      { ru: "Удаляет query и fragment из resource URL перед ответом frontend.", en: "Removes query strings and fragments from resource URLs before responding to the frontend." },
+    ],
+    limitations: [
+      { ru: "Lighthouse развивает Performance Insights и может не вернуть legacy audit в конкретной версии или запуске.", en: "Lighthouse is evolving toward Performance Insights and may omit this legacy audit in a specific version or run." },
+      { ru: "Estimated savings — lab estimate provider, а не измеренная экономия после исправления.", en: "Estimated savings are a provider lab estimate, not measured savings after a fix." },
+      { ru: "Инструмент не изменяет CSS/JS и не доказывает, что удаление конкретного файла безопасно.", en: "The tool does not modify CSS or JavaScript and cannot prove that removing a specific file is safe." },
+    ],
+    useCases: [
+      { ru: "Проверить наличие provider-confirmed blocking resources перед оптимизацией critical path.", en: "Check for provider-confirmed blocking resources before optimizing the critical path." },
+      { ru: "Сравнить mobile и desktop audit для одной страницы.", en: "Compare mobile and desktop audits for one page." },
+      { ru: "Зафиксировать unavailable state при смене Lighthouse contract без ложного зелёного результата.", en: "Record an unavailable state when the Lighthouse contract changes without producing a false green result." },
+    ],
+    technicalNotes: [
+      { ru: "Backend принимает только публичный URL, вызывает PageSpeed и возвращает strict DTO.", en: "The backend accepts only a public URL, calls PageSpeed, and returns a strict DTO." },
+      { ru: "Отсутствие audit отличается от доступного audit без возвращённых item rows.", en: "A missing audit is distinct from an available audit with no returned item rows." },
+    ],
+    faq: [
+      { question: { ru: "Почему audit может быть недоступен?", en: "Why can the audit be unavailable?" }, answer: { ru: "Provider payload зависит от версии Lighthouse и выбранных insights. WebDiag требует точный ID и не подменяет его собственной классификацией.", en: "The provider payload depends on the Lighthouse version and selected insights. WebDiag requires the exact ID and does not substitute its own classification." } },
+      { question: { ru: "Нулевая строка означает отсутствие проблем?", en: "Do zero rows mean there are no issues?" }, answer: { ru: "Не обязательно. Смотрите доступность audit и score; отсутствие item rows само по себе не является универсальным доказательством.", en: "Not necessarily. Check audit availability and score; missing item rows alone are not universal proof." } },
+    ],
+    relatedToolSlugs: ["resource-waterfall-analyzer", "core-web-vitals-checker", "css-delivery-analyzer"],
+    sourceUrls: ["https://developers.google.com/speed/docs/insights/rest/v5/pagespeedapi/runpagespeed", "https://github.com/GoogleChrome/lighthouse/discussions/16462"],
+    lastReviewedAt: "2026-08-14",
+    reviewDueAt: "2027-02-14",
+  }),
+
 
   toolPage({
     slug: "image-performance-checker",

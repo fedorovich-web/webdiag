@@ -29,8 +29,11 @@
     "riskTier": "R3",
     "access": "required",
     "implementationWave": "W4",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Показывает до 40 строк временной шкалы network-requests из Google PageSpeed Lighthouse: тип, начало, длительность и известный размер. Query и fragment удаляются; response bodies, headers, cookies и trace не сохраняются.",
+      "en": "Shows up to 40 network-requests timeline rows from Google PageSpeed Lighthouse: type, start, duration, and known size. Query strings and fragments are removed; response bodies, headers, cookies, and traces are not stored."
+    }
   },
   {
     "id": "WD-003",
@@ -384,8 +387,11 @@
     "riskTier": "R3",
     "access": "required",
     "implementationWave": "W4",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Показывает до 20 строк точного audit render-blocking-resources из Google PageSpeed Lighthouse. Если provider не вернул этот audit, результат помечается недоступным без эвристической подмены.",
+      "en": "Shows up to 20 rows from the exact Google PageSpeed Lighthouse render-blocking-resources audit. If the provider omits the audit, the result is marked unavailable without a heuristic substitute."
+    }
   },
   {
     "id": "WD-023",
@@ -400,7 +406,8 @@
     "access": "required",
     "implementationWave": "W4",
     "state": "internal",
-    "description": null
+    "description": null,
+    "supersededBy": "html-validator"
   },
   {
     "id": "WD-024",

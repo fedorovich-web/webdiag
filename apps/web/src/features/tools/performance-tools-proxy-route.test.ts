@@ -3,12 +3,14 @@ import type { NextRequest } from "next/server";
 import { POST as postCoreWebVitals } from "../../../app/api/tools/core-web-vitals/route";
 import { POST as postCachePolicy } from "../../../app/api/tools/cache-policy/route";
 import { POST as postPageWeight } from "../../../app/api/tools/page-weight/route";
+import { POST as postLighthouseNetwork } from "../../../app/api/tools/lighthouse-network/route";
 
 const generated_at = "2026-07-21T00:00:00Z";
 
 const validCore = { contract_version: "webdiag.tool.core_web_vitals.v2", generated_at, requested_url: "https://example.com/", normalized_url: "https://example.com/", strategy: "mobile", results: [{ strategy: "mobile", available: false, performance_score: null, field_data_available: false, field_overall_category: null, lighthouse_version: null, analysis_fetch_time: null, category_scores: { performance: null, accessibility: null, "best-practices": null, seo: null }, audit_findings: [], metrics: [], opportunities: [], fetch_error: "missing key" }], recommendation: "Set key" };
 const validCache = { contract_version: "webdiag.tool.cache_policy.v1", generated_at, requested_url: "https://example.com/", final_url: "https://example.com/", status_code: 200, content_type: "text/html", is_static_asset: false, cache_control: null, etag: null, last_modified: null, expires: null, vary: null, score: 25, checks: [{ id: "cache-control", title: "Cache-Control", status: "fail", severity: "medium", value: null, recommendation: "Add policy" }], recommendation: "Add policy" };
 const validWeight = { contract_version: "webdiag.tool.page_weight.v1", generated_at, requested_url: "https://example.com/", final_url: "https://example.com/", status_code: 200, scan_mode: "static_html_bounded", html_bytes: 1000, discovered_resource_count: 0, checked_resource_count: 0, total_known_bytes: 0, unknown_size_count: 0, image_count: 0, legacy_image_count: 0, modern_image_count: 0, summaries: [], largest_resources: [], recommendation: "OK" };
+const validNetwork = { contract_version: "webdiag.tool.lighthouse_network.v1", generated_at, requested_url: "https://example.com/", normalized_url: "https://example.com/", strategy: "mobile", available: true, lighthouse_version: "13", analysis_fetch_time: generated_at, fetch_error: null, resources_available: true, request_count: 0, returned_request_count: 0, total_transfer_bytes: null, total_resource_bytes: null, resources: [], render_blocking_available: true, render_blocking_score: 1, render_blocking_display_value: null, render_blocking_savings_ms: 0, render_blocking_items: [], recommendation: "No blockers in this provider run." };
 
 function request(path: string, body: unknown): NextRequest {
   return new Request(`http://localhost${path}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }) as NextRequest;
@@ -31,7 +33,7 @@ describe("performance tool proxy routes", () => {
     const fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       expect(init?.method).toBe("POST");
       const url = String(input);
-      const payload = url.endsWith("/core-web-vitals") ? validCore : url.endsWith("/cache-policy") ? validCache : validWeight;
+      const payload = url.endsWith("/core-web-vitals") ? validCore : url.endsWith("/cache-policy") ? validCache : url.endsWith("/lighthouse-network") ? validNetwork : validWeight;
       return new Response(JSON.stringify(payload), { status: 200, headers: { "content-type": "application/json" } });
     });
     vi.stubGlobal("fetch", fetch);
@@ -39,7 +41,8 @@ describe("performance tool proxy routes", () => {
     await expect(responseJson(await postCoreWebVitals(request("/api/tools/core-web-vitals", { url: "https://example.com/", strategy: "both" })))).resolves.toMatchObject({ contract_version: "webdiag.tool.core_web_vitals.v2" });
     await expect(responseJson(await postCachePolicy(request("/api/tools/cache-policy", { url: "https://example.com/" })))).resolves.toMatchObject({ contract_version: "webdiag.tool.cache_policy.v1" });
     await expect(responseJson(await postPageWeight(request("/api/tools/page-weight", { url: "https://example.com/" })))).resolves.toMatchObject({ contract_version: "webdiag.tool.page_weight.v1" });
-    expect(fetch).toHaveBeenCalledTimes(3);
+    await expect(responseJson(await postLighthouseNetwork(request("/api/tools/lighthouse-network", { url: "https://example.com/", strategy: "desktop" })))).resolves.toMatchObject({ contract_version: "webdiag.tool.lighthouse_network.v1" });
+    expect(fetch).toHaveBeenCalledTimes(4);
   });
 
   it("preserves normalized backend errors", async () => {

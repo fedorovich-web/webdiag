@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import math
 import os
 import re
 from collections import Counter
 from datetime import UTC, datetime
 from html.parser import HTMLParser
 from typing import Annotated, Any, Literal, Protocol
-from urllib.parse import urljoin, urlsplit
+from urllib.parse import urljoin, urlsplit, urlunsplit
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -187,6 +188,67 @@ class PageWeightResponse(BaseModel):
     recommendation: str = Field(min_length=1, max_length=1_000)
 
 
+class LighthouseNetworkRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    url: str = Field(min_length=1, max_length=2_048)
+    strategy: Strategy = "mobile"
+
+
+class LighthouseNetworkResourceResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    url: str = Field(min_length=1, max_length=2_048)
+    protocol: str | None = Field(default=None, max_length=40)
+    start_ms: float = Field(ge=0)
+    end_ms: float = Field(ge=0)
+    duration_ms: float = Field(ge=0)
+    transfer_bytes: int | None = Field(default=None, ge=0)
+    resource_bytes: int | None = Field(default=None, ge=0)
+    status_code: int | None = Field(default=None, ge=100, le=599)
+    mime_type: str | None = Field(default=None, max_length=160)
+    resource_type: str = Field(min_length=1, max_length=40)
+
+
+class LighthouseRenderBlockingItemResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    url: str = Field(min_length=1, max_length=2_048)
+    total_bytes: int | None = Field(default=None, ge=0)
+    wasted_bytes: int | None = Field(default=None, ge=0)
+    wasted_ms: float | None = Field(default=None, ge=0)
+
+
+class LighthouseNetworkResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    contract_version: Literal["webdiag.tool.lighthouse_network.v1"] = (
+        "webdiag.tool.lighthouse_network.v1"
+    )
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    requested_url: str = Field(min_length=1, max_length=2_048)
+    normalized_url: str = Field(min_length=1, max_length=2_048)
+    strategy: Strategy
+    available: bool
+    lighthouse_version: str | None = Field(default=None, max_length=80)
+    analysis_fetch_time: str | None = Field(default=None, max_length=80)
+    fetch_error: str | None = Field(default=None, max_length=500)
+    resources_available: bool
+    request_count: int = Field(ge=0, le=1_000)
+    returned_request_count: int = Field(ge=0, le=40)
+    total_transfer_bytes: int | None = Field(default=None, ge=0)
+    total_resource_bytes: int | None = Field(default=None, ge=0)
+    resources: tuple[LighthouseNetworkResourceResponse, ...] = Field(max_length=40)
+    render_blocking_available: bool
+    render_blocking_score: float | None = Field(default=None, ge=0, le=1)
+    render_blocking_display_value: str | None = Field(default=None, max_length=240)
+    render_blocking_savings_ms: float | None = Field(default=None, ge=0)
+    render_blocking_items: tuple[LighthouseRenderBlockingItemResponse, ...] = Field(
+        max_length=20
+    )
+    recommendation: str = Field(min_length=1, max_length=1_000)
+
+
 class MissingPageSpeedApiKeyError(RuntimeError):
     pass
 
@@ -291,6 +353,42 @@ def inspect_core_web_vitals(
     )
 
 
+@router.post("/v1/tools/lighthouse-network", response_model=LighthouseNetworkResponse)
+def inspect_lighthouse_network(
+    payload: LighthouseNetworkRequest,
+    pagespeed_client: PageSpeedClientDependency,
+) -> LighthouseNetworkResponse:
+    try:
+        validated = validate_url(payload.url)
+    except UrlPolicyError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "tool_url_rejected", "message": str(exc)},
+        ) from exc
+
+    try:
+        provider_payload = pagespeed_client.run(
+            url=validated.normalized,
+            strategy=payload.strategy,
+            categories=LIGHTHOUSE_CATEGORIES,
+        )
+    except MissingPageSpeedApiKeyError as exc:
+        return _unavailable_lighthouse_network(payload, validated.normalized, str(exc))
+    except PageSpeedApiError as exc:
+        return _unavailable_lighthouse_network(payload, validated.normalized, str(exc))
+
+    try:
+        return _parse_lighthouse_network_payload(
+            provider_payload,
+            request=payload,
+            normalized_url=validated.normalized,
+        )
+    except (KeyError, TypeError, ValueError):
+        return _unavailable_lighthouse_network(
+            payload,
+            validated.normalized,
+            "Google PageSpeed API returned an unsupported payload.",
+        )
 @router.post("/v1/tools/cache-policy", response_model=CachePolicyResponse)
 def inspect_cache_policy(
     payload: CachePolicyRequest,
@@ -434,6 +532,254 @@ def _unavailable_pagespeed(strategy: Strategy, message: str) -> PageSpeedStrateg
         opportunities=(),
         fetch_error=message,
     )
+
+
+def _unavailable_lighthouse_network(
+    request: LighthouseNetworkRequest,
+    normalized_url: str,
+    message: str,
+) -> LighthouseNetworkResponse:
+    response_url = _redacted_public_url(normalized_url)
+    if response_url is None:
+        raise ValueError("validated target URL could not be normalized")
+    return LighthouseNetworkResponse(
+        requested_url=response_url,
+        normalized_url=response_url,
+        strategy=request.strategy,
+        available=False,
+        lighthouse_version=None,
+        analysis_fetch_time=None,
+        fetch_error=_bounded_text(message, 500) or "PageSpeed provider is unavailable.",
+        resources_available=False,
+        request_count=0,
+        returned_request_count=0,
+        total_transfer_bytes=None,
+        total_resource_bytes=None,
+        resources=(),
+        render_blocking_available=False,
+        render_blocking_score=None,
+        render_blocking_display_value=None,
+        render_blocking_savings_ms=None,
+        render_blocking_items=(),
+        recommendation=(
+            "Lighthouse network evidence is unavailable for this run. No resource or "
+            "render-blocking conclusion was generated."
+        ),
+    )
+
+
+def _parse_lighthouse_network_payload(
+    payload: dict[str, Any],
+    *,
+    request: LighthouseNetworkRequest,
+    normalized_url: str,
+) -> LighthouseNetworkResponse:
+    response_url = _redacted_public_url(normalized_url)
+    if response_url is None:
+        raise ValueError("validated target URL could not be normalized")
+    lighthouse = _as_dict(payload.get("lighthouseResult"))
+    if not lighthouse:
+        raise ValueError("missing lighthouse result")
+    audits = _as_dict(lighthouse.get("audits"))
+
+    network_audit = _as_dict(audits.get("network-requests"))
+    network_details = _as_dict(network_audit.get("details"))
+    network_items = _as_list(network_details.get("items"))
+    resources_available = bool(network_audit) and network_details.get("type") == "table"
+    resources = tuple(_network_resources(network_items)) if resources_available else ()
+
+    render_audit = _as_dict(audits.get("render-blocking-resources"))
+    render_details = _as_dict(render_audit.get("details"))
+    render_items = _as_list(render_details.get("items"))
+    render_blocking_available = bool(render_audit) and isinstance(
+        render_audit.get("scoreDisplayMode"), str
+    )
+    render_score = _bounded_score(render_audit.get("score"))
+    render_savings = _finite_non_negative_number(render_details.get("overallSavingsMs"))
+    blocking_items = (
+        tuple(_render_blocking_items(render_items)) if render_blocking_available else ()
+    )
+
+    known_transfer = [item.transfer_bytes for item in resources if item.transfer_bytes is not None]
+    known_resource = [item.resource_bytes for item in resources if item.resource_bytes is not None]
+    recommendation = _lighthouse_network_recommendation(
+        resources_available=resources_available,
+        request_count=min(len(network_items), 1_000),
+        resources=resources,
+        render_blocking_available=render_blocking_available,
+        render_blocking_items=blocking_items,
+    )
+
+    return LighthouseNetworkResponse(
+        requested_url=response_url,
+        normalized_url=response_url,
+        strategy=request.strategy,
+        available=True,
+        lighthouse_version=_bounded_text(lighthouse.get("lighthouseVersion"), 80),
+        analysis_fetch_time=_bounded_text(lighthouse.get("fetchTime"), 80),
+        fetch_error=None,
+        resources_available=resources_available,
+        request_count=min(len(network_items), 1_000) if resources_available else 0,
+        returned_request_count=len(resources),
+        total_transfer_bytes=sum(known_transfer) if known_transfer else None,
+        total_resource_bytes=sum(known_resource) if known_resource else None,
+        resources=resources,
+        render_blocking_available=render_blocking_available,
+        render_blocking_score=render_score,
+        render_blocking_display_value=_bounded_text(render_audit.get("displayValue"), 240),
+        render_blocking_savings_ms=render_savings,
+        render_blocking_items=blocking_items,
+        recommendation=recommendation,
+    )
+
+
+def _network_resources(items: list[Any]) -> list[LighthouseNetworkResourceResponse]:
+    rows: list[LighthouseNetworkResourceResponse] = []
+    for raw in items:
+        item = _as_dict(raw)
+        url = _redacted_public_url(item.get("url"))
+        start = _finite_non_negative_number(item.get("startTime"))
+        end = _finite_non_negative_number(item.get("endTime"))
+        if url is None or start is None or end is None or end < start:
+            continue
+        status_code = _bounded_int(item.get("statusCode"), minimum=100, maximum=599)
+        transfer_bytes = _bounded_int(
+            item.get("transferSize"), minimum=0, maximum=2_000_000_000
+        )
+        resource_bytes = _bounded_int(
+            item.get("resourceSize"), minimum=0, maximum=2_000_000_000
+        )
+        rows.append(
+            LighthouseNetworkResourceResponse(
+                url=url,
+                protocol=_bounded_text(item.get("protocol"), 40),
+                start_ms=start,
+                end_ms=end,
+                duration_ms=end - start,
+                transfer_bytes=transfer_bytes,
+                resource_bytes=resource_bytes,
+                status_code=status_code,
+                mime_type=_bounded_text(item.get("mimeType"), 160),
+                resource_type=(
+                    _bounded_text(item.get("resourceType"), 40) or "other"
+                ).lower(),
+            )
+        )
+        if len(rows) == 40:
+            break
+    return sorted(rows, key=lambda row: (row.start_ms, row.end_ms, row.url))
+
+
+def _render_blocking_items(
+    items: list[Any],
+) -> list[LighthouseRenderBlockingItemResponse]:
+    rows: list[LighthouseRenderBlockingItemResponse] = []
+    for raw in items:
+        item = _as_dict(raw)
+        url = _redacted_public_url(item.get("url"))
+        if url is None:
+            continue
+        rows.append(
+            LighthouseRenderBlockingItemResponse(
+                url=url,
+                total_bytes=_bounded_int(
+                    item.get("totalBytes"), minimum=0, maximum=2_000_000_000
+                ),
+                wasted_bytes=_bounded_int(
+                    item.get("wastedBytes"), minimum=0, maximum=2_000_000_000
+                ),
+                wasted_ms=_finite_non_negative_number(item.get("wastedMs")),
+            )
+        )
+        if len(rows) == 20:
+            break
+    return rows
+
+
+def _redacted_public_url(value: Any) -> str | None:
+    if not isinstance(value, str) or len(value) > 8_192:
+        return None
+    try:
+        parsed = urlsplit(value)
+    except ValueError:
+        return None
+    if parsed.scheme.lower() not in {"http", "https"} or not parsed.hostname:
+        return None
+    if parsed.username is not None or parsed.password is not None:
+        return None
+    default_port = 443 if parsed.scheme.lower() == "https" else 80
+    try:
+        port = parsed.port
+    except ValueError:
+        return None
+    if port not in {None, 80, 443}:
+        return None
+    hostname = parsed.hostname.rstrip(".")
+    host = f"[{hostname}]" if ":" in hostname else hostname
+    netloc = host if port in {None, default_port} else f"{host}:{port}"
+    redacted = urlunsplit((parsed.scheme.lower(), netloc, parsed.path or "/", "", ""))
+    try:
+        return validate_url(redacted).normalized[:2_048]
+    except UrlPolicyError:
+        return None
+
+
+def _finite_non_negative_number(value: Any) -> float | None:
+    if isinstance(value, bool) or not isinstance(value, int | float):
+        return None
+    numeric = float(value)
+    if not math.isfinite(numeric) or not 0 <= numeric <= 3_600_000:
+        return None
+    return numeric
+
+
+def _bounded_int(value: Any, *, minimum: int, maximum: int) -> int | None:
+    if isinstance(value, bool) or not isinstance(value, int | float):
+        return None
+    numeric = float(value)
+    if not math.isfinite(numeric) or not numeric.is_integer():
+        return None
+    integer = int(numeric)
+    return integer if minimum <= integer <= maximum else None
+
+
+def _bounded_score(value: Any) -> float | None:
+    if isinstance(value, bool) or not isinstance(value, int | float):
+        return None
+    score = float(value)
+    return score if math.isfinite(score) and 0 <= score <= 1 else None
+
+
+def _lighthouse_network_recommendation(
+    *,
+    resources_available: bool,
+    request_count: int,
+    resources: tuple[LighthouseNetworkResourceResponse, ...],
+    render_blocking_available: bool,
+    render_blocking_items: tuple[LighthouseRenderBlockingItemResponse, ...],
+) -> str:
+    if not resources_available and not render_blocking_available:
+        return (
+            "Lighthouse network and render-blocking audit details are unavailable for this "
+            "run. No empty-success conclusion was generated."
+        )
+    notes: list[str] = []
+    if resources_available:
+        notes.append(
+            f"Lighthouse reported {request_count} network requests; WebDiag returned "
+            f"{len(resources)} bounded, redacted timeline rows."
+        )
+    else:
+        notes.append("The Lighthouse network request table is unavailable for this run.")
+    if render_blocking_available:
+        notes.append(
+            f"Lighthouse reported {len(render_blocking_items)} bounded render-blocking "
+            "resource rows. Review the provider evidence rather than inferring blockers "
+            "from markup."
+        )
+    else:
+        notes.append("The Lighthouse render-blocking audit is unavailable for this run.")
+    return " ".join(notes)
 
 
 def _parse_pagespeed_payload(

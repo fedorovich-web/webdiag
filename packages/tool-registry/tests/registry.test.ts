@@ -90,4 +90,16 @@ describe("tool registry", () => {
     expect(crawlerTools[0]?.title.en).toBe("Bounded Site Audit");
     expect(crawlerTools[2]?.title.en).toBe("Unlinked Page Candidates");
   });
+
+  it("publishes bounded PageSpeed network evidence and supersedes the viewport microtool", () => {
+    for (const slug of ["resource-waterfall-analyzer", "render-blocking-resources-checker"]) {
+      const tool = tools.find((candidate) => candidate.slug === slug);
+      expect(tool).toMatchObject({ executorClass: "chromium", state: "ready" });
+      expect(tool?.description?.en).toContain("PageSpeed");
+    }
+    expect(tools.find((tool) => tool.slug === "mobile-viewport-checker")).toMatchObject({
+      state: "internal",
+      supersededBy: "html-validator",
+    });
+  });
 });

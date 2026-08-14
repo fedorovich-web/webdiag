@@ -47,7 +47,7 @@ import { BrokenImageCheckerTool, BrokenLinkCheckerTool, LinkAnalyzerTool } from 
 import { HeadingStructureTool, KeywordFrequencyTool, ReadabilityAnalyzerTool } from "./content-analysis-tools";
 import { FaviconCheckerTool, ImagePerformanceCheckerTool, ImageSeoAuditTool } from "./image-audit-tools";
 import { MetaTagsCheckerTool, SerpPreviewTool, SocialPreviewTool } from "./metadata-preview-tools";
-import { CachePolicyTool, CoreWebVitalsTool, PageWeightTool } from "./performance-tools";
+import { CachePolicyTool, CoreWebVitalsTool, LighthouseNetworkTool, PageWeightTool } from "./performance-tools";
 import { HtmlMarkupValidatorTool, SchemaMarkupGeneratorTool, StructuredDataValidatorTool } from "./markup-tools";
 import {
   CookiePolicyCheckerTool,
@@ -336,6 +336,8 @@ export const SUPPORTED_TOOL_SLUGS = [
   "core-web-vitals-checker",
   "cache-policy-checker",
   "page-weight-analyzer",
+  "resource-waterfall-analyzer",
+  "render-blocking-resources-checker",
   "image-performance-checker",
   "image-seo-audit",
   "favicon-checker",
@@ -453,6 +455,8 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "core-web-vitals-checker": return <CoreWebVitalsTool locale={locale} />;
     case "cache-policy-checker": return <CachePolicyTool locale={locale} />;
     case "page-weight-analyzer": return <PageWeightTool locale={locale} />;
+    case "resource-waterfall-analyzer": return <LighthouseNetworkTool locale={locale} view="resources" />;
+    case "render-blocking-resources-checker": return <LighthouseNetworkTool locale={locale} view="blocking" />;
     case "image-performance-checker": return <ImagePerformanceCheckerTool locale={locale} />;
     case "image-seo-audit": return <ImageSeoAuditTool locale={locale} />;
     case "favicon-checker": return <FaviconCheckerTool locale={locale} />;
