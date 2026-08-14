@@ -131,8 +131,31 @@ def get_ai_image_upload_user(
 AIImageUploadUserDependency = Annotated[str, Depends(get_ai_image_upload_user)]
 
 
-def get_authenticated_ai_artifact_context(
+def get_authorized_ai_artifact_user(
+    run_id: UUID,
+    artifact_id: UUID,
+    ai: AIServiceDependency,
     user_id: AIUserIdDependency,
+) -> str:
+    try:
+        ai.require_artifact_access(
+            user_id=user_id,
+            run_id=str(run_id),
+            artifact_id=str(artifact_id),
+        )
+    except AIServiceError as error:
+        raise _error(error) from error
+    return user_id
+
+
+AIAuthorizedArtifactUserDependency = Annotated[
+    str,
+    Depends(get_authorized_ai_artifact_user),
+]
+
+
+def get_authenticated_ai_artifact_context(
+    user_id: AIAuthorizedArtifactUserDependency,
     artifact_storage: AIArtifactStorageDependency,
 ) -> tuple[str, ArtifactStorage]:
     return user_id, artifact_storage

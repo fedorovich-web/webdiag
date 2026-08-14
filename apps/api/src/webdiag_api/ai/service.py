@@ -471,13 +471,11 @@ class AIService:
         artifact_id: str,
         artifact_storage: ArtifactStorage,
     ) -> tuple[bytes, str]:
-        artifact = self._store.get_artifact_for_user(
+        artifact = self.require_artifact_access(
             user_id=user_id,
             run_id=run_id,
             artifact_id=artifact_id,
         )
-        if artifact is None:
-            raise AIServiceError(404, "ai_artifact_not_found", "AI artifact not found.")
         try:
             data = artifact_storage.read(
                 object_key=artifact.object_key,
@@ -499,6 +497,22 @@ class AIService:
                 "AI artifact is temporarily unavailable.",
             ) from error
         return data, artifact.media_type
+
+    def require_artifact_access(
+        self,
+        *,
+        user_id: str,
+        run_id: str,
+        artifact_id: str,
+    ) -> StoredAIArtifact:
+        artifact = self._store.get_artifact_for_user(
+            user_id=user_id,
+            run_id=run_id,
+            artifact_id=artifact_id,
+        )
+        if artifact is None:
+            raise AIServiceError(404, "ai_artifact_not_found", "AI artifact not found.")
+        return artifact
 
     @staticmethod
     def _validate_generated_artifact(

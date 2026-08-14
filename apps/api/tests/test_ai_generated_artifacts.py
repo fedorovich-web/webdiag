@@ -269,6 +269,41 @@ def test_generated_artifact_completion_is_private_owned_and_integrity_checked(
     }
 
 
+def test_missing_artifact_is_hidden_before_storage_initialization(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    account, service, _storage, owner, _other = _context(tmp_path)
+    app.dependency_overrides[get_account_service] = lambda: account
+    app.dependency_overrides[get_ai_service] = lambda: service
+    get_ai_artifact_storage.cache_clear()
+    monkeypatch.setattr(
+        "webdiag_api.ai.api.artifact_storage_from_env",
+        lambda: (_ for _ in ()).throw(AssertionError("storage must not initialize")),
+    )
+    try:
+        response = asyncio.run(
+            _call(
+                "GET",
+                (
+                    "/v1/account/ai/runs/11111111-1111-4111-8111-111111111111/"
+                    "artifacts/22222222-2222-4222-8222-222222222222"
+                ),
+                token=owner.token,
+            )
+        )
+    finally:
+        app.dependency_overrides.clear()
+        get_ai_artifact_storage.cache_clear()
+
+    assert response.status_code == 404
+    assert response.headers["cache-control"] == "no-store"
+    assert response.json()["detail"] == {
+        "code": "ai_artifact_not_found",
+        "message": "AI artifact not found.",
+    }
+
+
 def test_image_completion_rejects_missing_or_mismatched_private_artifact(tmp_path: Path) -> None:
     _account, service, storage, owner, _other = _context(tmp_path)
     run, _created = service.create_run(
