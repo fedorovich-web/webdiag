@@ -39,7 +39,11 @@ from webdiag_api.ai.storage import AILeaseLostError, SqliteAIStore
 from webdiag_api.config import settings
 
 router = APIRouter(prefix="/v1/account", tags=["account-ai"])
-internal_router = APIRouter(prefix="/v1/internal/ai", tags=["internal-ai"])
+internal_router = APIRouter(
+    prefix="/v1/internal/ai",
+    tags=["internal-ai"],
+    include_in_schema=False,
+)
 
 
 @lru_cache(maxsize=1)

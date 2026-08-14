@@ -34,6 +34,16 @@ def test_public_tools_are_limited_to_ready_entries() -> None:
     assert len(payload["items"]) == 112
 
 
+def test_public_openapi_excludes_internal_operational_routes() -> None:
+    response = asyncio.run(get("/openapi.json"))
+
+    assert response.status_code == 200
+    paths = response.json()["paths"]
+    assert "/v1/audits" in paths
+    assert "/v1/account/ai/catalog" in paths
+    assert not [path for path in paths if path.startswith("/v1/internal/")]
+
+
 async def call_asgi(
     app: object,
     scope: dict[str, object],

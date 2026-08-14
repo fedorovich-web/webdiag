@@ -17,7 +17,11 @@ from webdiag_api.crawl.models import AccountCrawlDetail, AccountCrawlJob, Accoun
 from webdiag_api.crawl.service import CrawlService, default_crawl_fetcher
 from webdiag_api.crawl.storage import CrawlIntegrityError, SqliteCrawlStore, StoredCrawlJob
 
-router = APIRouter(prefix="/v1/internal/crawl", tags=["internal-crawl"])
+router = APIRouter(
+    prefix="/v1/internal/crawl",
+    tags=["internal-crawl"],
+    include_in_schema=False,
+)
 account_router = APIRouter(prefix="/v1/account", tags=["account-crawl"])
 
 
