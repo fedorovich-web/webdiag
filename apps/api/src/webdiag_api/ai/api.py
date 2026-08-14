@@ -113,6 +113,20 @@ def get_ai_user_id(
 AIUserIdDependency = Annotated[str, Depends(get_ai_user_id)]
 
 
+def get_ai_image_upload_user(
+    ai: AIServiceDependency,
+    user_id: AIUserIdDependency,
+) -> str:
+    try:
+        ai.require_image_upload_capability()
+    except AIServiceError as error:
+        raise _error(error) from error
+    return user_id
+
+
+AIImageUploadUserDependency = Annotated[str, Depends(get_ai_image_upload_user)]
+
+
 def get_authenticated_ai_artifact_context(
     user_id: AIUserIdDependency,
     artifact_storage: AIArtifactStorageDependency,
@@ -165,10 +179,16 @@ def catalog(
 async def upload_image(
     request: Request,
     ai: AIServiceDependency,
-    artifact_context: AIArtifactContextDependency,
+    user_id: AIImageUploadUserDependency,
+    artifact_storage: OptionalAIArtifactStorageDependency,
 ):
-    user_id, artifact_storage = artifact_context
     try:
+        if artifact_storage is None:
+            raise AIServiceError(
+                503,
+                "ai_upload_storage_unavailable",
+                "Image upload storage is unavailable.",
+            )
         upload = ai.create_image_upload(
             user_id=user_id,
             data=await request.body(),

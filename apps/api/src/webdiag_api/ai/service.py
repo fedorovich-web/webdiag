@@ -55,6 +55,9 @@ class AIServiceError(RuntimeError):
         self.message = message
 
 
+IMAGE_UPLOAD_TOOL_IDS = frozenset({"ai_alt_text_studio", "ai_image_edit_studio"})
+
+
 class AIService:
     def __init__(
         self,
@@ -96,6 +99,7 @@ class AIService:
         content_type_hint: str | None,
         artifact_storage: ArtifactStorage,
     ) -> AIImageUploadResponseItem:
+        self.require_image_upload_capability()
         if (
             content_type_hint is None
             or content_type_hint != content_type_hint.strip()
@@ -163,6 +167,17 @@ class AIService:
             self._compensate_artifact(artifact_storage, artifact.object_key)
             raise
         return self._public_upload(upload)
+
+    def require_image_upload_capability(self) -> None:
+        if not any(
+            tool.state is AIToolState.READY and tool.id in IMAGE_UPLOAD_TOOL_IDS
+            for tool in self._catalog.all()
+        ):
+            raise AIServiceError(
+                503,
+                "ai_image_tools_unavailable",
+                "AI image tools are unavailable.",
+            )
 
     def grant_beta_credits(
         self,
