@@ -615,11 +615,81 @@ def test_claimed_run_requires_the_current_lease_token(tmp_path: Path) -> None:
     current = store.get_monitor(user_id=user_id, project_id=project_id)
     assert current is not None
     assert current.status == "running"
-    assert current.lease_token == claimed.lease_token
+    assert current.lease_token is None
 
     completed = save_passed_run(store, claimed)
     assert completed.status == "passed"
     assert len(store.list_runs(user_id=user_id, monitor_id=claimed.id)) == 1
+
+
+def test_monitoring_lease_token_is_hashed_at_rest(tmp_path: Path) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    user_id, project_id, _, store, _ = create_stored_monitor(database)
+    pending = store.get_monitor(user_id=user_id, project_id=project_id)
+    assert pending is not None
+    assert pending.next_run_at is not None
+
+    claimed = store.claim_due(now=pending.next_run_at)
+    assert claimed is not None
+    assert claimed.lease_token is not None
+
+    with sqlite3.connect(database) as connection:
+        stored_token, stored_hash = connection.execute(
+            """
+            SELECT lease_token, lease_token_hash
+            FROM account_workspace_monitors WHERE id = ?
+            """,
+            (claimed.id,),
+        ).fetchone()
+
+    assert stored_token is None
+    assert stored_hash == hashlib.sha256(claimed.lease_token.encode("utf-8")).hexdigest()
+    assert save_passed_run(store, claimed).status == "passed"
+
+
+def test_monitoring_lease_hash_migration_preserves_an_active_legacy_lease(
+    tmp_path: Path,
+) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    user_id, project_id, _, store, _ = create_stored_monitor(database)
+    monitor = store.get_monitor(user_id=user_id, project_id=project_id)
+    assert monitor is not None
+    legacy_token = "legacy-monitoring-lease-token"
+    now = int(time.time())
+    expires_at = now + 300
+
+    with sqlite3.connect(database) as connection:
+        connection.execute(
+            """
+            UPDATE account_workspace_monitors
+            SET status = 'running', lease_token = ?, lease_expires_at = ?
+            WHERE id = ?
+            """,
+            (legacy_token, expires_at, monitor.id),
+        )
+        connection.commit()
+
+    restarted = SqliteMonitoringStore(str(database))
+    restarted.ensure_schema()
+    with sqlite3.connect(database) as connection:
+        stored_token, stored_hash = connection.execute(
+            """
+            SELECT lease_token, lease_token_hash
+            FROM account_workspace_monitors WHERE id = ?
+            """,
+            (monitor.id,),
+        ).fetchone()
+
+    assert stored_token is None
+    assert stored_hash == hashlib.sha256(legacy_token.encode("utf-8")).hexdigest()
+    active_worker = replace(
+        monitor,
+        status="running",
+        lease_token=legacy_token,
+        lease_expires_at=expires_at,
+    )
+    renewed = restarted.renew_lease(active_worker, now=now)
+    assert renewed.lease_token == legacy_token
 
 
 def test_daily_monitor_preserves_local_hour_across_dst_start(

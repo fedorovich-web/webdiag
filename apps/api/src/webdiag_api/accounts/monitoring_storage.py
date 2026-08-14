@@ -6,7 +6,7 @@ import sqlite3
 import threading
 import time
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -33,6 +33,12 @@ class MonitorRunIntegrityError(RuntimeError):
 
 def _payload_digest(payload_json: str) -> str:
     return hashlib.sha256(payload_json.encode("utf-8")).hexdigest()
+
+
+def _lease_digest(lease_token: str | None) -> str:
+    if lease_token is None:
+        return ""
+    return hashlib.sha256(lease_token.encode("utf-8")).hexdigest()
 
 
 def _next_scheduled_run(
@@ -203,6 +209,9 @@ class SqliteMonitoringStore:
                         last_run_at INTEGER,
                         consecutive_failures INTEGER NOT NULL,
                         lease_token TEXT,
+                        lease_token_hash TEXT CHECK(
+                            lease_token_hash IS NULL OR length(lease_token_hash) = 64
+                        ),
                         lease_expires_at INTEGER,
                         created_at INTEGER NOT NULL,
                         updated_at INTEGER NOT NULL,
@@ -241,6 +250,36 @@ class SqliteMonitoringStore:
                 )
                 connection.execute("BEGIN IMMEDIATE")
                 try:
+                    monitor_columns = {
+                        str(row[1])
+                        for row in connection.execute(
+                            "PRAGMA table_info(account_workspace_monitors)"
+                        ).fetchall()
+                    }
+                    if "lease_token_hash" not in monitor_columns:
+                        connection.execute(
+                            """
+                            ALTER TABLE account_workspace_monitors
+                            ADD COLUMN lease_token_hash TEXT CHECK(
+                                lease_token_hash IS NULL OR length(lease_token_hash) = 64
+                            )
+                            """
+                        )
+                    legacy_leases = connection.execute(
+                        """
+                        SELECT id, lease_token FROM account_workspace_monitors
+                        WHERE lease_token IS NOT NULL
+                        """
+                    ).fetchall()
+                    for row in legacy_leases:
+                        connection.execute(
+                            """
+                            UPDATE account_workspace_monitors
+                            SET lease_token = NULL, lease_token_hash = ?
+                            WHERE id = ?
+                            """,
+                            (_lease_digest(str(row["lease_token"])), str(row["id"])),
+                        )
                     columns = {
                         str(row[1])
                         for row in connection.execute(
@@ -437,7 +476,8 @@ class SqliteMonitoringStore:
                 """
                 UPDATE account_workspace_monitors
                 SET cadence = ?, timezone = ?, enabled = ?, status = ?, next_run_at = ?,
-                    updated_at = ?, lease_token = NULL, lease_expires_at = NULL
+                    updated_at = ?, lease_token = NULL, lease_token_hash = NULL,
+                    lease_expires_at = NULL
                 WHERE user_id = ? AND project_id = ?
                 """,
                 (
@@ -499,15 +539,16 @@ class SqliteMonitoringStore:
         error_code: str | None = None,
     ) -> StoredMonitorRun:
         self.ensure_schema()
+        lease_token_hash = _lease_digest(monitor.lease_token)
         with self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
             row = connection.execute(
                 """
                 SELECT * FROM account_workspace_monitors
                 WHERE id = ? AND user_id = ? AND status = 'running'
-                    AND lease_token = ? AND lease_expires_at > ?
+                    AND lease_token_hash = ? AND lease_expires_at > ?
                 """,
-                (monitor.id, monitor.user_id, monitor.lease_token, int(time.time())),
+                (monitor.id, monitor.user_id, lease_token_hash, int(time.time())),
             ).fetchone()
             if row is None:
                 connection.execute("ROLLBACK")
@@ -573,9 +614,9 @@ class SqliteMonitoringStore:
                 UPDATE account_workspace_monitors
                 SET status = ?, last_run_at = ?, next_run_at = ?,
                     consecutive_failures = ?, updated_at = ?,
-                    lease_token = NULL, lease_expires_at = NULL
+                    lease_token = NULL, lease_token_hash = NULL, lease_expires_at = NULL
                 WHERE id = ? AND user_id = ? AND status = 'running'
-                    AND lease_token = ? AND lease_expires_at > ?
+                    AND lease_token_hash = ? AND lease_expires_at > ?
                 """,
                 (
                     status,
@@ -585,7 +626,7 @@ class SqliteMonitoringStore:
                     completed_at,
                     current.id,
                     current.user_id,
-                    current.lease_token,
+                    lease_token_hash,
                     int(time.time()),
                 ),
             )
@@ -649,17 +690,23 @@ class SqliteMonitoringStore:
             connection.execute(
                 """
                 UPDATE account_workspace_monitors
-                SET status = 'running', lease_token = ?, lease_expires_at = ?, updated_at = ?
+                SET status = 'running', lease_token = NULL, lease_token_hash = ?,
+                    lease_expires_at = ?, updated_at = ?
                 WHERE id = ?
                 """,
-                (token, current + MONITOR_LEASE_SECONDS, current, row["id"]),
+                (
+                    _lease_digest(token),
+                    current + MONITOR_LEASE_SECONDS,
+                    current,
+                    row["id"],
+                ),
             )
             claimed = connection.execute(
                 "SELECT * FROM account_workspace_monitors WHERE id = ?",
                 (row["id"],),
             ).fetchone()
             connection.execute("COMMIT")
-        return self._monitor(claimed)
+        return replace(self._monitor(claimed), lease_token=token)
 
     def claim_manual(
         self,
@@ -702,17 +749,23 @@ class SqliteMonitoringStore:
             connection.execute(
                 """
                 UPDATE account_workspace_monitors
-                SET status = 'running', lease_token = ?, lease_expires_at = ?, updated_at = ?
+                SET status = 'running', lease_token = NULL, lease_token_hash = ?,
+                    lease_expires_at = ?, updated_at = ?
                 WHERE id = ?
                 """,
-                (token, current + MONITOR_LEASE_SECONDS, current, row["id"]),
+                (
+                    _lease_digest(token),
+                    current + MONITOR_LEASE_SECONDS,
+                    current,
+                    row["id"],
+                ),
             )
             claimed = connection.execute(
                 "SELECT * FROM account_workspace_monitors WHERE id = ?",
                 (row["id"],),
             ).fetchone()
             connection.execute("COMMIT")
-        return self._monitor(claimed)
+        return replace(self._monitor(claimed), lease_token=token)
 
     def renew_lease(
         self,
@@ -729,14 +782,14 @@ class SqliteMonitoringStore:
                 UPDATE account_workspace_monitors
                 SET lease_expires_at = ?, updated_at = ?
                 WHERE id = ? AND user_id = ? AND status = 'running'
-                    AND lease_token = ? AND lease_expires_at > ?
+                    AND lease_token_hash = ? AND lease_expires_at > ?
                 """,
                 (
                     current + MONITOR_LEASE_SECONDS,
                     current,
                     monitor.id,
                     monitor.user_id,
-                    monitor.lease_token,
+                    _lease_digest(monitor.lease_token),
                     current,
                 ),
             )
@@ -748,7 +801,7 @@ class SqliteMonitoringStore:
                 (monitor.id,),
             ).fetchone()
             connection.execute("COMMIT")
-        return self._monitor(row)
+        return replace(self._monitor(row), lease_token=monitor.lease_token)
 
     @staticmethod
     def _monitor(row: sqlite3.Row) -> StoredMonitor:
@@ -763,7 +816,7 @@ class SqliteMonitoringStore:
             next_run_at=row["next_run_at"],
             last_run_at=row["last_run_at"],
             consecutive_failures=row["consecutive_failures"],
-            lease_token=row["lease_token"],
+            lease_token=None,
             lease_expires_at=row["lease_expires_at"],
             created_at=row["created_at"],
             updated_at=row["updated_at"],

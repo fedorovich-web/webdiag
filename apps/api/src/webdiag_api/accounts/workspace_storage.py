@@ -414,6 +414,21 @@ class SqliteWorkspaceStore:
                     """,
                     (now, user_id, project_id),
                 )
+                monitor_columns = {
+                    str(column[1])
+                    for column in connection.execute(
+                        "PRAGMA table_info(account_workspace_monitors)"
+                    ).fetchall()
+                }
+                if "lease_token_hash" in monitor_columns:
+                    connection.execute(
+                        """
+                        UPDATE account_workspace_monitors
+                        SET lease_token_hash = NULL
+                        WHERE user_id = ? AND project_id = ?
+                        """,
+                        (user_id, project_id),
+                    )
             crawl_table = connection.execute(
                 """
                 SELECT 1 FROM sqlite_master
