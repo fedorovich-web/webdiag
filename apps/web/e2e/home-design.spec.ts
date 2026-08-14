@@ -180,7 +180,9 @@ test.describe("home information architecture", () => {
         const panels = [...node.querySelectorAll<HTMLElement>(".wd-faq-panel")];
         const reserved = Number.parseFloat(getComputedStyle(node).getPropertyValue("--wd-faq-panel-height"));
         const heights = panels.map((panel) => Number.parseFloat(getComputedStyle(panel).maxHeight));
-        return heights[0] === 0 && Math.abs(heights[2] - reserved) < 0.5;
+        const closingHeight = heights.at(0);
+        const openingHeight = heights.at(2);
+        return closingHeight === 0 && openingHeight !== undefined && Math.abs(openingHeight - reserved) < 0.5;
       }))
       .toBe(true);
     const afterHeight = await page
