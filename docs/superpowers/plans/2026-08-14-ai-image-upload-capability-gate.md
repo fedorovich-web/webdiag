@@ -6,4 +6,3 @@
 3. Gate artifact-storage resolution behind authenticated capability validation.
 4. Run the affected AI/upload/injection tests, then one full Python and Ruff
    verification for the changed backend package.
-

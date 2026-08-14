@@ -35,4 +35,3 @@ non-HTTP callers cannot bypass the API dependency.
 - Missing storage configuration is not disclosed to unauthenticated callers.
 - Existing byte, dimension, pixel, quota, TTL, ownership, and format checks stay
   unchanged.
-
