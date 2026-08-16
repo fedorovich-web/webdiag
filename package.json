@@ -23,7 +23,7 @@
     "verify:release": "node scripts/verify-release.mjs",
     "test:registry": "npm --workspace @webdiag/tool-registry run test",
     "test:core": "npm --workspace @webdiag/tool-core run test",
-    "python:install": "node scripts/run-python.mjs -m pip install -c requirements-dev.lock.txt -e \"./apps/api[dev]\" -e \"./apps/worker[dev]\"",
+    "python:install": "node scripts/install-python-dependencies.mjs",
     "python:lock:refresh": "node scripts/refresh-python-lock-hashes.mjs",
     "test:python": "node scripts/run-python.mjs -m pytest apps/api/tests apps/worker/tests",
     "lint:python": "node scripts/run-python.mjs -m ruff check apps/api apps/worker",

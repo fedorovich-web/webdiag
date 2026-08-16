@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling==1.27.0"]
+requires = ["editables==0.6", "hatchling==1.27.0"]
 build-backend = "hatchling.build"
 
 [project]

@@ -59,10 +59,11 @@ test("lock file contains no private OpenAI registry addresses", async () => {
 });
 
 test("Python npm scripts always use the project virtualenv wrapper", () => {
-  for (const scriptName of ["python:where", "python:install", "test:python", "lint:python"]) {
+  for (const scriptName of ["python:where", "test:python", "lint:python"]) {
     const command = rootPackage.scripts[scriptName];
     assert.match(command, /^node scripts\/run-python\.mjs(?: |$)/, `${scriptName} bypasses .venv`);
   }
+  assert.equal(rootPackage.scripts["python:install"], "node scripts/install-python-dependencies.mjs");
   assert.equal(rootPackage.scripts["test:python"].includes("python -m"), false);
   assert.equal(rootPackage.scripts["lint:python"].includes("python -m"), false);
 });

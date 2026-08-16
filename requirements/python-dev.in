@@ -7,6 +7,7 @@ certifi==2026.6.17
 click==8.4.2
 colorama==0.4.6; sys_platform == "win32"
 dramatiq==2.2.0
+editables==0.6
 fastapi==0.139.1
 h11==0.16.0
 hatchling==1.27.0

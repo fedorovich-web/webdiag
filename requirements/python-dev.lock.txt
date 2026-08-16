@@ -20,6 +20,8 @@ colorama==0.4.6; sys_platform == "win32" \
     --hash=sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6
 dramatiq==2.2.0 \
     --hash=sha256:2b2aa244b4098e154600c47cdb2c04cec6c3af44e9e159c319c6fc8b6f0ba90e
+editables==0.6 \
+    --hash=sha256:d70e4698078a1d033e7786d9c64e5be070d058a67c21417024d38a58ac20aa43
 fastapi==0.139.1 \
     --hash=sha256:17faa81907751a8a85cd44c46f37fb576bde0078cb37de40bf1cd55de7104d87
 h11==0.16.0 \
