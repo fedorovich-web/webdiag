@@ -25,9 +25,9 @@ export default function Page() {
         <article><h2>Статус</h2><p>До запуска audit engine доступны пример отчёта и рабочие вспомогательные инструменты.</p></article>
       </section>
       <section className="wd-internal-note">
-        <strong>Полный аудит будет платным по объёму сайта</strong>
-        <p>Предварительная цена начинается от 490 ₽ для небольших сайтов. Перед запуском проверки WebDiag должен показывать лимиты и стоимость.</p>
-        <Link className="wd-button wd-button-primary" href="/pricing">Посмотреть тарифы</Link>
+        <strong>Полный аудит пока недоступен</strong>
+        <p>Audit engine ещё не запущен, цены и лимиты не опубликованы. Сейчас можно использовать точечные инструменты и посмотреть демонстрационную структуру отчёта.</p>
+        <Link className="wd-button wd-button-primary" href="/tools">Открыть инструменты</Link>
       </section>
     </main>
   );

@@ -1,5 +1,20 @@
 # Changelog
 
+## A13.2 — Factual public availability
+
+- Replaced unapproved prices and paid-run claims on the RU/EN home, pricing,
+  audit, and monitoring surfaces with factual current-availability states.
+  Unavailable AI and payment cards expose no action that implies activation.
+- Replaced the nonexistent AI catalog category with registry-backed links and
+  made the public catalog render all 115 ready tools across all six registry
+  categories. Category deep links now select the requested ready subset.
+- Added source and browser regressions for unapproved commercial claims,
+  unavailable-card actions, authoritative category coverage, RU/EN parity,
+  mobile overflow, and the compact availability-card geometry.
+- Updated only manually inspected home and catalog visual baselines. No price,
+  payment integration, AI availability, provider certification, release, or
+  deployment was introduced by this stage.
+
 ## A13.1 — Fail-closed production Compose preflight
 
 - Added a single-host production override that builds/runs the web public gate

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { publicTools } from "@webdiag/tool-registry";
 import { installBrowserGuard } from "./browser-guard";
 
 async function readVisibleCount(page: import("@playwright/test").Page) {
@@ -43,20 +44,57 @@ test.describe("catalog structure", () => {
     await assertBrowserClean(testInfo);
   });
 
-  test("groups the ready tools into three categories", async ({ page }) => {
+  test("groups every ready tool by its registry category", async ({ page }) => {
     await page.goto("/tools");
-    await expect(page.locator(".catalog-group")).toHaveCount(3);
+    await expect(page.locator(".catalog-group")).toHaveCount(6);
+    await expect(page.locator(".catalog-summary strong")).toHaveText(String(publicTools.length));
+    await expect(page.locator(".compact-tool-card")).toHaveCount(publicTools.length);
     await expectCardsMatchVisibleCount(page);
     await expectGroupCountsMatchCards(page);
     await expect(
-      page.getByRole("heading", { level: 2, name: "Разметка и данные" }),
+      page.getByRole("heading", { level: 2, name: "Текст и данные" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { level: 2, name: "UI и accessibility" }),
+      page.getByRole("heading", { level: 2, name: "Интерфейсы и CSS" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { level: 2, name: "Изображения на страницах" }),
+      page.getByRole("heading", { level: 2, name: "Изображения" }),
     ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 2, name: "SEO и аудит" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 2, name: "Безопасность и сеть" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 2, name: "Производительность" }),
+    ).toBeVisible();
+    const dimensions = await page.evaluate(() => ({
+      viewport: document.documentElement.clientWidth,
+      scroll: document.documentElement.scrollWidth,
+    }));
+    expect(dimensions.scroll).toBe(dimensions.viewport);
+  });
+
+  test("registry category deep links select the requested ready tools", async ({ page }) => {
+    await page.goto("/tools?category=seo-audit");
+    await expect(page.getByRole("button", { name: /SEO и аудит/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await expect(page.locator(".catalog-group")).toHaveCount(1);
+    await expect(page.locator(".catalog-group")).toHaveAttribute("id", "seo-audit");
+    await expectCardsMatchVisibleCount(page);
+  });
+
+  test("all registry categories stay inside the mobile viewport", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/tools");
+    const dimensions = await page.evaluate(() => ({
+      viewport: document.documentElement.clientWidth,
+      scroll: document.documentElement.scrollWidth,
+    }));
+    expect(dimensions.scroll).toBe(dimensions.viewport);
   });
 
   test("search and category filtering preserve the compact grouped layout", async ({
@@ -75,7 +113,7 @@ test.describe("catalog structure", () => {
     await expectCardsMatchVisibleCount(page);
     await expectGroupCountsMatchCards(page);
 
-    await page.getByRole("button", { name: /UI and accessibility/ }).click();
+    await page.getByRole("button", { name: /Interfaces and CSS/ }).click();
     await expectCardsMatchVisibleCount(page);
     await expectGroupCountsMatchCards(page);
 

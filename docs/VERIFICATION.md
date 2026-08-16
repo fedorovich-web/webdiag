@@ -1,5 +1,44 @@
 # Verification Notes
 
+# Factual public availability — 2026-08-16
+
+## Scope
+
+- removed unapproved ruble prices, monthly amounts, and paid-run claims from
+  linked RU/EN home, pricing, audit, and monitoring surfaces;
+- kept the stable pricing routes as factual availability explanations, with
+  working actions only for the public tools and account workspace;
+- made unavailable AI and payment cards non-interactive and described the AI,
+  price, and payment state without provider or launch claims;
+- replaced nonexistent category links and made the catalog consume every
+  `publicTools` entry and category title from the authoritative registry;
+- added RU/EN browser coverage for availability, category deep links, all 115
+  ready catalog cards, desktop/mobile overflow, and 180-pixel availability
+  cards;
+- manually inspected the changed home and full catalog screenshots before
+  updating their approved visual baselines.
+
+## Fresh verification
+
+```text
+registry verification                         PASS — 125 unique definitions / 115 ready
+workspace integrity tests                     PASS — 79/79
+registry Vitest                               PASS — 10/10
+core Vitest                                   PASS — 17/17
+web Vitest                                    PASS — 408/408 across 104 files
+production build                              PASS — 271 generated pages
+built-site verification                       PASS — 236 public / 234 HTML routes
+full Playwright Chromium                      PASS — 82/82
+full API/worker pytest                        PASS — 615 passed, 1 POSIX-only skip on Windows
+ESLint / TypeScript / Ruff / Python lock      PASS — 0 errors / 44 selected packages
+independent final review                      PASS — 0 Critical / 0 Important
+```
+
+ESLint retains the pre-existing `site-brand.tsx` `no-img-element` warning; it
+reported no error. No OpenRouter, S3, payment, release, deployment, domain, or
+TLS operation was performed. AI tools and commercial activation remain blocked
+until their external evidence and product decisions are supplied.
+
 # Fail-closed production Compose preflight — 2026-08-16
 
 ## Scope

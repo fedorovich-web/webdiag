@@ -85,6 +85,48 @@ test("home recommendations are explicit and do not depend on registry order", as
   assert.match(content, /json-formatter-validator/);
 });
 
+test("public availability copy contains no unapproved prices or payment claims", async () => {
+  const sources = {
+    home: await read("apps/web/src/features/home/home-page.tsx"),
+    header: await read("apps/web/src/components/site-header.tsx"),
+    pricingRu: await read("apps/web/app/(ru)/pricing/page.tsx"),
+    pricingEn: await read("apps/web/app/(en)/en/pricing/page.tsx"),
+    auditRu: await read("apps/web/app/(ru)/audit/page.tsx"),
+    auditEn: await read("apps/web/app/(en)/en/audit/page.tsx"),
+    monitoringRu: await read("apps/web/app/(ru)/monitoring/page.tsx"),
+    monitoringEn: await read("apps/web/app/(en)/en/monitoring/page.tsx"),
+    toolList: await read("apps/web/src/features/tools/tool-list.tsx"),
+  };
+  const combined = Object.values(sources).join("\n");
+  const categories = JSON.parse(
+    await read("packages/tool-registry/registry/categories.json"),
+  );
+
+  const priceMatches = combined.match(/\d[\d\s,]*\s*₽/gu);
+  const paymentClaimMatches = combined.match(
+    /(?:оплачиваются|платите за|цены предварительные|paid per run|pay for the|prices are preliminary|\/мес(?=["'\s,.)]|$)|\/mo(?=["'\s,.)]|$))/giu,
+  );
+
+  assert.deepEqual(priceMatches, null);
+  assert.deepEqual(paymentClaimMatches, null);
+  assert.doesNotMatch(combined, /release-gates?/i);
+  assert.doesNotMatch(sources.toolList, /homeContent/);
+  assert.match(sources.toolList, /categories as registryCategories/);
+  const publicCategoryReferences = [
+    ...combined.matchAll(/\?category=([a-z-]+)/g),
+    ...sources.header.matchAll(/\bcategory:\s*"([a-z-]+)"/g),
+  ].map((match) => match[1]);
+  for (const category of publicCategoryReferences) {
+    assert.ok(category in categories, `unknown public tool category: ${category}`);
+  }
+  assert.match(sources.home, /Что доступно сейчас/);
+  assert.match(sources.home, /What is available now/);
+  assert.match(sources.pricingRu, /Оплата не подключена/);
+  assert.match(sources.pricingEn, /Payments are not connected/);
+  assert.match(combined, /Цены не опубликованы/);
+  assert.match(combined, /No prices are published/);
+});
+
 test("home audit UI consumes only frontend-shaped audit result contracts", async () => {
   const uiFiles = [
     "apps/web/src/features/home/home-url-check-form.tsx",

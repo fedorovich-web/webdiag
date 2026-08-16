@@ -31,6 +31,23 @@ test.describe("home information architecture", () => {
     await expect(page.locator(".wd-priority-grid article")).toHaveCount(4);
     await expect(page.locator(".wd-tool-category-card")).toHaveCount(8);
     await expect(page.locator(".wd-faq-item")).toHaveCount(6);
+    await expect(
+      page.getByRole("heading", { level: 2, name: "Что доступно сейчас" }),
+    ).toBeVisible();
+    const availability = page.locator("#pricing");
+    await expect(availability.getByRole("link", { name: "Открыть инструменты" })).toBeVisible();
+    await expect(availability.getByRole("link", { name: "Создать аккаунт" })).toBeVisible();
+    await expect(page.getByText("Пока недоступно", { exact: true })).toBeVisible();
+    await expect(page.getByText("Не подключено", { exact: true })).toBeVisible();
+    for (const cardTitle of ["AI-инструменты", "Оплата и тарифы"]) {
+      const card = availability.locator("article").filter({
+        has: page.getByRole("heading", { level: 3, name: cardTitle }),
+      });
+      await expect(card.getByRole("link")).toHaveCount(0);
+      await expect(card.getByRole("button")).toHaveCount(0);
+    }
+    await expect(availability).not.toContainText(/₽|\/мес/i);
+    await expect(page).not.toHaveURL(/category=ai-geo-content/);
     await expect(page.getByText("Популярные задачи")).toHaveCount(0);
     await expect(
       page.getByText("Пример отчёта", { exact: true }),
@@ -105,6 +122,19 @@ test.describe("home information architecture", () => {
     expect(designState.processCards).toBe(4);
     expect(designState.toolCards).toBe(8);
     await expect(page.locator(".wd-step-number")).toHaveCount(0);
+  });
+
+  test("English unavailable availability cards do not offer actions", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/en");
+    const availability = page.locator("#pricing");
+    for (const cardTitle of ["AI tools", "Payments and plans"]) {
+      const card = availability.locator("article").filter({
+        has: page.getByRole("heading", { level: 3, name: cardTitle }),
+      });
+      await expect(card.getByRole("link")).toHaveCount(0);
+      await expect(card.getByRole("button")).toHaveCount(0);
+    }
   });
 
   test("desktop report sidebar fill reaches the bottom of the report frame", async ({

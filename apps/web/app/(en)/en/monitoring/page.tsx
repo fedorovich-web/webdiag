@@ -25,9 +25,9 @@ export default function Page() {
         <article><h2>History</h2><p>Dynamics of issues, fixes, and technical site health.</p></article>
       </section>
       <section className="wd-internal-note">
-        <strong>Subscription instead of one-off runs</strong>
-        <p>Preliminary monitoring starts from 299 ₽/mo. Limits depend on projects, URL volume, and check frequency.</p>
-        <Link className="wd-button wd-button-primary" href="/en/pricing">View pricing</Link>
+        <strong>Monitoring is available after sign-in</strong>
+        <p>In the account workspace, a user can set a schedule, run a manual check, and review saved history. Prices, subscriptions, and payments are not connected.</p>
+        <Link className="wd-button wd-button-primary" href="/en/register">Create an account</Link>
       </section>
     </main>
   );

@@ -1177,7 +1177,7 @@ body[data-theme=dark] .wd-chart-dot-marker{
 }
 .wd-pricing-grid-final>article{
   grid-template-rows:auto auto auto auto minmax(156px,1fr) auto;
-  min-height:420px;
+  min-height:0;
 }
 .wd-pricing-grid-final .wd-price-label{
   margin-top:18px;
@@ -1192,10 +1192,10 @@ body[data-theme=dark] .wd-chart-dot-marker{
   line-height:1;
 }
 .wd-pricing-grid-final>article p{
-  min-height:92px;
+  min-height:0;
 }
 .wd-pricing-grid-final ul{
-  min-height:156px;
+  min-height:0;
 }
 .wd-pricing-note{
   max-width:900px;
@@ -1244,7 +1244,7 @@ body[data-theme=dark] .wd-chart-dot-marker{
 .wd-pricing-grid-final>article{
   display:flex;
   flex-direction:column;
-  min-height:440px;
+  min-height:0;
 }
 .wd-pricing-grid-final .wd-price-label{
   min-height:28px;
@@ -1409,13 +1409,13 @@ body[data-theme=dark] .wd-chart-dot-marker{
 }
 .wd-pricing-grid-final>article>p{
   max-width:30ch;
-  min-height:112px;
+  min-height:0;
   margin-top:18px;
   text-align:left;
 }
 .wd-pricing-grid-final ul{
   width:100%;
-  min-height:142px;
+  min-height:0;
   margin-top:20px;
   gap:11px;
 }

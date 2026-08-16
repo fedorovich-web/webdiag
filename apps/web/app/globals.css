@@ -1623,6 +1623,10 @@ body:has(.tool-heading) main.shell::before{
   margin-top:40px;
 }
 
+.wd-internal-page .wd-availability-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+
 .wd-internal-page .wd-internal-grid>article{
   min-height:220px;
   display:flex;
@@ -1634,6 +1638,10 @@ body:has(.tool-heading) main.shell::before{
   background:var(--wd-internal-surface);
   box-shadow:var(--wd-internal-shadow);
   transition:transform var(--wd-tr,180ms cubic-bezier(.2,0,0,1)),border-color var(--wd-tr,180ms cubic-bezier(.2,0,0,1)),box-shadow var(--wd-tr,180ms cubic-bezier(.2,0,0,1));
+}
+
+.wd-internal-page .wd-availability-grid>article{
+  min-height:180px;
 }
 
 .wd-internal-page .wd-internal-grid>article:hover{

@@ -31,7 +31,7 @@ const toolCategories = [
   { icon: Braces, ru: "Разметка и сниппеты", en: "Markup and snippets", descriptionRu: "Schema.org, JSON-LD, FAQ, OG", descriptionEn: "Schema.org, JSON-LD, and Open Graph", category: "development-data" },
   { icon: ImageIcon, ru: "Изображения и медиа", en: "Images and media", descriptionRu: "Размеры, вес, форматы, alt", descriptionEn: "Optimization, dimensions, and formats", category: "media-utilities" },
   { icon: Code2, ru: "Разработка и данные", en: "Development and data", descriptionRu: "JSON, Base64, hash, UUID, URL", descriptionEn: "JSON, Base64, hash, UUID, and URL", category: "development-data" },
-  { icon: Sparkles, ru: "AI / GEO / контент", en: "AI / GEO / content", descriptionRu: "Мета-теги, FAQ, структура текста", descriptionEn: "Metadata, FAQ, and content structure", category: "ai-geo-content" },
+  { icon: Sparkles, ru: "Контент и Schema.org", en: "Content and Schema.org", descriptionRu: "Мета-теги, FAQ, читаемость и разметка", descriptionEn: "Metadata, FAQ, readability, and markup", category: "seo-audit" },
 ] as const;
 
 function NavigationLinks({ locale, compact = false }: { locale: Locale; compact?: boolean }) {
