@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import test from "node:test";
 import {
   normalizePythonPackageName,
@@ -7,9 +10,11 @@ import {
   renderHashedLock,
   wheelHashesFromPyPIMetadata,
 } from "./python-locks.mjs";
+import { refreshPythonLocks } from "./refresh-python-lock-hashes.mjs";
 
 const HASH_A = "a".repeat(64);
 const HASH_B = "b".repeat(64);
+const LOCK_GROUPS = ["build", "api", "worker", "dev"];
 
 function releaseMetadata({ name = "Example_Package", version = "1.2.3", urls } = {}) {
   return {
@@ -25,6 +30,39 @@ function releaseMetadata({ name = "Example_Package", version = "1.2.3", urls } =
         },
       ],
   };
+}
+
+async function createLockFixture(sourceByGroup = {}) {
+  const fixtureRoot = await mkdtemp(path.join(os.tmpdir(), "webdiag-python-lock-test-"));
+  const requirementsDir = path.join(fixtureRoot, "requirements");
+  await mkdir(requirementsDir);
+  for (const group of LOCK_GROUPS) {
+    await writeFile(
+      path.join(requirementsDir, `python-${group}.in`),
+      sourceByGroup[group] ?? "example-package==1.2.3\n",
+      "utf8",
+    );
+    await writeFile(
+      path.join(requirementsDir, `python-${group}.lock.txt`),
+      `old-${group}\n`,
+      "utf8",
+    );
+  }
+  return fixtureRoot;
+}
+
+async function removeLockFixture(fixtureRoot) {
+  const expectedPrefix = path.join(os.tmpdir(), "webdiag-python-lock-test-");
+  assert.ok(path.resolve(fixtureRoot).startsWith(path.resolve(expectedPrefix)));
+  await rm(fixtureRoot, { recursive: true, force: true });
+}
+
+function jsonResponse(metadata, init = {}) {
+  return new Response(JSON.stringify(metadata), {
+    status: 200,
+    headers: { "content-type": "application/json", ...init.headers },
+    ...init,
+  });
 }
 
 test("normalizes Python distribution names with PEP 503 separators", () => {
@@ -241,4 +279,184 @@ test("renders deterministic LF-only locks from shuffled entries and hashes", () 
       "",
     ].join("\n"),
   );
+});
+
+test("refreshes all fixed lock groups from one cached PyPI release", async () => {
+  const fixtureRoot = await createLockFixture();
+  const calls = [];
+  try {
+    const result = await refreshPythonLocks({
+      rootDir: fixtureRoot,
+      fetchMetadata: async (url, options) => {
+        calls.push({ url, options });
+        return jsonResponse(releaseMetadata());
+      },
+    });
+
+    assert.deepEqual(result.updatedFiles, [
+      "requirements/python-build.lock.txt",
+      "requirements/python-api.lock.txt",
+      "requirements/python-worker.lock.txt",
+      "requirements/python-dev.lock.txt",
+    ]);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].url, "https://pypi.org/pypi/example-package/1.2.3/json");
+    assert.equal(calls[0].options.redirect, "error");
+    assert.equal(new Headers(calls[0].options.headers).has("authorization"), false);
+
+    for (const group of LOCK_GROUPS) {
+      assert.equal(
+        await readFile(
+          path.join(fixtureRoot, "requirements", `python-${group}.lock.txt`),
+          "utf8",
+        ),
+        renderHashedLock(
+          [
+            {
+              ...parsePinSource("example-package==1.2.3\n")[0],
+              hashes: [HASH_A],
+            },
+          ],
+          { sourceName: `requirements/python-${group}.in` },
+        ),
+      );
+    }
+    assert.deepEqual(
+      (await readdir(path.join(fixtureRoot, "requirements"))).filter((name) =>
+        name.includes(".tmp-"),
+      ),
+      [],
+    );
+  } finally {
+    await removeLockFixture(fixtureRoot);
+  }
+});
+
+test("validates every release before publishing any lock", async () => {
+  const fixtureRoot = await createLockFixture({
+    dev: "broken-package==9.9.9\nexample-package==1.2.3\n",
+  });
+  try {
+    await assert.rejects(
+      refreshPythonLocks({
+        rootDir: fixtureRoot,
+        fetchMetadata: async (url) => {
+          if (url.includes("broken-package")) {
+            throw new Error("fixture transport failure with secret-response-body");
+          }
+          return jsonResponse(releaseMetadata());
+        },
+      }),
+      (error) => {
+        assert.match(error.message, /broken-package==9\.9\.9/);
+        assert.equal(error.message.includes("secret-response-body"), false);
+        return true;
+      },
+    );
+
+    for (const group of LOCK_GROUPS) {
+      assert.equal(
+        await readFile(
+          path.join(fixtureRoot, "requirements", `python-${group}.lock.txt`),
+          "utf8",
+        ),
+        `old-${group}\n`,
+      );
+    }
+    assert.deepEqual(
+      (await readdir(path.join(fixtureRoot, "requirements"))).filter((name) =>
+        name.includes(".tmp-"),
+      ),
+      [],
+    );
+  } finally {
+    await removeLockFixture(fixtureRoot);
+  }
+});
+
+test("rejects unsafe or oversized PyPI responses without exposing their bodies", async () => {
+  const cases = [
+    {
+      name: "redirect",
+      response: () =>
+        new Response(null, {
+          status: 302,
+          headers: { location: "https://example.test/redirect" },
+        }),
+    },
+    {
+      name: "non-success",
+      response: () =>
+        new Response("secret-response-body", {
+          status: 500,
+          headers: { "content-type": "application/json" },
+        }),
+    },
+    {
+      name: "non-JSON",
+      response: () =>
+        new Response("secret-response-body", {
+          status: 200,
+          headers: { "content-type": "text/plain" },
+        }),
+    },
+    {
+      name: "declared oversized body",
+      response: () =>
+        new Response("{}", {
+          status: 200,
+          headers: {
+            "content-type": "application/json",
+            "content-length": "4096",
+          },
+        }),
+    },
+    {
+      name: "streamed oversized body",
+      response: () =>
+        new Response(JSON.stringify({ padding: "x".repeat(4096) }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+    },
+    {
+      name: "malformed JSON",
+      response: () =>
+        new Response("{secret-response-body", {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+    },
+  ];
+
+  for (const fixtureCase of cases) {
+    const fixtureRoot = await createLockFixture();
+    try {
+      await assert.rejects(
+        refreshPythonLocks({
+          rootDir: fixtureRoot,
+          maxResponseBytes: 1024,
+          fetchMetadata: async () => fixtureCase.response(),
+        }),
+        (error) => {
+          assert.match(error.message, /example-package==1\.2\.3/);
+          assert.equal(error.message.includes("secret-response-body"), false);
+          return true;
+        },
+        fixtureCase.name,
+      );
+      for (const group of LOCK_GROUPS) {
+        assert.equal(
+          await readFile(
+            path.join(fixtureRoot, "requirements", `python-${group}.lock.txt`),
+            "utf8",
+          ),
+          `old-${group}\n`,
+          fixtureCase.name,
+        );
+      }
+    } finally {
+      await removeLockFixture(fixtureRoot);
+    }
+  }
 });
