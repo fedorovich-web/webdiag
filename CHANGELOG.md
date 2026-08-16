@@ -1,5 +1,24 @@
 # Changelog
 
+## A13.1 — Fail-closed production Compose preflight
+
+- Added a single-host production override that builds/runs the web public gate
+  explicitly, enforces production API/worker settings, secure cookies, distinct
+  internal secrets, private S3 artifacts, health checks, restart policies, and
+  loopback-only published ports.
+- Removed unused PostgreSQL and Valkey services from the production model while
+  retaining RabbitMQ for the active worker topology. Development Compose remains
+  unchanged and fail-safe.
+- Added an empty tracked environment template and a privacy-safe rendered-model
+  preflight. Missing credentials fail without printing Compose stderr or
+  environment values; the verifier enforces exact secret placement and volume
+  topology. Docker build contexts exclude every `.env` file.
+- Added CI build/runtime smoke coverage for all three production images. The
+  web smoke proves the public robots and sitemap policy from the running image;
+  a synthetic sentinel proves `.env.production` is not copied into its build.
+- No domain, TLS proxy, credential, provider, S3, release, or deployment was
+  configured or contacted by this stage.
+
 ## A12.9 — OpenRouter billed-cost evidence
 
 - Added fail-closed parsing of the documented OpenRouter `usage.cost` value for

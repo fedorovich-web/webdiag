@@ -31,6 +31,7 @@
     "test:workspace": "node --test scripts/tests-workspace-integrity.test.mjs scripts/tests-python-runtime.test.mjs scripts/tests-python-lock.test.mjs scripts/tests-python-hashes.test.mjs scripts/tests-ui-foundation.test.mjs scripts/tests-tool-catalog-quality.test.mjs scripts/tests-release-gate.test.mjs scripts/tests-workflow-security.test.mjs",
     "python:where": "node scripts/run-python.mjs -c \"import sys; print(sys.executable)\"",
     "verify:built-site": "node scripts/verify-built-site.mjs",
+    "verify:production-compose": "node scripts/verify-production-compose.mjs",
     "source:manifest": "node scripts/build-source-manifest.mjs",
     "test:browser": "npm --workspace @webdiag/web run test:browser",
     "verify:python-lock": "node scripts/verify-python-lock.mjs"

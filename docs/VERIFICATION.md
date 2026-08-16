@@ -1,5 +1,49 @@
 # Verification Notes
 
+# Fail-closed production Compose preflight — 2026-08-16
+
+## Scope
+
+- added an explicit single-host production override over the existing base and
+  account Compose files;
+- built the web public-release decision from a safe false-default Docker build
+  argument, with literal true only in the production profile;
+- replaced inherited development environments with exact production maps,
+  secure cookies, distinct required internal secrets, S3-only private
+  artifacts, health checks, restart policies, and loopback published ports;
+- removed unused PostgreSQL and Valkey services from the production model while
+  retaining RabbitMQ for the active worker topology;
+- added a privacy-safe rendered-model preflight that accepts the current
+  environment or `--env-file` and never prints Compose stderr or environment
+  values;
+- reset inherited artifact volumes, enforced an exact per-service environment
+  allowlist, and excluded every `.env` file from Docker build contexts;
+- added a web-image runtime smoke that verifies the public robots/sitemap policy
+  and a synthetic context sentinel that must remain outside the builder.
+
+## Fresh verification
+
+```text
+production Compose static/workflow tests         PASS — 78/78 workspace tests
+production Compose rendered preflight            PASS — 5 services
+empty production environment template            PASS — rejected fail-closed
+PUBLIC_RELEASE=true registry/build                PASS — 115 ready / 10 superseded
+public production build                           PASS — 271 generated pages
+built-site verification                           PASS — 236 public / 234 HTML routes
+full web Vitest                                   PASS — 408/408 across 104 files
+full Playwright Chromium                          PASS — 77/77
+full API/worker pytest                            PASS — 615/615, 1 POSIX-mode test skipped on Windows
+ESLint / TypeScript / Ruff / Python lock          PASS — 0 errors / 44 selected packages
+git diff --check                                  PASS
+```
+
+The local Docker CLI rendered the production model, but Docker Desktop's Linux
+engine was not running, so no local production image or container was started.
+The updated Python 3.14 CI job must build all three production images, including
+the web image with `PUBLIC_RELEASE=true`, before this stage is accepted. No real
+domain, TLS proxy, credential, OpenRouter, S3, payment, release, or deployment
+request was made.
+
 # OpenRouter billed-cost evidence — 2026-08-16
 
 ## Scope

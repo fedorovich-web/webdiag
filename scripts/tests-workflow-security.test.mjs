@@ -60,23 +60,32 @@ test("verifies Python locks on Ubuntu with Python 3.13 and 3.14", () => {
   }
 });
 
-test("builds and import-smokes both production images only on Python 3.14", () => {
+test("builds and runtime-smokes all production images only on 3.14", () => {
   const linuxJob = ciWorkflow.split(/^  python-locks:/m)[1];
   const conditionalSteps = linuxJob.match(
-    /- name: Build production Python images[\s\S]*?(?=\n      - name:|$)/,
+    /- name: Build production images[\s\S]*?(?=\n      - name:|$)/,
   )?.[0];
   const smokeStep = linuxJob.match(
     /- name: Smoke production Python images[\s\S]*?(?=\n      - name:|$)/,
   )?.[0];
+  const webSmokeStep = linuxJob.match(
+    /- name: Smoke production web image[\s\S]*?(?=\n      - name:|$)/,
+  )?.[0];
   assert.ok(conditionalSteps, "Docker build step is missing");
   assert.ok(smokeStep, "Docker smoke step is missing");
-  for (const step of [conditionalSteps, smokeStep]) {
+  assert.ok(webSmokeStep, "web Docker runtime smoke step is missing");
+  for (const step of [conditionalSteps, smokeStep, webSmokeStep]) {
     assert.match(step, /if: matrix\.python-version == '3\.14'/);
   }
   assert.match(conditionalSteps, /docker build -f apps\/api\/Dockerfile -t webdiag-api:ci \./);
+  assert.match(conditionalSteps, /WEBDIAG_DOCKER_CONTEXT_SENTINEL=must-not-be-copied/);
   assert.match(
     conditionalSteps,
     /docker build -f apps\/worker\/Dockerfile -t webdiag-worker:ci \./,
+  );
+  assert.match(
+    conditionalSteps,
+    /docker build --build-arg PUBLIC_RELEASE=true -f apps\/web\/Dockerfile -t webdiag-web:ci \./,
   );
   assert.match(smokeStep, /--entrypoint python webdiag-api:ci -c/);
   assert.match(smokeStep, /from webdiag_api\.main import app/);
@@ -84,4 +93,13 @@ test("builds and import-smokes both production images only on Python 3.14", () =
   assert.match(smokeStep, /--entrypoint python webdiag-worker:ci -c/);
   assert.match(smokeStep, /import webdiag_worker\.actors/);
   assert.doesNotMatch(smokeStep, /curl|wget|https?:\/\//i);
+  assert.match(webSmokeStep, /docker run --detach/);
+  assert.match(webSmokeStep, /--env PUBLIC_RELEASE=true/);
+  assert.match(webSmokeStep, /trap .*docker rm --force/);
+  assert.match(webSmokeStep, /robots\.txt/);
+  assert.match(webSmokeStep, /curl --connect-timeout 2 --max-time 5/);
+  assert.match(webSmokeStep, /Allow: \//);
+  assert.match(webSmokeStep, /Sitemap: https:\/\/webdiag\.ru\/sitemap\.xml/);
+  assert.match(webSmokeStep, /Disallow: \//);
+  assert.match(webSmokeStep, /for attempt in \{1\.\.30\}/);
 });

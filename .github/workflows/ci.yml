@@ -112,12 +112,30 @@ jobs:
       - name: Check Python dependency consistency
         run: node scripts/run-python.mjs -m pip check
 
-      - name: Build production Python images
+      - name: Verify production Compose policy
+        if: matrix.python-version == '3.14'
+        env:
+          RABBITMQ_DEFAULT_PASS: ci-rabbit-password-1234567890
+          WEBDIAG_MONITORING_INTERNAL_TOKEN: M123456789012345678901234567890123456789
+          WEBDIAG_CRAWLER_INTERNAL_TOKEN: C123456789012345678901234567890123456789
+          WEBDIAG_AI_INTERNAL_TOKEN: A123456789012345678901234567890123456789
+          WEBDIAG_AI_SAFETY_IDENTIFIER_SECRET: S123456789012345678901234567890123456789
+          WEBDIAG_OPENROUTER_API_KEY: O123456789012345678901234567890123456789
+          WEBDIAG_AI_ARTIFACT_S3_ENDPOINT_URL: https://s3.example.invalid
+          WEBDIAG_AI_ARTIFACT_S3_REGION: test-1
+          WEBDIAG_AI_ARTIFACT_S3_BUCKET: webdiag-private
+          WEBDIAG_AI_ARTIFACT_S3_ACCESS_KEY_ID: fixture-access
+          WEBDIAG_AI_ARTIFACT_S3_SECRET_ACCESS_KEY: fixture-secret
+        run: npm run verify:production-compose
+
+      - name: Build production images
         if: matrix.python-version == '3.14'
         shell: bash
         run: |
+          printf 'WEBDIAG_DOCKER_CONTEXT_SENTINEL=must-not-be-copied\n' > .env.production
           docker build -f apps/api/Dockerfile -t webdiag-api:ci .
           docker build -f apps/worker/Dockerfile -t webdiag-worker:ci .
+          docker build --build-arg PUBLIC_RELEASE=true -f apps/web/Dockerfile -t webdiag-web:ci .
 
       - name: Smoke production Python images
         if: matrix.python-version == '3.14'
@@ -125,3 +143,23 @@ jobs:
         run: |
           docker run --rm --entrypoint python webdiag-api:ci -c "from webdiag_api.main import app; assert app.title == 'WebDiag API'"
           docker run --rm --env WEBDIAG_BROKER_BACKEND=stub --entrypoint python webdiag-worker:ci -c "import webdiag_worker.actors as actors; assert actors.health_probe is not None"
+
+      - name: Smoke production web image
+        if: matrix.python-version == '3.14'
+        shell: bash
+        run: |
+          web_container="$(docker run --detach --publish 127.0.0.1:3010:3000 --env PUBLIC_RELEASE=true --env WEBDIAG_API_INTERNAL_URL=http://127.0.0.1:8000 webdiag-web:ci)"
+          trap 'docker rm --force "$web_container" >/dev/null 2>&1 || true' EXIT
+          robots=""
+          for attempt in {1..30}; do
+            if robots="$(curl --connect-timeout 2 --max-time 5 --fail --silent --show-error http://127.0.0.1:3010/robots.txt 2>/dev/null)"; then
+              break
+            fi
+            sleep 1
+          done
+          test -n "$robots"
+          grep --fixed-strings 'Allow: /' <<<"$robots"
+          grep --fixed-strings 'Sitemap: https://webdiag.ru/sitemap.xml' <<<"$robots"
+          if grep --fixed-strings 'Disallow: /' <<<"$robots"; then
+            exit 1
+          fi

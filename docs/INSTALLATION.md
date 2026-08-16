@@ -309,9 +309,12 @@ account snapshot через `mode=ro&immutable=1`. Она не создаёт WA
 запускает миграции и завершается ошибкой, если bundle или cost-evidence schema
 не готовы.
 
-## 8. Запуск всего окружения через Docker Compose
+## 8. Запуск development-окружения через Docker Compose
 
-Docker Compose использует исходный код и собирает web, API и worker, а также запускает PostgreSQL, RabbitMQ и Valkey.
+Этот двухфайловый Compose-стек предназначен только для development. Он
+использует исходный код, собирает web, API и worker, а также запускает
+PostgreSQL, RabbitMQ и Valkey. `PUBLIC_RELEASE=false` и local artifact storage
+в нём намеренны; этот запуск нельзя использовать как production.
 
 Внешние образы в Dockerfile и `docker-compose.yml` записаны как
 `tag@sha256:digest`. Tag показывает выбранную линию версии, а digest фиксирует
@@ -360,6 +363,73 @@ docker compose -f docker-compose.yml -f docker-compose.account.override.yml down
 ```
 
 Последняя команда удаляет локальные данные окружения.
+
+### Подготовка single-host production Compose
+
+Production использует третий override и оставляет единственный API writer для
+двух SQLite-баз. Неиспользуемые PostgreSQL и Valkey исключены из production
+model; RabbitMQ остаётся для worker. Web и API публикуются только на loopback,
+поэтому TLS и публичный домен должен завершать выбранный host reverse proxy.
+
+Создайте файл окружения за пределами repository build context и заполните его
+через выбранный secret manager. Все `.env`-файлы дополнительно исключены из
+Docker context. Пустой шаблон намеренно не проходит Compose interpolation:
+
+```powershell
+Copy-Item .env.production.example ..\webdiag.production.env
+```
+
+Monitoring, crawler, AI internal token и AI safety identifier secret должны
+быть разными значениями длиной не менее 32 символов. Реальные значения не
+добавляются в Git, Docker context, команды shell history, PR или логи.
+RabbitMQ user содержит 1–64 URL-safe символа. RabbitMQ password
+содержит 24–128 URL-safe символов `A-Z`, `a-z`, `0-9`, `.`, `_`, `~`, `-`,
+поскольку одно значение используется RabbitMQ и AMQP URI. OpenRouter key и S3
+credentials также обязательны. Production artifact storage принимает только
+приватный HTTPS S3-compatible endpoint; local backend удалён из итогового
+environment.
+
+До сборки проверьте полностью объединённую модель. Скрипт не печатает
+отрендеренный environment или stderr Compose:
+
+```powershell
+npm run verify:production-compose -- --env-file ..\webdiag.production.env
+```
+
+Успех выглядит как `production Compose preflight passed: services=5`. Команда
+проверяет production mode, secure cookies, build/runtime public release,
+allowlist секретов для каждого сервиса, S3 parity API/worker, точную topology
+volumes, внутренние origin и loopback ports. Она также проверяет поддержку
+Compose merge tags `!reset` и `!override`.
+
+Сборка и запуск подготовленной модели:
+
+```powershell
+docker compose --env-file ..\webdiag.production.env `
+  -f docker-compose.yml `
+  -f docker-compose.account.override.yml `
+  -f docker-compose.production.yml `
+  up -d --build
+```
+
+После запуска сначала проверьте container health и локальные origin с хоста:
+
+```powershell
+docker compose --env-file ..\webdiag.production.env `
+  -f docker-compose.yml `
+  -f docker-compose.account.override.yml `
+  -f docker-compose.production.yml `
+  ps
+
+Invoke-RestMethod http://127.0.0.1:8000/health
+Invoke-WebRequest http://127.0.0.1:3000/robots.txt
+```
+
+Затем на выбранном production domain отдельно проверяются TLS, canonical,
+robots/sitemap, registration/login/logout, ownership, один безопасный audit,
+monitoring lease, report/share, backup/restore и S3 artifact lifecycle. Static
+preflight не подтверждает доступность домена, корректность reverse proxy,
+валидность реальных credentials, provider billing или disaster recovery.
 
 ### Обновление внешних Docker-образов
 

@@ -15,4 +15,17 @@ AI tool remains unavailable until its real provider evaluation, billed-cost,
 security, integration, and approved fixed-credit-price gates pass. Those gates
 are not inferred from `PUBLIC_RELEASE=true`.
 
+The supported repository-level production preflight is:
+
+```text
+npm run verify:production-compose -- --env-file <path-outside-repository>
+```
+
+It renders the base, account, and production Compose files without starting
+containers and checks the single-writer production policy, exact volume
+topology, and environment allowlists. Production secret env-files are excluded
+from Docker build context and should remain outside the repository. Passing it
+does not certify a domain, TLS/reverse proxy, real secrets, S3 recovery,
+provider cost, payment, release, or deployment.
+
 The current package is an internal development scaffold, not a public release.

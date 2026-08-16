@@ -18,6 +18,7 @@ const compose = await readFile(new URL("docker-compose.yml", root), "utf8");
 const apiDockerfile = await readFile(new URL("apps/api/Dockerfile", root), "utf8");
 const workerDockerfile = await readFile(new URL("apps/worker/Dockerfile", root), "utf8");
 const webDockerfile = await readFile(new URL("apps/web/Dockerfile", root), "utf8");
+const dockerignore = await readFile(new URL(".dockerignore", root), "utf8");
 
 const SHA256_IMAGE_REFERENCE = /^[^\s@]+:[^\s@]+@sha256:[0-9a-f]{64}$/;
 
@@ -106,6 +107,86 @@ test("account compose exposes one distinct crawler token only to API and schedul
     "WEBDIAG_CRAWLER_INTERNAL_TOKEN:?set a distinct random token of at least 32 characters",
     "WEBDIAG_CRAWLER_INTERNAL_TOKEN:?set a distinct random token of at least 32 characters",
   ]);
+});
+
+test("production compose is fail-closed and has an executable privacy-safe preflight", async () => {
+  const productionCompose = await readFile(
+    new URL("docker-compose.production.yml", root),
+    "utf8",
+  );
+  const environmentExample = await readFile(
+    new URL(".env.production.example", root),
+    "utf8",
+  );
+  const verifier = await readFile(
+    new URL("scripts/verify-production-compose.mjs", root),
+    "utf8",
+  );
+  const requiredSecrets = [
+    "RABBITMQ_DEFAULT_PASS",
+    "WEBDIAG_MONITORING_INTERNAL_TOKEN",
+    "WEBDIAG_CRAWLER_INTERNAL_TOKEN",
+    "WEBDIAG_AI_INTERNAL_TOKEN",
+    "WEBDIAG_AI_SAFETY_IDENTIFIER_SECRET",
+    "WEBDIAG_OPENROUTER_API_KEY",
+    "WEBDIAG_AI_ARTIFACT_S3_ENDPOINT_URL",
+    "WEBDIAG_AI_ARTIFACT_S3_REGION",
+    "WEBDIAG_AI_ARTIFACT_S3_BUCKET",
+    "WEBDIAG_AI_ARTIFACT_S3_ACCESS_KEY_ID",
+    "WEBDIAG_AI_ARTIFACT_S3_SECRET_ACCESS_KEY",
+  ];
+
+  assert.match(productionCompose, /WEBDIAG_ENVIRONMENT:\s*production/g);
+  assert.match(productionCompose, /WEBDIAG_ACCOUNT_COOKIE_SECURE:\s*["']true["']/);
+  assert.match(productionCompose, /WEBDIAG_AI_ARTIFACT_STORAGE:\s*s3/g);
+  assert.doesNotMatch(productionCompose, /WEBDIAG_AI_ARTIFACT_STORAGE:\s*local/);
+  assert.match(productionCompose, /PUBLIC_RELEASE:\s*["']true["']/g);
+  assert.match(productionCompose, /api:[\s\S]*?volumes:\s*!override\s*\n\s+- account_data:\/data/);
+  assert.match(productionCompose, /worker:[\s\S]*?volumes:\s*!override\s*\[\]/);
+  assert.match(productionCompose, /ai_artifacts:\s*!reset\s+null/);
+  for (const name of requiredSecrets) {
+    assert.match(productionCompose, new RegExp(`\\$\\{${name}:\\?[^}]+\\}`), name);
+    assert.match(environmentExample, new RegExp(`^${name}=$`, "m"), name);
+  }
+  assert.match(environmentExample, /^WEBDIAG_AI_ARTIFACT_PREFIX=ai-uploads$/m);
+  assert.match(environmentExample, /^WEBDIAG_AI_ARTIFACT_S3_SESSION_TOKEN=$/m);
+  assert.doesNotMatch(environmentExample, /change-me|replace-with|https?:\/\//);
+
+  assert.match(webDockerfile, /ARG PUBLIC_RELEASE=false\s+ENV PUBLIC_RELEASE=\$\{PUBLIC_RELEASE\}\s+RUN npm run build/);
+  assert.match(webDockerfile, /COPY \. \.\s+RUN test ! -e \.env\.production/);
+  assert.equal(
+    rootPackage.scripts["verify:production-compose"],
+    "node scripts/verify-production-compose.mjs",
+  );
+  assert.match(verifier, /spawnSync\(["']docker["']/);
+  assert.match(verifier, /["']--format["'],\s*["']json["']/);
+  assert.match(verifier, /maxBuffer:\s*4 \* 1024 \* 1024/);
+  assert.match(verifier, /production Compose preflight passed/);
+  assert.match(verifier, /allowedEnvironmentPlacements/);
+  assert.match(verifier, /service .* received .* outside its allowlist/);
+  assert.match(verifier, /API volume topology differs/);
+  assert.match(verifier, /worker retains a volume mount/);
+  assert.doesNotMatch(verifier, /console\.(?:log|error)\([^\n]*(?:stdout|stderr|environment)/);
+
+  const workflow = await readFile(new URL(".github/workflows/ci.yml", root), "utf8");
+  assert.match(workflow, /run:\s*npm run verify:production-compose/);
+});
+
+test("Docker build context excludes environment files from every directory", () => {
+  const rules = new Set(
+    dockerignore
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean),
+  );
+  for (const pattern of [".env", ".env.*", "**/.env", "**/.env.*"]) {
+    assert.ok(rules.has(pattern), `.dockerignore is missing ${pattern}`);
+  }
+  assert.equal(
+    [...rules].some((rule) => rule.startsWith("!") && rule.includes(".env")),
+    false,
+    "environment files must not be re-included in the Docker context",
+  );
 });
 
 test("all external production container images are pinned by tag and SHA-256 digest", () => {

@@ -10,6 +10,9 @@ FROM node:24-bookworm-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba32756
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN test ! -e .env.production
+ARG PUBLIC_RELEASE=false
+ENV PUBLIC_RELEASE=${PUBLIC_RELEASE}
 RUN npm run build
 
 FROM node:24-bookworm-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03 AS runner
