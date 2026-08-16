@@ -13,6 +13,8 @@
   `internal`, have no credit price, and are unavailable to users;
 - thirteen text/vision-analysis policies use `openai/gpt-5.6-luna`; the two
   image policies use the separate `openai/gpt-image-2` Image API path.
+- every external action in `.github/workflows` is pinned to a full commit SHA;
+  the workspace gate rejects mutable action tags in current or future workflows.
 
 ## Fresh verification
 
@@ -20,6 +22,7 @@
 settings pytest                                PASS — 5/5
 registry verification                         PASS — 125 unique tools
 registry/renderer inventory                    PASS — 115 ready / 115 supported / 0 missing
+workspace integrity tests                      PASS — 54/54
 full API/worker pytest                         PASS — 599/599, 1 POSIX-mode test skipped on Windows
 full API/worker Ruff                           PASS
 git diff --check                               PASS
@@ -28,7 +31,9 @@ git diff --check                               PASS
 OpenRouter documentation was reviewed without a provider request. Real model
 evaluation, billed-cost verification, fixed credit pricing, provider runtime
 certification, marketplace, payment, release, and deployment remain unverified
-and were not performed.
+and were not performed. Python package artifact hashes also remain unverified:
+the current cross-platform constraint lock pins versions but does not yet use
+pip hash-checking mode.
 
 # A12.5 — staged SQLite recovery
 
