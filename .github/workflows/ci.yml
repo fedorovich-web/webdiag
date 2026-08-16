@@ -46,9 +46,6 @@ jobs:
       - name: Create Python virtual environment
         run: python -m venv .venv
 
-      - name: Upgrade pip
-        run: node scripts/run-python.mjs -m pip install --upgrade pip
-
       - name: Install Python dependencies
         run: npm run python:install
 
@@ -66,3 +63,65 @@ jobs:
           path: apps/web/test-results/
           if-no-files-found: ignore
           retention-days: 7
+
+  python-locks:
+    name: Python locks (${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.13", "3.14"]
+    env:
+      CI: "true"
+      PUBLIC_RELEASE: "false"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install JavaScript dependencies
+        run: npm ci
+
+      - name: Create Python virtual environment
+        run: python -m venv .venv
+
+      - name: Install hashed Python dependencies
+        run: npm run python:install
+
+      - name: Verify Python lock and environment
+        run: npm run verify:python-lock
+
+      - name: Run Python tests
+        run: npm run test:python
+
+      - name: Run Python lint
+        run: npm run lint:python
+
+      - name: Check Python dependency consistency
+        run: node scripts/run-python.mjs -m pip check
+
+      - name: Build production Python images
+        if: matrix.python-version == '3.14'
+        shell: bash
+        run: |
+          docker build -f apps/api/Dockerfile -t webdiag-api:ci .
+          docker build -f apps/worker/Dockerfile -t webdiag-worker:ci .
+
+      - name: Smoke production Python images
+        if: matrix.python-version == '3.14'
+        shell: bash
+        run: |
+          docker run --rm --entrypoint python webdiag-api:ci -c "from webdiag_api.main import app; assert app.title == 'WebDiag API'"
+          docker run --rm --env WEBDIAG_BROKER_BACKEND=stub --entrypoint python webdiag-worker:ci -c "import webdiag_worker.actors as actors; assert actors.health_probe is not None"
