@@ -1,5 +1,7 @@
 "use client";
 
+import { toolErrorMessage } from "./tool-error-presentation";
+
 import { useState, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import {
@@ -213,7 +215,7 @@ export function LighthouseNetworkTool({ locale, view }: { locale: Locale; view: 
     try {
       setResult(await runPerformanceTool("/api/tools/lighthouse-network", { url: parsed.toString(), strategy }, isLighthouseNetworkResponse));
     } catch (caught) {
-      setResult(null); setError(caught instanceof Error ? caught.message : "Tool failed.");
+      setResult(null); setError(toolErrorMessage(locale, caught));
     } finally { setLoading(false); }
   }
 
@@ -250,7 +252,7 @@ export function CoreWebVitalsTool({ locale }: { locale: Locale }) {
     try {
       setResult(await runPerformanceTool("/api/tools/core-web-vitals", { url: parsed.toString(), strategy }, isPageSpeedResponse));
     } catch (caught) {
-      setResult(null); setError(caught instanceof Error ? caught.message : "Tool failed.");
+      setResult(null); setError(toolErrorMessage(locale, caught));
     } finally { setLoading(false); }
   }
 
@@ -279,7 +281,7 @@ export function CachePolicyTool({ locale }: { locale: Locale }) {
     try {
       setResult(await runPerformanceTool("/api/tools/cache-policy", { url: parsed.toString() }, isCachePolicyResponse));
     } catch (caught) {
-      setResult(null); setError(caught instanceof Error ? caught.message : "Tool failed.");
+      setResult(null); setError(toolErrorMessage(locale, caught));
     } finally { setLoading(false); }
   }
 
@@ -303,7 +305,7 @@ export function PageWeightTool({ locale }: { locale: Locale }) {
     try {
       setResult(await runPerformanceTool("/api/tools/page-weight", { url: parsed.toString() }, isPageWeightResponse));
     } catch (caught) {
-      setResult(null); setError(caught instanceof Error ? caught.message : "Tool failed.");
+      setResult(null); setError(toolErrorMessage(locale, caught));
     } finally { setLoading(false); }
   }
 

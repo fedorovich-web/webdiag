@@ -1,4 +1,5 @@
 import { FormEvent, useState } from "react";
+import { toolErrorMessage } from "./tool-error-presentation";
 import type { Locale } from "@webdiag/tool-registry";
 import { CopyButton } from "../../components/copy-button";
 import { metadataCheckStatusLabel, parseMetadataToolUrlInput } from "./metadata-tool-contract";
@@ -96,7 +97,7 @@ function MarkupToolForm({
     try {
       await onRun(parsed.toString());
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Markup tool request failed.");
+      setError(toolErrorMessage(locale, caught));
     } finally {
       setIsLoading(false);
     }

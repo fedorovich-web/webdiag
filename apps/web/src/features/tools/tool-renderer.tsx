@@ -1,5 +1,7 @@
 "use client";
 
+import { toolErrorMessage } from "./tool-error-presentation";
+
 import { useMemo, useState } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import {
@@ -216,7 +218,7 @@ function JsonTool({ locale }: { locale: Locale }) {
   const [output, setOutput] = useState("");
   const [error, setError] = useState("");
   function run() {
-    try { setOutput(formatJson(input)); setError(""); } catch (caught) { setOutput(""); setError(caught instanceof Error ? caught.message : dictionary[locale].error); }
+    try { setOutput(formatJson(input)); setError(""); } catch (caught) { setOutput(""); setError(toolErrorMessage(locale, caught, "invalid_input")); }
   }
   return <div className="tool-grid"><Panel title={dictionary[locale].input}><label className="field"><span>JSON</span><textarea className="code-input" value={input} onChange={(event) => setInput(event.target.value)} rows={12} /></label><button className="button" type="button" onClick={run}>{locale === "ru" ? "Проверить и форматировать" : "Validate and format"}</button><ErrorMessage value={error} /></Panel><Panel title={dictionary[locale].result}><Output value={output} locale={locale} /></Panel></div>;
 }

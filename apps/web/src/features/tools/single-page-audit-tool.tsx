@@ -1,5 +1,7 @@
 "use client";
 
+import { toolErrorMessage } from "./tool-error-presentation";
+
 import { useState, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { AuditClientError, parseAuditUrlInput, startAuditSnapshot } from "../home/audit-client";
@@ -141,7 +143,7 @@ export function SinglePageAuditTool({ locale }: { locale: Locale }) {
     catch (caught) {
       if (caught instanceof AuditClientError && caught.code === "audit_rate_limited") setError(t.rateLimited);
       else if (caught instanceof AuditClientError && caught.code === "audit_capacity_unavailable") setError(t.capacityUnavailable);
-      else setError(caught instanceof AuditClientError ? caught.message : t.unknownError);
+      else setError(toolErrorMessage(locale, caught));
     }
     finally { setLoading(false); }
   }

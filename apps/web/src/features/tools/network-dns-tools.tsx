@@ -1,5 +1,7 @@
 "use client";
 
+import { toolErrorMessage } from "./tool-error-presentation";
+
 import { useState, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import {
@@ -371,7 +373,7 @@ function NetworkDnsTool({
       setResult(await runNetworkDnsTool(endpoint, domain, selector ? { selector } : {}));
     } catch (caught) {
       setResult(null);
-      setError(caught instanceof Error ? caught.message : "Tool request failed.");
+      setError(toolErrorMessage(locale, caught));
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,7 @@
 "use client";
 
+import { toolErrorMessage } from "./tool-error-presentation";
+
 import { useEffect, useState } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { CopyButton } from "../../components/copy-button";
@@ -105,7 +107,7 @@ export function ImagePaletteExtractorTool({ locale }: { locale: Locale }) {
       setImage(await loadImage(file));
     } catch (caught) {
       setImage(null);
-      setError(caught instanceof Error ? caught.message : t(locale, "Не удалось открыть изображение.", "Could not open the image."));
+      setError(toolErrorMessage(locale, caught, "image_open_failed"));
     }
   }
 
@@ -129,7 +131,7 @@ export function ImagePaletteExtractorTool({ locale }: { locale: Locale }) {
     } catch (caught) {
       setPalette([]);
       setSamplePixels(0);
-      setError(caught instanceof Error ? caught.message : t(locale, "Не удалось извлечь палитру.", "Could not extract the palette."));
+      setError(toolErrorMessage(locale, caught, "image_process_failed"));
     }
   }
 

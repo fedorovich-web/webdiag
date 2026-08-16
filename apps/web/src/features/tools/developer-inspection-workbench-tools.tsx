@@ -60,7 +60,9 @@ const errorMessages: Readonly<Record<string, { readonly ru: string; readonly en:
 };
 
 function localError(caught: unknown, locale: Locale, fallback: { readonly ru: string; readonly en: string }): string {
-  const code = caught instanceof Error ? caught.message : "";
+  const code = caught instanceof Error && Object.hasOwn(errorMessages, caught.message)
+    ? caught.message
+    : "";
   return errorMessages[code]?.[locale] ?? fallback[locale];
 }
 

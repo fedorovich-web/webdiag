@@ -1,5 +1,7 @@
 "use client";
 
+import { toolErrorMessage } from "./tool-error-presentation";
+
 import { useEffect, useMemo, useState } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import {
@@ -194,7 +196,7 @@ export function FaviconGeneratorTool({ locale }: { locale: Locale }) {
       setImage(await loadRasterImage(file));
     } catch (caught) {
       setImage(null);
-      setError(caught instanceof Error ? caught.message : t(locale, "Не удалось открыть изображение.", "Could not open the image."));
+      setError(toolErrorMessage(locale, caught, "image_open_failed"));
     }
   }
 
@@ -216,7 +218,7 @@ export function FaviconGeneratorTool({ locale }: { locale: Locale }) {
       setError("");
     } catch (caught) {
       next.forEach((result) => URL.revokeObjectURL(result.url));
-      setError(caught instanceof Error ? caught.message : t(locale, "Не удалось создать иконки.", "Could not generate the icons."));
+      setError(toolErrorMessage(locale, caught, "image_generate_failed"));
     }
   }
 
@@ -304,7 +306,7 @@ export function SvgOptimizerTool({ locale }: { locale: Locale }) {
       setResult(next);
       setError("");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : t(locale, "Не удалось оптимизировать SVG.", "Could not optimize the SVG."));
+      setError(toolErrorMessage(locale, caught, "image_process_failed"));
     }
   }
 
@@ -347,7 +349,7 @@ export function AddWatermarkImageTool({ locale }: { locale: Locale }) {
     setError("");
     if (!file) return;
     try { setImage(await loadRasterImage(file)); }
-    catch (caught) { setError(caught instanceof Error ? caught.message : t(locale, "Не удалось открыть изображение.", "Could not open the image.")); }
+    catch (caught) { setError(toolErrorMessage(locale, caught, "image_open_failed")); }
   }
 
   async function run() {
@@ -374,7 +376,7 @@ export function AddWatermarkImageTool({ locale }: { locale: Locale }) {
       setResult({ url: URL.createObjectURL(blob), filename: rasterFilename(image.file, "watermarked", format), size: blob.size, sourceSize: image.file.size, width: canvas.width, height: canvas.height, format });
       setError("");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : t(locale, "Не удалось добавить водяной знак.", "Could not add the watermark."));
+      setError(toolErrorMessage(locale, caught, "image_process_failed"));
     }
   }
 
@@ -415,7 +417,7 @@ export function ImageMetadataViewerTool({ locale }: { locale: Locale }) {
       setSignals(detectImageMetadataSignals(buffer));
       setImage(await loadRasterImage(file));
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : t(locale, "Не удалось прочитать изображение.", "Could not read the image."));
+      setError(toolErrorMessage(locale, caught, "image_read_failed"));
     }
   }
 
@@ -428,7 +430,7 @@ export function ImageMetadataViewerTool({ locale }: { locale: Locale }) {
       setResult({ url: URL.createObjectURL(blob), filename: rasterFilename(image.file, "metadata-stripped", format), size: blob.size, sourceSize: image.file.size, width: canvas.width, height: canvas.height, format });
       setError("");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : t(locale, "Не удалось удалить метаданные.", "Could not remove metadata."));
+      setError(toolErrorMessage(locale, caught, "image_metadata_failed"));
     }
   }
 

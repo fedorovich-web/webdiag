@@ -1,5 +1,7 @@
 "use client";
 
+import { toolErrorMessage } from "./tool-error-presentation";
+
 import { useState, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import {
@@ -142,7 +144,7 @@ function BaseTool<T extends TechnicalSeoToolResponse>({
       setResult(await runTool(endpoint, parsed.toString(), validator));
     } catch (caught) {
       setResult(null);
-      setError(caught instanceof Error ? caught.message : "Tool failed.");
+      setError(toolErrorMessage(locale, caught));
     } finally {
       setLoading(false);
     }

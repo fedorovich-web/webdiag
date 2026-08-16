@@ -1,5 +1,7 @@
 "use client";
 
+import { toolErrorMessage } from "./tool-error-presentation";
+
 import { type FormEvent, useState } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import {
@@ -101,7 +103,7 @@ export function BulkHttpStatusTool({ locale }: { locale: Locale }) {
       setResult(await inspectUrls(urls));
     } catch (caught) {
       setResult(null);
-      setError(caught instanceof Error ? caught.message : copy.invalid);
+      setError(toolErrorMessage(locale, caught, "invalid_input"));
     } finally {
       setLoading(false);
     }

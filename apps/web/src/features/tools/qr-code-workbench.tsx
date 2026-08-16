@@ -1,5 +1,7 @@
 "use client";
 
+import { toolErrorMessage } from "./tool-error-presentation";
+
 import { useEffect, useRef, useState } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import encodeQR, { type Image as QrImage } from "qr";
@@ -92,7 +94,7 @@ export function QrCodeWorkbenchTool({ locale }: { locale: Locale }) {
       const uri = pngDataUri(matrix, size);
       setGenerated({ uri, bytes: base64DataUriByteLength(uri), textBytes: valid.byteLength });
       setError("");
-    } catch (caught) { setGenerated(null); setError(caught instanceof Error ? caught.message : "QR generation failed."); }
+    } catch (caught) { setGenerated(null); setError(toolErrorMessage(locale, caught, "qr_generate_failed")); }
   }
 
   async function load(next?: File) {
@@ -105,7 +107,7 @@ export function QrCodeWorkbenchTool({ locale }: { locale: Locale }) {
       const nextBitmap = await createImageBitmap(next, { imageOrientation: "from-image" });
       try { validateQrImageGeometry(nextBitmap.width, nextBitmap.height); } catch (caught) { nextBitmap.close(); throw caught; }
       setFile(next); setBitmap(nextBitmap);
-    } catch (caught) { setError(caught instanceof Error ? caught.message : "Could not open the image."); }
+    } catch (caught) { setError(toolErrorMessage(locale, caught, "image_open_failed")); }
   }
 
   function read() {

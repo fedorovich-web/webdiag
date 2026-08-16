@@ -1,5 +1,7 @@
 "use client";
 
+import { toolErrorMessage } from "./tool-error-presentation";
+
 import { useState } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { CopyButton } from "../../components/copy-button";
@@ -114,7 +116,7 @@ export function ResponsiveSrcsetGeneratorTool({ locale }: { locale: Locale }) {
       setError("");
     } catch (caught) {
       setResult(null);
-      setError(caught instanceof Error ? caught.message : text(locale, "Не удалось создать srcset.", "Could not generate srcset."));
+      setError(toolErrorMessage(locale, caught, "srcset_generate_failed"));
     }
   }
 

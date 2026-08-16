@@ -1,5 +1,7 @@
 "use client";
 
+import { toolErrorMessage } from "./tool-error-presentation";
+
 import { useState, type ReactNode } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { CopyButton } from "../../components/copy-button";
@@ -25,7 +27,7 @@ function ErrorMessage({ value }: { value: string }) {
 }
 
 function errorText(caught: unknown, locale: Locale): string {
-  return caught instanceof Error ? caught.message : dictionary[locale].error;
+  return toolErrorMessage(locale, caught, "invalid_input");
 }
 
 export function HtmlEntitiesConverterTool({ locale }: { locale: Locale }) {

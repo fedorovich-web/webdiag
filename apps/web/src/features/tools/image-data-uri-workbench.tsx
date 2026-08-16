@@ -1,5 +1,7 @@
 "use client";
 
+import { toolErrorMessage } from "./tool-error-presentation";
+
 import { useEffect, useState } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { CopyButton } from "../../components/copy-button";
@@ -108,7 +110,7 @@ export function ImageDataUriWorkbenchTool({ locale }: { locale: Locale }) {
       setFile(next);
       setBitmap(decoded);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : t(locale, "Не удалось открыть изображение.", "Could not open the image."));
+      setError(toolErrorMessage(locale, caught, "image_open_failed"));
     }
   }
 
@@ -144,7 +146,7 @@ export function ImageDataUriWorkbenchTool({ locale }: { locale: Locale }) {
       setError("");
     } catch (caught) {
       setResult(null);
-      setError(caught instanceof Error ? caught.message : t(locale, "Не удалось создать Data URI.", "Could not create the Data URIs."));
+      setError(toolErrorMessage(locale, caught, "image_generate_failed"));
     }
   }
 
