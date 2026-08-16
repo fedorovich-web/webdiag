@@ -13,15 +13,16 @@
 - historical attempts remain explicitly unmeasured instead of being rewritten
   as zero-cost runs;
 - the bounded operator report emits only per-tool aggregate count, usage, and
-  min/max/nearest-rank-p95/total cost evidence.
+  min/max/nearest-rank-p95/total cost evidence from a verified immutable
+  recovery snapshot, never from the live WAL database.
 
 ## Fresh verification
 
 ```text
 initial worker/API cost suite                  PASS — 94/94
-operator p95/privacy/read-only regressions    PASS — 2/2
+review regressions: exact cost/snapshot safety PASS — 5/5
 previous full-run fixture regressions          PASS — 8/8 after adding usage.cost
-full API/worker pytest                         PASS — 610/610, 1 POSIX-mode test skipped on Windows
+full API/worker pytest                         PASS — 615/615, 1 POSIX-mode test skipped on Windows
 full API/worker Ruff                           PASS
 git diff --check                               PASS
 ```

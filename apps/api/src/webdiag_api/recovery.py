@@ -54,9 +54,14 @@ def _read_only_connection(path: Path) -> sqlite3.Connection:
     return sqlite3.connect(uri, uri=True)
 
 
+def _immutable_connection(path: Path) -> sqlite3.Connection:
+    uri = f"{path.resolve(strict=True).as_uri()}?mode=ro&immutable=1"
+    return sqlite3.connect(uri, uri=True)
+
+
 def _verify_sqlite(path: Path) -> None:
     try:
-        with closing(_read_only_connection(path)) as connection:
+        with closing(_immutable_connection(path)) as connection:
             integrity = connection.execute("PRAGMA integrity_check").fetchall()
             if integrity != [("ok",)]:
                 raise RecoveryError("SQLite integrity verification failed")

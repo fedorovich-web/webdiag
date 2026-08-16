@@ -7,6 +7,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from webdiag_api.ai.storage import CreditConflictError, SqliteAIStore
+from webdiag_api.recovery import DATABASE_FILENAMES, RecoveryError, verify_bundle
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -20,7 +21,7 @@ def _parser() -> argparse.ArgumentParser:
     grant.add_argument("--reason", required=True)
     grant.add_argument("--correlation-id", required=True)
     report = commands.add_parser("provider-cost-report")
-    report.add_argument("--database-path", required=True)
+    report.add_argument("--backup-dir", required=True)
     report.add_argument("--tool-id", required=True)
     report.add_argument("--sample-limit", type=int, default=10_000)
     return parser
@@ -29,10 +30,13 @@ def _parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     arguments = _parser().parse_args(argv)
     if arguments.command == "provider-cost-report":
-        if not Path(arguments.database_path).is_file():
-            print("provider cost database was not found", file=sys.stderr)
+        backup_dir = Path(arguments.backup_dir)
+        try:
+            verify_bundle(backup_dir)
+        except RecoveryError:
+            print("provider cost snapshot is unavailable", file=sys.stderr)
             return 2
-        store = SqliteAIStore(arguments.database_path)
+        store = SqliteAIStore(str(backup_dir / DATABASE_FILENAMES["account"]))
         try:
             report = store.provider_cost_report(
                 tool_id=arguments.tool_id,

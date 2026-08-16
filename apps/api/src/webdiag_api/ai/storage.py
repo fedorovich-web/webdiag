@@ -9,6 +9,7 @@ import threading
 import time
 import uuid
 from collections.abc import Callable
+from contextlib import closing
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -208,7 +209,7 @@ class SqliteAIStore:
         return connection
 
     def _connect_read_only(self) -> sqlite3.Connection:
-        database_uri = f"{self._path.resolve().as_uri()}?mode=ro"
+        database_uri = f"{self._path.resolve().as_uri()}?mode=ro&immutable=1"
         connection = sqlite3.connect(database_uri, uri=True, timeout=10)
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA query_only = ON")
@@ -406,7 +407,7 @@ class SqliteAIStore:
         ):
             raise ValueError("provider cost sample limit must be between 1 and 100000")
         try:
-            with self._connect_read_only() as connection:
+            with closing(self._connect_read_only()) as connection:
                 rows = connection.execute(
                     """
                     SELECT a.input_units, a.output_units, a.provider_cost_nano_usd

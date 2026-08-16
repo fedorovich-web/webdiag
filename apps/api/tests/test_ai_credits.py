@@ -12,6 +12,7 @@ from webdiag_api.ai.cli import main as cli_main
 from webdiag_api.ai.models import AIRunCreateRequest
 from webdiag_api.ai.service import AIService
 from webdiag_api.ai.storage import CreditConflictError, CreditIntegrityError, SqliteAIStore
+from webdiag_api.recovery import create_backup
 
 
 def create_user(database_path: Path) -> str:
@@ -21,6 +22,19 @@ def create_user(database_path: Path) -> str:
         password_hash="test-only-password-hash",
     )
     return user.id
+
+
+def create_cost_report_snapshot(tmp_path: Path, account_database: Path) -> Path:
+    audit_database = tmp_path / "cost-report-audits.sqlite3"
+    with sqlite3.connect(audit_database) as connection:
+        connection.execute("CREATE TABLE audit_marker(id INTEGER PRIMARY KEY)")
+    backup_dir = tmp_path / "cost-report-backup"
+    create_backup(
+        account_database=account_database,
+        audit_database=audit_database,
+        output_dir=backup_dir,
+    )
+    return backup_dir
 
 
 def test_duplicate_grant_is_idempotent_and_conflicting_reuse_is_rejected(
@@ -227,12 +241,13 @@ def test_operator_cost_report_is_bounded_aggregate_without_private_run_data(
             "UPDATE ai_run_attempts SET provider_cost_nano_usd = NULL WHERE run_id = ?",
             (run_ids[-1],),
         )
+    backup_dir = create_cost_report_snapshot(tmp_path, database_path)
 
     assert cli_main(
         [
             "provider-cost-report",
-            "--database-path",
-            str(database_path),
+            "--backup-dir",
+            str(backup_dir),
             "--tool-id",
             definition.id,
             "--sample-limit",
@@ -264,21 +279,21 @@ def test_operator_cost_report_is_bounded_aggregate_without_private_run_data(
     assert "gen_cost" not in output
 
 
-def test_operator_cost_report_does_not_create_a_missing_database(tmp_path: Path, capsys) -> None:
-    database_path = tmp_path / "missing.sqlite3"
+def test_operator_cost_report_rejects_a_missing_snapshot(tmp_path: Path, capsys) -> None:
+    backup_dir = tmp_path / "missing-backup"
 
     assert cli_main(
         [
             "provider-cost-report",
-            "--database-path",
-            str(database_path),
+            "--backup-dir",
+            str(backup_dir),
             "--tool-id",
             "test_cost_tool",
         ]
     ) == 2
 
-    assert capsys.readouterr().err == "provider cost database was not found\n"
-    assert not database_path.exists()
+    assert capsys.readouterr().err == "provider cost snapshot is unavailable\n"
+    assert not backup_dir.exists()
 
 
 def test_operator_cost_report_uses_read_only_sqlite_uri(
@@ -286,6 +301,7 @@ def test_operator_cost_report_uses_read_only_sqlite_uri(
 ) -> None:
     database_path = tmp_path / "accounts.sqlite3"
     SqliteAIStore(str(database_path)).ensure_schema()
+    backup_dir = create_cost_report_snapshot(tmp_path, database_path)
     connect_calls: list[tuple[object, dict[str, object]]] = []
     real_connect = ai_storage.sqlite3.connect
 
@@ -295,21 +311,38 @@ def test_operator_cost_report_uses_read_only_sqlite_uri(
 
     monkeypatch.setattr(ai_storage.sqlite3, "connect", connect)
 
+    report = SqliteAIStore(
+        str(backup_dir / "accounts.sqlite3")
+    ).provider_cost_report(tool_id="test_cost_tool")
+
+    assert report.sampled_attempts == 0
+    assert len(connect_calls) == 1
+    database, options = connect_calls[0]
+    assert str(database).endswith("?mode=ro&immutable=1")
+    assert options["uri"] is True
+
+
+def test_operator_cost_report_does_not_change_snapshot_files(
+    tmp_path: Path, capsys
+) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    SqliteAIStore(str(database_path)).ensure_schema()
+    backup_dir = create_cost_report_snapshot(tmp_path, database_path)
+    before = {path.name: path.read_bytes() for path in backup_dir.iterdir()}
+
     assert cli_main(
         [
             "provider-cost-report",
-            "--database-path",
-            str(database_path),
+            "--backup-dir",
+            str(backup_dir),
             "--tool-id",
             "test_cost_tool",
         ]
     ) == 0
     capsys.readouterr()
 
-    assert len(connect_calls) == 1
-    database, options = connect_calls[0]
-    assert str(database).endswith("?mode=ro")
-    assert options["uri"] is True
+    after = {path.name: path.read_bytes() for path in backup_dir.iterdir()}
+    assert after == before
 
 
 def test_operator_cost_report_does_not_migrate_an_old_schema(tmp_path: Path, capsys) -> None:
@@ -317,19 +350,20 @@ def test_operator_cost_report_does_not_migrate_an_old_schema(tmp_path: Path, cap
     SqliteAIStore(str(database_path)).ensure_schema()
     with sqlite3.connect(database_path) as connection:
         connection.execute("ALTER TABLE ai_run_attempts DROP COLUMN provider_cost_nano_usd")
+    backup_dir = create_cost_report_snapshot(tmp_path, database_path)
 
     assert cli_main(
         [
             "provider-cost-report",
-            "--database-path",
-            str(database_path),
+            "--backup-dir",
+            str(backup_dir),
             "--tool-id",
             "test_cost_tool",
         ]
     ) == 2
 
     assert capsys.readouterr().err == "provider cost evidence is unavailable\n"
-    with sqlite3.connect(database_path) as connection:
+    with sqlite3.connect(backup_dir / "accounts.sqlite3") as connection:
         columns = {
             str(row[1]) for row in connection.execute("PRAGMA table_info(ai_run_attempts)")
         }

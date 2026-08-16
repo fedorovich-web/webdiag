@@ -35,9 +35,11 @@ An operator-only read command reports one catalog tool at a time over a bounded
 latest-success sample. It emits deterministic JSON with sample size,
 measured/unmeasured counts, input/output units, and min/max/nearest-rank p95
 cost. It never emits user IDs, run IDs, prompts, outputs, provider bodies, or
-artifact keys. It opens an existing SQLite database with URI `mode=ro`, runs no
-schema initialization or write PRAGMA, and fails closed when the cost-evidence
-schema is unavailable.
+artifact keys. It accepts only a verified offline recovery bundle, not the live
+WAL database. After manifest, digest, integrity, and foreign-key verification,
+it opens the account snapshot with URI `mode=ro&immutable=1`, runs no schema
+initialization or write PRAGMA, creates no WAL/SHM sidecars, and fails closed
+when the bundle or cost-evidence schema is unavailable.
 
 ## Boundaries
 
@@ -56,6 +58,7 @@ Worker tests cover exact conversion, conservative sub-nano rounding, missing and
 invalid costs, and image/text responses. API tests cover request validation,
 transactional persistence, idempotent replay, and the historical `NULL`
 migration state. CLI tests cover bounded p95 aggregation, empty evidence,
-read-only URI use, and refusal to migrate an old schema.
+immutable read-only URI use, unchanged snapshot files, and refusal to migrate
+an old schema.
 Targeted worker/API tests run once after the implementation
 group, followed by the relevant complete Python suite before handoff.

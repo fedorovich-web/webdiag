@@ -288,12 +288,14 @@ node scripts/run-python.mjs -m webdiag_api.ai.cli grant-credits `
 
 Повтор той же команды с теми же данными идемпотентен. Повтор correlation ID с другими данными отклоняется. CLI не заменяет operator RBAC и не должен быть доступен через публичный HTTP endpoint.
 
-После opt-in provider evaluation оператор получает bounded cost evidence для
-одного tool ID без выгрузки пользовательских данных:
+После opt-in provider evaluation оператор сначала создаёт recovery bundle по
+инструкции ниже, затем получает bounded cost evidence для одного tool ID без
+выгрузки пользовательских данных. Живую WAL-базу этой команде передавать
+нельзя:
 
 ```powershell
 node scripts/run-python.mjs -m webdiag_api.ai.cli provider-cost-report `
-  --database-path .webdiag/accounts.sqlite3 `
+  --backup-dir recovery/backup `
   --tool-id ai_meta_serp_studio `
   --sample-limit 10000
 ```
@@ -301,9 +303,11 @@ node scripts/run-python.mjs -m webdiag_api.ai.cli provider-cost-report `
 JSON содержит размер выборки, количество измеренных и исторических
 неизмеренных попыток, суммарные token units и min/max/p95/total в nano-USD.
 Один USD равен 1 000 000 000 nano-USD. Этот отчёт не утверждает цену в кредитах
-и сам по себе не переводит инструмент в `ready`. Команда открывает только уже
-существующую SQLite-базу через `mode=ro`, не запускает миграции и завершается
-ошибкой, если схема ещё не содержит cost-evidence.
+и сам по себе не переводит инструмент в `ready`. Команда проверяет recovery
+manifest, размеры, SHA-256 и целостность обеих snapshot-баз, затем открывает
+account snapshot через `mode=ro&immutable=1`. Она не создаёт WAL/SHM, не
+запускает миграции и завершается ошибкой, если bundle или cost-evidence schema
+не готовы.
 
 ## 8. Запуск всего окружения через Docker Compose
 
