@@ -207,6 +207,14 @@ class SqliteAIStore:
         connection.execute("PRAGMA busy_timeout = 10000")
         return connection
 
+    def _connect_read_only(self) -> sqlite3.Connection:
+        database_uri = f"{self._path.resolve().as_uri()}?mode=ro"
+        connection = sqlite3.connect(database_uri, uri=True, timeout=10)
+        connection.row_factory = sqlite3.Row
+        connection.execute("PRAGMA query_only = ON")
+        connection.execute("PRAGMA busy_timeout = 10000")
+        return connection
+
     def ensure_schema(self) -> None:
         if self._schema_ready:
             return
@@ -397,25 +405,27 @@ class SqliteAIStore:
             or not 1 <= sample_limit <= 100_000
         ):
             raise ValueError("provider cost sample limit must be between 1 and 100000")
-        self.ensure_schema()
-        with self._connect() as connection:
-            rows = connection.execute(
-                """
-                SELECT a.input_units, a.output_units, a.provider_cost_nano_usd
-                FROM ai_run_attempts AS a
-                JOIN ai_runs AS r ON r.id = a.run_id
-                WHERE r.tool_id = ? AND r.state = 'succeeded'
-                  AND a.completed_at IS NOT NULL
-                  AND a.attempt_number = (
-                      SELECT MAX(latest.attempt_number)
-                      FROM ai_run_attempts AS latest
-                      WHERE latest.run_id = a.run_id
-                  )
-                ORDER BY a.completed_at DESC, a.run_id DESC
-                LIMIT ?
-                """,
-                (tool_id, sample_limit),
-            ).fetchall()
+        try:
+            with self._connect_read_only() as connection:
+                rows = connection.execute(
+                    """
+                    SELECT a.input_units, a.output_units, a.provider_cost_nano_usd
+                    FROM ai_run_attempts AS a
+                    JOIN ai_runs AS r ON r.id = a.run_id
+                    WHERE r.tool_id = ? AND r.state = 'succeeded'
+                      AND a.completed_at IS NOT NULL
+                      AND a.attempt_number = (
+                          SELECT MAX(latest.attempt_number)
+                          FROM ai_run_attempts AS latest
+                          WHERE latest.run_id = a.run_id
+                      )
+                    ORDER BY a.completed_at DESC, a.run_id DESC
+                    LIMIT ?
+                    """,
+                    (tool_id, sample_limit),
+                ).fetchall()
+        except sqlite3.Error as error:
+            raise ValueError("provider cost evidence is unavailable") from error
         measured = [row for row in rows if row["provider_cost_nano_usd"] is not None]
         costs = sorted(int(row["provider_cost_nano_usd"]) for row in measured)
         p95_index = ((95 * len(costs) + 99) // 100) - 1 if costs else None

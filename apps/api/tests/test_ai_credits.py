@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+import webdiag_api.ai.storage as ai_storage
 from webdiag_api.accounts.storage import SqliteAccountStore
 from webdiag_api.ai.catalog import AIToolCatalog, AIToolDefinition, AIToolState
 from webdiag_api.ai.cli import main as cli_main
@@ -278,3 +279,58 @@ def test_operator_cost_report_does_not_create_a_missing_database(tmp_path: Path,
 
     assert capsys.readouterr().err == "provider cost database was not found\n"
     assert not database_path.exists()
+
+
+def test_operator_cost_report_uses_read_only_sqlite_uri(
+    tmp_path: Path, capsys, monkeypatch
+) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    SqliteAIStore(str(database_path)).ensure_schema()
+    connect_calls: list[tuple[object, dict[str, object]]] = []
+    real_connect = ai_storage.sqlite3.connect
+
+    def connect(database, *args, **kwargs):
+        connect_calls.append((database, kwargs))
+        return real_connect(database, *args, **kwargs)
+
+    monkeypatch.setattr(ai_storage.sqlite3, "connect", connect)
+
+    assert cli_main(
+        [
+            "provider-cost-report",
+            "--database-path",
+            str(database_path),
+            "--tool-id",
+            "test_cost_tool",
+        ]
+    ) == 0
+    capsys.readouterr()
+
+    assert len(connect_calls) == 1
+    database, options = connect_calls[0]
+    assert str(database).endswith("?mode=ro")
+    assert options["uri"] is True
+
+
+def test_operator_cost_report_does_not_migrate_an_old_schema(tmp_path: Path, capsys) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    SqliteAIStore(str(database_path)).ensure_schema()
+    with sqlite3.connect(database_path) as connection:
+        connection.execute("ALTER TABLE ai_run_attempts DROP COLUMN provider_cost_nano_usd")
+
+    assert cli_main(
+        [
+            "provider-cost-report",
+            "--database-path",
+            str(database_path),
+            "--tool-id",
+            "test_cost_tool",
+        ]
+    ) == 2
+
+    assert capsys.readouterr().err == "provider cost evidence is unavailable\n"
+    with sqlite3.connect(database_path) as connection:
+        columns = {
+            str(row[1]) for row in connection.execute("PRAGMA table_info(ai_run_attempts)")
+        }
+    assert "provider_cost_nano_usd" not in columns

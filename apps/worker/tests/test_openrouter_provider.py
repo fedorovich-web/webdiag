@@ -2,6 +2,7 @@ import json
 import hashlib
 import base64
 import io
+from decimal import Decimal
 
 import httpx
 import pytest
@@ -239,6 +240,30 @@ def test_provider_converts_cost_conservatively(cost: float | int, expected_nano_
     result = _provider(lambda _request: httpx.Response(200, json=body)).execute(_request())
 
     assert result.provider_cost_nano_usd == expected_nano_usd
+
+
+@pytest.mark.parametrize(
+    ("cost", "expected_nano_usd"),
+    (
+        ("1.00000000000000000000000000001", 1_000_000_001),
+        ("1e-999999999", 1),
+    ),
+)
+def test_provider_cost_conversion_is_exact_beyond_decimal_context(
+    cost: str,
+    expected_nano_usd: int,
+) -> None:
+    _input, _output, actual = openrouter_provider._provider_usage(
+        {
+            "usage": {
+                "prompt_tokens": 1,
+                "completion_tokens": 1,
+                "cost": Decimal(cost),
+            }
+        }
+    )
+
+    assert actual == expected_nano_usd
 
 
 @pytest.mark.parametrize("cost", (True, "0.01", -0.01, 1000.000000001))

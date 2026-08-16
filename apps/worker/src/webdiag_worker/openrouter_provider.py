@@ -6,7 +6,7 @@ import hmac
 import json
 import os
 from dataclasses import dataclass
-from decimal import Decimal, InvalidOperation, ROUND_CEILING
+from decimal import Decimal
 
 import httpx
 from pydantic import BaseModel
@@ -613,6 +613,25 @@ def _provider_request_id(body: object) -> str:
     return value
 
 
+def _cost_to_nano_usd(cost: Decimal) -> int:
+    _sign, digits, exponent = cost.as_tuple()
+    first_nonzero = next((index for index, digit in enumerate(digits) if digit), None)
+    if first_nonzero is None:
+        return 0
+    significant = digits[first_nonzero:]
+    integer_digits = len(significant) + exponent + 9
+    if integer_digits <= 0:
+        return 1
+    if integer_digits >= len(significant):
+        return int("".join(str(digit) for digit in significant)) * (
+            10 ** (integer_digits - len(significant))
+        )
+    whole = int("".join(str(digit) for digit in significant[:integer_digits]))
+    if any(significant[integer_digits:]):
+        whole += 1
+    return whole
+
+
 def _provider_usage(body: object) -> tuple[int, int, int]:
     if not isinstance(body, dict):
         raise ValueError("invalid provider response")
@@ -628,15 +647,10 @@ def _provider_usage(body: object) -> tuple[int, int, int]:
     raw_cost = usage.get("cost")
     if isinstance(raw_cost, bool) or not isinstance(raw_cost, (int, Decimal)):
         raise ValueError("invalid provider cost")
-    try:
-        cost = Decimal(raw_cost)
-        if not cost.is_finite() or cost < 0 or cost > Decimal("1000"):
-            raise ValueError("invalid provider cost")
-        nano_usd = int(
-            (cost * Decimal("1000000000")).to_integral_value(rounding=ROUND_CEILING)
-        )
-    except (InvalidOperation, ValueError, OverflowError) as error:
-        raise ValueError("invalid provider cost") from error
+    cost = Decimal(raw_cost)
+    if not cost.is_finite() or cost < 0 or cost > Decimal("1000"):
+        raise ValueError("invalid provider cost")
+    nano_usd = _cost_to_nano_usd(cost)
     return values[0], values[1], nano_usd
 
 

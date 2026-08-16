@@ -10,7 +10,8 @@
   token usage, while historical unmeasured attempts remain explicit `NULL`.
 - Added a bounded operator-only per-tool JSON report with measured/unmeasured
   counts and min/max/p95/total cost. It exposes no user, run, prompt, output,
-  response-body, or artifact identifiers.
+  response-body, or artifact identifiers, opens SQLite in read-only mode, and
+  never initializes or migrates the inspected database.
 - AI tools remain internal. No provider request, cost claim, credit price,
   payment, release, or deployment was made by this stage.
 
