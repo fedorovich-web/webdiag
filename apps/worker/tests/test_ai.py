@@ -25,6 +25,7 @@ class FakeProvider:
             provider_request_id="req_test",
             input_units=12,
             output_units=4,
+            provider_cost_nano_usd=12_000,
         )
 
 
@@ -84,6 +85,7 @@ def test_worker_claims_marks_submitted_and_completes_typed_result(monkeypatch) -
         "provider_request_id": "req_test",
         "input_units": 12,
         "output_units": 4,
+        "provider_cost_nano_usd": 12_000,
         "artifact": None,
     }
 

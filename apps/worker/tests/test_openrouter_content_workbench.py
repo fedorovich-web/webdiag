@@ -20,7 +20,7 @@ def _response(output: dict[str, object]) -> dict[str, object]:
                 },
             }
         ],
-        "usage": {"prompt_tokens": 20, "completion_tokens": 10},
+        "usage": {"prompt_tokens": 20, "completion_tokens": 10, "cost": 0.00002},
     }
 
 

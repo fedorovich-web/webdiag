@@ -128,6 +128,7 @@ class AIWorkerCompleteRequest(AIWorkerLeaseRequest):
     provider_request_id: str | None = Field(default=None, min_length=1, max_length=200)
     input_units: int = Field(default=0, ge=0, le=1_000_000_000)
     output_units: int = Field(default=0, ge=0, le=1_000_000_000)
+    provider_cost_nano_usd: int = Field(ge=0, le=1_000_000_000_000)
     artifact: "AIWorkerArtifact | None" = None
 
 

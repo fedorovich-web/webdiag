@@ -283,6 +283,21 @@ node scripts/run-python.mjs -m webdiag_api.ai.cli grant-credits `
 
 Повтор той же команды с теми же данными идемпотентен. Повтор correlation ID с другими данными отклоняется. CLI не заменяет operator RBAC и не должен быть доступен через публичный HTTP endpoint.
 
+После opt-in provider evaluation оператор получает bounded cost evidence для
+одного tool ID без выгрузки пользовательских данных:
+
+```powershell
+node scripts/run-python.mjs -m webdiag_api.ai.cli provider-cost-report `
+  --database-path .webdiag/accounts.sqlite3 `
+  --tool-id ai_meta_serp_studio `
+  --sample-limit 10000
+```
+
+JSON содержит размер выборки, количество измеренных и исторических
+неизмеренных попыток, суммарные token units и min/max/p95/total в nano-USD.
+Один USD равен 1 000 000 000 nano-USD. Этот отчёт не утверждает цену в кредитах
+и сам по себе не переводит инструмент в `ready`.
+
 ## 8. Запуск всего окружения через Docker Compose
 
 Docker Compose использует исходный код и собирает web, API и worker, а также запускает PostgreSQL, RabbitMQ и Valkey.

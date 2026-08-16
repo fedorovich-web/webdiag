@@ -146,6 +146,7 @@ def test_current_completion_captures_and_safe_failure_releases(tmp_path: Path) -
         provider_request_id="req_123",
         input_units=120,
         output_units=30,
+        provider_cost_nano_usd=1_250_000,
         now=102,
     )
     assert completed.state == "succeeded"
@@ -153,12 +154,12 @@ def test_current_completion_captures_and_safe_failure_releases(tmp_path: Path) -
     with sqlite3.connect(tmp_path / "complete.sqlite3") as connection:
         usage = connection.execute(
             """
-            SELECT provider_request_id, input_units, output_units
+            SELECT provider_request_id, input_units, output_units, provider_cost_nano_usd
             FROM ai_run_attempts WHERE run_id = ?
             """,
             (complete_run,),
         ).fetchone()
-    assert usage == ("req_123", 120, 30)
+    assert usage == ("req_123", 120, 30, 1_250_000)
 
     fail_store, fail_user, fail_run = seeded_run(
         tmp_path / "fail.sqlite3",
@@ -268,6 +269,37 @@ def test_internal_completion_rejects_invalid_usage_with_stable_envelope(monkeypa
             }
         )
     )
+
+    assert response.status_code == 422
+    assert response.headers["cache-control"] == "no-store"
+    assert response.json() == {
+        "detail": {
+            "code": "ai_internal_invalid_request",
+            "message": "Invalid internal AI request.",
+        }
+    }
+
+
+def test_internal_completion_requires_reported_provider_cost(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "ai_internal_token", "a" * 32)
+
+    async def post() -> httpx.Response:
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app),
+            base_url="http://test",
+        ) as client:
+            return await client.post(
+                "/v1/internal/ai/runs/11111111-1111-4111-8111-111111111111/complete",
+                headers={"Authorization": f"Bearer {'a' * 32}"},
+                json={
+                    "lease_token": "lease-token-value-with-at-least-32-chars",
+                    "output": {"text": "value"},
+                    "input_units": 1,
+                    "output_units": 1,
+                },
+            )
+
+    response = asyncio.run(post())
 
     assert response.status_code == 422
     assert response.headers["cache-control"] == "no-store"

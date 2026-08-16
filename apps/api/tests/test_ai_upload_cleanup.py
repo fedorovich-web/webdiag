@@ -104,6 +104,7 @@ def test_terminal_run_marks_bound_upload_pending_in_same_transition(
             provider_request_id="gen_cleanup",
             input_units=10,
             output_units=4,
+            provider_cost_nano_usd=10_000,
         )
     else:
         service.fail_run(

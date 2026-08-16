@@ -6,6 +6,7 @@ import hmac
 import json
 import os
 from dataclasses import dataclass
+from decimal import Decimal, InvalidOperation, ROUND_CEILING
 
 import httpx
 from pydantic import BaseModel
@@ -301,10 +302,10 @@ class OpenRouterProvider:
         if status_code != 200 or response_content is None:
             raise ProviderOutcomeUnknownError("AI provider outcome is unknown")
         try:
-            body = json.loads(response_content)
+            body = json.loads(response_content, parse_float=Decimal)
             parsed = _parsed_output(body, policy.output_model)
             provider_request_id = _provider_request_id(body)
-            input_units, output_units = _provider_usage(body)
+            input_units, output_units, provider_cost_nano_usd = _provider_usage(body)
         except KnownSafeProviderError:
             raise
         except (ValueError, TypeError, KeyError, IndexError, json.JSONDecodeError) as error:
@@ -317,6 +318,7 @@ class OpenRouterProvider:
             provider_request_id=provider_request_id,
             input_units=input_units,
             output_units=output_units,
+            provider_cost_nano_usd=provider_cost_nano_usd,
         )
 
     def _execute_image(self, request: ProviderRequest) -> ProviderResult:
@@ -341,10 +343,10 @@ class OpenRouterProvider:
         if status_code != 200 or response_content is None:
             raise ProviderOutcomeUnknownError("AI provider outcome is unknown")
         try:
-            body = json.loads(response_content)
+            body = json.loads(response_content, parse_float=Decimal)
             data, media_type = _image_output(body)
             normalized = normalize_generated_image(data, declared_media_type=media_type)
-            input_units, output_units = _provider_usage(body)
+            input_units, output_units, provider_cost_nano_usd = _provider_usage(body)
             storage = self._artifact_storage or artifact_storage_from_env()
             artifact_id = request.artifact_reservation.artifact_id
             stored = storage.put_reserved(
@@ -379,6 +381,7 @@ class OpenRouterProvider:
             },
             input_units=input_units,
             output_units=output_units,
+            provider_cost_nano_usd=provider_cost_nano_usd,
             artifact=artifact,
         )
 
@@ -610,7 +613,7 @@ def _provider_request_id(body: object) -> str:
     return value
 
 
-def _provider_usage(body: object) -> tuple[int, int]:
+def _provider_usage(body: object) -> tuple[int, int, int]:
     if not isinstance(body, dict):
         raise ValueError("invalid provider response")
     usage = body.get("usage")
@@ -622,7 +625,19 @@ def _provider_usage(body: object) -> tuple[int, int]:
         for value in values
     ):
         raise ValueError("invalid provider usage")
-    return values
+    raw_cost = usage.get("cost")
+    if isinstance(raw_cost, bool) or not isinstance(raw_cost, (int, Decimal)):
+        raise ValueError("invalid provider cost")
+    try:
+        cost = Decimal(raw_cost)
+        if not cost.is_finite() or cost < 0 or cost > Decimal("1000"):
+            raise ValueError("invalid provider cost")
+        nano_usd = int(
+            (cost * Decimal("1000000000")).to_integral_value(rounding=ROUND_CEILING)
+        )
+    except (InvalidOperation, ValueError, OverflowError) as error:
+        raise ValueError("invalid provider cost") from error
+    return values[0], values[1], nano_usd
 
 
 def _schema_output(

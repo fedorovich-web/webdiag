@@ -1,5 +1,19 @@
 # Changelog
 
+## A12.9 — OpenRouter billed-cost evidence
+
+- Added fail-closed parsing of the documented OpenRouter `usage.cost` value for
+  both chat and image responses, using decimal arithmetic and conservative
+  nano-USD rounding instead of binary floating-point accounting.
+- Added a required internal completion field and additive SQLite attempt column;
+  new successful runs persist provider cost atomically with generation ID and
+  token usage, while historical unmeasured attempts remain explicit `NULL`.
+- Added a bounded operator-only per-tool JSON report with measured/unmeasured
+  counts and min/max/p95/total cost. It exposes no user, run, prompt, output,
+  response-body, or artifact identifiers.
+- AI tools remain internal. No provider request, cost claim, credit price,
+  payment, release, or deployment was made by this stage.
+
 ## A12.1e — Final grounded text contracts
 
 - Added strict RU/EN contracts for Redirect Migration Mapper, Localization Workbench, and Regex Workbench. All 13 text/vision-analysis catalog entries now have executable contracts on the fixed `openai/gpt-5.6-luna` OpenRouter path and remain internal pending real evaluation and pricing.

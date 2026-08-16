@@ -158,6 +158,7 @@ def test_generated_artifact_completion_is_private_owned_and_integrity_checked(
                     },
                     "input_units": 10,
                     "output_units": 20,
+                    "provider_cost_nano_usd": 25_000_000,
                 },
             )
         )
@@ -208,6 +209,7 @@ def test_generated_artifact_completion_is_private_owned_and_integrity_checked(
         provider_request_id=None,
         input_units=10,
         output_units=20,
+        provider_cost_nano_usd=25_000_000,
         artifact=AIWorkerArtifact(
             artifact_id=artifact_id,
             object_key=stored.object_key,
@@ -233,6 +235,7 @@ def test_generated_artifact_completion_is_private_owned_and_integrity_checked(
             provider_request_id=None,
             input_units=11,
             output_units=20,
+            provider_cost_nano_usd=25_000_000,
             artifact=AIWorkerArtifact(
                 artifact_id=artifact_id,
                 object_key=stored.object_key,
@@ -337,6 +340,7 @@ def test_image_completion_rejects_missing_or_mismatched_private_artifact(tmp_pat
             provider_request_id=None,
             input_units=1,
             output_units=1,
+            provider_cost_nano_usd=1_000,
             artifact=None,
             artifact_storage=storage,
         )
@@ -575,6 +579,7 @@ def test_deleted_run_artifact_cleanup_is_bounded_idempotent_and_retryable(
             provider_request_id=None,
             input_units=1,
             output_units=1,
+            provider_cost_nano_usd=25_000_000,
             artifact=AIWorkerArtifact(
                 artifact_id=artifact_id,
                 object_key=stored.object_key,

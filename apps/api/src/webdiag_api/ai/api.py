@@ -457,6 +457,7 @@ def complete_run_internal(
             provider_request_id=request.provider_request_id,
             input_units=request.input_units,
             output_units=request.output_units,
+            provider_cost_nano_usd=request.provider_cost_nano_usd,
             artifact=request.artifact,
             artifact_storage=artifact_storage,
         )

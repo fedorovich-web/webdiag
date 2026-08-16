@@ -1,5 +1,39 @@
 # Verification Notes
 
+# OpenRouter billed-cost evidence — 2026-08-16
+
+## Scope
+
+- non-streaming chat and image responses now require the documented numeric
+  OpenRouter `usage.cost` field and convert it conservatively to integer
+  nano-USD with decimal arithmetic;
+- the private worker completion envelope and SQLite attempt row persist cost in
+  the same transaction as generation ID, token usage, validated output, and
+  credit capture;
+- historical attempts remain explicitly unmeasured instead of being rewritten
+  as zero-cost runs;
+- the bounded operator report emits only per-tool aggregate count, usage, and
+  min/max/nearest-rank-p95/total cost evidence.
+
+## Fresh verification
+
+```text
+initial worker/API cost suite                  PASS — 94/94
+operator p95/privacy/read-only regressions    PASS — 2/2
+previous full-run fixture regressions          PASS — 8/8 after adding usage.cost
+full API/worker pytest                         PASS — 610/610, 1 POSIX-mode test skipped on Windows
+full API/worker Ruff                           PASS
+git diff --check                               PASS
+```
+
+Context7 was used to check current official OpenRouter response and generation
+metadata documentation before implementing the field. No OpenRouter or S3
+credential was present in the local environment, and no provider, object
+storage, public URL, marketplace, payment, release, or deployment request was
+made. The 15 AI tools remain internal pending real RU/EN evaluation, independent
+generation-cost cross-checks, production S3 evidence, and approved fixed credit
+prices.
+
 # Runtime configuration and capability audit — 2026-08-16
 
 ## Scope

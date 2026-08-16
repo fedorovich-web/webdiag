@@ -339,6 +339,7 @@ def test_invalid_provider_output_releases_reservation_without_capture(tmp_path) 
             provider_request_id="req_invalid",
             input_units=12,
             output_units=4,
+            provider_cost_nano_usd=12_000,
         )
 
     assert (error.value.status_code, error.value.code) == (422, "ai_invalid_provider_output")

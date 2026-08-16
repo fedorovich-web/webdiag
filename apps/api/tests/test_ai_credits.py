@@ -1,3 +1,4 @@
+import json
 import sqlite3
 import threading
 from pathlib import Path
@@ -5,7 +6,10 @@ from pathlib import Path
 import pytest
 
 from webdiag_api.accounts.storage import SqliteAccountStore
+from webdiag_api.ai.catalog import AIToolCatalog, AIToolDefinition, AIToolState
 from webdiag_api.ai.cli import main as cli_main
+from webdiag_api.ai.models import AIRunCreateRequest
+from webdiag_api.ai.service import AIService
 from webdiag_api.ai.storage import CreditConflictError, CreditIntegrityError, SqliteAIStore
 
 
@@ -174,3 +178,103 @@ def test_operator_cli_requires_matching_confirmation(tmp_path: Path, capsys) -> 
     output = capsys.readouterr().out
     assert user_id in output
     assert "available=20" in output
+
+
+def test_operator_cost_report_is_bounded_aggregate_without_private_run_data(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    user_id = create_user(database_path)
+    store = SqliteAIStore(str(database_path), lease_seconds=60)
+    definition = AIToolDefinition(
+        id="test_cost_tool",
+        contract_version="v1",
+        state=AIToolState.READY,
+        credit_price=1,
+        model_policy="test-only",
+    )
+    service = AIService(store, catalog=AIToolCatalog((definition,)), input_max_bytes=1024)
+    service.grant_beta_credits(
+        user_id=user_id,
+        quantity=20,
+        reason="cost report test",
+        correlation_id="cost-report-grant",
+    )
+    run_ids: list[str] = []
+    for index in range(1, 21):
+        run, _created = service.create_run(
+            user_id=user_id,
+            request=AIRunCreateRequest(tool_id=definition.id, input={"private": f"value-{index}"}),
+            idempotency_key=f"cost-report-run-{index}",
+        )
+        claim = service.claim_pending()
+        assert claim is not None
+        service.mark_submitted(run_id=run.id, lease_token=claim.lease_token)
+        service.complete_run(
+            run_id=run.id,
+            lease_token=claim.lease_token,
+            output={"text": f"private-output-{index}"},
+            provider_request_id=f"gen_cost_{index}",
+            input_units=index,
+            output_units=index * 2,
+            provider_cost_nano_usd=index * 100,
+        )
+        run_ids.append(run.id)
+    with sqlite3.connect(database_path) as connection:
+        connection.execute(
+            "UPDATE ai_run_attempts SET provider_cost_nano_usd = NULL WHERE run_id = ?",
+            (run_ids[-1],),
+        )
+
+    assert cli_main(
+        [
+            "provider-cost-report",
+            "--database-path",
+            str(database_path),
+            "--tool-id",
+            definition.id,
+            "--sample-limit",
+            "20",
+        ]
+    ) == 0
+
+    output = capsys.readouterr().out
+    report = json.loads(output)
+    assert report == {
+        "contract_version": "webdiag.ai.provider_cost_report.v1",
+        "tool_id": "test_cost_tool",
+        "sample_limit": 20,
+        "sampled_attempts": 20,
+        "measured_attempts": 19,
+        "unmeasured_attempts": 1,
+        "input_units_total": 190,
+        "output_units_total": 380,
+        "provider_cost_nano_usd": {
+            "minimum": 100,
+            "maximum": 1_900,
+            "p95": 1_900,
+            "total": 19_000,
+        },
+    }
+    assert user_id not in output
+    assert "value-" not in output
+    assert "private-output" not in output
+    assert "gen_cost" not in output
+
+
+def test_operator_cost_report_does_not_create_a_missing_database(tmp_path: Path, capsys) -> None:
+    database_path = tmp_path / "missing.sqlite3"
+
+    assert cli_main(
+        [
+            "provider-cost-report",
+            "--database-path",
+            str(database_path),
+            "--tool-id",
+            "test_cost_tool",
+        ]
+    ) == 2
+
+    assert capsys.readouterr().err == "provider cost database was not found\n"
+    assert not database_path.exists()

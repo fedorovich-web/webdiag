@@ -159,6 +159,21 @@ class StoredAIArtifact:
     deletion_state: str
 
 
+@dataclass(frozen=True, slots=True)
+class ProviderCostReport:
+    tool_id: str
+    sample_limit: int
+    sampled_attempts: int
+    measured_attempts: int
+    unmeasured_attempts: int
+    input_units_total: int
+    output_units_total: int
+    minimum_nano_usd: int | None
+    maximum_nano_usd: int | None
+    p95_nano_usd: int | None
+    total_nano_usd: int
+
+
 class SqliteAIStore:
     def __init__(
         self,
@@ -269,6 +284,8 @@ class SqliteAIStore:
                             CHECK(input_units BETWEEN 0 AND 1000000000),
                         output_units INTEGER NOT NULL DEFAULT 0
                             CHECK(output_units BETWEEN 0 AND 1000000000),
+                        provider_cost_nano_usd INTEGER
+                            CHECK(provider_cost_nano_usd BETWEEN 0 AND 1000000000000),
                         created_at INTEGER NOT NULL,
                         completed_at INTEGER,
                         PRIMARY KEY(run_id, attempt_number),
@@ -356,8 +373,65 @@ class SqliteAIStore:
                         DEFAULT 0 CHECK(output_units BETWEEN 0 AND 1000000000)
                         """
                     )
+                if "provider_cost_nano_usd" not in columns:
+                    connection.execute(
+                        """
+                        ALTER TABLE ai_run_attempts ADD COLUMN provider_cost_nano_usd INTEGER
+                        CHECK(provider_cost_nano_usd BETWEEN 0 AND 1000000000000)
+                        """
+                    )
                 connection.execute("COMMIT")
             self._schema_ready = True
+
+    def provider_cost_report(
+        self,
+        *,
+        tool_id: str,
+        sample_limit: int = 10_000,
+    ) -> ProviderCostReport:
+        if not re.fullmatch(r"[a-z][a-z0-9_]{1,119}", tool_id):
+            raise ValueError("AI tool ID is invalid")
+        if (
+            isinstance(sample_limit, bool)
+            or not isinstance(sample_limit, int)
+            or not 1 <= sample_limit <= 100_000
+        ):
+            raise ValueError("provider cost sample limit must be between 1 and 100000")
+        self.ensure_schema()
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT a.input_units, a.output_units, a.provider_cost_nano_usd
+                FROM ai_run_attempts AS a
+                JOIN ai_runs AS r ON r.id = a.run_id
+                WHERE r.tool_id = ? AND r.state = 'succeeded'
+                  AND a.completed_at IS NOT NULL
+                  AND a.attempt_number = (
+                      SELECT MAX(latest.attempt_number)
+                      FROM ai_run_attempts AS latest
+                      WHERE latest.run_id = a.run_id
+                  )
+                ORDER BY a.completed_at DESC, a.run_id DESC
+                LIMIT ?
+                """,
+                (tool_id, sample_limit),
+            ).fetchall()
+        measured = [row for row in rows if row["provider_cost_nano_usd"] is not None]
+        costs = sorted(int(row["provider_cost_nano_usd"]) for row in measured)
+        p95_index = ((95 * len(costs) + 99) // 100) - 1 if costs else None
+        return ProviderCostReport(
+            tool_id=tool_id,
+            sample_limit=sample_limit,
+            sampled_attempts=len(rows),
+            measured_attempts=len(measured),
+            unmeasured_attempts=len(rows) - len(measured),
+            input_units_total=sum(int(row["input_units"]) for row in measured),
+            output_units_total=sum(int(row["output_units"]) for row in measured),
+            minimum_nano_usd=costs[0] if costs else None,
+            maximum_nano_usd=costs[-1] if costs else None,
+            p95_nano_usd=costs[p95_index] if p95_index is not None else None,
+            total_nano_usd=sum(costs),
+        )
 
     def grant_credits(
         self,
@@ -1130,6 +1204,7 @@ class SqliteAIStore:
         provider_request_id: str | None = None,
         input_units: int = 0,
         output_units: int = 0,
+        provider_cost_nano_usd: int = 0,
         artifact: StoredAIArtifact | None = None,
         now: int | None = None,
     ) -> StoredAIRun:
@@ -1137,6 +1212,7 @@ class SqliteAIStore:
             provider_request_id=provider_request_id,
             input_units=input_units,
             output_units=output_units,
+            provider_cost_nano_usd=provider_cost_nano_usd,
         )
         current = int(time.time()) if now is None else now
         token_hash = hashlib.sha256(lease_token.encode()).hexdigest()
@@ -1165,6 +1241,8 @@ class SqliteAIStore:
                     and attempt["provider_request_id"] == provider_request_id
                     and int(attempt["input_units"]) == input_units
                     and int(attempt["output_units"]) == output_units
+                    and attempt["provider_cost_nano_usd"] is not None
+                    and int(attempt["provider_cost_nano_usd"]) == provider_cost_nano_usd
                 ):
                     persisted_artifact = connection.execute(
                         "SELECT * FROM ai_artifacts WHERE run_id = ?",
@@ -1259,7 +1337,7 @@ class SqliteAIStore:
                 """
                 UPDATE ai_run_attempts
                 SET completed_at = ?, provider_request_id = ?,
-                    input_units = ?, output_units = ?
+                    input_units = ?, output_units = ?, provider_cost_nano_usd = ?
                 WHERE run_id = ? AND attempt_number = ?
                 """,
                 (
@@ -1267,6 +1345,7 @@ class SqliteAIStore:
                     provider_request_id,
                     input_units,
                     output_units,
+                    provider_cost_nano_usd,
                     run_id,
                     attempt["attempt_number"],
                 ),
@@ -1649,6 +1728,7 @@ class SqliteAIStore:
         provider_request_id: str | None,
         input_units: int,
         output_units: int,
+        provider_cost_nano_usd: int,
     ) -> None:
         if provider_request_id is not None and not 1 <= len(provider_request_id) <= 200:
             raise ValueError("provider request ID is invalid")
@@ -1659,6 +1739,12 @@ class SqliteAIStore:
                 or not 0 <= value <= 1_000_000_000
             ):
                 raise ValueError("provider usage must use bounded non-negative integers")
+        if (
+            isinstance(provider_cost_nano_usd, bool)
+            or not isinstance(provider_cost_nano_usd, int)
+            or not 0 <= provider_cost_nano_usd <= 1_000_000_000_000
+        ):
+            raise ValueError("provider cost must use bounded nano-USD")
 
     @staticmethod
     def _bounded_text(value: str, *, name: str, maximum: int) -> str:

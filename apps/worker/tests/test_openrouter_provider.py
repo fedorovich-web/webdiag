@@ -177,6 +177,7 @@ def test_provider_sends_private_strict_openrouter_request_and_maps_usage() -> No
     assert result.output == output
     assert result.provider_request_id == "gen_123"
     assert (result.input_units, result.output_units) == (12, 4)
+    assert result.provider_cost_nano_usd == 12_000
     assert len(requests) == 1
     sent = json.loads(requests[0].content)
     assert requests[0].url == "https://openrouter.ai/api/v1/chat/completions"
@@ -199,6 +200,63 @@ def test_provider_sends_private_strict_openrouter_request_and_maps_usage() -> No
     assert "example.com" not in sent["messages"][0]["content"]
     assert "test-openrouter-key" not in requests[0].content.decode()
     assert "http-referer" not in requests[0].headers
+
+
+def test_provider_requires_reported_bounded_cost() -> None:
+    body = _response({
+        "variants": [
+            {
+                "title": f"Technical page check {index}",
+                "description": f"Review deterministic page findings in variant {index}.",
+                "rationale": "Uses supplied page facts only.",
+            }
+            for index in range(1, 4)
+        ]
+    })
+    del body["usage"]["cost"]
+
+    with pytest.raises(ProviderOutcomeUnknownError, match="response is invalid"):
+        _provider(lambda _request: httpx.Response(200, json=body)).execute(_request())
+
+
+@pytest.mark.parametrize(
+    ("cost", "expected_nano_usd"),
+    ((0, 0), (0.0000000001, 1), (0.000000012, 12)),
+)
+def test_provider_converts_cost_conservatively(cost: float | int, expected_nano_usd: int) -> None:
+    body = _response({
+        "variants": [
+            {
+                "title": f"Technical page check {index}",
+                "description": f"Review deterministic page findings in variant {index}.",
+                "rationale": "Uses supplied page facts only.",
+            }
+            for index in range(1, 4)
+        ]
+    })
+    body["usage"]["cost"] = cost
+
+    result = _provider(lambda _request: httpx.Response(200, json=body)).execute(_request())
+
+    assert result.provider_cost_nano_usd == expected_nano_usd
+
+
+@pytest.mark.parametrize("cost", (True, "0.01", -0.01, 1000.000000001))
+def test_provider_rejects_invalid_reported_cost(cost: object) -> None:
+    body = _response({
+        "variants": [
+            {
+                "title": f"Technical page check {index}",
+                "description": f"Review deterministic page findings in variant {index}.",
+                "rationale": "Uses supplied page facts only.",
+            }
+            for index in range(1, 4)
+        ]
+    })
+    body["usage"]["cost"] = cost
+
+    with pytest.raises(ProviderOutcomeUnknownError, match="response is invalid"):
+        _provider(lambda _request: httpx.Response(200, json=body)).execute(_request())
 
 
 def test_alt_text_preparation_checks_private_object_and_sends_one_low_detail_image() -> None:
@@ -268,7 +326,12 @@ def test_image_studio_uses_dedicated_gpt_image_2_api_and_stores_private_output()
                         "media_type": "image/png",
                     }
                 ],
-                "usage": {"prompt_tokens": 11, "completion_tokens": 27, "total_tokens": 38},
+                "usage": {
+                    "prompt_tokens": 11,
+                    "completion_tokens": 27,
+                    "total_tokens": 38,
+                    "cost": 0.025,
+                },
             },
         )
 
@@ -312,6 +375,7 @@ def test_image_studio_uses_dedicated_gpt_image_2_api_and_stores_private_output()
     assert result.artifact is not None
     assert result.artifact.object_key == "ai-uploads/ab/" + "c" * 62
     assert (result.input_units, result.output_units) == (11, 27)
+    assert result.provider_cost_nano_usd == 25_000_000
 
 
 def test_image_provider_rejects_missing_artifact_reservation_before_request() -> None:
@@ -354,7 +418,12 @@ def test_image_edit_reads_owned_upload_and_sends_one_data_url_reference() -> Non
             json={
                 "created": 1,
                 "data": [{"b64_json": base64.b64encode(generated).decode(), "media_type": "image/png"}],
-                "usage": {"prompt_tokens": 3, "completion_tokens": 7, "total_tokens": 10},
+                "usage": {
+                    "prompt_tokens": 3,
+                    "completion_tokens": 7,
+                    "total_tokens": 10,
+                    "cost": 0.01,
+                },
             },
         )
 
