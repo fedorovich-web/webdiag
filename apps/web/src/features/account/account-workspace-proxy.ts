@@ -27,6 +27,16 @@ export function accountWorkspacePath(parts: readonly string[]): string | null {
   return null;
 }
 
+export function accountLocaleQuery(searchParams: URLSearchParams): string | null {
+  let valid = true;
+  searchParams.forEach((_value, key) => {
+    if (key !== "locale" || searchParams.getAll(key).length !== 1) valid = false;
+  });
+  const locale = searchParams.get("locale");
+  if (!valid || (locale !== null && locale !== "ru" && locale !== "en")) return null;
+  return locale ? `?locale=${locale}` : "";
+}
+
 export function accountWorkspaceLifecyclePath(
   projectId: string,
   action: "archive" | "restore",

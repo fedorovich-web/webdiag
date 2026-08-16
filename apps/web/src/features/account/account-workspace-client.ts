@@ -1,4 +1,5 @@
 import { AccountClientError } from "./account-client";
+import type { Locale } from "@webdiag/tool-registry";
 import { isAccountErrorPayload } from "./account-contract";
 import {
   isArchivedAccountProject,
@@ -149,10 +150,11 @@ export async function getAccountProject(
 
 export async function runAccountProjectAudit(
   projectId: string,
+  locale: Locale,
   fetcher: Fetcher = fetch,
 ): Promise<SavedAuditDetailResponse> {
   return parse(
-    await fetcher(`/api/account/projects/${projectId}/audits`, {
+    await fetcher(`/api/account/projects/${projectId}/audits?locale=${locale}`, {
       ...common,
       method: "POST",
       headers: { accept: "application/json" },
@@ -164,10 +166,11 @@ export async function runAccountProjectAudit(
 export async function getAccountSavedAudit(
   projectId: string,
   auditId: string,
+  locale: Locale,
   fetcher: Fetcher = fetch,
 ): Promise<SavedAuditDetailResponse> {
   return parse(
-    await fetcher(`/api/account/projects/${projectId}/audits/${auditId}`, {
+    await fetcher(`/api/account/projects/${projectId}/audits/${auditId}?locale=${locale}`, {
       ...common,
       method: "GET",
       headers: { accept: "application/json" },

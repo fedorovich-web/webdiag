@@ -73,7 +73,7 @@ export function AccountIssuesList({
 
   useEffect(() => {
     let active = true;
-    listAccountIssues(projectId, auditId, filters)
+    listAccountIssues(projectId, auditId, { ...filters, locale })
       .then((value) => {
         if (active) setRequestState({ key: requestKey, result: value, error: "" });
       })

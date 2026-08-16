@@ -189,9 +189,7 @@ def remove_artifact_hash_column(database_path: Path) -> None:
             for row in connection.execute("PRAGMA table_info(account_workspace_reports)")
         }
         if "artifact_sha256" in columns:
-            connection.execute(
-                "ALTER TABLE account_workspace_reports DROP COLUMN artifact_sha256"
-            )
+            connection.execute("ALTER TABLE account_workspace_reports DROP COLUMN artifact_sha256")
 
 
 def assert_private_report_unavailable(response: httpx.Response) -> None:
@@ -363,9 +361,7 @@ def test_report_api_rejects_valid_snapshot_tampering_before_detail_or_export(
                 cookie=token,
             )
         )
-        public_detail = asyncio.run(
-            request("GET", f"/v1/public/reports/{shared.share_token}")
-        )
+        public_detail = asyncio.run(request("GET", f"/v1/public/reports/{shared.share_token}"))
         public_export = asyncio.run(
             request("GET", f"/v1/public/reports/{shared.share_token}/export.html")
         )
@@ -412,9 +408,7 @@ def test_report_api_hides_invalid_snapshot_validation_details(
         private_detail = asyncio.run(
             request("GET", f"/v1/account/reports/{report.report.id}", cookie=token)
         )
-        public_detail = asyncio.run(
-            request("GET", f"/v1/public/reports/{shared.share_token}")
-        )
+        public_detail = asyncio.run(request("GET", f"/v1/public/reports/{shared.share_token}"))
     finally:
         app.dependency_overrides.clear()
 
@@ -457,9 +451,7 @@ def test_report_api_rejects_missing_or_malformed_artifact_hash(
         private_detail = asyncio.run(
             request("GET", f"/v1/account/reports/{report.report.id}", cookie=token)
         )
-        public_detail = asyncio.run(
-            request("GET", f"/v1/public/reports/{shared.share_token}")
-        )
+        public_detail = asyncio.run(request("GET", f"/v1/public/reports/{shared.share_token}"))
     finally:
         app.dependency_overrides.clear()
 
@@ -495,9 +487,7 @@ def test_invalid_legacy_snapshot_migration_returns_controlled_api_errors(
         private_detail = asyncio.run(
             request("GET", f"/v1/account/reports/{report.report.id}", cookie=token)
         )
-        public_detail = asyncio.run(
-            request("GET", f"/v1/public/reports/{shared.share_token}")
-        )
+        public_detail = asyncio.run(request("GET", f"/v1/public/reports/{shared.share_token}"))
     finally:
         app.dependency_overrides.clear()
 
@@ -714,6 +704,18 @@ def test_report_api_create_export_share_and_public_privacy(tmp_path: Path) -> No
         assert created.status_code == 201
         assert created.headers["cache-control"] == "no-store"
         report_id = created.json()["report"]["id"]
+        assert created.json()["snapshot"]["checks"][0]["name"] == "Тег title"
+        assert created.json()["snapshot"]["issues"][0]["title"] == "Отсутствует тег title"
+
+        with sqlite3.connect(database) as connection:
+            stored_snapshot = str(
+                connection.execute(
+                    "SELECT snapshot_json FROM account_workspace_reports WHERE id = ?",
+                    (report_id,),
+                ).fetchone()[0]
+            )
+        assert '"name":"Title tag"' in stored_snapshot
+        assert '"title":"Title <tag> is missing"' in stored_snapshot
 
         hidden = asyncio.run(request("GET", f"/v1/account/reports/{report_id}", cookie=other_token))
         assert hidden.status_code == 404
@@ -725,7 +727,7 @@ def test_report_api_create_export_share_and_public_privacy(tmp_path: Path) -> No
         assert html_response.headers["content-type"].startswith("text/html")
         assert html_response.headers["content-disposition"].startswith("attachment")
         assert "default-src 'none'" in html_response.headers["content-security-policy"]
-        assert "&lt;tag&gt;" in html_response.text
+        assert "Отсутствует тег title" in html_response.text
         assert "<script" not in html_response.text.lower()
 
         share = asyncio.run(
@@ -744,6 +746,7 @@ def test_report_api_create_export_share_and_public_privacy(tmp_path: Path) -> No
         assert public.headers["cache-control"] == "no-store"
         assert "noindex" in public.headers["x-robots-tag"]
         assert set(public.json()) == {"contract_version", "report", "snapshot"}
+        assert public.json()["snapshot"]["issues"][0]["title"] == "Отсутствует тег title"
         assert "project_id" not in public.text
         assert "audit_id" not in public.text
 

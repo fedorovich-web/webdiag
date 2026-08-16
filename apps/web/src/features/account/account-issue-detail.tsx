@@ -33,7 +33,7 @@ export function AccountIssueDetail({
 
   useEffect(() => {
     let active = true;
-    getAccountIssue(projectId, auditId, issueId)
+    getAccountIssue(projectId, auditId, issueId, locale)
       .then((value) => { if (active) setDetail(value); })
       .catch((caught) => { if (active) setError(accountErrorMessage(locale, caught)); })
       .finally(() => { if (active) setLoading(false); });

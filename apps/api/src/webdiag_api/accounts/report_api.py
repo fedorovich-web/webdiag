@@ -7,6 +7,10 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
 from webdiag_api.accounts.api import AccountServiceDependency, SessionCookie
+from webdiag_api.accounts.audit_presentation import (
+    localize_account_report_detail,
+    localize_public_report,
+)
 from webdiag_api.accounts.report_models import (
     AccountReportDetailResponse,
     AccountReportListResponse,
@@ -95,12 +99,13 @@ def create_report(
     response.headers["cache-control"] = "no-store"
     user_id = _current_user_id(account_service, webdiag_session)
     try:
-        return reports.create_report(
+        detail = reports.create_report(
             user_id=user_id,
             project_id=str(project_id),
             audit_id=str(audit_id),
             request=request,
         )
+        return localize_account_report_detail(detail)
     except ReportServiceError as error:
         raise _report_error(error) from error
 
@@ -135,7 +140,8 @@ def get_report(
     response.headers["cache-control"] = "no-store"
     user_id = _current_user_id(account_service, webdiag_session)
     try:
-        return reports.get_report(user_id=user_id, report_id=str(report_id))
+        detail = reports.get_report(user_id=user_id, report_id=str(report_id))
+        return localize_account_report_detail(detail)
     except ReportServiceError as error:
         raise _report_error(error) from error
 
@@ -178,7 +184,8 @@ def revoke_report_share(
     response.headers["cache-control"] = "no-store"
     user_id = _current_user_id(account_service, webdiag_session)
     try:
-        return reports.revoke_share(user_id=user_id, report_id=str(report_id))
+        detail = reports.revoke_share(user_id=user_id, report_id=str(report_id))
+        return localize_account_report_detail(detail)
     except ReportServiceError as error:
         raise _report_error(error) from error
 
@@ -227,7 +234,8 @@ def get_public_report(
         }
     )
     try:
-        return reports.get_public_report(share_token=share_token)
+        public = reports.get_public_report(share_token=share_token)
+        return localize_public_report(public)
     except ReportServiceError as error:
         raise _report_error(error) from error
 

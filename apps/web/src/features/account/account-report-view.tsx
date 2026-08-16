@@ -6,26 +6,12 @@ import {
   groupReportIssues,
   orderedReportIssues,
   reportPriorityDistribution,
+  reportCategoryLabel,
+  reportCheckStatusLabel,
   reportPriorityLabel,
   reportSeverityLabel,
   reportSummary,
 } from "./account-report-presentation";
-
-const ruChecks: Readonly<Record<string, string>> = {
-  "http.status": "HTTP-статус",
-  "redirects.chain": "Цепочка перенаправлений",
-  "content_type.html": "HTML-тип содержимого",
-  "metadata.title": "Title",
-  "metadata.description": "Метаописание",
-  "metadata.h1": "H1",
-  "metadata.canonical": "Canonical",
-  "indexability.robots_meta": "Robots meta",
-  "metadata.open_graph": "Open Graph",
-  "structured_data.json_ld": "JSON-LD",
-  "security.headers": "Заголовки безопасности",
-  "crawlability.robots_txt": "robots.txt",
-  "crawlability.sitemap_xml": "sitemap.xml",
-};
 
 export function AccountReportSnapshotView({
   locale,
@@ -89,7 +75,7 @@ export function AccountReportSnapshotView({
               <article key={issue.issue_id} data-severity={issue.severity}>
                 <div className="wd-report-issue-order">{index + 1}</div>
                 <div>
-                  <div className="wd-report-issue-meta"><span data-kind="priority">{reportPriorityLabel(locale, issue.priority)}</span><span data-kind="severity">{reportSeverityLabel(locale, issue.severity)}</span><span>{issue.category}</span><span>{issue.affected_urls.length} {ru ? "стр." : "pages"}</span></div>
+                  <div className="wd-report-issue-meta"><span data-kind="priority">{reportPriorityLabel(locale, issue.priority)}</span><span data-kind="severity">{reportSeverityLabel(locale, issue.severity)}</span><span>{reportCategoryLabel(locale, issue.category)}</span><span>{issue.affected_urls.length} {ru ? "стр." : "pages"}</span></div>
                   <h3>{issue.title}</h3>
                   <p>{issue.description}</p>
                   <div className="wd-report-recommendation"><span>{ru ? "Рекомендация" : "Recommendation"}</span><strong>{issue.recommendation.summary}</strong></div>
@@ -107,8 +93,8 @@ export function AccountReportSnapshotView({
 
       <section className="wd-report-checks" aria-labelledby="report-checks-title">
         <div className="wd-report-section-heading"><div><span className="eyebrow">{ru ? "Состав аудита" : "Audit scope"}</span><h2 id="report-checks-title">{ru ? "Результаты проверок" : "Check results"}</h2></div><strong>{snapshot.checks.length}</strong></div>
-        {checks.attention.length > 0 && <div className="wd-report-check-group"><h3>{ru ? "Требуют внимания" : "Require attention"}</h3><ul>{checks.attention.map((check) => <li key={check.check_id}><span>{ru ? (ruChecks[check.check_id] ?? check.name) : check.name}</span><strong>{check.status}</strong></li>)}</ul></div>}
-        <details className="wd-report-passed-checks" open={checks.attention.length === 0}><summary>{ru ? `Пройдено проверок: ${checks.passed.length}` : `Passed checks: ${checks.passed.length}`}</summary>{checks.passed.length > 0 ? <ul>{checks.passed.map((check) => <li key={check.check_id}><span>{ru ? (ruChecks[check.check_id] ?? check.name) : check.name}</span><strong>{check.status}</strong></li>)}</ul> : <p>{ru ? "Пройденных проверок нет." : "No checks passed."}</p>}</details>
+        {checks.attention.length > 0 && <div className="wd-report-check-group"><h3>{ru ? "Требуют внимания" : "Require attention"}</h3><ul>{checks.attention.map((check) => <li key={check.check_id}><span>{check.name}</span><strong>{reportCheckStatusLabel(locale, check.status)}</strong></li>)}</ul></div>}
+        <details className="wd-report-passed-checks" open={checks.attention.length === 0}><summary>{ru ? `Пройдено проверок: ${checks.passed.length}` : `Passed checks: ${checks.passed.length}`}</summary>{checks.passed.length > 0 ? <ul>{checks.passed.map((check) => <li key={check.check_id}><span>{check.name}</span><strong>{reportCheckStatusLabel(locale, check.status)}</strong></li>)}</ul> : <p>{ru ? "Пройденных проверок нет." : "No checks passed."}</p>}</details>
       </section>
 
       <section className="wd-report-methodology" aria-labelledby="report-methodology-title">

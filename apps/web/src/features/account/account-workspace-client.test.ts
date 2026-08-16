@@ -131,7 +131,7 @@ describe("account workspace contracts", () => {
     const calls: Array<[string, RequestInit | undefined]> = [];
     const fetcher = async (input: string, init?: RequestInit) => {
       calls.push([input, init]);
-      const response = input.endsWith("/audits")
+      const response = input.endsWith("/audits?locale=en")
         ? { contract_version: "webdiag.account.saved_audit_detail.v1", project, audit, payload }
         : input.includes(`/audits/${audit.id}`)
           ? { contract_version: "webdiag.account.saved_audit_detail.v1", project, audit, payload }
@@ -146,12 +146,13 @@ describe("account workspace contracts", () => {
     await listAccountProjects(fetcher);
     await createAccountProject({ name: "Main", origin: "example.com" }, fetcher);
     await getAccountProject(project.id, fetcher);
-    await runAccountProjectAudit(project.id, fetcher);
-    await getAccountSavedAudit(project.id, audit.id, fetcher);
+    await runAccountProjectAudit(project.id, "en", fetcher);
+    await getAccountSavedAudit(project.id, audit.id, "ru", fetcher);
 
     expect(calls.every(([, init]) => init?.credentials === "same-origin")).toBe(true);
-    const runCall = calls.find(([path]) => path.endsWith("/audits"));
+    const runCall = calls.find(([path]) => path.endsWith("/audits?locale=en"));
     expect(runCall?.[1]?.body).toBeUndefined();
+    expect(calls.some(([path]) => path.endsWith(`/audits/${audit.id}?locale=ru`))).toBe(true);
   });
 
   it("uses exact lifecycle routes, methods, bodies, and same-origin credentials", async () => {

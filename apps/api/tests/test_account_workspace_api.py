@@ -181,9 +181,7 @@ def test_project_origin_normalization_and_duplicate_limit(tmp_path: Path) -> Non
 
     project = workspace.create_project(
         user_id=user_id,
-        request=ProjectCreateRequest(
-            name="  Main   website ", origin="https://Example.COM:443"
-        ),
+        request=ProjectCreateRequest(name="  Main   website ", origin="https://Example.COM:443"),
     )
     assert project.name == "Main website"
 
@@ -224,11 +222,14 @@ def test_project_lifecycle_storage_is_owned_idempotent_and_cancels_monitor_lease
     )
     assert claimed is not None and claimed.lease_token is not None
 
-    assert store.rename_project(
-        user_id=other_id,
-        project_id=project.id,
-        name="Cross account",
-    ) is None
+    assert (
+        store.rename_project(
+            user_id=other_id,
+            project_id=project.id,
+            name="Cross account",
+        )
+        is None
+    )
     renamed = store.rename_project(
         user_id=owner_id,
         project_id=project.id,
@@ -480,9 +481,7 @@ def test_saved_audit_hash_migration_is_safe_across_store_instances(
     database_path = tmp_path / "accounts.sqlite3"
     SqliteWorkspaceStore(str(database_path)).ensure_schema()
     with sqlite3.connect(database_path) as connection:
-        connection.execute(
-            "ALTER TABLE account_workspace_saved_audits DROP COLUMN payload_sha256"
-        )
+        connection.execute("ALTER TABLE account_workspace_saved_audits DROP COLUMN payload_sha256")
         connection.commit()
 
     migration_barrier = threading.Barrier(2)
@@ -557,7 +556,7 @@ def test_saved_audit_rejects_summary_payload_mismatch(tmp_path: Path) -> None:
 def test_workspace_api_create_run_history_and_detail(tmp_path: Path) -> None:
     database_path = tmp_path / "accounts.sqlite3"
     account = build_account_service(database_path)
-    _, token = register(account, "owner@example.com")
+    user_id, token = register(account, "owner@example.com")
     workspace = build_workspace(database_path)
     app.dependency_overrides[get_account_service] = lambda: account
     app.dependency_overrides[get_workspace_service] = lambda: workspace
@@ -588,6 +587,8 @@ def test_workspace_api_create_run_history_and_detail(tmp_path: Path) -> None:
         assert saved.json()["payload"]["contract_version"] == (
             "webdiag.account.saved_audit_payload.v1"
         )
+        assert saved.json()["payload"]["checks"][0]["name"] == "Тег title"
+        assert saved.json()["payload"]["issues"][0]["title"] == "Отсутствует тег title"
 
         detail = asyncio.run(request("GET", f"/v1/account/projects/{project_id}", cookie=token))
         assert detail.status_code == 200
@@ -596,16 +597,23 @@ def test_workspace_api_create_run_history_and_detail(tmp_path: Path) -> None:
         audit = asyncio.run(
             request(
                 "GET",
-                f"/v1/account/projects/{project_id}/audits/{audit_id}",
+                f"/v1/account/projects/{project_id}/audits/{audit_id}?locale=en",
                 cookie=token,
             )
         )
         assert audit.status_code == 200
         assert set(audit.json()) == {"contract_version", "project", "audit", "payload"}
-
-        invalid = asyncio.run(
-            request("GET", "/v1/account/projects/not-a-uuid", cookie=token)
+        assert audit.json()["payload"]["checks"][0]["name"] == "Title tag"
+        assert audit.json()["payload"]["issues"][0]["title"] == "Title tag is missing"
+        stored = workspace.get_saved_audit(
+            user_id=user_id,
+            project_id=project_id,
+            audit_id=audit_id,
         )
+        assert stored.payload.checks[0].name == "Title tag"
+        assert stored.payload.issues[0].title == "Title tag is missing"
+
+        invalid = asyncio.run(request("GET", "/v1/account/projects/not-a-uuid", cookie=token))
         assert invalid.status_code == 422
         assert invalid.json()["detail"]["code"] == "account_invalid_request"
     finally:
@@ -704,9 +712,7 @@ def test_project_lifecycle_api_is_versioned_owned_idempotent_and_no_store(
         assert repeated_archive.status_code == 200
         assert repeated_archive.json()["archived_at"] == archived.json()["archived_at"]
 
-        active_list = asyncio.run(
-            request("GET", "/v1/account/projects", cookie=owner_token)
-        )
+        active_list = asyncio.run(request("GET", "/v1/account/projects", cookie=owner_token))
         assert active_list.json()["projects"] == []
         detail = asyncio.run(
             request("GET", f"/v1/account/projects/{project_id}", cookie=owner_token)

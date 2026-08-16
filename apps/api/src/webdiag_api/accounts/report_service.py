@@ -6,6 +6,7 @@ import secrets
 import time
 from datetime import UTC, datetime, timedelta
 
+from webdiag_api.accounts.audit_presentation import localize_report_snapshot
 from webdiag_api.accounts.report_artifact import (
     build_report_snapshot,
     render_report_html,
@@ -105,9 +106,7 @@ class ReportService:
         try:
             report = self._store.get_report(user_id=user_id, report_id=report_id)
             if report is None:
-                raise ReportServiceError(
-                    404, "account_report_not_found", "Report was not found."
-                )
+                raise ReportServiceError(404, "account_report_not_found", "Report was not found.")
             return report.detail()
         except ReportIntegrityError as error:
             raise self._private_unavailable() from error
@@ -121,9 +120,7 @@ class ReportService:
     ) -> AccountReportShareResponse:
         try:
             if self._store.get_report(user_id=user_id, report_id=report_id) is None:
-                raise ReportServiceError(
-                    404, "account_report_not_found", "Report was not found."
-                )
+                raise ReportServiceError(404, "account_report_not_found", "Report was not found.")
             token = secrets.token_urlsafe(32)
             token_hash = self._hash_token(token)
             expires = datetime.now(UTC) + timedelta(days=request.expires_in_days)
@@ -134,9 +131,7 @@ class ReportService:
                 expires_at=int(expires.timestamp()),
             )
             if stored is None:
-                raise ReportServiceError(
-                    404, "account_report_not_found", "Report was not found."
-                )
+                raise ReportServiceError(404, "account_report_not_found", "Report was not found.")
         except ReportIntegrityError as error:
             raise self._private_unavailable() from error
         return AccountReportShareResponse(
@@ -150,9 +145,7 @@ class ReportService:
         try:
             report = self._store.revoke_share(user_id=user_id, report_id=report_id)
             if report is None:
-                raise ReportServiceError(
-                    404, "account_report_not_found", "Report was not found."
-                )
+                raise ReportServiceError(404, "account_report_not_found", "Report was not found.")
             return report.detail()
         except ReportIntegrityError as error:
             raise self._private_unavailable() from error
@@ -166,12 +159,18 @@ class ReportService:
 
     def private_html(self, *, user_id: str, report_id: str) -> tuple[bytes, str]:
         detail = self.get_report(user_id=user_id, report_id=report_id)
-        return render_report_html(detail.snapshot), report_filename(detail.report.title, report_id)
+        return (
+            render_report_html(localize_report_snapshot(detail.snapshot)),
+            report_filename(detail.report.title, report_id),
+        )
 
     def public_html(self, *, share_token: str) -> tuple[bytes, str]:
         report = self._shared_report(share_token)
         try:
-            return render_report_html(report.snapshot()), report_filename(report.title, report.id)
+            return (
+                render_report_html(localize_report_snapshot(report.snapshot())),
+                report_filename(report.title, report.id),
+            )
         except ReportIntegrityError as error:
             raise self._public_not_found() from error
 

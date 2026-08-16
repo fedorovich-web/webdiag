@@ -98,7 +98,7 @@ export function AccountProjectDetail({ locale, projectId }: { readonly locale: L
     setRunning(true);
     setError("");
     try {
-      const saved = await runAccountProjectAudit(projectId);
+      const saved = await runAccountProjectAudit(projectId, locale);
       setDetail((current) => current ? { ...current, saved_audits: [saved.audit, ...current.saved_audits] } : current);
     } catch (caught) {
       if (announceAccountAuthenticationLost(caught)) return;

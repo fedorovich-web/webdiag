@@ -3,10 +3,16 @@
 import { useEffect, useState } from "react";
 import { getPublicReport } from "./account-report-client";
 import type { PublicReportResponse } from "./account-report-contract";
-import { formatReportDate } from "./account-report-presentation";
+import { formatReportDate, publicReportShellCopy } from "./account-report-presentation";
 import { AccountReportSnapshotView } from "./account-report-view";
 
-export function PublicReport({ shareToken }: { readonly shareToken: string }) {
+export function PublicReport({
+  shareToken,
+  initialLocale,
+}: {
+  readonly shareToken: string;
+  readonly initialLocale: "ru" | "en";
+}) {
   const [report, setReport] = useState<PublicReportResponse | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -18,8 +24,14 @@ export function PublicReport({ shareToken }: { readonly shareToken: string }) {
     return () => { active = false; };
   }, [shareToken]);
 
-  if (failed) return <main className="shell wd-public-report-page"><section className="wd-account-card wd-account-empty"><h1>Report unavailable</h1><p>The link is invalid, revoked, expired, or unavailable.</p></section></main>;
-  if (!report) return <main className="shell wd-public-report-page"><section className="wd-account-card" aria-busy="true"><p>Loading report…</p></section></main>;
+  if (failed) {
+    const copy = publicReportShellCopy(initialLocale, "error");
+    return <main className="shell wd-public-report-page"><section className="wd-account-card wd-account-empty"><h1>{copy.title}</h1><p>{copy.message}</p></section></main>;
+  }
+  if (!report) {
+    const copy = publicReportShellCopy(initialLocale, "loading");
+    return <main className="shell wd-public-report-page"><section className="wd-account-card" aria-busy="true"><p>{copy.message}</p></section></main>;
+  }
 
   const locale = report.snapshot.locale;
   const ru = locale === "ru";

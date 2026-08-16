@@ -42,7 +42,7 @@ export function AccountReportDetail({ locale, reportId, onProjectResolved }: { r
     setCopyStatus("");
     try {
       const share = await enableAccountReportShare(reportId, expiresInDays);
-      setShareUrl(`${window.location.origin}${share.share_path}`);
+      setShareUrl(`${window.location.origin}${share.share_path}?locale=${locale}`);
       setDetail((current) => current ? {
         ...current,
         report: { ...current.report, shared: true, share_expires_at: share.expires_at },

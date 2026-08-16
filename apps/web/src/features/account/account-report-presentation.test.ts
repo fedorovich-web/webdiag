@@ -7,6 +7,10 @@ import {
   orderedReportIssues,
   reportPriorityLabel,
   reportPriorityDistribution,
+  reportCategoryLabel,
+  reportCheckStatusLabel,
+  reportLocaleHint,
+  publicReportShellCopy,
   reportSeverityLabel,
   reportShareState,
   reportSummary,
@@ -101,5 +105,26 @@ describe("account report presentation", () => {
     expect(reportSeverityLabel("en", "medium")).toBe("Medium");
     expect(reportSeverityLabel("en", "warning")).toBe("Warning");
     expect(reportSeverityLabel("ru", "provider-specific")).toBe("provider-specific");
+    expect(reportCategoryLabel("ru", "structured_data")).toBe("Структурированные данные");
+    expect(reportCategoryLabel("en", "structured_data")).toBe("Structured data");
+    expect(reportCheckStatusLabel("ru", "passed")).toBe("Пройдено");
+    expect(reportCheckStatusLabel("en", "failed")).toBe("Failed");
+    expect(reportCheckStatusLabel("ru", "provider-specific")).toBe("provider-specific");
+  });
+
+  it("uses a bounded locale hint only for public loading and error shells", () => {
+    expect(reportLocaleHint("en")).toBe("en");
+    expect(reportLocaleHint("ru")).toBe("ru");
+    expect(reportLocaleHint("de")).toBe("ru");
+    expect(reportLocaleHint(["en", "ru"])).toBe("ru");
+    expect(publicReportShellCopy("ru", "loading")).toEqual({
+      title: null,
+      message: "Загружаем отчёт…",
+    });
+    expect(publicReportShellCopy("ru", "error")).toEqual({
+      title: "Отчёт недоступен",
+      message: "Ссылка недействительна, отозвана, истекла или отчёт временно недоступен.",
+    });
+    expect(publicReportShellCopy("en", "error").title).toBe("Report unavailable");
   });
 });

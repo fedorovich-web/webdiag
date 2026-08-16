@@ -113,6 +113,79 @@ export function reportSeverityLabel(locale: Locale, severity: string): string {
   return labels[locale][severity] ?? severity;
 }
 
+export function reportCategoryLabel(locale: Locale, category: string): string {
+  const labels: Readonly<Record<Locale, Readonly<Record<string, string>>>> = {
+    ru: {
+      http: "HTTP",
+      redirects: "Перенаправления",
+      metadata: "Метаданные",
+      content: "Содержимое",
+      indexability: "Индексируемость",
+      crawlability: "Сканирование",
+      structured_data: "Структурированные данные",
+      security: "Безопасность",
+      seo: "SEO",
+      technical: "Техническая",
+    },
+    en: {
+      http: "HTTP",
+      redirects: "Redirects",
+      metadata: "Metadata",
+      content: "Content",
+      indexability: "Indexability",
+      crawlability: "Crawlability",
+      structured_data: "Structured data",
+      security: "Security",
+      seo: "SEO",
+      technical: "Technical",
+    },
+  };
+  return labels[locale][category] ?? category;
+}
+
+export function reportCheckStatusLabel(locale: Locale, status: string): string {
+  const labels: Readonly<Record<Locale, Readonly<Record<string, string>>>> = {
+    ru: {
+      passed: "Пройдено",
+      failed: "Не пройдено",
+      warning: "Требует внимания",
+      error: "Ошибка проверки",
+      running: "Выполняется",
+      pending: "Ожидает запуска",
+      skipped: "Пропущено",
+    },
+    en: {
+      passed: "Passed",
+      failed: "Failed",
+      warning: "Needs attention",
+      error: "Check error",
+      running: "Running",
+      pending: "Pending",
+      skipped: "Skipped",
+    },
+  };
+  return labels[locale][status] ?? status;
+}
+
+export function reportLocaleHint(value: string | string[] | undefined): Locale {
+  return value === "en" ? "en" : "ru";
+}
+
+export function publicReportShellCopy(locale: Locale, state: "loading" | "error") {
+  if (state === "loading") {
+    return { title: null, message: locale === "ru" ? "Загружаем отчёт…" : "Loading report…" };
+  }
+  return locale === "ru"
+    ? {
+        title: "Отчёт недоступен",
+        message: "Ссылка недействительна, отозвана, истекла или отчёт временно недоступен.",
+      }
+    : {
+        title: "Report unavailable",
+        message: "The link is invalid, revoked, expired, or the report is temporarily unavailable.",
+      };
+}
+
 export function formatReportDate(locale: Locale, value: string | null): string {
   if (!value) return "—";
   const date = new Date(value);
