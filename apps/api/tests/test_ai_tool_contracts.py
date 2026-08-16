@@ -8,6 +8,7 @@ from webdiag_api.ai.storage import SqliteAIStore
 from webdiag_api.ai.tool_contracts import (
     AIToolContractError,
     validate_output,
+    validate_provider_input,
     validate_public_input,
 )
 
@@ -56,6 +57,61 @@ def test_public_inputs_are_strict_bounded_and_canonical() -> None:
                 "project_id": "------------------------------------",
                 "audit_id": "00000000-0000-4000-8000-000000000000",
             },
+        )
+
+
+def test_transformed_provider_inputs_have_strict_current_contracts() -> None:
+    audit_input = {
+        "locale": "ru",
+        "target_origin": "https://example.com",
+        "score": 72,
+        "checks": [
+            {
+                "check_id": "title",
+                "name": "Page title",
+                "category": "seo",
+                "status": "warning",
+            }
+        ],
+        "issues": [],
+    }
+    assert validate_provider_input("ai_audit_action_plan", audit_input) == audit_input
+
+    image = {
+        "object_key": f"ai-uploads/aa/{'b' * 62}",
+        "media_type": "image/png",
+        "byte_size": 1_024,
+        "width": 320,
+        "height": 240,
+        "sha256": "c" * 64,
+    }
+    alt_input = {
+        "locale": "en",
+        "page_context": "Technical audit dashboard",
+        "surrounding_text": None,
+        "purpose": "informative",
+        "image": image,
+    }
+    assert validate_provider_input("ai_alt_text_studio", alt_input) == alt_input
+    edit_input = {
+        "locale": "ru",
+        "prompt": "Удалить фон и сохранить форму предмета.",
+        "aspect_ratio": "auto",
+        "quality": "medium",
+        "background": "opaque",
+        "image": image,
+    }
+    assert validate_provider_input("ai_image_edit_studio", edit_input) == edit_input
+
+    with pytest.raises(AIToolContractError):
+        validate_provider_input(
+            "ai_audit_action_plan",
+            {**audit_input, "unexpected": "not allowed"},
+        )
+    with pytest.raises(AIToolContractError):
+        validate_provider_input(
+            "ai_alt_text_studio",
+            {**alt_input, "image": {**image, "width": 8_192, "height": 8_192}},
         )
 
 

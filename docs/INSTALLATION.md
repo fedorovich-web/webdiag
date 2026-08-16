@@ -309,6 +309,34 @@ account snapshot через `mode=ro&immutable=1`. Она не создаёт WA
 запускает миграции и завершается ошибкой, если bundle или cost-evidence schema
 не готовы.
 
+`provider-eval-report` — report-only gate. Текущая поставка не создаёт такие
+запуски: все 15 definitions остаются `internal` без утверждённой цены, поэтому
+публичный `create_run` корректно отклоняет их. До live evaluation нужен
+отдельный operator-only execution path, который не меняет public catalog и не
+подставляет временную цену. Пока он не реализован, генерация реального RU/EN
+evidence остаётся заблокированной.
+
+Если после реализации этого отдельного пути в контролируемой среде появились
+успешные evaluation-запуски одного инструмента через штатный worker completion
+lifecycle, тот же recovery bundle можно проверить на
+RU/EN coverage, неизменность contract/model snapshot, целостность input/output,
+semantic grounding и наличие измеренной provider cost:
+
+```powershell
+node scripts/run-python.mjs -m webdiag_api.ai.cli provider-eval-report `
+  --backup-dir recovery/backup `
+  --tool-id ai_schema_studio `
+  --sample-limit 100
+```
+
+Команда повторно применяет серверный output contract ко всем выбранным
+результатам и выводит только агрегаты и SHA-256 набора доказательств. Она не
+выводит user/run/provider IDs, входы, ответы или URL. Для image tools отчёт
+явно оставляет ручную проверку изображения обязательной. `passed` означает
+только автоматический contract gate: отчёт не создаёт evaluation-запуски, не
+подтверждает качество текста или изображения, не назначает цену, не меняет
+catalog state и не заменяет security/integration review.
+
 ## 8. Запуск development-окружения через Docker Compose
 
 Этот двухфайловый Compose-стек предназначен только для development. Он

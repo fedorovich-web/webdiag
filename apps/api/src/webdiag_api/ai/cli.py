@@ -6,6 +6,11 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
+from webdiag_api.ai.evaluation import (
+    ProviderEvaluationError,
+    ProviderEvaluationIncompleteError,
+    build_provider_evaluation_report,
+)
 from webdiag_api.ai.storage import CreditConflictError, SqliteAIStore
 from webdiag_api.recovery import DATABASE_FILENAMES, RecoveryError, verify_bundle
 
@@ -24,11 +29,66 @@ def _parser() -> argparse.ArgumentParser:
     report.add_argument("--backup-dir", required=True)
     report.add_argument("--tool-id", required=True)
     report.add_argument("--sample-limit", type=int, default=10_000)
+    evaluation = commands.add_parser("provider-eval-report")
+    evaluation.add_argument("--backup-dir", required=True)
+    evaluation.add_argument("--tool-id", required=True)
+    evaluation.add_argument("--sample-limit", type=int, default=100)
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     arguments = _parser().parse_args(argv)
+    if arguments.command == "provider-eval-report":
+        backup_dir = Path(arguments.backup_dir)
+        try:
+            verify_bundle(backup_dir)
+        except RecoveryError:
+            print("provider evaluation snapshot is unavailable", file=sys.stderr)
+            return 2
+        store = SqliteAIStore(str(backup_dir / DATABASE_FILENAMES["account"]))
+        try:
+            report = build_provider_evaluation_report(
+                store,
+                tool_id=arguments.tool_id,
+                sample_limit=arguments.sample_limit,
+            )
+        except ProviderEvaluationIncompleteError as error:
+            print(str(error), file=sys.stderr)
+            return 2
+        except ProviderEvaluationError as error:
+            print(str(error), file=sys.stderr)
+            return 2
+        print(
+            json.dumps(
+                {
+                    "automated_contract_gate": "passed",
+                    "contract_version": "webdiag.ai.provider_eval_report.v1",
+                    "evidence_sha256": report.evidence_sha256,
+                    "locales": {"en": report.en_runs, "ru": report.ru_runs},
+                    "manual_output_review_required": (
+                        report.manual_output_review_required
+                    ),
+                    "model_policy": report.model_policy,
+                    "provider_cost_nano_usd": {
+                        "maximum": report.maximum_nano_usd,
+                        "minimum": report.minimum_nano_usd,
+                        "p95": report.p95_nano_usd,
+                        "total": report.total_nano_usd,
+                    },
+                    "sample_limit": report.sample_limit,
+                    "sampled_runs": report.sampled_runs,
+                    "tool_contract_version": report.tool_contract_version,
+                    "tool_id": report.tool_id,
+                    "usage": {
+                        "input_units_total": report.input_units_total,
+                        "output_units_total": report.output_units_total,
+                    },
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+        )
+        return 0
     if arguments.command == "provider-cost-report":
         backup_dir = Path(arguments.backup_dir)
         try:

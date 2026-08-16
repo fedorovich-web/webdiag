@@ -1,5 +1,40 @@
 # Verification Notes
 
+# Immutable AI evaluation evidence — 2026-08-16
+
+## Scope
+
+- added a bounded operator report over successful AI runs in a verified
+  immutable recovery snapshot;
+- revalidates the current tool contract/model snapshot, stored input/output
+  digests, JSON objects, existing per-tool semantic grounding rules, RU/EN
+  coverage, generation ID for text tools, provider usage, and measured cost;
+- emits only aggregate counts, usage/cost bounds, manual image-review status,
+  and a deterministic evidence SHA-256;
+- does not emit account, run, provider request, prompt, output, artifact, or URL
+  data and does not initialize or migrate the snapshot;
+- does not create provider runs, activate tools, assign prices, or claim the
+  remaining manual quality/security/integration gates passed.
+- is report-only in the current runtime: because all tools remain `internal`, a
+  separate operator-only execution path is still required before real RU/EN
+  evidence can be generated without changing public catalog state or inventing
+  a price.
+
+## Verification
+
+```text
+focused eval/cost/contract regression         PASS — 52/52
+full API/worker pytest                        PASS — 631/631, 1 POSIX-mode skip on Windows
+full API/worker Ruff                          PASS
+independent final review                      PASS — 0 Critical / 0 Important / 0 Minor
+git diff --check                              PASS
+```
+
+No OpenRouter, S3, payment, release, deployment, domain, or TLS request was
+made. Real RU/EN provider evidence, operator-only evaluation execution,
+manual quality review, fixed credit prices, production S3 proof, and tool
+activation remain open gates.
+
 # Factual public availability — 2026-08-16
 
 ## Scope

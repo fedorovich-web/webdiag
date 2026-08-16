@@ -30,6 +30,7 @@ RUN_STATES = (
     "provider_unknown",
     "deleted",
 )
+MAX_PROVIDER_EVALUATION_JSON_BYTES = 2_000_000
 
 
 class CreditConflictError(RuntimeError):
@@ -173,6 +174,22 @@ class ProviderCostReport:
     maximum_nano_usd: int | None
     p95_nano_usd: int | None
     total_nano_usd: int
+
+
+@dataclass(frozen=True, slots=True)
+class ProviderEvaluationSample:
+    contract_version: str
+    model_policy: str
+    input_json: str | None
+    input_bytes: int
+    input_sha256: str
+    output_json: str | None
+    output_bytes: int
+    output_sha256: str
+    provider_request_id: str | None
+    input_units: int
+    output_units: int
+    provider_cost_nano_usd: int | None
 
 
 class SqliteAIStore:
@@ -442,6 +459,87 @@ class SqliteAIStore:
             maximum_nano_usd=costs[-1] if costs else None,
             p95_nano_usd=costs[p95_index] if p95_index is not None else None,
             total_nano_usd=sum(costs),
+        )
+
+    def provider_evaluation_samples(
+        self,
+        *,
+        tool_id: str,
+        sample_limit: int = 100,
+    ) -> tuple[ProviderEvaluationSample, ...]:
+        if not re.fullmatch(r"[a-z][a-z0-9_]{1,119}", tool_id):
+            raise ValueError("AI tool ID is invalid")
+        if (
+            isinstance(sample_limit, bool)
+            or not isinstance(sample_limit, int)
+            or not 1 <= sample_limit <= 100
+        ):
+            raise ValueError("provider evaluation sample limit must be between 1 and 100")
+        try:
+            with closing(self._connect_read_only()) as connection:
+                rows = connection.execute(
+                    """
+                    SELECT r.contract_version, r.model_policy,
+                           CASE WHEN length(CAST(r.input_json AS BLOB))
+                                BETWEEN 2 AND ? THEN r.input_json END AS input_json,
+                           length(CAST(r.input_json AS BLOB)) AS input_bytes,
+                           r.input_sha256,
+                           CASE WHEN length(CAST(r.output_json AS BLOB))
+                                BETWEEN 2 AND ? THEN r.output_json END AS output_json,
+                           length(CAST(r.output_json AS BLOB)) AS output_bytes,
+                           r.output_sha256,
+                           a.provider_request_id, a.input_units, a.output_units,
+                           a.provider_cost_nano_usd
+                    FROM ai_runs AS r
+                    JOIN ai_run_attempts AS a ON a.run_id = r.id
+                    WHERE r.tool_id = ? AND r.state = 'succeeded'
+                      AND r.output_json IS NOT NULL AND r.output_sha256 IS NOT NULL
+                      AND a.completed_at IS NOT NULL
+                      AND a.attempt_number = (
+                          SELECT MAX(latest.attempt_number)
+                          FROM ai_run_attempts AS latest
+                          WHERE latest.run_id = r.id
+                      )
+                    ORDER BY a.completed_at DESC, r.id DESC
+                    LIMIT ?
+                    """,
+                    (
+                        MAX_PROVIDER_EVALUATION_JSON_BYTES,
+                        MAX_PROVIDER_EVALUATION_JSON_BYTES,
+                        tool_id,
+                        sample_limit,
+                    ),
+                ).fetchall()
+        except sqlite3.Error as error:
+            raise ValueError("provider evaluation evidence is unavailable") from error
+        return tuple(
+            ProviderEvaluationSample(
+                contract_version=str(row["contract_version"]),
+                model_policy=str(row["model_policy"]),
+                input_json=(
+                    str(row["input_json"]) if row["input_json"] is not None else None
+                ),
+                input_bytes=int(row["input_bytes"]),
+                input_sha256=str(row["input_sha256"]),
+                output_json=(
+                    str(row["output_json"]) if row["output_json"] is not None else None
+                ),
+                output_bytes=int(row["output_bytes"]),
+                output_sha256=str(row["output_sha256"]),
+                provider_request_id=(
+                    str(row["provider_request_id"])
+                    if row["provider_request_id"] is not None
+                    else None
+                ),
+                input_units=int(row["input_units"]),
+                output_units=int(row["output_units"]),
+                provider_cost_nano_usd=(
+                    int(row["provider_cost_nano_usd"])
+                    if row["provider_cost_nano_usd"] is not None
+                    else None
+                ),
+            )
+            for row in rows
         )
 
     def grant_credits(

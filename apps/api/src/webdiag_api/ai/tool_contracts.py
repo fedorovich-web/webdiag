@@ -316,6 +316,81 @@ class ImageEditStudioInput(ImageStudioInput):
     upload_id: CanonicalUUID
 
 
+class _AuditProviderCheck(_StrictModel):
+    check_id: str = Field(min_length=1, max_length=120)
+    name: str = Field(min_length=1, max_length=160)
+    category: str = Field(min_length=1, max_length=80)
+    status: str = Field(min_length=1, max_length=40)
+
+
+class _AuditProviderRecommendation(_StrictModel):
+    summary: str = Field(min_length=1, max_length=240)
+    steps: list[Annotated[str, Field(min_length=1, max_length=2_000)]] = Field(
+        max_length=20
+    )
+    expected_impact: str | None = Field(default=None, max_length=500)
+
+
+class _AuditProviderIssue(_StrictModel):
+    issue_id: str = Field(min_length=1, max_length=120)
+    check_id: str | None = Field(default=None, min_length=1, max_length=120)
+    category: str = Field(min_length=1, max_length=80)
+    severity: str = Field(min_length=1, max_length=40)
+    priority: str = Field(min_length=1, max_length=40)
+    title: str = Field(min_length=1, max_length=180)
+    description: str = Field(min_length=1, max_length=1_000)
+    affected_urls: list[
+        Annotated[str, Field(min_length=8, max_length=2_048)]
+    ] = Field(max_length=100)
+    recommendation: _AuditProviderRecommendation
+
+
+class AuditActionPlanProviderInput(_StrictModel):
+    locale: Locale
+    target_origin: str = Field(min_length=8, max_length=2_048)
+    score: int | None = Field(default=None, ge=0, le=100)
+    checks: list[_AuditProviderCheck] = Field(max_length=500)
+    issues: list[_AuditProviderIssue] = Field(max_length=500)
+
+
+class _ProviderImageDescriptor(_StrictModel):
+    object_key: str = Field(
+        min_length=1,
+        max_length=512,
+        pattern=(
+            r"^[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*/[0-9a-f]{2}/[0-9a-f]{62}$"
+        ),
+    )
+    media_type: Literal["image/jpeg", "image/png", "image/webp"]
+    byte_size: int = Field(ge=1, le=4 * 1024 * 1024)
+    width: int = Field(ge=1, le=8_192)
+    height: int = Field(ge=1, le=8_192)
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+    @model_validator(mode="after")
+    def validate_pixel_count(self):
+        if self.width * self.height > 8_000_000:
+            raise ValueError("image pixel count is too large")
+        return self
+
+
+class AltTextProviderInput(_StrictModel):
+    locale: Locale
+    page_context: str | None = Field(default=None, min_length=1, max_length=2_000)
+    surrounding_text: str | None = Field(default=None, min_length=1, max_length=2_000)
+    purpose: Literal["informative", "decorative", "unknown"]
+    image: _ProviderImageDescriptor
+
+    @field_validator("page_context", "surrounding_text")
+    @classmethod
+    def normalize_context(cls, value: str | None) -> str | None:
+        return AltTextInput.normalize_context(value)
+
+
+class ImageEditStudioProviderInput(ImageStudioInput):
+    image: _ProviderImageDescriptor
+
+
 class ActionPlanAction(_StrictModel):
     issue_ids: list[Annotated[str, Field(min_length=1, max_length=200)]] = Field(
         min_length=1,
@@ -551,6 +626,13 @@ _INPUT_MODELS: dict[str, type[_StrictModel]] = {
     "ai_image_edit_studio": ImageEditStudioInput,
 }
 
+_PROVIDER_INPUT_MODELS: dict[str, type[_StrictModel]] = {
+    **_INPUT_MODELS,
+    "ai_audit_action_plan": AuditActionPlanProviderInput,
+    "ai_alt_text_studio": AltTextProviderInput,
+    "ai_image_edit_studio": ImageEditStudioProviderInput,
+}
+
 
 def has_tool_contract(tool_id: str) -> bool:
     return tool_id in _INPUT_MODELS
@@ -578,6 +660,13 @@ def _validate(model: type[_StrictModel], value: object) -> dict[str, object]:
 
 def validate_public_input(tool_id: str, value: object) -> dict[str, object]:
     model = _INPUT_MODELS.get(tool_id)
+    if model is None:
+        raise AIToolContractError("unsupported AI tool contract")
+    return _validate(model, value)
+
+
+def validate_provider_input(tool_id: str, value: object) -> dict[str, object]:
+    model = _PROVIDER_INPUT_MODELS.get(tool_id)
     if model is None:
         raise AIToolContractError("unsupported AI tool contract")
     return _validate(model, value)
