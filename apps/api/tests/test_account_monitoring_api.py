@@ -77,6 +77,27 @@ class OverlapAuditService(StubAuditService):
         return super().start_single_url_audit(origin)
 
 
+class CoordinatedRenewalStore(SqliteMonitoringStore):
+    def __init__(self, database_path: str) -> None:
+        super().__init__(database_path)
+        self.renewal_started = threading.Event()
+        self.allow_renewal = threading.Event()
+        self.renewal_completed = threading.Event()
+
+    def renew_lease(
+        self,
+        monitor: StoredMonitor,
+        *,
+        now: int | None = None,
+    ) -> StoredMonitor:
+        self.renewal_started.set()
+        if not self.allow_renewal.wait(timeout=5):
+            raise TimeoutError("The monitoring lease renewal was not released by the test.")
+        renewed = super().renew_lease(monitor, now=now)
+        self.renewal_completed.set()
+        return renewed
+
+
 class BlockingFailedAuditService(StubAuditService):
     def __init__(self) -> None:
         super().__init__()
@@ -857,7 +878,7 @@ def test_long_running_audit_renews_its_claim_lease(tmp_path: Path) -> None:
         user_id=user_id,
         request=ProjectCreateRequest(name="Main", origin="https://example.com"),
     )
-    store = SqliteMonitoringStore(str(database))
+    store = CoordinatedRenewalStore(str(database))
     monitoring = MonitoringService(
         store,
         workspace_store=SqliteWorkspaceStore(str(database)),
@@ -884,7 +905,8 @@ def test_long_running_audit_renews_its_claim_lease(tmp_path: Path) -> None:
     execution.start()
     try:
         assert audit.first_started.wait(timeout=5)
-        near_expiry = int(time.time()) + 1
+        assert store.renewal_started.wait(timeout=5)
+        near_expiry = int(time.time()) + 10
         with sqlite3.connect(database) as connection:
             connection.execute(
                 """
@@ -896,13 +918,9 @@ def test_long_running_audit_renews_its_claim_lease(tmp_path: Path) -> None:
             )
             connection.commit()
 
-        deadline = time.monotonic() + 2
-        renewed = None
-        while time.monotonic() < deadline:
-            renewed = store.get_monitor(user_id=user_id, project_id=project.id)
-            if renewed is not None and (renewed.lease_expires_at or 0) > near_expiry + 100:
-                break
-            time.sleep(0.01)
+        store.allow_renewal.set()
+        assert store.renewal_completed.wait(timeout=5)
+        renewed = store.get_monitor(user_id=user_id, project_id=project.id)
         assert renewed is not None
         assert renewed.lease_expires_at is not None
         assert renewed.lease_expires_at > near_expiry + 100
@@ -912,6 +930,7 @@ def test_long_running_audit_renews_its_claim_lease(tmp_path: Path) -> None:
             now=near_expiry + 1,
         ) is None
     finally:
+        store.allow_renewal.set()
         audit.release_first.set()
         execution.join(timeout=10)
 
