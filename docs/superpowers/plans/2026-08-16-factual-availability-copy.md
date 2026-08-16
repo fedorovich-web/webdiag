@@ -111,7 +111,7 @@ node C:\Users\Roman\.agents\skills\impeccable\scripts\detect.mjs --json apps/web
 git diff --check
 ```
 
-- [ ] **Step 2: Review, document, commit, and push**
+- [x] **Step 2: Review, document, commit, and push**
 
 Record only observed results, request independent review, resolve every
 Critical/Important finding, commit `fix(marketing): remove unapproved pricing
