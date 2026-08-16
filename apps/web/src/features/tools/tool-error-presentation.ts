@@ -91,6 +91,8 @@ const apiCodes: Readonly<Record<string, MessageKey>> = {
   invalid_url: "invalid_url",
   tool_api_timeout: "request_timeout",
   audit_rate_limited: "rate_limited",
+  tool_url_rejected: "invalid_url",
+  tool_batch_deadline_exceeded: "request_timeout",
   tool_api_unavailable: "service_unavailable",
   audit_capacity_unavailable: "service_unavailable",
   tool_fetch_failed: "service_unavailable",
@@ -122,7 +124,7 @@ export function toolErrorMessage(
   fallback: ToolErrorCode = "tool_request_failed",
 ): string {
   const code = stableCode(caught);
-  const apiKey = code ? apiCodes[code] : undefined;
+  const apiKey = code && Object.hasOwn(apiCodes, code) ? apiCodes[code] : undefined;
   const key: MessageKey = apiKey
     ?? (caught instanceof ToolUserError ? caught.code : fallback);
   return messages[locale][key];

@@ -17,6 +17,12 @@ describe("tool error presentation", () => {
     expect(toolErrorMessage("en", apiError)).toBe(
       "The check took too long. Try again.",
     );
+    expect(toolErrorMessage("ru", { code: "tool_url_rejected", message: "raw" })).toBe(
+      "Введите корректный публичный URL.",
+    );
+    expect(toolErrorMessage("en", { code: "tool_batch_deadline_exceeded", message: "raw" })).toBe(
+      "The check took too long. Try again.",
+    );
   });
 
   it("uses stable local codes without exposing arbitrary exception messages", () => {
@@ -28,6 +34,9 @@ describe("tool error presentation", () => {
     );
     expect(toolErrorMessage("ru", { code: "unknown_provider_error", message: "secret" })).toBe(
       "Инструмент не смог выполнить запрос. Проверьте данные и повторите попытку.",
+    );
+    expect(toolErrorMessage("en", { code: "constructor", message: "secret" })).toBe(
+      "The tool could not complete the request. Check the input and try again.",
     );
   });
 
@@ -46,7 +55,8 @@ describe("tool error presentation", () => {
       .filter((name) => name.endsWith(".tsx"))
       .filter((name) => {
         const source = readFileSync(new URL(name, directory), "utf8");
-        return /(?:caught|error|reason) instanceof [A-Za-z]*Error\s*\?\s*(?:caught|error|reason)\.message/u.test(source);
+        return /(?:caught|error|reason) instanceof [A-Za-z]*Error\s*\?\s*(?:caught|error|reason)\.message/u.test(source)
+          || /\bitem\.error\.message\b/u.test(source);
       });
 
     expect(offenders).toEqual([]);

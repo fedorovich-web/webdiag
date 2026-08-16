@@ -128,10 +128,10 @@ export function BulkHttpStatusTool({ locale }: { locale: Locale }) {
         </dl>
         <ol className="result-list">
           {result.items.map((item) => <li key={`${item.index}-${item.requested_url}`}>
-            <strong>{item.result ? `HTTP ${item.result.status_code}` : item.error?.code}</strong>{" "}
+            <strong>{item.result ? `HTTP ${item.result.status_code}` : copy.failed}</strong>{" "}
             <span>{item.requested_url}</span>
             {item.result && item.result.final_url !== item.requested_url ? <span> · {copy.final}: {item.result.final_url}</span> : null}
-            {item.error ? <span> · {item.error.message}</span> : null}
+            {item.error ? <span> · {toolErrorMessage(locale, item.error)}</span> : null}
           </li>)}
         </ol>
       </> : <p className="muted-text">{copy.empty}</p>}
