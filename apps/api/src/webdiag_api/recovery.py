@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
 import os
+import re
 import shutil
 import sqlite3
 import tempfile
@@ -144,6 +146,109 @@ def _write_manifest(directory: Path, manifest: RecoveryManifest) -> None:
         os.chmod(path, 0o600)
     except OSError as error:
         raise RecoveryError("backup manifest could not be written") from error
+
+
+def _require_bundle_directory(path: Path) -> Path:
+    try:
+        if path.is_symlink() or not path.is_dir():
+            raise RecoveryError("backup directory is unavailable")
+        return path.resolve(strict=True)
+    except (OSError, RuntimeError) as error:
+        raise RecoveryError("backup directory is unavailable") from error
+
+
+def _require_regular_non_symlink(path: Path, *, label: str) -> Path:
+    try:
+        if path.is_symlink() or not path.is_file():
+            raise RecoveryError(f"{label} is unavailable")
+        return path
+    except OSError as error:
+        raise RecoveryError(f"{label} is unavailable") from error
+
+
+def _load_manifest(path: Path) -> RecoveryManifest:
+    try:
+        _require_regular_non_symlink(path, label="backup manifest")
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        if type(raw) is not dict or set(raw) != {
+            "contract_version",
+            "created_at",
+            "databases",
+        }:
+            raise RecoveryError("backup manifest is invalid")
+        if raw["contract_version"] != CONTRACT_VERSION:
+            raise RecoveryError("backup manifest is invalid")
+        created_at = raw["created_at"]
+        if type(created_at) is not str or not created_at.endswith("Z"):
+            raise RecoveryError("backup manifest is invalid")
+        parsed_timestamp = datetime.fromisoformat(f"{created_at[:-1]}+00:00")
+        if "T" not in created_at or parsed_timestamp.utcoffset() != UTC.utcoffset(None):
+            raise RecoveryError("backup manifest is invalid")
+        databases = raw["databases"]
+        if type(databases) is not dict or set(databases) != set(DATABASE_FILENAMES):
+            raise RecoveryError("backup manifest is invalid")
+        entries: dict[str, DatabaseManifest] = {}
+        for logical_name, expected_filename in DATABASE_FILENAMES.items():
+            entry = databases[logical_name]
+            if type(entry) is not dict or set(entry) != {
+                "filename",
+                "byte_size",
+                "sha256",
+            }:
+                raise RecoveryError("backup manifest is invalid")
+            filename = entry["filename"]
+            byte_size = entry["byte_size"]
+            sha256 = entry["sha256"]
+            if (
+                filename != expected_filename
+                or type(byte_size) is not int
+                or byte_size < 0
+                or type(sha256) is not str
+                or re.fullmatch(r"[0-9a-f]{64}", sha256) is None
+            ):
+                raise RecoveryError("backup manifest is invalid")
+            entries[logical_name] = DatabaseManifest(
+                filename=filename,
+                byte_size=byte_size,
+                sha256=sha256,
+            )
+        return RecoveryManifest(
+            contract_version=CONTRACT_VERSION,
+            created_at=created_at,
+            databases=entries,
+        )
+    except RecoveryError:
+        raise
+    except (KeyError, OSError, TypeError, ValueError, json.JSONDecodeError) as error:
+        raise RecoveryError("backup manifest is invalid") from error
+
+
+def verify_bundle(backup_dir: Path) -> RecoveryManifest:
+    directory = _require_bundle_directory(Path(backup_dir))
+    expected_files = {*DATABASE_FILENAMES.values(), "manifest.json"}
+    try:
+        if {item.name for item in directory.iterdir()} != expected_files:
+            raise RecoveryError("backup bundle contains unexpected files")
+    except OSError as error:
+        raise RecoveryError("backup directory is unavailable") from error
+    manifest = _load_manifest(directory / "manifest.json")
+    for logical_name, expected_filename in DATABASE_FILENAMES.items():
+        entry = manifest.databases[logical_name]
+        if entry.filename != expected_filename:
+            raise RecoveryError("backup manifest is invalid")
+        path = _require_regular_non_symlink(
+            directory / expected_filename,
+            label="backup file",
+        )
+        try:
+            digest_matches = hmac.compare_digest(_sha256(path), entry.sha256)
+            size_matches = path.stat().st_size == entry.byte_size
+        except OSError as error:
+            raise RecoveryError("backup file is unavailable") from error
+        if not size_matches or not digest_matches:
+            raise RecoveryError("backup file digest does not match")
+        _verify_sqlite(path)
+    return manifest
 
 
 def create_backup(
