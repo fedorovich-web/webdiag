@@ -180,6 +180,12 @@ def _no_store(response: Response) -> None:
 
 
 def _authorize_internal(authorization: str | None) -> None:
+    if not settings.ai_runtime_enabled:
+        raise HTTPException(
+            status_code=503,
+            detail={"code": "ai_runtime_disabled", "message": "AI runtime is disabled."},
+            headers={"Cache-Control": "no-store"},
+        )
     expected = settings.ai_internal_token
     supplied = authorization.removeprefix("Bearer ") if authorization else ""
     if not expected or not hmac.compare_digest(supplied, expected):

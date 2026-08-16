@@ -109,23 +109,37 @@ test("account compose exposes one distinct crawler token only to API and schedul
   ]);
 });
 
-test("production compose is fail-closed and has an executable privacy-safe preflight", async () => {
+test("production core and opt-in AI overlay have separate fail-closed preflights", async () => {
   const productionCompose = await readFile(
     new URL("docker-compose.production.yml", root),
+    "utf8",
+  );
+  const aiCompose = await readFile(
+    new URL("docker-compose.production.ai.yml", root),
     "utf8",
   );
   const environmentExample = await readFile(
     new URL(".env.production.example", root),
     "utf8",
   );
+  const aiEnvironmentExample = await readFile(
+    new URL(".env.production.ai.example", root),
+    "utf8",
+  );
   const verifier = await readFile(
     new URL("scripts/verify-production-compose.mjs", root),
     "utf8",
   );
-  const requiredSecrets = [
-    "RABBITMQ_DEFAULT_PASS",
+  const aiVerifier = await readFile(
+    new URL("scripts/verify-production-ai-compose.mjs", root),
+    "utf8",
+  );
+  const coreSecrets = [
     "WEBDIAG_MONITORING_INTERNAL_TOKEN",
     "WEBDIAG_CRAWLER_INTERNAL_TOKEN",
+  ];
+  const aiSecrets = [
+    "RABBITMQ_DEFAULT_PASS",
     "WEBDIAG_AI_INTERNAL_TOKEN",
     "WEBDIAG_AI_SAFETY_IDENTIFIER_SECRET",
     "WEBDIAG_OPENROUTER_API_KEY",
@@ -138,25 +152,39 @@ test("production compose is fail-closed and has an executable privacy-safe prefl
 
   assert.match(productionCompose, /WEBDIAG_ENVIRONMENT:\s*production/g);
   assert.match(productionCompose, /WEBDIAG_ACCOUNT_COOKIE_SECURE:\s*["']true["']/);
-  assert.match(productionCompose, /WEBDIAG_AI_ARTIFACT_STORAGE:\s*s3/g);
-  assert.doesNotMatch(productionCompose, /WEBDIAG_AI_ARTIFACT_STORAGE:\s*local/);
+  assert.match(productionCompose, /WEBDIAG_AI_RUNTIME_ENABLED:\s*["']false["']/);
+  assert.doesNotMatch(productionCompose, /RABBITMQ|OPENROUTER|AI_ARTIFACT|AI_INTERNAL_TOKEN/);
+  assert.match(productionCompose, /rabbitmq:\s*!reset\s+null/);
+  assert.match(productionCompose, /worker:\s*!reset\s+null/);
   assert.match(productionCompose, /PUBLIC_RELEASE:\s*["']true["']/g);
   assert.match(productionCompose, /api:[\s\S]*?volumes:\s*!override\s*\n\s+- account_data:\/data/);
-  assert.match(productionCompose, /worker:[\s\S]*?volumes:\s*!override\s*\[\]/);
   assert.match(productionCompose, /ai_artifacts:\s*!reset\s+null/);
-  for (const name of requiredSecrets) {
+  for (const name of coreSecrets) {
     assert.match(productionCompose, new RegExp(`\\$\\{${name}:\\?[^}]+\\}`), name);
     assert.match(environmentExample, new RegExp(`^${name}=$`, "m"), name);
+    assert.match(aiEnvironmentExample, new RegExp(`^${name}=$`, "m"), name);
   }
-  assert.match(environmentExample, /^WEBDIAG_AI_ARTIFACT_PREFIX=ai-uploads$/m);
-  assert.match(environmentExample, /^WEBDIAG_AI_ARTIFACT_S3_SESSION_TOKEN=$/m);
+  for (const name of aiSecrets) {
+    assert.match(aiCompose, new RegExp(`\\$\\{${name}:\\?[^}]+\\}`), name);
+    assert.match(aiEnvironmentExample, new RegExp(`^${name}=$`, "m"), name);
+    assert.doesNotMatch(environmentExample, new RegExp(`^${name}=`, "m"), name);
+  }
+  assert.match(aiCompose, /WEBDIAG_AI_RUNTIME_ENABLED:\s*["']true["']/);
+  assert.match(aiCompose, /WEBDIAG_AI_ARTIFACT_STORAGE:\s*s3/g);
+  assert.match(aiEnvironmentExample, /^WEBDIAG_AI_ARTIFACT_PREFIX=ai-uploads$/m);
+  assert.match(aiEnvironmentExample, /^WEBDIAG_AI_ARTIFACT_S3_SESSION_TOKEN=$/m);
   assert.doesNotMatch(environmentExample, /change-me|replace-with|https?:\/\//);
+  assert.doesNotMatch(aiEnvironmentExample, /change-me|replace-with/);
 
   assert.match(webDockerfile, /ARG PUBLIC_RELEASE=false\s+ENV PUBLIC_RELEASE=\$\{PUBLIC_RELEASE\}\s+RUN npm run build/);
   assert.match(webDockerfile, /COPY \. \.\s+RUN test ! -e \.env\.production/);
   assert.equal(
     rootPackage.scripts["verify:production-compose"],
     "node scripts/verify-production-compose.mjs",
+  );
+  assert.equal(
+    rootPackage.scripts["verify:production-ai-compose"],
+    "node scripts/verify-production-ai-compose.mjs",
   );
   assert.match(verifier, /spawnSync\(["']docker["']/);
   assert.match(verifier, /["']--format["'],\s*["']json["']/);
@@ -165,11 +193,14 @@ test("production compose is fail-closed and has an executable privacy-safe prefl
   assert.match(verifier, /allowedEnvironmentPlacements/);
   assert.match(verifier, /service .* received .* outside its allowlist/);
   assert.match(verifier, /API volume topology differs/);
-  assert.match(verifier, /worker retains a volume mount/);
   assert.doesNotMatch(verifier, /console\.(?:log|error)\([^\n]*(?:stdout|stderr|environment)/);
+  assert.match(aiVerifier, /production AI Compose preflight passed/);
+  assert.match(aiVerifier, /allowedEnvironmentPlacements/);
+  assert.doesNotMatch(aiVerifier, /console\.(?:log|error)\([^\n]*(?:stdout|stderr|environment)/);
 
   const workflow = await readFile(new URL(".github/workflows/ci.yml", root), "utf8");
   assert.match(workflow, /run:\s*npm run verify:production-compose/);
+  assert.match(workflow, /run:\s*npm run verify:production-ai-compose/);
 });
 
 test("Docker build context excludes environment files from every directory", () => {

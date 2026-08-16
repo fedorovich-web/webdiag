@@ -86,6 +86,7 @@ class Settings(BaseSettings):
     account_login_block_seconds: int = Field(default=900, ge=30, le=3600)
     monitoring_internal_token: str = ""
     monitoring_scheduler_interval_seconds: int = Field(default=60, ge=30, le=300)
+    ai_runtime_enabled: bool = False
     ai_internal_token: str = ""
     crawler_internal_token: str = ""
     crawler_lease_seconds: int = Field(default=120, ge=30, le=300)
@@ -167,15 +168,13 @@ class Settings(BaseSettings):
         normalized = value.strip()
         if value != normalized:
             raise ValueError(
-                "crawler internal token must contain only visible ASCII characters "
-                "without spaces"
+                "crawler internal token must contain only visible ASCII characters without spaces"
             )
         if normalized and len(normalized) < 32:
             raise ValueError("crawler internal token must contain at least 32 characters")
         if any(not 0x21 <= ord(character) <= 0x7E for character in normalized):
             raise ValueError(
-                "crawler internal token must contain only visible ASCII characters "
-                "without spaces"
+                "crawler internal token must contain only visible ASCII characters without spaces"
             )
         if normalized in _CRAWLER_TOKEN_PLACEHOLDERS:
             raise ValueError("crawler internal token must not use a documented placeholder")
@@ -224,20 +223,19 @@ class Settings(BaseSettings):
                 raise ValueError("production account cookies must be secure")
             if not self.monitoring_internal_token:
                 raise ValueError("production monitoring internal token is required")
-            if not self.ai_internal_token:
-                raise ValueError("production AI internal token is required")
             if not self.crawler_internal_token:
                 raise ValueError("production crawler internal token is required")
-            if not self.ai_safety_identifier_secret:
-                raise ValueError("production AI safety identifier secret is required")
-            if len(
-                {
-                    self.monitoring_internal_token,
-                    self.ai_internal_token,
-                    self.crawler_internal_token,
-                    self.ai_safety_identifier_secret,
-                }
-            ) != 4:
+            internal_secrets = [
+                self.monitoring_internal_token,
+                self.crawler_internal_token,
+            ]
+            if self.ai_runtime_enabled:
+                if not self.ai_internal_token:
+                    raise ValueError("production AI internal token is required")
+                if not self.ai_safety_identifier_secret:
+                    raise ValueError("production AI safety identifier secret is required")
+                internal_secrets.extend([self.ai_internal_token, self.ai_safety_identifier_secret])
+            if len(set(internal_secrets)) != len(internal_secrets):
                 raise ValueError("production internal tokens must be distinct")
         if self.account_request_body_max_bytes > self.http_request_body_max_bytes:
             raise ValueError("account request body max must not exceed HTTP request body max")

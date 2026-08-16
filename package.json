@@ -32,6 +32,7 @@
     "python:where": "node scripts/run-python.mjs -c \"import sys; print(sys.executable)\"",
     "verify:built-site": "node scripts/verify-built-site.mjs",
     "verify:production-compose": "node scripts/verify-production-compose.mjs",
+    "verify:production-ai-compose": "node scripts/verify-production-ai-compose.mjs",
     "source:manifest": "node scripts/build-source-manifest.mjs",
     "test:browser": "npm --workspace @webdiag/web run test:browser",
     "verify:python-lock": "node scripts/verify-python-lock.mjs"

@@ -227,6 +227,7 @@ def test_expired_submitted_run_becomes_provider_unknown_and_releases_reservation
 
 def test_internal_claim_requires_dedicated_bearer(monkeypatch) -> None:
     monkeypatch.setattr(settings, "ai_internal_token", "a" * 32)
+    monkeypatch.setattr(settings, "ai_runtime_enabled", True)
 
     async def post(headers: dict[str, str] | None = None) -> httpx.Response:
         async with httpx.AsyncClient(
@@ -244,8 +245,33 @@ def test_internal_claim_requires_dedicated_bearer(monkeypatch) -> None:
     assert missing.json()["detail"]["code"] == "ai_internal_unauthorized"
 
 
+def test_internal_ai_runtime_fails_closed_when_overlay_is_disabled(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "ai_internal_token", "a" * 32)
+    monkeypatch.setattr(settings, "ai_runtime_enabled", False)
+
+    async def post() -> httpx.Response:
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app),
+            base_url="http://test",
+        ) as client:
+            return await client.post(
+                "/v1/internal/ai/runs/claim",
+                headers={"Authorization": f"Bearer {'a' * 32}"},
+            )
+
+    response = asyncio.run(post())
+
+    assert response.status_code == 503
+    assert response.headers["cache-control"] == "no-store"
+    assert response.json()["detail"] == {
+        "code": "ai_runtime_disabled",
+        "message": "AI runtime is disabled.",
+    }
+
+
 def test_internal_completion_rejects_invalid_usage_with_stable_envelope(monkeypatch) -> None:
     monkeypatch.setattr(settings, "ai_internal_token", "a" * 32)
+    monkeypatch.setattr(settings, "ai_runtime_enabled", True)
 
     async def post(payload: dict[str, object]) -> httpx.Response:
         async with httpx.AsyncClient(
@@ -282,6 +308,7 @@ def test_internal_completion_rejects_invalid_usage_with_stable_envelope(monkeypa
 
 def test_internal_completion_requires_reported_provider_cost(monkeypatch) -> None:
     monkeypatch.setattr(settings, "ai_internal_token", "a" * 32)
+    monkeypatch.setattr(settings, "ai_runtime_enabled", True)
 
     async def post() -> httpx.Response:
         async with httpx.AsyncClient(

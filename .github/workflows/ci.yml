@@ -115,6 +115,13 @@ jobs:
       - name: Verify production Compose policy
         if: matrix.python-version == '3.14'
         env:
+          WEBDIAG_MONITORING_INTERNAL_TOKEN: M123456789012345678901234567890123456789
+          WEBDIAG_CRAWLER_INTERNAL_TOKEN: C123456789012345678901234567890123456789
+        run: npm run verify:production-compose
+
+      - name: Verify optional production AI Compose policy
+        if: matrix.python-version == '3.14'
+        env:
           RABBITMQ_DEFAULT_PASS: ci-rabbit-password-1234567890
           WEBDIAG_MONITORING_INTERNAL_TOKEN: M123456789012345678901234567890123456789
           WEBDIAG_CRAWLER_INTERNAL_TOKEN: C123456789012345678901234567890123456789
@@ -126,7 +133,7 @@ jobs:
           WEBDIAG_AI_ARTIFACT_S3_BUCKET: webdiag-private
           WEBDIAG_AI_ARTIFACT_S3_ACCESS_KEY_ID: fixture-access
           WEBDIAG_AI_ARTIFACT_S3_SECRET_ACCESS_KEY: fixture-secret
-        run: npm run verify:production-compose
+        run: npm run verify:production-ai-compose
 
       - name: Build production images
         if: matrix.python-version == '3.14'

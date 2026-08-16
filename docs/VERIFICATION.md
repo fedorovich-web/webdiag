@@ -113,6 +113,32 @@ reported no error. No OpenRouter, S3, payment, release, deployment, domain, or
 TLS operation was performed. AI tools and commercial activation remain blocked
 until their external evidence and product decisions are supplied.
 
+# Production core and optional AI overlay — 2026-08-16
+
+The production topology now has two independently rendered policies:
+
+- core: web, API, and monitoring/crawler scheduler; AI runtime is false and no
+  RabbitMQ, OpenRouter, S3, or AI secret reaches the model;
+- optional AI overlay: RabbitMQ and worker plus the existing private S3 and
+  OpenRouter boundaries; AI runtime is true only in this combined model.
+
+Observed targeted verification:
+
+```text
+production settings                         PASS — 23/23
+production topology static contract         PASS — 14/14
+production core rendered preflight          PASS — 3 services
+production AI overlay rendered preflight    PASS — 5 services
+```
+
+Both renders used synthetic credentials and started no service. The overlay
+remains blocked on provider evaluation, approved billed cost and credit prices,
+production S3/recovery evidence, and manual image review. No provider, S3,
+payment, domain, TLS, release, or deployment action was performed.
+
+The earlier five-service preflight record below is retained as historical
+evidence for the stage that originally introduced the combined topology.
+
 # Fail-closed production Compose preflight — 2026-08-16
 
 ## Scope

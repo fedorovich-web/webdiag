@@ -1,5 +1,19 @@
 # Changelog
 
+## A13.3 — Localized evidence and production core split
+
+- Added immutable RU/EN presentation for known saved-audit and report evidence;
+  stored snapshots and integrity digests remain canonical and unchanged.
+- Replaced raw tool exception output across 36 workbench components with a
+  stable allowlisted RU/EN error boundary and a source regression gate.
+- Split the production topology into a three-service non-AI core and an
+  explicit optional AI overlay with independent rendered-model preflights.
+  Core production no longer requires RabbitMQ, OpenRouter, S3, or AI secrets.
+- AI tools remain internal and the overlay remains blocked on the documented
+  external evaluation, cost, storage, manual image, and fixed-credit gates.
+- No provider, S3, payment, domain, TLS, release, or deployment operation was
+  performed by this stage.
+
 ## A13.2 — Factual public availability
 
 - Replaced unapproved prices and paid-run claims on the RU/EN home, pricing,

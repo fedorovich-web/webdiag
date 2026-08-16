@@ -267,7 +267,10 @@ WEBDIAG_AI_INTERNAL_TOKEN
 WEBDIAG_AI_API_INTERNAL_URL
 ```
 
-В production `WEBDIAG_AI_INTERNAL_TOKEN` обязателен и не может совпадать с `WEBDIAG_MONITORING_INTERNAL_TOKEN`. Секреты не добавляются в репозиторий и не передаются frontend.
+В production core AI runtime выключен и этот секрет не требуется. При явном
+подключении `docker-compose.production.ai.yml` он обязателен и не может
+совпадать с monitoring, crawler или safety secret. Секреты не добавляются в
+репозиторий и не передаются frontend.
 
 API и AI worker с обязательным полем `provider_cost_nano_usd` разворачиваются
 как одна согласованная версия. На время смешанной версии scheduler
@@ -472,8 +475,10 @@ docker compose -f docker-compose.yml -f docker-compose.account.override.yml down
 
 Production использует третий override и оставляет единственный API writer для
 двух SQLite-баз. Неиспользуемые PostgreSQL и Valkey исключены из production
-model; RabbitMQ остаётся для worker. Web и API публикуются только на loopback,
-поэтому TLS и публичный домен должен завершать выбранный host reverse proxy.
+model. Базовый production core содержит только web, API и
+`monitoring_scheduler`; RabbitMQ, AI worker, OpenRouter и S3 ему не нужны. Web
+и API публикуются только на loopback, поэтому TLS и публичный домен должен
+завершать выбранный host reverse proxy.
 
 Создайте файл окружения за пределами repository build context и заполните его
 через выбранный secret manager. Все `.env`-файлы дополнительно исключены из
@@ -483,15 +488,9 @@ Docker context. Пустой шаблон намеренно не проходи
 Copy-Item .env.production.example ..\webdiag.production.env
 ```
 
-Monitoring, crawler, AI internal token и AI safety identifier secret должны
-быть разными значениями длиной не менее 32 символов. Реальные значения не
-добавляются в Git, Docker context, команды shell history, PR или логи.
-RabbitMQ user содержит 1–64 URL-safe символа. RabbitMQ password
-содержит 24–128 URL-safe символов `A-Z`, `a-z`, `0-9`, `.`, `_`, `~`, `-`,
-поскольку одно значение используется RabbitMQ и AMQP URI. OpenRouter key и S3
-credentials также обязательны. Production artifact storage принимает только
-приватный HTTPS S3-compatible endpoint; local backend удалён из итогового
-environment.
+Monitoring и crawler internal token должны быть разными значениями длиной не
+менее 32 символов. Реальные значения не добавляются в Git, Docker context,
+команды shell history, PR или логи.
 
 До сборки проверьте полностью объединённую модель. Скрипт не печатает
 отрендеренный environment или stderr Compose:
@@ -500,9 +499,9 @@ environment.
 npm run verify:production-compose -- --env-file ..\webdiag.production.env
 ```
 
-Успех выглядит как `production Compose preflight passed: services=5`. Команда
-проверяет production mode, secure cookies, build/runtime public release,
-allowlist секретов для каждого сервиса, S3 parity API/worker, точную topology
+Успех выглядит как `production Compose preflight passed: services=3`. Команда
+проверяет production mode, secure cookies, выключенный AI runtime,
+build/runtime public release, allowlist двух core-секретов, точную topology
 volumes, внутренние origin и loopback ports. Она также проверяет поддержку
 Compose merge tags `!reset` и `!override`.
 
@@ -531,9 +530,43 @@ Invoke-WebRequest http://127.0.0.1:3000/robots.txt
 
 Затем на выбранном production domain отдельно проверяются TLS, canonical,
 robots/sitemap, registration/login/logout, ownership, один безопасный audit,
-monitoring lease, report/share, backup/restore и S3 artifact lifecycle. Static
+monitoring lease, report/share и backup/restore. Static
 preflight не подтверждает доступность домена, корректность reverse proxy,
 валидность реальных credentials, provider billing или disaster recovery.
+
+#### Опциональный AI overlay
+
+AI overlay не нужен для запуска текущего публичного каталога. До его включения
+должны быть закрыты provider evaluation, billed cost, фиксированные credit
+prices, production S3 recovery и ручная проверка image tools. Подготовьте полный
+файл из отдельного шаблона:
+
+```powershell
+Copy-Item .env.production.ai.example ..\webdiag.production.ai.env
+npm run verify:production-ai-compose -- --env-file ..\webdiag.production.ai.env
+```
+
+Успех выглядит как `production AI Compose preflight passed: services=5`.
+RabbitMQ user содержит 1–64 URL-safe символа, password — 24–128 URL-safe
+символов `A-Z`, `a-z`, `0-9`, `.`, `_`, `~`, `-`. AI internal token, safety
+identifier secret, monitoring token и crawler token должны быть различными.
+OpenRouter key и private HTTPS S3-compatible credentials обязательны; local
+artifact backend в итоговую модель не попадает.
+
+После отдельного продуктового и security-решения объединённая модель запускается
+с четвёртым файлом:
+
+```powershell
+docker compose --env-file ..\webdiag.production.ai.env `
+  -f docker-compose.yml `
+  -f docker-compose.account.override.yml `
+  -f docker-compose.production.yml `
+  -f docker-compose.production.ai.yml `
+  up -d --build
+```
+
+Само наличие или успешный preflight overlay не публикует AI-карточки и не
+является разрешением на provider calls.
 
 ### Обновление внешних Docker-образов
 
