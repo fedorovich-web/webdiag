@@ -14,6 +14,7 @@ from webdiag_api.recovery import (
     CONTRACT_VERSION,
     RecoveryError,
     create_backup,
+    restore_bundle,
     verify_bundle,
 )
 
@@ -302,3 +303,138 @@ def test_backup_uses_private_permissions(tmp_path: Path) -> None:
     assert stat.S_IMODE(bundle.stat().st_mode) == 0o700
     for filename in ("accounts.sqlite3", "audits.sqlite3", "manifest.json"):
         assert stat.S_IMODE((bundle / filename).stat().st_mode) == 0o600
+
+
+def test_restore_creates_independent_verified_candidate(tmp_path: Path) -> None:
+    bundle = _create_bundle(tmp_path)
+    original = {
+        name: _digest(bundle / name)
+        for name in ("accounts.sqlite3", "audits.sqlite3", "manifest.json")
+    }
+    output = tmp_path / "restored"
+
+    manifest = restore_bundle(backup_dir=bundle, output_dir=output)
+
+    assert {item.name for item in output.iterdir()} == set(original)
+    assert {name: _digest(bundle / name) for name in original} == original
+    with sqlite3.connect(output / "accounts.sqlite3") as connection:
+        assert connection.execute("SELECT value FROM records").fetchall() == [
+            ("account-row",)
+        ]
+    assert manifest.contract_version == CONTRACT_VERSION
+
+
+def test_invalid_restore_publishes_nothing(tmp_path: Path) -> None:
+    bundle = _create_bundle(tmp_path)
+    (bundle / "accounts.sqlite3").write_bytes(b"corrupt")
+    output = tmp_path / "not-published"
+
+    with pytest.raises(RecoveryError):
+        restore_bundle(backup_dir=bundle, output_dir=output)
+
+    assert not output.exists()
+
+
+def test_restore_rejects_existing_output_without_changing_it(tmp_path: Path) -> None:
+    bundle = _create_bundle(tmp_path)
+    output = tmp_path / "existing-restore"
+    output.mkdir()
+    sentinel = output / "keep.txt"
+    sentinel.write_text("keep", encoding="utf-8")
+
+    with pytest.raises(RecoveryError, match="output directory must not exist"):
+        restore_bundle(backup_dir=bundle, output_dir=output)
+
+    assert sentinel.read_text(encoding="utf-8") == "keep"
+
+
+def test_cli_reports_expected_failure_without_traceback(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    bundle = _create_bundle(tmp_path)
+    assert recovery.main(["verify", "--backup-dir", str(bundle)]) == 0
+    assert capsys.readouterr().out == f"backup_verified={bundle}\n"
+
+    (bundle / "accounts.sqlite3").write_bytes(b"private-row-content")
+    assert recovery.main(["verify", "--backup-dir", str(bundle)]) == 2
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "recovery_failed=" in captured.err
+    assert "Traceback" not in captured.err
+    assert "private-row-content" not in captured.err
+
+
+def test_cli_backup_and_restore_success_messages(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    account = _plain_database(
+        tmp_path / "cli-accounts.sqlite3", "account-row"
+    )
+    audit = _plain_database(tmp_path / "cli-audits.sqlite3", "audit-row")
+    bundle = tmp_path / "cli-backup"
+    assert (
+        recovery.main(
+            [
+                "backup",
+                "--account-database",
+                str(account),
+                "--audit-database",
+                str(audit),
+                "--output-dir",
+                str(bundle),
+            ]
+        )
+        == 0
+    )
+    assert capsys.readouterr().out == f"backup_created={bundle}\n"
+
+    restored = tmp_path / "cli-restored"
+    assert (
+        recovery.main(
+            [
+                "restore",
+                "--backup-dir",
+                str(bundle),
+                "--output-dir",
+                str(restored),
+            ]
+        )
+        == 0
+    )
+    assert capsys.readouterr().out == f"restore_created={restored}\n"
+
+
+def test_cli_hides_unexpected_exception_details(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    def fail(**_kwargs: Path) -> None:
+        raise RuntimeError("private database row and credentials")
+
+    monkeypatch.setattr(recovery, "create_backup", fail)
+    code = recovery.main(
+        [
+            "backup",
+            "--account-database",
+            "a.sqlite3",
+            "--audit-database",
+            "b.sqlite3",
+            "--output-dir",
+            "backup",
+        ]
+    )
+
+    assert code == 1
+    assert (
+        capsys.readouterr().err
+        == "recovery_failed=unexpected recovery failure\n"
+    )
+
+
+def test_cli_invalid_arguments_exit_two() -> None:
+    with pytest.raises(SystemExit) as raised:
+        recovery.main(["verify"])
+
+    assert raised.value.code == 2

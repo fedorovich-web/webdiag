@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import hashlib
 import hmac
 import json
@@ -7,8 +8,9 @@ import os
 import re
 import shutil
 import sqlite3
+import sys
 import tempfile
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from contextlib import closing, contextmanager
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
@@ -285,3 +287,94 @@ def create_backup(
         except OSError as error:
             raise RecoveryError("backup bundle could not be published") from error
     return manifest
+
+
+def _copy_recovery_file(source: Path, destination: Path) -> None:
+    try:
+        with source.open("rb") as source_stream, destination.open(
+            "xb"
+        ) as destination_stream:
+            while chunk := source_stream.read(1024 * 1024):
+                destination_stream.write(chunk)
+        os.chmod(destination, 0o600)
+    except OSError as error:
+        raise RecoveryError("restore copy failed") from error
+
+
+def restore_bundle(
+    *,
+    backup_dir: Path,
+    output_dir: Path,
+) -> RecoveryManifest:
+    source = _require_bundle_directory(Path(backup_dir))
+    verify_bundle(source)
+    output = Path(output_dir)
+    with _private_staging_directory(output) as staging:
+        for filename in DATABASE_FILENAMES.values():
+            destination = staging / filename
+            _copy_recovery_file(source / filename, destination)
+            _verify_sqlite(destination)
+        _copy_recovery_file(source / "manifest.json", staging / "manifest.json")
+        manifest = verify_bundle(staging)
+        try:
+            staging.rename(output)
+        except OSError as error:
+            raise RecoveryError("restore candidate could not be published") from error
+    return manifest
+
+
+def _parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Create and verify staged WebDiag SQLite recovery bundles."
+    )
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    backup = subparsers.add_parser("backup", help="create a verified backup")
+    backup.add_argument("--account-database", required=True)
+    backup.add_argument("--audit-database", required=True)
+    backup.add_argument("--output-dir", required=True)
+
+    verify = subparsers.add_parser("verify", help="verify a backup bundle")
+    verify.add_argument("--backup-dir", required=True)
+
+    restore = subparsers.add_parser(
+        "restore", help="prepare a verified restore candidate"
+    )
+    restore.add_argument("--backup-dir", required=True)
+    restore.add_argument("--output-dir", required=True)
+    return parser
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    arguments = _parser().parse_args(argv)
+    try:
+        if arguments.command == "backup":
+            create_backup(
+                account_database=Path(arguments.account_database),
+                audit_database=Path(arguments.audit_database),
+                output_dir=Path(arguments.output_dir),
+            )
+            print(f"backup_created={arguments.output_dir}")
+        elif arguments.command == "verify":
+            verify_bundle(Path(arguments.backup_dir))
+            print(f"backup_verified={arguments.backup_dir}")
+        else:
+            restore_bundle(
+                backup_dir=Path(arguments.backup_dir),
+                output_dir=Path(arguments.output_dir),
+            )
+            print(f"restore_created={arguments.output_dir}")
+    except RecoveryError as error:
+        print(f"recovery_failed={error}", file=sys.stderr)
+        return 2
+    except Exception:
+        print(
+            "recovery_failed=unexpected recovery failure",
+            file=sys.stderr,
+        )
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
