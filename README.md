@@ -19,7 +19,6 @@
 ```powershell
 npm ci
 py -3.14 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install --upgrade pip
 npm run python:install
 npm run verify:local
 ```
@@ -29,9 +28,11 @@ npm run verify:local
 ```bash
 npm ci
 python3 -m venv .venv
-.venv/bin/python -m pip install --upgrade pip
 npm run python:install
 npm run verify:local
 ```
 
-Активация `.venv` для npm-команд не требуется. Не запускайте `npm init` или `create-next-app` внутри проекта.
+`python:install` устанавливает сторонние пакеты только из committed wheel-only
+SHA-256 lock, затем добавляет локальные API и worker без разрешения их
+зависимостей. Активация `.venv` для npm-команд не требуется. Не запускайте
+`npm init` или `create-next-app` внутри проекта.

@@ -105,7 +105,6 @@ npm ci
 
 ```powershell
 py -3.14 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install --upgrade pip
 npm run python:install
 npm run python:where
 ```
@@ -116,7 +115,6 @@ npm run python:where
 
 ```cmd
 py -3.14 -m venv .venv
-.venv\Scripts\python.exe -m pip install --upgrade pip
 npm run python:install
 npm run python:where
 ```
@@ -125,12 +123,55 @@ npm run python:where
 
 ```bash
 python3 -m venv .venv
-.venv/bin/python -m pip install --upgrade pip
 npm run python:install
 npm run python:where
 ```
 
-Команда устанавливает API и worker в editable-режиме вместе с dev-зависимостями. `npm run python:install`, `test:python`, `lint:python` и `verify:local` всегда используют Python из `.venv`, даже если окружение не активировано.
+Команда сначала устанавливает `requirements/python-dev.lock.txt` через pip в
+isolated-режиме, с фиксированным `https://pypi.org/simple`, обязательными
+SHA-256 и запретом source distributions. Затем API и worker устанавливаются в
+editable-режиме с `--no-deps --no-build-isolation`; все build-зависимости уже
+входят в проверенный lock. `npm run python:install`, `test:python`,
+`lint:python` и `verify:local` всегда используют Python из `.venv`, даже если
+окружение не активировано.
+
+Не обновляйте pip отдельной непинованной командой перед установкой: проект
+использует pip, поставляемый выбранным Python runtime, и проверяет точные bytes
+сторонних wheels.
+
+### Группы Python-зависимостей
+
+- `python-build` содержит backend и helpers для локальной сборки;
+- `python-api` содержит только runtime closure API;
+- `python-worker` содержит runtime closure worker, включая объявленный
+  RabbitMQ extra;
+- `python-dev` объединяет build/runtime/test/lint зависимости.
+
+Windows выбирает `colorama` и исключает `uvloop` через committed marker. Linux
+делает обратный выбор. API и worker production images используют собственные
+runtime locks и не включают pytest, Ruff, Hatchling или editable helper.
+
+`.in` — reviewed exact source sets. `.lock.txt` — сгенерированные locks со
+всеми non-yanked wheel hashes для каждой точной версии. Обычная установка
+никогда не обновляет их.
+
+### Обновление hashes
+
+Только при осознанном пересмотре зависимостей:
+
+```bash
+npm run python:lock:refresh
+npm run verify:python-lock
+```
+
+Первая команда обращается к фиксированным PyPI JSON endpoints и атомарно
+перегенерирует четыре lock-файла. Изменения версий, markers, состава пакетов и
+hashes проверяются как обычный dependency diff и требуют повторного npm/Python
+vulnerability audit. CI не обновляет и не исправляет locks.
+
+SHA-256 проверяет, что pip получил один из одобренных wheel bytes. Это не
+доказательство безопасности publisher или содержимого пакета и не заменяет
+vulnerability/provenance review.
 
 ## 7. Быстрый локальный запуск
 

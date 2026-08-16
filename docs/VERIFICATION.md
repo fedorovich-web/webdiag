@@ -1546,3 +1546,57 @@ hash-based supply-chain verification remains unverified. No provider request,
 credit price, AI catalog activation, payment, release, or deployment occurred.
 Backup/restore remains unverified: the repository still has no database recovery
 command or runbook, and the production private-artifact topology is not configured.
+
+## Cross-platform Python wheel hash hardening
+
+Fresh local verification on 2026-08-16:
+
+```text
+clean Windows Python 3.14 environment
+PASS — hashed wheel-only install, editable API/worker build without isolation,
+pip check, and offline environment comparison 44/44
+
+npm run test:workspace
+PASS — 74/74
+
+npm run test:python
+PASS — 599 passed, 1 skipped
+
+npm run lint:python
+PASS — Ruff reported no findings
+
+npm run verify:python-lock
+PASS — 44 selected packages match the installed win32 environment
+
+node scripts/run-python.mjs -m pip check
+PASS — no broken requirements
+
+npm audit --audit-level=high --json
+PASS — 0 known vulnerabilities across 508 lockfile dependencies
+
+pip-audit 2.10.1, exact dev source and generated hash lock
+PASS — no known vulnerabilities found
+
+git diff --check
+PASS
+```
+
+The committed source groups contain 6 build, 33 API runtime, 21 worker runtime,
+and 45 development rows. Platform markers select 44 rows on Windows and 44 on
+Linux. The first clean editable installation exposed Hatchling's undeclared
+runtime import of `editables`; `editables==0.6` was audited, added explicitly to
+both build-system declarations and the build/dev locks, and then verified in a
+new clean environment. No application dependency version was upgraded.
+
+Third-party installation now uses pip isolated mode, the fixed public PyPI
+index, exact versions, wheel-only artifacts, and committed SHA-256 hashes. The
+API and worker Dockerfiles build local WebDiag wheels in separate builder
+stages and install distinct runtime locks without dependency resolution in the
+final images. Hash checking verifies approved bytes; it does not certify the
+publisher or package behavior.
+
+Local Docker image builds are `непроверено`: Docker CLI is installed, but the
+Docker Desktop Linux engine was not running. The new GitHub Ubuntu Python
+3.13/3.14 matrix and its Python 3.14 Docker build/import smoke are also
+`непроверено` in this local record until the branch is pushed. No provider,
+RabbitMQ, S3, public URL, release, or deployment call occurred.
