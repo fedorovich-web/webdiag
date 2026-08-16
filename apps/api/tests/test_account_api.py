@@ -108,6 +108,32 @@ def test_settings_reject_insecure_production_and_unsafe_storage_paths() -> None:
     )
 
 
+def test_settings_require_distinct_account_and_audit_databases(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    shared = str(tmp_path / "shared.sqlite3")
+
+    with pytest.raises(
+        ValidationError,
+        match="account and audit database paths must be distinct",
+    ):
+        Settings(
+            account_database_path=shared,
+            audit_database_path=shared,
+        )
+
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(
+        ValidationError,
+        match="account and audit database paths must be distinct",
+    ):
+        Settings(
+            account_database_path="shared.sqlite3",
+            audit_database_path=shared,
+        )
+
+
 def test_settings_bound_session_and_scrypt_parameters() -> None:
     defaults = Settings()
     assert defaults.account_scrypt_n == 2**15

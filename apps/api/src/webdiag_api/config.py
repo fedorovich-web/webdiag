@@ -1,5 +1,5 @@
 import re
-from pathlib import PurePosixPath, PureWindowsPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Self
 
 from pydantic import Field, field_validator, model_validator
@@ -212,6 +212,13 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def require_secure_cookie_in_production(self) -> Self:
+        try:
+            account_database = Path(self.account_database_path).resolve(strict=False)
+            audit_database = Path(self.audit_database_path).resolve(strict=False)
+        except (OSError, RuntimeError) as error:
+            raise ValueError("database paths could not be resolved") from error
+        if account_database == audit_database:
+            raise ValueError("account and audit database paths must be distinct")
         if self.environment.strip().casefold() == "production":
             if not self.account_cookie_secure:
                 raise ValueError("production account cookies must be secure")
