@@ -1596,7 +1596,38 @@ final images. Hash checking verifies approved bytes; it does not certify the
 publisher or package behavior.
 
 Local Docker image builds are `непроверено`: Docker CLI is installed, but the
-Docker Desktop Linux engine was not running. The new GitHub Ubuntu Python
-3.13/3.14 matrix and its Python 3.14 Docker build/import smoke are also
-`непроверено` in this local record until the branch is pushed. No provider,
-RabbitMQ, S3, public URL, release, or deployment call occurred.
+Docker Desktop Linux engine was not running. GitHub Actions run `31937461464`
+passed the Ubuntu Python 3.13/3.14 matrix and its Python 3.14 Docker build/import
+smoke against commit `4ec4b71`. The digest-pinned references were added after
+that run and require a new CI result. No provider, RabbitMQ, S3, public URL,
+release, or deployment call occurred.
+
+## Container base-image provenance
+
+Registry and configuration verification on 2026-08-16:
+
+```text
+docker buildx imagetools inspect for all five external image tags
+PASS — each committed SHA-256 value matches the current registry manifest digest
+
+docker compose config --images
+PASS — Compose accepts all three pinned service-image references
+
+node --test scripts/tests-workspace-integrity.test.mjs
+PASS — 12/12
+
+npm run test:workspace
+PASS — 76/76
+```
+
+All seven external `FROM` references and all three external Compose image
+references retain a readable version tag and pin a full lowercase SHA-256
+multi-platform manifest digest. Repeated Python and Node stages must resolve to
+one digest per tag. The workspace security test rejects a missing tag, missing
+digest, malformed digest, or absent Docker update coverage.
+
+`.github/dependabot.yml` covers the root Compose file and the API, worker, and
+web Dockerfile directories on a weekly schedule. Updates are pull requests;
+they are not automatically merged or deployed. Dependabot activation and the
+first pinned-image CI build remain `непроверено` until this configuration exists
+on the default branch and the feature branch has completed a fresh GitHub run.

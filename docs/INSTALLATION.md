@@ -287,6 +287,11 @@ node scripts/run-python.mjs -m webdiag_api.ai.cli grant-credits `
 
 Docker Compose использует исходный код и собирает web, API и worker, а также запускает PostgreSQL, RabbitMQ и Valkey.
 
+Внешние образы в Dockerfile и `docker-compose.yml` записаны как
+`tag@sha256:digest`. Tag показывает выбранную линию версии, а digest фиксирует
+конкретный multi-platform manifest. Не удаляйте digest и не заменяйте его
+значением из непроверенного источника.
+
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.account.override.yml up --build
 ```
@@ -329,6 +334,27 @@ docker compose -f docker-compose.yml -f docker-compose.account.override.yml down
 ```
 
 Последняя команда удаляет локальные данные окружения.
+
+### Обновление внешних Docker-образов
+
+После попадания `.github/dependabot.yml` в default branch Dependabot проверяет
+Docker-образы еженедельно и предлагает изменения через pull request. Обновление
+не применяется автоматически: новый digest должен пройти workspace tests,
+сборку и smoke-проверки контейнеров в CI.
+
+Для ручной проверки текущего manifest digest используйте registry-only команду,
+которая не требует запуска контейнера:
+
+```bash
+docker buildx imagetools inspect python:3.14-slim-bookworm --format '{{.Manifest.Digest}}'
+```
+
+При смене общей базовой линии обновляйте все её повторения одним патчем. Политику
+ссылок проверяет команда:
+
+```bash
+node --test scripts/tests-workspace-integrity.test.mjs
+```
 
 ### Резервное копирование и подготовка восстановления SQLite
 

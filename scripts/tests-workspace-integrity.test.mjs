@@ -14,8 +14,22 @@ const accountComposeOverride = await readFile(
   new URL("docker-compose.account.override.yml", root),
   "utf8",
 );
+const compose = await readFile(new URL("docker-compose.yml", root), "utf8");
 const apiDockerfile = await readFile(new URL("apps/api/Dockerfile", root), "utf8");
 const workerDockerfile = await readFile(new URL("apps/worker/Dockerfile", root), "utf8");
+const webDockerfile = await readFile(new URL("apps/web/Dockerfile", root), "utf8");
+
+const SHA256_IMAGE_REFERENCE = /^[^\s@]+:[^\s@]+@sha256:[0-9a-f]{64}$/;
+
+function externalStageReferences(dockerfile) {
+  return [...dockerfile.matchAll(/^FROM\s+(\S+)(?:\s+AS\s+\S+)?$/gim)].map(
+    (match) => match[1],
+  );
+}
+
+function composeImageReferences(source) {
+  return [...source.matchAll(/^\s*image:\s*([^\s#]+)\s*$/gm)].map((match) => match[1]);
+}
 
 const workspacePackages = [webPackage, corePackage, registryPackage];
 
@@ -94,15 +108,57 @@ test("account compose exposes one distinct crawler token only to API and schedul
   ]);
 });
 
+test("all external production container images are pinned by tag and SHA-256 digest", () => {
+  const dockerReferences = [
+    ...externalStageReferences(apiDockerfile),
+    ...externalStageReferences(workerDockerfile),
+    ...externalStageReferences(webDockerfile),
+  ];
+  const composeReferences = composeImageReferences(compose);
+
+  assert.equal(dockerReferences.length, 7);
+  assert.equal(composeReferences.length, 3);
+  for (const reference of [...dockerReferences, ...composeReferences]) {
+    assert.match(reference, SHA256_IMAGE_REFERENCE, reference);
+  }
+
+  const referencesByTag = Map.groupBy(
+    dockerReferences,
+    (reference) => reference.split("@sha256:")[0],
+  );
+  assert.equal(new Set(referencesByTag.get("python:3.14-slim-bookworm")).size, 1);
+  assert.equal(new Set(referencesByTag.get("node:24-bookworm-slim")).size, 1);
+});
+
+test("Dependabot covers every directory containing production container manifests", async () => {
+  const config = await readFile(new URL(".github/dependabot.yml", root), "utf8");
+
+  assert.match(config, /^version:\s*2$/m);
+  assert.match(config, /^\s*- package-ecosystem:\s*["']docker["']$/m);
+  for (const directory of ["/", "/apps/api", "/apps/worker", "/apps/web"]) {
+    assert.match(config, new RegExp(`^\\s*- ["']${directory.replaceAll("/", "\\/")}["']$`, "m"));
+  }
+  assert.match(config, /^\s*interval:\s*["']weekly["']$/m);
+  assert.match(config, /^\s*group-by:\s*["']dependency-name["']$/m);
+});
+
 test("Python production images build local wheels with hashed build dependencies", () => {
   for (const [name, dockerfile] of [
     ["api", apiDockerfile],
     ["worker", workerDockerfile],
   ]) {
-    assert.match(dockerfile, /^FROM python:3\.14-slim-bookworm AS builder$/m, name);
-    assert.match(dockerfile, /^FROM python:3\.14-slim-bookworm AS runtime$/m, name);
+    assert.match(
+      dockerfile,
+      /^FROM python:3\.14-slim-bookworm@sha256:[0-9a-f]{64} AS builder$/m,
+      name,
+    );
+    assert.match(
+      dockerfile,
+      /^FROM python:3\.14-slim-bookworm@sha256:[0-9a-f]{64} AS runtime$/m,
+      name,
+    );
     const [builder, runtime] = dockerfile.split(
-      /^FROM python:3\.14-slim-bookworm AS runtime$/m,
+      /^FROM python:3\.14-slim-bookworm@sha256:[0-9a-f]{64} AS runtime$/m,
     );
     assert.match(builder, /requirements\/python-build\.lock\.txt/, name);
     assert.match(
@@ -139,7 +195,7 @@ test("Python production images install only hashed runtime dependencies and one 
 
   for (const fixture of cases) {
     const runtime = fixture.dockerfile.split(
-      /^FROM python:3\.14-slim-bookworm AS runtime$/m,
+      /^FROM python:3\.14-slim-bookworm@sha256:[0-9a-f]{64} AS runtime$/m,
     )[1];
     assert.ok(runtime, `${fixture.name}: runtime stage missing`);
     assert.match(runtime, new RegExp(`requirements/${fixture.runtimeLock.replace(".", "\\.")}`));

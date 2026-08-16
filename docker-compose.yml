@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:18.4-bookworm
+    image: postgres:18.4-bookworm@sha256:882236b897e39051d2368c5ccc6cda944904723506b2dfc97f2a8f5bc9afa382
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-webdiag}
       POSTGRES_USER: ${POSTGRES_USER:-webdiag}
@@ -16,7 +16,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   rabbitmq:
-    image: rabbitmq:4.3.2-management-alpine
+    image: rabbitmq:4.3.2-management-alpine@sha256:0753b75ce99094c385483d89449d532a0544fb85e4942a478b21cc497ab66d33
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-webdiag}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-change-me}
@@ -30,7 +30,7 @@ services:
       retries: 12
 
   valkey:
-    image: valkey/valkey:9.1.0-alpine
+    image: valkey/valkey:9.1.0-alpine@sha256:c9b77919daeba2c02ad954d0c844cc4e7142069d177b89c5fd771f405daf9e02
     command: ["valkey-server", "--save", "60", "1"]
     ports:
       - "127.0.0.1:6379:6379"
