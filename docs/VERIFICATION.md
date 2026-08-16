@@ -1,5 +1,45 @@
 # Verification Notes
 
+# Production blocker closure — 2026-08-16
+
+## Scope
+
+- localized saved audits, issues, immutable account reports, public share views,
+  and safe HTML/print presentation without changing the canonical stored
+  snapshot or its ownership and integrity checks;
+- replaced raw tool exception presentation with a bounded RU/EN code catalog
+  and rejected prototype-inherited pseudo-codes;
+- split the production model into a three-service core and an explicit
+  five-service AI overlay, with the AI runtime disabled by default;
+- synchronized browser fixtures with the bounded locale contract and the
+  locale-preserving share URL;
+- inspected fresh controlled-fixture account overview/report screenshots at
+  desktop and mobile widths, including dark theme and the public share view.
+
+## Fresh verification
+
+```text
+registry verification                         PASS — 125 unique definitions
+workspace / registry / core Vitest             PASS — 79/79, 10/10, 17/17
+web Vitest                                     PASS — 413/413 across 105 files
+TypeScript / production build                  PASS — 271 generated pages
+built-site verification                       PASS — 236 public / 234 HTML routes
+full Playwright Chromium                      PASS — 82/82
+full API/worker pytest                        PASS — 657 passed, 3 platform skips on Windows
+ESLint / Ruff / Python lock                   PASS — 0 errors / 44 selected packages
+production core / AI overlay preflight        PASS — 3 / 5 rendered services
+git diff --check                              PASS
+```
+
+ESLint retains the pre-existing `site-brand.tsx` `no-img-element` warning and
+reported no errors. The Impeccable source detector reported one pre-existing
+false positive in a string that generates an escaped responsive-`srcset` HTML
+sample; the string includes the validated `src` attribute and does not render a
+broken image. No OpenRouter, S3, payment, release, deployment, domain, or TLS
+operation was performed. The optional AI overlay remains blocked on real
+provider evaluation, approved billed cost and credit prices, production
+S3/recovery evidence, and manual image review.
+
 # Operator-only AI provider evaluation runner — 2026-08-16
 
 ## Scope

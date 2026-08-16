@@ -651,8 +651,8 @@ test.describe("account reports", () => {
       audit_completed_at: "2026-07-31T12:00:00Z",
       score: 88,
       checks: [
-        { check_id: "security.headers", name: "Security headers", category: "security", status: "failed" },
-        { check_id: "http.status", name: "HTTP status", category: "http", status: "passed" },
+        { check_id: "security.headers", name: "Заголовки безопасности", category: "security", status: "failed" },
+        { check_id: "http.status", name: "HTTP-статус", category: "http", status: "passed" },
       ],
       issues: [{
         issue_id: "security.headers.missing",
@@ -660,13 +660,13 @@ test.describe("account reports", () => {
         category: "security",
         severity: "high",
         priority: "p0",
-        title: "Security headers are missing",
-        description: "Required response headers are not present.",
+        title: "Заголовки безопасности требуют внимания",
+        description: "В ответе отсутствует или ослаблен один или несколько базовых заголовков безопасности.",
         affected_urls: [firstProject.origin],
         recommendation: {
-          summary: "Configure the required headers.",
-          steps: ["Add the headers at the edge or origin server."],
-          expected_impact: "Reduced browser-side exposure.",
+          summary: "Добавьте совместимые с сайтом базовые заголовки безопасности ответа.",
+          steps: ["Добавьте X-Content-Type-Options: nosniff."],
+          expected_impact: "Снижает устранимые риски безопасности в браузере.",
         },
       }],
       generated_at: "2026-08-01T10:00:00Z",
@@ -722,7 +722,7 @@ test.describe("account reports", () => {
     await page.route("**/api/account/projects", (route) => route.fulfill({
       json: { contract_version: "webdiag.account.project_list.v1", projects: [firstProject] },
     }));
-    await page.route(`**/api/account/projects/${firstProject.id}/audits/${auditId}`, (route) => route.fulfill({ json: auditDetail }));
+    await page.route(`**/api/account/projects/${firstProject.id}/audits/${auditId}?locale=ru`, (route) => route.fulfill({ json: auditDetail }));
     await page.route(`**/api/account/projects/${firstProject.id}/audits/${auditId}/reports`, (route) => route.fulfill({ status: 201, json: reportDetail }));
     await page.route("**/api/account/reports?*", (route) => route.fulfill({
       json: { contract_version: "webdiag.account.report_list.v2", reports: [listItem] },
@@ -784,6 +784,8 @@ test.describe("account reports", () => {
     await expect(page.getByRole("heading", { level: 1, name: snapshot.title })).toBeVisible();
     await expect(page.getByRole("link", { name: "Отчёты проекта" })).toHaveAttribute("aria-current", "page");
     await expect(page.getByRole("heading", { name: "Результат сохранённого аудита" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Заголовки безопасности" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Заголовки безопасности требуют внимания" })).toBeVisible();
     await expect(page.getByText("Зафиксировано проблем: 1.", { exact: false })).toBeVisible();
     await expect(page.getByText("Высокая", { exact: true })).toBeVisible();
     await expect(page.getByText("P0 — исправить первым", { exact: true }).first()).toBeVisible();
@@ -794,7 +796,7 @@ test.describe("account reports", () => {
     );
     await page.getByRole("button", { name: "Включить общий доступ" }).click();
     await expect(page.getByLabel(/показывается один раз/i)).toHaveValue(
-      new RegExp(`/reports/share/${"A".repeat(43)}$`),
+      new RegExp(`/reports/share/${"A".repeat(43)}\\?locale=ru$`),
     );
     await page.getByRole("button", { name: "Копировать ссылку" }).click();
     await expect(page.getByRole("status")).toContainText(/Ссылка скопирована|Не удалось скопировать/);
@@ -806,7 +808,7 @@ test.describe("account reports", () => {
     await page.getByRole("button", { name: "Выпустить новую ссылку" }).click();
     await expect.poll(() => shareRequests).toBe(2);
     await expect(page.getByLabel(/показывается один раз/i)).toHaveValue(
-      new RegExp(`/reports/share/${"B".repeat(43)}$`),
+      new RegExp(`/reports/share/${"B".repeat(43)}\\?locale=ru$`),
     );
 
     const publicResponse = await page.goto(`/reports/share/${activeShareToken}`);

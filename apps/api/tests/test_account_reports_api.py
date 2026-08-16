@@ -234,7 +234,7 @@ def test_report_snapshot_is_safe_versioned_and_artifact_is_exact(tmp_path: Path)
         generated_at=datetime(2026, 8, 1, 8, 0, tzinfo=UTC),
     )
     digest = artifact_sha256(fixed)
-    assert digest == "b03a96b49dfbe6546a7a2159b1267de236ff4e5c65931c961fb18784059021ef"
+    assert digest == "7ee4bd44c50cbc8e3d1f44e2e919ce495a594d6144d838997521b4bf77dd1d03"
 
     with sqlite3.connect(database) as connection:
         token_hash, snapshot_json = connection.execute(

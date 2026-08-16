@@ -135,6 +135,7 @@ def test_generated_artifact_completion_is_private_owned_and_integrity_checked(
     app.dependency_overrides[get_ai_artifact_storage] = lambda: storage
     app.dependency_overrides[get_optional_ai_artifact_storage] = lambda: storage
     monkeypatch.setattr(settings, "ai_internal_token", "a" * 32)
+    monkeypatch.setattr(settings, "ai_runtime_enabled", True)
     try:
         completed = asyncio.run(
             _call(
@@ -615,6 +616,7 @@ def test_internal_artifact_cleanup_requires_bearer_and_is_no_store(
     app.dependency_overrides[get_ai_service] = lambda: service
     app.dependency_overrides[get_optional_ai_artifact_storage] = lambda: storage
     monkeypatch.setattr(settings, "ai_internal_token", "a" * 32)
+    monkeypatch.setattr(settings, "ai_runtime_enabled", True)
     try:
         missing = asyncio.run(_call("POST", "/v1/internal/ai/artifacts/cleanup?limit=1"))
         authorized = asyncio.run(

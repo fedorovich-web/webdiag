@@ -192,6 +192,7 @@ test.describe("home information architecture", () => {
       "aria-expanded",
       "true",
     );
+    await page.evaluate(() => document.fonts.ready);
 
     const beforeHeight = await page
       .locator(".wd-faq-grid")
