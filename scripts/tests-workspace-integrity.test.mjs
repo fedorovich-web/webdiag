@@ -14,6 +14,8 @@ const accountComposeOverride = await readFile(
   new URL("docker-compose.account.override.yml", root),
   "utf8",
 );
+const apiDockerfile = await readFile(new URL("apps/api/Dockerfile", root), "utf8");
+const workerDockerfile = await readFile(new URL("apps/worker/Dockerfile", root), "utf8");
 
 const workspacePackages = [webPackage, corePackage, registryPackage];
 
@@ -90,4 +92,68 @@ test("account compose exposes one distinct crawler token only to API and schedul
     "WEBDIAG_CRAWLER_INTERNAL_TOKEN:?set a distinct random token of at least 32 characters",
     "WEBDIAG_CRAWLER_INTERNAL_TOKEN:?set a distinct random token of at least 32 characters",
   ]);
+});
+
+test("Python production images build local wheels with hashed build dependencies", () => {
+  for (const [name, dockerfile] of [
+    ["api", apiDockerfile],
+    ["worker", workerDockerfile],
+  ]) {
+    assert.match(dockerfile, /^FROM python:3\.14-slim-bookworm AS builder$/m, name);
+    assert.match(dockerfile, /^FROM python:3\.14-slim-bookworm AS runtime$/m, name);
+    const [builder, runtime] = dockerfile.split(
+      /^FROM python:3\.14-slim-bookworm AS runtime$/m,
+    );
+    assert.match(builder, /requirements\/python-build\.lock\.txt/, name);
+    assert.match(
+      builder,
+      /pip --isolated install[^\n]*--index-url https:\/\/pypi\.org\/simple[^\n]*--require-hashes[^\n]*--only-binary=:all:/,
+      name,
+    );
+    assert.match(
+      builder,
+      /pip --isolated wheel[^\n]*--no-deps[^\n]*--no-build-isolation[^\n]*--wheel-dir \/wheels/,
+      name,
+    );
+    assert.equal(runtime.includes("COPY apps/"), false, `${name}: runtime copies source tree`);
+    assert.equal(runtime.includes("python-dev.lock.txt"), false, `${name}: runtime uses dev lock`);
+    assert.doesNotMatch(runtime, /pytest|ruff/i, name);
+  }
+});
+
+test("Python production images install only hashed runtime dependencies and one local wheel", () => {
+  const cases = [
+    {
+      name: "api",
+      dockerfile: apiDockerfile,
+      runtimeLock: "python-api.lock.txt",
+      wheel: "webdiag_api-*.whl",
+    },
+    {
+      name: "worker",
+      dockerfile: workerDockerfile,
+      runtimeLock: "python-worker.lock.txt",
+      wheel: "webdiag_worker-*.whl",
+    },
+  ];
+
+  for (const fixture of cases) {
+    const runtime = fixture.dockerfile.split(
+      /^FROM python:3\.14-slim-bookworm AS runtime$/m,
+    )[1];
+    assert.ok(runtime, `${fixture.name}: runtime stage missing`);
+    assert.match(runtime, new RegExp(`requirements/${fixture.runtimeLock.replace(".", "\\.")}`));
+    assert.match(
+      runtime,
+      /pip --isolated install[^\n]*--index-url https:\/\/pypi\.org\/simple[^\n]*--require-hashes[^\n]*--only-binary=:all:/,
+      fixture.name,
+    );
+    assert.equal(
+      runtime.includes(`COPY --from=builder /wheels/${fixture.wheel} /tmp/webdiag/`),
+      true,
+      `${fixture.name}: runtime does not copy its local wheel`,
+    );
+    assert.match(runtime, /pip --isolated install[^\n]*--no-deps \/tmp\/webdiag\/\*\.whl/);
+    assert.doesNotMatch(runtime, /pip install --no-cache-dir \/app\/apps\//, fixture.name);
+  }
 });
