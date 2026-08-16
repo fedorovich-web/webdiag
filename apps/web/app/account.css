@@ -2829,6 +2829,12 @@ body:has(.wd-account-workspace-page) .site-footer {
 @media (max-width: 760px) {
   body:has(.wd-account-workspace-page) .wd-site-header .wd-header-actions .language-switcher-desktop {
     display: grid !important;
+    width: 98px !important;
+    min-width: 98px !important;
+  }
+
+  body:has(.wd-account-workspace-page) .wd-site-header .wd-header-actions .language-segment {
+    min-width: 44px !important;
   }
 
   body:has(.wd-account-workspace-page) .wd-site-header .wd-header-inner.header-inner {
@@ -3146,8 +3152,6 @@ body:has(.wd-account-workspace-page) .site-footer {
 }
 
 .wd-crawl-limit-note {
-  border-left: 3px solid var(--warning);
-  padding-left: 11px;
   color: var(--text-soft);
   font-size: 13px;
 }
@@ -3457,6 +3461,15 @@ body:has(.wd-account-workspace-page) .site-footer {
 }
 
 @media (max-width: 520px) {
+  body:has(.wd-account-workspace-page) .wd-site-header .wd-brand {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+  }
+
   body:has(.wd-account-workspace-page) .wd-site-header .wd-brand .brand-picture {
     display: none;
   }

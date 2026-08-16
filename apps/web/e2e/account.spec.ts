@@ -393,6 +393,23 @@ test.describe("account workspace", () => {
       page.locator(".wd-site-header").getByRole("button", { name: "Меню кабинета" }),
     ).toBeVisible();
     await expect(page.locator(".wd-workspace-mobile-bar")).toHaveCount(0);
+    const headerTargets = await page
+      .locator(".wd-site-header a, .wd-site-header button, .wd-site-header summary")
+      .evaluateAll((elements) => elements.flatMap((element) => {
+        const rect = element.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) {
+          return [];
+        }
+        return [{
+          label: element.getAttribute("aria-label") ?? element.textContent?.trim() ?? element.tagName,
+          width: rect.width,
+          height: rect.height,
+        }];
+      }));
+    for (const target of headerTargets) {
+      expect(target.width, `${target.label} touch target width`).toBeGreaterThanOrEqual(44);
+      expect(target.height, `${target.label} touch target height`).toBeGreaterThanOrEqual(44);
+    }
     await trigger.click();
     await expect.poll(() => page.evaluate(() => document.body.style.overflow)).toBe("hidden");
     const triggerBox = await trigger.boundingBox();
