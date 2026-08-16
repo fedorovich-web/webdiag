@@ -1,5 +1,34 @@
 # Verification Notes
 
+# A12.5 — staged SQLite recovery
+
+## Scope
+
+- added an operator-only standard-library CLI for online backup, strict bundle
+  verification, and preparation of a new restore candidate for the account and
+  audit SQLite databases;
+- fixed the v1 bundle to `accounts.sqlite3`, `audits.sqlite3`, and
+  `manifest.json`, with exact schema parsing, SHA-256, SQLite integrity, and
+  foreign-key checks;
+- backup and restore publish only through a private sibling staging directory,
+  reject symlinks and existing destinations, and never overwrite live state;
+- documented the persistent Compose invocation and offline two-database cutover.
+
+## Fresh verification
+
+```text
+recovery pytest                                PASS — 20/20, 1 POSIX-mode test skipped on Windows
+full API/worker pytest                         PASS — 598/598, 1 POSIX-mode test skipped on Windows
+full API/worker Ruff                           PASS
+git diff --check                               PASS
+```
+
+The two SQLite snapshots are independently consistent, not cross-database
+atomic. SHA-256 detects changed bundle bytes but is not an authenticity
+signature. No live or production restore ran. Production S3 recovery remains
+unverified; no provider, object-storage, marketplace, payment, release, or
+deployment request was made.
+
 # A12.8 — direct private S3 artifact transport
 
 ## Scope

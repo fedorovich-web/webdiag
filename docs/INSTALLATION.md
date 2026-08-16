@@ -240,7 +240,7 @@ node scripts/run-python.mjs -m webdiag_api.ai.cli grant-credits `
 Docker Compose использует исходный код и собирает web, API и worker, а также запускает PostgreSQL, RabbitMQ и Valkey.
 
 ```bash
-docker compose up --build
+docker compose -f docker-compose.yml -f docker-compose.account.override.yml up --build
 ```
 
 После запуска:
@@ -253,34 +253,85 @@ docker compose up --build
 Запуск в фоне:
 
 ```bash
-docker compose up -d --build
+docker compose -f docker-compose.yml -f docker-compose.account.override.yml up -d --build
 ```
 
 Просмотр состояния:
 
 ```bash
-docker compose ps
+docker compose -f docker-compose.yml -f docker-compose.account.override.yml ps
 ```
 
 Просмотр логов:
 
 ```bash
-docker compose logs -f
+docker compose -f docker-compose.yml -f docker-compose.account.override.yml logs -f
 ```
 
 Остановка:
 
 ```bash
-docker compose down
+docker compose -f docker-compose.yml -f docker-compose.account.override.yml down
 ```
 
 Удаление контейнеров вместе с локальными томами базы данных и Valkey:
 
 ```bash
-docker compose down -v
+docker compose -f docker-compose.yml -f docker-compose.account.override.yml down -v
 ```
 
 Последняя команда удаляет локальные данные окружения.
+
+### Резервное копирование и подготовка восстановления SQLite
+
+Операторский CLI работает сразу с двумя базами WebDiag и не доступен через HTTP.
+Каталог результата должен отсутствовать, а его родительский каталог — уже
+существовать. Для локальных путей по умолчанию пример выглядит так:
+
+```bash
+node scripts/run-python.mjs -m webdiag_api.recovery backup --account-database .webdiag/accounts.sqlite3 --audit-database .webdiag/audits.sqlite3 --output-dir recovery/backup
+```
+
+Успешная команда печатает `backup_created=recovery/backup`. В каталоге будут
+ровно `accounts.sqlite3`, `audits.sqlite3` и `manifest.json`. Каждая база
+снимается через SQLite online backup и проверяется отдельно. Это не атомарный
+снимок общего состояния двух баз: изменения между двумя snapshot возможны.
+
+После создания перенесите весь каталог в защищённое внешнее хранилище способом,
+принятым в вашей инфраструктуре, и повторно проверьте уже перенесённую копию:
+
+```bash
+node scripts/run-python.mjs -m webdiag_api.recovery verify --backup-dir recovery/backup
+```
+
+Успех печатается как `backup_verified=recovery/backup`. SHA-256 обнаруживает
+изменение файлов, но не является подписью. Контроль доступа к backup и правила
+его внешнего хранения остаются ответственностью оператора.
+
+Восстановление сначала создаёт новый проверенный кандидат и никогда не
+перезаписывает существующий каталог или рабочие базы:
+
+```bash
+node scripts/run-python.mjs -m webdiag_api.recovery restore --backup-dir recovery/backup --output-dir recovery/restored
+```
+
+Успех печатается как `restore_created=recovery/restored`. Перед переключением:
+
+1. Остановите API и `monitoring_scheduler`, чтобы обе базы были офлайн.
+2. Укажите `WEBDIAG_ACCOUNT_DATABASE_PATH` на новый `accounts.sqlite3`, а
+   `WEBDIAG_AUDIT_DATABASE_PATH` — на новый `audits.sqlite3` из одного restore-кандидата.
+3. Запустите API и выполните smoke-проверку аутентификации, ownership,
+   кредитов, monitoring и чтения одного существующего публичного аудита.
+4. Только после приёмки запускайте scheduler. Старые базы сохраняйте до
+   завершения приёмки.
+
+Пути должны быть доступны API в его файловом пространстве; для контейнерного
+запуска это означает путь внутри подключённого volume, а не путь хоста. CLI
+возвращает `0` при успехе, `2` при ожидаемой ошибке recovery и `1` при
+неожиданном внутреннем сбое. Он не печатает traceback или содержимое баз.
+
+Production S3 recovery: непроверено. Реальный backup/restore из production S3
+не выполнялся, и этот CLI не заменяет отдельную проверку объектного хранилища.
 
 ## 9. Проверки перед продолжением разработки
 
