@@ -309,18 +309,94 @@ account snapshot через `mode=ro&immutable=1`. Она не создаёт WA
 запускает миграции и завершается ошибкой, если bundle или cost-evidence schema
 не готовы.
 
-`provider-eval-report` — report-only gate. Текущая поставка не создаёт такие
-запуски: все 15 definitions остаются `internal` без утверждённой цены, поэтому
-публичный `create_run` корректно отклоняет их. До live evaluation нужен
-отдельный operator-only execution path, который не меняет public catalog и не
-подставляет временную цену. Пока он не реализован, генерация реального RU/EN
-evidence остаётся заблокированной.
+Операторский runner позволяет сначала проверить набор кейсов без сети. Один
+JSON-файл содержит ровно один `tool_id`, от 2 до 20 уникальных кейсов и как
+минимум по одному кейсу `ru` и `en`:
 
-Если после реализации этого отдельного пути в контролируемой среде появились
-успешные evaluation-запуски одного инструмента через штатный worker completion
-lifecycle, тот же recovery bundle можно проверить на
-RU/EN coverage, неизменность contract/model snapshot, целостность input/output,
-semantic grounding и наличие измеренной provider cost:
+```json
+{
+  "contract_version": "webdiag.ai.provider_eval_cases.v1",
+  "tool_id": "ai_schema_studio",
+  "cases": [
+    {
+      "case_id": "ru-organization",
+      "provider_input": {
+        "locale": "ru",
+        "schema_type": "Organization",
+        "page_url": "https://ru.example.test/about",
+        "facts": ["WebDiag"]
+      }
+    },
+    {
+      "case_id": "en-organization",
+      "provider_input": {
+        "locale": "en",
+        "schema_type": "Organization",
+        "page_url": "https://en.example.test/about",
+        "facts": ["WebDiag"]
+      }
+    }
+  ]
+}
+```
+
+Это синтетический fixture на зарезервированном домене `.test`, а не реальные
+данные или результат оценки. Каждый объект должен полностью пройти текущий
+строгий контракт выбранного инструмента. Для `ai_alt_text_studio` и
+`ai_image_edit_studio` оператор использует уже разрешённый приватный artifact
+descriptor, сформированный штатным upload lifecycle; публичный `upload_id`
+здесь не подставляется. Case-файлы с приватными данными также хранятся только в
+игнорируемом `.webdiag/ai-evals` и не добавляются в Git.
+
+Проверка контракта не создаёт provider и не пишет evidence:
+
+```powershell
+node scripts/run-python.mjs scripts/ai_provider_evaluation.py `
+  --cases .webdiag/ai-evals/cases/ai-schema-cases.json
+```
+
+Платный вызов требует буквального opt-in и нового отсутствующего файла прямо в
+игнорируемом каталоге `.webdiag/ai-evals`; вложенный output-путь и link/reparse
+components отклоняются. Ключ передаётся процессу через
+принятый операторский secret mechanism как `WEBDIAG_OPENROUTER_API_KEY`, а не
+в аргументе команды, файле кейсов, логе или Git:
+
+```powershell
+node scripts/run-python.mjs scripts/ai_provider_evaluation.py `
+  --cases .webdiag/ai-evals/cases/ai-schema-cases.json `
+  --output .webdiag/ai-evals/ai-schema-evidence.json `
+  --execute-paid-provider
+```
+
+Runner резервирует evidence-файл до инициализации provider, не перезаписывает
+существующий путь, не повторяет неоднозначный результат и печатает только
+редактированный итог с количеством кейсов, стоимостью в nano-USD и SHA-256.
+Полные входы, ответы, generation IDs и private artifact keys остаются только в
+локальном evidence-файле, создаваемом с POSIX mode `0600`. На Windows файл
+наследует ACL каталога, поэтому оператор заранее ограничивает доступ к
+`.webdiag/ai-evals`. Для image generation/edit также нужны штатные private S3
+credentials. Исходный image-edit artifact читается из
+`WEBDIAG_AI_ARTIFACT_PREFIX` (по умолчанию `ai-uploads`), а evaluation output
+записывается в отличный от него `WEBDIAG_AI_EVALUATION_ARTIFACT_PREFIX` (по
+умолчанию `ai-evals`) того же private storage. Итоговые изображения всегда
+требуют отдельной ручной проверки. Provider/S3 и локальный evidence-файл не
+образуют атомарную транзакцию: после аварийно прерванного image-run оператор
+инвентаризирует отдельный evaluation prefix и удаляет либо сверяет объекты, для
+которых нет завершённого evidence. Без этой сверки activation gate не пройден.
+CI не включает платный флаг.
+
+Этот direct-provider runner не создаёт account run и поэтому не доказывает
+очередь, кредиты, ownership или recovery integration. Все 15 definitions
+остаются `internal` без утверждённой цены, а публичный `create_run` корректно
+отклоняет их. Успешный файл evidence сам по себе не переводит инструмент в
+`ready`.
+
+`provider-eval-report` — отдельный report-only gate над успешными
+evaluation-запусками, которые прошли штатный worker completion lifecycle и
+попали в recovery bundle. Если такие записи появились в контролируемой среде,
+bundle можно проверить на RU/EN coverage, неизменность contract/model snapshot,
+целостность input/output, semantic grounding и наличие измеренной provider
+cost:
 
 ```powershell
 node scripts/run-python.mjs -m webdiag_api.ai.cli provider-eval-report `

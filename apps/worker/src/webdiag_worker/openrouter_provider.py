@@ -224,7 +224,11 @@ class OpenRouterProvider:
         self._artifact_storage = artifact_storage
 
     @classmethod
-    def from_env(cls) -> OpenRouterProvider:
+    def from_env(
+        cls,
+        *,
+        artifact_storage: ArtifactStorage | None = None,
+    ) -> OpenRouterProvider:
         api_key = os.getenv("WEBDIAG_OPENROUTER_API_KEY", "")
         if (
             not api_key
@@ -248,7 +252,8 @@ class OpenRouterProvider:
                 },
                 timeout=timeout,
                 trust_env=False,
-            )
+            ),
+            artifact_storage=artifact_storage,
         )
 
     def __enter__(self) -> OpenRouterProvider:

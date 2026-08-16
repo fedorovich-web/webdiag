@@ -1,5 +1,44 @@
 # Verification Notes
 
+# Operator-only AI provider evaluation runner — 2026-08-16
+
+## Scope
+
+- added a repository operator runner that validates bounded canonical RU/EN
+  case manifests without constructing a provider by default;
+- requires the literal `--execute-paid-provider` opt-in before using the
+  existing OpenRouter adapter and current API input/output contracts;
+- reserves a direct private evidence file in ignored `.webdiag/ai-evals` before
+  provider initialization, rejects link/reparse path components, never
+  overwrites it, and removes it after failure only while its file and full
+  `.webdiag/ai-evals` ancestor identity still match the reservation;
+- records raw provider inputs/outputs, request IDs, measured nano-USD cost, and
+  image artifact metadata only in the private evidence file while stdout is an
+  aggregate redacted report;
+- classifies known-safe failure, unknown provider outcome, invalid result,
+  invalid semantic output, and mismatched image artifacts as incomplete
+  without retry;
+- creates private image artifact reservations and keeps manual image review
+  mandatory, with separate configured input and evaluation-output storage
+  prefixes;
+- does not claim atomicity between external image storage and local evidence:
+  interrupted runs require operator inventory of the dedicated evaluation
+  prefix before activation.
+
+## Verification
+
+```text
+focused runner regression                    PASS — 20 passed, 2 POSIX rename scenarios skipped on Windows
+full API/worker pytest                        PASS — 651 passed, 3 platform skips on Windows
+full API/worker Ruff plus runner Ruff         PASS
+independent final review                      PASS — 0 Critical / 0 Important / 0 Minor
+git diff --check                              PASS
+```
+
+MockTransport and local private artifact storage exercise the real provider
+adapter without an external request. No real OpenRouter, S3, payment, release,
+deployment, domain, or TLS operation was performed.
+
 # Immutable AI evaluation evidence — 2026-08-16
 
 ## Scope
@@ -15,10 +54,10 @@
   data and does not initialize or migrate the snapshot;
 - does not create provider runs, activate tools, assign prices, or claim the
   remaining manual quality/security/integration gates passed.
-- is report-only in the current runtime: because all tools remain `internal`, a
-  separate operator-only execution path is still required before real RU/EN
-  evidence can be generated without changing public catalog state or inventing
-  a price.
+- is report-only over account recovery snapshots. The separate direct-provider
+  operator runner now collects private RU/EN evidence without changing public
+  catalog state or inventing a price, but it does not create account lifecycle
+  records for this snapshot report.
 
 ## Verification
 
@@ -30,8 +69,8 @@ independent final review                      PASS — 0 Critical / 0 Important 
 git diff --check                              PASS
 ```
 
-No OpenRouter, S3, payment, release, deployment, domain, or TLS request was
-made. Real RU/EN provider evidence, operator-only evaluation execution,
+That report stage made no OpenRouter, S3, payment, release, deployment, domain,
+or TLS request. Real RU/EN provider evidence, account-lifecycle evaluation,
 manual quality review, fixed credit prices, production S3 proof, and tool
 activation remain open gates.
 
