@@ -1628,6 +1628,8 @@ digest, malformed digest, or absent Docker update coverage.
 
 `.github/dependabot.yml` covers the root Compose file and the API, worker, and
 web Dockerfile directories on a weekly schedule. Updates are pull requests;
-they are not automatically merged or deployed. Dependabot activation and the
-first pinned-image CI build remain `непроверено` until this configuration exists
-on the default branch and the feature branch has completed a fresh GitHub run.
+they are not automatically merged or deployed. GitHub Actions run `31938086167`
+passed full verification plus the Python 3.14 pinned API/worker image builds and
+import smokes against commit `3c026fa`. Dependabot activation and its first real
+update pull request remain `непроверено` until the configuration exists on the
+default branch.
