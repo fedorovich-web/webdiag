@@ -1,5 +1,35 @@
 # Verification Notes
 
+# Runtime configuration and capability audit — 2026-08-16
+
+## Scope
+
+- runtime settings now reject account and audit database paths that resolve to
+  the same file, including relative/absolute aliases;
+- the non-AI registry remains 125 unique definitions: all 115 `ready` slugs
+  match the 115 renderer contracts, while the 10 `internal` definitions are
+  explicitly superseded by ready tools;
+- the authenticated AI catalog remains fail closed: all 15 tools are
+  `internal`, have no credit price, and are unavailable to users;
+- thirteen text/vision-analysis policies use `openai/gpt-5.6-luna`; the two
+  image policies use the separate `openai/gpt-image-2` Image API path.
+
+## Fresh verification
+
+```text
+settings pytest                                PASS — 5/5
+registry verification                         PASS — 125 unique tools
+registry/renderer inventory                    PASS — 115 ready / 115 supported / 0 missing
+full API/worker pytest                         PASS — 599/599, 1 POSIX-mode test skipped on Windows
+full API/worker Ruff                           PASS
+git diff --check                               PASS
+```
+
+OpenRouter documentation was reviewed without a provider request. Real model
+evaluation, billed-cost verification, fixed credit pricing, provider runtime
+certification, marketplace, payment, release, and deployment remain unverified
+and were not performed.
+
 # A12.5 — staged SQLite recovery
 
 ## Scope
