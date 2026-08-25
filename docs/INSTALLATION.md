@@ -698,17 +698,21 @@ npm --workspace @webdiag/web run start
 http://localhost:3000
 ```
 
-## 11. Инициализация Git
+## 11. Проверка Git checkout
 
-Git не обязателен для запуска, но нужен для нормальной разработки.
+Официальный checkout уже является Git-репозиторием и использует настроенный
+remote `origin`. Перед branch-, push- или PR-операциями проверьте фактическое
+состояние, не создавая второй репозиторий или remote:
 
 ```bash
-git init
-git add .
-git commit -m "chore: initialize WebDiag"
+git status --short --branch
+git remote -v
+git branch -vv
 ```
 
-Remote-репозиторий в проекте не настроен. Его нельзя считать существующим, пока он не создан отдельно.
+Архив исходников без каталога `.git` можно запустить локально, но branch-,
+history- и PR-операции в нём недоступны. Не выполняйте `git init` и `git add .`
+в существующем checkout WebDiag.
 
 ## 12. Частые ошибки
 
@@ -747,7 +751,18 @@ docker compose logs rabbitmq
 
 ### Build блокируется при `PUBLIC_RELEASE=true`
 
-Это ожидаемое поведение. Публичный release gate должен оставаться закрытым до выполнения утверждённых требований проекта.
+На текущем реестре это не является ожидаемым поведением: public registry gate
+проходит для 115 готовых и 10 явно superseded определений. Сначала запустите
+его отдельно:
+
+```bash
+PUBLIC_RELEASE=true npm run verify:release
+```
+
+Успешная команда печатает `Public release registry gate passed`. Если gate
+отклоняет реестр, исправьте дубликат, некорректное состояние или связь
+`supersededBy`; не отключайте и не обходите проверку. Успех registry gate не
+сертифицирует production-инфраструктуру и не является разрешением на deployment.
 
 ## 13. Если `npm ci` сообщает E404 для `@webdiag/...`
 
