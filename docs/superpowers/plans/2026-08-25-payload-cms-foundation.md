@@ -2,6 +2,14 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **Security hold — 2026-08-25:** Do not execute this plan. Payload `3.85.0`
+> produced 17 production audit findings, including 11 high-severity findings.
+> Stable Payload `3.88.0` removed the high findings but retained seven findings
+> through `dompurify@3.4.8` and `esbuild@0.18.20`. Resume only when a stable,
+> supported Payload tree passes `npm audit --omit=dev` without `--force`, audit
+> suppression, vendored patches, or out-of-range overrides. The recorded pins
+> remain historical planning inputs, not approved installation versions.
+
 **Goal:** Add an isolated, production-gated Payload CMS service with PostgreSQL, secure administrative access contracts, RU/EN content schemas, S3 media configuration, and a validated server-only WebDiag content client without switching any existing public route.
 
 **Architecture:** `apps/cms` is a separate Next.js/Payload workspace and container. Payload owns editorial schemas and exposes bounded published projections; `apps/web` consumes those projections only from server code. The existing FastAPI/API, account SQLite, three-service production core, and optional AI overlay remain unchanged until a later route-cutover plan explicitly promotes the CMS overlay.

@@ -1,8 +1,24 @@
 # Payload CMS content platform design
 
 Date: 2026-08-25  
-Status: approved in chat; pending implementation plan  
+Status: approved target architecture; implementation paused by dependency security gate
 Branch: `feature/backend-production-readiness`
+
+## Security hold
+
+Do not execute the linked foundation plan against its recorded Payload
+`3.85.0` baseline. A fresh production dependency audit on 2026-08-25 reported
+17 vulnerabilities, including 11 high-severity findings. Testing the current
+stable Payload `3.88.0` line removed the high-severity findings but still left
+seven production findings: the Admin dependency tree retained vulnerable
+`dompurify@3.4.8`, and the PostgreSQL migration-tool tree retained vulnerable
+`esbuild@0.18.20` through `drizzle-kit` and `@esbuild-kit`.
+
+The CMS implementation resumes only after a stable, supported Payload dependency
+tree passes `npm audit --omit=dev` with no production vulnerability and without
+`--force`, audit suppression, vendored patches, or out-of-range dependency
+overrides. This hold does not change the existing public-content runtime or the
+three-service production core.
 
 ## Objective
 
