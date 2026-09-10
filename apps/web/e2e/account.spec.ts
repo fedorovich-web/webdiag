@@ -636,6 +636,88 @@ test.describe("account monitoring", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   });
+
+  test("AI workspace stays factual and runs the saved-audit copilot", async ({ page }) => {
+    const auditId = "33333333-3333-4333-8333-333333333333";
+    const runId = "77777777-7777-4777-8777-777777777777";
+    const toolIds = [
+      "ai_audit_action_plan",
+      "ai_competitor_gap_report",
+      "ai_content_brief",
+      "ai_content_optimizer",
+      "ai_search_intent_page_fit",
+      "ai_internal_linking_planner",
+    ] as const;
+    const catalog = {
+      contract_version: "webdiag.ai.catalog.v1",
+      tools: toolIds.map((id) => ({ id, contract_version: "webdiag.ai.tool.v1", credit_price: 1 })),
+    };
+    const running = {
+      id: runId,
+      tool_id: "ai_audit_action_plan",
+      contract_version: "webdiag.ai.run.v1",
+      credit_price: 1,
+      state: "running",
+      output: null,
+      error_code: null,
+      created_at: "2026-08-13T12:00:00Z",
+      updated_at: "2026-08-13T12:00:01Z",
+    };
+    const succeeded = {
+      ...running,
+      state: "succeeded",
+      output: {
+        summary: "Начните с исправления заголовков безопасности, затем перепроверьте сохранённый аудит.",
+        actions: [{
+          issue_ids: ["security.headers.missing"],
+          title: "Усилить заголовки безопасности",
+          rationale: "Проблема подтверждена исходным аудитом.",
+          steps: ["Добавьте X-Content-Type-Options: nosniff."],
+          verification: "Повторите аудит и проверьте заголовок в ответе.",
+          affected_urls: [firstProject.origin],
+        }],
+      },
+    };
+
+    await page.route("**/api/account/me", (route) => route.fulfill({ json: session }));
+    await page.route("**/api/account/projects", (route) => route.fulfill({
+      json: { contract_version: "webdiag.account.project_list.v1", projects: [firstProject] },
+    }));
+    await page.route("**/api/account/overview", (route) => route.fulfill({ json: operationsOverview }));
+    await page.route("**/api/account/ai/catalog", (route) => route.fulfill({ json: catalog }));
+    await page.route("**/api/account/credits", (route) => route.fulfill({
+      json: { contract_version: "webdiag.credits.balance.v1", account: { available: 12, reserved: 0 } },
+    }));
+    await page.route("**/api/account/ai/runs", async (route) => {
+      if (route.request().method() === "POST") return route.fulfill({ status: 202, json: { contract_version: "webdiag.ai.run.v1", run: running } });
+      return route.fulfill({ json: { contract_version: "webdiag.ai.run_list.v1", runs: [], next_cursor: null } });
+    });
+    await page.route(`**/api/account/ai/runs/${runId}`, (route) => route.fulfill({
+      json: { contract_version: "webdiag.ai.run.v1", run: succeeded },
+    }));
+    await page.route(`**/api/account/projects/${firstProject.id}/audits/${auditId}?locale=ru`, (route) => route.fulfill({
+      json: {
+        contract_version: "webdiag.account.saved_audit_detail.v1",
+        project: firstProject,
+        audit: { id: auditId, project_id: firstProject.id, status: "succeeded", score: 82, check_count: 0, issue_count: 1, completed_at: "2026-08-12T10:00:00Z", created_at: "2026-08-12T10:00:00Z" },
+        payload: { contract_version: "webdiag.account.saved_audit_payload.v1", target_origin: firstProject.origin, status: "succeeded", score: 82, checks: [], issues: [{ issue_id: "security.headers.missing", check_id: "security.headers", category: "security", severity: "high", priority: "p0", title: "Заголовки безопасности", description: "Недостаёт заголовка.", affected_urls: [firstProject.origin], recommendation: { summary: "Добавьте заголовок.", steps: ["Добавьте nosniff."], expected_impact: "Снижает риск." } }], completed_at: "2026-08-12T10:00:00Z" },
+      },
+    }));
+
+    await page.goto("/account/ai");
+    await expect(page.getByRole("heading", { level: 1, name: "AI-инструменты кабинета" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "AI-план исправлений" })).toBeVisible();
+    await expect(page.getByText("Внутренняя оценка").first()).toBeVisible();
+    await expect(page.getByText(/uptime|инцидент/i)).toHaveCount(0);
+
+    await page.goto(`/account/projects/${firstProject.id}/audits/${auditId}`);
+    await page.getByRole("button", { name: "Запустить AI-план" }).click();
+    await expect(page.getByText("Заголовки безопасности", { exact: true }).last()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Порядок исправлений" })).toBeVisible();
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await expect.poll(() => page.locator(".wd-ai-copilot-actions").getByRole("button", { name: "Запустить AI-план" }).evaluate((button) => button.getBoundingClientRect().height >= 44)).toBe(true);
+  });
 });
 
 test.describe("account reports", () => {
