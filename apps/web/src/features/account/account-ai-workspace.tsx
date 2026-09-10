@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { accountErrorMessage } from "./account-messages";
 import {
@@ -34,7 +34,7 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
   const [deletingRunId, setDeletingRunId] = useState<string | null>(null);
   const [selectedTool, setSelectedTool] = useState<Exclude<AIToolId, "ai_audit_action_plan"> | null>(null);
 
-  function loadWorkspace() {
+  const loadWorkspace = useCallback(() => {
     setLoadState("loading");
     setError("");
     Promise.allSettled([getAICatalog(), getAICredits(), listAIRuns()]).then(
@@ -62,11 +62,12 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
         setLoadState("ready");
       },
     );
-  }
+  }, [locale, ru]);
 
   useEffect(() => {
-    loadWorkspace();
-  }, [locale]);
+    const timer = window.setTimeout(loadWorkspace, 0);
+    return () => window.clearTimeout(timer);
+  }, [loadWorkspace]);
 
   async function handleDelete(runId: string) {
     setDeletingRunId(runId);

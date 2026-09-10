@@ -19,16 +19,11 @@ export function AccountAIAuditCopilot({ locale, projectId, auditId }: AccountAIA
   const ru = locale === "ru";
   const [run, setRun] = useState<AIRun | null>(null);
   const [pollAttempt, setPollAttempt] = useState(0);
-  const [pollingStopped, setPollingStopped] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!run || isAIRunTerminal(run.state) || pollingStopped) return;
-    if (!shouldPollAIRun(run.state, pollAttempt)) {
-      setPollingStopped(true);
-      return;
-    }
+    if (!run || isAIRunTerminal(run.state) || !shouldPollAIRun(run.state, pollAttempt)) return;
     let active = true;
     const timer = window.setTimeout(() => {
       getAIRun(run.id)
@@ -47,12 +42,11 @@ export function AccountAIAuditCopilot({ locale, projectId, auditId }: AccountAIA
       active = false;
       window.clearTimeout(timer);
     };
-  }, [locale, pollAttempt, pollingStopped, run]);
+  }, [locale, pollAttempt, run]);
 
   async function startRun() {
     setPending(true);
     setError("");
-    setPollingStopped(false);
     setPollAttempt(0);
     try {
       const detail = await createAuditActionPlan(
@@ -85,7 +79,7 @@ export function AccountAIAuditCopilot({ locale, projectId, auditId }: AccountAIA
       {state === "pending" || state === "running" ? (
         <p className="wd-ai-copilot-status" aria-live="polite">{ru ? "Проверяем состояние запуска…" : "Checking run status…"}</p>
       ) : null}
-      {pollingStopped && !isAIRunTerminal(state ?? "deleted") && (
+      {run && !isAIRunTerminal(run.state) && !shouldPollAIRun(run.state, pollAttempt) && (
         <p className="wd-ai-copilot-status" role="status">{ru ? "Статус не подтвердился за отведённое время. Обновите страницу позже." : "The status was not confirmed within the polling window. Check again later."}</p>
       )}
       {state === "provider_unknown" && <p className="wd-ai-copilot-status" role="status">{ru ? "Провайдер не подтвердил результат. Не используйте его без ручной проверки." : "The provider did not confirm the outcome. Do not use it without manual review."}</p>}

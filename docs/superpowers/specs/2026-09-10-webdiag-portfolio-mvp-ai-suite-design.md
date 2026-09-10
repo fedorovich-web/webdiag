@@ -293,6 +293,30 @@ Implementation is divided into reversible, independently verifiable increments:
 
 ## 12. Definition of done
 
+## Implementation evidence (2026-09-10)
+
+- `4cc0da2` added the localized account AI navigation entry and active-state
+  contract coverage.
+- `c7cdee6` added strict RU/EN catalog, credit, run, and grounded Audit Copilot
+  response validators.
+- `90b2b0f` added a bounded same-origin AI proxy with selected-cookie,
+  idempotency-key, body-size, timeout, and no-store controls.
+- `e14eab1` added the typed account AI client and localized safe error mapping.
+- `dcdc939` added the RU/EN AI workspace shell, six-tool workflow catalog,
+  run history, responsive states, and account routes.
+- `0081788` added the saved-audit Audit Copilot, finite polling, grounded action
+  plan rendering, and manual review messaging for unknown provider outcomes.
+- `2f3a158` added five evidence-first text-tool forms and strict output shapes
+  for content briefs, content optimization, search-intent fit, competitor gap,
+  and internal linking proposals.
+- `b7a0af2` and `def0657` added browser coverage for the AI workspace, five form
+  entry points, the saved-audit run flow, mobile overflow, and touch targets.
+
+The six tools remain `internal` in the production catalog until the provider,
+cost, safety, and release gates in section 8 are evidenced. The implementation
+therefore demonstrates the complete authenticated UI and contracts without
+claiming live model availability.
+
 The AI portfolio MVP is complete only when:
 
 - all six tools are publicly `ready` and usable through authenticated RU/EN UI;

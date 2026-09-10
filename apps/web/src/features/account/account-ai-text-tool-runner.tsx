@@ -103,16 +103,11 @@ export function AccountAITextToolRunner({ locale, toolId, onClose }: AccountAITe
   const [values, setValues] = useState<FormValues>(() => ({ ...EMPTY_VALUES }));
   const [run, setRun] = useState<AIRun | null>(null);
   const [attempt, setAttempt] = useState(0);
-  const [stopped, setStopped] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!run || isAIRunTerminal(run.state) || stopped) return;
-    if (!shouldPollAIRun(run.state, attempt)) {
-      setStopped(true);
-      return;
-    }
+    if (!run || isAIRunTerminal(run.state) || !shouldPollAIRun(run.state, attempt)) return;
     let active = true;
     const timer = window.setTimeout(() => {
       getAIRun(run.id).then((detail) => {
@@ -126,7 +121,7 @@ export function AccountAITextToolRunner({ locale, toolId, onClose }: AccountAITe
       });
     }, aiPollDelayMs(attempt));
     return () => { active = false; window.clearTimeout(timer); };
-  }, [attempt, locale, run, stopped]);
+  }, [attempt, locale, run]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -134,7 +129,6 @@ export function AccountAITextToolRunner({ locale, toolId, onClose }: AccountAITe
     setError("");
     setRun(null);
     setAttempt(0);
-    setStopped(false);
     try {
       const detail = await createAIRun(toolId, buildInput(locale, toolId, values), newAIIdempotencyKey());
       setRun(detail.run);
@@ -169,7 +163,7 @@ export function AccountAITextToolRunner({ locale, toolId, onClose }: AccountAITe
         ))}
         <button className="wd-button wd-button-primary" type="submit" disabled={pending || Boolean(run && !isAIRunTerminal(run.state))} aria-busy={pending}>{pending ? (ru ? "Ставим в очередь…" : "Queuing…") : (ru ? "Запустить инструмент" : "Run tool")}</button>
       </form>
-      {run && <p className="wd-ai-copilot-status" role="status">{aiRunStateLabel(locale, run.state)}{stopped ? (ru ? " — обновите позже" : " — check again later") : ""}</p>}
+      {run && <p className="wd-ai-copilot-status" role="status">{aiRunStateLabel(locale, run.state)}{!isAIRunTerminal(run.state) && !shouldPollAIRun(run.state, attempt) ? (ru ? " — обновите позже" : " — check again later") : ""}</p>}
       {error && <p className="wd-account-error" role="alert">{error}</p>}
       {output && <div className="wd-ai-text-output"><strong>{ru ? "Результат подтверждён контрактом" : "Result validated by contract"}</strong><p>{outputPreview(output, locale)}</p></div>}
     </section>
