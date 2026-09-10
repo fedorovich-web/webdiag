@@ -49,6 +49,70 @@ export interface AuditActionPlanOutput {
   readonly actions: readonly AuditActionPlanAction[];
 }
 
+export interface ContentBriefOutput {
+  readonly suggested_title: string;
+  readonly sections: readonly {
+    readonly heading: string;
+    readonly purpose: string;
+    readonly coverage: readonly { readonly source_fact_index: number; readonly excerpt: string }[];
+  }[];
+  readonly warnings: readonly string[];
+}
+
+export interface ContentOptimizerOutput {
+  readonly revised_content: string;
+  readonly changes: readonly {
+    readonly kind: "clarity" | "structure" | "relevance" | "style";
+    readonly before_excerpt: string;
+    readonly after_excerpt: string;
+    readonly rationale: string;
+  }[];
+  readonly preserved_fact_indexes: readonly number[];
+  readonly warnings: readonly string[];
+}
+
+export interface SearchIntentPageFitOutput {
+  readonly inferred_intent: "informational" | "commercial" | "transactional" | "navigational" | "local" | "unknown";
+  readonly confidence: "low" | "medium" | "high";
+  readonly fit: "aligned" | "partial" | "misaligned" | "insufficient_evidence";
+  readonly evidence: readonly string[];
+  readonly gaps: readonly string[];
+  readonly recommendations: readonly string[];
+  readonly warnings: readonly string[];
+}
+
+export interface CompetitorGapOutput {
+  readonly summary: string;
+  readonly gaps: readonly {
+    readonly topic: string;
+    readonly own_evidence: readonly string[];
+    readonly competitor_evidence: readonly { readonly page_index: number; readonly excerpt: string }[];
+    readonly recommendation: string;
+  }[];
+  readonly warnings: readonly string[];
+}
+
+export interface InternalLinkingOutput {
+  readonly summary: string;
+  readonly proposals: readonly {
+    readonly source_page_index: number;
+    readonly target_page_index: number;
+    readonly suggested_anchor: string;
+    readonly source_evidence: string;
+    readonly target_evidence: string;
+    readonly rationale: string;
+  }[];
+  readonly warnings: readonly string[];
+}
+
+export type AIOutput =
+  | AuditActionPlanOutput
+  | ContentBriefOutput
+  | ContentOptimizerOutput
+  | SearchIntentPageFitOutput
+  | CompetitorGapOutput
+  | InternalLinkingOutput;
+
 export interface AIRun {
   readonly id: string;
   readonly tool_id: AIToolId;
@@ -104,6 +168,10 @@ function nonNegativeInteger(value: unknown): value is number {
 
 function positiveInteger(value: unknown): value is number {
   return nonNegativeInteger(value) && value > 0;
+}
+
+function boundedIndex(value: unknown, maxExclusive: number): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < maxExclusive;
 }
 
 function timestamp(value: unknown): value is string {
@@ -180,6 +248,111 @@ function isAuditActionPlanOutput(value: unknown): value is AuditActionPlanOutput
     && value.actions.every(isAuditActionPlanAction);
 }
 
+function isWarnings(value: unknown): value is readonly string[] {
+  return boundedStrings(value, { minItems: 0, maxItems: 20, maxLength: 1_000 });
+}
+
+function isContentBriefOutput(value: unknown): value is ContentBriefOutput {
+  return record(value)
+    && only(value, ["suggested_title", "sections", "warnings"])
+    && boundedString(value.suggested_title, 1, 300)
+    && Array.isArray(value.sections)
+    && value.sections.length >= 1
+    && value.sections.length <= 20
+    && value.sections.every((section) => record(section)
+      && only(section, ["heading", "purpose", "coverage"])
+      && boundedString(section.heading, 1, 300)
+      && boundedString(section.purpose, 1, 1_000)
+      && Array.isArray(section.coverage)
+      && section.coverage.length >= 1
+      && section.coverage.length <= 10
+      && section.coverage.every((coverage) => record(coverage)
+        && only(coverage, ["source_fact_index", "excerpt"])
+        && boundedIndex(coverage.source_fact_index, 50)
+        && boundedString(coverage.excerpt, 1, 1_000)))
+    && isWarnings(value.warnings);
+}
+
+function isContentOptimizerOutput(value: unknown): value is ContentOptimizerOutput {
+  return record(value)
+    && only(value, ["revised_content", "changes", "preserved_fact_indexes", "warnings"])
+    && boundedString(value.revised_content, 20, 50_000)
+    && Array.isArray(value.changes)
+    && value.changes.length <= 30
+    && value.changes.every((change) => record(change)
+      && only(change, ["kind", "before_excerpt", "after_excerpt", "rationale"])
+      && (change.kind === "clarity" || change.kind === "structure" || change.kind === "relevance" || change.kind === "style")
+      && boundedString(change.before_excerpt, 1, 2_000)
+      && boundedString(change.after_excerpt, 1, 2_000)
+      && boundedString(change.rationale, 1, 1_000))
+    && Array.isArray(value.preserved_fact_indexes)
+    && value.preserved_fact_indexes.length <= 30
+    && value.preserved_fact_indexes.every((index) => Number.isInteger(index) && index >= 0 && index < 30)
+    && isWarnings(value.warnings);
+}
+
+function isSearchIntentPageFitOutput(value: unknown): value is SearchIntentPageFitOutput {
+  return record(value)
+    && only(value, ["inferred_intent", "confidence", "fit", "evidence", "gaps", "recommendations", "warnings"])
+    && ["informational", "commercial", "transactional", "navigational", "local", "unknown"].includes(String(value.inferred_intent))
+    && ["low", "medium", "high"].includes(String(value.confidence))
+    && ["aligned", "partial", "misaligned", "insufficient_evidence"].includes(String(value.fit))
+    && boundedStrings(value.evidence, { minItems: 0, maxItems: 10, maxLength: 1_000 })
+    && boundedStrings(value.gaps, { minItems: 0, maxItems: 20, maxLength: 1_000 })
+    && boundedStrings(value.recommendations, { minItems: 0, maxItems: 20, maxLength: 1_000 })
+    && isWarnings(value.warnings);
+}
+
+function isCompetitorGapOutput(value: unknown): value is CompetitorGapOutput {
+  return record(value)
+    && only(value, ["summary", "gaps", "warnings"])
+    && boundedString(value.summary, 1, 4_000)
+    && Array.isArray(value.gaps)
+    && value.gaps.length >= 1
+    && value.gaps.length <= 30
+    && value.gaps.every((gap) => record(gap)
+      && only(gap, ["topic", "own_evidence", "competitor_evidence", "recommendation"])
+      && boundedString(gap.topic, 1, 300)
+      && boundedStrings(gap.own_evidence, { minItems: 0, maxItems: 10, maxLength: 1_000 })
+      && Array.isArray(gap.competitor_evidence)
+      && gap.competitor_evidence.length >= 1
+      && gap.competitor_evidence.length <= 10
+      && gap.competitor_evidence.every((evidence) => record(evidence)
+        && only(evidence, ["page_index", "excerpt"])
+        && boundedIndex(evidence.page_index, 3)
+        && boundedString(evidence.excerpt, 1, 1_000))
+      && boundedString(gap.recommendation, 1, 2_000))
+    && isWarnings(value.warnings);
+}
+
+function isInternalLinkingOutput(value: unknown): value is InternalLinkingOutput {
+  return record(value)
+    && only(value, ["summary", "proposals", "warnings"])
+    && boundedString(value.summary, 1, 4_000)
+    && Array.isArray(value.proposals)
+    && value.proposals.length <= 100
+    && value.proposals.every((proposal) => record(proposal)
+      && only(proposal, ["source_page_index", "target_page_index", "suggested_anchor", "source_evidence", "target_evidence", "rationale"])
+      && boundedIndex(proposal.source_page_index, 50)
+      && boundedIndex(proposal.target_page_index, 50)
+      && proposal.source_page_index !== proposal.target_page_index
+      && boundedString(proposal.suggested_anchor, 1, 200)
+      && boundedString(proposal.source_evidence, 1, 1_000)
+      && boundedString(proposal.target_evidence, 1, 1_000)
+      && boundedString(proposal.rationale, 1, 1_000))
+    && isWarnings(value.warnings);
+}
+
+function isAIOutput(toolId: AIToolId, value: unknown): value is AIOutput {
+  if (toolId === "ai_audit_action_plan") return isAuditActionPlanOutput(value);
+  if (toolId === "ai_content_brief") return isContentBriefOutput(value);
+  if (toolId === "ai_content_optimizer") return isContentOptimizerOutput(value);
+  if (toolId === "ai_search_intent_page_fit") return isSearchIntentPageFitOutput(value);
+  if (toolId === "ai_competitor_gap_report") return isCompetitorGapOutput(value);
+  if (toolId === "ai_internal_linking_planner") return isInternalLinkingOutput(value);
+  return false;
+}
+
 function isAIRunState(value: unknown): value is AIRunState {
   return value === "pending"
     || value === "running"
@@ -207,8 +380,7 @@ function isAIRun(value: unknown): value is AIRun {
   if (!timestamp(value.created_at) || !timestamp(value.updated_at)) return false;
 
   if (value.state === "succeeded") {
-    return value.tool_id === "ai_audit_action_plan"
-      && isAuditActionPlanOutput(value.output)
+    return isAIOutput(value.tool_id, value.output)
       && value.error_code === null;
   }
   if (value.output !== null) return false;

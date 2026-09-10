@@ -11,6 +11,7 @@ interface AccountAIToolListProps {
   readonly locale: Locale;
   readonly catalog: AICatalogResponse | null;
   readonly loading: boolean;
+  readonly onSelect?: (toolId: AIWorkspaceToolDescriptor["id"]) => void;
 }
 
 function catalogTool(
@@ -20,7 +21,7 @@ function catalogTool(
   return catalog?.tools.find((tool) => tool.id === toolId) ?? null;
 }
 
-export function AccountAIToolList({ locale, catalog, loading }: AccountAIToolListProps) {
+export function AccountAIToolList({ locale, catalog, loading, onSelect }: AccountAIToolListProps) {
   const ru = locale === "ru";
   const descriptors = aiToolDescriptors(locale);
 
@@ -37,6 +38,7 @@ export function AccountAIToolList({ locale, catalog, loading }: AccountAIToolLis
         {descriptors.map((descriptor) => {
           const tool = catalogTool(catalog, descriptor.id);
           const enabled = Boolean(tool);
+          const selectable = enabled && descriptor.id !== "ai_audit_action_plan" && Boolean(onSelect);
           return (
             <article className="wd-ai-tool-card" key={descriptor.id} data-enabled={enabled}>
               <div className="wd-ai-tool-card-head">
@@ -52,8 +54,8 @@ export function AccountAIToolList({ locale, catalog, loading }: AccountAIToolLis
               <h3>{descriptor.title}</h3>
               <p>{descriptor.summary}</p>
               <small>{descriptor.limits}</small>
-              <button className="wd-button wd-button-secondary" type="button" disabled>
-                {ru ? "Требуются данные проекта" : "Project evidence required"}
+              <button className="wd-button wd-button-secondary" type="button" disabled={!selectable} onClick={() => onSelect?.(descriptor.id)}>
+                {selectable ? (ru ? "Открыть форму" : "Open form") : (ru ? "Требуются данные проекта" : "Project evidence required")}
               </button>
             </article>
           );

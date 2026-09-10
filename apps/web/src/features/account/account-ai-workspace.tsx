@@ -12,11 +12,13 @@ import {
 import type {
   AICatalogResponse,
   AICreditBalanceResponse,
+  AIToolId,
   AIRun,
 } from "./account-ai-contract";
 import { aiWorkspaceEmptyCopy } from "./account-ai-presentation";
 import { AccountAIToolList } from "./account-ai-tool-list";
 import { AccountAIRunHistory } from "./account-ai-run-history";
+import { AccountAITextToolRunner } from "./account-ai-text-tool-runner";
 
 interface AccountAIWorkspaceProps {
   readonly locale: Locale;
@@ -30,6 +32,7 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
   const [loadState, setLoadState] = useState<"loading" | "ready" | "unavailable">("loading");
   const [error, setError] = useState("");
   const [deletingRunId, setDeletingRunId] = useState<string | null>(null);
+  const [selectedTool, setSelectedTool] = useState<Exclude<AIToolId, "ai_audit_action_plan"> | null>(null);
 
   function loadWorkspace() {
     setLoadState("loading");
@@ -133,7 +136,8 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
         </div>
       ) : (
         <>
-          <AccountAIToolList locale={locale} catalog={catalog} loading={false} />
+          <AccountAIToolList locale={locale} catalog={catalog} loading={false} onSelect={(toolId) => setSelectedTool(toolId === "ai_audit_action_plan" ? null : toolId)} />
+          {selectedTool && <AccountAITextToolRunner locale={locale} toolId={selectedTool} onClose={() => setSelectedTool(null)} />}
           <AccountAIRunHistory
             locale={locale}
             runs={runs}

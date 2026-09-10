@@ -6,6 +6,7 @@ import {
   isAICreditBalanceResponse,
   isAIRunDetailResponse,
   isAIRunListResponse,
+  type AIToolId,
   type AICatalogResponse,
   type AICreditBalanceResponse,
   type AIRunDetailResponse,
@@ -105,6 +106,24 @@ export async function createAuditActionPlan(
   idempotencyKey: string,
   fetcher: Fetcher = fetch,
 ): Promise<AIRunDetailResponse> {
+  return createAIRun(
+    "ai_audit_action_plan",
+    {
+      locale: input.locale,
+      project_id: input.projectId,
+      audit_id: input.auditId,
+    },
+    idempotencyKey,
+    fetcher,
+  );
+}
+
+export async function createAIRun(
+  toolId: AIToolId,
+  input: Record<string, unknown>,
+  idempotencyKey: string,
+  fetcher: Fetcher = fetch,
+): Promise<AIRunDetailResponse> {
   return parse(
     await fetcher("/api/account/ai/runs", {
       ...common,
@@ -115,12 +134,8 @@ export async function createAuditActionPlan(
         "idempotency-key": idempotencyKey,
       },
       body: JSON.stringify({
-        tool_id: "ai_audit_action_plan",
-        input: {
-          locale: input.locale,
-          project_id: input.projectId,
-          audit_id: input.auditId,
-        },
+        tool_id: toolId,
+        input,
       }),
     }),
     isAIRunDetailResponse,

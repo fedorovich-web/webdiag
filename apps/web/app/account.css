@@ -3199,6 +3199,84 @@ body:has(.wd-public-report-page) .site-footer {
   color: var(--muted);
 }
 
+.wd-ai-text-runner {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid color-mix(in srgb, var(--brand) 24%, var(--line));
+  border-radius: var(--wd-account-radius);
+  background: var(--wd-account-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.wd-ai-text-runner-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.wd-ai-text-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.wd-ai-text-form label {
+  display: grid;
+  gap: 5px;
+  color: var(--text-soft);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.wd-ai-text-form label:has(textarea) {
+  grid-column: 1 / -1;
+}
+
+.wd-ai-text-form input,
+.wd-ai-text-form textarea,
+.wd-ai-text-form select {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 11px;
+  background: var(--surface-muted);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+}
+
+.wd-ai-text-form textarea {
+  min-height: 112px;
+  resize: vertical;
+}
+
+.wd-ai-text-form > .wd-button {
+  grid-column: 1 / -1;
+  justify-self: start;
+  min-height: 44px;
+}
+
+.wd-ai-text-output {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border-left: 3px solid var(--success);
+  background: color-mix(in srgb, var(--success-soft) 55%, var(--surface));
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.wd-ai-text-output p {
+  max-height: 180px;
+  margin: 0;
+  overflow: auto;
+  color: var(--text-soft);
+  white-space: pre-wrap;
+}
+
 @media (max-width: 900px) {
   .wd-ai-tool-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3266,6 +3344,23 @@ body:has(.wd-public-report-page) .site-footer {
 
   .wd-ai-action-head {
     flex-direction: column;
+  }
+
+  .wd-ai-text-runner {
+    padding: 16px;
+  }
+
+  .wd-ai-text-form {
+    grid-template-columns: 1fr;
+  }
+
+  .wd-ai-text-form label:has(textarea),
+  .wd-ai-text-form > .wd-button {
+    grid-column: auto;
+  }
+
+  .wd-ai-text-form > .wd-button {
+    width: 100%;
   }
 }
 

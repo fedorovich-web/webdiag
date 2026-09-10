@@ -92,6 +92,22 @@ describe("account AI response contracts", () => {
     })).toBe(false);
   });
 
+  it("accepts grounded output shapes for the five text evidence tools", () => {
+    const outputs = [
+      { tool_id: "ai_content_brief", output: { suggested_title: "Title", sections: [{ heading: "Intro", purpose: "Explain", coverage: [{ source_fact_index: 0, excerpt: "Verified fact" }] }], warnings: [] } },
+      { tool_id: "ai_content_optimizer", output: { revised_content: "This is a sufficiently long revised page content.", changes: [], preserved_fact_indexes: [0], warnings: [] } },
+      { tool_id: "ai_search_intent_page_fit", output: { inferred_intent: "informational", confidence: "medium", fit: "aligned", evidence: ["Verified fact"], gaps: [], recommendations: [], warnings: [] } },
+      { tool_id: "ai_competitor_gap_report", output: { summary: "One confirmed gap.", gaps: [{ topic: "Topic", own_evidence: [], competitor_evidence: [{ page_index: 0, excerpt: "Competitor fact" }], recommendation: "Review the gap." }], warnings: [] } },
+      { tool_id: "ai_internal_linking_planner", output: { summary: "One safe proposal.", proposals: [{ source_page_index: 0, target_page_index: 1, suggested_anchor: "Read more", source_evidence: "Source fact", target_evidence: "Target fact", rationale: "Relevant pages." }], warnings: [] } },
+    ] as const;
+    for (const item of outputs) {
+      expect(isAIRunDetailResponse({
+        contract_version: "webdiag.ai.run.v1",
+        run: { ...runBase, tool_id: item.tool_id, state: "succeeded", output: item.output, error_code: null },
+      })).toBe(true);
+    }
+  });
+
   it("enforces output and error invariants for every persisted run state", () => {
     for (const state of ["pending", "running", "deleted"] as const) {
       expect(isAIRunDetailResponse({

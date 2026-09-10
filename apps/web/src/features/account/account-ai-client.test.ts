@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { AccountClientError } from "./account-client";
 import {
+  createAIRun,
   createAuditActionPlan,
   deleteAIRun,
   getAICatalog,
@@ -52,6 +53,27 @@ describe("account AI client", () => {
       input: { locale: "ru", project_id: projectId, audit_id: auditId },
     }));
     expect(created.run.id).toBe(runId);
+  });
+
+  it("serializes a text-tool run without forwarding arbitrary browser headers", async () => {
+    let seenInit: RequestInit | undefined;
+    const fetcher = async (_input: string, init?: RequestInit) => {
+      seenInit = init;
+      return Response.json({ contract_version: "webdiag.ai.run.v1", run: pendingRun }, { status: 202 });
+    };
+
+    await createAIRun(
+      "ai_content_brief",
+      { locale: "en", audience: "Editors", objective: "Clarify the page", facts: ["Verified fact"] },
+      "550e8400-e29b-41d4-a716-446655440000",
+      fetcher,
+    );
+
+    expect(new Headers(seenInit?.headers).get("idempotency-key")).toBe("550e8400-e29b-41d4-a716-446655440000");
+    expect(seenInit?.body).toBe(JSON.stringify({
+      tool_id: "ai_content_brief",
+      input: { locale: "en", audience: "Editors", objective: "Clarify the page", facts: ["Verified fact"] },
+    }));
   });
 
   it("loads strict catalog, credit, run list, and bound run detail responses", async () => {
