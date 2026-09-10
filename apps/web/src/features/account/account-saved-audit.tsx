@@ -9,6 +9,7 @@ import { getAccountSavedAudit } from "./account-workspace-client";
 import type { SavedAuditDetailResponse } from "./account-workspace-contract";
 import { projectPath, reportPath, savedAuditIssuesPath } from "../../lib/routes";
 import { reportCheckStatusLabel } from "./account-report-presentation";
+import { AccountAIAuditCopilot } from "./account-ai-audit-copilot";
 
 export function AccountSavedAudit({ locale, projectId, auditId }: { readonly locale: Locale; readonly projectId: string; readonly auditId: string }) {
   const ru = locale === "ru";
@@ -54,6 +55,7 @@ export function AccountSavedAudit({ locale, projectId, auditId }: { readonly loc
       <div className="wd-saved-audit-actions">
         <Link className="wd-button wd-button-primary" href={savedAuditIssuesPath(locale, projectId, auditId)}>{ru ? "Проблемы и приоритеты" : "Issues and priorities"}</Link>
       </div>
+      <AccountAIAuditCopilot locale={locale} projectId={projectId} auditId={auditId} />
       <section className="wd-account-card wd-create-report-card" aria-labelledby="create-report-title">
         <div><h2 id="create-report-title">{ru ? "Сохранить отдельный отчёт" : "Save a standalone report"}</h2><p>{ru ? "Создаётся неизменяемый snapshot без raw evidence и внутренних идентификаторов." : "Creates an immutable snapshot without raw evidence or internal identifiers."}</p></div>
         <label>{ru ? "Название отчёта" : "Report title"}<input value={reportTitle} onChange={(event: ChangeEvent<HTMLInputElement>) => setReportTitle(event.target.value)} maxLength={120} disabled={reportPending} /></label>

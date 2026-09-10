@@ -3067,6 +3067,138 @@ body:has(.wd-public-report-page) .site-footer {
   font-size: 11px;
 }
 
+.wd-ai-copilot-card,
+.wd-ai-action-plan-result {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid color-mix(in srgb, var(--brand) 24%, var(--line));
+  border-radius: var(--wd-account-radius);
+  background: color-mix(in srgb, var(--brand-soft) 28%, var(--wd-account-surface));
+  box-shadow: var(--shadow-sm);
+}
+
+.wd-ai-copilot-card > div:first-child p {
+  max-width: 68ch;
+  margin: 7px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.wd-ai-copilot-card h2,
+.wd-ai-action-plan-result h2 {
+  margin: 4px 0 0;
+  font-size: clamp(20px, 2vw, 26px);
+  letter-spacing: -.025em;
+}
+
+.wd-ai-copilot-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.wd-ai-copilot-actions .wd-button {
+  min-height: 44px;
+}
+
+.wd-ai-copilot-status {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.wd-ai-action-plan-summary {
+  margin: 0;
+  padding: 12px;
+  border-left: 3px solid var(--brand);
+  background: color-mix(in srgb, var(--surface) 74%, transparent);
+  color: var(--text-soft);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.wd-ai-action-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: ai-action;
+}
+
+.wd-ai-action-list > li {
+  display: grid;
+  gap: 9px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-muted);
+  counter-increment: ai-action;
+}
+
+.wd-ai-action-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.wd-ai-action-head > div {
+  min-width: 0;
+}
+
+.wd-ai-action-head > div > span {
+  color: var(--brand);
+  font: 700 10px var(--font-mono);
+}
+
+.wd-ai-action-head h3 {
+  margin: 3px 0 0;
+  font-size: 15px;
+}
+
+.wd-ai-action-count {
+  flex: none;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.wd-ai-action-list > li > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.wd-ai-action-list ol {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text-soft);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.wd-ai-action-verification {
+  display: grid;
+  gap: 3px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.wd-ai-action-verification strong {
+  color: var(--brand);
+}
+
+.wd-ai-action-verification span {
+  color: var(--muted);
+}
+
 @media (max-width: 900px) {
   .wd-ai-tool-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3116,6 +3248,24 @@ body:has(.wd-public-report-page) .site-footer {
   .wd-ai-run-row .wd-button {
     grid-column: 1 / -1;
     width: 100%;
+  }
+
+  .wd-ai-copilot-card,
+  .wd-ai-action-plan-result {
+    padding: 16px;
+  }
+
+  .wd-ai-copilot-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .wd-ai-copilot-actions .wd-button {
+    width: 100%;
+  }
+
+  .wd-ai-action-head {
+    flex-direction: column;
   }
 }
 
