@@ -37,6 +37,18 @@ const ruMessages: Readonly<Record<string, string>> = {
   account_api_misconfigured: "Внутренний адрес API аккаунтов не настроен.",
   account_api_invalid_response: "Сервис аккаунтов вернул некорректный ответ.",
   account_invalid_response: "Сервис аккаунтов вернул неподдерживаемый формат данных.",
+  account_ai_request_failed: "Сервис AI-инструментов временно недоступен.",
+  ai_tool_unavailable: "Этот AI-инструмент пока недоступен.",
+  ai_invalid_tool_input: "Проверьте данные для запуска AI-инструмента.",
+  ai_invalid_idempotency_key: "Не удалось безопасно создать запуск. Повторите попытку.",
+  ai_idempotency_conflict: "Этот идентификатор уже использован для другого запуска.",
+  ai_insufficient_credits: "Недостаточно кредитов для запуска AI-инструмента.",
+  ai_source_not_found: "Проект или сохранённый аудит не найден.",
+  ai_source_unavailable: "Исходные данные для AI-инструмента временно недоступны.",
+  ai_run_not_found: "AI-запуск не найден.",
+  ai_input_too_large: "Исходные данные превышают допустимый размер.",
+  ai_completion_outcome_unknown: "Результат запуска требует проверки оператором.",
+  ai_provider_outcome_unknown: "Результат запуска требует проверки оператором.",
 };
 
 const enMessages: Readonly<Record<string, string>> = {
@@ -75,6 +87,18 @@ const enMessages: Readonly<Record<string, string>> = {
   account_api_misconfigured: "The internal account API address is not configured.",
   account_api_invalid_response: "The account service returned invalid data.",
   account_invalid_response: "The account service returned an unsupported response format.",
+  account_ai_request_failed: "The AI tools service is temporarily unavailable.",
+  ai_tool_unavailable: "This AI tool is not available yet.",
+  ai_invalid_tool_input: "Check the data submitted to the AI tool.",
+  ai_invalid_idempotency_key: "The run could not be created safely. Try again.",
+  ai_idempotency_conflict: "This identifier was already used for another run.",
+  ai_insufficient_credits: "There are not enough credits to run this AI tool.",
+  ai_source_not_found: "The project or saved audit was not found.",
+  ai_source_unavailable: "The AI tool source data is temporarily unavailable.",
+  ai_run_not_found: "The AI run was not found.",
+  ai_input_too_large: "The source data exceeds the allowed size.",
+  ai_completion_outcome_unknown: "The run outcome needs operator review.",
+  ai_provider_outcome_unknown: "The run outcome needs operator review.",
 };
 
 export function accountErrorMessage(locale: Locale, error: unknown): string {
