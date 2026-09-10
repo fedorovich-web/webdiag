@@ -723,6 +723,78 @@ test.describe("account monitoring", () => {
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await expect.poll(() => page.locator(".wd-ai-copilot-actions").getByRole("button", { name: "Запустить AI-план" }).evaluate((button) => button.getBoundingClientRect().height >= 44)).toBe(true);
   });
+
+  test("English AI workspace keeps an empty catalog honest on mobile", async ({ page }) => {
+    await page.route("**/api/account/me", (route) => route.fulfill({ json: session }));
+    await page.route("**/api/account/projects", (route) => route.fulfill({
+      json: { contract_version: "webdiag.account.project_list.v1", projects: [firstProject] },
+    }));
+    await page.route("**/api/account/ai/catalog", (route) => route.fulfill({
+      json: { contract_version: "webdiag.ai.catalog.v1", tools: [] },
+    }));
+    await page.route("**/api/account/credits", (route) => route.fulfill({
+      json: { contract_version: "webdiag.credits.balance.v1", account: { available: 0, reserved: 0 } },
+    }));
+    await page.route("**/api/account/ai/runs", (route) => route.fulfill({
+      json: { contract_version: "webdiag.ai.run_list.v1", runs: [], next_cursor: null },
+    }));
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/en/account/ai");
+    await expect(page.getByRole("heading", { level: 1, name: "Account AI tools" })).toBeVisible();
+    await expect(page.getByText("0/6", { exact: true })).toBeVisible();
+    await expect(page.getByText("Not available", { exact: true })).toHaveCount(6);
+    await expect(page.getByRole("button", { name: "Project evidence required" })).toHaveCount(6);
+    await expect(page.getByText(/soon|coming soon|uptime|incident/i)).toHaveCount(0);
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  });
+
+  test("English AI form presents insufficient credits without attempting a provider call", async ({ page }) => {
+    const toolIds = [
+      "ai_audit_action_plan",
+      "ai_competitor_gap_report",
+      "ai_content_brief",
+      "ai_content_optimizer",
+      "ai_search_intent_page_fit",
+      "ai_internal_linking_planner",
+    ] as const;
+    let providerSubmissionCount = 0;
+    await page.route("**/api/account/me", (route) => route.fulfill({ json: session }));
+    await page.route("**/api/account/projects", (route) => route.fulfill({
+      json: { contract_version: "webdiag.account.project_list.v1", projects: [firstProject] },
+    }));
+    await page.route("**/api/account/ai/catalog", (route) => route.fulfill({
+      json: {
+        contract_version: "webdiag.ai.catalog.v1",
+        tools: toolIds.map((id) => ({ id, contract_version: "v1", credit_price: 3 })),
+      },
+    }));
+    await page.route("**/api/account/credits", (route) => route.fulfill({
+      json: { contract_version: "webdiag.credits.balance.v1", account: { available: 0, reserved: 0 } },
+    }));
+    await page.route("**/api/account/ai/runs", async (route) => {
+      if (route.request().method() === "POST") {
+        providerSubmissionCount += 1;
+        return route.fulfill({
+          status: 402,
+          json: { detail: { code: "ai_insufficient_credits", message: "Insufficient credits" } },
+        });
+      }
+      return route.fulfill({
+        json: { contract_version: "webdiag.ai.run_list.v1", runs: [], next_cursor: null },
+      });
+    });
+
+    await page.goto("/en/account/ai");
+    await page.getByRole("article").filter({ hasText: "AI content brief" }).getByRole("button", { name: "Open form" }).click();
+    await page.getByLabel("Audience").fill("Site owners and product teams");
+    await page.getByLabel("Objective").fill("Explain the workflow and define a useful next step.");
+    await page.getByLabel("Confirmed facts (one per line)").fill("WebDiag stores confirmed audit evidence.\nThe result remains reviewable.");
+    await page.getByRole("button", { name: "Run tool" }).click();
+    await expect(page.locator(".wd-ai-text-runner").getByRole("alert")).toContainText("There are not enough credits to run this AI tool.");
+    expect(providerSubmissionCount).toBe(1);
+    await expect(page.getByText(/uptime|incident/i)).toHaveCount(0);
+  });
 });
 
 test.describe("account reports", () => {
