@@ -6,6 +6,7 @@ import {
   recentAccountProjects,
   resolveActiveAccountProject,
 } from "./account-workspace-shell-contract";
+import { accountAIPath } from "../../lib/routes";
 import type { AccountProject } from "./account-workspace-contract";
 
 const projects: readonly AccountProject[] = [
@@ -34,13 +35,22 @@ const projects: readonly AccountProject[] = [
 
 describe("account workspace shell contract", () => {
   it("builds localized navigation for the real account routes", () => {
+    expect(accountAIPath("ru")).toBe("/account/ai");
+    expect(accountAIPath("en")).toBe("/en/account/ai");
+
     const ru = buildAccountWorkspaceNavigation("ru", "overview");
-    expect(ru.portfolio).toHaveLength(4);
+    expect(ru.portfolio).toHaveLength(5);
     expect(ru.portfolio[0]?.label).toBe("Обзор");
     expect(ru.portfolio[0]?.active).toBe(true);
     expect(ru.portfolio[1]?.href).toBe("/account#projects");
-    expect(ru.portfolio[2]?.href).toBe("/account/reports");
-    expect(ru.portfolio[3]).toMatchObject({
+    expect(ru.portfolio[2]).toMatchObject({
+      id: "ai",
+      label: "AI-инструменты",
+      href: "/account/ai",
+      active: false,
+    });
+    expect(ru.portfolio[3]?.href).toBe("/account/reports");
+    expect(ru.portfolio[4]).toMatchObject({
       id: "account",
       label: "Аккаунт",
       href: "/account/settings",
@@ -52,12 +62,16 @@ describe("account workspace shell contract", () => {
     expect(en.portfolio[0]?.href).toBe("/en/account");
     expect(en.portfolio[1]?.label).toBe("Projects");
     expect(en.portfolio[1]?.active).toBe(true);
-    expect(en.portfolio[2]?.label).toBe("Reports");
+    expect(en.portfolio[2]?.label).toBe("AI tools");
     expect(en.portfolio[2]?.active).toBe(false);
-    expect(en.portfolio[3]?.href).toBe("/en/account/settings");
+    expect(en.portfolio[3]?.label).toBe("Reports");
+    expect(en.portfolio[4]?.href).toBe("/en/account/settings");
 
     const settings = buildAccountWorkspaceNavigation("ru", "settings");
-    expect(settings.portfolio[3]?.active).toBe(true);
+    expect(settings.portfolio[4]?.active).toBe(true);
+
+    const ai = buildAccountWorkspaceNavigation("ru", "ai");
+    expect(ai.portfolio[2]?.active).toBe(true);
   });
 
   it("builds project task navigation only from live routes and known audit context", () => {

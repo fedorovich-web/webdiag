@@ -1,5 +1,6 @@
 import type { Locale } from "@webdiag/tool-registry";
 import {
+  accountAIPath,
   accountPath,
   accountSettingsPath,
   projectMonitoringPath,
@@ -12,6 +13,7 @@ import type { AccountProject } from "./account-workspace-contract";
 export type AccountWorkspaceSection =
   | "overview"
   | "projects"
+  | "ai"
   | "project"
   | "audit"
   | "issues"
@@ -23,6 +25,7 @@ export type AccountWorkspaceSection =
 export type AccountWorkspaceNavigationId =
   | "overview"
   | "projects"
+  | "ai"
   | "reports"
   | "account"
   | "project_overview"
@@ -68,6 +71,13 @@ export function buildAccountWorkspaceNavigation(
       label: ru ? "Проекты" : "Projects",
       href: `${root}#projects`,
       active: section === "projects" || projectSections.has(section),
+      disabled: false,
+    },
+    {
+      id: "ai",
+      label: ru ? "AI-инструменты" : "AI tools",
+      href: accountAIPath(locale),
+      active: section === "ai",
       disabled: false,
     },
     {
