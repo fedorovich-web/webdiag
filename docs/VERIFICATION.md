@@ -20,7 +20,7 @@
 ## Verification
 
 ```text
-activation-gate regression                   PASS — 19 passed
+activation-gate regression                   PASS — 18 passed
 Ruff (activation module, CLI, tests)          PASS
 ```
 
