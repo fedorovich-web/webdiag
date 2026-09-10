@@ -708,6 +708,11 @@ test.describe("account monitoring", () => {
     await expect(page.getByRole("heading", { level: 1, name: "AI-инструменты кабинета" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "AI-план исправлений" })).toBeVisible();
     await expect(page.getByText("Внутренняя оценка").first()).toBeVisible();
+    await expect(page.getByRole("button", { name: "Открыть форму" })).toHaveCount(5);
+    await page.getByRole("article").filter({ hasText: "AI-бриф контента" }).getByRole("button", { name: "Открыть форму" }).click();
+    await expect(page.locator(".wd-ai-text-runner").getByRole("heading", { name: "AI-бриф контента" })).toBeVisible();
+    await expect(page.getByLabel("Подтверждённые факты (по одному в строке)")).toBeVisible();
+    await page.getByRole("button", { name: "Закрыть" }).click();
     await expect(page.getByText(/uptime|инцидент/i)).toHaveCount(0);
 
     await page.goto(`/account/projects/${firstProject.id}/audits/${auditId}`);
