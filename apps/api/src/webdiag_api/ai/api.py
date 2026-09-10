@@ -36,6 +36,7 @@ from webdiag_api.ai.models import (
 )
 from webdiag_api.ai.service import AIService, AIServiceError
 from webdiag_api.ai.storage import AILeaseLostError, SqliteAIStore
+from webdiag_api.audit.fetcher import SafeFetchConfig, SafeHttpFetcher
 from webdiag_api.config import settings
 
 router = APIRouter(prefix="/v1/account", tags=["account-ai"])
@@ -48,6 +49,13 @@ internal_router = APIRouter(
 
 @lru_cache(maxsize=1)
 def get_ai_service() -> AIService:
+    page_fetcher = SafeHttpFetcher(
+        config=SafeFetchConfig(
+            timeout_seconds=8.0,
+            max_redirects=5,
+            max_body_bytes=600_000,
+        )
+    )
     return AIService(
         SqliteAIStore(
             settings.account_database_path,
@@ -56,7 +64,10 @@ def get_ai_service() -> AIService:
         catalog=DEFAULT_AI_CATALOG,
         input_max_bytes=settings.ai_input_max_bytes,
         output_max_bytes=settings.ai_output_max_bytes,
-        input_resolver=AIInputResolver(SqliteWorkspaceStore(settings.account_database_path)),
+        input_resolver=AIInputResolver(
+            SqliteWorkspaceStore(settings.account_database_path),
+            fetcher=page_fetcher,
+        ),
         safety_identifier_secret=settings.ai_safety_identifier_secret,
         artifact_prefix=settings.ai_artifact_prefix,
     )

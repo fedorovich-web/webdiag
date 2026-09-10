@@ -73,6 +73,32 @@ def test_planning_tools_accept_strict_inputs_and_redact_url_secrets() -> None:
     assert linking["locale"] == "en"
 
 
+def test_context_planning_tools_accept_url_references_without_client_evidence() -> None:
+    gap = validate_public_input(
+        "ai_competitor_gap_report",
+        {
+            "locale": "en",
+            "objective": None,
+            "own_page": {"page_url": "https://example.com/guide"},
+            "competitor_pages": [{"page_url": "https://competitor.example/guide"}],
+        },
+    )
+    linking = validate_public_input(
+        "ai_internal_linking_planner",
+        {
+            "locale": "ru",
+            "pages": [
+                {"page_url": "https://example.com/audit"},
+                {"page_url": "https://example.com/robots"},
+            ],
+            "existing_links": [],
+        },
+    )
+
+    assert gap["own_page"]["content"] is None
+    assert linking["pages"][0]["title"] is None
+
+
 @pytest.mark.parametrize(
     ("tool_id", "value"),
     [

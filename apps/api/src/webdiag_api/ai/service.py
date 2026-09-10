@@ -9,7 +9,11 @@ import uuid
 from webdiag_api.ai.artifacts import ArtifactStorage
 from webdiag_api.ai.catalog import AIToolCatalog, AIToolState
 from webdiag_api.ai.images import ImageValidationError, normalize_image
-from webdiag_api.ai.input_resolver import AIInputResolutionError, AIInputResolver
+from webdiag_api.ai.input_resolver import (
+    CONTEXT_SNAPSHOT_TOOL_IDS,
+    AIInputResolutionError,
+    AIInputResolver,
+)
 from webdiag_api.ai.models import (
     AICatalogResponse,
     AIImageUploadResponseItem,
@@ -221,7 +225,7 @@ class AIService:
                     "ai_invalid_tool_input",
                     "Invalid AI tool input.",
                 ) from error
-        if definition.id == "ai_audit_action_plan":
+        if definition.id == "ai_audit_action_plan" or definition.id in CONTEXT_SNAPSHOT_TOOL_IDS:
             if self._input_resolver is None:
                 raise AIServiceError(
                     503,

@@ -175,6 +175,20 @@ class EvidencePageInput(_StrictModel):
         return _normalize_content_page_url(value)
 
 
+class ContextEvidencePageInput(_StrictModel):
+    """Public page reference; server-owned snapshots may replace optional evidence."""
+
+    page_url: str = Field(min_length=8, max_length=2_048)
+    title: str | None = Field(default=None, min_length=1, max_length=300)
+    h1: str | None = Field(default=None, min_length=1, max_length=300)
+    content: str | None = Field(default=None, min_length=20, max_length=20_000)
+
+    @field_validator("page_url")
+    @classmethod
+    def normalize_page_url(cls, value: str) -> str:
+        return _normalize_content_page_url(value)
+
+
 class CompetitorGapInput(_StrictModel):
     locale: Locale
     objective: str | None = Field(default=None, min_length=1, max_length=1_000)
@@ -197,6 +211,42 @@ class ExistingLinkInput(_StrictModel):
 class InternalLinkingInput(_StrictModel):
     locale: Locale
     pages: list[EvidencePageInput] = Field(min_length=2, max_length=50)
+    existing_links: list[ExistingLinkInput] = Field(default_factory=list, max_length=500)
+
+    @model_validator(mode="after")
+    def validate_inventory(self):
+        urls = [page.page_url for page in self.pages]
+        if len(set(urls)) != len(urls):
+            raise ValueError("page URLs must be unique")
+        pairs = [
+            (link.source_page_index, link.target_page_index) for link in self.existing_links
+        ]
+        if any(source == target for source, target in pairs):
+            raise ValueError("existing links must not be self-links")
+        if any(source >= len(self.pages) or target >= len(self.pages) for source, target in pairs):
+            raise ValueError("existing link references an unknown page")
+        if len(set(pairs)) != len(pairs):
+            raise ValueError("existing links must be unique")
+        return self
+
+
+class ContextCompetitorGapInput(_StrictModel):
+    locale: Locale
+    objective: str | None = Field(default=None, min_length=1, max_length=1_000)
+    own_page: ContextEvidencePageInput
+    competitor_pages: list[ContextEvidencePageInput] = Field(min_length=1, max_length=3)
+
+    @model_validator(mode="after")
+    def reject_duplicate_pages(self):
+        urls = [self.own_page.page_url] + [page.page_url for page in self.competitor_pages]
+        if len(set(urls)) != len(urls):
+            raise ValueError("page URLs must be unique")
+        return self
+
+
+class ContextInternalLinkingInput(_StrictModel):
+    locale: Locale
+    pages: list[ContextEvidencePageInput] = Field(min_length=2, max_length=50)
     existing_links: list[ExistingLinkInput] = Field(default_factory=list, max_length=500)
 
     @model_validator(mode="after")
@@ -617,8 +667,8 @@ _INPUT_MODELS: dict[str, type[_StrictModel]] = {
     "ai_content_brief": ContentBriefInput,
     "ai_content_optimizer": ContentOptimizerInput,
     "ai_search_intent_page_fit": SearchIntentPageFitInput,
-    "ai_competitor_gap_report": CompetitorGapInput,
-    "ai_internal_linking_planner": InternalLinkingInput,
+    "ai_competitor_gap_report": ContextCompetitorGapInput,
+    "ai_internal_linking_planner": ContextInternalLinkingInput,
     "ai_redirect_migration_mapper": RedirectMigrationInput,
     "ai_localization_workbench": LocalizationInput,
     "ai_regex_workbench": RegexWorkbenchInput,
@@ -631,6 +681,8 @@ _PROVIDER_INPUT_MODELS: dict[str, type[_StrictModel]] = {
     "ai_audit_action_plan": AuditActionPlanProviderInput,
     "ai_alt_text_studio": AltTextProviderInput,
     "ai_image_edit_studio": ImageEditStudioProviderInput,
+    "ai_competitor_gap_report": CompetitorGapInput,
+    "ai_internal_linking_planner": InternalLinkingInput,
 }
 
 

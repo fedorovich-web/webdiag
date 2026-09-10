@@ -59,13 +59,12 @@ function buildInput(locale: Locale, toolId: TextToolId, values: FormValues): Rec
     return { locale, page_url: fieldValue(values, "page_url"), primary_query: fieldValue(values, "primary_query"), intended_page_type: fieldValue(values, "intended_page_type"), page_title: null, h1: null, content: fieldValue(values, "content") };
   }
   if (toolId === "ai_competitor_gap_report") {
-    return { locale, objective: fieldValue(values, "objective") || null, own_page: { page_url: fieldValue(values, "own_page_url"), title: null, h1: null, content: fieldValue(values, "own_content") }, competitor_pages: [{ page_url: fieldValue(values, "competitor_page_url"), title: null, h1: null, content: fieldValue(values, "competitor_content") }] };
+    return { locale, objective: fieldValue(values, "objective") || null, own_page: { page_url: fieldValue(values, "own_page_url") }, competitor_pages: [{ page_url: fieldValue(values, "competitor_page_url") }] };
   }
   return {
     locale,
     pages: lines(fieldValue(values, "pages")).map((entry) => {
-      const [page_url, content] = entry.split("|", 2);
-      return { page_url: page_url?.trim() ?? "", title: null, h1: null, content: content?.trim() ?? "" };
+      return { page_url: entry };
     }),
     existing_links: [],
   };
@@ -86,7 +85,7 @@ function fieldLabel(locale: Locale, key: string): string {
     own_content: ru ? "Текст своей страницы" : "Own page content",
     competitor_page_url: ru ? "URL страницы конкурента" : "Competitor page URL",
     competitor_content: ru ? "Текст страницы конкурента" : "Competitor page content",
-    pages: ru ? "Страницы: URL|текст, по одной в строке" : "Pages: URL|content, one per line",
+    pages: ru ? "Страницы проекта: URL, по одному в строке" : "Project pages: one URL per line",
   } satisfies Record<string, string>)[key] ?? key;
 }
 
@@ -94,7 +93,7 @@ function requiredFields(toolId: TextToolId): readonly string[] {
   if (toolId === "ai_content_brief") return ["audience", "objective", "facts"];
   if (toolId === "ai_content_optimizer") return ["page_url", "content"];
   if (toolId === "ai_search_intent_page_fit") return ["page_url", "primary_query", "content"];
-  if (toolId === "ai_competitor_gap_report") return ["own_page_url", "own_content", "competitor_page_url", "competitor_content"];
+  if (toolId === "ai_competitor_gap_report") return ["own_page_url", "competitor_page_url"];
   return ["pages"];
 }
 
@@ -148,13 +147,15 @@ export function AccountAITextToolRunner({ locale, toolId, onClose }: AccountAITe
         <div><span className="eyebrow">{ru ? "ПОДТВЕРЖДЁННЫЕ ДАННЫЕ" : "CONFIRMED EVIDENCE"}</span><h2 id="ai-text-runner-title">{descriptor.title}</h2></div>
         <button className="wd-button wd-button-ghost" type="button" onClick={onClose}>{ru ? "Закрыть" : "Close"}</button>
       </div>
-      <p className="wd-ai-text-runner-note">{ru ? "Вставляйте только данные, которыми вы уже владеете. AI не получает доступ к сайту и не публикует изменения." : "Paste only evidence you already own. AI does not access the site or publish changes."}</p>
+      <p className="wd-ai-text-runner-note">{toolId === "ai_competitor_gap_report" || toolId === "ai_internal_linking_planner"
+        ? (ru ? "WebDiag получает ограниченные HTML-снимки по указанным публичным URL. AI не публикует изменения." : "WebDiag fetches bounded HTML snapshots from the public URLs you provide. AI never publishes changes.")
+        : (ru ? "Вставляйте только данные, которыми вы уже владеете. AI не получает доступ к сайту и не публикует изменения." : "Paste only evidence you already own. AI does not access the site or publish changes.")}</p>
       <form className="wd-ai-text-form" onSubmit={submit}>
         {Object.keys(EMPTY_VALUES).filter((key) => {
           if (toolId === "ai_content_brief") return ["audience", "objective", "facts"].includes(key);
           if (toolId === "ai_content_optimizer") return ["page_url", "content", "target_query", "objective"].includes(key);
           if (toolId === "ai_search_intent_page_fit") return ["page_url", "primary_query", "intended_page_type", "content"].includes(key);
-          if (toolId === "ai_competitor_gap_report") return ["own_page_url", "own_content", "competitor_page_url", "competitor_content", "objective"].includes(key);
+          if (toolId === "ai_competitor_gap_report") return ["own_page_url", "competitor_page_url", "objective"].includes(key);
           return key === "pages";
         }).map((key) => key === "intended_page_type" ? (
           <label key={key}>{fieldLabel(locale, key)}<select value={fieldValue(values, key)} onChange={(event) => setValues((current) => ({ ...current, [key]: event.target.value }))}><option value="informational">informational</option><option value="commercial">commercial</option><option value="transactional">transactional</option><option value="navigational">navigational</option><option value="local">local</option><option value="unknown">unknown</option></select></label>

@@ -101,7 +101,7 @@ def _response(output: dict[str, object]) -> dict[str, object]:
         ),
     ],
 )
-def test_planning_tools_use_strict_non_crawling_openrouter_policies(
+def test_planning_tools_use_strict_snapshot_aware_openrouter_policies(
     tool_id: str,
     input_value: dict[str, object],
     output: dict[str, object],

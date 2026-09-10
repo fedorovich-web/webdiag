@@ -28,6 +28,33 @@ The gate is an evidence-consistency check, not an activation command. A
 separate reviewed catalog commit is still required for each tool, and no real
 provider, payment, release, deployment, domain, or TLS operation was performed.
 
+# Server-owned AI page snapshots — 2026-09-10
+
+## Scope
+
+- changed `ai_competitor_gap_report` and `ai_internal_linking_planner` public
+  inputs to accept URL references without requiring browser-provided evidence;
+- added an ownership-scoped resolver that verifies the own/project origin,
+  rejects foreign page inventories, fetches only bounded HTML through the
+  existing SSRF-safe `SafeHttpFetcher`, strips query/fragment data, extracts
+  title/H1/body text, and revalidates the provider contract before persistence;
+- retained backward-compatible optional client hints but never uses them as
+  authoritative provider evidence; resolved snapshots replace them before the
+  run is stored or queued;
+- updated the worker policy and RU/EN form copy to state that WebDiag fetches
+  bounded snapshots and that AI cannot publish changes.
+
+## Verification
+
+```text
+context resolver / planning / service / worker  PASS — 19 passed
+Ruff (resolver, contracts, service, API, worker) PASS
+```
+
+Tests use an injected in-memory fetcher and make no external HTTP request. A
+real provider, live site, payment, release, deployment, or catalog activation
+was not performed.
+
 # Production blocker closure — 2026-08-16
 
 ## Scope

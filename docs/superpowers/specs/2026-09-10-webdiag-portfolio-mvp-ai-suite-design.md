@@ -309,6 +309,9 @@ Implementation is divided into reversible, independently verifiable increments:
 - `2f3a158` added five evidence-first text-tool forms and strict output shapes
   for content briefs, content optimization, search-intent fit, competitor gap,
   and internal linking proposals.
+- The follow-up context resolver now replaces optional browser hints for
+  competitor-gap and internal-linking runs with ownership-checked, bounded
+  HTML snapshots fetched through the existing SSRF-safe policy before queueing.
 - `b7a0af2` and `def0657` added browser coverage for the AI workspace, five form
   entry points, the saved-audit run flow, mobile overflow, and touch targets.
 
