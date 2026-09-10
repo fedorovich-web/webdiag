@@ -2807,6 +2807,318 @@ body:has(.wd-public-report-page) .site-footer {
   }
 }
 
+/* AI workspace: compact, evidence-first account surface */
+.wd-ai-workspace {
+  display: grid;
+  gap: 16px;
+  max-width: 1120px;
+}
+
+.wd-ai-workspace-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 176px;
+  padding: clamp(22px, 3vw, 34px);
+  border: 1px solid var(--wd-account-border);
+  border-radius: var(--wd-account-radius);
+  background: linear-gradient(135deg, var(--surface) 50%, color-mix(in srgb, var(--brand-soft) 64%, var(--surface)));
+  box-shadow: var(--shadow-sm);
+}
+
+.wd-ai-workspace-hero h1 {
+  margin: 6px 0 0;
+  font-size: clamp(30px, 4vw, 46px);
+  line-height: 1.04;
+  letter-spacing: -.045em;
+}
+
+.wd-ai-workspace-hero p {
+  max-width: 64ch;
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.wd-ai-workspace-hero-note {
+  display: grid;
+  flex: 0 1 240px;
+  gap: 5px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--brand) 24%, var(--line));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+}
+
+.wd-ai-workspace-hero-note strong {
+  color: var(--brand);
+  font-size: 12px;
+}
+
+.wd-ai-workspace-hero-note span {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.wd-ai-workspace-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.wd-ai-workspace-summary article {
+  display: grid;
+  gap: 5px;
+  min-height: 100px;
+  padding: 16px;
+  border: 1px solid var(--wd-account-border);
+  border-radius: 14px;
+  background: var(--wd-account-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.wd-ai-workspace-summary span,
+.wd-ai-workspace-summary small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.wd-ai-workspace-summary strong {
+  font-size: 30px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.wd-ai-tool-section,
+.wd-ai-history-section {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--wd-account-border);
+  border-radius: var(--wd-account-radius);
+  background: var(--wd-account-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.wd-ai-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.wd-ai-section-heading h2 {
+  margin: 4px 0 0;
+  font-size: clamp(20px, 2vw, 26px);
+  letter-spacing: -.025em;
+}
+
+.wd-ai-section-heading p {
+  max-width: 48ch;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: right;
+}
+
+.wd-ai-tool-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.wd-ai-tool-card {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--surface-muted);
+}
+
+.wd-ai-tool-card[data-enabled="false"] {
+  opacity: .82;
+}
+
+.wd-ai-tool-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.wd-ai-tool-order {
+  color: var(--brand);
+  font: 700 11px var(--font-mono);
+}
+
+.wd-ai-tool-status,
+.wd-ai-run-state {
+  width: fit-content;
+  padding: 4px 7px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.wd-ai-tool-status.is-internal {
+  border-color: color-mix(in srgb, var(--warning) 35%, var(--line));
+  background: color-mix(in srgb, var(--warning-soft) 62%, var(--surface));
+  color: var(--warning);
+}
+
+.wd-ai-tool-card h3 {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.wd-ai-tool-card p,
+.wd-ai-tool-card small {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.wd-ai-tool-card .wd-button {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 2px;
+  font-size: 11px;
+}
+
+.wd-ai-empty-state {
+  display: grid;
+  gap: 8px;
+  padding: 24px;
+  border: 1px dashed var(--line);
+  border-radius: 13px;
+  background: var(--surface-muted);
+}
+
+.wd-ai-empty-state strong {
+  font-size: 14px;
+}
+
+.wd-ai-empty-state p {
+  max-width: 64ch;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.wd-ai-run-list {
+  display: grid;
+  gap: 8px;
+}
+
+.wd-ai-run-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--surface-muted);
+}
+
+.wd-ai-run-row > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.wd-ai-run-row strong {
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wd-ai-run-row time {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.wd-ai-run-state[data-state="succeeded"] {
+  border-color: color-mix(in srgb, var(--success) 30%, var(--line));
+  color: var(--success);
+}
+
+.wd-ai-run-state[data-state="failed"],
+.wd-ai-run-state[data-state="provider_unknown"] {
+  border-color: color-mix(in srgb, var(--warning) 35%, var(--line));
+  color: var(--warning);
+}
+
+.wd-ai-run-row .wd-button {
+  min-height: 40px;
+  padding-inline: 10px;
+  font-size: 11px;
+}
+
+@media (max-width: 900px) {
+  .wd-ai-tool-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .wd-ai-workspace-hero {
+    align-items: stretch;
+    flex-direction: column;
+    min-height: 0;
+    padding: 20px 16px;
+  }
+
+  .wd-ai-workspace-hero-note {
+    flex-basis: auto;
+  }
+
+  .wd-ai-workspace-summary,
+  .wd-ai-tool-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wd-ai-tool-section,
+  .wd-ai-history-section {
+    padding: 16px;
+  }
+
+  .wd-ai-section-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .wd-ai-section-heading p {
+    text-align: left;
+  }
+
+  .wd-ai-run-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .wd-ai-run-row .wd-ai-run-state {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .wd-ai-run-row .wd-button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .wd-account-workspace-page *,
   .wd-account-workspace-page *::before,
