@@ -6,6 +6,12 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
+from webdiag_api.ai.activation import (
+    ACTIVATION_GATE_CONTRACT,
+    ActivationGateError,
+    build_activation_gate_report,
+    load_activation_approval,
+)
 from webdiag_api.ai.evaluation import (
     ProviderEvaluationError,
     ProviderEvaluationIncompleteError,
@@ -33,11 +39,61 @@ def _parser() -> argparse.ArgumentParser:
     evaluation.add_argument("--backup-dir", required=True)
     evaluation.add_argument("--tool-id", required=True)
     evaluation.add_argument("--sample-limit", type=int, default=100)
+    activation = commands.add_parser("provider-activation-gate")
+    activation.add_argument("--backup-dir", required=True)
+    activation.add_argument("--approval", required=True)
+    activation.add_argument("--tool-id", required=True)
+    activation.add_argument("--sample-limit", type=int, default=100)
+    activation.add_argument("--minimum-samples", type=int, default=10)
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     arguments = _parser().parse_args(argv)
+    if arguments.command == "provider-activation-gate":
+        backup_dir = Path(arguments.backup_dir)
+        try:
+            verify_bundle(backup_dir)
+            approval = load_activation_approval(Path(arguments.approval))
+            report = build_activation_gate_report(
+                SqliteAIStore(str(backup_dir / DATABASE_FILENAMES["account"])),
+                tool_id=arguments.tool_id,
+                approval=approval,
+                sample_limit=arguments.sample_limit,
+                minimum_samples=arguments.minimum_samples,
+            )
+        except RecoveryError:
+            print("provider activation snapshot is unavailable", file=sys.stderr)
+            return 2
+        except ActivationGateError as error:
+            print(str(error), file=sys.stderr)
+            return 2
+        print(
+            json.dumps(
+                {
+                    "activation_gate": "passed",
+                    "contract_version": ACTIVATION_GATE_CONTRACT,
+                    "evidence_sha256": report.evidence_sha256,
+                    "observed_provider_cost_nano_usd": {
+                        "maximum": report.observed_maximum_provider_cost_nano_usd,
+                        "p95": report.observed_p95_provider_cost_nano_usd,
+                        "total": report.observed_total_provider_cost_nano_usd,
+                    },
+                    "approved": {
+                        "credit_price": report.approved_credit_price,
+                        "maximum_provider_cost_nano_usd": (
+                            report.approved_maximum_provider_cost_nano_usd
+                        ),
+                    },
+                    "locales": {"en": report.en_runs, "ru": report.ru_runs},
+                    "sampled_runs": report.sampled_runs,
+                    "tool_id": report.tool_id,
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+        )
+        return 0
     if arguments.command == "provider-eval-report":
         backup_dir = Path(arguments.backup_dir)
         try:

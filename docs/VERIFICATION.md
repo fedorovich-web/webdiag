@@ -1,5 +1,33 @@
 # Verification Notes
 
+# AI activation gate — 2026-09-10
+
+## Scope
+
+- added a read-only operator gate for the six portfolio MVP text tools:
+  `ai_audit_action_plan`, `ai_competitor_gap_report`, `ai_content_brief`,
+  `ai_content_optimizer`, `ai_search_intent_page_fit`, and
+  `ai_internal_linking_planner`;
+- validates an exact approval schema, immutable provider-evidence SHA-256,
+  balanced RU/EN sample counts, minimum representative corpus size, observed
+  maximum cost, and positive fixed credit-price approval;
+- requires explicit `passed` values for semantic review, provider smoke, safety
+  review, and production preflight while rejecting binary/image tools;
+- reads only a verified recovery snapshot and bounded non-linked approval file;
+  it never changes catalog state, prices, credits, runs, evidence, or provider
+  state and prints no private IDs, prompts, responses, URLs, or secrets.
+
+## Verification
+
+```text
+activation-gate regression                   PASS — 19 passed
+Ruff (activation module, CLI, tests)          PASS
+```
+
+The gate is an evidence-consistency check, not an activation command. A
+separate reviewed catalog commit is still required for each tool, and no real
+provider, payment, release, deployment, domain, or TLS operation was performed.
+
 # Production blocker closure — 2026-08-16
 
 ## Scope

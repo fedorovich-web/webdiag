@@ -416,6 +416,50 @@ node scripts/run-python.mjs -m webdiag_api.ai.cli provider-eval-report `
 подтверждает качество текста или изображения, не назначает цену, не меняет
 catalog state и не заменяет security/integration review.
 
+### Отдельный activation gate для шести MVP text tools
+
+После report-only проверки оператор может подготовить локальный approval JSON
+для одного из шести выбранных text tools:
+`ai_audit_action_plan`, `ai_competitor_gap_report`, `ai_content_brief`,
+`ai_content_optimizer`, `ai_search_intent_page_fit` или
+`ai_internal_linking_planner`. Файл должен находиться вне Git (например, в
+`.webdiag/ai-evals/approvals`) и содержать только точное множество полей:
+
+```json
+{
+  "contract_version": "webdiag.ai.activation_approval.v1",
+  "tool_id": "ai_content_brief",
+  "evidence_sha256": "<sha256-from-provider-eval-report>",
+  "approved_credit_price": 7,
+  "maximum_provider_cost_nano_usd": 10000,
+  "semantic_review": "passed",
+  "provider_smoke": "passed",
+  "safety_review": "passed",
+  "production_preflight": "passed"
+}
+```
+
+Placeholder hash и неподтверждённые `passed` значения использовать нельзя:
+approval отражает фактически проведённые оператором проверки, а не план.
+Gate сверяет hash с тем же recovery snapshot, требует сбалансированную RU/EN
+выборку (по умолчанию минимум 10 результатов), проверяет observed maximum cost
+против утверждённого лимита и печатает только безопасный агрегат:
+
+```powershell
+node scripts/run-python.mjs -m webdiag_api.ai.cli provider-activation-gate `
+  --backup-dir recovery/backup `
+  --approval .webdiag/ai-evals/approvals/ai-content-brief.json `
+  --tool-id ai_content_brief `
+  --sample-limit 100 `
+  --minimum-samples 10
+```
+
+Команда read-only: она не меняет catalog state, цену, кредиты, runs или
+evidence и не делает provider-запросов. `passed` означает, что проверенный
+approval согласован с конкретным snapshot; отдельный тематический commit,
+который переводит один tool в `ready`, всё равно обязателен и должен пройти
+обычные release gates. Binary/image tools этим MVP gate намеренно отклоняются.
+
 ## 8. Запуск development-окружения через Docker Compose
 
 Этот двухфайловый Compose-стек предназначен только для development. Он
