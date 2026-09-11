@@ -5,9 +5,15 @@ from typing import Annotated, NoReturn
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from webdiag_api.auth.cookies import SESSION_COOKIE_NAME, clear_session_cookie, set_session_cookie
+from webdiag_api.auth.rate_limit import (
+    AuthRateLimiter,
+    RateLimitExceeded,
+    RateLimitUnavailable,
+)
 from webdiag_api.auth.schemas import (
     EmailActionRequest,
     LoginRequest,
@@ -36,6 +42,12 @@ logger = logging.getLogger(__name__)
 SessionDep = Annotated[AsyncSession, Depends(get_db_session)]
 SessionCookie = Annotated[str | None, Cookie(alias=SESSION_COOKIE_NAME)]
 
+rate_limit_redis = Redis.from_url(
+    settings.redis_url.get_secret_value(),
+    decode_responses=False,
+)
+auth_rate_limiter = AuthRateLimiter(rate_limit_redis)
+
 _REGISTERED_MESSAGE = "Если адрес доступен для регистрации, письмо подтверждения отправлено."
 _RESEND_MESSAGE = "Если аккаунту требуется подтверждение, новое письмо будет отправлено."
 _RESET_REQUEST_MESSAGE = "Если аккаунт существует, инструкции по восстановлению будут отправлены."
@@ -51,6 +63,37 @@ def _email_transport() -> ResendTransport:
     if not api_key:
         raise RuntimeError("Transactional email transport is not configured")
     return ResendTransport(api_key=api_key)
+
+
+async def _enforce_rate_limit(
+    *,
+    scope: str,
+    identifier: str,
+    limit: int,
+    window_seconds: int,
+) -> None:
+    if not settings.rate_limit_enabled:
+        return
+
+    try:
+        await auth_rate_limiter.enforce(
+            scope=scope,
+            identifier=identifier,
+            limit=limit,
+            window_seconds=window_seconds,
+        )
+    except RateLimitExceeded as exc:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many authentication requests",
+            headers={"Retry-After": str(window_seconds)},
+        ) from exc
+    except RateLimitUnavailable as exc:
+        logger.error("auth_rate_limit_backend_unavailable")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Authentication protection is temporarily unavailable",
+        ) from exc
 
 
 async def _deliver_required(
@@ -123,9 +166,17 @@ def _require_session_token(token: str | None) -> str:
 
 @router.post("/register", response_model=MessageResponse, status_code=status.HTTP_202_ACCEPTED)
 async def register(payload: RegisterRequest, session: SessionDep) -> MessageResponse:
+    normalized_email = str(payload.email).strip().lower()
+    await _enforce_rate_limit(
+        scope="register",
+        identifier=normalized_email,
+        limit=5,
+        window_seconds=3600,
+    )
+
     service = AuthService(session)
     try:
-        result = await service.register(email=str(payload.email), password=payload.password)
+        result = await service.register(email=normalized_email, password=payload.password)
     except AuthError as exc:
         if exc.code == "email_already_registered":
             return MessageResponse(message=_REGISTERED_MESSAGE)
@@ -153,6 +204,13 @@ async def verify_email(
     response: Response,
     session: SessionDep,
 ) -> MessageResponse:
+    await _enforce_rate_limit(
+        scope="verify-email",
+        identifier=payload.token,
+        limit=10,
+        window_seconds=900,
+    )
+
     service = AuthService(session)
     try:
         result = await service.verify_email(payload.token)
@@ -173,8 +231,16 @@ async def resend_verification(
     payload: EmailActionRequest,
     session: SessionDep,
 ) -> MessageResponse:
+    normalized_email = str(payload.email).strip().lower()
+    await _enforce_rate_limit(
+        scope="resend-verification",
+        identifier=normalized_email,
+        limit=5,
+        window_seconds=3600,
+    )
+
     service = AuthService(session)
-    result = await service.request_verification(email=str(payload.email))
+    result = await service.request_verification(email=normalized_email)
     if result is None:
         return MessageResponse(message=_RESEND_MESSAGE)
 
@@ -200,9 +266,17 @@ async def login(
     response: Response,
     session: SessionDep,
 ) -> UserResponse:
+    normalized_email = str(payload.email).strip().lower()
+    await _enforce_rate_limit(
+        scope="login",
+        identifier=normalized_email,
+        limit=10,
+        window_seconds=300,
+    )
+
     service = AuthService(session)
     try:
-        result = await service.login(email=str(payload.email), password=payload.password)
+        result = await service.login(email=normalized_email, password=payload.password)
     except AuthError as exc:
         _raise_auth_error(exc)
 
@@ -246,8 +320,16 @@ async def forgot_password(
     payload: EmailActionRequest,
     session: SessionDep,
 ) -> MessageResponse:
+    normalized_email = str(payload.email).strip().lower()
+    await _enforce_rate_limit(
+        scope="forgot-password",
+        identifier=normalized_email,
+        limit=5,
+        window_seconds=3600,
+    )
+
     service = AuthService(session)
-    result = await service.request_password_reset(email=str(payload.email))
+    result = await service.request_password_reset(email=normalized_email)
     if result is None:
         return MessageResponse(message=_RESET_REQUEST_MESSAGE)
 
@@ -274,6 +356,13 @@ async def reset_password(
     response: Response,
     session: SessionDep,
 ) -> MessageResponse:
+    await _enforce_rate_limit(
+        scope="reset-password",
+        identifier=payload.token,
+        limit=10,
+        window_seconds=900,
+    )
+
     service = AuthService(session)
     try:
         user = await service.reset_password(
@@ -300,6 +389,13 @@ async def change_password(
     session_token: SessionCookie = None,
 ) -> MessageResponse:
     token = _require_session_token(session_token)
+    await _enforce_rate_limit(
+        scope="change-password",
+        identifier=token,
+        limit=5,
+        window_seconds=3600,
+    )
+
     service = AuthService(session)
     try:
         user = await service.change_password(
