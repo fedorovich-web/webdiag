@@ -4,6 +4,7 @@ from webdiag_api.ai.tool_contracts import (
     AIToolContractError,
     has_tool_contract,
     validate_output,
+    validate_provider_input,
     validate_public_input,
 )
 
@@ -68,6 +69,40 @@ def test_content_workbench_accepts_strict_ru_en_inputs(
     assert has_tool_contract(tool_id) is True
     validated = validate_public_input(tool_id, value)
     assert {key: validated[key] for key in expected} == expected
+
+
+@pytest.mark.parametrize(
+    ("tool_id", "value"),
+    [
+        (
+            "ai_content_optimizer",
+            {
+                "locale": "ru",
+                "page_url": "https://example.com/guide",
+                "target_query": "технический аудит",
+                "objective": "Сделать текст понятнее.",
+                "factual_constraints": [],
+            },
+        ),
+        (
+            "ai_search_intent_page_fit",
+            {
+                "locale": "en",
+                "page_url": "https://example.com/guide",
+                "primary_query": "technical audit guide",
+                "intended_page_type": "informational",
+            },
+        ),
+    ],
+)
+def test_owned_content_tools_accept_url_only_public_input_but_require_provider_snapshot(
+    tool_id: str,
+    value: dict[str, object],
+) -> None:
+    validated = validate_public_input(tool_id, value)
+
+    with pytest.raises(AIToolContractError, match="contract validation failed"):
+        validate_provider_input(tool_id, validated)
 
 
 @pytest.mark.parametrize(

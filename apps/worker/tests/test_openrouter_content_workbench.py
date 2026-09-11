@@ -81,7 +81,7 @@ def _response(output: dict[str, object]) -> dict[str, object]:
                 "preserved_fact_indexes": [0],
                 "warnings": [],
             },
-            "preserve every factual constraint verbatim",
+            "server-resolved page snapshot",
         ),
         (
             "ai_search_intent_page_fit",
@@ -103,7 +103,7 @@ def _response(output: dict[str, object]) -> dict[str, object]:
                 "recommendations": [],
                 "warnings": [],
             },
-            "not a live SERP classification",
+            "server-resolved page snapshot",
         ),
     ],
 )

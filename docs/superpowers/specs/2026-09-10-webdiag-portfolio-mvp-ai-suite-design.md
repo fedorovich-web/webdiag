@@ -101,21 +101,26 @@ evidence unless a future contract adds an explicit trusted source for that data.
 
 ### 4.4 AI Content Optimizer
 
-The user submits existing page content, an optional target query and objective,
-and zero to 30 factual constraints. The result contains revised content, a
-bounded change ledger, preserved fact references, and warnings. Every ledger
-entry identifies exact before and after excerpts. Supplied factual constraints
-must be preserved and machine-validated.
+The user selects an owned project-page URL and supplies an optional target query
+and objective. The API verifies active-project ownership and captures a bounded
+page snapshot before provider submission; optional browser content is retained
+only for contract compatibility and is replaced. The result contains revised
+content, a bounded change ledger, preserved fact references, and warnings.
+Every ledger entry identifies exact before and after excerpts.
+Any supplied factual constraint must be an exact substring of the resolved page
+snapshot before the run can be queued.
 
 The interface presents the result as a reviewable draft. It provides copy and
 export actions but no automatic publication and no ranking promise.
 
 ### 4.5 AI Search Intent & Page Fit
 
-The user supplies a primary query, intended page type, and page content. The
-result classifies intent and fit using bounded categorical values, exact source
-excerpts, gaps, recommendations, and warnings. A non-unknown intent requires
-evidence from the submitted query, title, H1, or content.
+The user selects an owned project-page URL and supplies a primary query and
+intended page type. The API verifies active-project ownership and captures the
+page title, first H1, and bounded body text; browser-provided page evidence is
+replaced. The result classifies intent and fit using bounded categorical values,
+exact source excerpts, gaps, recommendations, and warnings. A non-unknown intent
+requires evidence from the submitted query or server-resolved page snapshot.
 
 This tool evaluates declared query-to-page fit. It does not query a search engine
 or represent its output as observed SERP intent.
@@ -215,7 +220,7 @@ Required controls include:
 - no secrets, raw prompts, raw responses, or provider error bodies in logs;
 - privacy-preserving provider safety identifiers;
 - bounded input, output, pagination, retention, and deletion;
-- SSRF-safe server-side capture for competitor and project page snapshots;
+- SSRF-safe server-side capture for competitor and owned project-page snapshots;
 - HTML escaping and structured rendering for every result and export;
 - rate limits for run creation, status polling, and snapshot capture;
 - no automatic provider retry after an ambiguous submission outcome.
@@ -310,8 +315,9 @@ Implementation is divided into reversible, independently verifiable increments:
   for content briefs, content optimization, search-intent fit, competitor gap,
   and internal linking proposals.
 - The follow-up context resolver now replaces optional browser hints for
-  competitor-gap and internal-linking runs with ownership-checked, bounded
-  HTML snapshots fetched through the existing SSRF-safe policy before queueing.
+  competitor-gap, content-optimizer, search-intent, and internal-linking runs
+  with ownership-checked, bounded HTML snapshots fetched through the existing
+  SSRF-safe policy before queueing.
 - `b7a0af2` and `def0657` added browser coverage for the AI workspace, five form
   entry points, the saved-audit run flow, mobile overflow, and touch targets.
 

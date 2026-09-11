@@ -147,6 +147,95 @@ def test_internal_linking_resolver_requires_owned_origin_and_fetches_pages(tmp_p
     assert (error.value.status_code, error.value.code) == (404, "ai_source_not_found")
 
 
+def test_owned_content_resolver_replaces_optimizer_and_intent_browser_hints(tmp_path) -> None:
+    workspace, owner_id, _project = _workspace(tmp_path)
+    fetcher = _FakeFetcher(
+        {
+            "https://example.com/guide": (
+                "<html><head><title>Server title</title></head><body>"
+                "<h1>Server heading</h1>Server-owned guide content for both tools.</body></html>"
+            ),
+        }
+    )
+    resolver = AIInputResolver(workspace, fetcher=fetcher)
+
+    optimizer = resolver.resolve(
+        user_id=owner_id,
+        tool_id="ai_content_optimizer",
+        validated_input=validate_public_input(
+            "ai_content_optimizer",
+            {
+                "locale": "en",
+                "page_url": "https://example.com/guide",
+                "content": "Browser-supplied content must never reach the provider.",
+                "target_query": "technical audit guide",
+                "objective": None,
+                "factual_constraints": [],
+            },
+        ),
+    )
+    intent = resolver.resolve(
+        user_id=owner_id,
+        tool_id="ai_search_intent_page_fit",
+        validated_input=validate_public_input(
+            "ai_search_intent_page_fit",
+            {
+                "locale": "ru",
+                "page_url": "https://example.com/guide",
+                "primary_query": "технический аудит",
+                "intended_page_type": "informational",
+                "page_title": "Browser title",
+                "h1": "Browser heading",
+                "content": "Browser-supplied content must never reach the provider.",
+            },
+        ),
+    )
+
+    assert optimizer["content"] == "Server heading Server-owned guide content for both tools."
+    assert intent["page_title"] == "Server title"
+    assert intent["h1"] == "Server heading"
+    assert intent["content"] == "Server heading Server-owned guide content for both tools."
+    assert "Browser" not in str(optimizer)
+    assert "Browser" not in str(intent)
+    assert fetcher.calls == [
+        ("https://example.com/guide", "https://example.com"),
+        ("https://example.com/guide", "https://example.com"),
+    ]
+
+
+def test_content_optimizer_rejects_client_fact_absent_from_owned_snapshot(tmp_path) -> None:
+    workspace, owner_id, _project = _workspace(tmp_path)
+    resolver = AIInputResolver(
+        workspace,
+        fetcher=_FakeFetcher(
+            {
+                "https://example.com/guide": (
+                    "<h1>Verified guide</h1>The owned page contains confirmed evidence only."
+                ),
+            }
+        ),
+    )
+    validated = validate_public_input(
+        "ai_content_optimizer",
+        {
+            "locale": "en",
+            "page_url": "https://example.com/guide",
+            "target_query": None,
+            "objective": None,
+            "factual_constraints": ["An invented client claim."],
+        },
+    )
+
+    with pytest.raises(AIInputResolutionError) as error:
+        resolver.resolve(
+            user_id=owner_id,
+            tool_id="ai_content_optimizer",
+            validated_input=validated,
+        )
+
+    assert (error.value.status_code, error.value.code) == (422, "ai_invalid_tool_input")
+
+
 def test_context_resolver_fails_closed_for_non_html_or_fetch_errors(tmp_path) -> None:
     workspace, owner_id, _project = _workspace(tmp_path)
 

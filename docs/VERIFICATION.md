@@ -1,5 +1,39 @@
 # Verification Notes
 
+# Owned-page snapshots for content AI — 2026-09-11
+
+## Scope
+
+- extended server-owned snapshot resolution to `ai_content_optimizer` and
+  `ai_search_intent_page_fit`;
+- public contracts now accept an owned page URL without browser-provided page
+  content, while provider contracts still require a canonical resolved snapshot;
+- active-project ownership, SSRF-safe bounded HTML capture, final-origin checks,
+  query/fragment stripping, and provider-contract revalidation happen before a
+  run is persisted or queued;
+- optional browser title/H1/content hints remain backward compatible but are
+  replaced and cannot become provider evidence;
+- client factual constraints for Content Optimizer are accepted only when each
+  is an exact substring of the server-resolved owned-page snapshot;
+- RU account forms now request the URL and task inputs only; provider policies
+  prohibit additional crawling or fetching.
+
+## Verification
+
+```text
+content/resolver/worker targeted pytest       PASS — 32 passed
+API/worker pytest                              PASS — 684 passed / 3 Windows skips
+web Vitest                                     PASS — 438 passed / 111 files
+Ruff / TypeScript                             PASS / PASS
+Next.js production build                      PASS — 273 generated pages
+account Playwright                             PASS — 17 passed
+ESLint / Impeccable changed-component scan     PASS — 0 errors / 0 findings
+```
+
+All fetches in tests use an injected in-memory fixture. No live site, provider,
+payment, activation, release, deployment, merge, tag, or main-branch operation
+was performed.
+
 # AI catalog availability semantics — 2026-09-11
 
 ## Scope

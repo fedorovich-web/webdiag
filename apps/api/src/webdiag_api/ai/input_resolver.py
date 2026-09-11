@@ -14,7 +14,12 @@ from webdiag_api.audit.html_metadata import parse_html_metadata
 from webdiag_api.security.url_policy import UrlPolicyError, validate_url
 
 CONTEXT_SNAPSHOT_TOOL_IDS = frozenset(
-    {"ai_competitor_gap_report", "ai_internal_linking_planner"}
+    {
+        "ai_competitor_gap_report",
+        "ai_content_optimizer",
+        "ai_internal_linking_planner",
+        "ai_search_intent_page_fit",
+    }
 )
 MAX_SNAPSHOT_CONTENT_CHARS = 20_000
 
@@ -107,6 +112,18 @@ class AIInputResolver:
                 tool_id=tool_id,
                 validated_input=validated_input,
             )
+        if tool_id == "ai_content_optimizer":
+            return self._resolve_content_optimizer_snapshot(
+                user_id=user_id,
+                tool_id=tool_id,
+                validated_input=validated_input,
+            )
+        if tool_id == "ai_search_intent_page_fit":
+            return self._resolve_search_intent_snapshot(
+                user_id=user_id,
+                tool_id=tool_id,
+                validated_input=validated_input,
+            )
         return self._resolve_internal_linking_snapshots(
             user_id=user_id,
             tool_id=tool_id,
@@ -140,6 +157,59 @@ class AIInputResolver:
         resolved["competitor_pages"] = [
             self._fetch_snapshot(url, allowed_origin=None) for url in competitor_urls
         ]
+        return self._validate_resolved_input(tool_id, resolved)
+
+    def _resolve_content_optimizer_snapshot(
+        self,
+        *,
+        user_id: str,
+        tool_id: str,
+        validated_input: dict[str, object],
+    ) -> dict[str, object]:
+        snapshot = self._owned_page_snapshot(
+            user_id=user_id,
+            page_url=validated_input.get("page_url"),
+        )
+        resolved = dict(validated_input)
+        resolved["page_url"] = snapshot["page_url"]
+        resolved["content"] = snapshot["content"]
+        content = snapshot.get("content")
+        constraints = resolved.get("factual_constraints")
+        if (
+            not isinstance(content, str)
+            or not isinstance(constraints, list)
+            or any(
+                not isinstance(constraint, str) or constraint not in content
+                for constraint in constraints
+            )
+        ):
+            raise AIInputResolutionError(
+                422,
+                "ai_invalid_tool_input",
+                "Invalid AI tool input.",
+            )
+        return self._validate_resolved_input(tool_id, resolved)
+
+    def _resolve_search_intent_snapshot(
+        self,
+        *,
+        user_id: str,
+        tool_id: str,
+        validated_input: dict[str, object],
+    ) -> dict[str, object]:
+        snapshot = self._owned_page_snapshot(
+            user_id=user_id,
+            page_url=validated_input.get("page_url"),
+        )
+        resolved = dict(validated_input)
+        resolved.update(
+            {
+                "page_url": snapshot["page_url"],
+                "page_title": snapshot["title"],
+                "h1": snapshot["h1"],
+                "content": snapshot["content"],
+            }
+        )
         return self._validate_resolved_input(tool_id, resolved)
 
     def _resolve_internal_linking_snapshots(
@@ -188,6 +258,17 @@ class AIInputResolver:
         ):
             return origin
         raise AIInputResolutionError(404, "ai_source_not_found", "AI source was not found.")
+
+    def _owned_page_snapshot(
+        self,
+        *,
+        user_id: str,
+        page_url: object,
+    ) -> dict[str, object]:
+        if not isinstance(page_url, str):
+            raise AIInputResolutionError(422, "ai_invalid_tool_input", "Invalid AI tool input.")
+        owned_origin = self._owned_origin(user_id=user_id, page_url=page_url)
+        return self._fetch_snapshot(page_url, allowed_origin=owned_origin)
 
     def _fetch_snapshot(
         self,

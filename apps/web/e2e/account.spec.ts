@@ -716,6 +716,17 @@ test.describe("account monitoring", () => {
     await expect(page.getByLabel("Подтверждённые факты (по одному в строке)")).toBeVisible();
     await page.getByRole("button", { name: "Закрыть" }).click();
 
+    await page.getByRole("article").filter({ hasText: "AI-оптимизатор контента" }).getByRole("button", { name: "Открыть форму" }).click();
+    await expect(page.getByLabel("URL страницы")).toBeVisible();
+    await expect(page.getByLabel("Текст страницы")).toHaveCount(0);
+    await page.getByRole("button", { name: "Закрыть" }).click();
+
+    await page.getByRole("article").filter({ hasText: "AI-соответствие интента странице" }).getByRole("button", { name: "Открыть форму" }).click();
+    await expect(page.getByLabel("URL страницы")).toBeVisible();
+    await expect(page.getByLabel("Основной запрос")).toBeVisible();
+    await expect(page.getByLabel("Текст страницы")).toHaveCount(0);
+    await page.getByRole("button", { name: "Закрыть" }).click();
+
     await page.getByRole("article").filter({ hasText: "AI-анализ конкурентных пробелов" }).getByRole("button", { name: "Открыть форму" }).click();
     await expect(page.locator(".wd-ai-text-runner").getByRole("heading", { name: "AI-анализ конкурентных пробелов" })).toBeVisible();
     await expect(page.getByLabel("URL своей страницы")).toBeVisible();

@@ -138,6 +138,24 @@ class ContentOptimizerInput(_StrictModel):
         return _normalize_content_page_url(value)
 
 
+class ContextContentOptimizerInput(_StrictModel):
+    """Public owned-page reference; the API replaces optional browser content."""
+
+    locale: Locale
+    page_url: str = Field(min_length=8, max_length=2_048)
+    content: str | None = Field(default=None, min_length=20, max_length=40_000)
+    target_query: str | None = Field(default=None, min_length=1, max_length=300)
+    objective: str | None = Field(default=None, min_length=1, max_length=1_000)
+    factual_constraints: list[
+        Annotated[str, Field(min_length=1, max_length=2_000)]
+    ] = Field(default_factory=list, max_length=30)
+
+    @field_validator("page_url")
+    @classmethod
+    def normalize_page_url(cls, value: str) -> str:
+        return _normalize_content_page_url(value)
+
+
 PageType = Literal[
     "informational",
     "commercial",
@@ -156,6 +174,23 @@ class SearchIntentPageFitInput(_StrictModel):
     page_title: str | None = Field(default=None, min_length=1, max_length=300)
     h1: str | None = Field(default=None, min_length=1, max_length=500)
     content: str = Field(min_length=20, max_length=40_000)
+
+    @field_validator("page_url")
+    @classmethod
+    def normalize_page_url(cls, value: str) -> str:
+        return _normalize_content_page_url(value)
+
+
+class ContextSearchIntentPageFitInput(_StrictModel):
+    """Public owned-page reference; the API builds the provider snapshot."""
+
+    locale: Locale
+    page_url: str = Field(min_length=8, max_length=2_048)
+    primary_query: str = Field(min_length=1, max_length=300)
+    intended_page_type: PageType
+    page_title: str | None = Field(default=None, min_length=1, max_length=300)
+    h1: str | None = Field(default=None, min_length=1, max_length=500)
+    content: str | None = Field(default=None, min_length=20, max_length=40_000)
 
     @field_validator("page_url")
     @classmethod
@@ -665,8 +700,8 @@ _INPUT_MODELS: dict[str, type[_StrictModel]] = {
     "ai_faq_studio": FAQStudioInput,
     "ai_alt_text_studio": AltTextInput,
     "ai_content_brief": ContentBriefInput,
-    "ai_content_optimizer": ContentOptimizerInput,
-    "ai_search_intent_page_fit": SearchIntentPageFitInput,
+    "ai_content_optimizer": ContextContentOptimizerInput,
+    "ai_search_intent_page_fit": ContextSearchIntentPageFitInput,
     "ai_competitor_gap_report": ContextCompetitorGapInput,
     "ai_internal_linking_planner": ContextInternalLinkingInput,
     "ai_redirect_migration_mapper": RedirectMigrationInput,
@@ -681,6 +716,8 @@ _PROVIDER_INPUT_MODELS: dict[str, type[_StrictModel]] = {
     "ai_audit_action_plan": AuditActionPlanProviderInput,
     "ai_alt_text_studio": AltTextProviderInput,
     "ai_image_edit_studio": ImageEditStudioProviderInput,
+    "ai_content_optimizer": ContentOptimizerInput,
+    "ai_search_intent_page_fit": SearchIntentPageFitInput,
     "ai_competitor_gap_report": CompetitorGapInput,
     "ai_internal_linking_planner": InternalLinkingInput,
 }
