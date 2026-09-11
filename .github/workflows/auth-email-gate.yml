@@ -1,0 +1,44 @@
+name: Auth Email Gate
+
+on:
+  push:
+    branches: [feat/auth-email-resend]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Frontend tests
+        run: npm run test:web
+      - name: Frontend lint
+        run: npm run lint:web
+      - name: Frontend typecheck
+        run: npm run typecheck
+
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements-dev.lock.txt
+      - name: Install API dependencies
+        run: python -m pip install -c requirements-dev.lock.txt -e "./apps/api[dev]"
+      - name: API tests
+        run: python -m pytest apps/api/tests
+      - name: API lint
+        run: python -m ruff check apps/api
