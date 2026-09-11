@@ -6,7 +6,6 @@ import { SiteBrand } from "./site-brand";
 import { toolsPath } from "../lib/routes";
 
 const featured = ["json-formatter-validator", "image-optimizer", "color-contrast-checker", "hash-generator"] as const;
-const supportEmail = "support@webdiag.ru";
 
 export function SiteFooter({ locale }: { locale: Locale }) {
   const prefix = locale === "ru" ? "" : "/en";
@@ -48,7 +47,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
           <Link href={pages.pricing}>{locale === "ru" ? "Цены" : "Pricing"}</Link>
           <Link href={toolsPath(locale)}>{text.support}</Link>
           <Link href={pages.contacts}>{text.contacts}</Link>
-          <a href={`mailto:${supportEmail}`}>{supportEmail}</a>
+          <a href="mailto:support@webdiag.ru">support@webdiag.ru</a>
         </div>
         <div className="footer-column">
           <strong>{text.categories}</strong>
