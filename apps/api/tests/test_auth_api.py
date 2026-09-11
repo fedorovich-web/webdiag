@@ -249,10 +249,10 @@ async def test_login_replaces_attacker_supplied_session_cookie(auth_client) -> N
     client.cookies.clear()
 
     attacker_token = "attacker-fixed-session-token"
-    client.cookies.set("webdiag_session", attacker_token)
     login = await client.post(
         "/api/auth/login",
         json={"email": "roman@example.com", "password": PASSWORD},
+        headers={"cookie": f"webdiag_session={attacker_token}"},
     )
 
     assert login.status_code == 200
