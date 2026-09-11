@@ -70,12 +70,15 @@ describe("WebDiag auth UI contract", () => {
     expect(tokenForm).toContain('minLength={10}');
   });
 
-  it("fails closed for missing tokens and surfaces FastAPI detail errors", () => {
+  it("fails closed for missing tokens and shares sanitized API error parsing", () => {
     const tokenForm = source("./auth-token-form.tsx");
     const form = source("./auth-form.tsx");
+    const responseParser = source("./auth-api-response.ts");
 
     expect(tokenForm).toContain("missingToken");
-    expect(tokenForm).toContain("detail");
-    expect(form).toContain("detail");
+    expect(tokenForm).toContain("readAuthMessage");
+    expect(form).toContain("readAuthMessage");
+    expect(responseParser).toContain("detail");
+    expect(responseParser).toContain("message");
   });
 });
