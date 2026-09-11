@@ -8,16 +8,26 @@ function source(relativeUrl: string): string {
 describe("WebDiag auth UI contract", () => {
   it("publishes login, registration and password recovery in RU and EN", () => {
     const routes = [
-      "../../../app/(ru)/auth/login/page.tsx",
-      "../../../app/(ru)/auth/register/page.tsx",
-      "../../../app/(ru)/auth/forgot-password/page.tsx",
-      "../../../app/(en)/en/auth/login/page.tsx",
-      "../../../app/(en)/en/auth/register/page.tsx",
-      "../../../app/(en)/en/auth/forgot-password/page.tsx",
+      "../../../app/(auth-ru)/auth/login/page.tsx",
+      "../../../app/(auth-ru)/auth/register/page.tsx",
+      "../../../app/(auth-ru)/auth/forgot-password/page.tsx",
+      "../../../app/(auth-en)/en/auth/login/page.tsx",
+      "../../../app/(auth-en)/en/auth/register/page.tsx",
+      "../../../app/(auth-en)/en/auth/forgot-password/page.tsx",
     ];
 
     for (const route of routes) {
       expect(existsSync(new URL(route, import.meta.url)), route).toBe(true);
+    }
+  });
+
+  it("keeps auth pages out of the public header and footer layouts", () => {
+    const ruLayout = source("../../../app/(auth-ru)/layout.tsx");
+    const enLayout = source("../../../app/(auth-en)/layout.tsx");
+
+    for (const layout of [ruLayout, enLayout]) {
+      expect(layout).not.toContain("SiteHeader");
+      expect(layout).not.toContain("SiteFooter");
     }
   });
 
