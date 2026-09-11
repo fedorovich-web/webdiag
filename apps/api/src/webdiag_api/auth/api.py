@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Annotated, NoReturn
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
@@ -32,6 +33,9 @@ from webdiag_api.email.transactional import (
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 logger = logging.getLogger(__name__)
 
+SessionDep = Annotated[AsyncSession, Depends(get_db_session)]
+SessionCookie = Annotated[str | None, Cookie(alias=SESSION_COOKIE_NAME)]
+
 _REGISTERED_MESSAGE = "Если адрес доступен для регистрации, письмо подтверждения отправлено."
 _RESEND_MESSAGE = "Если аккаунту требуется подтверждение, новое письмо будет отправлено."
 _RESET_REQUEST_MESSAGE = "Если аккаунт существует, инструкции по восстановлению будут отправлены."
@@ -57,7 +61,10 @@ async def _deliver_required(
     try:
         await _email_transport().send(message, idempotency_key=idempotency_key)
     except RuntimeError as exc:
-        logger.error("transactional_email_delivery_failed", extra={"error_type": type(exc).__name__})
+        logger.error(
+            "transactional_email_delivery_failed",
+            extra={"error_type": type(exc).__name__},
+        )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Transactional email is temporarily unavailable",
@@ -78,29 +85,44 @@ async def _deliver_best_effort(
         )
 
 
-def _raise_auth_error(exc: AuthError) -> None:
+def _raise_auth_error(exc: AuthError) -> NoReturn:
     if exc.code in {"invalid_credentials", "invalid_session"}:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication failed") from exc
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication failed",
+        ) from exc
     if exc.code == "email_not_verified":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Email verification is required") from exc
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Email verification is required",
+        ) from exc
     if exc.code == "invalid_or_expired_token":
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired token") from exc
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired token",
+        ) from exc
     if exc.code == "invalid_current_password":
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect") from exc
-    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid authentication request") from exc
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect",
+        ) from exc
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Invalid authentication request",
+    ) from exc
 
 
 def _require_session_token(token: str | None) -> str:
     if not token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required",
+        )
     return token
 
 
 @router.post("/register", response_model=MessageResponse, status_code=status.HTTP_202_ACCEPTED)
-async def register(
-    payload: RegisterRequest,
-    session: AsyncSession = Depends(get_db_session),
-) -> MessageResponse:
+async def register(payload: RegisterRequest, session: SessionDep) -> MessageResponse:
     service = AuthService(session)
     try:
         result = await service.register(email=str(payload.email), password=payload.password)
@@ -108,7 +130,6 @@ async def register(
         if exc.code == "email_already_registered":
             return MessageResponse(message=_REGISTERED_MESSAGE)
         _raise_auth_error(exc)
-        raise AssertionError("unreachable")
 
     try:
         await _deliver_required(
@@ -130,14 +151,13 @@ async def register(
 async def verify_email(
     payload: TokenActionRequest,
     response: Response,
-    session: AsyncSession = Depends(get_db_session),
+    session: SessionDep,
 ) -> MessageResponse:
     service = AuthService(session)
     try:
         result = await service.verify_email(payload.token)
     except AuthError as exc:
         _raise_auth_error(exc)
-        raise AssertionError("unreachable")
 
     set_session_cookie(response, result.session_token, settings)
     await session.commit()
@@ -151,7 +171,7 @@ async def verify_email(
 )
 async def resend_verification(
     payload: EmailActionRequest,
-    session: AsyncSession = Depends(get_db_session),
+    session: SessionDep,
 ) -> MessageResponse:
     service = AuthService(session)
     result = await service.request_verification(email=str(payload.email))
@@ -178,14 +198,13 @@ async def resend_verification(
 async def login(
     payload: LoginRequest,
     response: Response,
-    session: AsyncSession = Depends(get_db_session),
+    session: SessionDep,
 ) -> UserResponse:
     service = AuthService(session)
     try:
         result = await service.login(email=str(payload.email), password=payload.password)
     except AuthError as exc:
         _raise_auth_error(exc)
-        raise AssertionError("unreachable")
 
     set_session_cookie(response, result.session_token, settings)
     await session.commit()
@@ -195,8 +214,8 @@ async def login(
 @router.post("/logout", response_model=MessageResponse)
 async def logout(
     response: Response,
-    session_token: str | None = Cookie(default=None, alias=SESSION_COOKIE_NAME),
-    session: AsyncSession = Depends(get_db_session),
+    session: SessionDep,
+    session_token: SessionCookie = None,
 ) -> MessageResponse:
     if session_token:
         await AuthService(session).logout(session_token)
@@ -207,15 +226,14 @@ async def logout(
 
 @router.get("/me", response_model=UserResponse)
 async def me(
-    session_token: str | None = Cookie(default=None, alias=SESSION_COOKIE_NAME),
-    session: AsyncSession = Depends(get_db_session),
+    session: SessionDep,
+    session_token: SessionCookie = None,
 ) -> UserResponse:
     token = _require_session_token(session_token)
     try:
         user = await AuthService(session).authenticate_session(token)
     except AuthError as exc:
         _raise_auth_error(exc)
-        raise AssertionError("unreachable")
     return UserResponse.model_validate(user)
 
 
@@ -226,7 +244,7 @@ async def me(
 )
 async def forgot_password(
     payload: EmailActionRequest,
-    session: AsyncSession = Depends(get_db_session),
+    session: SessionDep,
 ) -> MessageResponse:
     service = AuthService(session)
     result = await service.request_password_reset(email=str(payload.email))
@@ -254,14 +272,16 @@ async def forgot_password(
 async def reset_password(
     payload: PasswordResetRequest,
     response: Response,
-    session: AsyncSession = Depends(get_db_session),
+    session: SessionDep,
 ) -> MessageResponse:
     service = AuthService(session)
     try:
-        user = await service.reset_password(token=payload.token, new_password=payload.new_password)
+        user = await service.reset_password(
+            token=payload.token,
+            new_password=payload.new_password,
+        )
     except AuthError as exc:
         _raise_auth_error(exc)
-        raise AssertionError("unreachable")
 
     await session.commit()
     clear_session_cookie(response, settings)
@@ -276,8 +296,8 @@ async def reset_password(
 async def change_password(
     payload: PasswordChangeRequest,
     response: Response,
-    session_token: str | None = Cookie(default=None, alias=SESSION_COOKIE_NAME),
-    session: AsyncSession = Depends(get_db_session),
+    session: SessionDep,
+    session_token: SessionCookie = None,
 ) -> MessageResponse:
     token = _require_session_token(session_token)
     service = AuthService(session)
@@ -289,7 +309,6 @@ async def change_password(
         )
     except AuthError as exc:
         _raise_auth_error(exc)
-        raise AssertionError("unreachable")
 
     await session.commit()
     clear_session_cookie(response, settings)
