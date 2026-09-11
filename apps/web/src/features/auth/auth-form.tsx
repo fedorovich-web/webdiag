@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 
 import type { AuthLocale } from "./auth-shell";
 import styles from "./auth-form.module.css";
@@ -132,7 +132,7 @@ export function AuthForm({ locale, mode }: AuthFormProps) {
   const loginHref = locale === "ru" ? "/auth/login" : "/en/auth/login";
   const forgotHref = locale === "ru" ? "/auth/forgot-password" : "/en/auth/forgot-password";
 
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
     setMessage(null);
@@ -158,12 +158,10 @@ export function AuthForm({ locale, mode }: AuthFormProps) {
 
       if (isMessagePayload(payload)) {
         setMessage(payload.message);
+      } else if (mode === "register") {
+        setMessage(locale === "ru" ? "Проверьте почту и подтвердите email." : "Check your inbox and verify your email.");
       } else {
-        setMessage(
-          mode === "register"
-            ? locale === "ru" ? "Проверьте почту и подтвердите email." : "Check your inbox and verify your email."
-            : locale === "ru" ? "Если аккаунт существует, ссылка отправлена на указанный email." : "If the account exists, a reset link has been sent.",
-        );
+        setMessage(locale === "ru" ? "Если аккаунт существует, ссылка отправлена на указанный email." : "If the account exists, a reset link has been sent.");
       }
     } catch {
       setError(copy.genericError);
@@ -173,9 +171,13 @@ export function AuthForm({ locale, mode }: AuthFormProps) {
   }
 
   if (message) {
+    const stateTitle = mode === "register"
+      ? (locale === "ru" ? "Проверьте почту" : "Check your inbox")
+      : (locale === "ru" ? "Запрос принят" : "Request received");
+
     return (
       <div className={styles.state} role="status">
-        <strong>{mode === "register" ? (locale === "ru" ? "Проверьте почту" : "Check your inbox") : (locale === "ru" ? "Запрос принят" : "Request received")}</strong>
+        <strong>{stateTitle}</strong>
         <p>{message}</p>
         <Link className={styles.primaryLink} href={loginHref}>{locale === "ru" ? "Перейти ко входу" : "Go to sign in"}</Link>
       </div>
