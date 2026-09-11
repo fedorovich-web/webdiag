@@ -1,0 +1,248 @@
+"use client";
+
+import Link from "next/link";
+import { useState } from "react";
+
+import type { AuthLocale } from "./auth-shell";
+import styles from "./auth-form.module.css";
+
+type AuthMode = "login" | "register" | "forgot-password";
+
+type AuthFormProps = {
+  locale: AuthLocale;
+  mode: AuthMode;
+};
+
+type Copy = {
+  email: string;
+  password: string;
+  submit: string;
+  pending: string;
+  forgot: string;
+  alternatePrefix: string;
+  alternateLabel: string;
+  alternateHref: string;
+  yandex: string;
+  yandexSoon: string;
+  genericError: string;
+};
+
+const copies: Record<AuthLocale, Record<AuthMode, Copy>> = {
+  ru: {
+    login: {
+      email: "Email",
+      password: "Пароль",
+      submit: "Войти",
+      pending: "Входим...",
+      forgot: "Забыли пароль?",
+      alternatePrefix: "Нет аккаунта?",
+      alternateLabel: "Создать аккаунт",
+      alternateHref: "/auth/register",
+      yandex: "Продолжить с Яндекс ID",
+      yandexSoon: "Скоро",
+      genericError: "Не удалось войти. Проверьте данные и попробуйте ещё раз.",
+    },
+    register: {
+      email: "Email",
+      password: "Пароль",
+      submit: "Создать аккаунт",
+      pending: "Создаём аккаунт...",
+      forgot: "",
+      alternatePrefix: "Уже есть аккаунт?",
+      alternateLabel: "Войти",
+      alternateHref: "/auth/login",
+      yandex: "Продолжить с Яндекс ID",
+      yandexSoon: "Скоро",
+      genericError: "Не удалось создать аккаунт. Проверьте данные и попробуйте ещё раз.",
+    },
+    "forgot-password": {
+      email: "Email",
+      password: "",
+      submit: "Отправить ссылку",
+      pending: "Отправляем...",
+      forgot: "",
+      alternatePrefix: "Вспомнили пароль?",
+      alternateLabel: "Вернуться ко входу",
+      alternateHref: "/auth/login",
+      yandex: "Продолжить с Яндекс ID",
+      yandexSoon: "Скоро",
+      genericError: "Не удалось обработать запрос. Попробуйте ещё раз позже.",
+    },
+  },
+  en: {
+    login: {
+      email: "Email",
+      password: "Password",
+      submit: "Sign in",
+      pending: "Signing in...",
+      forgot: "Forgot password?",
+      alternatePrefix: "No account yet?",
+      alternateLabel: "Create account",
+      alternateHref: "/en/auth/register",
+      yandex: "Continue with Yandex ID",
+      yandexSoon: "Soon",
+      genericError: "Could not sign in. Check your details and try again.",
+    },
+    register: {
+      email: "Email",
+      password: "Password",
+      submit: "Create account",
+      pending: "Creating account...",
+      forgot: "",
+      alternatePrefix: "Already have an account?",
+      alternateLabel: "Sign in",
+      alternateHref: "/en/auth/login",
+      yandex: "Continue with Yandex ID",
+      yandexSoon: "Soon",
+      genericError: "Could not create the account. Check your details and try again.",
+    },
+    "forgot-password": {
+      email: "Email",
+      password: "",
+      submit: "Send reset link",
+      pending: "Sending...",
+      forgot: "",
+      alternatePrefix: "Remembered your password?",
+      alternateLabel: "Back to sign in",
+      alternateHref: "/en/auth/login",
+      yandex: "Continue with Yandex ID",
+      yandexSoon: "Soon",
+      genericError: "Could not process the request. Try again later.",
+    },
+  },
+};
+
+function authEndpoint(mode: AuthMode): string {
+  if (mode === "forgot-password") return "/api/auth/forgot-password";
+  return `/api/auth/${mode}`;
+}
+
+function isMessagePayload(value: unknown): value is { message: string } {
+  return typeof value === "object" && value !== null && "message" in value && typeof value.message === "string";
+}
+
+export function AuthForm({ locale, mode }: AuthFormProps) {
+  const copy = copies[locale][mode];
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const needsPassword = mode !== "forgot-password";
+  const loginHref = locale === "ru" ? "/auth/login" : "/en/auth/login";
+  const forgotHref = locale === "ru" ? "/auth/forgot-password" : "/en/auth/forgot-password";
+
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setMessage(null);
+    setPending(true);
+
+    try {
+      const response = await fetch(authEndpoint(mode), {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(needsPassword ? { email: email.trim(), password } : { email: email.trim() }),
+      });
+      const payload: unknown = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        setError(isMessagePayload(payload) ? payload.message : copy.genericError);
+        return;
+      }
+
+      if (mode === "login") {
+        window.location.assign(locale === "ru" ? "/" : "/en");
+        return;
+      }
+
+      if (isMessagePayload(payload)) {
+        setMessage(payload.message);
+      } else {
+        setMessage(
+          mode === "register"
+            ? locale === "ru" ? "Проверьте почту и подтвердите email." : "Check your inbox and verify your email."
+            : locale === "ru" ? "Если аккаунт существует, ссылка отправлена на указанный email." : "If the account exists, a reset link has been sent.",
+        );
+      }
+    } catch {
+      setError(copy.genericError);
+    } finally {
+      setPending(false);
+    }
+  }
+
+  if (message) {
+    return (
+      <div className={styles.state} role="status">
+        <strong>{mode === "register" ? (locale === "ru" ? "Проверьте почту" : "Check your inbox") : (locale === "ru" ? "Запрос принят" : "Request received")}</strong>
+        <p>{message}</p>
+        <Link className={styles.primaryLink} href={loginHref}>{locale === "ru" ? "Перейти ко входу" : "Go to sign in"}</Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.stack}>
+      <form className={styles.form} onSubmit={submit}>
+        <label>
+          <span>{copy.email}</span>
+          <input
+            autoComplete="email"
+            inputMode="email"
+            name="email"
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="you@example.com"
+            required
+            type="email"
+            value={email}
+          />
+        </label>
+
+        {needsPassword ? (
+          <label>
+            <span>{copy.password}</span>
+            <input
+              autoComplete={mode === "login" ? "current-password" : "new-password"}
+              minLength={mode === "register" ? 10 : 1}
+              name="password"
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder={mode === "register" ? (locale === "ru" ? "Минимум 10 символов" : "At least 10 characters") : "••••••••••"}
+              required
+              type="password"
+              value={password}
+            />
+          </label>
+        ) : null}
+
+        {mode === "login" ? <Link className={styles.forgot} href={forgotHref}>{copy.forgot}</Link> : null}
+        {error ? <p className={styles.error} role="alert">{error}</p> : null}
+
+        <button className={styles.primaryButton} disabled={pending} type="submit">
+          {pending ? copy.pending : copy.submit}
+        </button>
+      </form>
+
+      {mode !== "forgot-password" ? (
+        <div className={styles.socialBlock}>
+          <div className={styles.divider}><span>{locale === "ru" ? "или" : "or"}</span></div>
+          <button
+            aria-label={locale === "ru" ? "Продолжить с Яндекс ID — скоро" : "Continue with Yandex ID — soon"}
+            className={styles.yandexButton}
+            disabled
+            title={locale === "ru" ? "Яндекс ID будет доступен после подключения OAuth" : "Yandex ID will be available after OAuth is connected"}
+            type="button"
+          >
+            <span className={styles.yandexMark} aria-hidden="true">Я</span>
+            <span>{copy.yandex}</span>
+            <small>{copy.yandexSoon}</small>
+          </button>
+        </div>
+      ) : null}
+
+      <p className={styles.alternate}>
+        {copy.alternatePrefix}{" "}<Link href={copy.alternateHref}>{copy.alternateLabel}</Link>
+      </p>
+    </div>
+  );
+}
