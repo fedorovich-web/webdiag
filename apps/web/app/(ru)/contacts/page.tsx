@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { pageMetadata } from "../../../src/lib/seo";
 
-const supportEmail = "support@webdiag.ru";
-
 export const metadata: Metadata = pageMetadata({
   locale: "ru",
   title: "Контакты",
@@ -23,7 +21,7 @@ export default function Page() {
       <section className="wd-internal-note" aria-labelledby="support-title">
         <strong id="support-title">Поддержка</strong>
         <p>
-          <a href={`mailto:${supportEmail}`}>{supportEmail}</a>
+          <a href="mailto:support@webdiag.ru">support@webdiag.ru</a>
         </p>
       </section>
     </main>
