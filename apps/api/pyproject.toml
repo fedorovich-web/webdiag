@@ -44,3 +44,4 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["webdiag_api"]
+known-third-party = ["alembic"]
