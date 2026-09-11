@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 
-import type { AuthLocale } from "./auth-shell";
+import { readAuthMessage } from "./auth-api-response";
 import styles from "./auth-form.module.css";
+import type { AuthLocale } from "./auth-shell";
 
 type AuthMode = "login" | "register" | "forgot-password";
 
@@ -117,10 +118,6 @@ function authEndpoint(mode: AuthMode): string {
   return `/api/auth/${mode}`;
 }
 
-function isMessagePayload(value: unknown): value is { message: string } {
-  return typeof value === "object" && value !== null && "message" in value && typeof value.message === "string";
-}
-
 export function AuthForm({ locale, mode }: AuthFormProps) {
   const copy = copies[locale][mode];
   const [email, setEmail] = useState("");
@@ -141,13 +138,16 @@ export function AuthForm({ locale, mode }: AuthFormProps) {
     try {
       const response = await fetch(authEndpoint(mode), {
         method: "POST",
+        credentials: "same-origin",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(needsPassword ? { email: email.trim(), password } : { email: email.trim() }),
+        body: JSON.stringify(
+          needsPassword ? { email: email.trim(), password } : { email: email.trim() },
+        ),
       });
       const payload: unknown = await response.json().catch(() => null);
 
       if (!response.ok) {
-        setError(isMessagePayload(payload) ? payload.message : copy.genericError);
+        setError(readAuthMessage(payload) ?? copy.genericError);
         return;
       }
 
@@ -156,12 +156,21 @@ export function AuthForm({ locale, mode }: AuthFormProps) {
         return;
       }
 
-      if (isMessagePayload(payload)) {
-        setMessage(payload.message);
+      const apiMessage = readAuthMessage(payload);
+      if (apiMessage) {
+        setMessage(apiMessage);
       } else if (mode === "register") {
-        setMessage(locale === "ru" ? "Проверьте почту и подтвердите email." : "Check your inbox and verify your email.");
+        setMessage(
+          locale === "ru"
+            ? "Проверьте почту и подтвердите email."
+            : "Check your inbox and verify your email.",
+        );
       } else {
-        setMessage(locale === "ru" ? "Если аккаунт существует, ссылка отправлена на указанный email." : "If the account exists, a reset link has been sent.");
+        setMessage(
+          locale === "ru"
+            ? "Если аккаунт существует, ссылка отправлена на указанный email."
+            : "If the account exists, a reset link has been sent.",
+        );
       }
     } catch {
       setError(copy.genericError);
@@ -171,15 +180,22 @@ export function AuthForm({ locale, mode }: AuthFormProps) {
   }
 
   if (message) {
-    const stateTitle = mode === "register"
-      ? (locale === "ru" ? "Проверьте почту" : "Check your inbox")
-      : (locale === "ru" ? "Запрос принят" : "Request received");
+    const stateTitle =
+      mode === "register"
+        ? locale === "ru"
+          ? "Проверьте почту"
+          : "Check your inbox"
+        : locale === "ru"
+          ? "Запрос принят"
+          : "Request received";
 
     return (
       <div className={styles.state} role="status">
         <strong>{stateTitle}</strong>
         <p>{message}</p>
-        <Link className={styles.primaryLink} href={loginHref}>{locale === "ru" ? "Перейти ко входу" : "Go to sign in"}</Link>
+        <Link className={styles.primaryLink} href={loginHref}>
+          {locale === "ru" ? "Перейти ко входу" : "Go to sign in"}
+        </Link>
       </div>
     );
   }
@@ -209,7 +225,13 @@ export function AuthForm({ locale, mode }: AuthFormProps) {
               minLength={mode === "register" ? 10 : 1}
               name="password"
               onChange={(event) => setPassword(event.target.value)}
-              placeholder={mode === "register" ? (locale === "ru" ? "Минимум 10 символов" : "At least 10 characters") : "••••••••••"}
+              placeholder={
+                mode === "register"
+                  ? locale === "ru"
+                    ? "Минимум 10 символов"
+                    : "At least 10 characters"
+                  : "••••••••••"
+              }
               required
               type="password"
               value={password}
@@ -217,8 +239,16 @@ export function AuthForm({ locale, mode }: AuthFormProps) {
           </label>
         ) : null}
 
-        {mode === "login" ? <Link className={styles.forgot} href={forgotHref}>{copy.forgot}</Link> : null}
-        {error ? <p className={styles.error} role="alert">{error}</p> : null}
+        {mode === "login" ? (
+          <Link className={styles.forgot} href={forgotHref}>
+            {copy.forgot}
+          </Link>
+        ) : null}
+        {error ? (
+          <p className={styles.error} role="alert">
+            {error}
+          </p>
+        ) : null}
 
         <button className={styles.primaryButton} disabled={pending} type="submit">
           {pending ? copy.pending : copy.submit}
@@ -227,15 +257,27 @@ export function AuthForm({ locale, mode }: AuthFormProps) {
 
       {mode !== "forgot-password" ? (
         <div className={styles.socialBlock}>
-          <div className={styles.divider}><span>{locale === "ru" ? "или" : "or"}</span></div>
+          <div className={styles.divider}>
+            <span>{locale === "ru" ? "или" : "or"}</span>
+          </div>
           <button
-            aria-label={locale === "ru" ? "Продолжить с Яндекс ID — скоро" : "Continue with Yandex ID — soon"}
+            aria-label={
+              locale === "ru"
+                ? "Продолжить с Яндекс ID — скоро"
+                : "Continue with Yandex ID — soon"
+            }
             className={styles.yandexButton}
             disabled
-            title={locale === "ru" ? "Яндекс ID будет доступен после подключения OAuth" : "Yandex ID will be available after OAuth is connected"}
+            title={
+              locale === "ru"
+                ? "Яндекс ID будет доступен после подключения OAuth"
+                : "Yandex ID will be available after OAuth is connected"
+            }
             type="button"
           >
-            <span className={styles.yandexMark} aria-hidden="true">Я</span>
+            <span className={styles.yandexMark} aria-hidden="true">
+              Я
+            </span>
             <span>{copy.yandex}</span>
             <small>{copy.yandexSoon}</small>
           </button>
@@ -243,7 +285,8 @@ export function AuthForm({ locale, mode }: AuthFormProps) {
       ) : null}
 
       <p className={styles.alternate}>
-        {copy.alternatePrefix}{" "}<Link href={copy.alternateHref}>{copy.alternateLabel}</Link>
+        {copy.alternatePrefix}{" "}
+        <Link href={copy.alternateHref}>{copy.alternateLabel}</Link>
       </p>
     </div>
   );
