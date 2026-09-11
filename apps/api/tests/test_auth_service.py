@@ -10,6 +10,8 @@ from webdiag_api.auth.models import AuthSession, Base, OneTimeToken
 from webdiag_api.auth.security import digest_token
 from webdiag_api.auth.service import AuthError, AuthService
 
+PASSWORD = "correct horse battery staple"
+
 
 @pytest.fixture
 async def service():
@@ -29,7 +31,7 @@ async def service():
 async def test_registration_creates_unverified_user_and_persists_only_token_digest(service) -> None:
     auth, session = service
 
-    result = await auth.register(email=" Roman@Example.COM ", password="correct horse battery staple")
+    result = await auth.register(email=" Roman@Example.COM ", password=PASSWORD)
     await session.commit()
 
     assert result.user.email == "roman@example.com"
@@ -44,7 +46,7 @@ async def test_registration_creates_unverified_user_and_persists_only_token_dige
 @pytest.mark.asyncio
 async def test_verification_is_single_use_and_issues_opaque_session(service) -> None:
     auth, session = service
-    registered = await auth.register(email="roman@example.com", password="correct horse battery staple")
+    registered = await auth.register(email="roman@example.com", password=PASSWORD)
     await session.commit()
 
     verified = await auth.verify_email(registered.token.raw)
@@ -63,17 +65,17 @@ async def test_verification_is_single_use_and_issues_opaque_session(service) -> 
 @pytest.mark.asyncio
 async def test_login_requires_verified_email_and_rejects_bad_password(service) -> None:
     auth, session = service
-    registered = await auth.register(email="roman@example.com", password="correct horse battery staple")
+    registered = await auth.register(email="roman@example.com", password=PASSWORD)
     await session.commit()
 
     with pytest.raises(AuthError, match="email_not_verified"):
-        await auth.login(email="roman@example.com", password="correct horse battery staple")
+        await auth.login(email="roman@example.com", password=PASSWORD)
     with pytest.raises(AuthError, match="invalid_credentials"):
         await auth.login(email="roman@example.com", password="wrong password")
 
     await auth.verify_email(registered.token.raw)
     await session.commit()
-    logged_in = await auth.login(email="roman@example.com", password="correct horse battery staple")
+    logged_in = await auth.login(email="roman@example.com", password=PASSWORD)
 
     assert logged_in.user.email == "roman@example.com"
     assert logged_in.session_token
@@ -89,10 +91,10 @@ async def test_forgot_password_does_not_reveal_unknown_accounts(service) -> None
 @pytest.mark.asyncio
 async def test_password_reset_consumes_token_and_revokes_existing_sessions(service) -> None:
     auth, session = service
-    registered = await auth.register(email="roman@example.com", password="correct horse battery staple")
+    registered = await auth.register(email="roman@example.com", password=PASSWORD)
     await auth.verify_email(registered.token.raw)
     await session.commit()
-    logged_in = await auth.login(email="roman@example.com", password="correct horse battery staple")
+    logged_in = await auth.login(email="roman@example.com", password=PASSWORD)
     reset = await auth.request_password_reset(email="roman@example.com")
     assert reset is not None
     await session.commit()
@@ -103,7 +105,7 @@ async def test_password_reset_consumes_token_and_revokes_existing_sessions(servi
     with pytest.raises(AuthError, match="invalid_session"):
         await auth.authenticate_session(logged_in.session_token)
     with pytest.raises(AuthError, match="invalid_credentials"):
-        await auth.login(email="roman@example.com", password="correct horse battery staple")
+        await auth.login(email="roman@example.com", password=PASSWORD)
     relogin = await auth.login(email="roman@example.com", password="new correct horse battery")
     assert relogin.session_token
     with pytest.raises(AuthError, match="invalid_or_expired_token"):
@@ -113,7 +115,7 @@ async def test_password_reset_consumes_token_and_revokes_existing_sessions(servi
 @pytest.mark.asyncio
 async def test_expired_one_time_token_is_rejected(service) -> None:
     auth, session = service
-    registered = await auth.register(email="roman@example.com", password="correct horse battery staple")
+    registered = await auth.register(email="roman@example.com", password=PASSWORD)
     persisted = (await session.execute(select(OneTimeToken))).scalar_one()
     persisted.expires_at = datetime(2026, 9, 11, 11, 59, tzinfo=UTC)
     await session.commit()
