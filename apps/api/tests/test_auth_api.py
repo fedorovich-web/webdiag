@@ -5,9 +5,11 @@ from collections.abc import AsyncIterator
 
 import httpx
 import pytest
+from pydantic import SecretStr
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from webdiag_api.auth.models import Base
+from webdiag_api.config import settings
 from webdiag_api.db import get_db_session
 from webdiag_api.email.resend import ResendTransport
 from webdiag_api.email.transactional import TransactionalEmail
@@ -43,6 +45,7 @@ async def auth_client(
         delivered.append(message)
         return "email-test-id"
 
+    monkeypatch.setattr(settings, "resend_api_key", SecretStr("re_test_auth_api_key"))
     monkeypatch.setattr(ResendTransport, "send", fake_send)
     app.dependency_overrides[get_db_session] = override_db_session
 
