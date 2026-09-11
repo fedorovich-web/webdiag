@@ -112,7 +112,9 @@ async def test_verify_sets_http_only_session_cookie_and_logout_revokes_it(auth_c
 
 
 @pytest.mark.asyncio
-async def test_password_recovery_is_enumeration_safe_and_revokes_existing_session(auth_client) -> None:
+async def test_password_recovery_is_enumeration_safe_and_revokes_existing_session(
+    auth_client,
+) -> None:
     client, delivered = auth_client
     await client.post(
         "/api/auth/register",
@@ -128,7 +130,11 @@ async def test_password_recovery_is_enumeration_safe_and_revokes_existing_sessio
     assert unknown.status_code == 202
     assert known.json() == unknown.json()
 
-    reset_message = next(message for message in reversed(delivered) if "парол" in message.subject.lower())
+    reset_message = next(
+        message
+        for message in reversed(delivered)
+        if "парол" in message.subject.lower()
+    )
     reset_token = _token_from(reset_message)
     reset = await client.post(
         "/api/auth/reset-password",
