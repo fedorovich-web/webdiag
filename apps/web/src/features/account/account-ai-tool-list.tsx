@@ -21,6 +21,20 @@ function catalogTool(
   return catalog?.tools.find((tool) => tool.id === toolId) ?? null;
 }
 
+function toolActionLabel(
+  locale: Locale,
+  toolId: AIWorkspaceToolDescriptor["id"],
+  options: { readonly enabled: boolean; readonly loading: boolean },
+): string {
+  const ru = locale === "ru";
+  if (options.loading) return ru ? "Проверяем" : "Checking";
+  if (!options.enabled) return ru ? "Недоступен" : "Not available";
+  if (toolId === "ai_audit_action_plan") {
+    return ru ? "Запуск из сохранённого аудита" : "Run from a saved audit";
+  }
+  return ru ? "Открыть форму" : "Open form";
+}
+
 export function AccountAIToolList({ locale, catalog, loading, onSelect }: AccountAIToolListProps) {
   const ru = locale === "ru";
   const descriptors = aiToolDescriptors(locale);
@@ -55,7 +69,7 @@ export function AccountAIToolList({ locale, catalog, loading, onSelect }: Accoun
               <p>{descriptor.summary}</p>
               <small>{descriptor.limits}</small>
               <button className="wd-button wd-button-secondary" type="button" disabled={!selectable} onClick={() => onSelect?.(descriptor.id)}>
-                {selectable ? (ru ? "Открыть форму" : "Open form") : (ru ? "Требуются данные проекта" : "Project evidence required")}
+                {toolActionLabel(locale, descriptor.id, { enabled, loading })}
               </button>
             </article>
           );

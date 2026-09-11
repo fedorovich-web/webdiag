@@ -9,6 +9,9 @@
   `Доступен` / `Available` rather than `Внутренняя оценка`;
 - retained the fail-closed empty-catalog state: internal tools remain omitted,
   render as unavailable, and cannot open a run form;
+- replaced the misleading project-evidence action on unavailable cards with an
+  explicit unavailable state; a ready Audit Copilot points users to a saved
+  audit, where its server-owned evidence flow starts;
 - added browser coverage proving that competitor-gap and internal-linking forms
   accept URL references without exposing the removed client evidence fields.
 

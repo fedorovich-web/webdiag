@@ -710,6 +710,7 @@ test.describe("account monitoring", () => {
     await expect(page.getByText("Доступен", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("готовы к запуску", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Открыть форму" })).toHaveCount(5);
+    await expect(page.getByRole("button", { name: "Запуск из сохранённого аудита" })).toBeDisabled();
     await page.getByRole("article").filter({ hasText: "AI-бриф контента" }).getByRole("button", { name: "Открыть форму" }).click();
     await expect(page.locator(".wd-ai-text-runner").getByRole("heading", { name: "AI-бриф контента" })).toBeVisible();
     await expect(page.getByLabel("Подтверждённые факты (по одному в строке)")).toBeVisible();
@@ -758,8 +759,8 @@ test.describe("account monitoring", () => {
     await page.goto("/en/account/ai");
     await expect(page.getByRole("heading", { level: 1, name: "Account AI tools" })).toBeVisible();
     await expect(page.getByText("0/6", { exact: true })).toBeVisible();
-    await expect(page.getByText("Not available", { exact: true })).toHaveCount(6);
-    await expect(page.getByRole("button", { name: "Project evidence required" })).toHaveCount(6);
+    await expect(page.locator(".wd-ai-tool-status").filter({ hasText: /^Not available$/u })).toHaveCount(6);
+    await expect(page.getByRole("button", { name: "Not available" })).toHaveCount(6);
     await expect(page.getByText(/soon|coming soon|uptime|incident/i)).toHaveCount(0);
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   });
