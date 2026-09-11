@@ -9,7 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from webdiag_api.auth.models import Base
 from webdiag_api.db import get_db_session
-from webdiag_api.email.resend import EmailMessage, ResendTransport
+from webdiag_api.email.resend import ResendTransport
+from webdiag_api.email.transactional import TransactionalEmail
 from webdiag_api.main import app
 
 PASSWORD = "correct horse battery staple"
@@ -17,7 +18,9 @@ NEW_PASSWORD = "new correct horse battery"
 
 
 @pytest.fixture
-async def auth_client(monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[tuple[httpx.AsyncClient, list[EmailMessage]]]:
+async def auth_client(
+    monkeypatch: pytest.MonkeyPatch,
+) -> AsyncIterator[tuple[httpx.AsyncClient, list[TransactionalEmail]]]:
     engine = create_async_engine("sqlite+aiosqlite:///:memory:")
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
@@ -28,10 +31,17 @@ async def auth_client(monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[tuple[ht
         async with session_factory() as session:
             yield session
 
-    delivered: list[EmailMessage] = []
+    delivered: list[TransactionalEmail] = []
 
-    async def fake_send(self: ResendTransport, message: EmailMessage) -> None:
+    async def fake_send(
+        self: ResendTransport,
+        message: TransactionalEmail,
+        *,
+        idempotency_key: str,
+    ) -> str:
+        assert idempotency_key
         delivered.append(message)
+        return "email-test-id"
 
     monkeypatch.setattr(ResendTransport, "send", fake_send)
     app.dependency_overrides[get_db_session] = override_db_session
@@ -44,7 +54,7 @@ async def auth_client(monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[tuple[ht
     await engine.dispose()
 
 
-def _token_from(message: EmailMessage) -> str:
+def _token_from(message: TransactionalEmail) -> str:
     match = re.search(r"[?&]token=([A-Za-z0-9_-]+)", message.text)
     assert match is not None
     return match.group(1)
