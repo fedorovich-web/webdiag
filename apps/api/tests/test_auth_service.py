@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy import select
@@ -115,7 +115,7 @@ async def test_expired_one_time_token_is_rejected(service) -> None:
     auth, session = service
     registered = await auth.register(email="roman@example.com", password="correct horse battery staple")
     persisted = (await session.execute(select(OneTimeToken))).scalar_one()
-    persisted.expires_at = datetime.now(UTC) - timedelta(seconds=1)
+    persisted.expires_at = datetime(2026, 9, 11, 11, 59, tzinfo=UTC)
     await session.commit()
 
     with pytest.raises(AuthError, match="invalid_or_expired_token"):
