@@ -8,7 +8,9 @@ import pytest
 from pydantic import SecretStr
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+import webdiag_api.auth.api as auth_api
 from webdiag_api.auth.models import Base
+from webdiag_api.auth.rate_limit import RateLimitExceeded, RateLimitUnavailable
 from webdiag_api.config import settings
 from webdiag_api.db import get_db_session
 from webdiag_api.email.resend import ResendTransport
@@ -17,6 +19,23 @@ from webdiag_api.main import app
 
 PASSWORD = "correct horse battery staple"
 NEW_PASSWORD = "new correct horse battery"
+
+
+class StubRateLimiter:
+    def __init__(self, error: Exception) -> None:
+        self.error = error
+        self.calls: list[tuple[str, str, int, int]] = []
+
+    async def enforce(
+        self,
+        *,
+        scope: str,
+        identifier: str,
+        limit: int,
+        window_seconds: int,
+    ) -> None:
+        self.calls.append((scope, identifier, limit, window_seconds))
+        raise self.error
 
 
 @pytest.fixture
@@ -157,3 +176,43 @@ async def test_password_recovery_is_enumeration_safe_and_revokes_existing_sessio
     )
     assert new_password.status_code == 200
     assert "webdiag_session=" in new_password.headers.get("set-cookie", "")
+
+
+@pytest.mark.asyncio
+async def test_register_returns_429_before_persistence_when_rate_limit_is_exceeded(
+    auth_client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client, delivered = auth_client
+    limiter = StubRateLimiter(RateLimitExceeded())
+    monkeypatch.setattr(settings, "rate_limit_enabled", True)
+    monkeypatch.setattr(auth_api, "auth_rate_limiter", limiter, raising=False)
+
+    response = await client.post(
+        "/api/auth/register",
+        json={"email": "Roman@Example.com", "password": PASSWORD},
+    )
+
+    assert response.status_code == 429
+    assert delivered == []
+    assert limiter.calls == [("register", "roman@example.com", 5, 3600)]
+
+
+@pytest.mark.asyncio
+async def test_auth_fails_closed_when_rate_limit_backend_is_unavailable(
+    auth_client,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client, delivered = auth_client
+    limiter = StubRateLimiter(RateLimitUnavailable())
+    monkeypatch.setattr(settings, "rate_limit_enabled", True)
+    monkeypatch.setattr(auth_api, "auth_rate_limiter", limiter, raising=False)
+
+    response = await client.post(
+        "/api/auth/forgot-password",
+        json={"email": "Roman@Example.com"},
+    )
+
+    assert response.status_code == 503
+    assert delivered == []
+    assert limiter.calls == [("forgot-password", "roman@example.com", 5, 3600)]
