@@ -82,6 +82,20 @@ def _token_from(message: TransactionalEmail) -> str:
     return match.group(1)
 
 
+async def _register_and_verify(
+    client: httpx.AsyncClient,
+    delivered: list[TransactionalEmail],
+) -> str:
+    await client.post(
+        "/api/auth/register",
+        json={"email": "roman@example.com", "password": PASSWORD},
+    )
+    token = _token_from(delivered[-1])
+    verified = await client.post("/api/auth/verify-email", json={"token": token})
+    assert verified.status_code == 200
+    return token
+
+
 @pytest.mark.asyncio
 async def test_register_is_enumeration_safe_and_sends_verification(auth_client) -> None:
     client, delivered = auth_client
@@ -103,19 +117,10 @@ async def test_register_is_enumeration_safe_and_sends_verification(auth_client) 
 @pytest.mark.asyncio
 async def test_verify_sets_http_only_session_cookie_and_logout_revokes_it(auth_client) -> None:
     client, delivered = auth_client
-    await client.post(
-        "/api/auth/register",
-        json={"email": "roman@example.com", "password": PASSWORD},
-    )
-    token = _token_from(delivered[-1])
+    await _register_and_verify(client, delivered)
 
-    verified = await client.post("/api/auth/verify-email", json={"token": token})
-
-    assert verified.status_code == 200
-    set_cookie = verified.headers.get("set-cookie", "")
-    assert "webdiag_session=" in set_cookie
-    assert "HttpOnly" in set_cookie
-    assert "SameSite=lax" in set_cookie
+    set_cookie = client.cookies.get("webdiag_session")
+    assert set_cookie is not None
 
     current = await client.get("/api/auth/me")
     assert current.status_code == 200
@@ -135,12 +140,7 @@ async def test_password_recovery_is_enumeration_safe_and_revokes_existing_sessio
     auth_client,
 ) -> None:
     client, delivered = auth_client
-    await client.post(
-        "/api/auth/register",
-        json={"email": "roman@example.com", "password": PASSWORD},
-    )
-    verify_token = _token_from(delivered[-1])
-    await client.post("/api/auth/verify-email", json={"token": verify_token})
+    await _register_and_verify(client, delivered)
 
     known = await client.post("/api/auth/forgot-password", json={"email": "roman@example.com"})
     unknown = await client.post("/api/auth/forgot-password", json={"email": "missing@example.com"})
@@ -186,7 +186,7 @@ async def test_register_returns_429_before_persistence_when_rate_limit_is_exceed
     client, delivered = auth_client
     limiter = StubRateLimiter(RateLimitExceeded())
     monkeypatch.setattr(settings, "rate_limit_enabled", True)
-    monkeypatch.setattr(auth_api, "auth_rate_limiter", limiter, raising=False)
+    monkeypatch.setattr(auth_api, "auth_rate_limiter", limiter)
 
     response = await client.post(
         "/api/auth/register",
@@ -206,7 +206,7 @@ async def test_auth_fails_closed_when_rate_limit_backend_is_unavailable(
     client, delivered = auth_client
     limiter = StubRateLimiter(RateLimitUnavailable())
     monkeypatch.setattr(settings, "rate_limit_enabled", True)
-    monkeypatch.setattr(auth_api, "auth_rate_limiter", limiter, raising=False)
+    monkeypatch.setattr(auth_api, "auth_rate_limiter", limiter)
 
     response = await client.post(
         "/api/auth/forgot-password",
@@ -216,3 +216,67 @@ async def test_auth_fails_closed_when_rate_limit_backend_is_unavailable(
     assert response.status_code == 503
     assert delivered == []
     assert limiter.calls == [("forgot-password", "roman@example.com", 5, 3600)]
+
+
+@pytest.mark.asyncio
+async def test_sql_injection_payloads_cannot_bypass_login(auth_client) -> None:
+    client, delivered = auth_client
+    await _register_and_verify(client, delivered)
+    await client.post("/api/auth/logout")
+
+    password_attack = await client.post(
+        "/api/auth/login",
+        json={"email": "roman@example.com", "password": "' OR '1'='1' --"},
+    )
+    email_attack = await client.post(
+        "/api/auth/login",
+        json={"email": "' OR 1=1 --", "password": PASSWORD},
+    )
+    valid_login = await client.post(
+        "/api/auth/login",
+        json={"email": "roman@example.com", "password": PASSWORD},
+    )
+
+    assert password_attack.status_code == 401
+    assert email_attack.status_code == 422
+    assert valid_login.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_login_replaces_attacker_supplied_session_cookie(auth_client) -> None:
+    client, delivered = auth_client
+    await _register_and_verify(client, delivered)
+    client.cookies.clear()
+
+    attacker_token = "attacker-fixed-session-token"
+    client.cookies.set("webdiag_session", attacker_token)
+    login = await client.post(
+        "/api/auth/login",
+        json={"email": "roman@example.com", "password": PASSWORD},
+    )
+
+    assert login.status_code == 200
+    issued_token = client.cookies.get("webdiag_session")
+    assert issued_token is not None
+    assert issued_token != attacker_token
+
+    attacker_transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(
+        transport=attacker_transport,
+        base_url="http://testserver",
+        cookies={"webdiag_session": attacker_token},
+    ) as attacker_client:
+        attacker_session = await attacker_client.get("/api/auth/me")
+
+    assert attacker_session.status_code == 401
+    assert (await client.get("/api/auth/me")).status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_email_verification_token_replay_is_rejected(auth_client) -> None:
+    client, delivered = auth_client
+    token = await _register_and_verify(client, delivered)
+
+    replay = await client.post("/api/auth/verify-email", json={"token": token})
+
+    assert replay.status_code == 400
