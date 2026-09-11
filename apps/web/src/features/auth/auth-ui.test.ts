@@ -6,14 +6,18 @@ function source(relativeUrl: string): string {
 }
 
 describe("WebDiag auth UI contract", () => {
-  it("publishes login, registration and password recovery in RU and EN", () => {
+  it("publishes complete account auth flows in RU and EN", () => {
     const routes = [
       "../../../app/(auth-ru)/auth/login/page.tsx",
       "../../../app/(auth-ru)/auth/register/page.tsx",
       "../../../app/(auth-ru)/auth/forgot-password/page.tsx",
+      "../../../app/(auth-ru)/auth/verify-email/page.tsx",
+      "../../../app/(auth-ru)/auth/reset-password/page.tsx",
       "../../../app/(auth-en)/en/auth/login/page.tsx",
       "../../../app/(auth-en)/en/auth/register/page.tsx",
       "../../../app/(auth-en)/en/auth/forgot-password/page.tsx",
+      "../../../app/(auth-en)/en/auth/verify-email/page.tsx",
+      "../../../app/(auth-en)/en/auth/reset-password/page.tsx",
     ];
 
     for (const route of routes) {
@@ -52,5 +56,26 @@ describe("WebDiag auth UI contract", () => {
     expect(form).not.toMatch(/Google/i);
     expect(form).toContain('type="email"');
     expect(form).toContain('type="password"');
+  });
+
+  it("consumes verification and reset tokens through the auth API", () => {
+    const tokenFormPath = new URL("./auth-token-form.tsx", import.meta.url);
+    expect(existsSync(tokenFormPath)).toBe(true);
+
+    const tokenForm = readFileSync(tokenFormPath, "utf8");
+    expect(tokenForm).toContain("/api/auth/verify-email");
+    expect(tokenForm).toContain("/api/auth/reset-password");
+    expect(tokenForm).toContain("new_password");
+    expect(tokenForm).toContain("token");
+    expect(tokenForm).toContain('minLength={10}');
+  });
+
+  it("fails closed for missing tokens and surfaces FastAPI detail errors", () => {
+    const tokenForm = source("./auth-token-form.tsx");
+    const form = source("./auth-form.tsx");
+
+    expect(tokenForm).toContain("missingToken");
+    expect(tokenForm).toContain("detail");
+    expect(form).toContain("detail");
   });
 });
