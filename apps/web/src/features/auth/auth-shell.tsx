@@ -70,10 +70,10 @@ export function AuthShell({ children, description, locale, title }: AuthShellPro
           </div>
 
           <div className={styles.metrics}>
-            <div><span>SEO</span><strong>96</strong><i style={{ "--metric": "96%" } as React.CSSProperties} /></div>
-            <div><span>Performance</span><strong>88</strong><i style={{ "--metric": "88%" } as React.CSSProperties} /></div>
-            <div><span>Security</span><strong>94</strong><i style={{ "--metric": "94%" } as React.CSSProperties} /></div>
-            <div><span>Accessibility</span><strong>91</strong><i style={{ "--metric": "91%" } as React.CSSProperties} /></div>
+            <div><span>SEO</span><strong>96</strong><i /></div>
+            <div><span>Performance</span><strong>88</strong><i /></div>
+            <div><span>Security</span><strong>94</strong><i /></div>
+            <div><span>Accessibility</span><strong>91</strong><i /></div>
           </div>
 
           <div className={styles.issueSummary}>
