@@ -18,7 +18,13 @@ class TransactionalEmail:
     html: str
 
 
-def _layout(*, title: str, body: str, action_url: str | None = None, action_label: str | None = None) -> str:
+def _layout(
+    *,
+    title: str,
+    body: str,
+    action_url: str | None = None,
+    action_label: str | None = None,
+) -> str:
     action = ""
     if action_url and action_label:
         action = (
@@ -29,7 +35,8 @@ def _layout(*, title: str, body: str, action_url: str | None = None, action_labe
             f"{escape(action_label)}</a></p>"
         )
     return (
-        '<!doctype html><html><body style="font-family:Arial,sans-serif;line-height:1.5;color:#171717">'
+        "<!doctype html><html><body "
+        'style="font-family:Arial,sans-serif;line-height:1.5;color:#171717">'
         f"<h1>{escape(title)}</h1><p>{escape(body)}</p>{action}"
         f'<p style="color:#666">Поддержка: <a href="mailto:{DEFAULT_SUPPORT_EMAIL}">'
         f"{DEFAULT_SUPPORT_EMAIL}</a></p></body></html>"
@@ -89,14 +96,15 @@ def build_password_changed_email(*, recipient: str) -> TransactionalEmail:
         "Пароль вашего аккаунта WebDiag был изменён.\n\n"
         f"Если это были не вы, немедленно напишите на {DEFAULT_SUPPORT_EMAIL}."
     )
+    body = (
+        "Пароль вашего аккаунта WebDiag был изменён. "
+        "Если это были не вы, свяжитесь с поддержкой."
+    )
     return TransactionalEmail(
         sender=DEFAULT_SENDER,
         reply_to=DEFAULT_SUPPORT_EMAIL,
         to=recipient,
         subject=subject,
         text=text,
-        html=_layout(
-            title="Пароль изменён",
-            body="Пароль вашего аккаунта WebDiag был изменён. Если это были не вы, свяжитесь с поддержкой.",
-        ),
+        html=_layout(title="Пароль изменён", body=body),
     )
