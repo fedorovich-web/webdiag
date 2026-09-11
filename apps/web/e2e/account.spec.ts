@@ -713,6 +713,20 @@ test.describe("account monitoring", () => {
     await expect(page.locator(".wd-ai-text-runner").getByRole("heading", { name: "AI-бриф контента" })).toBeVisible();
     await expect(page.getByLabel("Подтверждённые факты (по одному в строке)")).toBeVisible();
     await page.getByRole("button", { name: "Закрыть" }).click();
+
+    await page.getByRole("article").filter({ hasText: "AI-анализ конкурентных пробелов" }).getByRole("button", { name: "Открыть форму" }).click();
+    await expect(page.locator(".wd-ai-text-runner").getByRole("heading", { name: "AI-анализ конкурентных пробелов" })).toBeVisible();
+    await expect(page.getByLabel("URL своей страницы")).toBeVisible();
+    await expect(page.getByLabel("URL страницы конкурента")).toBeVisible();
+    await expect(page.getByLabel("Текст своей страницы")).toHaveCount(0);
+    await expect(page.getByLabel("Текст страницы конкурента")).toHaveCount(0);
+    await page.getByRole("button", { name: "Закрыть" }).click();
+
+    await page.getByRole("article").filter({ hasText: "AI-план внутренних ссылок" }).getByRole("button", { name: "Открыть форму" }).click();
+    await expect(page.locator(".wd-ai-text-runner").getByRole("heading", { name: "AI-план внутренних ссылок" })).toBeVisible();
+    await expect(page.getByLabel("Страницы проекта: URL, по одному в строке")).toBeVisible();
+    await expect(page.getByLabel("Текст страницы")).toHaveCount(0);
+    await page.getByRole("button", { name: "Закрыть" }).click();
     await expect(page.getByText(/uptime|инцидент/i)).toHaveCount(0);
 
     await page.goto(`/account/projects/${firstProject.id}/audits/${auditId}`);
