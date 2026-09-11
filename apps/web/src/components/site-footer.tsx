@@ -6,18 +6,19 @@ import { SiteBrand } from "./site-brand";
 import { toolsPath } from "../lib/routes";
 
 const featured = ["json-formatter-validator", "image-optimizer", "color-contrast-checker", "hash-generator"] as const;
+const supportEmail = "support@webdiag.ru";
 
 export function SiteFooter({ locale }: { locale: Locale }) {
   const prefix = locale === "ru" ? "" : "/en";
-  const pages = locale === "ru" ? { audit: "/audit", monitoring: "/monitoring", pricing: "/pricing", blog: "/blog", knowledge: "/knowledge" } : { audit: "/en/audit", monitoring: "/en/monitoring", pricing: "/en/pricing", blog: "/en/blog", knowledge: "/en/knowledge" };
+  const pages = locale === "ru" ? { audit: "/audit", pricing: "/pricing", contacts: "/contacts" } : { audit: "/en/audit", pricing: "/en/pricing", contacts: "/en/contacts" };
   const t = <T extends { readonly ru: string; readonly en: string }>(value: T) => localizeValue(value, locale);
   const text = locale === "ru"
     ? {
         summary: "WebDiag развивает сценарий технического SEO-аудита сайта. Сейчас доступны рабочие инструменты и демонстрация будущего отчёта с приоритетами исправлений.",
         navigation: "Навигация",
         checks: "Проверки сайта",
-        report: "Отчёт и приоритеты",
         support: "Дополнительные инструменты",
+        contacts: "Контакты",
         categories: "Разделы исправлений",
         recommended: "Вспомогательные инструменты",
         privacy: "Политика конфиденциальности",
@@ -26,8 +27,8 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         summary: "WebDiag is developing a technical SEO audit flow. Today, the ready surface is the supporting tool catalog and a preview of the future prioritized report.",
         navigation: "Navigation",
         checks: "Site checks",
-        report: "Report and priorities",
         support: "Supporting tools",
+        contacts: "Contacts",
         categories: "Fix sections",
         recommended: "Supporting tools",
         privacy: "Privacy policy",
@@ -46,6 +47,8 @@ export function SiteFooter({ locale }: { locale: Locale }) {
           <Link href={pages.audit}>{text.checks}</Link>
           <Link href={pages.pricing}>{locale === "ru" ? "Цены" : "Pricing"}</Link>
           <Link href={toolsPath(locale)}>{text.support}</Link>
+          <Link href={pages.contacts}>{text.contacts}</Link>
+          <a href={`mailto:${supportEmail}`}>{supportEmail}</a>
         </div>
         <div className="footer-column">
           <strong>{text.categories}</strong>
