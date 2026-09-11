@@ -112,7 +112,7 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
         <article>
           <span>{ru ? "Инструменты" : "Tools"}</span>
           <strong>{loadState === "loading" ? "—" : `${availableTools}/6`}</strong>
-          <small>{ru ? "доступны для внутренней оценки" : "available for internal evaluation"}</small>
+          <small>{ru ? "готовы к запуску" : "ready to run"}</small>
         </article>
         <article>
           <span>{ru ? "Кредиты" : "Credits"}</span>

@@ -2968,10 +2968,10 @@ body:has(.wd-public-report-page) .site-footer {
   font-weight: 800;
 }
 
-.wd-ai-tool-status.is-internal {
-  border-color: color-mix(in srgb, var(--warning) 35%, var(--line));
-  background: color-mix(in srgb, var(--warning-soft) 62%, var(--surface));
-  color: var(--warning);
+.wd-ai-tool-status.is-ready {
+  border-color: color-mix(in srgb, var(--success) 30%, var(--line));
+  background: color-mix(in srgb, var(--success-soft) 62%, var(--surface));
+  color: var(--success);
 }
 
 .wd-ai-tool-card h3 {

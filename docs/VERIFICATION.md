@@ -1,5 +1,33 @@
 # Verification Notes
 
+# AI catalog availability semantics — 2026-09-11
+
+## Scope
+
+- aligned account UI status copy with the API contract: the authenticated
+  catalog returns only `ready` tools, so a returned tool is now labelled
+  `Доступен` / `Available` rather than `Внутренняя оценка`;
+- retained the fail-closed empty-catalog state: internal tools remain omitted,
+  render as unavailable, and cannot open a run form;
+- added browser coverage proving that competitor-gap and internal-linking forms
+  accept URL references without exposing the removed client evidence fields.
+
+## Verification
+
+```text
+web Vitest                                  PASS — 438 passed / 111 files
+API/worker pytest                           PASS — 680 passed / 3 Windows skips
+Next.js production build                    PASS — 273 generated pages
+account Playwright                          PASS — 17 passed
+ESLint / TypeScript / git diff              PASS — 0 errors / PASS / PASS
+```
+
+ESLint retains the pre-existing `site-brand.tsx` `no-img-element` warning.
+Impeccable reported two pre-existing side-accent rules outside this patch; the
+changed AI status uses the existing semantic success tokens. Controlled browser
+fixtures do not represent live provider availability, and no provider, payment,
+release, deployment, merge, tag, or catalog activation was performed.
+
 # AI activation gate — 2026-09-10
 
 ## Scope

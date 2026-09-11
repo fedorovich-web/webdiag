@@ -43,11 +43,11 @@ export function AccountAIToolList({ locale, catalog, loading, onSelect }: Accoun
             <article className="wd-ai-tool-card" key={descriptor.id} data-enabled={enabled}>
               <div className="wd-ai-tool-card-head">
                 <span className="wd-ai-tool-order">{String(descriptor.workflowOrder).padStart(2, "0")}</span>
-                <span className={`wd-ai-tool-status${enabled ? " is-internal" : ""}`}>
+                <span className={`wd-ai-tool-status${enabled ? " is-ready" : ""}`}>
                   {loading
                     ? (ru ? "Проверяем" : "Checking")
                     : enabled
-                      ? (ru ? "Внутренняя оценка" : "Internal evaluation")
+                      ? (ru ? "Доступен" : "Available")
                       : (ru ? "Недоступен" : "Not available")}
                 </span>
               </div>
