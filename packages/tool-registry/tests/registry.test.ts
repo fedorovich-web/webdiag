@@ -83,11 +83,13 @@ describe("tool registry", () => {
         access: "required",
         state: "ready",
       });
-      expect(tool?.description?.ru).toContain("25");
-      expect(tool?.description?.en).toContain("25");
+      expect(tool?.description?.ru).toContain("100");
+      expect(tool?.description?.en).toContain("100");
     }
 
     expect(crawlerTools[0]?.title.en).toBe("Bounded Site Audit");
+    expect(crawlerTools[0]?.description.ru).toContain("без заявления о полном покрытии");
+    expect(crawlerTools[0]?.description.en).toContain("no claim of complete site coverage");
     expect(crawlerTools[2]?.title.en).toBe("Unlinked Page Candidates");
   });
 
