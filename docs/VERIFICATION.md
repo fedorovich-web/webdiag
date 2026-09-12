@@ -935,3 +935,27 @@ PASS — 113 entries / 61 ready tools / duplicated backend registry byte-identic
 ```
 
 Run the full local pre-push gate before commit/push.
+
+
+## A10.40 certificate inspection
+
+- `apps/web/src/features/tools/pem-certificate-engine.test.ts` covers private-key and CSR rejection.
+- Runtime verification generates an OpenSSL X.509 certificate and confirms subject, issuer, SAN, validity, algorithms, Basic Constraints, and SHA-256 fingerprint extraction.
+- Registry/API expectations are 125 total, 103 ready, and 22 internal tools.
+
+## A11.5 reports
+
+```powershell
+node scripts/run-python.mjs -m pytest apps/api/tests/test_account_reports_api.py -q
+
+npm --workspace @webdiag/web exec -- `
+  vitest run `
+  src/features/account/account-report-contract.test.ts `
+  src/features/account/account-report-client.test.ts `
+  --pool=forks --maxWorkers=1
+
+npm --workspace @webdiag/web exec -- `
+  playwright test e2e/account.spec.ts --project=chromium
+```
+
+The backend test pins the exact SHA-256 of a deterministic, self-contained HTML artifact and verifies that public report responses do not contain account, project, audit, session, token, or raw-evidence fields.

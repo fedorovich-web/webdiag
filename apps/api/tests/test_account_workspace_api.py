@@ -1,0 +1,323 @@
+import asyncio
+import sqlite3
+from datetime import UTC, datetime
+from pathlib import Path
+
+import httpx
+import pytest
+
+from webdiag_api.accounts.api import get_account_service
+from webdiag_api.accounts.models import RegisterRequest
+from webdiag_api.accounts.security import ScryptParameters
+from webdiag_api.accounts.service import AccountService
+from webdiag_api.accounts.storage import SqliteAccountStore
+from webdiag_api.accounts.workspace_api import get_workspace_service
+from webdiag_api.accounts.workspace_models import ProjectCreateRequest
+from webdiag_api.accounts.workspace_service import (
+    WorkspaceService,
+    WorkspaceServiceError,
+    normalize_project_origin,
+)
+from webdiag_api.accounts.workspace_storage import SqliteWorkspaceStore
+from webdiag_api.audit.models import (
+    AffectedUrl,
+    AuditCheck,
+    AuditIssue,
+    AuditJob,
+    AuditJobStatus,
+    AuditRun,
+    AuditTarget,
+    CheckStatus,
+    Evidence,
+    EvidenceKind,
+    IssueCategory,
+    Priority,
+    Recommendation,
+    Severity,
+    ToolMapping,
+)
+from webdiag_api.audit.service import AuditSnapshot
+from webdiag_api.main import app
+
+
+class StubAuditService:
+    def __init__(self) -> None:
+        self.origins: list[str] = []
+
+    def start_single_url_audit(self, origin: str) -> AuditSnapshot:
+        self.origins.append(origin)
+        target = AuditTarget(original_url=origin, normalized_url=origin, hostname="example.com")
+        job = AuditJob(target=target, status=AuditJobStatus.SUCCEEDED)
+        issue_id = "metadata.title.missing"
+        run = AuditRun(
+            job_id=job.job_id,
+            target=target,
+            status=AuditJobStatus.SUCCEEDED,
+            score=82,
+            completed_at=datetime.now(UTC),
+            checks=(
+                AuditCheck(
+                    check_id="metadata.title",
+                    name="Title tag",
+                    category=IssueCategory.METADATA,
+                    status=CheckStatus.FAILED,
+                    evidence=(
+                        Evidence(
+                            kind=EvidenceKind.HTML_ELEMENT,
+                            source="head",
+                            value="raw secret-like evidence",
+                        ),
+                    ),
+                    issue_ids=(issue_id,),
+                ),
+            ),
+            issues=(
+                AuditIssue(
+                    issue_id=issue_id,
+                    check_id="metadata.title",
+                    category=IssueCategory.METADATA,
+                    severity=Severity.MEDIUM,
+                    priority=Priority.P1,
+                    title="Title tag is missing",
+                    description="The page does not expose a title tag.",
+                    affected_urls=(
+                        AffectedUrl(
+                            url="https://example.com/page?token=secret#fragment",
+                            normalized_url="https://example.com/page?token=secret#fragment",
+                            final_url="https://example.com/page?token=secret#fragment",
+                        ),
+                        AffectedUrl(
+                            url="https://other.example/path?secret=1",
+                            normalized_url="https://other.example/path?secret=1",
+                        ),
+                    ),
+                    evidence=(
+                        Evidence(
+                            kind=EvidenceKind.TEXT_SAMPLE,
+                            source="html",
+                            value="do not persist me",
+                        ),
+                    ),
+                    recommendation=Recommendation(
+                        summary="Add a descriptive title.",
+                        steps=("Add one title element.",),
+                        expected_impact="Clearer search snippets.",
+                    ),
+                    tool_mappings=(
+                        ToolMapping(
+                            issue_category=IssueCategory.METADATA,
+                            tool_category="seo-audit",
+                            ready=False,
+                            rationale="Internal mapping must not leave the account API.",
+                        ),
+                    ),
+                ),
+            ),
+        )
+        return AuditSnapshot(job=job, run=run)
+
+
+def build_account_service(database_path: Path) -> AccountService:
+    return AccountService(
+        SqliteAccountStore(str(database_path)),
+        session_ttl_seconds=3600,
+        active_session_limit=10,
+        scrypt_parameters=ScryptParameters(n=2**12),
+    )
+
+
+def register(service: AccountService, email: str) -> tuple[str, str]:
+    session = service.register(
+        RegisterRequest(
+            email=email,
+            display_name="Roman User",
+            password="correct horse battery staple",
+        )
+    )
+    return session.response.user.id, session.token
+
+
+def build_workspace(database_path: Path, audit_service: StubAuditService | None = None):
+    return WorkspaceService(
+        SqliteWorkspaceStore(str(database_path)),
+        audit_service=audit_service or StubAuditService(),
+    )
+
+
+async def request(
+    method: str,
+    path: str,
+    *,
+    json: dict[str, object] | None = None,
+    cookie: str | None = None,
+) -> httpx.Response:
+    transport = httpx.ASGITransport(app=app)
+    headers = {"cookie": f"webdiag_session={cookie}"} if cookie else None
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        return await client.request(method, path, json=json, headers=headers)
+
+
+def test_project_origin_normalization_and_duplicate_limit(tmp_path: Path) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    account = build_account_service(database_path)
+    user_id, _ = register(account, "owner@example.com")
+    workspace = build_workspace(database_path)
+
+    assert normalize_project_origin(" Example.COM. ") == "https://example.com"
+    assert normalize_project_origin("http://example.com/") == "http://example.com"
+    for unsafe in (
+        "https://example.com/path",
+        "https://example.com/?query=1",
+        "https://user:pass@example.com",
+        "http://127.0.0.1",
+    ):
+        with pytest.raises(WorkspaceServiceError):
+            normalize_project_origin(unsafe)
+
+    project = workspace.create_project(
+        user_id=user_id,
+        request=ProjectCreateRequest(name="  Main   website ", origin="example.com"),
+    )
+    assert project.name == "Main website"
+    assert project.origin == "https://example.com"
+    assert workspace.list_projects(user_id=user_id).projects == (project,)
+
+    with pytest.raises(WorkspaceServiceError) as duplicate:
+        workspace.create_project(
+            user_id=user_id,
+            request=ProjectCreateRequest(name="Duplicate", origin="https://example.com/"),
+        )
+    assert duplicate.value.code == "account_project_origin_exists"
+
+
+def test_project_and_audit_ownership_are_hidden(tmp_path: Path) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    account = build_account_service(database_path)
+    owner_id, _ = register(account, "owner@example.com")
+    other_id, _ = register(account, "other@example.com")
+    workspace = build_workspace(database_path)
+    project = workspace.create_project(
+        user_id=owner_id,
+        request=ProjectCreateRequest(name="Owned", origin="https://example.com"),
+    )
+    saved = workspace.run_and_save_audit(user_id=owner_id, project_id=project.id)
+
+    with pytest.raises(WorkspaceServiceError) as project_error:
+        workspace.get_project(user_id=other_id, project_id=project.id)
+    assert project_error.value.status_code == 404
+
+    with pytest.raises(WorkspaceServiceError) as audit_error:
+        workspace.get_saved_audit(
+            user_id=other_id,
+            project_id=project.id,
+            audit_id=saved.audit.id,
+        )
+    assert audit_error.value.status_code == 404
+
+
+def test_saved_audit_is_versioned_bounded_and_excludes_internal_fields(tmp_path: Path) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    account = build_account_service(database_path)
+    user_id, _ = register(account, "owner@example.com")
+    audit_service = StubAuditService()
+    workspace = build_workspace(database_path, audit_service)
+    project = workspace.create_project(
+        user_id=user_id,
+        request=ProjectCreateRequest(name="Main", origin="https://example.com"),
+    )
+
+    saved = workspace.run_and_save_audit(user_id=user_id, project_id=project.id)
+    assert audit_service.origins == ["https://example.com"]
+    assert saved.payload.contract_version == "webdiag.account.saved_audit_payload.v1"
+    assert saved.audit.check_count == 1
+    assert saved.audit.issue_count == 1
+    assert saved.payload.issues[0].affected_urls == ("https://example.com/page",)
+
+    serialized = saved.model_dump_json()
+    for forbidden in (
+        "raw secret-like evidence",
+        "do not persist me",
+        "tool_mappings",
+        "job_id",
+        "run_id",
+        "token=secret",
+        "secret=1",
+    ):
+        assert forbidden not in serialized
+
+    with sqlite3.connect(database_path) as connection:
+        tables = {
+            row[0]
+            for row in connection.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table'"
+            ).fetchall()
+        }
+        payload_version, payload_json = connection.execute(
+            "SELECT payload_version, payload_json FROM account_workspace_saved_audits"
+        ).fetchone()
+    assert tables == {
+        "account_users",
+        "account_sessions",
+        "account_workspace_projects",
+        "account_workspace_saved_audits",
+    }
+    assert payload_version == "webdiag.account.saved_audit_payload.v1"
+    assert "evidence" not in payload_json
+
+
+def test_workspace_api_create_run_history_and_detail(tmp_path: Path) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    account = build_account_service(database_path)
+    _, token = register(account, "owner@example.com")
+    workspace = build_workspace(database_path)
+    app.dependency_overrides[get_account_service] = lambda: account
+    app.dependency_overrides[get_workspace_service] = lambda: workspace
+    try:
+        created = asyncio.run(
+            request(
+                "POST",
+                "/v1/account/projects",
+                json={"name": "Main", "origin": "example.com"},
+                cookie=token,
+            )
+        )
+        assert created.status_code == 201
+        assert created.headers["cache-control"] == "no-store"
+        project_id = created.json()["id"]
+
+        listed = asyncio.run(request("GET", "/v1/account/projects", cookie=token))
+        assert listed.status_code == 200
+        assert listed.json()["contract_version"] == "webdiag.account.project_list.v1"
+        assert len(listed.json()["projects"]) == 1
+
+        saved = asyncio.run(
+            request("POST", f"/v1/account/projects/{project_id}/audits", cookie=token)
+        )
+        assert saved.status_code == 201
+        assert saved.headers["cache-control"] == "no-store"
+        audit_id = saved.json()["audit"]["id"]
+        assert saved.json()["payload"]["contract_version"] == (
+            "webdiag.account.saved_audit_payload.v1"
+        )
+
+        detail = asyncio.run(request("GET", f"/v1/account/projects/{project_id}", cookie=token))
+        assert detail.status_code == 200
+        assert len(detail.json()["saved_audits"]) == 1
+
+        audit = asyncio.run(
+            request(
+                "GET",
+                f"/v1/account/projects/{project_id}/audits/{audit_id}",
+                cookie=token,
+            )
+        )
+        assert audit.status_code == 200
+        assert set(audit.json()) == {"contract_version", "project", "audit", "payload"}
+
+        invalid = asyncio.run(
+            request("GET", "/v1/account/projects/not-a-uuid", cookie=token)
+        )
+        assert invalid.status_code == 422
+        assert invalid.json()["detail"]["code"] == "account_invalid_request"
+    finally:
+        app.dependency_overrides.clear()

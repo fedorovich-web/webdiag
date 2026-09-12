@@ -30,6 +30,12 @@ test.describe("rendered SEO metadata", () => {
       await expect(page.locator('meta[property="og:title"]')).toHaveCount(1);
       await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", "https://webdiag.ru/og/webdiag.png");
       await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary_large_image");
+      await expect(page.locator('link[rel="icon"][type="image/png"][sizes="96x96"]')).toHaveAttribute("href", "/favicon-96x96.png");
+      await expect(page.locator('link[rel="icon"][type="image/svg+xml"]')).toHaveAttribute("href", "/favicon.svg");
+      await expect(page.locator('link[rel="shortcut icon"]')).toHaveAttribute("href", "/favicon.ico");
+      await expect(page.locator('link[rel="apple-touch-icon"][sizes="180x180"]')).toHaveAttribute("href", "/apple-touch-icon.png");
+      await expect(page.locator('meta[name="apple-mobile-web-app-title"]')).toHaveAttribute("content", "WebDiag");
+      await expect(page.locator('link[rel="manifest"]')).toHaveAttribute("href", "/site.webmanifest");
       const structured = await page.locator('script[type="application/ld+json"]').first().textContent();
       expect(structured).toContain(`\"@type\":\"${item.type}\"`);
     });

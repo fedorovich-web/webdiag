@@ -125,6 +125,7 @@ import {
   DiffCheckerTool,
   HtmlEntitiesConverterTool,
 } from "./text-encoding-diff-tools";
+import { PemCertificateViewerTool } from "./pem-certificate-tool";
 import { dictionary } from "../../lib/i18n";
 
 interface ToolRendererProps {
@@ -348,6 +349,7 @@ export const SUPPORTED_TOOL_SLUGS = [
   "http-compression-checker",
   "tls-configuration-checker",
   "ssl-certificate-checker",
+  "pem-certificate-viewer",
   "http-headers-analyzer",
   "http-protocol-checker",
   "cors-checker",
@@ -452,6 +454,7 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "whois-lookup": return <DomainRdapLookupTool locale={locale} />;
     case "ip-information": return <IpRdapLookupTool locale={locale} />;
     case "ssl-certificate-checker": return <SslCertificateCheckerTool locale={locale} />;
+    case "pem-certificate-viewer": return <PemCertificateViewerTool locale={locale} />;
     case "tls-configuration-checker": return <TlsConfigurationCheckerTool locale={locale} />;
     case "http-compression-checker": return <HttpCompressionCheckerTool locale={locale} />;
     case "http-headers-analyzer": return <HttpHeadersAnalyzerTool locale={locale} />;

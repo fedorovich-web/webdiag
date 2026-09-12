@@ -146,14 +146,11 @@ p { text-wrap: pretty; }
 /* Header */
 .site-header { position: sticky; top: 0; z-index: 40; border-bottom: 1px solid color-mix(in srgb, var(--line) 72%, transparent); background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: blur(22px) saturate(150%); }
 .header-inner { min-height: 76px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 30px; }
-.brand { min-width: max-content; display: inline-flex; align-items: center; gap: 12px; text-decoration: none; }
-.brand-symbol { width: 40px; height: 40px; color: var(--brand); filter: drop-shadow(0 7px 18px color-mix(in srgb, var(--brand) 20%, transparent)); }
-.brand-symbol rect { fill: var(--brand-soft); stroke: color-mix(in srgb, var(--brand) 30%, var(--line)); }
-.brand-symbol path, .brand-symbol circle { stroke-width: 2.1; }
-.brand-symbol circle { fill: var(--brand); stroke: var(--brand); }
-.brand-copy { display: grid; line-height: 1.06; }
-.brand-copy strong { font-size: 18px; letter-spacing: -0.035em; }
-.brand-copy small { margin-top: 5px; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: 0.055em; text-transform: uppercase; }
+.brand { min-width: max-content; display: inline-flex; align-items: center; text-decoration: none; }
+.brand-picture { display: block; padding: 2px 4px; border-radius: 8px; background: #fff; line-height: 0; }
+.brand-logo { display: block; width: auto; height: 32px; object-fit: contain; }
+.brand-mark { display: none; width: 35px; height: 35px; border-radius: 10px; object-fit: contain; }
+.brand[data-brand-variant="footer"] .brand-logo { height: 34px; }
 .main-nav { justify-self: center; display: flex; align-items: center; gap: 24px; padding: 0; border: 0; border-radius: 0; background: transparent; }
 .main-nav a, .main-nav summary, .main-nav > span { min-height: 44px; display: inline-flex; align-items: center; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--text-soft); text-decoration: none; font-size: 14px; font-weight: 600; transition: color var(--transition-fast); }
 .main-nav a:hover, .main-nav summary:hover { background: transparent; color: var(--text); transform: none; }
@@ -524,8 +521,7 @@ textarea { resize: vertical; }
   .shell { width: min(var(--shell), calc(100% - 24px)); }
   .header-inner { min-height: 66px; grid-template-columns: auto 1fr; gap: 10px; }
   .header-actions { justify-self: end; gap: 4px; }
-  .brand-symbol { width: 35px; height: 35px; }
-  .brand-copy small { display: none; }
+  .brand[data-brand-variant="header"] .brand-logo { height: 28px; }
   .language-switcher-desktop { display: none; }
   .language-switcher-mobile { width: 100%; display: grid; }
   .mobile-menu-panel { gap: 12px; }
@@ -586,7 +582,8 @@ textarea { resize: vertical; }
 }
 
 @media (max-width: 370px) {
-  .brand-copy { display: none; }
+  .brand[data-brand-variant="header"] .brand-picture { display: none; }
+  .brand[data-brand-variant="header"] .brand-mark { display: block; }
   .theme-switch { width: 54px; min-width: 54px; }
   .home-hero h1 { font-size: 40px; }
   .hero-tool-rail { grid-template-columns: 1fr; }
@@ -1923,3 +1920,17 @@ body:has(.tool-heading) main.shell::before{
 @media (max-width: 840px) {
   .result-grid { grid-template-columns: 1fr; }
 }
+
+.pem-certificate-tool { align-items: start; }
+.certificate-results { display: grid; gap: 1rem; }
+.certificate-card { padding: 1rem; border-radius: var(--radius-md); background: var(--surface-raised); box-shadow: var(--shadow-sm); }
+.certificate-card header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.certificate-card h3 { margin: 0; overflow-wrap: anywhere; }
+.certificate-card dl { display: grid; grid-template-columns: minmax(9rem, .35fr) 1fr; gap: .5rem 1rem; margin: 1rem 0 0; }
+.certificate-card dt { color: var(--muted); font-weight: 700; }
+.certificate-card dd { margin: 0; overflow-wrap: anywhere; }
+.certificate-state { border-radius: 999px; padding: .3rem .65rem; font-weight: 700; white-space: nowrap; }
+.certificate-state.is-valid { background: color-mix(in srgb, #22c55e 16%, transparent); }
+.certificate-state.is-expired, .certificate-state.is-not_yet_valid { background: color-mix(in srgb, #ef4444 16%, transparent); }
+.certificate-fingerprint { display: flex; align-items: center; gap: .5rem; }
+@media (max-width: 720px) { .certificate-card header { display: grid; } .certificate-card dl { grid-template-columns: 1fr; } }

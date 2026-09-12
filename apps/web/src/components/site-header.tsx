@@ -15,7 +15,7 @@ import { LanguageSwitcher } from "./language-switcher";
 import { SiteBrand } from "./site-brand";
 import { ThemeSwitcher } from "./theme-switcher";
 import { ToolsMenuShell } from "./tools-menu-shell";
-import { toolsPath } from "../lib/routes";
+import { loginPath, toolsPath } from "../lib/routes";
 
 interface SiteHeaderProps {
   locale: Locale;
@@ -37,8 +37,8 @@ const toolCategories = [
 function NavigationLinks({ locale, compact = false }: { locale: Locale; compact?: boolean }) {
   const tools = toolsPath(locale);
   const pages = locale === "ru"
-    ? { audit: "/audit", monitoring: "/monitoring", pricing: "/pricing", blog: "/blog", knowledge: "/knowledge" }
-    : { audit: "/en/audit", monitoring: "/en/monitoring", pricing: "/en/pricing", blog: "/en/blog", knowledge: "/en/knowledge" };
+    ? { audit: "/audit", monitoring: "/monitoring", pricing: "/pricing", blog: "/blog", knowledge: "/knowledge", account: "/login" }
+    : { audit: "/en/audit", monitoring: "/en/monitoring", pricing: "/en/pricing", blog: "/en/blog", knowledge: "/en/knowledge", account: "/en/login" };
   const text = locale === "ru"
     ? {
         audit: "Аудит сайта",
@@ -47,6 +47,7 @@ function NavigationLinks({ locale, compact = false }: { locale: Locale; compact?
         pricing: "Цены",
         blog: "Блог",
         knowledge: "База знаний",
+        account: "Личный кабинет",
         categories: "Категории инструментов",
         all: "Все инструменты",
         planned: "планируется",
@@ -60,6 +61,7 @@ function NavigationLinks({ locale, compact = false }: { locale: Locale; compact?
         pricing: "Pricing",
         blog: "Blog",
         knowledge: "Knowledge base",
+        account: "Account",
         categories: "Tool categories",
         all: "All tools",
         planned: "planned",
@@ -76,6 +78,7 @@ function NavigationLinks({ locale, compact = false }: { locale: Locale; compact?
         <Link href={pages.pricing}>{text.pricing}</Link>
         <Link href={pages.blog}>{text.blog}</Link>
         <Link href={pages.knowledge}>{text.knowledge}</Link>
+        <Link href={pages.account}>{text.account}</Link>
       </nav>
     );
   }
@@ -129,7 +132,7 @@ export function SiteHeader({ locale }: SiteHeaderProps) {
         <div className="header-actions wd-header-actions">
           <LanguageSwitcher locale={locale} className="language-switcher-desktop" />
           <ThemeSwitcher locale={locale} />
-          <span className="wd-header-login is-disabled" aria-disabled="true" title={locale === "ru" ? "Авторизация появится позже" : "Sign-in is planned"}>{login}</span>
+          <Link className="wd-header-login" href={loginPath(locale)}>{login}</Link>
           <Link className="wd-header-cta" href={locale === "ru" ? "/audit" : "/en/audit"}>{openAudit}</Link>
           <details className="mobile-menu">
             <summary aria-label={menu}>

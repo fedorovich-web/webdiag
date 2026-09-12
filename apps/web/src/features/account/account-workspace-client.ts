@@ -1,0 +1,112 @@
+import { AccountClientError } from "./account-client";
+import { isAccountErrorPayload } from "./account-contract";
+import {
+  isAccountProject,
+  isAccountProjectDetailResponse,
+  isAccountProjectListResponse,
+  isSavedAuditDetailResponse,
+  type AccountProject,
+  type AccountProjectDetailResponse,
+  type AccountProjectListResponse,
+  type SavedAuditDetailResponse,
+} from "./account-workspace-contract";
+
+type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
+
+const common: Pick<RequestInit, "cache" | "credentials"> = {
+  cache: "no-store",
+  credentials: "same-origin",
+};
+
+async function parse<T>(response: Response, validator: (value: unknown) => value is T): Promise<T> {
+  const payload: unknown = await response.json().catch(() => null);
+  if (!response.ok) {
+    if (isAccountErrorPayload(payload)) {
+      throw new AccountClientError(payload.detail.message, {
+        status: response.status,
+        code: payload.detail.code,
+      });
+    }
+    throw new AccountClientError("Account workspace request failed.", {
+      status: response.status,
+      code: "account_workspace_request_failed",
+    });
+  }
+  if (!validator(payload)) {
+    throw new AccountClientError("Account workspace returned an invalid response.", {
+      status: response.status,
+      code: "account_invalid_response",
+    });
+  }
+  return payload;
+}
+
+
+export async function listAccountProjects(fetcher: Fetcher = fetch): Promise<AccountProjectListResponse> {
+  return parse(
+    await fetcher("/api/account/projects", {
+      ...common,
+      method: "GET",
+      headers: { accept: "application/json" },
+    }),
+    isAccountProjectListResponse,
+  );
+}
+
+export async function createAccountProject(
+  input: { readonly name: string; readonly origin: string },
+  fetcher: Fetcher = fetch,
+): Promise<AccountProject> {
+  return parse(
+    await fetcher("/api/account/projects", {
+      ...common,
+      method: "POST",
+      headers: { accept: "application/json", "content-type": "application/json" },
+      body: JSON.stringify(input),
+    }),
+    isAccountProject,
+  );
+}
+
+export async function getAccountProject(
+  projectId: string,
+  fetcher: Fetcher = fetch,
+): Promise<AccountProjectDetailResponse> {
+  return parse(
+    await fetcher(`/api/account/projects/${projectId}`, {
+      ...common,
+      method: "GET",
+      headers: { accept: "application/json" },
+    }),
+    isAccountProjectDetailResponse,
+  );
+}
+
+export async function runAccountProjectAudit(
+  projectId: string,
+  fetcher: Fetcher = fetch,
+): Promise<SavedAuditDetailResponse> {
+  return parse(
+    await fetcher(`/api/account/projects/${projectId}/audits`, {
+      ...common,
+      method: "POST",
+      headers: { accept: "application/json" },
+    }),
+    isSavedAuditDetailResponse,
+  );
+}
+
+export async function getAccountSavedAudit(
+  projectId: string,
+  auditId: string,
+  fetcher: Fetcher = fetch,
+): Promise<SavedAuditDetailResponse> {
+  return parse(
+    await fetcher(`/api/account/projects/${projectId}/audits/${auditId}`, {
+      ...common,
+      method: "GET",
+      headers: { accept: "application/json" },
+    }),
+    isSavedAuditDetailResponse,
+  );
+}
