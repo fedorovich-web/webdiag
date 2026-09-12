@@ -34,8 +34,13 @@ describe("AI workspace presentation", () => {
   });
 
   it("uses factual unavailable copy for an empty real catalog", () => {
-    expect(aiWorkspaceEmptyCopy("ru")).toMatch(/проверки качества|недоступны/u);
-    expect(aiWorkspaceEmptyCopy("en")).toMatch(/evaluation|not available/u);
+    expect(aiWorkspaceEmptyCopy("ru")).toBe(
+      "AI-инструменты временно недоступны. Повторите попытку позже.",
+    );
+    expect(aiWorkspaceEmptyCopy("en")).toBe(
+      "AI tools are temporarily unavailable. Try again later.",
+    );
     expect(aiWorkspaceEmptyCopy("ru")).not.toMatch(/скоро появится|готов/u);
+    expect(aiWorkspaceEmptyCopy("en")).not.toMatch(/coming soon|ready/u);
   });
 });
