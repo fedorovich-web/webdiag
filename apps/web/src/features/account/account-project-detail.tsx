@@ -162,7 +162,7 @@ export function AccountProjectDetail({ locale, projectId }: { readonly locale: L
       <nav className="wd-account-breadcrumb" aria-label={ru ? "Навигация кабинета" : "Account navigation"}><Link href={accountPath(locale)}>{ru ? "Проекты" : "Projects"}</Link><span aria-hidden="true">/</span><span>{detail.project.name}</span></nav>
       <header className="wd-account-dashboard-head">
         <div><span className="eyebrow">{ru ? "Проект" : "Project"}</span><h1>{detail.project.name}</h1><p>{detail.project.origin}</p></div>
-        <div className="wd-account-actions"><a className="wd-button wd-button-secondary" href={projectMonitoringPath(locale, projectId)}>{ru ? "Мониторинг" : "Monitoring"}</a><button className="wd-button wd-button-secondary" type="button" aria-expanded={managementOpen} aria-controls="project-management" onClick={() => setManagementOpen((value) => !value)}>{ru ? "Управление проектом" : "Manage project"}</button><button className="wd-button wd-button-primary" type="button" onClick={runAudit} disabled={running} aria-busy={running}>{running ? (ru ? "Проверяем сайт…" : "Running audit…") : (ru ? "Запустить и сохранить аудит" : "Run and save audit")}</button></div>
+        <div className="wd-account-actions"><a className="wd-button wd-button-secondary" href={projectMonitoringPath(locale, projectId)}>{ru ? "Мониторинг" : "Monitoring"}</a><button className="wd-button wd-button-secondary" type="button" aria-expanded={managementOpen} aria-controls="project-management" onClick={() => setManagementOpen((value) => !value)}>{ru ? "Управление проектом" : "Manage project"}</button><button className="wd-button wd-button-primary" type="button" onClick={runAudit} disabled={running} aria-busy={running}>{running ? (ru ? "Проверяем сайт…" : "Checking website…") : (ru ? "Запустить и сохранить аудит" : "Run and save audit")}</button></div>
       </header>
       {error && <p className="wd-account-error" role="alert">{error}</p>}
       {managementOpen && (
@@ -170,7 +170,7 @@ export function AccountProjectDetail({ locale, projectId }: { readonly locale: L
           <div className="wd-project-management-copy">
             <span className="eyebrow">{ru ? "Настройки" : "Settings"}</span>
             <h2 id="project-management-title">{ru ? "Управление проектом" : "Project management"}</h2>
-            <p>{ru ? "Домен проекта изменить нельзя: сохранённые аудиты и отчёты остаются привязаны к исходному адресу." : "The project origin cannot be changed because saved audits and reports remain tied to the original address."}</p>
+            <p>{ru ? "Адрес сайта изменить нельзя: сохранённые аудиты и отчёты остаются привязаны к исходному адресу." : "The website address cannot be changed because saved audits and reports remain tied to the original address."}</p>
           </div>
           <form className="wd-project-rename" onSubmit={renameProject} aria-busy={renamePending}>
             <label>{ru ? "Название проекта" : "Project name"}<input value={projectName} onChange={(event: ChangeEvent<HTMLInputElement>) => setProjectName(event.target.value)} minLength={2} maxLength={80} required autoComplete="off" disabled={renamePending || archivePending} aria-invalid={Boolean(renameError)} aria-describedby={renameError ? "project-rename-error" : undefined} /></label>
@@ -193,9 +193,9 @@ export function AccountProjectDetail({ locale, projectId }: { readonly locale: L
       <section className="wd-crawl-console" aria-labelledby="crawl-console-title">
         <div className="wd-crawl-console-head">
           <div>
-            <span className="eyebrow">{ru ? "Сайт целиком" : "Whole site"}</span>
-            <h2 id="crawl-console-title">{ru ? "Ограниченный обход проекта" : "Bounded project crawl"}</h2>
-            <p>{ru ? "До 25 HTML-страниц одного origin. Без входа в закрытые разделы, выполнения JavaScript и отправки форм." : "Up to 25 HTML pages on one origin. No authenticated areas, JavaScript execution, or form submissions."}</p>
+            <span className="eyebrow">{ru ? "Страницы сайта" : "Website pages"}</span>
+            <h2 id="crawl-console-title">{ru ? "Проверка страниц проекта" : "Project page check"}</h2>
+            <p>{ru ? "Проверьте до 25 HTML-страниц одного сайта. Закрытые разделы, выполнение JavaScript и отправка форм не используются." : "Check up to 25 HTML pages on one website. Authenticated areas, JavaScript execution, and form submissions are not used."}</p>
           </div>
           <button
             className="wd-button wd-button-primary"
@@ -204,18 +204,18 @@ export function AccountProjectDetail({ locale, projectId }: { readonly locale: L
             disabled={crawlPending || crawlDetail?.job.state === "queued" || crawlDetail?.job.state === "running"}
             aria-busy={crawlPending}
           >
-            {crawlPending ? (ru ? "Ставим в очередь…" : "Queuing…") : (ru ? "Обойти сайт" : "Crawl site")}
+            {crawlPending ? (ru ? "Запускаем…" : "Starting…") : (ru ? "Проверить страницы" : "Check pages")}
           </button>
         </div>
         {crawlError && <p className="wd-account-error" role="alert">{crawlError}</p>}
         {!crawlDetail ? (
-          <div className="wd-crawl-empty"><strong>{ru ? "Обходов пока нет" : "No crawls yet"}</strong><p>{ru ? "Запустите обход, чтобы проверить дубли метаданных и страницы из sitemap без внутренних ссылок." : "Start a crawl to inspect duplicate metadata and sitemap pages without internal links."}</p></div>
+          <div className="wd-crawl-empty"><strong>{ru ? "Проверок страниц пока нет" : "No page checks yet"}</strong><p>{ru ? "Запустите проверку, чтобы найти дубли метаданных и страницы из sitemap без внутренних ссылок." : "Start a check to find duplicate metadata and sitemap pages without internal links."}</p></div>
         ) : (
           <CrawlSummary locale={locale} detail={crawlDetail} historyCount={crawlHistory.length} />
         )}
       </section>
       <section className="wd-audit-history" aria-labelledby="audit-history-title">
-        <div className="wd-project-list-head"><div><span className="eyebrow">{ru ? "Реальные результаты" : "Real results"}</span><h2 id="audit-history-title">{ru ? "История аудитов" : "Audit history"}</h2></div><strong>{detail.saved_audits.length}</strong></div>
+        <div className="wd-project-list-head"><div><span className="eyebrow">{ru ? "Результаты" : "Results"}</span><h2 id="audit-history-title">{ru ? "История проверок" : "Check history"}</h2></div><strong>{detail.saved_audits.length}</strong></div>
         {detail.saved_audits.length === 0 ? <div className="wd-account-empty"><p>{ru ? "Сохранённых аудитов пока нет." : "No saved audits yet."}</p></div> : (
           <div className="wd-audit-list">
             {detail.saved_audits.map((audit) => (
@@ -244,8 +244,8 @@ function CrawlSummary({ locale, detail, historyCount }: { readonly locale: Local
   if (!result) return (
     <div className="wd-crawl-progress" aria-live="polite">
       <span className="wd-crawl-state" data-state={job.state}>{state}</span>
-      <div><strong>{ru ? "Последний обход" : "Latest crawl"}</strong><p>{new Intl.DateTimeFormat(ru ? "ru-RU" : "en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(job.created_at))}</p></div>
-      {job.state === "failed" && <p>{ru ? "Корневая страница не прошла безопасную проверку или не вернула HTML. Подробности сети не раскрываются." : "The root page failed the safe-fetch checks or did not return HTML. Network internals are not exposed."}</p>}
+      <div><strong>{ru ? "Последняя проверка страниц" : "Latest page check"}</strong><p>{new Intl.DateTimeFormat(ru ? "ru-RU" : "en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(job.created_at))}</p></div>
+      {job.state === "failed" && <p>{ru ? "Не удалось получить корневую страницу сайта или HTML-ответ. Повторите проверку позже." : "The website root page or its HTML response could not be retrieved. Try the check again later."}</p>}
     </div>
   );
   const duplicatePages = new Set([...result.duplicate_titles, ...result.duplicate_descriptions].flatMap((group) => group.urls)).size;
@@ -253,7 +253,7 @@ function CrawlSummary({ locale, detail, historyCount }: { readonly locale: Local
     <div className="wd-crawl-result">
       <div className="wd-crawl-result-meta"><span className="wd-crawl-state" data-state={job.state}>{state}</span><span>{ru ? `История: ${historyCount}` : `History: ${historyCount}`}</span><span>{new Intl.DateTimeFormat(ru ? "ru-RU" : "en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(result.completed_at))}</span></div>
       <dl>
-        <div><dt>{ru ? "Получено HTML" : "HTML fetched"}</dt><dd>{result.pages.length}</dd></div>
+        <div><dt>{ru ? "Проверено страниц" : "Pages checked"}</dt><dd>{result.pages.length}</dd></div>
         <div><dt>{ru ? "Страниц с дублями" : "Pages with duplicates"}</dt><dd>{duplicatePages}</dd></div>
         <div><dt>{ru ? "Без внутренних ссылок" : "No internal links"}</dt><dd>{result.orphan_urls.length}</dd></div>
         <div><dt>{ru ? "Не проверено" : "Not checked"}</dt><dd>{result.page_failures.length}</dd></div>
