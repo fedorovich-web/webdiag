@@ -1,4 +1,5 @@
 import "../home-fidelity.css";
+import "../home-polish.css";
 import type { Metadata } from "next";
 import { HomePage } from "../../src/features/home/home-page";
 import { JsonLd } from "../../src/components/json-ld";
