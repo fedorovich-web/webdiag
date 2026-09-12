@@ -6,6 +6,7 @@ import {
   Gauge,
   Grid3X3,
   Image as ImageIcon,
+  Search,
   SearchCheck,
   ShieldCheck,
   Sparkles,
@@ -109,19 +110,26 @@ export function SiteHeader({ locale }: SiteHeaderProps) {
   const createAccount = locale === "ru" ? "Создать аккаунт" : "Create account";
   const login = locale === "ru" ? "Войти" : "Sign in";
   const menu = locale === "ru" ? "Открыть меню" : "Open menu";
+  const search = locale === "ru" ? "Найти инструмент" : "Find a tool";
   const registerHref = locale === "ru" ? "/register" : "/en/register";
 
   return (
     <header className="site-header wd-site-header">
       <div className="shell header-inner wd-header-inner">
         <SiteBrand locale={locale} className="brand wd-brand" variant="header" />
-
         <NavigationLinks locale={locale} />
 
         <div className="header-actions wd-header-actions">
           <div id="account-workspace-menu-slot" className="wd-account-menu-slot" />
-          <LanguageSwitcher locale={locale} className="language-switcher-desktop" />
-          <ThemeSwitcher locale={locale} />
+          <Link
+            aria-label={search}
+            className="wd-header-login"
+            href={toolsPath(locale)}
+            title={search}
+            style={{ width: 38, minHeight: 38, justifyContent: "center", padding: 0, borderRadius: 999 }}
+          >
+            <Search aria-hidden="true" size={16} />
+          </Link>
           <Link className="wd-header-login" href={loginPath(locale)}>{login}</Link>
           <Link className="wd-header-cta" href={registerHref}>{createAccount}</Link>
           <details className="mobile-menu">
@@ -132,6 +140,7 @@ export function SiteHeader({ locale }: SiteHeaderProps) {
             </summary>
             <div className="mobile-menu-panel">
               <LanguageSwitcher locale={locale} className="language-switcher-mobile" />
+              <ThemeSwitcher locale={locale} />
               <NavigationLinks locale={locale} compact />
               <Link className="wd-header-cta" href={registerHref}>{createAccount}</Link>
             </div>
