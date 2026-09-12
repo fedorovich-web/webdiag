@@ -27,6 +27,25 @@ test.describe("home functional smoke", () => {
     }
   });
 
+  test("homepage uses the approved standalone artwork without duplicate hero callouts", async ({ page }) => {
+    await page.goto("/");
+
+    await expect(page.locator('img.wd-hero-dashboard[src="/home/hero-dashboard.webp"]')).toHaveCount(1);
+    await expect(page.locator(".wd-hero-callout")).toHaveCount(0);
+
+    for (const src of [
+      "/home/benefit-tools.webp",
+      "/home/benefit-reports.webp",
+      "/home/benefit-time.webp",
+      "/home/process-accent.webp",
+      "/home/knowledge-technical-seo.webp",
+      "/home/knowledge-robots.webp",
+      "/home/knowledge-core-web-vitals.webp",
+    ]) {
+      await expect(page.locator(`img[src="${src}"]`)).toHaveCount(1);
+    }
+  });
+
   test("English homepage exposes the localized core user flow", async ({ page }) => {
     await page.goto("/en");
 
