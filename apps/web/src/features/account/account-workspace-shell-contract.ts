@@ -89,7 +89,7 @@ export function buildAccountWorkspaceNavigation(
     },
     {
       id: "account",
-      label: ru ? "Аккаунт" : "Account",
+      label: ru ? "Настройки" : "Settings",
       href: accountSettingsPath(locale),
       active: section === "settings",
       disabled: false,
@@ -108,7 +108,7 @@ export function buildAccountWorkspaceNavigation(
     },
     {
       id: "audits",
-      label: ru ? "Аудиты" : "Audits",
+      label: ru ? "История проверок" : "Check history",
       href: `${base}#audit-history`,
       active: section === "audit",
       disabled: false,
@@ -129,7 +129,7 @@ export function buildAccountWorkspaceNavigation(
     },
     {
       id: "project_reports",
-      label: ru ? "Отчёты проекта" : "Project reports",
+      label: ru ? "Отчёты" : "Reports",
       href: `${reportsPath(locale)}?project_id=${projectId}`,
       active: section === "reports" || section === "report",
       disabled: false,
