@@ -22,6 +22,7 @@ import { toolsPath } from "../../lib/routes";
 import { HomeFaqAccordion } from "./home-faq-accordion";
 import { HomeMonitoringChart } from "./home-monitoring-chart";
 import { HomeUrlCheckForm } from "./home-url-check-form";
+import styles from "./home-fidelity.module.css";
 
 const popularToolIcons: Record<string, LucideIcon> = {
   "single-page-audit": SearchCheck,
@@ -141,7 +142,7 @@ export function HomePage({ locale }: { locale: Locale }) {
     : t(homeContent.description);
 
   return (
-    <main className="wd-home">
+    <main className={`wd-home ${styles.fidelity}`}>
       <section className="wd-hero" aria-labelledby="home-title">
         <div className="shell wd-hero-grid">
           <div className="wd-hero-copy">
