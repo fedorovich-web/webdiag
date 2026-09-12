@@ -1,0 +1,74 @@
+@media (min-width: 961px) {
+  :root {
+    --wd-section-y: 46px;
+  }
+
+  .wd-hero {
+    padding: 42px 0 28px;
+  }
+
+  .wd-hero-copy {
+    padding: 10px 0 4px;
+  }
+
+  .wd-hero-lead {
+    margin-top: 14px;
+  }
+
+  .wd-url-check {
+    margin-top: 18px;
+  }
+
+  .wd-hero-note {
+    margin-top: 6px;
+  }
+
+  .wd-hero-visual {
+    min-height: 406px;
+  }
+
+  .wd-hero-benefits {
+    margin-top: 0 !important;
+  }
+
+  .wd-platform-strip {
+    padding: 14px 0 17px;
+  }
+
+  .wd-section-intro,
+  .wd-section-headline {
+    margin-bottom: 20px;
+  }
+
+  .wd-product-section {
+    padding-top: 12px;
+    padding-bottom: 36px;
+  }
+
+  .wd-monitoring-chart svg {
+    min-height: 132px;
+  }
+
+  .wd-knowledge-faq-section {
+    padding-top: 12px;
+    padding-bottom: 24px;
+  }
+
+  .wd-knowledge-faq-section .wd-section-headline,
+  .wd-faq-column .wd-section-intro {
+    margin-bottom: 11px;
+  }
+
+  .wd-final-section {
+    padding: 21px 0 22px;
+  }
+
+  .site-footer {
+    padding: 21px 0 12px;
+  }
+
+  .footer-bottom {
+    margin-top: 16px !important;
+    padding-top: 10px;
+  }
+}
