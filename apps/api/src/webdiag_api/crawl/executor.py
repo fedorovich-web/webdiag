@@ -110,7 +110,8 @@ def crawl_origin(
         if root_policy.allows_target is False:
             raise CrawlExecutionError("crawl_root_disallowed")
     except (SafeFetchError, UrlPolicyError):
-        pass
+        robots_body = ""
+        robots_status = None
 
     sitemap_candidates.append(f"{normalized_origin}/sitemap.xml")
     sitemap_url, sitemap_urls, sitemap_count, sitemap_complete = _load_sitemap(

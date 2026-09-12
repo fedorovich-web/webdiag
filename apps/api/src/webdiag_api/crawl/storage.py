@@ -27,6 +27,18 @@ class CrawlLeaseLostError(RuntimeError):
     pass
 
 
+class CrawlUserLimitError(RuntimeError):
+    """The account already has the maximum active crawl jobs."""
+
+
+class CrawlQueueCapacityError(RuntimeError):
+    """The bounded global crawl queue has no capacity for another job."""
+
+
+class CrawlResultTooLargeError(RuntimeError):
+    """A crawl result exceeded the persisted result boundary."""
+
+
 @dataclass(frozen=True, slots=True)
 class StoredCrawlJob:
     id: str
@@ -82,12 +94,22 @@ class SqliteCrawlStore:
         database_path: str,
         *,
         lease_seconds: int = 120,
+        active_job_limit_per_user: int = 2,
+        active_job_limit_global: int = 25,
         clock: Callable[[], int] = lambda: int(time.time()),
     ) -> None:
         if not 30 <= lease_seconds <= 300:
             raise ValueError("crawl lease seconds must be between 30 and 300")
+        if not 1 <= active_job_limit_per_user <= 20:
+            raise ValueError("crawl active job limit per user must be between 1 and 20")
+        if not active_job_limit_per_user <= active_job_limit_global <= 1_000:
+            raise ValueError(
+                "crawl global active job limit must be between the per-user limit and 1000"
+            )
         self._path = Path(database_path)
         self._lease_seconds = lease_seconds
+        self._active_job_limit_per_user = active_job_limit_per_user
+        self._active_job_limit_global = active_job_limit_global
         self._clock = clock
         self._schema_lock = threading.Lock()
         self._schema_ready = False
@@ -165,6 +187,36 @@ class SqliteCrawlStore:
                 connection.execute("ROLLBACK")
                 raise ValueError("account_project_not_found")
             origin = str(owned["origin"])
+            project_active = connection.execute(
+                """
+                SELECT 1 FROM crawl_jobs
+                WHERE project_id = ? AND state IN ('queued', 'running')
+                """,
+                (project_id,),
+            ).fetchone()
+            if project_active is not None:
+                connection.execute("ROLLBACK")
+                raise ValueError("crawl_job_active_exists")
+            user_active = int(
+                connection.execute(
+                    """
+                    SELECT COUNT(*) FROM crawl_jobs
+                    WHERE user_id = ? AND state IN ('queued', 'running')
+                    """,
+                    (user_id,),
+                ).fetchone()[0]
+            )
+            if user_active >= self._active_job_limit_per_user:
+                connection.execute("ROLLBACK")
+                raise CrawlUserLimitError
+            global_active = int(
+                connection.execute(
+                    "SELECT COUNT(*) FROM crawl_jobs WHERE state IN ('queued', 'running')"
+                ).fetchone()[0]
+            )
+            if global_active >= self._active_job_limit_global:
+                connection.execute("ROLLBACK")
+                raise CrawlQueueCapacityError
             try:
                 connection.execute(
                     """
@@ -273,7 +325,7 @@ class SqliteCrawlStore:
         current = self._clock() if now is None else now
         payload = result.model_dump_json()
         if len(payload.encode()) > 2_000_000:
-            raise ValueError("crawl_result_too_large")
+            raise CrawlResultTooLargeError
         digest = hashlib.sha256(payload.encode()).hexdigest()
         token_hash = hashlib.sha256(lease_token.encode()).hexdigest()
         self.ensure_schema()

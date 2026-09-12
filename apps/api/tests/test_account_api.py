@@ -204,12 +204,16 @@ def test_settings_bound_site_audit_budget_and_runtime() -> None:
     assert defaults.crawler_page_limit == 100
     assert defaults.crawler_deadline_seconds == 240
     assert defaults.crawler_lease_seconds == 300
+    assert defaults.crawler_active_job_limit_per_user == 2
+    assert defaults.crawler_active_job_limit_global == 25
 
     for payload in (
         {"crawler_page_limit": 0},
         {"crawler_page_limit": 501},
         {"crawler_deadline_seconds": 241},
         {"crawler_lease_seconds": 269, "crawler_deadline_seconds": 240},
+        {"crawler_active_job_limit_per_user": 0},
+        {"crawler_active_job_limit_global": 1, "crawler_active_job_limit_per_user": 2},
     ):
         with pytest.raises(ValidationError):
             Settings(**payload)

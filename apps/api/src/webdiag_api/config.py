@@ -93,6 +93,8 @@ class Settings(BaseSettings):
     crawler_page_limit: int = Field(default=100, ge=1, le=500)
     crawler_page_body_max_bytes: int = Field(default=500_000, ge=16_384, le=1_000_000)
     crawler_deadline_seconds: int = Field(default=240, ge=10, le=240)
+    crawler_active_job_limit_per_user: int = Field(default=2, ge=1, le=20)
+    crawler_active_job_limit_global: int = Field(default=25, ge=1, le=1_000)
     ai_safety_identifier_secret: str = ""
     ai_artifact_prefix: str = "ai-uploads"
     ai_lease_seconds: int = Field(default=900, ge=60, le=3600)
@@ -251,6 +253,10 @@ class Settings(BaseSettings):
             raise ValueError("AI global active run limit must not be below the per-user limit")
         if self.crawler_lease_seconds < self.crawler_deadline_seconds + 30:
             raise ValueError("crawler lease must exceed the crawl deadline by at least 30 seconds")
+        if self.crawler_active_job_limit_global < self.crawler_active_job_limit_per_user:
+            raise ValueError(
+                "crawler global active job limit must not be below the per-user limit"
+            )
         return self
 
 

@@ -4,7 +4,10 @@ from collections.abc import Callable
 
 from webdiag_api.audit.fetcher import SafeFetchConfig, SafeHttpFetcher
 from webdiag_api.crawl.executor import CrawlConfig, CrawlExecutionError, crawl_origin
-from webdiag_api.crawl.storage import CrawlLeaseLostError, SqliteCrawlStore
+from webdiag_api.crawl.storage import (
+    CrawlResultTooLargeError,
+    SqliteCrawlStore,
+)
 from webdiag_api.security.url_policy import UrlPolicyError
 
 
@@ -41,8 +44,12 @@ class CrawlService:
                 lease_token=claim.lease_token,
                 error_code=_public_error_code(str(error)),
             )
-        except CrawlLeaseLostError:
-            pass
+        except CrawlResultTooLargeError:
+            self._store.fail_job(
+                job_id=claim.job.id,
+                lease_token=claim.lease_token,
+                error_code="crawl_result_too_large",
+            )
         return True
 
 

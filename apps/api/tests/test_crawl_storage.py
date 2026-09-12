@@ -8,7 +8,13 @@ import pytest
 from webdiag_api.accounts.storage import SqliteAccountStore
 from webdiag_api.accounts.workspace_storage import SqliteWorkspaceStore
 from webdiag_api.crawl.models import CrawlResult, SiteAuditResult
-from webdiag_api.crawl.storage import CrawlIntegrityError, CrawlLeaseLostError, SqliteCrawlStore
+from webdiag_api.crawl.storage import (
+    CrawlIntegrityError,
+    CrawlLeaseLostError,
+    CrawlQueueCapacityError,
+    CrawlUserLimitError,
+    SqliteCrawlStore,
+)
 
 
 def seed_project(database_path: Path) -> tuple[str, str]:
@@ -177,3 +183,48 @@ def test_archiving_project_fails_active_crawl_and_invalidates_lease(tmp_path: Pa
             result=CrawlResult(origin="https://example.com", pages=()),
             now=101,
         )
+
+
+def test_crawl_queue_enforces_per_user_limit_across_projects(tmp_path: Path) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    user_id, first_project_id = seed_project(database_path)
+    second_project = SqliteWorkspaceStore(str(database_path)).create_project(
+        user_id=user_id,
+        name="Second project",
+        origin="https://second.example.com",
+    )
+    store = SqliteCrawlStore(
+        str(database_path),
+        lease_seconds=60,
+        active_job_limit_per_user=1,
+        active_job_limit_global=2,
+    )
+
+    store.create_job(user_id=user_id, project_id=first_project_id)
+    with pytest.raises(CrawlUserLimitError):
+        store.create_job(user_id=user_id, project_id=second_project.id)
+
+
+def test_crawl_queue_enforces_global_limit_across_accounts(tmp_path: Path) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    first_user_id, first_project_id = seed_project(database_path)
+    second_user = SqliteAccountStore(str(database_path)).create_user(
+        email="second-crawler@example.com",
+        display_name="Second crawler",
+        password_hash="test-only-password-hash",
+    )
+    second_project = SqliteWorkspaceStore(str(database_path)).create_project(
+        user_id=second_user.id,
+        name="Second account project",
+        origin="https://second.example.com",
+    )
+    store = SqliteCrawlStore(
+        str(database_path),
+        lease_seconds=60,
+        active_job_limit_per_user=1,
+        active_job_limit_global=1,
+    )
+
+    store.create_job(user_id=first_user_id, project_id=first_project_id)
+    with pytest.raises(CrawlQueueCapacityError):
+        store.create_job(user_id=second_user.id, project_id=second_project.id)

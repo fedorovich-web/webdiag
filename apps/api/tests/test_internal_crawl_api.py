@@ -4,6 +4,7 @@ import asyncio
 from pathlib import Path
 
 import httpx
+import pytest
 from test_account_workspace_api import build_account_service, build_workspace, register
 
 from webdiag_api.accounts.api import get_account_service
@@ -13,7 +14,11 @@ from webdiag_api.accounts.workspace_models import ProjectCreateRequest
 from webdiag_api.accounts.workspace_service import WorkspaceService
 from webdiag_api.config import settings
 from webdiag_api.crawl.api import get_crawl_service, get_crawl_store
-from webdiag_api.crawl.storage import SqliteCrawlStore
+from webdiag_api.crawl.storage import (
+    CrawlQueueCapacityError,
+    CrawlUserLimitError,
+    SqliteCrawlStore,
+)
 from webdiag_api.main import app
 
 
@@ -25,6 +30,14 @@ class StubCrawlService:
     def run_one(self) -> bool:
         self.calls += 1
         return self.processed
+
+
+class RejectingCrawlStore:
+    def __init__(self, error: type[RuntimeError]) -> None:
+        self._error = error
+
+    def create_job(self, *, user_id: str, project_id: str):
+        raise self._error
 
 
 def test_internal_crawl_run_one_requires_dedicated_bearer(monkeypatch) -> None:
@@ -186,3 +199,47 @@ def test_account_site_audit_routes_are_owned_versioned_and_share_the_crawl_queue
     assert listed.json()["contract_version"] == "webdiag.account.site_audit_list.v1"
     assert [job["id"] for job in listed.json()["jobs"]] == [job_id]
     assert detail.json() == created.json()
+
+
+@pytest.mark.parametrize(
+    ("store_error", "expected_status", "expected_code"),
+    (
+        (CrawlUserLimitError, 429, "crawl_user_limit_reached"),
+        (CrawlQueueCapacityError, 503, "crawl_queue_capacity_reached"),
+    ),
+)
+def test_account_site_audit_queue_limits_have_stable_no_store_responses(
+    tmp_path: Path,
+    store_error: type[RuntimeError],
+    expected_status: int,
+    expected_code: str,
+) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    account: AccountService = build_account_service(database_path)
+    user_id, owner_token = register(account, "owner@example.com")
+    workspace: WorkspaceService = build_workspace(database_path)
+    project = workspace.create_project(
+        user_id=user_id,
+        request=ProjectCreateRequest(name="Site audit", origin="https://example.com"),
+    )
+    app.dependency_overrides[get_account_service] = lambda: account
+    app.dependency_overrides[get_crawl_store] = lambda: RejectingCrawlStore(store_error)
+
+    async def post() -> httpx.Response:
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            return await client.post(
+                f"/v1/account/projects/{project.id}/site-audits",
+                headers={"Cookie": f"webdiag_session={owner_token}"},
+            )
+
+    try:
+        response = asyncio.run(post())
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == expected_status
+    assert response.headers["cache-control"] == "no-store"
+    assert response.headers["retry-after"] == "60"
+    assert response.json()["detail"]["code"] == expected_code

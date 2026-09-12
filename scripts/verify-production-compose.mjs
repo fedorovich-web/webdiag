@@ -80,6 +80,8 @@ expect(api.WEBDIAG_AI_RUNTIME_ENABLED === "false", "AI runtime is not disabled")
 expect(api.WEBDIAG_CRAWLER_PAGE_LIMIT === "100", "crawler page budget differs");
 expect(api.WEBDIAG_CRAWLER_DEADLINE_SECONDS === "240", "crawler deadline differs");
 expect(api.WEBDIAG_CRAWLER_LEASE_SECONDS === "300", "crawler lease differs");
+expect(api.WEBDIAG_CRAWLER_ACTIVE_JOB_LIMIT_PER_USER === "2", "crawler user limit differs");
+expect(api.WEBDIAG_CRAWLER_ACTIVE_JOB_LIMIT_GLOBAL === "25", "crawler queue limit differs");
 expect(
   scheduler.WEBDIAG_CRAWLER_WORKER_TIMEOUT_SECONDS === "270",
   "crawler worker timeout differs",

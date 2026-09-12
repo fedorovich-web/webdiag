@@ -24,7 +24,13 @@ from webdiag_api.crawl.models import (
     SiteAuditResult,
 )
 from webdiag_api.crawl.service import CrawlService, default_crawl_fetcher
-from webdiag_api.crawl.storage import CrawlIntegrityError, SqliteCrawlStore, StoredCrawlJob
+from webdiag_api.crawl.storage import (
+    CrawlIntegrityError,
+    CrawlQueueCapacityError,
+    CrawlUserLimitError,
+    SqliteCrawlStore,
+    StoredCrawlJob,
+)
 
 router = APIRouter(
     prefix="/v1/internal/crawl",
@@ -46,6 +52,8 @@ def get_crawl_store() -> SqliteCrawlStore:
     return SqliteCrawlStore(
         settings.account_database_path,
         lease_seconds=settings.crawler_lease_seconds,
+        active_job_limit_per_user=settings.crawler_active_job_limit_per_user,
+        active_job_limit_global=settings.crawler_active_job_limit_global,
     )
 
 
@@ -125,6 +133,24 @@ def _not_found() -> HTTPException:
 def _create_job(*, user_id: str, project_id: UUID, store: SqliteCrawlStore) -> StoredCrawlJob:
     try:
         return store.create_job(user_id=user_id, project_id=str(project_id))
+    except CrawlUserLimitError as error:
+        raise HTTPException(
+            status_code=429,
+            detail={
+                "code": "crawl_user_limit_reached",
+                "message": "Too many site audits are already queued or running.",
+            },
+            headers={"Cache-Control": "no-store", "Retry-After": "60"},
+        ) from error
+    except CrawlQueueCapacityError as error:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "crawl_queue_capacity_reached",
+                "message": "Site audit capacity is temporarily unavailable.",
+            },
+            headers={"Cache-Control": "no-store", "Retry-After": "60"},
+        ) from error
     except ValueError as error:
         code = str(error)
         if code == "account_project_not_found":
