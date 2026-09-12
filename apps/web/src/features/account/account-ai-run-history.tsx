@@ -31,15 +31,15 @@ export function AccountAIRunHistory({
     <section className="wd-ai-history-section" aria-labelledby="account-ai-history-heading">
       <div className="wd-ai-section-heading">
         <div>
-          <span className="eyebrow">{ru ? "RUN HISTORY" : "RUN HISTORY"}</span>
-          <h2 id="account-ai-history-heading">{ru ? "Запуски AI" : "AI runs"}</h2>
+          <span className="eyebrow">{ru ? "История" : "History"}</span>
+          <h2 id="account-ai-history-heading">{ru ? "История AI-запусков" : "AI run history"}</h2>
         </div>
-        <p>{ru ? "Результаты остаются привязанными к аккаунту и доступны для удаления." : "Results stay scoped to your account and can be deleted."}</p>
+        <p>{ru ? "Результаты сохраняются в аккаунте; ненужные запуски можно удалить." : "Results are saved to your account; runs you no longer need can be deleted."}</p>
       </div>
       {runs.length === 0 ? (
         <div className="wd-ai-empty-state">
           <strong>{ru ? "Запусков пока нет" : "No runs yet"}</strong>
-          <p>{ru ? "После появления подтверждённых данных проекта здесь будет история запусков." : "Run history will appear after confirmed project evidence is available."}</p>
+          <p>{ru ? "После первого запуска здесь появится история результатов." : "Your result history will appear here after the first run."}</p>
         </div>
       ) : (
         <div className="wd-ai-run-list">
