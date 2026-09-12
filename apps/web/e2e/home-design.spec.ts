@@ -73,6 +73,8 @@ test.describe("home functional smoke", () => {
     await expect(page.locator(".language-switcher-desktop")).toBeHidden();
     await page.locator(".mobile-menu summary").click();
     await expect(page.locator(".language-switcher-mobile")).toBeVisible();
+
+    await page.screenshot({ path: "test-results/homepage-mobile-current.png", fullPage: true });
   });
 
   test("FAQ controls remain keyboard operable when FAQ items are present", async ({ page }) => {
