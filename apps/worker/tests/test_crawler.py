@@ -27,6 +27,7 @@ def test_crawler_bridge_disables_ambient_proxies_and_uses_dedicated_bearer(monke
     request = mocked.call_args.args[0]
     assert request.full_url == "http://api:8000/v1/internal/crawl/run-one"
     assert request.headers["Authorization"] == f"Bearer {'c' * 32}"
+    assert mocked.call_args.kwargs["timeout"] == 270
 
 
 def test_crawler_bridge_rejects_credentialed_origin_and_invalid_token(monkeypatch) -> None:

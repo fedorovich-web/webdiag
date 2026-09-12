@@ -19,11 +19,11 @@ class CrawlPage(StrictCrawlModel):
 
 
 class CrawlSeverityCounts(StrictCrawlModel):
-    critical: int = Field(default=0, ge=0, le=2_500)
-    high: int = Field(default=0, ge=0, le=2_500)
-    medium: int = Field(default=0, ge=0, le=2_500)
-    low: int = Field(default=0, ge=0, le=2_500)
-    info: int = Field(default=0, ge=0, le=2_500)
+    critical: int = Field(default=0, ge=0, le=50_000)
+    high: int = Field(default=0, ge=0, le=50_000)
+    medium: int = Field(default=0, ge=0, le=50_000)
+    low: int = Field(default=0, ge=0, le=50_000)
+    info: int = Field(default=0, ge=0, le=50_000)
 
 
 class AuditedCrawlPage(CrawlPage):
@@ -39,15 +39,15 @@ class CrawlPageFailure(StrictCrawlModel):
 
 class CrawlDuplicateGroup(StrictCrawlModel):
     value: str = Field(min_length=1, max_length=500)
-    urls: tuple[str, ...] = Field(min_length=2, max_length=25)
+    urls: tuple[str, ...] = Field(min_length=2, max_length=500)
 
 
 class CrawlResult(StrictCrawlModel):
     contract_version: Literal["webdiag.crawl.result.v1"] = "webdiag.crawl.result.v1"
     origin: str = Field(min_length=1, max_length=2_048)
-    pages: tuple[CrawlPage, ...] = Field(max_length=25)
-    page_failures: tuple[CrawlPageFailure, ...] = Field(default=(), max_length=25)
-    page_limit: int = Field(default=25, ge=1, le=25)
+    pages: tuple[CrawlPage, ...] = Field(max_length=500)
+    page_failures: tuple[CrawlPageFailure, ...] = Field(default=(), max_length=500)
+    page_limit: int = Field(default=100, ge=1, le=500)
     page_budget_exhausted: bool = False
     sitemap_url: str | None = Field(default=None, max_length=2_048)
     sitemap_url_count: int = Field(default=0, ge=0, le=10_000)
@@ -68,15 +68,15 @@ class SiteAuditIssue(StrictCrawlModel):
     title: str = Field(min_length=1, max_length=180)
     description: str = Field(min_length=1, max_length=1_000)
     affected_urls: tuple[str, ...] = Field(min_length=1, max_length=25)
-    affected_url_count: int = Field(ge=1, le=25)
+    affected_url_count: int = Field(ge=1, le=500)
     recommendation: Recommendation
 
 
 class SiteAuditSummary(StrictCrawlModel):
-    pages_audited: int = Field(default=0, ge=0, le=25)
-    pages_with_issues: int = Field(default=0, ge=0, le=25)
+    pages_audited: int = Field(default=0, ge=0, le=500)
+    pages_with_issues: int = Field(default=0, ge=0, le=500)
     unique_issue_count: int = Field(default=0, ge=0, le=100)
-    issue_occurrence_count: int = Field(default=0, ge=0, le=2_500)
+    issue_occurrence_count: int = Field(default=0, ge=0, le=50_000)
     occurrences_by_severity: CrawlSeverityCounts = Field(
         default_factory=CrawlSeverityCounts
     )
@@ -87,9 +87,9 @@ class SiteAuditResult(StrictCrawlModel):
         "webdiag.site_audit.result.v1"
     )
     origin: str = Field(min_length=1, max_length=2_048)
-    pages: tuple[AuditedCrawlPage, ...] = Field(max_length=25)
-    page_failures: tuple[CrawlPageFailure, ...] = Field(default=(), max_length=25)
-    page_limit: int = Field(default=25, ge=1, le=25)
+    pages: tuple[AuditedCrawlPage, ...] = Field(max_length=500)
+    page_failures: tuple[CrawlPageFailure, ...] = Field(default=(), max_length=500)
+    page_limit: int = Field(default=100, ge=1, le=500)
     page_budget_exhausted: bool = False
     sitemap_url: str | None = Field(default=None, max_length=2_048)
     sitemap_url_count: int = Field(default=0, ge=0, le=10_000)

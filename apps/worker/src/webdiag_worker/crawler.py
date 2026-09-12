@@ -39,7 +39,10 @@ def run_one_crawl() -> bool:
         raise RuntimeError("WEBDIAG_CRAWLER_INTERNAL_TOKEN must contain at least 32 characters")
     if any(not 0x21 <= ord(character) <= 0x7E for character in token):
         raise RuntimeError("WEBDIAG_CRAWLER_INTERNAL_TOKEN must contain visible ASCII")
-    timeout = max(30, min(120, int(os.getenv("WEBDIAG_CRAWLER_WORKER_TIMEOUT_SECONDS", "90"))))
+    timeout = max(
+        60,
+        min(330, int(os.getenv("WEBDIAG_CRAWLER_WORKER_TIMEOUT_SECONDS", "270"))),
+    )
     request = Request(
         f"{parsed.scheme}://{parsed.netloc}/v1/internal/crawl/run-one",
         method="POST",

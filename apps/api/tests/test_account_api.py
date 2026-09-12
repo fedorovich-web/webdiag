@@ -199,6 +199,22 @@ def test_settings_bound_request_body_limits() -> None:
             Settings(**payload)
 
 
+def test_settings_bound_site_audit_budget_and_runtime() -> None:
+    defaults = Settings()
+    assert defaults.crawler_page_limit == 100
+    assert defaults.crawler_deadline_seconds == 240
+    assert defaults.crawler_lease_seconds == 300
+
+    for payload in (
+        {"crawler_page_limit": 0},
+        {"crawler_page_limit": 501},
+        {"crawler_deadline_seconds": 241},
+        {"crawler_lease_seconds": 269, "crawler_deadline_seconds": 240},
+    ):
+        with pytest.raises(ValidationError):
+            Settings(**payload)
+
+
 def test_settings_require_bounded_distinct_ai_worker_credentials() -> None:
     with pytest.raises(ValidationError, match="production AI internal token is required"):
         Settings(

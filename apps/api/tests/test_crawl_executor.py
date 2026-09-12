@@ -202,6 +202,47 @@ def test_crawl_reports_page_budget_without_labelling_reachable_urls_as_orphans()
     assert result.orphan_urls == ()
 
 
+def test_site_audit_can_process_more_than_twenty_five_pages_with_bounded_evidence() -> None:
+    origin = "https://example.com"
+    page_urls = [f"{origin}/page-{index}" for index in range(1, 30)]
+    root_links = "".join(f'<a href="/page-{index}">Page</a>' for index in range(1, 30))
+    responses: dict[str, SafeFetchResult | Exception] = {
+        f"{origin}/robots.txt": SafeFetchError("unavailable"),
+        f"{origin}/sitemap.xml": SafeFetchError("missing"),
+        f"{origin}/": fetched(f"{origin}/", f"<html><body>{root_links}</body></html>"),
+    }
+    responses.update(
+        {
+            url: fetched(url, "<html><body>Page without metadata</body></html>")
+            for url in page_urls
+        }
+    )
+
+    result = crawl_origin(
+        origin,
+        fetcher=FixtureFetcher(responses),
+        config=CrawlConfig(page_limit=30, deadline_seconds=60),
+    )
+
+    missing_title = next(
+        issue for issue in result.issues if issue.issue_id == "metadata.title.missing"
+    )
+    assert result.audit_summary.pages_audited == 30
+    assert result.page_budget_exhausted is False
+    assert missing_title.affected_url_count == 30
+    assert len(missing_title.affected_urls) == 25
+
+
+def test_crawl_configuration_is_bounded_for_production_site_audits() -> None:
+    assert CrawlConfig().page_limit == 100
+    assert CrawlConfig().deadline_seconds == 240
+    assert CrawlConfig(page_limit=500, deadline_seconds=240).page_limit == 500
+    with pytest.raises(ValueError, match="between 1 and 500"):
+        CrawlConfig(page_limit=501)
+    with pytest.raises(ValueError, match="between 10 and 240"):
+        CrawlConfig(deadline_seconds=241)
+
+
 def test_incomplete_crawl_does_not_claim_sitemap_only_urls_are_orphans() -> None:
     origin = "https://example.com"
     fetcher = FixtureFetcher(

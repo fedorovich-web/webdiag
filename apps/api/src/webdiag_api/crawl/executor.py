@@ -38,16 +38,23 @@ class CrawlExecutionError(RuntimeError):
     pass
 
 
+DEFAULT_CRAWL_PAGE_LIMIT = 100
+MAX_CRAWL_PAGE_LIMIT = 500
+MAX_DISCOVERED_LINKS_PER_PAGE = 500
+MAX_REPORTED_INTERNAL_LINKS_PER_PAGE = 25
+MAX_AFFECTED_URL_SAMPLES = 25
+
+
 @dataclass(frozen=True, slots=True)
 class CrawlConfig:
-    page_limit: int = 25
-    deadline_seconds: int = 60
+    page_limit: int = DEFAULT_CRAWL_PAGE_LIMIT
+    deadline_seconds: int = 240
 
     def __post_init__(self) -> None:
-        if not 1 <= self.page_limit <= 25:
-            raise ValueError("crawl page limit must be between 1 and 25")
-        if not 10 <= self.deadline_seconds <= 120:
-            raise ValueError("crawl deadline must be between 10 and 120 seconds")
+        if not 1 <= self.page_limit <= MAX_CRAWL_PAGE_LIMIT:
+            raise ValueError("crawl page limit must be between 1 and 500")
+        if not 10 <= self.deadline_seconds <= 240:
+            raise ValueError("crawl deadline must be between 10 and 240 seconds")
 
 
 class _LinkParser(HTMLParser):
@@ -56,7 +63,7 @@ class _LinkParser(HTMLParser):
         self.hrefs: list[str] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-        if tag.lower() != "a":
+        if tag.lower() != "a" or len(self.hrefs) >= MAX_DISCOVERED_LINKS_PER_PAGE:
             return
         for key, value in attrs:
             if key.lower() == "href" and value:
@@ -184,7 +191,7 @@ def crawl_origin(
                 status_code=response.status_code,
                 title=metadata.title,
                 meta_description=metadata.meta_description,
-                internal_links=internal_links[:100],
+                internal_links=internal_links[:MAX_REPORTED_INTERNAL_LINKS_PER_PAGE],
                 audit_score=page_score,
                 issue_count=len(page_issues),
                 issues_by_severity=severity_counts,
@@ -408,7 +415,7 @@ def _site_issues(
             priority=issue.priority,
             title=issue.title,
             description=issue.description,
-            affected_urls=tuple(urls),
+            affected_urls=tuple(urls[:MAX_AFFECTED_URL_SAMPLES]),
             affected_url_count=len(urls),
             recommendation=issue.recommendation,
         )
@@ -448,8 +455,8 @@ def _site_issues(
                     "These sitemap URLs were not found in links from the fully audited "
                     "page set. They are candidates for an internal-linking review."
                 ),
-                affected_urls=tuple(orphan_urls[:25]),
-                affected_url_count=min(len(orphan_urls), 25),
+                affected_urls=tuple(orphan_urls[:MAX_AFFECTED_URL_SAMPLES]),
+                affected_url_count=len(orphan_urls),
                 recommendation=Recommendation(
                     summary="Review navigation and contextual links to these sitemap URLs.",
                     steps=(
@@ -529,8 +536,8 @@ def _crawl_failure_issues(
                 priority=priority,
                 title=title,
                 description=description,
-                affected_urls=tuple(urls[:25]),
-                affected_url_count=min(len(urls), 25),
+                affected_urls=tuple(urls[:MAX_AFFECTED_URL_SAMPLES]),
+                affected_url_count=len(urls),
                 recommendation=Recommendation(
                     summary=summary,
                     steps=(
@@ -552,9 +559,10 @@ def _duplicate_issues(
     severity: Severity,
     summary: str,
 ) -> tuple[SiteAuditIssue, ...]:
-    urls = tuple(dict.fromkeys(url for group in groups for url in group.urls))[:25]
-    if not urls:
+    all_urls = tuple(dict.fromkeys(url for group in groups for url in group.urls))
+    if not all_urls:
         return ()
+    urls = all_urls[:MAX_AFFECTED_URL_SAMPLES]
     return (
         SiteAuditIssue(
             issue_id=issue_id,
@@ -565,7 +573,7 @@ def _duplicate_issues(
             title=title,
             description=description,
             affected_urls=urls,
-            affected_url_count=len(urls),
+            affected_url_count=len(all_urls),
             recommendation=Recommendation(
                 summary=summary,
                 steps=(

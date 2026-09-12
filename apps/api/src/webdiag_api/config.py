@@ -89,10 +89,10 @@ class Settings(BaseSettings):
     ai_runtime_enabled: bool = False
     ai_internal_token: str = ""
     crawler_internal_token: str = ""
-    crawler_lease_seconds: int = Field(default=120, ge=30, le=300)
-    crawler_page_limit: int = Field(default=25, ge=1, le=25)
+    crawler_lease_seconds: int = Field(default=300, ge=30, le=300)
+    crawler_page_limit: int = Field(default=100, ge=1, le=500)
     crawler_page_body_max_bytes: int = Field(default=500_000, ge=16_384, le=1_000_000)
-    crawler_deadline_seconds: int = Field(default=60, ge=10, le=120)
+    crawler_deadline_seconds: int = Field(default=240, ge=10, le=240)
     ai_safety_identifier_secret: str = ""
     ai_artifact_prefix: str = "ai-uploads"
     ai_lease_seconds: int = Field(default=900, ge=60, le=3600)
@@ -249,6 +249,8 @@ class Settings(BaseSettings):
             raise ValueError("AI lease renew interval must be shorter than the AI lease")
         if self.ai_active_run_limit_global < self.ai_active_run_limit_per_user:
             raise ValueError("AI global active run limit must not be below the per-user limit")
+        if self.crawler_lease_seconds < self.crawler_deadline_seconds + 30:
+            raise ValueError("crawler lease must exceed the crawl deadline by at least 30 seconds")
         return self
 
 
