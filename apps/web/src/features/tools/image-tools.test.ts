@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   RASTER_INPUT_MIME_TYPES,
   RASTER_OUTPUT_FORMAT_OPTIONS,
+  assertEncodedBlobFormat,
   compressionDelta,
   formatBytes,
   formatMimeLabel,
@@ -37,5 +38,15 @@ describe("browser-local image utility helpers", () => {
     expect(formatBytes(1536, "ru")).toBe("1,5 KB");
     expect(compressionDelta(1_000_000, 400_000)).toEqual({ bytes: 600_000, percent: 0.6 });
     expect(() => compressionDelta(0, 100)).toThrow();
+  });
+
+  it("rejects a browser PNG fallback instead of presenting it as AVIF", () => {
+    const avif = new Blob(["avif"], { type: "image/avif" });
+    const pngFallback = new Blob(["png"], { type: "image/png" });
+
+    expect(assertEncodedBlobFormat(avif, "image/avif")).toBe(avif);
+    expect(() => assertEncodedBlobFormat(pngFallback, "image/avif")).toThrow(
+      "The browser could not encode AVIF.",
+    );
   });
 });

@@ -64,6 +64,23 @@ export function formatMimeLabel(value: RasterOutputFormat | string): string {
   return value || "unknown";
 }
 
+class UnsupportedCanvasEncoderError extends Error {
+  readonly format: RasterOutputFormat;
+
+  constructor(format: RasterOutputFormat) {
+    super(`The browser could not encode ${formatMimeLabel(format)}.`);
+    this.name = "UnsupportedCanvasEncoderError";
+    this.format = format;
+  }
+}
+
+export function assertEncodedBlobFormat(blob: Blob, format: RasterOutputFormat): Blob {
+  if (blob.type.toLowerCase() !== format) {
+    throw new UnsupportedCanvasEncoderError(format);
+  }
+  return blob;
+}
+
 export function compressionDelta(sourceBytes: number, outputBytes: number): { bytes: number; percent: number } {
   if (!Number.isFinite(sourceBytes) || sourceBytes <= 0 || !Number.isFinite(outputBytes) || outputBytes < 0) {
     throw new TypeError("Image byte sizes must be finite and the source size must be greater than zero.");
@@ -91,7 +108,17 @@ async function loadImage(file: File): Promise<LoadedImage> {
 function canvasToBlob(canvas: HTMLCanvasElement, format: RasterOutputFormat, quality: number): Promise<Blob> {
   return new Promise((resolve, reject) => {
     canvas.toBlob(
-      (blob) => blob ? resolve(blob) : reject(new Error(`The browser could not encode ${formatMimeLabel(format)}. Try WebP, JPEG, or PNG in this browser.`)),
+      (blob) => {
+        if (!blob) {
+          reject(new UnsupportedCanvasEncoderError(format));
+          return;
+        }
+        try {
+          resolve(assertEncodedBlobFormat(blob, format));
+        } catch (error) {
+          reject(error);
+        }
+      },
       format,
       format === "image/png" ? undefined : normalizeImageQuality(quality),
     );
@@ -186,6 +213,23 @@ function FormatField({ locale, value, onChange }: { locale: Locale; value: Raste
   </label>;
 }
 
+function imageProcessingError(
+  error: unknown,
+  locale: Locale,
+  fallbackRu: string,
+  fallbackEn: string,
+): string {
+  if (error instanceof UnsupportedCanvasEncoderError) {
+    const format = formatMimeLabel(error.format);
+    return t(
+      locale,
+      `Этот браузер не поддерживает кодирование ${format}. Используйте WebP, JPEG или PNG.`,
+      `This browser cannot encode ${format}. Use WebP, JPEG, or PNG.`,
+    );
+  }
+  return error instanceof Error ? error.message : t(locale, fallbackRu, fallbackEn);
+}
+
 export function ImageOptimizerTool({ locale }: { locale: Locale }) {
   const [image, setImage] = useState<LoadedImage | null>(null);
   const [format, setFormat] = useState<RasterOutputFormat>("image/webp");
@@ -194,13 +238,14 @@ export function ImageOptimizerTool({ locale }: { locale: Locale }) {
   const [result, setResult] = useImageResult();
   async function run() {
     if (!image) return setError(t(locale, "Выберите изображение.", "Choose an image."));
+    setResult(null);
     try {
       const { canvas, context } = makeCanvas(image.bitmap.width, image.bitmap.height);
       context.drawImage(image.bitmap, 0, 0);
       const blob = await canvasToBlob(canvas, format, quality);
       setResult({ url: URL.createObjectURL(blob), filename: filenameFor(image.file, "compressed", format), size: blob.size, sourceSize: image.file.size, width: canvas.width, height: canvas.height, format });
       setError("");
-    } catch (caught) { setError(caught instanceof Error ? caught.message : t(locale, "Не удалось обработать изображение.", "Could not process the image.")); }
+    } catch (caught) { setError(imageProcessingError(caught, locale, "Не удалось обработать изображение.", "Could not process the image.")); }
   }
   return <div className="tool-grid"><section className="tool-panel"><h2>{t(locale, "Параметры", "Settings")}</h2><FileField locale={locale} onLoaded={setImage} /><FormatField locale={locale} value={format} onChange={setFormat} /><label className="field"><span>{t(locale, "Качество JPEG/WebP/AVIF", "JPEG/WebP/AVIF quality")}: {Math.round(quality * 100)}%</span><input type="range" min="0.1" max="1" step="0.05" value={quality} onChange={(event) => setQuality(Number(event.target.value))} /></label><button className="button" type="button" onClick={() => void run()}>{t(locale, "Оптимизировать", "Optimize")}</button>{error && <p className="form-error" role="alert">{error}</p>}</section><ResultPanel locale={locale} result={result} /></div>;
 }
@@ -213,13 +258,14 @@ export function ImageFormatConverterTool({ locale }: { locale: Locale }) {
   const [result, setResult] = useImageResult();
   async function run() {
     if (!image) return setError(t(locale, "Выберите изображение.", "Choose an image."));
+    setResult(null);
     try {
       const { canvas, context } = makeCanvas(image.bitmap.width, image.bitmap.height);
       context.drawImage(image.bitmap, 0, 0);
       const blob = await canvasToBlob(canvas, format, quality);
       setResult({ url: URL.createObjectURL(blob), filename: filenameFor(image.file, "converted", format), size: blob.size, sourceSize: image.file.size, width: canvas.width, height: canvas.height, format });
       setError("");
-    } catch (caught) { setError(caught instanceof Error ? caught.message : t(locale, "Не удалось конвертировать изображение.", "Could not convert the image.")); }
+    } catch (caught) { setError(imageProcessingError(caught, locale, "Не удалось конвертировать изображение.", "Could not convert the image.")); }
   }
   return <div className="tool-grid"><section className="tool-panel"><h2>{t(locale, "Параметры", "Settings")}</h2><FileField locale={locale} onLoaded={setImage} /><FormatField locale={locale} value={format} onChange={setFormat} />{format !== "image/png" && <label className="field"><span>{t(locale, "Качество JPEG/WebP/AVIF", "JPEG/WebP/AVIF quality")}: {Math.round(quality * 100)}%</span><input type="range" min="0.1" max="1" step="0.05" value={quality} onChange={(event) => setQuality(Number(event.target.value))} /></label>}<button className="button" type="button" onClick={() => void run()}>{t(locale, "Конвертировать", "Convert")}</button>{error && <p className="form-error" role="alert">{error}</p>}</section><ResultPanel locale={locale} result={result} /></div>;
 }
@@ -237,6 +283,7 @@ export function ImageResizerTool({ locale }: { locale: Locale }) {
   function changeHeight(value: string) { setHeight(value); if (lockRatio && image && Number(value) > 0) setWidth(String(resizeToHeight(image.bitmap.width, image.bitmap.height, Number(value)).width)); }
   async function run() {
     if (!image) return setError(t(locale, "Выберите изображение.", "Choose an image."));
+    setResult(null);
     try {
       const dimensions = validateImageDimensions(Number(width), Number(height));
       const { canvas, context } = makeCanvas(dimensions.width, dimensions.height);
@@ -244,7 +291,7 @@ export function ImageResizerTool({ locale }: { locale: Locale }) {
       const blob = await canvasToBlob(canvas, format, 0.92);
       setResult({ url: URL.createObjectURL(blob), filename: filenameFor(image.file, "resized", format), size: blob.size, sourceSize: image.file.size, ...dimensions, format });
       setError("");
-    } catch (caught) { setError(caught instanceof Error ? caught.message : t(locale, "Проверьте размеры.", "Check the dimensions.")); }
+    } catch (caught) { setError(imageProcessingError(caught, locale, "Проверьте размеры.", "Check the dimensions.")); }
   }
   return <div className="tool-grid"><section className="tool-panel"><h2>{t(locale, "Новые размеры", "New dimensions")}</h2><FileField locale={locale} onLoaded={loaded} /><div className="field-row"><label className="field"><span>{t(locale, "Ширина, px", "Width, px")}</span><input inputMode="numeric" value={width} onChange={(event) => changeWidth(event.target.value)} /></label><label className="field"><span>{t(locale, "Высота, px", "Height, px")}</span><input inputMode="numeric" value={height} onChange={(event) => changeHeight(event.target.value)} /></label></div><label className="check-field"><input type="checkbox" checked={lockRatio} onChange={(event) => setLockRatio(event.target.checked)} />{t(locale, "Сохранять пропорции", "Preserve aspect ratio")}</label><FormatField locale={locale} value={format} onChange={setFormat} /><button className="button" type="button" onClick={() => void run()}>{t(locale, "Изменить размер", "Resize")}</button>{error && <p className="form-error" role="alert">{error}</p>}</section><ResultPanel locale={locale} result={result} /></div>;
 }
@@ -259,6 +306,7 @@ export function ImageCropperTool({ locale }: { locale: Locale }) {
   function field(key: keyof typeof rectangle, value: string) { setRectangle((current) => ({ ...current, [key]: value })); }
   async function run() {
     if (!image) return setError(t(locale, "Выберите изображение.", "Choose an image."));
+    setResult(null);
     try {
       const crop = normalizeCropRectangle(image.bitmap.width, image.bitmap.height, { x: Number(rectangle.x), y: Number(rectangle.y), width: Number(rectangle.width), height: Number(rectangle.height) });
       const { canvas, context } = makeCanvas(crop.width, crop.height);
@@ -266,7 +314,7 @@ export function ImageCropperTool({ locale }: { locale: Locale }) {
       const blob = await canvasToBlob(canvas, format, 0.92);
       setResult({ url: URL.createObjectURL(blob), filename: filenameFor(image.file, "cropped", format), size: blob.size, sourceSize: image.file.size, width: crop.width, height: crop.height, format });
       setError("");
-    } catch (caught) { setError(caught instanceof Error ? caught.message : t(locale, "Проверьте область обрезки.", "Check the crop area.")); }
+    } catch (caught) { setError(imageProcessingError(caught, locale, "Проверьте область обрезки.", "Check the crop area.")); }
   }
   return <div className="tool-grid"><section className="tool-panel"><h2>{t(locale, "Область обрезки", "Crop area")}</h2><FileField locale={locale} onLoaded={loaded} /><div className="crop-grid">{(["x", "y", "width", "height"] as const).map((key) => <label className="field" key={key}><span>{key === "width" ? t(locale, "Ширина", "Width") : key === "height" ? t(locale, "Высота", "Height") : key.toUpperCase()}</span><input inputMode="numeric" value={rectangle[key]} onChange={(event) => field(key, event.target.value)} /></label>)}</div><FormatField locale={locale} value={format} onChange={setFormat} /><button className="button" type="button" onClick={() => void run()}>{t(locale, "Обрезать", "Crop")}</button>{error && <p className="form-error" role="alert">{error}</p>}</section><ResultPanel locale={locale} result={result} /></div>;
 }
