@@ -43,10 +43,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
 
   return (
     <footer className="site-footer">
-      <div
-        className="shell footer-grid wd-footer-grid"
-        style={{ gridTemplateColumns: "1.5fr repeat(4, minmax(0, 1fr))" }}
-      >
+      <div className="shell footer-grid wd-footer-grid">
         <div className="footer-brand wd-footer-brand">
           <SiteBrand locale={locale} className="brand" variant="footer" />
           <p>{text.summary}</p>
