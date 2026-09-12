@@ -1,0 +1,81 @@
+/* Final visual-fidelity adjustments against the approved Fresh Mint homepage reference. */
+
+.wd-footer-grid {
+  grid-template-columns: 1.5fr repeat(4, minmax(0, 1fr));
+}
+
+@media (min-width: 1181px) {
+  .wd-home {
+    --wd-section-y: 40px;
+  }
+
+  .wd-section-intro {
+    margin-bottom: 18px;
+  }
+
+  .wd-section-headline {
+    margin-bottom: 18px;
+  }
+
+  .wd-platform-strip {
+    padding-top: 14px;
+    padding-bottom: 16px;
+  }
+
+  .wd-process-section {
+    padding-top: 30px;
+    padding-bottom: 30px;
+  }
+
+  #checks {
+    padding-bottom: 40px;
+  }
+
+  .wd-product-section {
+    padding-top: 34px;
+    padding-bottom: 34px;
+  }
+
+  .wd-knowledge-faq-section {
+    padding-top: 34px;
+    padding-bottom: 34px;
+  }
+
+  .wd-final-section {
+    padding-top: 24px;
+    padding-bottom: 24px;
+  }
+
+  .site-footer {
+    padding-top: 18px;
+    padding-bottom: 10px;
+  }
+
+  .footer-bottom {
+    margin-top: 12px !important;
+    padding-top: 8px;
+  }
+}
+
+@media (max-width: 1180px) and (min-width: 961px) {
+  .wd-footer-grid {
+    grid-template-columns: 1.5fr repeat(4, minmax(0, 1fr));
+    gap: 18px;
+  }
+}
+
+@media (max-width: 960px) {
+  .wd-footer-grid {
+    grid-template-columns: 1.5fr repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .wd-footer-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .wd-footer-brand {
+    grid-column: 1 / -1;
+  }
+}
