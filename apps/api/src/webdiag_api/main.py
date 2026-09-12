@@ -2,6 +2,7 @@ from fastapi import FastAPI
 
 from webdiag_api import __version__
 from webdiag_api.audit.api import router as audit_router
+from webdiag_api.auth.api import router as auth_router
 from webdiag_api.registry import public_tools
 from webdiag_api.tools.accessibility_static import router as accessibility_static_tool_router
 from webdiag_api.tools.asset_delivery import router as asset_delivery_tool_router
@@ -25,6 +26,7 @@ from webdiag_api.tools.url_management import router as url_management_tool_route
 
 app = FastAPI(title="WebDiag API", version=__version__)
 app.include_router(audit_router)
+app.include_router(auth_router)
 app.include_router(accessibility_static_tool_router)
 app.include_router(asset_delivery_tool_router)
 app.include_router(canonical_tool_router)
@@ -45,9 +47,11 @@ app.include_router(sitemap_xml_tool_router)
 app.include_router(technical_seo_tool_router)
 app.include_router(url_management_tool_router)
 
+
 @app.get("/health", tags=["system"])
 def health() -> dict[str, str]:
     return {"status": "ok", "service": "webdiag-api", "version": __version__}
+
 
 @app.get("/v1/tools", tags=["tools"])
 def list_tools() -> dict[str, object]:
