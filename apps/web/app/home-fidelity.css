@@ -4,14 +4,43 @@
   grid-template-columns: 1.5fr repeat(4, minmax(0, 1fr));
 }
 
+.footer-grid {
+  padding: 20px 0 14px;
+  gap: 26px;
+}
+
+.footer-column {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.footer-column strong {
+  margin-bottom: 2px;
+  font-size: 10px;
+}
+
+.footer-column a {
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.footer-bottom {
+  min-height: 0;
+}
+
 @media (min-width: 1181px) {
   .wd-home {
-    --wd-section-y: 38px;
+    --wd-section-y: 32px;
+  }
+
+  .wd-header-inner {
+    min-height: 60px;
   }
 
   .wd-section-intro,
   .wd-section-headline {
-    margin-bottom: 18px;
+    margin-bottom: 16px;
   }
 
   .wd-hero {
@@ -40,8 +69,8 @@
   }
 
   .wd-process-section {
-    padding-top: 8px;
-    padding-bottom: 34px;
+    padding-top: 6px;
+    padding-bottom: 28px;
   }
 
   .wd-process-panel {
@@ -51,7 +80,11 @@
 
   #checks {
     padding-top: 0;
-    padding-bottom: 34px;
+    padding-bottom: 28px;
+  }
+
+  .wd-check-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .wd-check-grid article {
@@ -60,8 +93,8 @@
   }
 
   .wd-product-section {
-    padding-top: 8px;
-    padding-bottom: 32px;
+    padding-top: 6px;
+    padding-bottom: 26px;
   }
 
   .wd-monitoring-chart svg {
@@ -69,21 +102,21 @@
   }
 
   .wd-knowledge-faq-section {
-    padding-top: 8px;
-    padding-bottom: 22px;
+    padding-top: 6px;
+    padding-bottom: 18px;
   }
 
   .wd-final-section {
-    padding: 20px 0;
+    padding: 16px 0;
   }
 
   .site-footer {
-    padding-top: 18px;
-    padding-bottom: 10px;
+    padding-top: 12px;
+    padding-bottom: 8px;
   }
 
   .footer-bottom {
-    margin-top: 12px !important;
+    margin-top: 10px !important;
     padding-top: 8px;
   }
 }
