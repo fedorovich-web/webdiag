@@ -5,6 +5,7 @@ body[data-theme="light"] {
   --brand-contrast: #ffffff;
   --brand-soft: #e8faf7;
   --accent: #3b82f6;
+  --accent-soft: #eef6ff;
   --focus: #22d3ee;
   --surface-muted: #f4f9fa;
   --line: #dbe6e8;
@@ -17,10 +18,21 @@ body[data-theme="dark"] {
   --brand-contrast: #06191b;
   --brand-soft: #12322f;
   --accent: #60a5fa;
+  --accent-soft: #122b3d;
   --focus: #34d399;
   --surface-muted: #0b151a;
   --line: #26383e;
   --line-strong: #35505a;
+}
+
+/* Never fall back to the legacy violet accent on shared public surfaces. */
+.eyebrow-on-dark {
+  color: #67e8f9;
+}
+
+::selection {
+  background: #22d3ee;
+  color: #06191b;
 }
 
 /* Primary actions share the same Fresh Mint product signature as the homepage. */
@@ -38,6 +50,12 @@ body[data-theme="dark"] {
 .wd-account-workspace-page .wd-button:not(.wd-button-secondary):hover {
   background: linear-gradient(120deg, #10b981 0%, #06b6d4 52%, #3b82f6 100%);
   color: #06191b;
+}
+
+.button:not(.button-secondary):focus-visible,
+.wd-account-page .wd-button:not(.wd-button-secondary):focus-visible,
+.wd-account-workspace-page .wd-button:not(.wd-button-secondary):focus-visible {
+  outline-color: var(--focus);
 }
 
 /* Full production footer. */
@@ -108,8 +126,15 @@ body[data-theme="dark"] {
 }
 
 .wd-workspace-navigation a[aria-current="page"] {
-  background: color-mix(in srgb, var(--brand-soft) 82%, var(--surface));
-  box-shadow: inset 3px 0 0 var(--brand), inset 0 0 0 1px color-mix(in srgb, var(--brand) 18%, var(--line));
+  background: linear-gradient(
+    110deg,
+    color-mix(in srgb, #34d399 15%, var(--surface)) 0%,
+    color-mix(in srgb, #22d3ee 13%, var(--surface)) 56%,
+    color-mix(in srgb, #60a5fa 11%, var(--surface)) 100%
+  );
+  box-shadow:
+    inset 3px 0 0 #0e9fba,
+    inset 0 0 0 1px color-mix(in srgb, var(--brand) 18%, var(--line));
   color: var(--text);
 }
 
@@ -127,6 +152,12 @@ body[data-theme="dark"] {
 .wd-workspace-real-metric strong,
 .wd-account-session-count strong {
   color: var(--brand-hover);
+}
+
+.wd-project-list-head > strong,
+.wd-saved-audit-head > strong {
+  color: var(--brand-hover);
+  background: color-mix(in srgb, var(--brand-soft) 44%, var(--surface));
 }
 
 .wd-priority-order {
