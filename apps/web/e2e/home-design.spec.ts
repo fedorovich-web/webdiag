@@ -15,6 +15,7 @@ test.describe("home functional smoke", () => {
   });
 
   test("Russian homepage exposes the complete site-check journey without enforcing presentation", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 1200 });
     await page.goto("/");
 
     await expect(page.locator("h1")).toHaveCount(1);
@@ -25,6 +26,8 @@ test.describe("home functional smoke", () => {
     for (const id of ["tools", "report", "monitoring", "knowledge", "faq"]) {
       await expect(page.locator(`#${id}`)).toHaveCount(1);
     }
+
+    await page.screenshot({ path: "test-results/homepage-current.png", fullPage: true });
   });
 
   test("homepage uses the approved standalone artwork without duplicate hero callouts", async ({ page }) => {
