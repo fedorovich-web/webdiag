@@ -19,23 +19,27 @@ const viewBox = { width: 560, height: 128, floor: 106 } as const;
 
 const points: Record<Locale, readonly ChartPoint[]> = {
   ru: [
-    { x: 82, y: 82, label: "Пн", title: "Стартовая проверка", text: "25 страниц, 4 критичные проблемы" },
-    { x: 214, y: 58, label: "Вт", title: "После исправлений", text: "исправлены ошибки мета-тегов" },
-    { x: 342, y: 73, label: "Чт", title: "Найдена регрессия", text: "новая цепочка редиректов" },
-    { x: 496, y: 50, label: "Сегодня", title: "Состояние улучшилось", text: "HTTPS и sitemap проходят проверку" },
+    { x: 52, y: 84, label: "Янв", title: "Стартовая проверка", text: "SEO-здоровье проекта: 31" },
+    { x: 144, y: 86, label: "Фев", title: "Повторная проверка", text: "состояние проекта стабильно" },
+    { x: 236, y: 72, label: "Мар", title: "После исправлений", text: "исправлены ошибки мета-тегов" },
+    { x: 328, y: 55, label: "Апр", title: "Рост качества", text: "устранены технические проблемы" },
+    { x: 420, y: 43, label: "Май", title: "Стабильный результат", text: "основные проверки проходят успешно" },
+    { x: 510, y: 42, label: "Июн", title: "Текущее состояние", text: "SEO-здоровье проекта: 78" },
   ],
   en: [
-    { x: 82, y: 82, label: "Mon", title: "Initial check", text: "25 pages, 4 critical issues" },
-    { x: 214, y: 58, label: "Tue", title: "After fixes", text: "metadata issues resolved" },
-    { x: 342, y: 73, label: "Thu", title: "Regression detected", text: "new redirect chain detected" },
-    { x: 496, y: 50, label: "Today", title: "Health improved", text: "HTTPS and sitemap checks pass" },
+    { x: 52, y: 84, label: "Jan", title: "Initial check", text: "project SEO health: 31" },
+    { x: 144, y: 86, label: "Feb", title: "Repeat check", text: "project health is stable" },
+    { x: 236, y: 72, label: "Mar", title: "After fixes", text: "metadata issues resolved" },
+    { x: 328, y: 55, label: "Apr", title: "Quality improved", text: "technical issues resolved" },
+    { x: 420, y: 43, label: "May", title: "Stable result", text: "core checks pass successfully" },
+    { x: 510, y: 42, label: "Jun", title: "Current state", text: "project SEO health: 78" },
   ],
 };
 
 const linePath =
-  "M0 90 C40 88 54 84 82 82 C128 78 166 62 214 58 C260 55 298 74 342 73 C398 72 438 51 496 50 C522 50 542 51 560 53";
+  "M0 91 C24 89 38 86 52 84 C88 80 112 87 144 86 C178 85 204 77 236 72 C268 67 298 60 328 55 C360 49 388 44 420 43 C453 42 482 44 510 42 C530 40 546 35 560 31";
 const areaPath =
-  "M0 106 L0 90 C40 88 54 84 82 82 C128 78 166 62 214 58 C260 55 298 74 342 73 C398 72 438 51 496 50 C522 50 542 51 560 53 L560 106 Z";
+  "M0 106 L0 91 C24 89 38 86 52 84 C88 80 112 87 144 86 C178 85 204 77 236 72 C268 67 298 60 328 55 C360 49 388 44 420 43 C453 42 482 44 510 42 C530 40 546 35 560 31 L560 106 Z";
 
 export function HomeMonitoringChart({ locale }: HomeMonitoringChartProps) {
   const chartPoints = points[locale];
@@ -71,6 +75,7 @@ export function HomeMonitoringChart({ locale }: HomeMonitoringChartProps) {
           type="button"
         >
           <span aria-hidden="true" className="wd-chart-dot-marker" />
+          <span aria-hidden="true" className="wd-chart-point-label">{point.label}</span>
         </button>
       ))}
       {active && (
