@@ -3,6 +3,8 @@ import type { Locale } from "@webdiag/tool-registry";
 import { SiteBrand } from "./site-brand";
 import { toolsPath } from "../lib/routes";
 
+const SUPPORT_EMAIL = "support@webdiag.ru";
+
 export function SiteFooter({ locale }: { locale: Locale }) {
   const prefix = locale === "ru" ? "" : "/en";
   const text = locale === "ru"
@@ -11,8 +13,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         product: "Продукт",
         materials: "Материалы",
         company: "Компания",
-        account: "Аккаунт",
-        legal: "Документы",
+        contact: "Контакты",
         audit: "SEO-аудит",
         monitoring: "Мониторинг",
         tools: "Все инструменты",
@@ -20,8 +21,6 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         knowledge: "Руководства",
         blog: "Блог",
         home: "О проекте",
-        register: "Создать аккаунт",
-        login: "Войти",
         privacy: "Политика конфиденциальности",
         copyright: "© 2026 WebDiag. Все права защищены.",
       }
@@ -30,8 +29,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         product: "Product",
         materials: "Resources",
         company: "Company",
-        account: "Account",
-        legal: "Legal",
+        contact: "Contact",
         audit: "SEO audit",
         monitoring: "Monitoring",
         tools: "All tools",
@@ -39,8 +37,6 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         knowledge: "Guides",
         blog: "Blog",
         home: "About WebDiag",
-        register: "Create account",
-        login: "Sign in",
         privacy: "Privacy policy",
         copyright: "© 2026 WebDiag. All rights reserved.",
       };
@@ -70,17 +66,12 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         <div className="footer-column">
           <strong>{text.company}</strong>
           <Link href={prefix || "/"}>{text.home}</Link>
-        </div>
-
-        <div className="footer-column">
-          <strong>{text.account}</strong>
-          <Link href={`${prefix}/register`}>{text.register}</Link>
-          <Link href={`${prefix}/login`}>{text.login}</Link>
-        </div>
-
-        <div className="footer-column">
-          <strong>{text.legal}</strong>
           <Link href={`${prefix}/privacy`}>{text.privacy}</Link>
+        </div>
+
+        <div className="footer-column">
+          <strong>{text.contact}</strong>
+          <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>
         </div>
       </div>
       <div className="shell footer-bottom">
