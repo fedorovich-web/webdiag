@@ -34,7 +34,7 @@ export function HomeFaqAccordion({ items }: HomeFaqAccordionProps) {
                 aria-expanded={isOpen}
                 id={buttonId}
                 type="button"
-                onClick={() => setOpenIndex(index)}
+                onClick={() => setOpenIndex(isOpen ? -1 : index)}
               >
                 <span>{question}</span>
                 <span aria-hidden="true" className="wd-faq-toggle" />
