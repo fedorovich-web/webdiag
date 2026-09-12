@@ -7,7 +7,7 @@ import pytest
 
 from webdiag_api.accounts.storage import SqliteAccountStore
 from webdiag_api.accounts.workspace_storage import SqliteWorkspaceStore
-from webdiag_api.crawl.models import CrawlResult
+from webdiag_api.crawl.models import CrawlResult, SiteAuditResult
 from webdiag_api.crawl.storage import CrawlIntegrityError, CrawlLeaseLostError, SqliteCrawlStore
 
 
@@ -98,6 +98,27 @@ def test_crawl_jobs_are_owner_scoped_and_tampered_result_is_rejected(tmp_path: P
         )
     with pytest.raises(CrawlIntegrityError):
         store.get_job(user_id=user_id, project_id=project_id, job_id=job.id)
+
+
+def test_site_audit_result_round_trips_with_integrity_validation(tmp_path: Path) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    user_id, project_id = seed_project(database_path)
+    store = SqliteCrawlStore(str(database_path), lease_seconds=60)
+    job = store.create_job(user_id=user_id, project_id=project_id)
+    claim = store.claim_pending(now=100)
+    assert claim is not None
+    expected = SiteAuditResult(origin="https://example.com", pages=())
+
+    store.complete_job(
+        job_id=job.id,
+        lease_token=claim.lease_token,
+        result=expected,
+        now=101,
+    )
+
+    stored = store.get_job(user_id=user_id, project_id=project_id, job_id=job.id)
+    assert stored is not None
+    assert stored.result() == expected
 
 
 def test_crawl_job_origin_is_loaded_from_owned_active_project_and_history_is_bounded(

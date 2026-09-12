@@ -13,7 +13,16 @@ from webdiag_api.accounts.api import AccountServiceDependency, SessionCookie
 from webdiag_api.accounts.service import AccountServiceError
 from webdiag_api.config import settings
 from webdiag_api.crawl.executor import CrawlConfig
-from webdiag_api.crawl.models import AccountCrawlDetail, AccountCrawlJob, AccountCrawlList
+from webdiag_api.crawl.models import (
+    AccountCrawlDetail,
+    AccountCrawlJob,
+    AccountCrawlList,
+    AccountSiteAuditDetail,
+    AccountSiteAuditList,
+    CrawlPage,
+    CrawlResult,
+    SiteAuditResult,
+)
 from webdiag_api.crawl.service import CrawlService, default_crawl_fetcher
 from webdiag_api.crawl.storage import CrawlIntegrityError, SqliteCrawlStore, StoredCrawlJob
 
@@ -113,6 +122,83 @@ def _not_found() -> HTTPException:
     )
 
 
+def _create_job(*, user_id: str, project_id: UUID, store: SqliteCrawlStore) -> StoredCrawlJob:
+    try:
+        return store.create_job(user_id=user_id, project_id=str(project_id))
+    except ValueError as error:
+        code = str(error)
+        if code == "account_project_not_found":
+            raise _not_found() from error
+        if code == "crawl_job_active_exists":
+            raise HTTPException(
+                status_code=409,
+                detail={"code": code, "message": "A site audit is already in progress."},
+                headers={"Cache-Control": "no-store"},
+            ) from error
+        raise
+
+
+def _list_jobs(
+    *, user_id: str, project_id: UUID, store: SqliteCrawlStore
+) -> tuple[StoredCrawlJob, ...]:
+    try:
+        return store.list_jobs(user_id=user_id, project_id=str(project_id))
+    except ValueError as error:
+        if str(error) == "account_project_not_found":
+            raise _not_found() from error
+        raise
+
+
+def _get_job(
+    *, user_id: str, project_id: UUID, job_id: UUID, store: SqliteCrawlStore
+) -> StoredCrawlJob:
+    try:
+        job = store.get_job(
+            user_id=user_id,
+            project_id=str(project_id),
+            job_id=str(job_id),
+        )
+    except CrawlIntegrityError as error:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "code": "crawl_result_unavailable",
+                "message": "Site audit result is unavailable.",
+            },
+            headers={"Cache-Control": "no-store"},
+        ) from error
+    if job is None:
+        raise _not_found()
+    return job
+
+
+def _legacy_result(result: SiteAuditResult | CrawlResult | None) -> CrawlResult | None:
+    if result is None or isinstance(result, CrawlResult):
+        return result
+    return CrawlResult(
+        origin=result.origin,
+        pages=tuple(
+            CrawlPage(
+                url=page.url,
+                status_code=page.status_code,
+                title=page.title,
+                meta_description=page.meta_description,
+                internal_links=page.internal_links,
+            )
+            for page in result.pages
+        ),
+        page_failures=result.page_failures,
+        page_limit=result.page_limit,
+        page_budget_exhausted=result.page_budget_exhausted,
+        sitemap_url=result.sitemap_url,
+        sitemap_url_count=result.sitemap_url_count,
+        duplicate_titles=result.duplicate_titles,
+        duplicate_descriptions=result.duplicate_descriptions,
+        orphan_urls=result.orphan_urls,
+        completed_at=result.completed_at,
+    )
+
+
 @account_router.post(
     "/projects/{project_id}/crawls",
     response_model=AccountCrawlDetail,
@@ -126,22 +212,11 @@ def create_crawl(
     webdiag_session: SessionCookie = None,
 ) -> AccountCrawlDetail:
     response.headers["cache-control"] = "no-store"
-    try:
-        job = store.create_job(
-            user_id=_user_id(account_service, webdiag_session),
-            project_id=str(project_id),
-        )
-    except ValueError as error:
-        code = str(error)
-        if code == "account_project_not_found":
-            raise _not_found() from error
-        if code == "crawl_job_active_exists":
-            raise HTTPException(
-                status_code=409,
-                detail={"code": code, "message": "A site crawl is already in progress."},
-                headers={"Cache-Control": "no-store"},
-            ) from error
-        raise
+    job = _create_job(
+        user_id=_user_id(account_service, webdiag_session),
+        project_id=project_id,
+        store=store,
+    )
     return AccountCrawlDetail(job=_public_job(job))
 
 
@@ -154,15 +229,11 @@ def list_crawls(
     webdiag_session: SessionCookie = None,
 ) -> AccountCrawlList:
     response.headers["cache-control"] = "no-store"
-    try:
-        jobs = store.list_jobs(
-            user_id=_user_id(account_service, webdiag_session),
-            project_id=str(project_id),
-        )
-    except ValueError as error:
-        if str(error) == "account_project_not_found":
-            raise _not_found() from error
-        raise
+    jobs = _list_jobs(
+        user_id=_user_id(account_service, webdiag_session),
+        project_id=project_id,
+        store=store,
+    )
     return AccountCrawlList(jobs=tuple(_public_job(job) for job in jobs))
 
 
@@ -178,19 +249,83 @@ def get_crawl(
     webdiag_session: SessionCookie = None,
 ) -> AccountCrawlDetail:
     response.headers["cache-control"] = "no-store"
-    try:
-        job = store.get_job(
-            user_id=_user_id(account_service, webdiag_session),
-            project_id=str(project_id),
-            job_id=str(job_id),
-        )
-        result = job.result() if job else None
-    except CrawlIntegrityError as error:
+    job = _get_job(
+        user_id=_user_id(account_service, webdiag_session),
+        project_id=project_id,
+        job_id=job_id,
+        store=store,
+    )
+    return AccountCrawlDetail(job=_public_job(job), result=_legacy_result(job.result()))
+
+
+@account_router.post(
+    "/projects/{project_id}/site-audits",
+    response_model=AccountSiteAuditDetail,
+    status_code=201,
+)
+def create_site_audit(
+    project_id: UUID,
+    response: Response,
+    store: CrawlStoreDependency,
+    account_service: AccountServiceDependency,
+    webdiag_session: SessionCookie = None,
+) -> AccountSiteAuditDetail:
+    response.headers["cache-control"] = "no-store"
+    job = _create_job(
+        user_id=_user_id(account_service, webdiag_session),
+        project_id=project_id,
+        store=store,
+    )
+    return AccountSiteAuditDetail(job=_public_job(job))
+
+
+@account_router.get(
+    "/projects/{project_id}/site-audits",
+    response_model=AccountSiteAuditList,
+)
+def list_site_audits(
+    project_id: UUID,
+    response: Response,
+    store: CrawlStoreDependency,
+    account_service: AccountServiceDependency,
+    webdiag_session: SessionCookie = None,
+) -> AccountSiteAuditList:
+    response.headers["cache-control"] = "no-store"
+    jobs = _list_jobs(
+        user_id=_user_id(account_service, webdiag_session),
+        project_id=project_id,
+        store=store,
+    )
+    return AccountSiteAuditList(jobs=tuple(_public_job(job) for job in jobs))
+
+
+@account_router.get(
+    "/projects/{project_id}/site-audits/{job_id}",
+    response_model=AccountSiteAuditDetail,
+)
+def get_site_audit(
+    project_id: UUID,
+    job_id: UUID,
+    response: Response,
+    store: CrawlStoreDependency,
+    account_service: AccountServiceDependency,
+    webdiag_session: SessionCookie = None,
+) -> AccountSiteAuditDetail:
+    response.headers["cache-control"] = "no-store"
+    job = _get_job(
+        user_id=_user_id(account_service, webdiag_session),
+        project_id=project_id,
+        job_id=job_id,
+        store=store,
+    )
+    result = job.result()
+    if isinstance(result, CrawlResult):
         raise HTTPException(
-            status_code=500,
-            detail={"code": "crawl_result_unavailable", "message": "Crawl result is unavailable."},
+            status_code=409,
+            detail={
+                "code": "site_audit_result_version_unavailable",
+                "message": "This historical result does not contain a full site audit.",
+            },
             headers={"Cache-Control": "no-store"},
-        ) from error
-    if job is None:
-        raise _not_found()
-    return AccountCrawlDetail(job=_public_job(job), result=result)
+        )
+    return AccountSiteAuditDetail(job=_public_job(job), result=result)

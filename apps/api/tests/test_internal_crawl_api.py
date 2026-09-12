@@ -139,3 +139,50 @@ def test_account_crawl_jobs_are_authenticated_owned_versioned_and_no_store(
     assert detail.json() == created.json()
     assert duplicate.status_code == 409
     assert duplicate.json()["detail"]["code"] == "crawl_job_active_exists"
+
+
+def test_account_site_audit_routes_are_owned_versioned_and_share_the_crawl_queue(
+    tmp_path: Path,
+) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    account: AccountService = build_account_service(database_path)
+    user_id, owner_token = register(account, "owner@example.com")
+    _, other_token = register(account, "other@example.com")
+    workspace: WorkspaceService = build_workspace(database_path)
+    project = workspace.create_project(
+        user_id=user_id,
+        request=ProjectCreateRequest(name="Site audit", origin="https://example.com"),
+    )
+    store = SqliteCrawlStore(str(database_path), lease_seconds=60)
+    app.dependency_overrides[get_account_service] = lambda: account
+    app.dependency_overrides[get_workspace_service] = lambda: workspace
+    app.dependency_overrides[get_crawl_store] = lambda: store
+
+    async def request(method: str, path: str, token: str | None) -> httpx.Response:
+        headers = {"Cookie": f"webdiag_session={token}"} if token else {}
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            return await client.request(method, path, headers=headers)
+
+    path = f"/v1/account/projects/{project.id}/site-audits"
+    try:
+        anonymous = asyncio.run(request("POST", path, None))
+        hidden = asyncio.run(request("POST", path, other_token))
+        created = asyncio.run(request("POST", path, owner_token))
+        listed = asyncio.run(request("GET", path, owner_token))
+        job_id = created.json()["job"]["id"]
+        detail = asyncio.run(request("GET", f"{path}/{job_id}", owner_token))
+    finally:
+        app.dependency_overrides.clear()
+
+    assert anonymous.status_code == 401
+    assert hidden.status_code == 404
+    assert created.status_code == 201
+    assert created.headers["cache-control"] == "no-store"
+    assert created.json()["contract_version"] == "webdiag.account.site_audit_detail.v1"
+    assert created.json()["result"] is None
+    assert listed.status_code == 200
+    assert listed.json()["contract_version"] == "webdiag.account.site_audit_list.v1"
+    assert [job["id"] for job in listed.json()["jobs"]] == [job_id]
+    assert detail.json() == created.json()

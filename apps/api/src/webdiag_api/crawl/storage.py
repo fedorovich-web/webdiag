@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import json
 import secrets
 import sqlite3
 import threading
@@ -13,7 +14,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from webdiag_api.crawl.models import CrawlResult
+from webdiag_api.crawl.models import CrawlResult, SiteAuditResult, StoredCrawlResult
 
 CRAWL_STATES = ("queued", "running", "succeeded", "failed")
 
@@ -39,7 +40,7 @@ class StoredCrawlJob:
     created_at: int
     updated_at: int
 
-    def result(self) -> CrawlResult | None:
+    def result(self) -> StoredCrawlResult | None:
         if self.result_json is None:
             return None
         if self.result_sha256 is None:
@@ -48,8 +49,19 @@ class StoredCrawlJob:
         if not hmac.compare_digest(actual, self.result_sha256):
             raise CrawlIntegrityError("crawl result digest does not match")
         try:
-            result = CrawlResult.model_validate_json(self.result_json, strict=True)
-        except (ValidationError, ValueError) as error:
+            envelope = json.loads(self.result_json)
+            if not isinstance(envelope, dict):
+                raise ValueError("crawl result envelope is invalid")
+            contract_version = envelope.get("contract_version")
+            if contract_version == "webdiag.crawl.result.v1":
+                result: StoredCrawlResult = CrawlResult.model_validate_json(
+                    self.result_json, strict=True
+                )
+            elif contract_version == "webdiag.site_audit.result.v1":
+                result = SiteAuditResult.model_validate_json(self.result_json, strict=True)
+            else:
+                raise ValueError("crawl result contract is unsupported")
+        except (json.JSONDecodeError, ValidationError, ValueError) as error:
             raise CrawlIntegrityError("persisted crawl result is invalid") from error
         if result.origin != self.origin:
             raise CrawlIntegrityError("crawl result origin does not match job")
@@ -255,7 +267,7 @@ class SqliteCrawlStore:
         *,
         job_id: str,
         lease_token: str,
-        result: CrawlResult,
+        result: StoredCrawlResult,
         now: int | None = None,
     ) -> StoredCrawlJob:
         current = self._clock() if now is None else now

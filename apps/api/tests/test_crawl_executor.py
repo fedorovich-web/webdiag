@@ -117,6 +117,22 @@ def test_crawl_is_same_origin_query_free_robots_aware_and_projects_site_findings
     )
     assert result.duplicate_descriptions[0].value == "Same description"
     assert result.page_budget_exhausted is False
+    assert result.contract_version == "webdiag.site_audit.result.v1"
+    assert result.audit_summary.pages_audited == 3
+    assert result.audit_summary.pages_with_issues == 3
+    assert result.audit_summary.unique_issue_count == len(result.issues)
+    assert result.audit_summary.issue_occurrence_count == sum(
+        issue.affected_url_count for issue in result.issues
+    )
+    assert all(page.audit_score is not None for page in result.pages)
+    duplicate_title = next(
+        issue for issue in result.issues if issue.issue_id == "site.metadata.duplicate_title"
+    )
+    assert duplicate_title.affected_urls == (
+        f"{origin}/about",
+        f"{origin}/duplicate",
+    )
+    assert duplicate_title.affected_url_count == 2
     assert all(allowed == origin for _url, allowed in fetcher.requests)
     assert not any("secret" in url for url, _allowed in fetcher.requests)
     assert not any(url.endswith("/blocked") for url, _allowed in fetcher.requests)
@@ -184,6 +200,66 @@ def test_crawl_reports_page_budget_without_labelling_reachable_urls_as_orphans()
     assert len(result.pages) == 1
     assert result.page_budget_exhausted is True
     assert result.orphan_urls == ()
+
+
+def test_incomplete_crawl_does_not_claim_sitemap_only_urls_are_orphans() -> None:
+    origin = "https://example.com"
+    fetcher = FixtureFetcher(
+        {
+            f"{origin}/robots.txt": SafeFetchError("unavailable"),
+            f"{origin}/sitemap.xml": fetched(
+                f"{origin}/sitemap.xml",
+                "<urlset><url><loc>https://example.com/not-yet-seen</loc></url></urlset>",
+                content_type="application/xml",
+            ),
+            f"{origin}/": fetched(
+                f"{origin}/",
+                '<html><head><title>Home</title></head><a href="/next">Next</a></html>',
+            ),
+        }
+    )
+
+    result = crawl_origin(
+        origin,
+        fetcher=fetcher,
+        config=CrawlConfig(page_limit=1, deadline_seconds=60),
+    )
+
+    assert result.page_budget_exhausted is True
+    assert result.orphan_urls == ()
+    assert not any(
+        issue.issue_id == "site.crawlability.orphan_candidate" for issue in result.issues
+    )
+
+
+def test_site_audit_groups_page_findings_and_failed_urls_without_losing_severity() -> None:
+    origin = "https://example.com"
+    fetcher = FixtureFetcher(
+        {
+            f"{origin}/robots.txt": SafeFetchError("unavailable"),
+            f"{origin}/sitemap.xml": SafeFetchError("missing"),
+            f"{origin}/": fetched(
+                f"{origin}/",
+                '<html><head></head><body><a href="/missing">Missing</a></body></html>',
+            ),
+            f"{origin}/missing": SafeFetchError("connection failed"),
+        }
+    )
+
+    result = crawl_origin(origin, fetcher=fetcher, config=CrawlConfig())
+
+    missing_title = next(
+        issue for issue in result.issues if issue.issue_id == "metadata.title.missing"
+    )
+    fetch_failure = next(
+        issue for issue in result.issues if issue.issue_id == "site.http.fetch_failed"
+    )
+    assert missing_title.affected_urls == (f"{origin}/",)
+    assert missing_title.severity.value == "medium"
+    assert fetch_failure.affected_urls == (f"{origin}/missing",)
+    assert fetch_failure.severity.value == "high"
+    assert result.audit_summary.occurrences_by_severity.high == 1
+    assert result.audit_summary.occurrences_by_severity.medium >= 1
 
 
 def test_crawl_fails_closed_when_root_is_disallowed_or_not_html() -> None:
