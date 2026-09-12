@@ -1,18 +1,13 @@
 import Link from "next/link";
 import {
-  Activity,
   Bot,
   CheckCircle2,
   ChevronRight,
-  CircleAlert,
   FileSearch,
   FileText,
   Gauge,
-  Globe2,
   Image as ImageIcon,
-  KeyRound,
   Link2,
-  ListChecks,
   Map,
   MonitorCheck,
   Network,
@@ -21,7 +16,6 @@ import {
   SearchCheck,
   ShieldCheck,
   Sparkles,
-  TriangleAlert,
   type LucideIcon,
 } from "lucide-react";
 import { getPublicTool, type Locale } from "@webdiag/tool-registry";
@@ -58,88 +52,45 @@ const checkIcons: Record<string, LucideIcon> = {
   images: ImageIcon,
 };
 
-const processIcons = [Globe2, Activity, ListChecks] as const;
-const resourceIcons = [FileText, Bot, Gauge] as const;
+const benefitArtwork = [
+  "/home/benefit-tools.webp",
+  "/home/benefit-reports.webp",
+  "/home/benefit-time.webp",
+] as const;
+
+const knowledgeArtwork = [
+  "/home/knowledge-technical-seo.webp",
+  "/home/knowledge-robots.webp",
+  "/home/knowledge-core-web-vitals.webp",
+] as const;
 
 function IconBox({ icon: Icon }: { icon: LucideIcon }) {
   return <span className="wd-icon-box"><Icon aria-hidden="true" /></span>;
-}
-
-function HeroReportPreview({ locale }: { locale: Locale }) {
-  const ru = locale === "ru";
-  return (
-    <div className="wd-hero-visual">
-      <span className="wd-hero-callout wd-hero-callout-top">{ru ? "Понятный отчёт с приоритетами" : "A clear prioritized report"}</span>
-      <div className="wd-hero-report" aria-label={ru ? "Демонстрация отчёта WebDiag" : "WebDiag report demonstration"}>
-        <header>
-          <div><span className="wd-report-dot" /><strong>example.ru</strong></div>
-          <span>{ru ? "Демо отчёта" : "Report demo"}</span>
-        </header>
-        <div className="wd-hero-report-body">
-          <div className="wd-hero-summary">
-            <article className="wd-hero-score">
-              <div className="wd-score-ring"><div className="wd-score-value"><strong>78</strong><span>/100</span></div></div>
-              <div><strong>{ru ? "Состояние сайта" : "Site health"}</strong><span>{ru ? "есть задачи для исправления" : "issues need attention"}</span></div>
-            </article>
-            <div className="wd-hero-metrics">
-              <article><Globe2 aria-hidden="true" /><strong>25</strong><span>{ru ? "страниц" : "pages"}</span></article>
-              <article><TriangleAlert aria-hidden="true" /><strong>4</strong><span>{ru ? "критично" : "critical"}</span></article>
-              <article><CircleAlert aria-hidden="true" /><strong>11</strong><span>{ru ? "предупр." : "warnings"}</span></article>
-              <article><CheckCircle2 aria-hidden="true" /><strong>42</strong><span>{ru ? "пройдено" : "passed"}</span></article>
-            </div>
-          </div>
-          <div className="wd-hero-tabs" aria-hidden="true">
-            <span className="is-active">{ru ? "Проблемы" : "Issues"}</span>
-            <span>{ru ? "Страницы" : "Pages"}</span>
-            <span>{ru ? "История" : "History"}</span>
-          </div>
-          <div className="wd-hero-issues">
-            <div><span className="wd-status-pill is-red">P0</span><strong>{ru ? "robots.txt закрывает важные URL" : "robots.txt blocks important URLs"}</strong><b>4 URL</b></div>
-            <div><span className="wd-status-pill is-amber">P1</span><strong>{ru ? "Отсутствует description" : "Meta description is missing"}</strong><b>7 URL</b></div>
-            <div><span className="wd-status-pill is-amber">P1</span><strong>{ru ? "Найдена цепочка редиректов" : "Redirect chain detected"}</strong><b>3 URL</b></div>
-            <div><span className="wd-status-pill is-cyan">OK</span><strong>{ru ? "HTTPS и sitemap проходят проверку" : "HTTPS and sitemap checks pass"}</strong><b>{ru ? "Готово" : "Pass"}</b></div>
-          </div>
-        </div>
-      </div>
-      <span className="wd-hero-callout wd-hero-callout-bottom">{ru ? "Сразу видно, что исправлять первым" : "See what to fix first"}</span>
-    </div>
-  );
 }
 
 function ReportExample({ locale }: { locale: Locale }) {
   const ru = locale === "ru";
   return (
     <article className="wd-report-example-card">
-      <header className="wd-product-card-header">
-        <div><span className="wd-report-dot" /><strong>example.ru</strong></div>
-        <span>{ru ? "Последняя проверка" : "Latest check"}</span>
-      </header>
       <div className="wd-report-tabs" aria-label={ru ? "Разделы примера отчёта" : "Sample report sections"}>
-        <span className="is-active">{ru ? "Приоритеты" : "Priorities"}</span>
-        <span>{ru ? "Индексация" : "Indexing"}</span>
-        <span>SEO</span>
-        <span>{ru ? "Скорость" : "Speed"}</span>
+        <span className="is-active">{ru ? "Проблемы 36" : "Issues 36"}</span>
+        <span>{ru ? "Страницы" : "Pages"}</span>
+        <span>{ru ? "Параметры" : "Parameters"}</span>
+        <span>{ru ? "Сравнение" : "Comparison"}</span>
+      </div>
+      <div className="wd-report-table-head" aria-hidden="true">
+        <span>{ru ? "Проблема" : "Issue"}</span><span>{ru ? "Страницы" : "Pages"}</span><span>{ru ? "Приоритет" : "Priority"}</span>
       </div>
       <div className="wd-report-issue-list">
-        <div>
-          <span className="wd-priority-mark is-critical">P0</span>
-          <div><strong>{ru ? "Важные страницы закрыты в robots.txt" : "Important pages are blocked in robots.txt"}</strong><p>{ru ? "4 URL · влияет на обход и индексирование" : "4 URLs · affects crawling and indexing"}</p></div>
-          <ChevronRight aria-hidden="true" />
-        </div>
-        <div>
-          <span className="wd-priority-mark is-warning">P1</span>
-          <div><strong>{ru ? "На посадочных страницах нет description" : "Landing pages are missing descriptions"}</strong><p>{ru ? "7 URL · перепроверьте после исправления" : "7 URLs · re-check after fixing"}</p></div>
-          <ChevronRight aria-hidden="true" />
-        </div>
-        <div>
-          <span className="wd-priority-mark is-warning">P1</span>
-          <div><strong>{ru ? "Редирект проходит через лишний переход" : "A redirect contains an extra hop"}</strong><p>{ru ? "3 URL · сократите цепочку" : "3 URLs · shorten the chain"}</p></div>
-          <ChevronRight aria-hidden="true" />
-        </div>
+        <div><span className="wd-issue-dot is-critical" /><strong>{ru ? "Отсутствует meta description" : "Meta description is missing"}</strong><b>12</b><span className="wd-priority-mark is-critical">{ru ? "Критический" : "Critical"}</span></div>
+        <div><span className="wd-issue-dot is-high" /><strong>{ru ? "Битые ссылки" : "Broken links"}</strong><b>4</b><span className="wd-priority-mark is-high">{ru ? "Высокий" : "High"}</span></div>
+        <div><span className="wd-issue-dot is-warning" /><strong>{ru ? "Слишком большие изображения" : "Oversized images"}</strong><b>23</b><span className="wd-priority-mark is-warning">{ru ? "Средний" : "Medium"}</span></div>
+        <div><span className="wd-issue-dot is-warning" /><strong>{ru ? "Не настроен robots.txt" : "robots.txt needs attention"}</strong><b>1</b><span className="wd-priority-mark is-warning">{ru ? "Средний" : "Medium"}</span></div>
+        <div><span className="wd-issue-dot is-warning" /><strong>{ru ? "Отсутствует canonical" : "Canonical is missing"}</strong><b>8</b><span className="wd-priority-mark is-warning">{ru ? "Средний" : "Medium"}</span></div>
       </div>
-      <div className="wd-report-recommendation">
-        <span><Sparkles aria-hidden="true" /></span>
-        <div><strong>{ru ? "Как исправить?" : "How to fix it"}</strong><p>{ru ? "Начните с P0: откройте нужные URL для поисковых роботов, затем повторите проверку robots.txt и затронутых страниц." : "Start with P0: restore crawler access to the required URLs, then re-check robots.txt and the affected pages."}</p></div>
+      <div className="wd-report-bottom-row">
+        <Link href={ru ? "/audit" : "/en/audit"}>{ru ? "Смотреть полный пример отчёта" : "View full report example"}<span aria-hidden="true">→</span></Link>
+        <div className="wd-report-recommendation"><strong>{ru ? "Рекомендация" : "Recommendation"}</strong><p>{ru ? "Добавьте уникальные meta description для всех важных страниц сайта." : "Add unique meta descriptions to all important pages."}</p><span>{ru ? "Как исправить?" : "How to fix it"} →</span></div>
       </div>
     </article>
   );
@@ -149,24 +100,14 @@ function MonitoringPreview({ locale }: { locale: Locale }) {
   const ru = locale === "ru";
   return (
     <article className="wd-monitoring-dashboard">
-      <header className="wd-product-card-header">
-        <div><Radar aria-hidden="true" /><strong>{ru ? "Мониторинг · example.ru" : "Monitoring · example.com"}</strong></div>
-        <span className="wd-online-pill"><i />{ru ? "проверки активны" : "checks active"}</span>
-      </header>
-      <div className="wd-monitoring-body">
-        <div className="wd-monitoring-score-row">
-          <div><span>{ru ? "SEO health" : "SEO health"}</span><strong>84</strong><small>+6</small></div>
-          <div><span>{ru ? "Новые" : "New"}</span><strong>2</strong></div>
-          <div><span>{ru ? "Исправлено" : "Resolved"}</span><strong>9</strong></div>
-        </div>
-        <div className="wd-monitoring-chart">
-          <header><strong>{ru ? "Динамика состояния" : "Health trend"}</strong><span>7 days</span></header>
-          <HomeMonitoringChart locale={locale} />
-        </div>
-        <div className="wd-monitoring-events">
-          <div><span className="is-good" /><div><strong>{ru ? "Сегодня" : "Today"}</strong><p>{ru ? "исправлены ошибки мета-тегов" : "metadata issues resolved"}</p></div></div>
-          <div><span className="is-warn" /><div><strong>{ru ? "Вчера" : "Yesterday"}</strong><p>{ru ? "обнаружена новая цепочка редиректов" : "new redirect chain detected"}</p></div></div>
-        </div>
+      <div className="wd-monitoring-chart">
+        <header><strong>{ru ? "Динамика SEO-здоровья" : "SEO health trend"}</strong><span className="wd-score-chip"><b>78</b><small>+12%</small></span></header>
+        <HomeMonitoringChart locale={locale} />
+      </div>
+      <div className="wd-monitoring-score-row">
+        <div><strong>142</strong><span>{ru ? "Проверено страниц" : "Pages checked"}</span></div>
+        <div><strong className="is-critical">36</strong><span>{ru ? "Найдено проблем" : "Issues found"}</span></div>
+        <div><strong>28</strong><span>{ru ? "Исправлено" : "Resolved"}</span></div>
       </div>
     </article>
   );
@@ -183,16 +124,6 @@ export function HomePage({ locale }: { locale: Locale }) {
   return (
     <main className="wd-home">
       <section className="wd-hero" aria-labelledby="home-title">
-        <img
-          alt=""
-          aria-hidden="true"
-          className="wd-hero-art"
-          decoding="async"
-          fetchPriority="high"
-          height="360"
-          src="/hero/webdiag-hero-aurora.webp"
-          width="600"
-        />
         <div className="shell wd-hero-grid">
           <div className="wd-hero-copy">
             <span className="wd-eyebrow">{t(homeContent.eyebrow)}</span>
@@ -200,29 +131,33 @@ export function HomePage({ locale }: { locale: Locale }) {
             <p className="wd-hero-lead">{t(homeContent.description)}</p>
             <HomeUrlCheckForm locale={locale} instance="hero" />
             <p className="wd-hero-note">{t(homeContent.heroNote)}</p>
-            <a className="wd-inline-link" href="#report">{t(homeContent.secondaryAction)}<span aria-hidden="true">→</span></a>
           </div>
-          <HeroReportPreview locale={locale} />
+          <div className="wd-hero-visual" aria-hidden="true">
+            <img className="wd-hero-dashboard" src="/home/hero-dashboard.webp" alt="" width="1536" height="1024" fetchPriority="high" decoding="async" />
+          </div>
         </div>
         <div className="shell wd-hero-benefits" aria-label={locale === "ru" ? "Преимущества WebDiag" : "WebDiag benefits"}>
-          {homeContent.trustFacts.map((fact) => <span key={t(fact)}><CheckCircle2 aria-hidden="true" />{t(fact)}</span>)}
+          {homeContent.trustFacts.map((fact, index) => (
+            <div className="wd-hero-benefit" key={t(fact)}>
+              <img src={benefitArtwork[index]} alt="" width="96" height="96" loading="eager" decoding="async" />
+              <span>{t(fact)}</span>
+            </div>
+          ))}
         </div>
       </section>
 
       <section className="wd-platform-strip" aria-label={t(homeContent.platformsTitle)}>
         <div className="shell">
-          <p>{t(homeContent.platformsTitle)}</p>
+          <p>{locale === "ru" ? "Нам доверяют веб-мастера, SEO-специалисты и бизнесы" : "Used by webmasters, SEO specialists and businesses"}</p>
           <div>{homeContent.platforms.map((platform) => <span key={platform}>{platform}</span>)}</div>
+          <span className="wd-platform-more">{locale === "ru" ? "и другие" : "and more"}</span>
         </div>
       </section>
 
       <section className="wd-section" id="tools">
         <div className="shell">
           <div className="wd-section-headline">
-            <div className="wd-section-intro">
-              <h2>{t(homeContent.popularToolsTitle)}</h2>
-              <p>{t(homeContent.popularToolsDescription)}</p>
-            </div>
+            <div className="wd-section-intro"><h2>{t(homeContent.popularToolsTitle)}</h2><p>{t(homeContent.popularToolsDescription)}</p></div>
             <Link className="wd-section-link" href={toolsHref}>{t(homeContent.popularToolsAction)}<span aria-hidden="true">→</span></Link>
           </div>
           <div className="wd-popular-tools-grid">
@@ -241,114 +176,67 @@ export function HomePage({ locale }: { locale: Locale }) {
       </section>
 
       <section className="wd-section wd-process-section">
-        <div className="shell">
-          <div className="wd-section-intro is-centered">
-            <h2>{t(homeContent.processTitle)}</h2>
-            <p>{t(homeContent.processDescription)}</p>
+        <div className="shell wd-process-panel">
+          <div className="wd-process-heading"><h2>{t(homeContent.processTitle)}</h2><p>{locale === "ru" ? "3 простых шага — от URL до готового отчёта" : "3 simple steps — from URL to a ready report"}</p></div>
+          <div className="wd-process-steps">
+            {homeContent.processSteps.map((step, index) => (
+              <article key={t(step.title)}><span className="wd-step-number">{index + 1}</span><div><h3>{t(step.title)}</h3><p>{t(step.description)}</p></div></article>
+            ))}
           </div>
-          <div className="wd-process-panel">
-            {homeContent.processSteps.map((step, index) => {
-              const Icon = processIcons[index] ?? ListChecks;
-              return (
-                <article key={t(step.title)}>
-                  <span className="wd-step-number">0{index + 1}</span>
-                  <IconBox icon={Icon} />
-                  <h3>{t(step.title)}</h3>
-                  <p>{t(step.description)}</p>
-                </article>
-              );
-            })}
-          </div>
+          <img className="wd-process-accent" src="/home/process-accent.webp" alt="" width="420" height="280" loading="lazy" decoding="async" />
         </div>
       </section>
 
-      <section className="wd-section wd-section-soft" id="checks">
+      <section className="wd-section" id="checks">
         <div className="shell">
-          <div className="wd-section-intro">
-            <h2>{t(homeContent.checksTitle)}</h2>
-            <p>{t(homeContent.checksDescription)}</p>
-          </div>
+          <div className="wd-section-intro"><h2>{t(homeContent.checksTitle)}</h2><p>{locale === "ru" ? "Полный технический и SEO-аудит сайта" : "A complete technical and SEO website audit"}</p></div>
           <div className="wd-check-grid">
             {homeContent.auditAreas.map((area) => {
               const Icon = checkIcons[area.id] ?? SearchCheck;
-              return (
-                <article key={area.id}>
-                  <IconBox icon={Icon} />
-                  <div><h3>{t(area.title)}</h3><p>{t(area.description)}</p></div>
-                </article>
-              );
+              return <article key={area.id}><IconBox icon={Icon} /><div><h3>{t(area.title)}</h3><p>{t(area.description)}</p></div></article>;
             })}
           </div>
         </div>
       </section>
 
-      <section className="wd-section" id="report">
+      <section className="wd-section wd-product-section" id="report">
         <div className="shell wd-product-split">
           <div className="wd-product-column">
-            <div className="wd-section-intro">
-              <span className="wd-eyebrow">{locale === "ru" ? "Отчёт" : "Report"}</span>
-              <h2>{t(homeContent.reportTitle)}</h2>
-              <p>{t(homeContent.reportDescription)}</p>
-            </div>
+            <div className="wd-section-intro"><h2>{t(homeContent.reportTitle)}</h2><p>{locale === "ru" ? "Понятные приоритеты, конкретные страницы и рекомендации" : "Clear priorities, affected pages and recommendations"}</p></div>
             <ReportExample locale={locale} />
-            <Link className="wd-section-link wd-product-link" href={auditHref}>{t(homeContent.reportAction)}<span aria-hidden="true">→</span></Link>
           </div>
-
           <div className="wd-product-column" id="monitoring">
-            <div className="wd-section-intro">
-              <span className="wd-eyebrow">{locale === "ru" ? "Контроль" : "Monitoring"}</span>
-              <h2>{t(homeContent.monitoringTitle)}</h2>
-              <p>{t(homeContent.monitoringDescription)}</p>
-            </div>
+            <div className="wd-section-intro"><h2>{t(homeContent.monitoringTitle)}</h2><p>{locale === "ru" ? "Следите за состоянием сайта в динамике" : "Track website health over time"}</p></div>
             <MonitoringPreview locale={locale} />
-            <ul className="wd-check-list">
-              {homeContent.monitoringBullets.map((item) => <li key={t(item)}><CheckCircle2 aria-hidden="true" />{t(item)}</li>)}
-            </ul>
             <Link className="wd-section-link wd-product-link" href={monitoringHref}>{t(homeContent.monitoringAction)}<span aria-hidden="true">→</span></Link>
           </div>
         </div>
       </section>
 
-      <section className="wd-section wd-section-soft wd-knowledge-faq-section">
+      <section className="wd-section wd-knowledge-faq-section">
         <div className="shell wd-knowledge-faq-grid">
           <div id="knowledge">
             <div className="wd-section-headline">
-              <div className="wd-section-intro">
-                <h2>{t(homeContent.knowledgeTitle)}</h2>
-                <p>{t(homeContent.knowledgeDescription)}</p>
-              </div>
+              <div className="wd-section-intro"><h2>{t(homeContent.knowledgeTitle)}</h2><p>{locale === "ru" ? "Инструкции, гайды и статьи для веб-мастеров" : "Guides and articles for webmasters"}</p></div>
               <Link className="wd-section-link" href={locale === "ru" ? "/knowledge" : "/en/knowledge"}>{t(homeContent.knowledgeAction)}<span aria-hidden="true">→</span></Link>
             </div>
             <div className="wd-resource-grid">
-              {homeContent.resources.map((resource, index) => {
-                const Icon = resourceIcons[index] ?? FileText;
-                return (
-                  <Link className="wd-resource-card" href={t(resource.href)} key={t(resource.title)}>
-                    <div className="wd-resource-visual"><Icon aria-hidden="true" /><span>WebDiag</span></div>
-                    <div><h3>{t(resource.title)}</h3><p>{t(resource.description)}</p><span className="wd-card-link">{locale === "ru" ? "Подробнее" : "Read more"}<span aria-hidden="true">→</span></span></div>
-                  </Link>
-                );
-              })}
+              {homeContent.resources.map((resource, index) => (
+                <Link className="wd-resource-card" href={t(resource.href)} key={t(resource.title)}>
+                  <div className="wd-resource-visual"><img src={knowledgeArtwork[index]} alt="" width="640" height="420" loading="lazy" decoding="async" /></div>
+                  <div><span className="wd-resource-label">{index === 0 ? "SEO" : index === 1 ? (locale === "ru" ? "Руководство" : "Guide") : (locale === "ru" ? "Аналитика" : "Analytics")}</span><h3>{t(resource.title)}</h3><p>{t(resource.description)}</p></div>
+                </Link>
+              ))}
             </div>
           </div>
-
-          <div className="wd-faq-column" id="faq">
-            <div className="wd-section-intro"><h2>{t(homeContent.faqTitle)}</h2></div>
-            <HomeFaqAccordion items={faqItems} />
-          </div>
+          <div className="wd-faq-column" id="faq"><div className="wd-section-intro"><h2>{t(homeContent.faqTitle)}</h2><p>{locale === "ru" ? "Короткие ответы на популярные вопросы" : "Short answers to common questions"}</p></div><HomeFaqAccordion items={faqItems} /></div>
         </div>
       </section>
 
       <section className="wd-section wd-final-section">
-        <div className="shell">
-          <div className="wd-final-panel">
-            <div className="wd-final-copy">
-              <span className="wd-eyebrow">{locale === "ru" ? "Начать проверку" : "Start checking"}</span>
-              <h2>{t(homeContent.finalTitle)}</h2>
-              <p>{t(homeContent.finalDescription)}</p>
-            </div>
-            <HomeUrlCheckForm locale={locale} instance="final" />
-          </div>
+        <div className="shell wd-final-panel">
+          <div className="wd-final-copy"><h2>{t(homeContent.finalTitle)}</h2><p>{t(homeContent.finalDescription)}</p></div>
+          <HomeUrlCheckForm locale={locale} instance="final" />
         </div>
       </section>
     </main>
