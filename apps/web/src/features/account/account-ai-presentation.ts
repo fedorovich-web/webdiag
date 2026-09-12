@@ -106,7 +106,7 @@ const RUN_STATE_LABELS: Record<Locale, Record<AIRunState, string>> = {
     running: "В работе",
     succeeded: "Готово к проверке",
     failed: "Не выполнено",
-    provider_unknown: "Нужна проверка результата",
+    provider_unknown: "Результат нужно проверить",
     deleted: "Удалён",
   },
   en: {
@@ -114,7 +114,7 @@ const RUN_STATE_LABELS: Record<Locale, Record<AIRunState, string>> = {
     running: "Processing",
     succeeded: "Ready for review",
     failed: "Could not complete",
-    provider_unknown: "Outcome needs review",
+    provider_unknown: "Result needs review",
     deleted: "Deleted",
   },
 };
@@ -137,6 +137,6 @@ export function aiRunStateLabel(locale: Locale, state: AIRunState): string {
 
 export function aiWorkspaceEmptyCopy(locale: Locale): string {
   return locale === "ru"
-    ? "AI-инструменты доступны после подтверждённой проверки качества; оценка провайдера пока недоступна."
-    : "AI tools become available after a confirmed quality evaluation; provider evaluation is not available yet.";
+    ? "Не удалось загрузить доступные AI-инструменты. Повторите попытку позже."
+    : "Available AI tools could not be loaded. Try again later.";
 }
