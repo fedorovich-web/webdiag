@@ -26,7 +26,7 @@ export default function Page() {
       </section>
       <section className="wd-internal-note">
         <strong>Need a focused check?</strong>
-        <p>For a specific task such as robots.txt, sitemap.xml, canonicals, redirects, metadata, performance, or other signals, use WebDiag's dedicated tools.</p>
+        <p>For a specific task such as robots.txt, sitemap.xml, canonicals, redirects, metadata, performance, or other signals, use WebDiag’s dedicated tools.</p>
         <Link className="wd-button wd-button-primary" href="/en/tools">Open tools</Link>
       </section>
     </main>
