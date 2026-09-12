@@ -1,10 +1,10 @@
 @media (min-width: 961px) {
-  :root {
-    --wd-section-y: 46px;
+  .wd-home {
+    --wd-section-y: 30px;
   }
 
   .wd-hero {
-    padding: 42px 0 28px;
+    padding: 42px 0 26px;
   }
 
   .wd-hero-copy {
@@ -24,7 +24,12 @@
   }
 
   .wd-hero-visual {
-    min-height: 406px;
+    min-height: 380px;
+  }
+
+  .wd-hero-dashboard {
+    width: 118%;
+    margin-left: -5%;
   }
 
   .wd-hero-benefits {
@@ -32,43 +37,77 @@
   }
 
   .wd-platform-strip {
-    padding: 14px 0 17px;
+    padding: 13px 0 15px;
   }
 
   .wd-section-intro,
   .wd-section-headline {
-    margin-bottom: 20px;
+    margin-bottom: 16px;
   }
 
   .wd-product-section {
-    padding-top: 12px;
-    padding-bottom: 36px;
-  }
-
-  .wd-monitoring-chart svg {
-    min-height: 132px;
+    padding-top: 5px;
+    padding-bottom: 24px;
   }
 
   .wd-knowledge-faq-section {
-    padding-top: 12px;
-    padding-bottom: 24px;
+    padding-top: 5px;
+    padding-bottom: 16px;
   }
 
   .wd-knowledge-faq-section .wd-section-headline,
   .wd-faq-column .wd-section-intro {
-    margin-bottom: 11px;
+    margin-bottom: 10px;
   }
 
   .wd-final-section {
-    padding: 21px 0 22px;
+    padding: 20px 0 21px;
   }
 
   .site-footer {
-    padding: 21px 0 12px;
+    padding: 0 !important;
   }
 
-  .footer-bottom {
-    margin-top: 16px !important;
-    padding-top: 10px;
+  .site-footer .footer-grid {
+    gap: 28px !important;
+    padding: 22px 0 13px !important;
+  }
+
+  .site-footer .brand[data-brand-variant="footer"] .brand-logo {
+    height: 28px;
+  }
+
+  .site-footer .footer-brand p {
+    margin: 7px 0 0 !important;
+    font-size: 9px !important;
+    line-height: 1.45 !important;
+  }
+
+  .site-footer .footer-column {
+    gap: 4px !important;
+  }
+
+  .site-footer .footer-column strong {
+    margin-bottom: 2px !important;
+    font-size: 10px !important;
+  }
+
+  .site-footer .footer-column a {
+    font-size: 9px !important;
+    line-height: 1.4 !important;
+  }
+
+  .site-footer .footer-bottom {
+    min-height: 34px !important;
+    margin-top: 0 !important;
+    padding: 7px 0 !important;
+    font-size: 9px !important;
+  }
+
+  .site-footer .footer-bottom span,
+  .site-footer .footer-bottom a,
+  .site-footer .footer-privacy-link {
+    font-size: 9px !important;
+    line-height: 1.35 !important;
   }
 }
