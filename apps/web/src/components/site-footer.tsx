@@ -66,7 +66,6 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         <div className="footer-column">
           <strong>{text.company}</strong>
           <Link href={prefix || "/"}>{text.home}</Link>
-          <Link href={`${prefix}/privacy`}>{text.privacy}</Link>
         </div>
 
         <div className="footer-column">
@@ -76,7 +75,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
       </div>
       <div className="shell footer-bottom">
         <span>{text.copyright}</span>
-        <span>WebDiag</span>
+        <Link className="footer-privacy-link" href={`${prefix}/privacy`}>{text.privacy}</Link>
       </div>
     </footer>
   );
