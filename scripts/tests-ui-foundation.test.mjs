@@ -157,10 +157,11 @@ test("SEO layer includes social metadata, structured data, and localized sitemap
   assert.match(jsonLd, /replace\(\/<\/g/);
 });
 
-test("mobile navigation exposes separate desktop and mobile language controls", async () => {
+test("mobile navigation keeps localized language and theme controls", async () => {
   const header = await read("apps/web/src/components/site-header.tsx");
+  assert.match(header, /className="mobile-menu"/);
   assert.match(header, /language-switcher-mobile/);
-  assert.match(header, /language-switcher-desktop/);
+  assert.match(header, /<ThemeSwitcher locale=\{locale\} \/>/);
 });
 
 test("random generators wait for an explicit client action", async () => {
