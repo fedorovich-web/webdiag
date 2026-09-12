@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { installBrowserGuard } from "./browser-guard";
 
 const urlForm = 'form:has(input[type="url"], input[inputmode="url"])';
+const targetViewportWidths = [375, 390, 430, 768, 1024, 1440] as const;
 
 test.describe("home functional smoke", () => {
   let assertBrowserClean: ReturnType<typeof installBrowserGuard>;
@@ -77,6 +78,21 @@ test.describe("home functional smoke", () => {
     await expect(page.locator(urlForm)).toHaveCount(2);
     await expect(page.locator('a[href="/en/register"]').first()).toBeVisible();
     await expect(page.locator('a[href="/en/login"]').first()).toBeVisible();
+  });
+
+  test("homepage stays overflow-free across target viewports", async ({ page }) => {
+    for (const width of targetViewportWidths) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/");
+
+      const dimensions = await page.evaluate(() => ({
+        viewport: document.documentElement.clientWidth,
+        scroll: document.documentElement.scrollWidth,
+      }));
+
+      expect(dimensions.scroll, `${width}px viewport should not overflow horizontally`).toBe(dimensions.viewport);
+      await expect(page.locator("h1")).toBeVisible();
+    }
   });
 
   test("mobile homepage does not overflow horizontally and keeps mobile navigation usable", async ({ page }) => {
