@@ -30,7 +30,7 @@ const popularToolIcons: Record<string, LucideIcon> = {
   "sitemap-validator": Map,
   "redirect-chain-checker": Route,
   "meta-tags-checker": FileText,
-  "canonical-checker": Link2,
+  "ssl-certificate-checker": ShieldCheck,
   "image-seo-audit": ImageIcon,
 };
 
@@ -145,7 +145,7 @@ export function HomePage({ locale }: { locale: Locale }) {
             <p className="wd-hero-note">{t(homeContent.heroNote)}</p>
           </div>
           <div className="wd-hero-visual" aria-hidden="true">
-            <img className="wd-hero-dashboard" src="/home/hero-dashboard.webp" alt="" width="1536" height="1024" fetchPriority="high" decoding="async" />
+            <img className="wd-hero-dashboard" src="/home/hero-dashboard.webp" alt="" width="1080" height="720" fetchPriority="high" decoding="async" />
           </div>
         </div>
         <div className="shell wd-hero-benefits" aria-label={locale === "ru" ? "Преимущества WebDiag" : "WebDiag benefits"}>
@@ -195,7 +195,7 @@ export function HomePage({ locale }: { locale: Locale }) {
               <article key={t(step.title)}><span className="wd-step-number">{index + 1}</span><div><h3>{t(step.title)}</h3><p>{t(step.description)}</p></div></article>
             ))}
           </div>
-          <img className="wd-process-accent" src="/home/process-accent.webp" alt="" width="512" height="512" loading="lazy" decoding="async" />
+          <img className="wd-process-accent" src="/home/process-accent.webp" alt="" width="320" height="240" loading="lazy" decoding="async" />
         </div>
       </section>
 
@@ -235,7 +235,7 @@ export function HomePage({ locale }: { locale: Locale }) {
             <div className="wd-resource-grid">
               {homeContent.resources.map((resource, index) => (
                 <Link className="wd-resource-card" href={t(resource.href)} key={t(resource.title)}>
-                  <div className="wd-resource-visual"><img src={knowledgeArtwork[index]} alt="" width="512" height="512" loading="lazy" decoding="async" /></div>
+                  <div className="wd-resource-visual"><img src={knowledgeArtwork[index]} alt="" width="480" height="360" loading="lazy" decoding="async" /></div>
                   <div><span className="wd-resource-label">{index === 0 ? "SEO" : index === 1 ? (locale === "ru" ? "Руководство" : "Guide") : (locale === "ru" ? "Аналитика" : "Analytics")}</span><h3>{t(resource.title)}</h3><p>{t(resource.description)}</p></div>
                 </Link>
               ))}
