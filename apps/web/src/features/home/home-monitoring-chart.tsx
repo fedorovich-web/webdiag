@@ -74,9 +74,13 @@ export function HomeMonitoringChart({ locale }: HomeMonitoringChartProps) {
           type="button"
         >
           <span aria-hidden="true" className="wd-chart-dot-marker" />
-          <span aria-hidden="true" className="wd-chart-point-label">{point.label}</span>
         </button>
       ))}
+      <div className="wd-chart-axis-labels" aria-hidden="true">
+        {chartPoints.map((point) => (
+          <span key={point.label} style={{ left: `${(point.x / viewBox.width) * 100}%` }}>{point.label}</span>
+        ))}
+      </div>
       {active && (
         <div className="wd-chart-tooltip" style={{ left: `${(active.x / viewBox.width) * 100}%`, top: `${(active.y / viewBox.height) * 100}%` }}>
           <span>{active.label}</span>
