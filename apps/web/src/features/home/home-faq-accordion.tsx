@@ -8,7 +8,7 @@ interface HomeFaqAccordionProps {
 
 export function HomeFaqAccordion({ items }: HomeFaqAccordionProps) {
   const baseId = useId();
-  const [openIndex, setOpenIndex] = useState(0);
+  const [openIndex, setOpenIndex] = useState(-1);
 
   return (
     <div className="wd-faq-list">
