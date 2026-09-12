@@ -3,6 +3,7 @@ import "../globals.css";
 import "../account.css";
 import "../brand-system.css";
 import "../home-v11.css";
+import "../home-fidelity.css";
 import { SiteFooter } from "../../src/components/site-footer";
 import { SiteHeader } from "../../src/components/site-header";
 import { ThemeBootstrapScript } from "../../src/components/theme-bootstrap-script";
