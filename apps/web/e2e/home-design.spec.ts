@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { installBrowserGuard } from "./browser-guard";
 
+const urlForm = 'form:has(input[type="url"], input[inputmode="url"])';
+
 test.describe("home functional smoke", () => {
   let assertBrowserClean: ReturnType<typeof installBrowserGuard>;
 
@@ -12,13 +14,17 @@ test.describe("home functional smoke", () => {
     await assertBrowserClean(testInfo);
   });
 
-  test("Russian homepage exposes the core user flow without enforcing presentation", async ({ page }) => {
+  test("Russian homepage exposes the complete site-check journey without enforcing presentation", async ({ page }) => {
     await page.goto("/");
 
     await expect(page.locator("h1")).toHaveCount(1);
-    await expect(page.locator('form[action], form').filter({ has: page.locator('input[type="url"], input[inputmode="url"]') }).first()).toBeVisible();
+    await expect(page.locator(urlForm)).toHaveCount(2);
     await expect(page.locator('a[href="/register"]').first()).toBeVisible();
     await expect(page.locator('a[href="/login"]').first()).toBeVisible();
+
+    for (const id of ["tools", "report", "monitoring", "knowledge", "faq"]) {
+      await expect(page.locator(`#${id}`)).toHaveCount(1);
+    }
   });
 
   test("English homepage exposes the localized core user flow", async ({ page }) => {
@@ -26,6 +32,7 @@ test.describe("home functional smoke", () => {
 
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
     await expect(page.locator("h1")).toHaveCount(1);
+    await expect(page.locator(urlForm)).toHaveCount(2);
     await expect(page.locator('a[href="/en/register"]').first()).toBeVisible();
     await expect(page.locator('a[href="/en/login"]').first()).toBeVisible();
   });
