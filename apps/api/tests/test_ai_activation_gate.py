@@ -22,7 +22,7 @@ def _report(**overrides: object) -> ProviderEvaluationReport:
     values: dict[str, object] = {
         "tool_id": TOOL_ID,
         "tool_contract_version": "v1",
-        "model_policy": "openai/gpt-5.6-luna",
+        "model_policy": "openai/gpt-5.6-sol",
         "sample_limit": 100,
         "sampled_runs": 12,
         "ru_runs": 6,

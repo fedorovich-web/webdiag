@@ -4,22 +4,24 @@ import base64
 import hashlib
 import hmac
 import json
+import math
 import os
+import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from decimal import Decimal
+from email.utils import parsedate_to_datetime
 
 import httpx
 from pydantic import BaseModel
 
 from webdiag_worker.ai import (
     KnownSafeProviderError,
-    ProviderArtifact,
     ProviderOutcomeUnknownError,
     ProviderRequest,
     ProviderResult,
 )
 from webdiag_worker.artifact_storage import ArtifactStorage, artifact_storage_from_env
-from webdiag_worker.image_output import normalize_generated_image
 from webdiag_worker.tool_contracts import (
     AltTextOutput,
     AuditActionPlanOutput,
@@ -45,14 +47,13 @@ class _ToolPolicy:
     instructions: str
 
 
-_MODEL = "openai/gpt-5.6-luna"
-_OPENROUTER_CHAT_URL = "https://openrouter.ai/api/v1/chat/completions"
-_OPENROUTER_IMAGE_URL = "https://openrouter.ai/api/v1/images"
+_MODEL = "openai/gpt-5.6-sol"
+_PROVIDER = "vercel"
+_GATEWAY_BASE_URL = "https://ai-gateway.vercel.sh/v1"
+_REASONING_EFFORT = "medium"
+_GATEWAY_CHAT_URL = "https://ai-gateway.vercel.sh/v1/chat/completions"
 _CHAT_RESPONSE_MAX_BYTES = 2 * 1024 * 1024
-_IMAGE_RESPONSE_MAX_BYTES = 6 * 1024 * 1024
 _RESPONSE_CHUNK_BYTES = 64 * 1024
-_IMAGE_MODEL = "openai/gpt-image-2"
-_IMAGE_TOOL_IDS = frozenset({"ai_image_studio", "ai_image_edit_studio"})
 _TOOL_POLICIES = {
     "ai_audit_action_plan": _ToolPolicy(
         model=_MODEL,
@@ -213,39 +214,53 @@ _TOOL_POLICIES = {
     ),
 }
 
-_KNOWN_REJECTED_STATUS_CODES = frozenset({400, 401, 402, 403, 404, 413, 422})
+_KNOWN_REJECTED_STATUS_CODES = frozenset({400, 401, 402, 403, 404, 413, 422, 429})
+_MAX_ATTEMPTS = 3
+_RETRYABLE_STATUS_CODES = frozenset({429, *range(500, 600)})
 
 
-class OpenRouterProvider:
+class VercelAIGatewayProvider:
     def __init__(
         self,
         client: httpx.Client,
         *,
         artifact_storage: ArtifactStorage | None = None,
+        sleep: Callable[[float], None] = time.sleep,
+        now: Callable[[], float] = time.time,
     ) -> None:
         self._client = client
         self._artifact_storage = artifact_storage
+        self._sleep = sleep
+        self._now = now
 
     @classmethod
     def from_env(
         cls,
         *,
         artifact_storage: ArtifactStorage | None = None,
-    ) -> OpenRouterProvider:
-        api_key = os.getenv("WEBDIAG_OPENROUTER_API_KEY", "")
+    ) -> VercelAIGatewayProvider:
+        expected_configuration = {
+            "AI_PROVIDER": _PROVIDER,
+            "AI_GATEWAY_BASE_URL": _GATEWAY_BASE_URL,
+            "AI_MODEL": _MODEL,
+            "AI_REASONING_EFFORT": _REASONING_EFFORT,
+        }
+        for name, expected in expected_configuration.items():
+            if os.getenv(name, expected).strip() != expected:
+                raise RuntimeError(f"{name} must be {expected}")
+        api_key = os.getenv("AI_GATEWAY_API_KEY", "")
         if (
-            not api_key
-            or len(api_key) > 512
+            not 16 <= len(api_key) <= 512
             or any(character.isspace() or not character.isascii() for character in api_key)
         ):
             raise RuntimeError(
-                "WEBDIAG_OPENROUTER_API_KEY is required and must be visible ASCII"
+                "AI_GATEWAY_API_KEY must contain 16 to 512 visible ASCII characters"
             )
         timeout = httpx.Timeout(
-            connect=_bounded_timeout("WEBDIAG_OPENROUTER_CONNECT_TIMEOUT_SECONDS", 5),
-            read=_bounded_timeout("WEBDIAG_OPENROUTER_READ_TIMEOUT_SECONDS", 120),
-            write=_bounded_timeout("WEBDIAG_OPENROUTER_WRITE_TIMEOUT_SECONDS", 10),
-            pool=_bounded_timeout("WEBDIAG_OPENROUTER_POOL_TIMEOUT_SECONDS", 5),
+            connect=5,
+            read=120,
+            write=10,
+            pool=5,
         )
         return cls(
             httpx.Client(
@@ -259,15 +274,13 @@ class OpenRouterProvider:
             artifact_storage=artifact_storage,
         )
 
-    def __enter__(self) -> OpenRouterProvider:
+    def __enter__(self) -> VercelAIGatewayProvider:
         return self
 
     def __exit__(self, *_args: object) -> None:
         self._client.close()
 
     def execute(self, request: ProviderRequest) -> ProviderResult:
-        if request.tool_id in _IMAGE_TOOL_IDS:
-            return self._execute_image(request)
         policy = _TOOL_POLICIES.get(request.tool_id)
         if (
             policy is None
@@ -278,7 +291,7 @@ class OpenRouterProvider:
             raise KnownSafeProviderError("AI provider request was rejected locally")
         try:
             status_code, response_content = self._post_bounded(
-                _OPENROUTER_CHAT_URL,
+                _GATEWAY_CHAT_URL,
                 payload={
                     "model": policy.model,
                     "messages": _messages(request, policy),
@@ -291,14 +304,11 @@ class OpenRouterProvider:
                         },
                     },
                     "max_tokens": policy.max_output_tokens,
-                    "reasoning_effort": "low",
+                    "reasoning": {"effort": _REASONING_EFFORT},
                     "stream": False,
                     "user": request.safety_identifier,
-                    "provider": {
-                        "allow_fallbacks": False,
-                        "data_collection": "deny",
-                        "require_parameters": True,
-                        "zdr": True,
+                    "providerOptions": {
+                        "gateway": {"zeroDataRetention": True},
                     },
                 },
                 max_response_bytes=_CHAT_RESPONSE_MAX_BYTES,
@@ -311,6 +321,8 @@ class OpenRouterProvider:
             raise ProviderOutcomeUnknownError("AI provider outcome is unknown")
         try:
             body = json.loads(response_content, parse_float=Decimal)
+            if not isinstance(body, dict) or body.get("model") != _MODEL:
+                raise ValueError("invalid provider response model")
             parsed = _parsed_output(body, policy.output_model)
             provider_request_id = _provider_request_id(body)
             input_units, output_units, provider_cost_nano_usd = _provider_usage(body)
@@ -329,70 +341,6 @@ class OpenRouterProvider:
             provider_cost_nano_usd=provider_cost_nano_usd,
         )
 
-    def _execute_image(self, request: ProviderRequest) -> ProviderResult:
-        if (
-            request.contract_version != "v1"
-            or request.model_policy != _IMAGE_MODEL
-            or request.safety_identifier is None
-            or request.artifact_reservation is None
-        ):
-            raise KnownSafeProviderError("AI provider request was rejected locally")
-        payload = _image_request_payload(request)
-        try:
-            status_code, response_content = self._post_bounded(
-                _OPENROUTER_IMAGE_URL,
-                payload=payload,
-                max_response_bytes=_IMAGE_RESPONSE_MAX_BYTES,
-            )
-        except (httpx.TimeoutException, httpx.TransportError) as error:
-            raise ProviderOutcomeUnknownError("AI provider outcome is unknown") from error
-        if status_code in _KNOWN_REJECTED_STATUS_CODES:
-            raise KnownSafeProviderError("AI provider rejected the request")
-        if status_code != 200 or response_content is None:
-            raise ProviderOutcomeUnknownError("AI provider outcome is unknown")
-        try:
-            body = json.loads(response_content, parse_float=Decimal)
-            data, media_type = _image_output(body)
-            normalized = normalize_generated_image(data, declared_media_type=media_type)
-            input_units, output_units, provider_cost_nano_usd = _provider_usage(body)
-            storage = self._artifact_storage or artifact_storage_from_env()
-            artifact_id = request.artifact_reservation.artifact_id
-            stored = storage.put_reserved(
-                artifact_id=artifact_id,
-                object_key=request.artifact_reservation.object_key,
-                data=normalized.data,
-                media_type=normalized.media_type,
-            )
-            if (
-                stored.media_type != normalized.media_type
-                or stored.byte_size != normalized.byte_size
-                or not hmac.compare_digest(stored.sha256, normalized.sha256)
-            ):
-                raise ValueError("stored image artifact does not match provider output")
-        except KnownSafeProviderError:
-            raise
-        except Exception as error:
-            raise ProviderOutcomeUnknownError("AI provider response is invalid") from error
-        artifact = ProviderArtifact(
-            artifact_id=artifact_id,
-            object_key=stored.object_key,
-            media_type=stored.media_type,
-            byte_size=stored.byte_size,
-            sha256=stored.sha256,
-        )
-        return ProviderResult(
-            output={
-                "artifact_id": artifact.artifact_id,
-                "media_type": artifact.media_type,
-                "byte_size": artifact.byte_size,
-                "sha256": artifact.sha256,
-            },
-            input_units=input_units,
-            output_units=output_units,
-            provider_cost_nano_usd=provider_cost_nano_usd,
-            artifact=artifact,
-        )
-
     def _post_bounded(
         self,
         url: str,
@@ -400,18 +348,39 @@ class OpenRouterProvider:
         payload: dict[str, object],
         max_response_bytes: int,
     ) -> tuple[int, bytes | None]:
-        with self._client.stream("POST", url, json=payload) as response:
-            if response.status_code != 200:
-                return response.status_code, None
-            content = bytearray()
-            for chunk in response.iter_bytes(chunk_size=_RESPONSE_CHUNK_BYTES):
-                if len(content) + len(chunk) > max_response_bytes:
-                    raise ProviderOutcomeUnknownError("AI provider response is too large")
-                content.extend(chunk)
-            return response.status_code, bytes(content)
+        for attempt in range(_MAX_ATTEMPTS):
+            try:
+                with self._client.stream("POST", url, json=payload) as response:
+                    if response.status_code != 200:
+                        if (
+                            response.status_code in _RETRYABLE_STATUS_CODES
+                            and attempt + 1 < _MAX_ATTEMPTS
+                        ):
+                            self._sleep(
+                                _retry_delay(
+                                    response.headers.get("Retry-After"),
+                                    attempt,
+                                    now=self._now(),
+                                )
+                            )
+                            continue
+                        return response.status_code, None
+                    content = bytearray()
+                    for chunk in response.iter_bytes(chunk_size=_RESPONSE_CHUNK_BYTES):
+                        if len(content) + len(chunk) > max_response_bytes:
+                            raise ProviderOutcomeUnknownError(
+                                "AI provider response is too large"
+                            )
+                        content.extend(chunk)
+                    return response.status_code, bytes(content)
+            except (httpx.TimeoutException, httpx.TransportError):
+                if attempt + 1 >= _MAX_ATTEMPTS:
+                    raise
+                self._sleep(_retry_delay(None, attempt, now=self._now()))
+        raise RuntimeError("unreachable AI provider retry state")
 
     def prepare(self, request: ProviderRequest) -> ProviderRequest:
-        if request.tool_id not in {"ai_alt_text_studio", "ai_image_edit_studio"}:
+        if request.tool_id != "ai_alt_text_studio":
             return request
         descriptor = request.input.get("image")
         if not isinstance(descriptor, dict) or set(descriptor) != {
@@ -470,15 +439,19 @@ class OpenRouterProvider:
         )
 
 
-def _bounded_timeout(name: str, default: int) -> int:
-    raw = os.getenv(name, str(default))
-    try:
-        value = int(raw)
-    except ValueError as error:
-        raise RuntimeError(f"{name} must be an integer") from error
-    if not 1 <= value <= 600:
-        raise RuntimeError(f"{name} must be between 1 and 600 seconds")
-    return value
+def _retry_delay(retry_after: str | None, attempt: int, *, now: float) -> float:
+    if retry_after is not None:
+        try:
+            seconds = float(retry_after)
+        except ValueError:
+            try:
+                retry_at = parsedate_to_datetime(retry_after)
+                seconds = retry_at.timestamp() - now
+            except (TypeError, ValueError, OverflowError):
+                seconds = -1
+        if math.isfinite(seconds) and seconds >= 0:
+            return min(seconds, 30.0)
+    return 0.25 * (2**attempt)
 
 
 def _messages(request: ProviderRequest, policy: _ToolPolicy) -> list[dict[str, object]]:
@@ -528,65 +501,6 @@ def _messages(request: ProviderRequest, policy: _ToolPolicy) -> list[dict[str, o
             ],
         },
     ]
-
-
-def _image_request_payload(request: ProviderRequest) -> dict[str, object]:
-    prompt = request.input.get("prompt")
-    aspect_ratio = request.input.get("aspect_ratio")
-    quality = request.input.get("quality")
-    background = request.input.get("background")
-    if (
-        not isinstance(prompt, str)
-        or not 10 <= len(prompt) <= 4_000
-        or aspect_ratio not in {"auto", "1:1", "3:2", "2:3", "4:3", "3:4", "16:9", "9:16", "21:9"}
-        or quality not in {"auto", "low", "medium", "high"}
-        or background not in {"auto", "opaque"}
-    ):
-        raise KnownSafeProviderError("AI image request is invalid")
-    payload: dict[str, object] = {
-        "model": _IMAGE_MODEL,
-        "prompt": prompt,
-        "aspect_ratio": aspect_ratio,
-        "quality": quality,
-        "background": background,
-        "n": 1,
-        "provider": {"only": ["openai"], "allow_fallbacks": False},
-    }
-    if request.tool_id == "ai_image_edit_studio":
-        image_data_url = request.input.get("_image_data_url")
-        if (
-            not isinstance(image_data_url, str)
-            or not image_data_url.startswith(
-                ("data:image/jpeg;base64,", "data:image/png;base64,", "data:image/webp;base64,")
-            )
-            or len(image_data_url) > 6_000_000
-        ):
-            raise KnownSafeProviderError("AI image input is not prepared")
-        payload["input_references"] = [
-            {"type": "image_url", "image_url": {"url": image_data_url}}
-        ]
-    return payload
-
-
-def _image_output(body: object) -> tuple[bytes, str]:
-    if not isinstance(body, dict):
-        raise ValueError("invalid image provider response")
-    values = body.get("data")
-    if not isinstance(values, list) or len(values) != 1 or not isinstance(values[0], dict):
-        raise ValueError("invalid image provider data")
-    encoded = values[0].get("b64_json")
-    media_type = values[0].get("media_type")
-    if (
-        not isinstance(encoded, str)
-        or not encoded
-        or len(encoded) > 5_600_000
-        or media_type not in {"image/jpeg", "image/png", "image/webp"}
-    ):
-        raise ValueError("invalid image provider output")
-    data = base64.b64decode(encoded, validate=True)
-    if not 1 <= len(data) <= 4 * 1024 * 1024:
-        raise ValueError("invalid image provider output size")
-    return data, media_type
 
 
 def _parsed_output(body: object, output_model: type[BaseModel]) -> BaseModel:

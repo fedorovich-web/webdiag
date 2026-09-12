@@ -56,7 +56,7 @@ def _create_run(
         user_id=user_id,
         tool_id="ai_alt_text_studio",
         contract_version="webdiag.ai.alt_text.v1",
-        model_policy="openai/gpt-5.6-luna",
+        model_policy="openai/gpt-5.6-sol",
         credit_price=1,
         idempotency_key=idempotency_key,
         input_json='{"locale":"ru"}',

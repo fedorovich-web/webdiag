@@ -18,7 +18,7 @@ from webdiag_api.ai.storage import SqliteAIStore
 from webdiag_api.recovery import create_backup
 
 TOOL_ID = "ai_schema_studio"
-MODEL_POLICY = "openai/gpt-5.6-luna"
+MODEL_POLICY = "openai/gpt-5.6-sol"
 
 
 def _create_snapshot(tmp_path: Path, *, locales: tuple[str, ...]) -> tuple[Path, str]:

@@ -323,7 +323,7 @@ def _meta_service(tmp_path):
         contract_version="v1",
         state=AIToolState.READY,
         credit_price=3,
-        model_policy="openai/gpt-5.6-luna",
+        model_policy="openai/gpt-5.6-sol",
     )
     service = AIService(store, catalog=AIToolCatalog((tool,)), input_max_bytes=100_000)
     service.grant_beta_credits(

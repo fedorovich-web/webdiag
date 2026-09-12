@@ -290,7 +290,7 @@ def test_known_safe_prepare_failure_releases_without_marking_submitted(monkeypat
                     "lease_expires_at": 1_900_000_000,
                     "tool_id": "ai_alt_text_studio",
                     "contract_version": "v1",
-                    "model_policy": "openai/gpt-5.6-luna",
+                    "model_policy": "openai/gpt-5.6-sol",
                     "input": {"image": {}},
                 },
             }

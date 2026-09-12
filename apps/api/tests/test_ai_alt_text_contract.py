@@ -58,7 +58,7 @@ def _service(tmp_path: Path, *, clock: FakeClock | None = None):
         contract_version="v1",
         state=AIToolState.READY,
         credit_price=1,
-        model_policy="openai/gpt-5.6-luna",
+        model_policy="openai/gpt-5.6-sol",
     )
     service = AIService(store, catalog=AIToolCatalog((tool,)), input_max_bytes=20_000)
     for user_id, correlation in ((owner.id, "owner-grant"), (other.id, "other-grant")):

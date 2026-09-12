@@ -31,7 +31,7 @@ from webdiag_worker.artifact_storage import (
     StoredArtifact,
     artifact_storage_from_env,
 )
-from webdiag_worker.openrouter_provider import OpenRouterProvider
+from webdiag_worker.vercel_gateway_provider import VercelAIGatewayProvider
 
 CASES_CONTRACT = "webdiag.ai.provider_eval_cases.v1"
 VALIDATION_CONTRACT = "webdiag.ai.provider_eval_validation.v1"
@@ -526,14 +526,14 @@ def _default_provider_factory(
     tool_id: str,
     artifact_prefix: str | None,
 ) -> _ProviderFactory:
-    def factory() -> OpenRouterProvider:
+    def factory() -> VercelAIGatewayProvider:
         if artifact_prefix is None:
-            return OpenRouterProvider.from_env()
+            return VercelAIGatewayProvider.from_env()
         input_storage = artifact_storage_from_env()
         output_environment = dict(os.environ)
         output_environment["WEBDIAG_AI_ARTIFACT_PREFIX"] = artifact_prefix
         output_storage = artifact_storage_from_env(output_environment)
-        return OpenRouterProvider.from_env(
+        return VercelAIGatewayProvider.from_env(
             artifact_storage=_EvaluationArtifactStorage(
                 input_storage=input_storage,
                 output_storage=output_storage,

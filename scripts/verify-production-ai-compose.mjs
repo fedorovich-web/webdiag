@@ -103,7 +103,11 @@ const allowedEnvironmentPlacements = new Map([
   ["WEBDIAG_CRAWLER_INTERNAL_TOKEN", ["api", "monitoring_scheduler"]],
   ["WEBDIAG_AI_INTERNAL_TOKEN", ["api", "monitoring_scheduler", "worker"]],
   ["WEBDIAG_AI_SAFETY_IDENTIFIER_SECRET", ["api"]],
-  ["WEBDIAG_OPENROUTER_API_KEY", ["worker"]],
+  ["AI_PROVIDER", ["worker"]],
+  ["AI_GATEWAY_API_KEY", ["worker"]],
+  ["AI_GATEWAY_BASE_URL", ["worker"]],
+  ["AI_MODEL", ["worker"]],
+  ["AI_REASONING_EFFORT", ["worker"]],
   ["WEBDIAG_AI_ARTIFACT_S3_ENDPOINT_URL", ["api", "worker"]],
   ["WEBDIAG_AI_ARTIFACT_S3_REGION", ["api", "worker"]],
   ["WEBDIAG_AI_ARTIFACT_S3_BUCKET", ["api", "worker"]],
@@ -133,7 +137,18 @@ for (const [name, destinations] of propagatedSecrets) {
   distinctSecrets.push(value);
 }
 expect(new Set(distinctSecrets).size === distinctSecrets.length, "internal secrets are not distinct");
-expect(typeof worker.WEBDIAG_OPENROUTER_API_KEY === "string" && worker.WEBDIAG_OPENROUTER_API_KEY.length >= 32, "worker OpenRouter key is missing");
+expect(worker.AI_PROVIDER === "vercel", "worker AI provider differs");
+expect(
+  typeof worker.AI_GATEWAY_API_KEY === "string" &&
+    /^[\x21-\x7E]{16,512}$/u.test(worker.AI_GATEWAY_API_KEY),
+  "worker AI Gateway key is missing",
+);
+expect(
+  worker.AI_GATEWAY_BASE_URL === "https://ai-gateway.vercel.sh/v1",
+  "worker AI Gateway base URL differs",
+);
+expect(worker.AI_MODEL === "openai/gpt-5.6-sol", "worker AI model differs");
+expect(worker.AI_REASONING_EFFORT === "medium", "worker AI reasoning effort differs");
 
 const apiVolumes = service("api").volumes ?? [];
 expect(apiVolumes.length === 1 && apiVolumes[0].source === "account_data" && apiVolumes[0].target === "/data", "API volume topology differs");

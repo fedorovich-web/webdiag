@@ -65,7 +65,7 @@ def test_sql_metacharacters_remain_bound_ai_run_data(tmp_path: Path) -> None:
         user_id=owner.id,
         tool_id="ai_meta_serp_studio",
         contract_version="v1",
-        model_policy="openai/gpt-5.6-luna",
+        model_policy="openai/gpt-5.6-sol",
         credit_price=1,
         idempotency_key=SQL_PAYLOAD,
         input_json=input_json,

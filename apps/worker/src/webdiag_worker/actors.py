@@ -3,7 +3,7 @@ import dramatiq
 from webdiag_worker.ai import cleanup_ai_artifacts, run_one_ai_job
 from webdiag_worker.broker import create_broker
 from webdiag_worker.monitoring import run_due_monitors
-from webdiag_worker.openrouter_provider import OpenRouterProvider
+from webdiag_worker.vercel_gateway_provider import VercelAIGatewayProvider
 
 broker = create_broker()
 dramatiq.set_broker(broker)
@@ -21,7 +21,7 @@ def run_due_monitoring() -> int:
 
 @dramatiq.actor(queue_name="ai")
 def run_pending_ai() -> bool:
-    with OpenRouterProvider.from_env() as provider:
+    with VercelAIGatewayProvider.from_env() as provider:
         return run_one_ai_job(provider)
 
 

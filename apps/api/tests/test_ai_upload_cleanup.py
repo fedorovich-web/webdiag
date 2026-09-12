@@ -41,7 +41,7 @@ def _context(tmp_path: Path):
         contract_version="v1",
         state=AIToolState.READY,
         credit_price=1,
-        model_policy="openai/gpt-5.6-luna",
+        model_policy="openai/gpt-5.6-sol",
     )
     service = AIService(store, catalog=AIToolCatalog((tool,)), input_max_bytes=20_000)
     service.grant_beta_credits(

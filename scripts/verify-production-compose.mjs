@@ -86,7 +86,8 @@ expect(
   "scheduler internal API origins differ",
 );
 
-const forbiddenCoreNames = /RABBITMQ|BROKER|OPENROUTER|WEBDIAG_AI_(?!RUNTIME_ENABLED)/u;
+const forbiddenCoreNames =
+  /RABBITMQ|BROKER|OPENROUTER|AI_GATEWAY|WEBDIAG_AI_(?!RUNTIME_ENABLED)/u;
 for (const name of expectedServices) {
   for (const key of Object.keys(environment(name))) {
     expect(!forbiddenCoreNames.test(key), `service ${name} received optional AI setting ${key}`);

@@ -26,10 +26,10 @@ def test_ai_actor_import_is_lazy_and_invocation_without_provider_key_fails_close
     monkeypatch,
 ) -> None:
     monkeypatch.setenv("WEBDIAG_BROKER_BACKEND", "stub")
-    monkeypatch.delenv("WEBDIAG_OPENROUTER_API_KEY", raising=False)
+    monkeypatch.delenv("AI_GATEWAY_API_KEY", raising=False)
     actors = importlib.import_module("webdiag_worker.actors")
 
-    with pytest.raises(RuntimeError, match="WEBDIAG_OPENROUTER_API_KEY"):
+    with pytest.raises(RuntimeError, match="AI_GATEWAY_API_KEY"):
         actors.run_pending_ai.fn()
 
 
@@ -49,7 +49,7 @@ def test_ai_actor_executes_one_job_with_lazily_created_provider(monkeypatch) -> 
     provider = Provider()
     seen = []
 
-    monkeypatch.setattr(actors.OpenRouterProvider, "from_env", lambda: provider)
+    monkeypatch.setattr(actors.VercelAIGatewayProvider, "from_env", lambda: provider)
 
     def run_one(value):
         seen.append(value)

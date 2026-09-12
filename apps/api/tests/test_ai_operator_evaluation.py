@@ -1,18 +1,12 @@
-import base64
-import hashlib
-import io
 import json
 from copy import deepcopy
 from pathlib import Path
 
 import httpx
 import pytest
-import webdiag_worker.openrouter_provider as openrouter_provider
-from PIL import Image
 from scripts.ai_provider_evaluation import run_cli
 from webdiag_worker.ai import ProviderArtifact, ProviderResult
-from webdiag_worker.artifact_storage import LocalArtifactStorage
-from webdiag_worker.openrouter_provider import OpenRouterProvider
+from webdiag_worker.vercel_gateway_provider import VercelAIGatewayProvider
 
 
 def _schema_manifest() -> dict[str, object]:
@@ -237,7 +231,7 @@ def test_explicit_execution_writes_private_evidence_and_redacted_summary(
                 "id": f"gen_private_{provider_input['locale']}",
                 "object": "chat.completion",
                 "created": 1_786_000_000,
-                "model": "openai/gpt-5.6-luna",
+                "model": "openai/gpt-5.6-sol",
                 "choices": [
                     {
                         "finish_reason": "stop",
@@ -269,8 +263,8 @@ def test_explicit_execution_writes_private_evidence_and_redacted_summary(
             },
         )
 
-    def provider_factory() -> OpenRouterProvider:
-        return OpenRouterProvider(
+    def provider_factory() -> VercelAIGatewayProvider:
+        return VercelAIGatewayProvider(
             httpx.Client(
                 transport=httpx.MockTransport(handler),
                 headers={"Authorization": "Bearer test-only-key"},
@@ -331,7 +325,7 @@ def test_semantic_rejection_writes_incomplete_private_evidence_without_retry(
                 "id": "gen_private_invalid",
                 "object": "chat.completion",
                 "created": 1_786_000_000,
-                "model": "openai/gpt-5.6-luna",
+                "model": "openai/gpt-5.6-sol",
                 "choices": [
                     {
                         "finish_reason": "stop",
@@ -363,8 +357,8 @@ def test_semantic_rejection_writes_incomplete_private_evidence_without_retry(
             },
         )
 
-    def provider_factory() -> OpenRouterProvider:
-        return OpenRouterProvider(
+    def provider_factory() -> VercelAIGatewayProvider:
+        return VercelAIGatewayProvider(
             httpx.Client(
                 transport=httpx.MockTransport(handler),
                 headers={"Authorization": "Bearer test-only-key"},
@@ -408,7 +402,7 @@ def test_semantic_rejection_writes_incomplete_private_evidence_without_retry(
         ("unknown", "provider_unknown"),
     ),
 )
-def test_provider_failures_are_classified_without_retry_or_private_error(
+def test_provider_failures_are_classified_with_bounded_transient_retry(
     tmp_path: Path,
     capsys,
     failure_mode: str,
@@ -423,8 +417,8 @@ def test_provider_failures_are_classified_without_retry_or_private_error(
             return httpx.Response(400, json={"error": "private provider detail"})
         raise httpx.ReadTimeout("private provider timeout detail", request=request)
 
-    def provider_factory() -> OpenRouterProvider:
-        return OpenRouterProvider(
+    def provider_factory() -> VercelAIGatewayProvider:
+        return VercelAIGatewayProvider(
             httpx.Client(
                 transport=httpx.MockTransport(handler),
                 headers={"Authorization": "Bearer test-only-key"},
@@ -446,7 +440,7 @@ def test_provider_failures_are_classified_without_retry_or_private_error(
         provider_factory=provider_factory,
     ) == 2
 
-    assert len(requests) == 1
+    assert len(requests) == (1 if failure_mode == "known_safe" else 3)
     evidence = json.loads(output_path.read_text(encoding="utf-8"))
     assert evidence["status"] == "incomplete"
     assert evidence["failure"] == {
@@ -903,51 +897,26 @@ def test_image_artifact_must_match_private_reservation(
     assert "gen_private_mismatch" not in json.dumps(report)
 
 
-def test_real_image_provider_writes_to_evaluation_storage_prefix(
+def test_gateway_provider_rejects_image_generation_without_network_access(
     tmp_path: Path,
     capsys,
     monkeypatch,
 ) -> None:
     cases_path = _write_manifest(tmp_path, _image_manifest())
-    image_output = io.BytesIO()
-    Image.new("RGB", (3, 2), (12, 34, 56)).save(image_output, format="PNG")
-    image_bytes = image_output.getvalue()
     requests: list[httpx.Request] = []
-    storage_root = tmp_path / "artifacts"
     monkeypatch.setenv("WEBDIAG_AI_ARTIFACT_PREFIX", "ai-uploads")
     monkeypatch.setenv("WEBDIAG_AI_EVALUATION_ARTIFACT_PREFIX", "eval-artifacts")
 
     def handler(request: httpx.Request) -> httpx.Response:
         requests.append(request)
-        return httpx.Response(
-            200,
-            json={
-                "created": 1_786_000_000,
-                "data": [
-                    {
-                        "b64_json": base64.b64encode(image_bytes).decode("ascii"),
-                        "media_type": "image/png",
-                    }
-                ],
-                "usage": {
-                    "prompt_tokens": 11,
-                    "completion_tokens": 27,
-                    "total_tokens": 38,
-                    "cost": 0.025,
-                },
-            },
-        )
+        return httpx.Response(500)
 
-    def provider_factory() -> OpenRouterProvider:
-        return OpenRouterProvider(
+    def provider_factory() -> VercelAIGatewayProvider:
+        return VercelAIGatewayProvider(
             httpx.Client(
                 transport=httpx.MockTransport(handler),
                 headers={"Authorization": "Bearer test-only-key"},
-            ),
-            artifact_storage=LocalArtifactStorage(
-                storage_root,
-                prefix="eval-artifacts",
-            ),
+            )
         )
 
     evidence_path = tmp_path / ".webdiag" / "ai-evals" / "real-image.json"
@@ -961,46 +930,32 @@ def test_real_image_provider_writes_to_evaluation_storage_prefix(
         ],
         repo_root=tmp_path,
         provider_factory=provider_factory,
-    ) == 0
+    ) == 2
 
-    assert len(requests) == 2
+    assert requests == []
     evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
-    object_keys = [case["artifact"]["object_key"] for case in evidence["cases"]]
-    assert all(key.startswith("eval-artifacts/") for key in object_keys)
-    assert all(storage_root.joinpath(*key.split("/")).is_file() for key in object_keys)
-    assert json.loads(capsys.readouterr().out)["status"] == "complete"
+    assert evidence["cases"] == []
+    report = json.loads(capsys.readouterr().out)
+    assert report["status"] == "incomplete"
+    assert report["failure_class"] == "known_safe_failure"
 
 
-def test_default_image_edit_provider_reads_input_and_writes_evaluation_namespace(
+def test_gateway_provider_rejects_image_edit_without_network_access(
     tmp_path: Path,
     capsys,
     monkeypatch,
 ) -> None:
-    source_output = io.BytesIO()
-    Image.new("RGB", (3, 2), (20, 40, 60)).save(source_output, format="PNG")
-    source = source_output.getvalue()
-    generated_output = io.BytesIO()
-    Image.new("RGB", (3, 2), (60, 40, 20)).save(generated_output, format="PNG")
-    generated = generated_output.getvalue()
-    storage_root = tmp_path / "artifacts"
-    input_storage = LocalArtifactStorage(storage_root, prefix="ai-uploads")
     source_key = "ai-uploads/aa/" + "b" * 62
-    input_storage.put_reserved(
-        artifact_id="11111111-1111-4111-8111-111111111111",
-        object_key=source_key,
-        data=source,
-        media_type="image/png",
-    )
     cases_path = _write_manifest(
         tmp_path,
         _image_edit_manifest(
             {
                 "object_key": source_key,
                 "media_type": "image/png",
-                "byte_size": len(source),
+                "byte_size": 1,
                 "width": 3,
                 "height": 2,
-                "sha256": hashlib.sha256(source).hexdigest(),
+                "sha256": "0" * 64,
             }
         ),
     )
@@ -1008,41 +963,16 @@ def test_default_image_edit_provider_reads_input_and_writes_evaluation_namespace
 
     def handler(request: httpx.Request) -> httpx.Response:
         requests.append(request)
-        assert source_key not in request.content.decode()
-        return httpx.Response(
-            200,
-            json={
-                "created": 1_786_000_000,
-                "data": [
-                    {
-                        "b64_json": base64.b64encode(generated).decode("ascii"),
-                        "media_type": "image/png",
-                    }
-                ],
-                "usage": {
-                    "prompt_tokens": 3,
-                    "completion_tokens": 7,
-                    "total_tokens": 10,
-                    "cost": 0.01,
-                },
-            },
+        return httpx.Response(500)
+
+    def provider_factory() -> VercelAIGatewayProvider:
+        return VercelAIGatewayProvider(
+            httpx.Client(
+                transport=httpx.MockTransport(handler),
+                headers={"Authorization": "Bearer test-only-key"},
+            )
         )
 
-    real_client = httpx.Client
-
-    def client_factory(**kwargs: object) -> httpx.Client:
-        return real_client(
-            transport=httpx.MockTransport(handler),
-            headers=kwargs["headers"],
-            timeout=kwargs["timeout"],
-            trust_env=kwargs["trust_env"],
-        )
-
-    monkeypatch.setattr(openrouter_provider.httpx, "Client", client_factory)
-    monkeypatch.setenv("WEBDIAG_OPENROUTER_API_KEY", "test-only-key")
-    monkeypatch.setenv("WEBDIAG_ENVIRONMENT", "development")
-    monkeypatch.setenv("WEBDIAG_AI_ARTIFACT_STORAGE", "local")
-    monkeypatch.setenv("WEBDIAG_AI_ARTIFACT_LOCAL_ROOT", str(storage_root))
     monkeypatch.setenv("WEBDIAG_AI_ARTIFACT_PREFIX", "ai-uploads")
     monkeypatch.setenv("WEBDIAG_AI_EVALUATION_ARTIFACT_PREFIX", "eval-artifacts")
 
@@ -1056,12 +986,12 @@ def test_default_image_edit_provider_reads_input_and_writes_evaluation_namespace
             "--execute-paid-provider",
         ],
         repo_root=tmp_path,
-    ) == 0
+        provider_factory=provider_factory,
+    ) == 2
 
-    assert len(requests) == 2
+    assert requests == []
     evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
-    object_keys = [case["artifact"]["object_key"] for case in evidence["cases"]]
-    assert all(key.startswith("eval-artifacts/") for key in object_keys)
-    assert all(storage_root.joinpath(*key.split("/")).is_file() for key in object_keys)
-    assert storage_root.joinpath(*source_key.split("/")).is_file()
-    assert json.loads(capsys.readouterr().out)["status"] == "complete"
+    assert evidence["cases"] == []
+    report = json.loads(capsys.readouterr().out)
+    assert report["status"] == "incomplete"
+    assert report["failure_class"] == "known_safe_failure"

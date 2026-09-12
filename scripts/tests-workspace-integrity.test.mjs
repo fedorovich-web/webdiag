@@ -142,7 +142,7 @@ test("production core and opt-in AI overlay have separate fail-closed preflights
     "RABBITMQ_DEFAULT_PASS",
     "WEBDIAG_AI_INTERNAL_TOKEN",
     "WEBDIAG_AI_SAFETY_IDENTIFIER_SECRET",
-    "WEBDIAG_OPENROUTER_API_KEY",
+    "AI_GATEWAY_API_KEY",
     "WEBDIAG_AI_ARTIFACT_S3_ENDPOINT_URL",
     "WEBDIAG_AI_ARTIFACT_S3_REGION",
     "WEBDIAG_AI_ARTIFACT_S3_BUCKET",
@@ -153,7 +153,10 @@ test("production core and opt-in AI overlay have separate fail-closed preflights
   assert.match(productionCompose, /WEBDIAG_ENVIRONMENT:\s*production/g);
   assert.match(productionCompose, /WEBDIAG_ACCOUNT_COOKIE_SECURE:\s*["']true["']/);
   assert.match(productionCompose, /WEBDIAG_AI_RUNTIME_ENABLED:\s*["']false["']/);
-  assert.doesNotMatch(productionCompose, /RABBITMQ|OPENROUTER|AI_ARTIFACT|AI_INTERNAL_TOKEN/);
+  assert.doesNotMatch(
+    productionCompose,
+    /RABBITMQ|OPENROUTER|AI_GATEWAY|AI_ARTIFACT|AI_INTERNAL_TOKEN/,
+  );
   assert.match(productionCompose, /rabbitmq:\s*!reset\s+null/);
   assert.match(productionCompose, /worker:\s*!reset\s+null/);
   assert.match(productionCompose, /PUBLIC_RELEASE:\s*["']true["']/g);
@@ -170,10 +173,20 @@ test("production core and opt-in AI overlay have separate fail-closed preflights
     assert.doesNotMatch(environmentExample, new RegExp(`^${name}=`, "m"), name);
   }
   assert.match(aiCompose, /WEBDIAG_AI_RUNTIME_ENABLED:\s*["']true["']/);
+  assert.match(aiCompose, /AI_PROVIDER:\s*["']?\$\{AI_PROVIDER:-vercel\}["']?/);
+  assert.match(
+    aiCompose,
+    /AI_GATEWAY_BASE_URL:\s*["']?\$\{AI_GATEWAY_BASE_URL:-https:\/\/ai-gateway\.vercel\.sh\/v1\}["']?/,
+  );
+  assert.match(aiCompose, /AI_MODEL:\s*["']?\$\{AI_MODEL:-openai\/gpt-5\.6-sol\}["']?/);
+  assert.match(
+    aiCompose,
+    /AI_REASONING_EFFORT:\s*["']?\$\{AI_REASONING_EFFORT:-medium\}["']?/,
+  );
   assert.match(aiCompose, /WEBDIAG_AI_ARTIFACT_STORAGE:\s*s3/g);
   assert.match(aiEnvironmentExample, /^WEBDIAG_AI_ARTIFACT_PREFIX=ai-uploads$/m);
   assert.match(aiEnvironmentExample, /^WEBDIAG_AI_ARTIFACT_S3_SESSION_TOKEN=$/m);
-  assert.doesNotMatch(environmentExample, /change-me|replace-with|https?:\/\//);
+  assert.doesNotMatch(environmentExample, /change-me|replace-with/);
   assert.doesNotMatch(aiEnvironmentExample, /change-me|replace-with/);
 
   assert.match(webDockerfile, /ARG PUBLIC_RELEASE=false\s+ENV PUBLIC_RELEASE=\$\{PUBLIC_RELEASE\}\s+RUN npm run build/);

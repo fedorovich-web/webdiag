@@ -36,7 +36,7 @@ def test_initial_catalog_exposes_no_unevaluated_tools() -> None:
         definition.model_policy
         for definition in definitions
         if definition.state is AIToolState.INTERNAL
-    } == {"openai/gpt-5.6-luna", "openai/gpt-image-2"}
+    } == {"openai/gpt-5.6-sol", "openai/gpt-image-2"}
     assert all(
         has_tool_contract(definition.id)
         for definition in definitions

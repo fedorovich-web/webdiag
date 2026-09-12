@@ -282,7 +282,7 @@ def test_service_persists_server_resolved_context_snapshot(tmp_path) -> None:
                     contract_version="v1",
                     state=AIToolState.READY,
                     credit_price=3,
-                    model_policy="openai/gpt-5.6-luna",
+                    model_policy="openai/gpt-5.6-sol",
                 ),
             )
         ),
