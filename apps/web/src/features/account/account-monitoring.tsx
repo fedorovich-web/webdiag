@@ -138,9 +138,9 @@ export function AccountMonitoring({ locale, projectId }: Props) {
     <section className="wd-monitoring-page">
       <header className="wd-account-dashboard-head wd-monitoring-hero">
         <div>
-          <span className="eyebrow">{ru ? "Плановые сравнительные аудиты" : "Scheduled comparative audits"}</span>
+          <span className="eyebrow">{ru ? "Регулярные проверки" : "Scheduled checks"}</span>
           <h1>{ru ? "Мониторинг проекта" : "Project monitoring"}</h1>
-          <p>{ru ? "WebDiag сохраняет новый аудит по расписанию и сравнивает его с предыдущим результатом." : "WebDiag saves a new audit on schedule and compares it with the previous result."}</p>
+          <p>{ru ? "WebDiag запускает проверки по расписанию и показывает, что изменилось относительно предыдущего результата." : "WebDiag runs checks on schedule and shows what changed since the previous result."}</p>
         </div>
         {monitor && (
           <div className="wd-monitoring-hero-actions">
@@ -169,7 +169,7 @@ export function AccountMonitoring({ locale, projectId }: Props) {
         </div>
         <div className="wd-monitoring-fields">
           <label>{ru ? "Частота" : "Cadence"}<select value={cadence} onChange={(event: ChangeEvent<HTMLSelectElement>) => setCadence(event.target.value as MonitorCadence)} disabled={pending}>{cadenceOptions.map((value) => <option key={value} value={value}>{monitorCadenceLabel(locale, value)}</option>)}</select></label>
-          <label>{ru ? "Часовой пояс IANA" : "IANA timezone"}<input value={timezone} onChange={(event: ChangeEvent<HTMLInputElement>) => setTimezone(event.target.value)} required maxLength={64} disabled={pending} placeholder="Europe/Berlin" /></label>
+          <label>{ru ? "Часовой пояс" : "Timezone"}<input value={timezone} onChange={(event: ChangeEvent<HTMLInputElement>) => setTimezone(event.target.value)} required maxLength={64} disabled={pending} placeholder="Europe/Berlin" /></label>
         </div>
         <div className="wd-monitoring-config-actions">
           <button className="wd-button wd-button-secondary" type="submit" disabled={pending}>{missing ? (ru ? "Включить мониторинг" : "Enable monitoring") : (ru ? "Сохранить настройки" : "Save settings")}</button>
@@ -179,7 +179,7 @@ export function AccountMonitoring({ locale, projectId }: Props) {
 
       {history && (
         <section className="wd-monitoring-history" aria-labelledby="monitor-history-title">
-          <div className="wd-project-list-head"><div><span className="eyebrow">{ru ? "Сохранённые результаты" : "Persisted results"}</span><h2 id="monitor-history-title">{ru ? "История проверок" : "Check history"}</h2></div><strong>{history.runs.length}</strong></div>
+          <div className="wd-project-list-head"><div><span className="eyebrow">{ru ? "Сохранённые результаты" : "Saved results"}</span><h2 id="monitor-history-title">{ru ? "История проверок" : "Check history"}</h2></div><strong>{history.runs.length}</strong></div>
           {history.runs.length === 0 ? <div className="wd-account-empty"><p>{ru ? "Запусков пока нет." : "No runs yet."}</p></div> : (
             <div className="wd-monitor-run-list">
               {history.runs.map((run) => {
@@ -187,9 +187,9 @@ export function AccountMonitoring({ locale, projectId }: Props) {
                 return (
                   <article key={run.id} data-outcome={run.change.kind}>
                     <div className="wd-monitor-run-head"><div><span>{monitorChangeLabel(locale, run.change.kind)}</span><strong>{formatMonitorDate(locale, run.completed_at)}</strong></div><b>{run.score === null ? "—" : `${run.score}/100`}</b></div>
-                    <p>{ru ? `Проблем в сохранённом аудите: ${run.issue_count}` : `Issues in the saved audit: ${run.issue_count}`}</p>
+                    <p>{ru ? `Найдено проблем: ${run.issue_count}` : `Issues found: ${run.issue_count}`}</p>
                     {deltas.length > 0 && <ul className="wd-monitor-deltas">{deltas.map((delta) => <li key={delta}>{delta}</li>)}</ul>}
-                    {run.error_code && <details className="wd-monitor-error"><summary>{ru ? "Техническая диагностика" : "Technical diagnostics"}</summary><code>{run.error_code}</code></details>}
+                    {run.error_code && <details className="wd-monitor-error"><summary>{ru ? "Подробности ошибки" : "Error details"}</summary><code>{run.error_code}</code></details>}
                   </article>
                 );
               })}
