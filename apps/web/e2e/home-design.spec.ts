@@ -90,6 +90,12 @@ test.describe("home functional smoke", () => {
 
     expect(dimensions.scroll).toBe(dimensions.viewport);
 
+    const platformLogos = page.locator(".wd-platform-strip .wd-platform-logo");
+    await expect(platformLogos).toHaveCount(6);
+    for (let index = 0; index < 6; index += 1) {
+      await expect(platformLogos.nth(index)).toBeInViewport();
+    }
+
     await expect(page.locator(".language-switcher-desktop")).toBeHidden();
     await page.locator(".mobile-menu summary").click();
     await expect(page.locator(".language-switcher-mobile")).toBeVisible();
