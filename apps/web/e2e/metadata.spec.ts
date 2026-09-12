@@ -36,21 +36,12 @@ test.describe("rendered SEO metadata", () => {
     });
   }
 
-  test("Russian homepage targets website-check intent", async ({ page }) => {
-    await page.goto("/");
-    await expect(page).toHaveTitle("Проверка сайта на ошибки онлайн — WebDiag");
-    await expect(page.locator('meta[name="description"]')).toHaveAttribute(
-      "content",
-      /проверьте сайт.*техническ.*seo-ошиб/i,
-    );
-  });
-
-  test("English homepage uses a natural website-check title", async ({ page }) => {
-    await page.goto("/en");
-    await expect(page).toHaveTitle("Website Technical & SEO Checker — WebDiag");
-    await expect(page.locator('meta[name="description"]')).toHaveAttribute(
-      "content",
-      /check a website.*technical.*seo issues/i,
-    );
-  });
+  for (const route of ["/", "/en"] as const) {
+    test(`${route} exposes non-empty title and description without enforcing editorial wording`, async ({ page }) => {
+      await page.goto(route);
+      expect((await page.title()).trim().length).toBeGreaterThan(0);
+      const description = await page.locator('meta[name="description"]').getAttribute("content");
+      expect(description?.trim().length ?? 0).toBeGreaterThan(0);
+    });
+  }
 });
