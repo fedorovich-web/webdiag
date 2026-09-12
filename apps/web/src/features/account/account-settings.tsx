@@ -140,16 +140,16 @@ export function AccountSettings({
     <section className="wd-account-dashboard wd-account-settings-page">
       <header className="wd-account-dashboard-head">
         <div>
-          <span className="eyebrow">{ru ? "Управление доступом" : "Access management"}</span>
-          <h1>{ru ? "Аккаунт" : "Account"}</h1>
-          <p>{ru ? "Личные данные, пароль и активные сессии без платёжных настроек." : "Identity, password, and active sessions without billing controls."}</p>
+          <span className="eyebrow">{ru ? "Безопасность аккаунта" : "Account security"}</span>
+          <h1>{ru ? "Настройки аккаунта" : "Account settings"}</h1>
+          <p>{ru ? "Проверьте данные профиля, смените пароль или завершите другие активные сессии." : "Review your profile, change your password, or end other active sessions."}</p>
         </div>
       </header>
 
       <div className="wd-account-settings-grid">
         <section className="wd-account-card" aria-labelledby="account-identity-title">
           <span className="eyebrow">{ru ? "Профиль" : "Profile"}</span>
-          <h2 id="account-identity-title">{ru ? "Данные аккаунта" : "Account identity"}</h2>
+          <h2 id="account-identity-title">{ru ? "Данные аккаунта" : "Account details"}</h2>
           <dl className="wd-account-settings-identity">
             <div><dt>{ru ? "Имя" : "Name"}</dt><dd>{session.user.display_name}</dd></div>
             <div><dt>{ru ? "Электронная почта" : "Email"}</dt><dd>{session.user.email}</dd></div>
