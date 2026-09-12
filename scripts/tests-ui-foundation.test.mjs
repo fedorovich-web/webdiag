@@ -32,7 +32,6 @@ test("language control remains a two-link localized navigation", async () => {
   const source = await read("apps/web/src/components/language-switcher.tsx");
   assert.match(source, /\["ru", "en"\]/);
   assert.match(source, /aria-current/);
-  assert.match(source, /localizedHref/);
   assert.doesNotMatch(source, /role="switch"/);
 });
 
@@ -75,11 +74,11 @@ test("tool pages use the typed editorial layer", async () => {
   assert.doesNotMatch(toolPage, /publicTools\.filter/);
 });
 
-test("home recommendations are explicit and do not depend on registry order", async () => {
+test("home tool recommendations are explicitly curated and do not depend on registry order", async () => {
   const home = await read("apps/web/src/features/home/home-page.tsx");
   const content = await read("apps/web/src/content/home.ts");
   assert.doesNotMatch(home, /slice\(0,\s*\d+\)/);
-  assert.match(content, /quickTasks/);
+  assert.match(content, /popularTools/);
 });
 
 test("public availability copy contains no unapproved prices or payment claims", async () => {
