@@ -19,16 +19,16 @@ const viewBox = { width: 560, height: 128, floor: 106 } as const;
 
 const points: Record<Locale, readonly ChartPoint[]> = {
   ru: [
-    { x: 82, y: 82, label: "Пн", title: "Стартовая проверка", text: "128 страниц, 7 критичных проблем" },
-    { x: 214, y: 58, label: "Вт", title: "Первые исправления", text: "исправлено 8 alt-ошибок" },
-    { x: 342, y: 73, label: "Чт", title: "Найдена регрессия", text: "цепочка редиректов на посадочной" },
-    { x: 496, y: 50, label: "Сегодня", title: "Состояние стабильнее", text: "SSL, sitemap и canonical без ошибок" },
+    { x: 82, y: 82, label: "Пн", title: "Стартовая проверка", text: "25 страниц, 4 критичные проблемы" },
+    { x: 214, y: 58, label: "Вт", title: "После исправлений", text: "исправлены ошибки мета-тегов" },
+    { x: 342, y: 73, label: "Чт", title: "Найдена регрессия", text: "новая цепочка редиректов" },
+    { x: 496, y: 50, label: "Сегодня", title: "Состояние улучшилось", text: "HTTPS и sitemap проходят проверку" },
   ],
   en: [
-    { x: 82, y: 82, label: "Mon", title: "Initial check", text: "128 pages, 7 critical issues" },
-    { x: 214, y: 58, label: "Tue", title: "First fixes", text: "8 alt issues resolved" },
-    { x: 342, y: 73, label: "Thu", title: "Regression detected", text: "redirect chain on a landing page" },
-    { x: 496, y: 50, label: "Today", title: "Health is steadier", text: "SSL, sitemap, and canonical pass" },
+    { x: 82, y: 82, label: "Mon", title: "Initial check", text: "25 pages, 4 critical issues" },
+    { x: 214, y: 58, label: "Tue", title: "After fixes", text: "metadata issues resolved" },
+    { x: 342, y: 73, label: "Thu", title: "Regression detected", text: "new redirect chain detected" },
+    { x: 496, y: 50, label: "Today", title: "Health improved", text: "HTTPS and sitemap checks pass" },
   ],
 };
 
