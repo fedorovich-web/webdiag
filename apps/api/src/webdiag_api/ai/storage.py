@@ -66,6 +66,14 @@ class AIUploadUnavailableError(RuntimeError):
         super().__init__("AI upload is unavailable")
 
 
+class AIRunLimitReachedError(RuntimeError):
+    """The authenticated account already has the maximum active AI runs."""
+
+
+class AIQueueCapacityError(RuntimeError):
+    """The bounded global AI queue has no capacity for another run."""
+
+
 @dataclass(frozen=True, slots=True)
 class CreditAccount:
     user_id: str
@@ -200,6 +208,8 @@ class SqliteAIStore:
         lease_seconds: int = 900,
         upload_ttl_seconds: int = 24 * 60 * 60,
         upload_limit: int = 10,
+        active_run_limit_per_user: int = 3,
+        active_run_limit_global: int = 100,
         clock_ns: Callable[[], int] = time.time_ns,
     ) -> None:
         if not 60 <= lease_seconds <= 3600:
@@ -208,10 +218,18 @@ class SqliteAIStore:
             raise ValueError("AI upload TTL must be between 1 second and 7 days")
         if not 1 <= upload_limit <= 100:
             raise ValueError("AI upload limit must be between 1 and 100")
+        if not 1 <= active_run_limit_per_user <= 20:
+            raise ValueError("AI active run limit per user must be between 1 and 20")
+        if not active_run_limit_per_user <= active_run_limit_global <= 10_000:
+            raise ValueError(
+                "AI global active run limit must be between the per-user limit and 10000"
+            )
         self._path = Path(database_path)
         self._lease_seconds = lease_seconds
         self._upload_ttl_ns = upload_ttl_seconds * 1_000_000_000
         self._upload_limit = upload_limit
+        self._active_run_limit_per_user = active_run_limit_per_user
+        self._active_run_limit_global = active_run_limit_global
         self._clock_ns = clock_ns
         self._schema_lock = threading.Lock()
         self._schema_ready = False
@@ -893,6 +911,26 @@ class SqliteAIStore:
                     raise AIIdempotencyConflictError
                 connection.execute("COMMIT")
                 return run, False
+            user_active = int(
+                connection.execute(
+                    """
+                    SELECT COUNT(*) FROM ai_runs
+                    WHERE user_id = ? AND state IN ('pending', 'running')
+                    """,
+                    (user_id,),
+                ).fetchone()[0]
+            )
+            if user_active >= self._active_run_limit_per_user:
+                connection.execute("ROLLBACK")
+                raise AIRunLimitReachedError
+            global_active = int(
+                connection.execute(
+                    "SELECT COUNT(*) FROM ai_runs WHERE state IN ('pending', 'running')"
+                ).fetchone()[0]
+            )
+            if global_active >= self._active_run_limit_global:
+                connection.execute("ROLLBACK")
+                raise AIQueueCapacityError
             run_id = str(uuid.uuid4())
             now = self._clock_ns()
             connection.execute(

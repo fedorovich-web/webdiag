@@ -340,8 +340,8 @@ def run_one_ai_job(
                 "ai_completion_outcome_unknown",
                 "provider_unknown",
             )
-        except Exception:
-            pass
+        except Exception as recovery_error:
+            raise RuntimeError("AI completion recovery failed") from recovery_error
         return True
     return True
 

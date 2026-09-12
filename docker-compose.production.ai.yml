@@ -19,20 +19,15 @@ services:
       WEBDIAG_AI_RUNTIME_ENABLED: "true"
       WEBDIAG_AI_INTERNAL_TOKEN: "${WEBDIAG_AI_INTERNAL_TOKEN:?set a distinct AI internal token}"
       WEBDIAG_AI_SAFETY_IDENTIFIER_SECRET: "${WEBDIAG_AI_SAFETY_IDENTIFIER_SECRET:?set a distinct AI safety identifier secret}"
-      WEBDIAG_AI_ARTIFACT_STORAGE: s3
-      WEBDIAG_AI_ARTIFACT_S3_ENDPOINT_URL: "${WEBDIAG_AI_ARTIFACT_S3_ENDPOINT_URL:?set the private artifact S3 HTTPS endpoint}"
-      WEBDIAG_AI_ARTIFACT_S3_REGION: "${WEBDIAG_AI_ARTIFACT_S3_REGION:?set the private artifact S3 region}"
-      WEBDIAG_AI_ARTIFACT_S3_BUCKET: "${WEBDIAG_AI_ARTIFACT_S3_BUCKET:?set the private artifact S3 bucket}"
-      WEBDIAG_AI_ARTIFACT_PREFIX: "${WEBDIAG_AI_ARTIFACT_PREFIX:-ai-uploads}"
-      WEBDIAG_AI_ARTIFACT_S3_ACCESS_KEY_ID: "${WEBDIAG_AI_ARTIFACT_S3_ACCESS_KEY_ID:?set the private artifact S3 access key}"
-      WEBDIAG_AI_ARTIFACT_S3_SECRET_ACCESS_KEY: "${WEBDIAG_AI_ARTIFACT_S3_SECRET_ACCESS_KEY:?set the private artifact S3 secret key}"
-      WEBDIAG_AI_ARTIFACT_S3_SESSION_TOKEN: "${WEBDIAG_AI_ARTIFACT_S3_SESSION_TOKEN:-}"
+      WEBDIAG_AI_ACTIVE_RUN_LIMIT_PER_USER: "${WEBDIAG_AI_ACTIVE_RUN_LIMIT_PER_USER:-3}"
+      WEBDIAG_AI_ACTIVE_RUN_LIMIT_GLOBAL: "${WEBDIAG_AI_ACTIVE_RUN_LIMIT_GLOBAL:-100}"
 
   worker:
     build:
       context: .
       dockerfile: apps/worker/Dockerfile
     restart: unless-stopped
+    command: ["dramatiq", "--processes", "1", "--threads", "1", "webdiag_worker.actors"]
     volumes: []
     environment:
       WEBDIAG_BROKER_URL: "amqp://${RABBITMQ_DEFAULT_USER:-webdiag}:${RABBITMQ_DEFAULT_PASS:?set the production RabbitMQ password}@rabbitmq:5672/"
@@ -44,14 +39,6 @@ services:
       AI_GATEWAY_BASE_URL: "${AI_GATEWAY_BASE_URL:-https://ai-gateway.vercel.sh/v1}"
       AI_MODEL: "${AI_MODEL:-openai/gpt-5.6-sol}"
       AI_REASONING_EFFORT: "${AI_REASONING_EFFORT:-medium}"
-      WEBDIAG_AI_ARTIFACT_STORAGE: s3
-      WEBDIAG_AI_ARTIFACT_S3_ENDPOINT_URL: "${WEBDIAG_AI_ARTIFACT_S3_ENDPOINT_URL:?set the private artifact S3 HTTPS endpoint}"
-      WEBDIAG_AI_ARTIFACT_S3_REGION: "${WEBDIAG_AI_ARTIFACT_S3_REGION:?set the private artifact S3 region}"
-      WEBDIAG_AI_ARTIFACT_S3_BUCKET: "${WEBDIAG_AI_ARTIFACT_S3_BUCKET:?set the private artifact S3 bucket}"
-      WEBDIAG_AI_ARTIFACT_PREFIX: "${WEBDIAG_AI_ARTIFACT_PREFIX:-ai-uploads}"
-      WEBDIAG_AI_ARTIFACT_S3_ACCESS_KEY_ID: "${WEBDIAG_AI_ARTIFACT_S3_ACCESS_KEY_ID:?set the private artifact S3 access key}"
-      WEBDIAG_AI_ARTIFACT_S3_SECRET_ACCESS_KEY: "${WEBDIAG_AI_ARTIFACT_S3_SECRET_ACCESS_KEY:?set the private artifact S3 secret key}"
-      WEBDIAG_AI_ARTIFACT_S3_SESSION_TOKEN: "${WEBDIAG_AI_ARTIFACT_S3_SESSION_TOKEN:-}"
     depends_on:
       rabbitmq:
         condition: service_healthy

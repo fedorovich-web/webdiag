@@ -75,9 +75,16 @@ expect(api.WEBDIAG_ENVIRONMENT === "production", "API environment is not product
 expect(worker.WEBDIAG_ENVIRONMENT === "production", "worker environment is not production");
 expect(scheduler.WEBDIAG_ENVIRONMENT === "production", "scheduler environment is not production");
 expect(api.WEBDIAG_AI_RUNTIME_ENABLED === "true", "API AI runtime is disabled");
+expect(api.WEBDIAG_AI_ACTIVE_RUN_LIMIT_PER_USER === "3", "per-user AI run limit differs");
+expect(api.WEBDIAG_AI_ACTIVE_RUN_LIMIT_GLOBAL === "100", "global AI run limit differs");
 expect(api.WEBDIAG_ACCOUNT_COOKIE_SECURE === "true", "secure account cookies are disabled");
 expect(api.WEBDIAG_PUBLIC_RELEASE === "true" && web.PUBLIC_RELEASE === "true", "public release flag is disabled");
 expect(service("web").build?.args?.PUBLIC_RELEASE === "true", "web build public release flag is disabled");
+expect(
+  JSON.stringify(service("worker").command) ===
+    JSON.stringify(["dramatiq", "--processes", "1", "--threads", "1", "webdiag_worker.actors"]),
+  "worker concurrency is not bounded for the production MVP",
+);
 expect(web.WEBDIAG_API_INTERNAL_URL === "http://api:8000", "web API origin differs");
 expect(worker.WEBDIAG_AI_API_INTERNAL_URL === "http://api:8000", "worker AI API origin differs");
 expect(
@@ -108,13 +115,6 @@ const allowedEnvironmentPlacements = new Map([
   ["AI_GATEWAY_BASE_URL", ["worker"]],
   ["AI_MODEL", ["worker"]],
   ["AI_REASONING_EFFORT", ["worker"]],
-  ["WEBDIAG_AI_ARTIFACT_S3_ENDPOINT_URL", ["api", "worker"]],
-  ["WEBDIAG_AI_ARTIFACT_S3_REGION", ["api", "worker"]],
-  ["WEBDIAG_AI_ARTIFACT_S3_BUCKET", ["api", "worker"]],
-  ["WEBDIAG_AI_ARTIFACT_PREFIX", ["api", "worker"]],
-  ["WEBDIAG_AI_ARTIFACT_S3_ACCESS_KEY_ID", ["api", "worker"]],
-  ["WEBDIAG_AI_ARTIFACT_S3_SECRET_ACCESS_KEY", ["api", "worker"]],
-  ["WEBDIAG_AI_ARTIFACT_S3_SESSION_TOKEN", ["api", "worker"]],
 ]);
 for (const [name, allowedServices] of allowedEnvironmentPlacements) {
   for (const serviceName of expectedServices) {
@@ -154,24 +154,10 @@ const apiVolumes = service("api").volumes ?? [];
 expect(apiVolumes.length === 1 && apiVolumes[0].source === "account_data" && apiVolumes[0].target === "/data", "API volume topology differs");
 expect((service("worker").volumes ?? []).length === 0, "worker retains a volume mount");
 expect(JSON.stringify(Object.keys(model?.volumes ?? {}).sort()) === JSON.stringify(["account_data"]), "named volume inventory differs");
-
-const s3Fields = [
-  "WEBDIAG_AI_ARTIFACT_S3_ENDPOINT_URL",
-  "WEBDIAG_AI_ARTIFACT_S3_REGION",
-  "WEBDIAG_AI_ARTIFACT_S3_BUCKET",
-  "WEBDIAG_AI_ARTIFACT_PREFIX",
-  "WEBDIAG_AI_ARTIFACT_S3_ACCESS_KEY_ID",
-  "WEBDIAG_AI_ARTIFACT_S3_SECRET_ACCESS_KEY",
-  "WEBDIAG_AI_ARTIFACT_S3_SESSION_TOKEN",
-];
-expect(api.WEBDIAG_AI_ARTIFACT_STORAGE === "s3" && worker.WEBDIAG_AI_ARTIFACT_STORAGE === "s3", "artifact storage is not S3");
-for (const name of s3Fields) expect(api[name] === worker[name], `${name} differs between API and worker`);
-expect(api.WEBDIAG_AI_ARTIFACT_LOCAL_ROOT === undefined && worker.WEBDIAG_AI_ARTIFACT_LOCAL_ROOT === undefined, "local artifact storage is present");
-try {
-  const endpoint = new URL(api.WEBDIAG_AI_ARTIFACT_S3_ENDPOINT_URL);
-  expect(endpoint.protocol === "https:" && !endpoint.username && !endpoint.password && !endpoint.search && !endpoint.hash, "S3 endpoint is not private HTTPS configuration");
-} catch {
-  fail("S3 endpoint is invalid");
+for (const name of expectedServices) {
+  for (const key of Object.keys(environment(name))) {
+    expect(!key.startsWith("WEBDIAG_AI_ARTIFACT_"), `service ${name} received binary AI storage setting ${key}`);
+  }
 }
 
 console.log(`production AI Compose preflight passed: services=${expectedServices.length}`);

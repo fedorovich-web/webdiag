@@ -195,6 +195,39 @@ def test_worker_reconciles_ambiguous_completion_without_repeating_provider(
     assert paths[-1].endswith("/fail")
 
 
+def test_worker_fails_loudly_when_completion_recovery_is_unavailable(monkeypatch) -> None:
+    monkeypatch.setenv("WEBDIAG_AI_INTERNAL_TOKEN", "a" * 32)
+    monkeypatch.setenv("WEBDIAG_AI_API_INTERNAL_URL", "http://api:8000")
+    provider = FakeProvider()
+
+    def request_json(_method: str, path: str, payload=None):
+        if path.endswith("/claim"):
+            return {
+                "contract_version": "webdiag.ai.worker.v1",
+                "claim": {
+                    "run_id": "11111111-1111-4111-8111-111111111111",
+                    "attempt_number": 1,
+                    "lease_token": "lease-token-value-with-at-least-32-chars",
+                    "lease_expires_at": 1_900_000_000,
+                    "tool_id": "test_text_tool",
+                    "contract_version": "v1",
+                    "model_policy": "test-only",
+                    "input": {"content": "source"},
+                },
+            }
+        if path.endswith(("/complete", "/fail")):
+            raise RuntimeError("internal API unavailable")
+        return {"contract_version": "webdiag.ai.worker.v1", "state": "running"}
+
+    with (
+        patch("webdiag_worker.ai._request_json", side_effect=request_json),
+        pytest.raises(RuntimeError, match="AI completion recovery failed"),
+    ):
+        run_one_ai_job(provider, lease_renew_interval_seconds=30)
+
+    assert len(provider.requests) == 1
+
+
 def test_worker_rejects_image_claim_without_valid_reservation(monkeypatch) -> None:
     monkeypatch.setenv("WEBDIAG_AI_INTERNAL_TOKEN", "a" * 32)
     monkeypatch.setenv("WEBDIAG_AI_API_INTERNAL_URL", "http://api:8000")

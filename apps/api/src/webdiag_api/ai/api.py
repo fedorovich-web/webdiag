@@ -60,6 +60,8 @@ def get_ai_service() -> AIService:
         SqliteAIStore(
             settings.account_database_path,
             lease_seconds=settings.ai_lease_seconds,
+            active_run_limit_per_user=settings.ai_active_run_limit_per_user,
+            active_run_limit_global=settings.ai_active_run_limit_global,
         ),
         catalog=DEFAULT_AI_CATALOG,
         input_max_bytes=settings.ai_input_max_bytes,

@@ -143,11 +143,6 @@ test("production core and opt-in AI overlay have separate fail-closed preflights
     "WEBDIAG_AI_INTERNAL_TOKEN",
     "WEBDIAG_AI_SAFETY_IDENTIFIER_SECRET",
     "AI_GATEWAY_API_KEY",
-    "WEBDIAG_AI_ARTIFACT_S3_ENDPOINT_URL",
-    "WEBDIAG_AI_ARTIFACT_S3_REGION",
-    "WEBDIAG_AI_ARTIFACT_S3_BUCKET",
-    "WEBDIAG_AI_ARTIFACT_S3_ACCESS_KEY_ID",
-    "WEBDIAG_AI_ARTIFACT_S3_SECRET_ACCESS_KEY",
   ];
 
   assert.match(productionCompose, /WEBDIAG_ENVIRONMENT:\s*production/g);
@@ -183,9 +178,12 @@ test("production core and opt-in AI overlay have separate fail-closed preflights
     aiCompose,
     /AI_REASONING_EFFORT:\s*["']?\$\{AI_REASONING_EFFORT:-medium\}["']?/,
   );
-  assert.match(aiCompose, /WEBDIAG_AI_ARTIFACT_STORAGE:\s*s3/g);
-  assert.match(aiEnvironmentExample, /^WEBDIAG_AI_ARTIFACT_PREFIX=ai-uploads$/m);
-  assert.match(aiEnvironmentExample, /^WEBDIAG_AI_ARTIFACT_S3_SESSION_TOKEN=$/m);
+  assert.doesNotMatch(aiCompose, /WEBDIAG_AI_ARTIFACT_/);
+  assert.match(
+    aiCompose,
+    /command:\s*\["dramatiq",\s*"--processes",\s*"1",\s*"--threads",\s*"1",\s*"webdiag_worker\.actors"\]/,
+  );
+  assert.doesNotMatch(aiEnvironmentExample, /^WEBDIAG_AI_ARTIFACT_/m);
   assert.doesNotMatch(environmentExample, /change-me|replace-with/);
   assert.doesNotMatch(aiEnvironmentExample, /change-me|replace-with/);
 

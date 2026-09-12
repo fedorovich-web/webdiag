@@ -32,6 +32,8 @@ from webdiag_api.ai.safety import derive_safety_identifier
 from webdiag_api.ai.storage import (
     AIIdempotencyConflictError,
     AIInsufficientCreditsError,
+    AIQueueCapacityError,
+    AIRunLimitReachedError,
     AIRunStateError,
     AIUploadQuotaError,
     AIUploadUnavailableError,
@@ -284,6 +286,18 @@ class AIService:
             )
         except AIInsufficientCreditsError as error:
             raise AIServiceError(402, "ai_insufficient_credits", "Insufficient credits.") from error
+        except AIRunLimitReachedError as error:
+            raise AIServiceError(
+                429,
+                "ai_run_limit_reached",
+                "Too many AI runs are already queued or processing.",
+            ) from error
+        except AIQueueCapacityError as error:
+            raise AIServiceError(
+                503,
+                "ai_queue_capacity_reached",
+                "AI processing capacity is temporarily unavailable.",
+            ) from error
         except AIIdempotencyConflictError as error:
             raise AIServiceError(
                 409,

@@ -97,6 +97,8 @@ class Settings(BaseSettings):
     ai_artifact_prefix: str = "ai-uploads"
     ai_lease_seconds: int = Field(default=900, ge=60, le=3600)
     ai_lease_renew_interval_seconds: int = Field(default=300, ge=10, le=1200)
+    ai_active_run_limit_per_user: int = Field(default=3, ge=1, le=20)
+    ai_active_run_limit_global: int = Field(default=100, ge=1, le=10_000)
     ai_input_max_bytes: int = Field(
         default=262_144,
         ge=_MIN_AI_PAYLOAD_MAX_BYTES,
@@ -245,6 +247,8 @@ class Settings(BaseSettings):
             raise ValueError("AI text request body max must include bounded envelope overhead")
         if self.ai_lease_renew_interval_seconds >= self.ai_lease_seconds:
             raise ValueError("AI lease renew interval must be shorter than the AI lease")
+        if self.ai_active_run_limit_global < self.ai_active_run_limit_per_user:
+            raise ValueError("AI global active run limit must not be below the per-user limit")
         return self
 
 
