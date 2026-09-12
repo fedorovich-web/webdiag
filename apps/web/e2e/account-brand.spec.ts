@@ -17,7 +17,7 @@ const emptyOverview = {
   projects: [],
 };
 
-test.describe("account visual brand parity", () => {
+test.describe("account product presentation", () => {
   let assertBrowserClean: ReturnType<typeof installBrowserGuard>;
 
   test.beforeEach(async ({ page }) => {
@@ -31,6 +31,16 @@ test.describe("account visual brand parity", () => {
 
   test.afterEach(async ({}, testInfo) => {
     await assertBrowserClean(testInfo);
+  });
+
+  test("first-use dashboard speaks in user-facing product language", async ({ page }) => {
+    await page.goto("/account");
+
+    await expect(page.getByRole("heading", { level: 1, name: "Добавьте первый сайт" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 2, name: "Добавьте сайт в WebDiag" })).toBeVisible();
+    await expect(page.getByText(/запускать проверки, сохранять результаты и следить за изменениями/i)).toBeVisible();
+    await expect(page.locator("body")).not.toContainText(/WebDiag Workspace|канонический адрес проекта/i);
+    await expect(page.getByRole("button", { name: "Создать проект" })).toBeVisible();
   });
 
   test("dashboard uses the same Fresh Mint primary action system as the public site", async ({ page }) => {
