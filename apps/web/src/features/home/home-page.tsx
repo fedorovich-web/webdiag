@@ -1,7 +1,6 @@
 import Link from "next/link";
 import {
   Bot,
-  CheckCircle2,
   ChevronRight,
   FileSearch,
   FileText,
@@ -11,11 +10,9 @@ import {
   Map,
   MonitorCheck,
   Network,
-  Radar,
   Route,
   SearchCheck,
   ShieldCheck,
-  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import { getPublicTool, type Locale } from "@webdiag/tool-registry";
@@ -63,6 +60,13 @@ const knowledgeArtwork = [
   "/home/knowledge-robots.webp",
   "/home/knowledge-core-web-vitals.webp",
 ] as const;
+
+const heroAccentStyle = {
+  background: "var(--wd-button-bg)",
+  WebkitBackgroundClip: "text",
+  backgroundClip: "text",
+  color: "transparent",
+} as const;
 
 function IconBox({ icon: Icon }: { icon: LucideIcon }) {
   return <span className="wd-icon-box"><Icon aria-hidden="true" /></span>;
@@ -116,7 +120,6 @@ function MonitoringPreview({ locale }: { locale: Locale }) {
 export function HomePage({ locale }: { locale: Locale }) {
   const t = (value: { readonly ru: string; readonly en: string }) => localizeValue(value, locale);
   const toolsHref = toolsPath(locale);
-  const auditHref = locale === "ru" ? "/audit" : "/en/audit";
   const monitoringHref = locale === "ru" ? "/monitoring" : "/en/monitoring";
   const faqItems = homeContent.faq.map((item) => [t(item.question), t(item.answer)] as const);
   const popularTools = homeContent.popularTools.filter((item) => getPublicTool(item.slug));
@@ -127,7 +130,9 @@ export function HomePage({ locale }: { locale: Locale }) {
         <div className="shell wd-hero-grid">
           <div className="wd-hero-copy">
             <span className="wd-eyebrow">{t(homeContent.eyebrow)}</span>
-            <h1 id="home-title">{t(homeContent.title)}</h1>
+            <h1 id="home-title">
+              {locale === "ru" ? <>Проверка сайта на технические и <span style={heroAccentStyle}>SEO-ошибки</span></> : <>Check Your Website for Technical and <span style={heroAccentStyle}>SEO Issues</span></>}
+            </h1>
             <p className="wd-hero-lead">{t(homeContent.description)}</p>
             <HomeUrlCheckForm locale={locale} instance="hero" />
             <p className="wd-hero-note">{t(homeContent.heroNote)}</p>
@@ -139,7 +144,7 @@ export function HomePage({ locale }: { locale: Locale }) {
         <div className="shell wd-hero-benefits" aria-label={locale === "ru" ? "Преимущества WebDiag" : "WebDiag benefits"}>
           {homeContent.trustFacts.map((fact, index) => (
             <div className="wd-hero-benefit" key={t(fact)}>
-              <img src={benefitArtwork[index]} alt="" width="96" height="96" loading="eager" decoding="async" />
+              <img src={benefitArtwork[index]} alt="" width="192" height="192" loading="eager" decoding="async" />
               <span>{t(fact)}</span>
             </div>
           ))}
@@ -183,7 +188,7 @@ export function HomePage({ locale }: { locale: Locale }) {
               <article key={t(step.title)}><span className="wd-step-number">{index + 1}</span><div><h3>{t(step.title)}</h3><p>{t(step.description)}</p></div></article>
             ))}
           </div>
-          <img className="wd-process-accent" src="/home/process-accent.webp" alt="" width="420" height="280" loading="lazy" decoding="async" />
+          <img className="wd-process-accent" src="/home/process-accent.webp" alt="" width="512" height="512" loading="lazy" decoding="async" />
         </div>
       </section>
 
@@ -223,7 +228,7 @@ export function HomePage({ locale }: { locale: Locale }) {
             <div className="wd-resource-grid">
               {homeContent.resources.map((resource, index) => (
                 <Link className="wd-resource-card" href={t(resource.href)} key={t(resource.title)}>
-                  <div className="wd-resource-visual"><img src={knowledgeArtwork[index]} alt="" width="640" height="420" loading="lazy" decoding="async" /></div>
+                  <div className="wd-resource-visual"><img src={knowledgeArtwork[index]} alt="" width="512" height="512" loading="lazy" decoding="async" /></div>
                   <div><span className="wd-resource-label">{index === 0 ? "SEO" : index === 1 ? (locale === "ru" ? "Руководство" : "Guide") : (locale === "ru" ? "Аналитика" : "Analytics")}</span><h3>{t(resource.title)}</h3><p>{t(resource.description)}</p></div>
                 </Link>
               ))}
