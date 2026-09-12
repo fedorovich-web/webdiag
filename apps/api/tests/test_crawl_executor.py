@@ -89,6 +89,13 @@ def test_crawl_is_same_origin_query_free_robots_aware_and_projects_site_findings
             f"{origin}/": fetched(f"{origin}/", root),
             f"{origin}/about": fetched(f"{origin}/about", duplicate),
             f"{origin}/duplicate": fetched(f"{origin}/duplicate", duplicate),
+            f"{origin}/orphan": fetched(
+                f"{origin}/orphan",
+                (
+                    '<html><head><title>Orphan candidate</title>'
+                    '<meta name="description" content="Sitemap only"></head></html>'
+                ),
+            ),
         }
     )
 
@@ -102,6 +109,7 @@ def test_crawl_is_same_origin_query_free_robots_aware_and_projects_site_findings
         f"{origin}/",
         f"{origin}/about",
         f"{origin}/duplicate",
+        f"{origin}/orphan",
     ]
     assert result.pages[0].internal_links == (
         f"{origin}/about",
@@ -110,6 +118,7 @@ def test_crawl_is_same_origin_query_free_robots_aware_and_projects_site_findings
     )
     assert result.sitemap_url == f"{origin}/sitemap.xml"
     assert result.sitemap_url_count == 4
+    assert result.sitemap_complete is True
     assert result.orphan_urls == (f"{origin}/orphan",)
     assert result.duplicate_titles[0].urls == (
         f"{origin}/about",
@@ -118,8 +127,8 @@ def test_crawl_is_same_origin_query_free_robots_aware_and_projects_site_findings
     assert result.duplicate_descriptions[0].value == "Same description"
     assert result.page_budget_exhausted is False
     assert result.contract_version == "webdiag.site_audit.result.v1"
-    assert result.audit_summary.pages_audited == 3
-    assert result.audit_summary.pages_with_issues == 3
+    assert result.audit_summary.pages_audited == 4
+    assert result.audit_summary.pages_with_issues == 4
     assert result.audit_summary.unique_issue_count == len(result.issues)
     assert result.audit_summary.issue_occurrence_count == sum(
         issue.affected_url_count for issue in result.issues
@@ -335,6 +344,7 @@ def test_crawl_fails_closed_when_root_is_disallowed_or_not_html() -> None:
 
 def test_crawl_does_not_treat_sitemap_index_children_as_page_urls() -> None:
     origin = "https://example.com"
+    post_url = f"{origin}/post"
     fetcher = FixtureFetcher(
         {
             f"{origin}/robots.txt": SafeFetchError("missing"),
@@ -345,6 +355,84 @@ def test_crawl_does_not_treat_sitemap_index_children_as_page_urls() -> None:
                 </sitemapindex>""",
                 content_type="application/xml",
             ),
+            f"{origin}/posts-sitemap.xml": fetched(
+                f"{origin}/posts-sitemap.xml",
+                f"<urlset><url><loc>{post_url}</loc></url></urlset>",
+                content_type="application/xml",
+            ),
+            f"{origin}/": fetched(
+                f"{origin}/",
+                "<html><head><title>Home</title></head></html>",
+            ),
+            post_url: fetched(
+                post_url,
+                "<html><head><title>Post</title></head></html>",
+            ),
+        }
+    )
+
+    result = crawl_origin(origin, fetcher=fetcher, config=CrawlConfig())
+
+    assert result.sitemap_url == f"{origin}/sitemap.xml"
+    assert result.sitemap_url_count == 1
+    assert result.sitemap_complete is True
+    assert [page.url for page in result.pages] == [f"{origin}/", post_url]
+    assert result.orphan_urls == (post_url,)
+
+
+def test_site_audit_uses_same_origin_sitemap_urls_after_link_graph_is_exhausted() -> None:
+    origin = "https://example.com"
+    hidden_url = f"{origin}/sitemap-only"
+    fetcher = FixtureFetcher(
+        {
+            f"{origin}/robots.txt": SafeFetchError("missing"),
+            f"{origin}/sitemap.xml": fetched(
+                f"{origin}/sitemap.xml",
+                (
+                    "<urlset>"
+                    f"<url><loc>{origin}/</loc></url>"
+                    f"<url><loc>{hidden_url}</loc></url>"
+                    "</urlset>"
+                ),
+                content_type="application/xml",
+            ),
+            f"{origin}/": fetched(
+                f"{origin}/",
+                "<html><head><title>Home</title></head></html>",
+            ),
+            hidden_url: fetched(
+                hidden_url,
+                "<html><head><title>Sitemap only</title></head></html>",
+            ),
+        }
+    )
+
+    result = crawl_origin(origin, fetcher=fetcher, config=CrawlConfig())
+
+    assert [page.url for page in result.pages] == [f"{origin}/", hidden_url]
+    assert result.page_budget_exhausted is False
+    assert result.orphan_urls == (hidden_url,)
+    orphan_issue = next(
+        issue for issue in result.issues if issue.issue_id == "site.crawlability.orphan_candidate"
+    )
+    assert orphan_issue.affected_urls == (hidden_url,)
+
+
+def test_incomplete_sitemap_index_never_produces_orphan_claims() -> None:
+    origin = "https://example.com"
+    fetcher = FixtureFetcher(
+        {
+            f"{origin}/robots.txt": SafeFetchError("missing"),
+            f"{origin}/sitemap.xml": fetched(
+                f"{origin}/sitemap.xml",
+                (
+                    "<sitemapindex>"
+                    f"<sitemap><loc>{origin}/missing-sitemap.xml</loc></sitemap>"
+                    "</sitemapindex>"
+                ),
+                content_type="application/xml",
+            ),
+            f"{origin}/missing-sitemap.xml": SafeFetchError("missing"),
             f"{origin}/": fetched(
                 f"{origin}/",
                 "<html><head><title>Home</title></head></html>",
@@ -354,6 +442,9 @@ def test_crawl_does_not_treat_sitemap_index_children_as_page_urls() -> None:
 
     result = crawl_origin(origin, fetcher=fetcher, config=CrawlConfig())
 
-    assert result.sitemap_url is None
-    assert result.sitemap_url_count == 0
+    assert result.sitemap_url == f"{origin}/sitemap.xml"
+    assert result.sitemap_complete is False
     assert result.orphan_urls == ()
+    assert not any(
+        issue.issue_id == "site.crawlability.orphan_candidate" for issue in result.issues
+    )

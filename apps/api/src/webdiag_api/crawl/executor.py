@@ -41,6 +41,9 @@ class CrawlExecutionError(RuntimeError):
 DEFAULT_CRAWL_PAGE_LIMIT = 100
 MAX_CRAWL_PAGE_LIMIT = 500
 MAX_DISCOVERED_LINKS_PER_PAGE = 500
+MAX_DISCOVERED_URLS = 10_000
+MAX_SITEMAP_FILES = 20
+MAX_SITEMAP_URLS = 10_000
 MAX_REPORTED_INTERNAL_LINKS_PER_PAGE = 25
 MAX_AFFECTED_URL_SAMPLES = 25
 
@@ -110,25 +113,34 @@ def crawl_origin(
         pass
 
     sitemap_candidates.append(f"{normalized_origin}/sitemap.xml")
-    sitemap_url, sitemap_urls, sitemap_count = _load_sitemap(
+    sitemap_url, sitemap_urls, sitemap_count, sitemap_complete = _load_sitemap(
         sitemap_candidates,
         origin=normalized_origin,
         fetcher=fetcher,
     )
 
     queue: deque[str] = deque((f"{normalized_origin}/",))
+    sitemap_queue: deque[str] = deque(
+        url for url in sitemap_urls if url != f"{normalized_origin}/"
+    )
     queued = set(queue)
     discovered = set(queue)
+    discovery_budget_exhausted = False
     visited: set[str] = set()
     pages: list[AuditedCrawlPage] = []
     failures: list[CrawlPageFailure] = []
     issue_urls: dict[str, tuple[AuditIssue, list[str]]] = {}
 
-    while queue and len(pages) + len(failures) < config.page_limit:
+    while (queue or sitemap_queue) and len(pages) + len(failures) < config.page_limit:
         if monotonic() - started >= config.deadline_seconds:
             break
-        url = queue.popleft()
-        queued.discard(url)
+        if queue:
+            url = queue.popleft()
+            queued.discard(url)
+        else:
+            url = sitemap_queue.popleft()
+        if url in visited:
+            continue
         visited.add(url)
         if not _robots_allows(
             url,
@@ -173,8 +185,12 @@ def crawl_origin(
             base_url=final_url,
             origin=normalized_origin,
         )
-        discovered.update(internal_links)
         for link in internal_links:
+            if link not in discovered:
+                if len(discovered) >= MAX_DISCOVERED_URLS:
+                    discovery_budget_exhausted = True
+                    continue
+                discovered.add(link)
             if link not in visited and link not in queued:
                 queue.append(link)
                 queued.add(link)
@@ -199,10 +215,14 @@ def crawl_origin(
         )
 
     root_url = f"{normalized_origin}/"
-    page_budget_exhausted = bool(queue)
+    page_budget_exhausted = (
+        discovery_budget_exhausted
+        or bool(queue)
+        or any(url not in visited for url in sitemap_queue)
+    )
     orphan_urls = (
         ()
-        if page_budget_exhausted
+        if page_budget_exhausted or not sitemap_complete
         else tuple(sorted((set(sitemap_urls) - discovered) - {root_url}))[:100]
     )
     duplicate_titles = _duplicate_groups(pages, "title")
@@ -222,6 +242,7 @@ def crawl_origin(
         page_budget_exhausted=page_budget_exhausted,
         sitemap_url=sitemap_url,
         sitemap_url_count=sitemap_count,
+        sitemap_complete=sitemap_complete,
         duplicate_titles=duplicate_titles,
         duplicate_descriptions=duplicate_descriptions,
         orphan_urls=orphan_urls,
@@ -309,14 +330,33 @@ def _load_sitemap(
     *,
     origin: str,
     fetcher: SafeHttpFetcher,
-) -> tuple[str | None, tuple[str, ...], int]:
-    for raw_url in dict.fromkeys(candidates):
+) -> tuple[str | None, tuple[str, ...], int, bool]:
+    queue: deque[tuple[str, bool]] = deque()
+    queued: set[str] = set()
+    for raw_url in candidates:
         sitemap_url = _same_origin_url(raw_url, origin)
-        if sitemap_url is None:
+        if sitemap_url is not None and sitemap_url not in queued:
+            queue.append((sitemap_url, True))
+            queued.add(sitemap_url)
+
+    visited: set[str] = set()
+    page_urls: list[str] = []
+    page_url_set: set[str] = set()
+    primary_sitemap_url: str | None = None
+    complete = True
+    while queue:
+        sitemap_url, is_root_candidate = queue.popleft()
+        if sitemap_url in visited:
             continue
+        if len(visited) >= MAX_SITEMAP_FILES:
+            complete = False
+            break
+        visited.add(sitemap_url)
         try:
             response = fetcher.fetch(sitemap_url, allowed_origin=origin)
         except (SafeFetchError, UrlPolicyError):
+            if not is_root_candidate:
+                complete = False
             continue
         summary = parse_sitemap_xml(
             response.body_text,
@@ -325,22 +365,48 @@ def _load_sitemap(
             status_code=response.status_code,
         )
         if not summary.available or not summary.valid_xml:
+            if not is_root_candidate:
+                complete = False
             continue
         try:
             root = ElementTree.fromstring(response.body_text.encode("utf-8"))
         except ElementTree.ParseError:
+            if not is_root_candidate:
+                complete = False
             continue
-        if root.tag.rsplit("}", maxsplit=1)[-1] != "urlset":
+        kind = root.tag.rsplit("}", maxsplit=1)[-1]
+        if kind not in {"urlset", "sitemapindex"}:
+            if not is_root_candidate:
+                complete = False
             continue
-        clean = tuple(
-            dict.fromkeys(
-                url
-                for value in summary.loc_urls[:10_000]
-                if (url := _same_origin_url(value, origin)) is not None
-            )
-        )
-        return sitemap_url, clean, len(clean)
-    return None, (), 0
+        if primary_sitemap_url is None:
+            primary_sitemap_url = sitemap_url
+        if kind == "sitemapindex":
+            for raw_child in summary.loc_urls:
+                child = _same_origin_url(raw_child, origin)
+                if child is None:
+                    complete = False
+                    continue
+                if child in visited or child in queued:
+                    continue
+                if len(visited) + len(queue) >= MAX_SITEMAP_FILES:
+                    complete = False
+                    continue
+                queue.append((child, False))
+                queued.add(child)
+            continue
+        for raw_page_url in summary.loc_urls:
+            page_url = _same_origin_url(raw_page_url, origin)
+            if page_url is None or page_url in page_url_set:
+                continue
+            if len(page_urls) >= MAX_SITEMAP_URLS:
+                complete = False
+                continue
+            page_url_set.add(page_url)
+            page_urls.append(page_url)
+    if primary_sitemap_url is None:
+        return None, (), 0, False
+    return primary_sitemap_url, tuple(page_urls), len(page_urls), complete and not queue
 
 
 def _is_html(content_type: str | None) -> bool:
