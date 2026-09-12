@@ -1,5 +1,13 @@
 /* Final code-only polish for the approved homepage reference. */
 
+.wd-home .wd-hero-copy h1 {
+  margin-bottom: 28px !important;
+}
+
+.wd-home .wd-hero-lead {
+  margin-top: 0 !important;
+}
+
 .wd-home .wd-section-intro > p,
 .wd-home .wd-product-column .wd-section-intro > p,
 .wd-home .wd-knowledge-faq-section .wd-section-intro > p {
@@ -204,7 +212,7 @@ html[lang="en"] .wd-home .wd-platform-strip .shell > p::after {
   font-weight: 800;
 }
 
-/* Monitoring: clean baseline, evenly spaced data points and a true fixed month axis. */
+/* Monitoring: exact 128px coordinate space keeps SVG curve and HTML hotspots aligned. */
 .wd-home .wd-monitoring-dashboard {
   min-height: 302px;
   padding: 14px 15px 13px;
@@ -224,16 +232,17 @@ html[lang="en"] .wd-home .wd-platform-strip .shell > p::after {
 
 .wd-home .wd-monitoring-chart-visual {
   position: relative;
-  height: 128px;
-  margin: 2px 0 23px;
+  height: 128px !important;
+  min-height: 128px !important;
+  margin: 2px 0 10px;
 }
 
 .wd-home .wd-monitoring-chart-visual svg {
   display: block;
   width: 100%;
-  height: 128px;
-  min-height: 0 !important;
-  overflow: visible;
+  height: 128px !important;
+  min-height: 128px !important;
+  overflow: hidden !important;
 }
 
 .wd-home .wd-chart-grid-floor {
@@ -294,9 +303,9 @@ html[lang="en"] .wd-home .wd-platform-strip .shell > p::after {
 .wd-home .wd-chart-axis-labels {
   position: absolute;
   right: 0;
-  bottom: -19px;
+  bottom: 1px;
   left: 0;
-  height: 14px;
+  height: 12px;
   pointer-events: none;
 }
 
@@ -312,7 +321,7 @@ html[lang="en"] .wd-home .wd-platform-strip .shell > p::after {
 
 .wd-home .wd-monitoring-score-row {
   gap: 7px;
-  margin-top: 5px;
+  margin-top: 4px;
 }
 
 .wd-home .wd-monitoring-score-row > div {
