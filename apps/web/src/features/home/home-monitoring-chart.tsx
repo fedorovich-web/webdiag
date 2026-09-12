@@ -15,31 +15,31 @@ interface ChartPoint {
   readonly text: string;
 }
 
-const viewBox = { width: 560, height: 128, floor: 106 } as const;
+const viewBox = { width: 560, height: 128 } as const;
 
 const points: Record<Locale, readonly ChartPoint[]> = {
   ru: [
-    { x: 52, y: 84, label: "Янв", title: "Стартовая проверка", text: "SEO-здоровье проекта: 31" },
-    { x: 144, y: 86, label: "Фев", title: "Повторная проверка", text: "состояние проекта стабильно" },
-    { x: 236, y: 72, label: "Мар", title: "После исправлений", text: "исправлены ошибки мета-тегов" },
-    { x: 328, y: 55, label: "Апр", title: "Рост качества", text: "устранены технические проблемы" },
-    { x: 420, y: 43, label: "Май", title: "Стабильный результат", text: "основные проверки проходят успешно" },
-    { x: 510, y: 42, label: "Июн", title: "Текущее состояние", text: "SEO-здоровье проекта: 78" },
+    { x: 40, y: 88, label: "Янв", title: "Стартовая проверка", text: "SEO-здоровье проекта: 31" },
+    { x: 136, y: 82, label: "Фев", title: "Первые исправления", text: "исправлены критичные ошибки" },
+    { x: 232, y: 72, label: "Мар", title: "Стабильный рост", text: "улучшены мета-теги и структура" },
+    { x: 328, y: 58, label: "Апр", title: "Рост качества", text: "устранены технические проблемы" },
+    { x: 424, y: 48, label: "Май", title: "Стабильный результат", text: "основные проверки проходят успешно" },
+    { x: 520, y: 34, label: "Июн", title: "Текущее состояние", text: "SEO-здоровье проекта: 78" },
   ],
   en: [
-    { x: 52, y: 84, label: "Jan", title: "Initial check", text: "project SEO health: 31" },
-    { x: 144, y: 86, label: "Feb", title: "Repeat check", text: "project health is stable" },
-    { x: 236, y: 72, label: "Mar", title: "After fixes", text: "metadata issues resolved" },
-    { x: 328, y: 55, label: "Apr", title: "Quality improved", text: "technical issues resolved" },
-    { x: 420, y: 43, label: "May", title: "Stable result", text: "core checks pass successfully" },
-    { x: 510, y: 42, label: "Jun", title: "Current state", text: "project SEO health: 78" },
+    { x: 40, y: 88, label: "Jan", title: "Initial check", text: "project SEO health: 31" },
+    { x: 136, y: 82, label: "Feb", title: "First fixes", text: "critical issues resolved" },
+    { x: 232, y: 72, label: "Mar", title: "Steady growth", text: "metadata and structure improved" },
+    { x: 328, y: 58, label: "Apr", title: "Quality improved", text: "technical issues resolved" },
+    { x: 424, y: 48, label: "May", title: "Stable result", text: "core checks pass successfully" },
+    { x: 520, y: 34, label: "Jun", title: "Current state", text: "project SEO health: 78" },
   ],
 };
 
 const linePath =
-  "M0 91 C24 89 38 86 52 84 C88 80 112 87 144 86 C178 85 204 77 236 72 C268 67 298 60 328 55 C360 49 388 44 420 43 C453 42 482 44 510 42 C530 40 546 35 560 31";
+  "M0 94 C18 93 28 90 40 88 C72 84 104 83 136 82 C168 81 200 76 232 72 C264 68 296 62 328 58 C360 54 392 50 424 48 C456 46 488 41 520 34 C536 31 548 28 560 25";
 const areaPath =
-  "M0 106 L0 91 C24 89 38 86 52 84 C88 80 112 87 144 86 C178 85 204 77 236 72 C268 67 298 60 328 55 C360 49 388 44 420 43 C453 42 482 44 510 42 C530 40 546 35 560 31 L560 106 Z";
+  "M0 108 L0 94 C18 93 28 90 40 88 C72 84 104 83 136 82 C168 81 200 76 232 72 C264 68 296 62 328 58 C360 54 392 50 424 48 C456 46 488 41 520 34 C536 31 548 28 560 25 L560 108 Z";
 
 export function HomeMonitoringChart({ locale }: HomeMonitoringChartProps) {
   const chartPoints = points[locale];
@@ -58,7 +58,6 @@ export function HomeMonitoringChart({ locale }: HomeMonitoringChartProps) {
         <path className="wd-chart-grid-line" d="M0 34 H560" />
         <path className="wd-chart-grid-line" d="M0 62 H560" />
         <path className="wd-chart-grid-line" d="M0 90 H560" />
-        <path className="wd-chart-grid-floor" d={`M0 ${viewBox.floor} H560`} />
         <path className="area" d={areaPath} />
         <path className="wd-chart-line-shadow-path" d={linePath} />
         <path className="line" d={linePath} />
