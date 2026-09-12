@@ -7,7 +7,7 @@ import { homeContent } from "../../../src/content/home";
 
 export const metadata: Metadata = pageMetadata({
   locale: "en",
-  title: "Technical SEO Audit and Website Diagnostics",
+  title: homeContent.seoTitle.en,
   description: homeContent.description.en,
   canonical: "/en",
   ruPath: "/",
