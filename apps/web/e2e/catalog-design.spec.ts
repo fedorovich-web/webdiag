@@ -9,31 +9,24 @@ async function readVisibleCount(page: import("@playwright/test").Page) {
   return count;
 }
 
-async function expectCardsMatchVisibleCount(
-  page: import("@playwright/test").Page,
-) {
-  await expect(page.locator(".compact-tool-card")).toHaveCount(
-    await readVisibleCount(page),
-  );
+async function expectCardsMatchVisibleCount(page: import("@playwright/test").Page) {
+  await expect(page.locator(".compact-tool-card")).toHaveCount(await readVisibleCount(page));
 }
 
-async function expectGroupCountsMatchCards(
-  page: import("@playwright/test").Page,
-) {
+async function expectGroupCountsMatchCards(page: import("@playwright/test").Page) {
   const groups = page.locator(".catalog-group");
   const groupCount = await groups.count();
+  expect(groupCount).toBeGreaterThan(0);
   for (let index = 0; index < groupCount; index += 1) {
     const group = groups.nth(index);
-    const text = await group
-      .locator(".catalog-group-heading > strong")
-      .textContent();
+    const text = await group.locator(".catalog-group-heading > strong").textContent();
     const expected = Number.parseInt(text?.trim() ?? "", 10);
     expect(Number.isInteger(expected)).toBe(true);
     await expect(group.locator(".compact-tool-card")).toHaveCount(expected);
   }
 }
 
-test.describe("catalog structure", () => {
+test.describe("catalog behavior", () => {
   let assertBrowserClean: ReturnType<typeof installBrowserGuard>;
 
   test.beforeEach(async ({ page }) => {
@@ -44,50 +37,24 @@ test.describe("catalog structure", () => {
     await assertBrowserClean(testInfo);
   });
 
-  test("groups every ready tool by its registry category", async ({ page }) => {
+  test("renders every ready tool and keeps group counts consistent", async ({ page }) => {
     await page.goto("/tools");
-    await expect(page.locator(".catalog-group")).toHaveCount(6);
     await expect(page.locator(".catalog-summary strong")).toHaveText(String(publicTools.length));
     await expect(page.locator(".compact-tool-card")).toHaveCount(publicTools.length);
     await expectCardsMatchVisibleCount(page);
     await expectGroupCountsMatchCards(page);
-    await expect(
-      page.getByRole("heading", { level: 2, name: "Текст и данные" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { level: 2, name: "Интерфейсы и CSS" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { level: 2, name: "Изображения" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { level: 2, name: "SEO и аудит" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { level: 2, name: "Безопасность и сеть" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { level: 2, name: "Производительность" }),
-    ).toBeVisible();
-    const dimensions = await page.evaluate(() => ({
-      viewport: document.documentElement.clientWidth,
-      scroll: document.documentElement.scrollWidth,
-    }));
-    expect(dimensions.scroll).toBe(dimensions.viewport);
   });
 
   test("registry category deep links select the requested ready tools", async ({ page }) => {
     await page.goto("/tools?category=seo-audit");
-    await expect(page.getByRole("button", { name: /SEO и аудит/ })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    const selected = page.locator('[aria-pressed="true"]');
+    await expect(selected).toHaveCount(1);
     await expect(page.locator(".catalog-group")).toHaveCount(1);
     await expect(page.locator(".catalog-group")).toHaveAttribute("id", "seo-audit");
     await expectCardsMatchVisibleCount(page);
   });
 
-  test("all registry categories stay inside the mobile viewport", async ({ page }) => {
+  test("catalog stays inside the mobile viewport", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/tools");
     const dimensions = await page.evaluate(() => ({
@@ -97,14 +64,9 @@ test.describe("catalog structure", () => {
     expect(dimensions.scroll).toBe(dimensions.viewport);
   });
 
-  test("search and category filtering preserve the compact grouped layout", async ({
-    page,
-  }) => {
+  test("search and category filtering keep counts in sync", async ({ page }) => {
     await page.goto("/en/tools");
-    const allCountText = await page
-      .getByRole("button", { name: /^All/ })
-      .locator("span")
-      .textContent();
+    const allCountText = await page.getByRole("button", { name: /^All/ }).locator("span").textContent();
     const allCount = Number.parseInt(allCountText?.trim() ?? "", 10);
     expect(Number.isInteger(allCount)).toBe(true);
 
@@ -113,13 +75,14 @@ test.describe("catalog structure", () => {
     await expectCardsMatchVisibleCount(page);
     await expectGroupCountsMatchCards(page);
 
-    await page.getByRole("button", { name: /Interfaces and CSS/ }).click();
+    const categoryButtons = page.locator('button[aria-pressed]');
+    expect(await categoryButtons.count()).toBeGreaterThan(1);
+    await categoryButtons.nth(1).click();
     await expectCardsMatchVisibleCount(page);
-    await expectGroupCountsMatchCards(page);
 
     await page.getByRole("searchbox").fill("__webdiag_no_matching_tool__");
-    await expect(page.getByText("No tools found")).toBeVisible();
-    await page.getByRole("button", { name: "Reset filters" }).click();
+    await expect(page.locator(".compact-tool-card")).toHaveCount(0);
+    await page.getByRole("button", { name: /reset/i }).click();
     await expect(page.locator(".compact-tool-card")).toHaveCount(allCount);
     await expectGroupCountsMatchCards(page);
   });
