@@ -26,7 +26,7 @@ export const homeContent: HomeContent = {
   trustFacts: [
     { ru: "140+ инструментов для SEO и диагностики", en: "140+ tools for SEO and diagnostics" },
     { ru: "Понятные отчёты с приоритетами", en: "Clear reports with priorities" },
-    { ru: "Повторные проверки и мониторинг", en: "Re-checks and monitoring" },
+    { ru: "Экономия времени для владельцев и SEO-специалистов", en: "Save time for site owners and SEO specialists" },
   ],
 
   platformsTitle: {
@@ -73,9 +73,9 @@ export const homeContent: HomeContent = {
       description: { ru: "Title, description, robots, canonical, Open Graph и JSON-LD.", en: "Title, description, robots, canonical, Open Graph and JSON-LD." },
     },
     {
-      slug: "canonical-checker",
-      title: { ru: "Проверка canonical", en: "Canonical check" },
-      description: { ru: "Найдите отсутствующие, конфликтующие и некорректные canonical-ссылки.", en: "Find missing, conflicting or incorrect canonical references." },
+      slug: "ssl-certificate-checker",
+      title: { ru: "Проверка HTTPS", en: "HTTPS check" },
+      description: { ru: "SSL-сертификат, HTTPS и основные параметры защищённого соединения.", en: "SSL certificate, HTTPS and core secure-connection parameters." },
     },
     {
       slug: "image-seo-audit",
