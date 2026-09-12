@@ -82,19 +82,26 @@ function ReportExample({ locale }: { locale: Locale }) {
         <span>{ru ? "Параметры" : "Parameters"}</span>
         <span>{ru ? "Сравнение" : "Comparison"}</span>
       </div>
-      <div className="wd-report-table-head" aria-hidden="true">
-        <span>{ru ? "Проблема" : "Issue"}</span><span>{ru ? "Страницы" : "Pages"}</span><span>{ru ? "Приоритет" : "Priority"}</span>
-      </div>
-      <div className="wd-report-issue-list">
-        <div><span className="wd-issue-dot is-critical" /><strong>{ru ? "Отсутствует meta description" : "Meta description is missing"}</strong><b>12</b><span className="wd-priority-mark is-critical">{ru ? "Критический" : "Critical"}</span></div>
-        <div><span className="wd-issue-dot is-high" /><strong>{ru ? "Битые ссылки" : "Broken links"}</strong><b>4</b><span className="wd-priority-mark is-high">{ru ? "Высокий" : "High"}</span></div>
-        <div><span className="wd-issue-dot is-warning" /><strong>{ru ? "Слишком большие изображения" : "Oversized images"}</strong><b>23</b><span className="wd-priority-mark is-warning">{ru ? "Средний" : "Medium"}</span></div>
-        <div><span className="wd-issue-dot is-warning" /><strong>{ru ? "Не настроен robots.txt" : "robots.txt needs attention"}</strong><b>1</b><span className="wd-priority-mark is-warning">{ru ? "Средний" : "Medium"}</span></div>
-        <div><span className="wd-issue-dot is-warning" /><strong>{ru ? "Отсутствует canonical" : "Canonical is missing"}</strong><b>8</b><span className="wd-priority-mark is-warning">{ru ? "Средний" : "Medium"}</span></div>
-      </div>
       <div className="wd-report-bottom-row">
+        <div>
+          <div className="wd-report-table-head" aria-hidden="true">
+            <span>{ru ? "Проблема" : "Issue"}</span><span>{ru ? "Страницы" : "Pages"}</span><span>{ru ? "Приоритет" : "Priority"}</span>
+          </div>
+          <div className="wd-report-issue-list">
+            <div><span className="wd-issue-dot is-critical" /><strong>{ru ? "Отсутствует meta description" : "Meta description is missing"}</strong><b>12</b><span className="wd-priority-mark is-critical">{ru ? "Критический" : "Critical"}</span></div>
+            <div><span className="wd-issue-dot is-high" /><strong>{ru ? "Битые ссылки" : "Broken links"}</strong><b>4</b><span className="wd-priority-mark is-high">{ru ? "Высокий" : "High"}</span></div>
+            <div><span className="wd-issue-dot is-warning" /><strong>{ru ? "Слишком большие изображения" : "Oversized images"}</strong><b>23</b><span className="wd-priority-mark is-warning">{ru ? "Средний" : "Medium"}</span></div>
+            <div><span className="wd-issue-dot is-warning" /><strong>{ru ? "Не настроен robots.txt" : "robots.txt needs attention"}</strong><b>1</b><span className="wd-priority-mark is-warning">{ru ? "Средний" : "Medium"}</span></div>
+            <div><span className="wd-issue-dot is-warning" /><strong>{ru ? "Отсутствует canonical" : "Canonical is missing"}</strong><b>8</b><span className="wd-priority-mark is-warning">{ru ? "Средний" : "Medium"}</span></div>
+          </div>
+        </div>
+        <div className="wd-report-recommendation">
+          <strong>{ru ? "Отсутствует meta description" : "Meta description is missing"}</strong>
+          <small>{ru ? "12 страниц (4,8% страниц)" : "12 pages (4.8% of pages)"}</small>
+          <p><b>{ru ? "Рекомендация" : "Recommendation"}</b><br />{ru ? "Добавьте уникальные meta description для всех важных страниц сайта." : "Add unique meta descriptions to all important pages."}</p>
+          <span>{ru ? "Как исправить?" : "How to fix it"} →</span>
+        </div>
         <Link href={ru ? "/audit" : "/en/audit"}>{ru ? "Смотреть полный пример отчёта" : "View full report example"}<span aria-hidden="true">→</span></Link>
-        <div className="wd-report-recommendation"><strong>{ru ? "Рекомендация" : "Recommendation"}</strong><p>{ru ? "Добавьте уникальные meta description для всех важных страниц сайта." : "Add unique meta descriptions to all important pages."}</p><span>{ru ? "Как исправить?" : "How to fix it"} →</span></div>
       </div>
     </article>
   );
