@@ -4,7 +4,7 @@ import { pageMetadata } from "../../../src/lib/seo";
 export const metadata: Metadata = pageMetadata({
   locale: "ru",
   title: "Политика конфиденциальности",
-  description: "Политика конфиденциальности WebDiag: какие данные обрабатываются при использовании сайта, инструментов и будущих проверок.",
+  description: "Политика конфиденциальности WebDiag: какие данные обрабатываются при использовании сайта, инструментов, аудита и личного кабинета.",
   canonical: "/privacy",
   ruPath: "/privacy",
   enPath: "/en/privacy",
@@ -17,7 +17,7 @@ export default function Page() {
         <span className="eyebrow">WebDiag</span>
         <h1>Политика конфиденциальности</h1>
         <p>
-          Документ описывает базовые принципы обработки данных на сайте WebDiag, в каталоге инструментов и в будущих сценариях технического аудита.
+          Документ описывает базовые принципы обработки данных при использовании сайта WebDiag, инструментов, аудита и личного кабинета.
         </p>
       </header>
       <section className="wd-internal-grid wd-legal-grid" aria-label="Разделы политики конфиденциальности">
@@ -35,8 +35,8 @@ export default function Page() {
         </article>
       </section>
       <section className="wd-internal-note">
-        <strong>Полная юридическая редакция будет уточнена перед публичным запуском</strong>
-        <p>До production-релиза текст политики должен быть проверен с учётом фактической архитектуры, хранения данных, аналитики, платежей и уведомлений.</p>
+        <strong>Контакты по вопросам конфиденциальности</strong>
+        <p>Если у вас есть вопрос об обработке данных, напишите на <a href="mailto:support@webdiag.ru">support@webdiag.ru</a>.</p>
       </section>
     </main>
   );
