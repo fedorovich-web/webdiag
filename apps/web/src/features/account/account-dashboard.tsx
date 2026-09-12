@@ -111,14 +111,14 @@ export function AccountDashboard({
     return (
       <section className="wd-project-archive-list" aria-labelledby="project-archive-title">
         <div className="wd-project-list-head">
-          <div><span className="eyebrow">{ru ? "Восстановление" : "Recovery"}</span><h2 id="project-archive-title">{ru ? "Архив проектов" : "Project archive"}</h2></div>
+          <div><span className="eyebrow">{ru ? "Архив" : "Archive"}</span><h2 id="project-archive-title">{ru ? "Архивированные проекты" : "Archived projects"}</h2></div>
           {archiveState === "ready" && <strong>{archivedProjects.length}</strong>}
         </div>
-        {archiveState === "idle" || archiveState === "failed" ? <button className="wd-button wd-button-secondary" type="button" onClick={loadArchivedProjects}>{ru ? "Показать архив" : "Show archive"}</button> : archiveState === "loading" ? <p aria-live="polite">{ru ? "Загружаем архив…" : "Loading archive…"}</p> : archivedProjects.length === 0 ? <p>{ru ? "В архиве нет проектов." : "There are no archived projects."}</p> : (
+        {archiveState === "idle" || archiveState === "failed" ? <button className="wd-button wd-button-secondary" type="button" onClick={loadArchivedProjects}>{ru ? "Открыть архив" : "Open archive"}</button> : archiveState === "loading" ? <p aria-live="polite">{ru ? "Загружаем архив…" : "Loading archive…"}</p> : archivedProjects.length === 0 ? <p>{ru ? "Архивированных проектов нет." : "There are no archived projects."}</p> : (
           <div className="wd-project-archive-items">
             {archivedProjects.map((project) => (
               <article key={project.id}>
-                <div><strong>{project.name}</strong><p>{project.origin}</p><small>{ru ? "Архивирован" : "Archived"}: {formatAccountDate(project.archived_at, locale)}</small></div>
+                <div><strong>{project.name}</strong><p>{project.origin}</p><small>{ru ? "В архиве с" : "Archived"}: {formatAccountDate(project.archived_at, locale)}</small></div>
                 <button className="wd-button wd-button-secondary" type="button" onClick={() => restoreProject(project.id)} disabled={restorePendingId !== null} aria-busy={restorePendingId === project.id}>{restorePendingId === project.id ? (ru ? "Восстанавливаем…" : "Restoring…") : (ru ? "Восстановить" : "Restore")}</button>
               </article>
             ))}
@@ -138,12 +138,12 @@ export function AccountDashboard({
         <div>
           <span className="eyebrow">{ru ? "Новый проект" : "New project"}</span>
           <h2 id={primary ? "project-create-title" : "project-create-title-secondary"}>
-            {ru ? "Добавьте сайт для первой проверки" : "Add a site for the first check"}
+            {ru ? "Добавьте сайт в WebDiag" : "Add a website to WebDiag"}
           </h2>
           <p>
             {ru
-              ? "Укажите название и публичный домен. WebDiag сохранит канонический адрес проекта."
-              : "Enter a name and public domain. WebDiag will store the canonical project origin."}
+              ? "Укажите название проекта и адрес сайта. Этот домен будет использоваться для аудитов, отчётов и мониторинга."
+              : "Enter a project name and website address. This domain will be used for audits, reports and monitoring."}
           </p>
         </div>
         <form className="wd-project-create-form" onSubmit={createProject} aria-busy={createPending}>
@@ -160,7 +160,7 @@ export function AccountDashboard({
             />
           </label>
           <label>
-            {ru ? "Домен" : "Domain"}
+            {ru ? "Адрес сайта" : "Website address"}
             <input
               value={origin}
               onChange={(event: ChangeEvent<HTMLInputElement>) => setOrigin(event.target.value)}
@@ -173,8 +173,8 @@ export function AccountDashboard({
           </label>
           <button className="wd-button wd-button-primary" type="submit" disabled={createPending}>
             {createPending
-              ? (ru ? "Создаём…" : "Creating…")
-              : (ru ? "Создать проект" : "Create project")}
+              ? (ru ? "Добавляем…" : "Adding…")
+              : (ru ? "Добавить проект" : "Add project")}
           </button>
         </form>
       </section>
@@ -204,15 +204,15 @@ export function AccountDashboard({
         </header>
         <dl>
           <div>
-            <dt>{ru ? "Последний аудит" : "Latest audit"}</dt>
-            <dd>{audit ? formatAccountDate(audit.completed_at, locale) : (ru ? "Не запускался" : "Not run")}</dd>
+            <dt>{ru ? "Последняя проверка" : "Latest check"}</dt>
+            <dd>{audit ? formatAccountDate(audit.completed_at, locale) : (ru ? "Ещё не запускалась" : "Not run yet")}</dd>
           </div>
           <div>
             <dt>{ru ? "Оценка" : "Score"}</dt>
             <dd>{audit ? formatNullableScore(audit.score, locale) : "—"}</dd>
           </div>
           <div>
-            <dt>{ru ? "Проблемы" : "Issues"}</dt>
+            <dt>{ru ? "Найдено проблем" : "Issues"}</dt>
             <dd>{audit ? audit.issue_count : "—"}</dd>
           </div>
           <div>
@@ -224,7 +224,7 @@ export function AccountDashboard({
           <span>
             {monitor?.next_run_at
               ? `${ru ? "Следующая проверка" : "Next check"}: ${formatAccountDate(monitor.next_run_at, locale)}`
-              : (ru ? "Расписание не настроено" : "No schedule configured")}
+              : (ru ? "Автопроверки не настроены" : "Scheduled checks are not configured")}
           </span>
           <Link className="wd-button wd-button-secondary" href={projectPath(locale, item.project.id)}>
             {ru ? "Открыть проект" : "Open project"}
@@ -239,12 +239,12 @@ export function AccountDashboard({
       <div className="wd-account-overview is-first-use">
         <header className="wd-account-dashboard-head">
           <div>
-            <span className="eyebrow">WebDiag Workspace</span>
-            <h1>{ru ? "Создайте первый проект" : "Create your first project"}</h1>
+            <span className="eyebrow">{ru ? "Личный кабинет" : "Account"}</span>
+            <h1>{ru ? "Добавьте первый сайт" : "Add your first website"}</h1>
             <p>
               {ru
-                ? `${session.user.display_name}, начните с сайта, который нужно проверить.`
-                : `${session.user.display_name}, start with the site you need to check.`}
+                ? `${session.user.display_name}, создайте проект, чтобы запускать проверки и сохранять результаты.`
+                : `${session.user.display_name}, create a project to run checks and keep the results.`}
             </p>
           </div>
         </header>
@@ -262,12 +262,12 @@ export function AccountDashboard({
     <div className="wd-account-overview">
       <header className="wd-account-dashboard-head wd-operation-heading">
         <div>
-          <span className="eyebrow">WebDiag Workspace</span>
-          <h1>{ru ? "Обзор" : "Overview"}</h1>
+          <span className="eyebrow">{ru ? "Личный кабинет" : "Account"}</span>
+          <h1>{ru ? "Обзор проектов" : "Project overview"}</h1>
           <p>
             {ru
-              ? `${session.user.display_name}, здесь собраны сохранённые результаты и следующие действия.`
-              : `${session.user.display_name}, your saved results and next actions are collected here.`}
+              ? `${session.user.display_name}, здесь видно состояние сайтов, последние проверки и задачи, которые требуют внимания.`
+              : `${session.user.display_name}, review website health, recent checks and tasks that need attention.`}
           </p>
         </div>
         <button className="wd-button wd-button-primary" type="button" onClick={openProjectCreation}>
@@ -278,9 +278,9 @@ export function AccountDashboard({
       {error && <p className="wd-account-error" role="alert">{error}</p>}
 
       {metrics && (
-        <section className="wd-operation-metrics" aria-label={ru ? "Сводка аккаунта" : "Account summary"}>
+        <section className="wd-operation-metrics" aria-label={ru ? "Сводка по проектам" : "Project summary"}>
           <article><strong>{metrics.projectCount}</strong><span>{ru ? "Проекты" : "Projects"}</span></article>
-          <article><strong>{metrics.projectsWithAudit}</strong><span>{ru ? "С аудитами" : "With audits"}</span></article>
+          <article><strong>{metrics.projectsWithAudit}</strong><span>{ru ? "Проверены" : "Checked"}</span></article>
           <article><strong>{metrics.projectsRequiringAttention}</strong><span>{ru ? "Требуют внимания" : "Need attention"}</span></article>
           <article><strong>{metrics.readyReportCount}</strong><span>{ru ? "Готовые отчёты" : "Ready reports"}</span></article>
         </section>
@@ -289,8 +289,8 @@ export function AccountDashboard({
       {overview && actions.length > 0 && (
         <section className="wd-operation-actions" aria-labelledby="account-next-actions-title">
           <div>
-            <span className="eyebrow">{ru ? "Приоритет" : "Priority"}</span>
-            <h2 id="account-next-actions-title">{ru ? "Что сделать дальше" : "What to do next"}</h2>
+            <span className="eyebrow">{ru ? "Следующие шаги" : "Next steps"}</span>
+            <h2 id="account-next-actions-title">{ru ? "Что требует внимания" : "What needs attention"}</h2>
           </div>
           <div className="wd-operation-action-list">
             {actions.map((action) => (
@@ -298,7 +298,7 @@ export function AccountDashboard({
                 key={`${action.kind}:${action.projectId ?? "account"}`}
                 href={accountNextActionHref(locale, action, overview)}
               >
-                <span>{action.projectName ?? (ru ? "Рабочая область" : "Workspace")}</span>
+                <span>{action.projectName ?? (ru ? "Все проекты" : "All projects")}</span>
                 <strong>{action.label}</strong>
               </Link>
             ))}
@@ -309,8 +309,8 @@ export function AccountDashboard({
       <section id="projects" className="wd-operation-projects" aria-labelledby="project-list-title">
         <div className="wd-project-list-head">
           <div>
-            <span className="eyebrow">{ru ? "Рабочая область" : "Workspace"}</span>
-            <h2 id="project-list-title">{ru ? "Все проекты" : "All projects"}</h2>
+            <span className="eyebrow">{ru ? "Проекты" : "Projects"}</span>
+            <h2 id="project-list-title">{ru ? "Все сайты" : "All websites"}</h2>
           </div>
           <strong>{projects.length}</strong>
         </div>
@@ -332,7 +332,7 @@ export function AccountDashboard({
       </section>
 
       <details ref={createDetailsRef} id="project-create" className="wd-operation-add-project">
-        <summary>{ru ? "Добавить ещё один проект" : "Add another project"}</summary>
+        <summary>{ru ? "Добавить ещё один сайт" : "Add another website"}</summary>
         {projectCreatePanel(false)}
       </details>
       {projectArchivePanel()}
