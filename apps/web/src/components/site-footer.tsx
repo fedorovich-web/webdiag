@@ -1,49 +1,48 @@
 import Link from "next/link";
 import type { Locale } from "@webdiag/tool-registry";
-import { homeContent } from "../content/home";
-import { localizeValue } from "../content/types";
 import { SiteBrand } from "./site-brand";
 import { toolsPath } from "../lib/routes";
 
 export function SiteFooter({ locale }: { locale: Locale }) {
   const prefix = locale === "ru" ? "" : "/en";
-  const t = <T extends { readonly ru: string; readonly en: string }>(value: T) => localizeValue(value, locale);
   const text = locale === "ru"
     ? {
-        summary: "WebDiag помогает находить технические и SEO-ошибки, расставлять приоритеты исправлений и контролировать состояние сайта после изменений.",
+        summary: "Инструменты для диагностики и SEO-аудита сайтов.",
         product: "Продукт",
-        categories: "Категории",
         materials: "Материалы",
         company: "Компания",
-        legal: "Правовая информация",
+        account: "Аккаунт",
+        legal: "Документы",
         audit: "SEO-аудит",
         monitoring: "Мониторинг",
-        tools: "Инструменты",
+        tools: "Все инструменты",
         pricing: "Тарифы",
-        knowledge: "База знаний",
+        knowledge: "Руководства",
         blog: "Блог",
-        home: "О WebDiag",
+        home: "О проекте",
         register: "Создать аккаунт",
         login: "Войти",
         privacy: "Политика конфиденциальности",
+        copyright: "© 2026 WebDiag. Все права защищены.",
       }
     : {
-        summary: "WebDiag helps you find technical and SEO issues, prioritize fixes and monitor website health after changes.",
+        summary: "Tools for website diagnostics and technical SEO audits.",
         product: "Product",
-        categories: "Categories",
         materials: "Resources",
         company: "Company",
+        account: "Account",
         legal: "Legal",
         audit: "SEO audit",
         monitoring: "Monitoring",
-        tools: "Tools",
+        tools: "All tools",
         pricing: "Pricing",
-        knowledge: "Knowledge base",
+        knowledge: "Guides",
         blog: "Blog",
         home: "About WebDiag",
         register: "Create account",
         login: "Sign in",
         privacy: "Privacy policy",
+        copyright: "© 2026 WebDiag. All rights reserved.",
       };
 
   return (
@@ -56,28 +55,25 @@ export function SiteFooter({ locale }: { locale: Locale }) {
 
         <div className="footer-column">
           <strong>{text.product}</strong>
-          <Link href={`${prefix}/audit`}>{text.audit}</Link>
-          <Link href={`${prefix}/monitoring`}>{text.monitoring}</Link>
           <Link href={toolsPath(locale)}>{text.tools}</Link>
+          <Link href={`${prefix}/audit`}>{text.audit}</Link>
           <Link href={`${prefix}/pricing`}>{text.pricing}</Link>
-        </div>
-
-        <div className="footer-column">
-          <strong>{text.categories}</strong>
-          {homeContent.categories.map((category) => (
-            <Link href={`${toolsPath(locale)}?category=${category.id}`} key={category.id}>{t(category.title)}</Link>
-          ))}
+          <Link href={`${prefix}/monitoring`}>{text.monitoring}</Link>
         </div>
 
         <div className="footer-column">
           <strong>{text.materials}</strong>
-          <Link href={`${prefix}/knowledge`}>{text.knowledge}</Link>
           <Link href={`${prefix}/blog`}>{text.blog}</Link>
+          <Link href={`${prefix}/knowledge`}>{text.knowledge}</Link>
         </div>
 
         <div className="footer-column">
           <strong>{text.company}</strong>
           <Link href={prefix || "/"}>{text.home}</Link>
+        </div>
+
+        <div className="footer-column">
+          <strong>{text.account}</strong>
           <Link href={`${prefix}/register`}>{text.register}</Link>
           <Link href={`${prefix}/login`}>{text.login}</Link>
         </div>
@@ -88,8 +84,8 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         </div>
       </div>
       <div className="shell footer-bottom">
-        <span>© 2026 WebDiag</span>
-        <span>{locale === "ru" ? "Техническая диагностика и SEO-инструменты" : "Technical diagnostics and SEO tools"}</span>
+        <span>{text.copyright}</span>
+        <span>WebDiag</span>
       </div>
     </footer>
   );
