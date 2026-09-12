@@ -6,44 +6,75 @@
 
 @media (min-width: 1181px) {
   .wd-home {
-    --wd-section-y: 40px;
+    --wd-section-y: 38px;
   }
 
-  .wd-section-intro {
-    margin-bottom: 18px;
-  }
-
+  .wd-section-intro,
   .wd-section-headline {
     margin-bottom: 18px;
   }
 
+  .wd-hero {
+    padding: 42px 0 30px;
+  }
+
+  .wd-hero-copy {
+    padding: 8px 0 4px;
+  }
+
+  .wd-hero-visual {
+    min-height: 380px;
+  }
+
+  .wd-hero-dashboard {
+    width: 112%;
+    margin-left: -3%;
+  }
+
+  .wd-hero-benefits {
+    margin-top: 2px !important;
+  }
+
   .wd-platform-strip {
-    padding-top: 14px;
-    padding-bottom: 16px;
+    padding: 14px 0 16px;
   }
 
   .wd-process-section {
-    padding-top: 30px;
-    padding-bottom: 30px;
+    padding-top: 8px;
+    padding-bottom: 34px;
+  }
+
+  .wd-process-panel {
+    min-height: 160px;
+    padding: 22px 30px;
   }
 
   #checks {
-    padding-bottom: 40px;
+    padding-top: 0;
+    padding-bottom: 34px;
+  }
+
+  .wd-check-grid article {
+    min-height: 76px;
+    padding: 10px;
   }
 
   .wd-product-section {
-    padding-top: 34px;
-    padding-bottom: 34px;
+    padding-top: 8px;
+    padding-bottom: 32px;
+  }
+
+  .wd-monitoring-chart svg {
+    min-height: 124px;
   }
 
   .wd-knowledge-faq-section {
-    padding-top: 34px;
-    padding-bottom: 34px;
+    padding-top: 8px;
+    padding-bottom: 22px;
   }
 
   .wd-final-section {
-    padding-top: 24px;
-    padding-bottom: 24px;
+    padding: 20px 0;
   }
 
   .site-footer {
