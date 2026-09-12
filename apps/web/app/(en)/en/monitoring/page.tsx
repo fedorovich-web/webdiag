@@ -21,12 +21,12 @@ export default function Page() {
       </header>
       <section className="wd-internal-grid" aria-label="Monitoring capabilities">
         <article><h2>Scheduled checks</h2><p>Recurring control of availability, SSL, sitemap, robots.txt, canonical, noindex, and response statuses.</p></article>
-        <article><h2>Regressions</h2><p>Comparing post-release health with previous checks.</p></article>
-        <article><h2>History</h2><p>Dynamics of issues, fixes, and technical site health.</p></article>
+        <article><h2>Regressions</h2><p>Compare site health after a release with previous checks.</p></article>
+        <article><h2>History</h2><p>Track changes in issues, fixes, and technical site health over time.</p></article>
       </section>
       <section className="wd-internal-note">
-        <strong>Monitoring is available after sign-in</strong>
-        <p>In the account workspace, a user can set a schedule, run a manual check, and review saved history. Prices, subscriptions, and payments are not connected.</p>
+        <strong>Monitoring is available in the account workspace</strong>
+        <p>Add a project, run checks manually or on a schedule, and use saved history to track new and resolved issues.</p>
         <Link className="wd-button wd-button-primary" href="/en/register">Create an account</Link>
       </section>
     </main>
