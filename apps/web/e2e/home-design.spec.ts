@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { installBrowserGuard } from "./browser-guard";
 
-test.describe("home information architecture", () => {
+test.describe("home redesign contract", () => {
   let assertBrowserClean: ReturnType<typeof installBrowserGuard>;
 
   test.beforeEach(async ({ page }) => {
@@ -12,213 +12,107 @@ test.describe("home information architecture", () => {
     await assertBrowserClean(testInfo);
   });
 
-  test("desktop home exposes report-first website audit positioning", async ({
-    page,
-  }) => {
+  test("Russian homepage exposes the approved production information architecture", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/");
 
-    await expect(
-      page.getByRole("heading", {
-        level: 1,
-        name: "Найдите ошибки сайта до потери SEO-трафика",
-      }),
-    ).toBeVisible();
-    await expect(page.locator(".wd-hero-report")).toBeVisible();
-    await expect(page.locator(".wd-report-frame")).toBeVisible();
-    await expect(page.locator(".wd-report-tabs [role='tab']")).toHaveCount(8);
-    await expect(page.locator(".wd-coverage-grid article")).toHaveCount(10);
-    await expect(page.locator(".wd-priority-grid article")).toHaveCount(4);
-    await expect(page.locator(".wd-tool-category-card")).toHaveCount(8);
-    await expect(page.locator(".wd-faq-item")).toHaveCount(6);
-    await expect(
-      page.getByRole("heading", { level: 2, name: "Что доступно сейчас" }),
-    ).toBeVisible();
-    const availability = page.locator("#pricing");
-    await expect(availability.getByRole("link", { name: "Открыть инструменты" })).toBeVisible();
-    await expect(availability.getByRole("link", { name: "Создать аккаунт" })).toBeVisible();
-    await expect(page.getByText("Пока недоступно", { exact: true })).toBeVisible();
-    await expect(page.getByText("Не подключено", { exact: true })).toBeVisible();
-    for (const cardTitle of ["AI-инструменты", "Оплата и тарифы"]) {
-      const card = availability.locator("article").filter({
-        has: page.getByRole("heading", { level: 3, name: cardTitle }),
-      });
-      await expect(card.getByRole("link")).toHaveCount(0);
-      await expect(card.getByRole("button")).toHaveCount(0);
+    await expect(page.getByRole("heading", {
+      level: 1,
+      name: "Проверка сайта на технические и SEO-ошибки",
+    })).toBeVisible();
+
+    for (const heading of [
+      "Популярные инструменты",
+      "Как проходит проверка",
+      "Что проверяет WebDiag",
+      "Пример отчёта",
+      "Мониторинг изменений",
+      "База знаний и полезные материалы",
+      "Часто задаваемые вопросы",
+      "Проверьте свой сайт прямо сейчас",
+    ]) {
+      await expect(page.getByRole("heading", { name: heading })).toBeVisible();
     }
-    await expect(availability).not.toContainText(/₽|\/мес/i);
-    await expect(page).not.toHaveURL(/category=ai-geo-content/);
-    await expect(page.getByText("Популярные задачи")).toHaveCount(0);
-    await expect(
-      page.getByText("Пример отчёта", { exact: true }),
-    ).toBeVisible();
-    await expect(page.getByText("site.ru", { exact: true })).toBeVisible();
 
-    await expect(
-      page.getByRole("link", { name: "Попробовать бесплатно" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "Проверить сайт" }),
-    ).toBeVisible();
-    await expect(page.getByLabel("Адрес сайта или страницы")).toBeVisible();
-    await expect(page.getByRole("link", { name: "Войти" })).toHaveAttribute(
-      "href",
-      "/login",
-    );
+    await expect(page.getByRole("link", { name: "Создать аккаунт" }).first()).toHaveAttribute("href", "/register");
+    await expect(page.getByRole("link", { name: "Войти" }).first()).toHaveAttribute("href", "/login");
+    await expect(page.getByRole("button", { name: "Проверить сайт" }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: "Посмотреть пример отчёта" })).toBeVisible();
+    await expect(page.getByLabel("Адрес сайта или страницы").first()).toBeVisible();
 
-    const designState = await page.evaluate(() => {
+    await expect(page.locator(".wd-popular-tool-card")).toHaveCount(8);
+    await expect(page.locator(".wd-check-card")).toHaveCount(12);
+    await expect(page.locator(".wd-process-step")).toHaveCount(3);
+    await expect(page.locator(".wd-resource-card")).toHaveCount(3);
+    await expect(page.locator(".wd-faq-item")).toHaveCount(5);
+
+    await expect(page.locator("body")).not.toContainText(/будущ(?:ий|его|ая)|audit engine|пока недоступно|не подключено/i);
+
+    const design = await page.evaluate(() => {
       const root = getComputedStyle(document.documentElement);
-      const h1 = getComputedStyle(document.querySelector(".wd-home h1")!);
-      const h2 = getComputedStyle(document.querySelector(".wd-home h2")!);
-      const h3 = getComputedStyle(
-        document.querySelector(".wd-priority-grid h3")!,
-      );
-      const pricingButton = getComputedStyle(
-        document.querySelector(".wd-pricing-grid a")!,
-      );
-      const processCards = Array.from(
-        document.querySelectorAll(".wd-process-flow article"),
-      );
-      const toolCards = Array.from(
-        document.querySelectorAll(".wd-tool-category-card"),
-      );
-      const tab = getComputedStyle(
-        document.querySelector(".wd-report-tablist button")!,
-      );
-      const faqQuestion = getComputedStyle(
-        document.querySelector(".wd-faq-item button")!,
-      );
+      const section = document.querySelector<HTMLElement>(".wd-section");
+      const hero = document.querySelector<HTMLElement>(".wd-hero");
       return {
-        h1: Number.parseFloat(h1.fontSize),
-        h2: Number.parseFloat(h2.fontSize),
-        h3: Number.parseFloat(h3.fontSize),
-        pricingBackground: pricingButton.backgroundImage,
-        pricingColor: pricingButton.color,
-        tabBackground: tab.backgroundColor,
-        tabBorder: tab.borderTopColor,
-        faqQuestion: Number.parseFloat(faqQuestion.fontSize),
-        rootH1: root.getPropertyValue("--wd-h1"),
-        rootH2: root.getPropertyValue("--wd-h2"),
-        rootH3: root.getPropertyValue("--wd-h3"),
-        buttonBg: root.getPropertyValue("--wd-button-bg"),
-        processCards: processCards.length,
-        toolCards: toolCards.length,
+        buttonGradient: root.getPropertyValue("--wd-button-bg").trim().toLowerCase(),
+        sectionY: Number.parseFloat(root.getPropertyValue("--wd-section-y")),
+        sectionPadding: section ? Number.parseFloat(getComputedStyle(section).paddingTop) : 0,
+        heroBackground: hero ? getComputedStyle(hero).backgroundImage : "",
       };
     });
-    expect(designState.h1).toBeLessThanOrEqual(64);
-    expect(designState.h2).toBeLessThanOrEqual(48);
-    expect(designState.h3).toBeGreaterThanOrEqual(22);
-    expect(designState.h3).toBeLessThanOrEqual(28);
-    expect(designState.faqQuestion).toBeGreaterThanOrEqual(14);
-    expect(designState.faqQuestion).toBeLessThanOrEqual(16);
-    expect(designState.pricingBackground).toContain("gradient");
-    expect(designState.pricingColor).not.toBe("rgb(9, 17, 33)");
-    expect(designState.tabBackground).not.toBe("rgb(239, 239, 239)");
-    expect(designState.tabBorder).not.toBe("rgb(118, 118, 118)");
-    expect(designState.rootH1).toContain("64px");
-    expect(designState.rootH2).toContain("48px");
-    expect(designState.rootH3.trim()).toBe("28px");
-    expect(designState.buttonBg).toContain("linear-gradient");
-    expect(designState.processCards).toBe(4);
-    expect(designState.toolCards).toBe(8);
-    await expect(page.locator(".wd-step-number")).toHaveCount(0);
+
+    expect(design.buttonGradient).toContain("#34d399");
+    expect(design.buttonGradient).toContain("#22d3ee");
+    expect(design.buttonGradient).toContain("#60a5fa");
+    expect(design.sectionY).toBeGreaterThanOrEqual(110);
+    expect(design.sectionPadding).toBeGreaterThanOrEqual(110);
+    expect(design.heroBackground).toContain("gradient");
   });
 
-  test("English unavailable availability cards do not offer actions", async ({ page }) => {
+  test("English homepage keeps the same product hierarchy without roadmap copy", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/en");
-    const availability = page.locator("#pricing");
-    for (const cardTitle of ["AI tools", "Payments and plans"]) {
-      const card = availability.locator("article").filter({
-        has: page.getByRole("heading", { level: 3, name: cardTitle }),
-      });
-      await expect(card.getByRole("link")).toHaveCount(0);
-      await expect(card.getByRole("button")).toHaveCount(0);
-    }
+
+    await expect(page.getByRole("heading", {
+      level: 1,
+      name: "Check Your Website for Technical and SEO Issues",
+    })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Create account" }).first()).toHaveAttribute("href", "/en/register");
+    await expect(page.getByRole("button", { name: "Check website" }).first()).toBeVisible();
+    await expect(page.locator("body")).not.toContainText(/future report|future scenario|audit engine|not available|not connected/i);
   });
 
-  test("desktop report sidebar fill reaches the bottom of the report frame", async ({
-    page,
-  }) => {
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto("/");
-    const fill = await page.locator(".wd-report-frame").evaluate((element) => {
-      const style = window.getComputedStyle(element, "::after");
-      return {
-        top: style.top,
-        bottom: style.bottom,
-        width: style.width,
-        display: style.display,
-      };
-    });
-    expect(fill.display).not.toBe("none");
-    expect(fill.top).toBe("56px");
-    expect(fill.bottom).toBe("0px");
-    expect(Number.parseFloat(fill.width)).toBeGreaterThan(200);
-  });
-
-  test("mobile header moves language navigation into the menu", async ({
-    page,
-  }) => {
+  test("mobile homepage keeps generous section rhythm without horizontal overflow", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
 
+    const dimensions = await page.evaluate(() => {
+      const section = document.querySelector<HTMLElement>(".wd-section");
+      return {
+        viewport: document.documentElement.clientWidth,
+        scroll: document.documentElement.scrollWidth,
+        sectionPadding: section ? Number.parseFloat(getComputedStyle(section).paddingTop) : 0,
+      };
+    });
+
+    expect(dimensions.scroll).toBe(dimensions.viewport);
+    expect(dimensions.sectionPadding).toBeGreaterThanOrEqual(64);
+
     await expect(page.locator(".language-switcher-desktop")).toBeHidden();
-    await expect(page.locator(".language-switcher-mobile")).toBeHidden();
     await page.locator(".mobile-menu summary").click();
     await expect(page.locator(".language-switcher-mobile")).toBeVisible();
-    await expect(
-      page.getByRole("link", { name: "Русская версия" }),
-    ).toHaveAttribute("aria-current", "page");
-    await expect(page.getByRole("link", { name: "Личный кабинет" })).toHaveAttribute(
-      "href",
-      "/login",
-    );
-
-    const dimensions = await page.evaluate(() => ({
-      viewport: document.documentElement.clientWidth,
-      scroll: document.documentElement.scrollWidth,
-    }));
-    expect(dimensions.scroll).toBe(dimensions.viewport);
   });
 
-  test("FAQ behaves as a single stable accordion", async ({ page }) => {
+  test("FAQ remains a keyboard-accessible single accordion", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/");
 
     const faqItems = page.locator(".wd-faq-item");
-    await expect(faqItems).toHaveCount(6);
-    await expect(faqItems.nth(0).locator("button")).toHaveAttribute(
-      "aria-expanded",
-      "true",
-    );
-    await page.evaluate(() => document.fonts.ready);
+    await expect(faqItems).toHaveCount(5);
+    await expect(faqItems.nth(0).locator("button")).toHaveAttribute("aria-expanded", "true");
 
-    const beforeHeight = await page
-      .locator(".wd-faq-grid")
-      .evaluate((node) => node.getBoundingClientRect().height);
-    await faqItems.nth(2).locator("button").click();
-    await expect(faqItems.nth(0).locator("button")).toHaveAttribute(
-      "aria-expanded",
-      "false",
-    );
-    await expect(faqItems.nth(2).locator("button")).toHaveAttribute(
-      "aria-expanded",
-      "true",
-    );
-    await expect
-      .poll(() => page.locator(".wd-faq-grid").evaluate((node) => {
-        const panels = [...node.querySelectorAll<HTMLElement>(".wd-faq-panel")];
-        const reserved = Number.parseFloat(getComputedStyle(node).getPropertyValue("--wd-faq-panel-height"));
-        const heights = panels.map((panel) => Number.parseFloat(getComputedStyle(panel).maxHeight));
-        const closingHeight = heights.at(0);
-        const openingHeight = heights.at(2);
-        return closingHeight === 0 && openingHeight !== undefined && Math.abs(openingHeight - reserved) < 0.5;
-      }))
-      .toBe(true);
-    const afterHeight = await page
-      .locator(".wd-faq-grid")
-      .evaluate((node) => node.getBoundingClientRect().height);
-    expect(Math.abs(afterHeight - beforeHeight)).toBeLessThanOrEqual(24);
+    await faqItems.nth(2).locator("button").focus();
+    await page.keyboard.press("Enter");
+    await expect(faqItems.nth(0).locator("button")).toHaveAttribute("aria-expanded", "false");
+    await expect(faqItems.nth(2).locator("button")).toHaveAttribute("aria-expanded", "true");
   });
 });
