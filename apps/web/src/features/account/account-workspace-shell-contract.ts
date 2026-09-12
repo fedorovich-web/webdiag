@@ -89,7 +89,7 @@ export function buildAccountWorkspaceNavigation(
     },
     {
       id: "account",
-      label: ru ? "Настройки" : "Settings",
+      label: ru ? "Аккаунт" : "Account",
       href: accountSettingsPath(locale),
       active: section === "settings",
       disabled: false,
