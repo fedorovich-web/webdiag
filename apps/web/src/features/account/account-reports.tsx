@@ -54,9 +54,9 @@ export function AccountReports({
     <section className="wd-account-dashboard wd-reports-page">
       <header className="wd-account-dashboard-head wd-reports-hero">
         <div>
-          <span className="eyebrow">{projectId ? (ru ? "Отчёты выбранного проекта" : "Selected project reports") : (ru ? "Клиентская передача" : "Client delivery")}</span>
+          <span className="eyebrow">{projectId ? (ru ? "Отчёты проекта" : "Project reports") : (ru ? "Для команды и клиентов" : "For teams and clients")}</span>
           <h1>{ru ? "Сохранённые отчёты" : "Saved reports"}</h1>
-          <p>{ru ? "Неизменяемые снимки аудитов для чтения, экспорта и контролируемого общего доступа." : "Immutable audit snapshots for reading, export, and controlled sharing."}</p>
+          <p>{ru ? "Сохраняйте версии результатов для чтения, экспорта и контролируемого общего доступа." : "Save result versions for review, export, and controlled sharing."}</p>
         </div>
         {projectId && <Link className="wd-button wd-button-secondary" href={reportsPath(locale)}>{ru ? "Все отчёты" : "All reports"}</Link>}
       </header>
@@ -70,7 +70,7 @@ export function AccountReports({
       ) : reports.length === 0 ? (
         <section className="wd-account-card wd-account-empty">
           <h2>{projectId ? (ru ? "У проекта пока нет отчётов" : "This project has no reports yet") : (ru ? "Отчётов пока нет" : "No reports yet")}</h2>
-          <p>{ru ? "Откройте сохранённый аудит и создайте отчёт из его подтверждённых данных." : "Open a saved audit and create a report from its persisted data."}</p>
+          <p>{ru ? "Откройте сохранённый аудит и создайте отчёт из данных проверки." : "Open a saved audit and create a report from its check data."}</p>
         </section>
       ) : (
         <div className="wd-report-list" aria-label={ru ? "Список отчётов" : "Report list"}>
@@ -85,7 +85,7 @@ export function AccountReports({
                   </div>
                   <p><Link href={projectPath(locale, report.project_id)}>{report.project_name}</Link> · {report.target_origin}</p>
                   <dl>
-                    <div><dt>{ru ? "Аудит" : "Audit"}</dt><dd>{formatReportDate(locale, report.audit_completed_at)}</dd></div>
+                    <div><dt>{ru ? "Проверка" : "Check"}</dt><dd>{formatReportDate(locale, report.audit_completed_at)}</dd></div>
                     <div><dt>{ru ? "Отчёт создан" : "Created"}</dt><dd>{formatReportDate(locale, report.created_at)}</dd></div>
                     <div><dt>{ru ? "Доступ" : "Access"}</dt><dd>{share.label}</dd></div>
                   </dl>
