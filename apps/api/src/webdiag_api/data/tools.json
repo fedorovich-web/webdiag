@@ -21,8 +21,8 @@
     "id": "WD-002",
     "slug": "whole-site-audit",
     "title": {
-      "ru": "Аудит сайта с обходом страниц",
-      "en": "Whole-Site Audit"
+      "ru": "Ограниченный аудит сайта",
+      "en": "Bounded Site Audit"
     },
     "category": "seo-audit",
     "executorClass": "crawler",
@@ -31,8 +31,8 @@
     "implementationWave": "W4",
     "state": "ready",
     "description": {
-      "ru": "Показывает до 40 строк временной шкалы network-requests из Google PageSpeed Lighthouse: тип, начало, длительность и известный размер. Query и fragment удаляются; response bodies, headers, cookies и trace не сохраняются.",
-      "en": "Shows up to 40 network-requests timeline rows from Google PageSpeed Lighthouse: type, start, duration, and known size. Query strings and fragments are removed; response bodies, headers, cookies, and traces are not stored."
+      "ru": "Запускает из авторизованного проекта ограниченный обход одного origin: до 25 публичных HTML-страниц с учётом robots.txt, без JavaScript и без заявления о полном покрытии сайта.",
+      "en": "Runs an authenticated, project-bound crawl of one origin: up to 25 public HTML pages with robots.txt handling, no JavaScript execution, and no claim of complete site coverage."
     }
   },
   {
@@ -389,25 +389,27 @@
     "implementationWave": "W4",
     "state": "ready",
     "description": {
-      "ru": "Показывает до 20 строк точного audit render-blocking-resources из Google PageSpeed Lighthouse. Если provider не вернул этот audit, результат помечается недоступным без эвристической подмены.",
-      "en": "Shows up to 20 rows from the exact Google PageSpeed Lighthouse render-blocking-resources audit. If the provider omits the audit, the result is marked unavailable without a heuristic substitute."
+      "ru": "Группирует одинаковые непустые title и description в выборке до 25 HTML-страниц одного ограниченного обхода проекта.",
+      "en": "Groups identical non-empty titles and descriptions within the sample of up to 25 HTML pages from one bounded project crawl."
     }
   },
   {
     "id": "WD-023",
     "slug": "orphan-page-finder",
     "title": {
-      "ru": "Поиск страниц-сирот",
-      "en": "Orphan Page Finder"
+      "ru": "Кандидаты в страницы без внутренних ссылок",
+      "en": "Unlinked Page Candidates"
     },
     "category": "seo-audit",
     "executorClass": "crawler",
     "riskTier": "R3",
     "access": "required",
     "implementationWave": "W4",
-    "state": "internal",
-    "description": null,
-    "supersededBy": "html-validator"
+    "state": "ready",
+    "description": {
+      "ru": "Показывает кандидатов из sitemap, на которые не найдены внутренние ссылки в выборке до 25 HTML-страниц; результат не доказывает, что страница является сиротой на всём сайте.",
+      "en": "Shows sitemap candidates with no internal links found in a sample of up to 25 HTML pages; the result does not prove that a page is orphaned across the complete site."
+    }
   },
   {
     "id": "WD-024",
@@ -995,8 +997,11 @@
     "riskTier": "R3",
     "access": "optional",
     "implementationWave": "W4",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Показывает до 40 строк временной шкалы network-requests из Google PageSpeed Lighthouse: тип, начало, длительность и известный размер. Query и fragment удаляются; response bodies, headers, cookies и trace не сохраняются.",
+      "en": "Shows up to 40 network-requests timeline rows from Google PageSpeed Lighthouse: type, start, duration, and known size. Query strings and fragments are removed; response bodies, headers, cookies, and traces are not stored."
+    }
   },
   {
     "id": "WD-055",
@@ -1064,8 +1069,11 @@
     "riskTier": "R3",
     "access": "optional",
     "implementationWave": "W4",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Показывает до 20 строк точного audit render-blocking-resources из Google PageSpeed Lighthouse. Если provider не вернул этот audit, результат помечается недоступным без эвристической подмены.",
+      "en": "Shows up to 20 rows from the exact Google PageSpeed Lighthouse render-blocking-resources audit. If the provider omits the audit, the result is marked unavailable without a heuristic substitute."
+    }
   },
   {
     "id": "WD-059",
@@ -1080,7 +1088,8 @@
     "access": "none",
     "implementationWave": "W3",
     "state": "internal",
-    "description": null
+    "description": null,
+    "supersededBy": "html-validator"
   },
   {
     "id": "WD-060",
