@@ -75,7 +75,7 @@ function NavigationLinks({ locale, compact = false }: { locale: Locale; compact?
   }
 
   return (
-    <nav className="main-nav wd-main-nav" aria-label={locale === "ru" ? "Основная навигация" : "Main navigation"}>
+    <nav className="wd-main-nav" aria-label={locale === "ru" ? "Основная навигация" : "Main navigation"}>
       <ToolsMenuShell className="wd-tools-menu">
         <summary><Grid3X3 aria-hidden="true" />{text.tools}</summary>
         <div className="wd-tools-dropdown">
@@ -114,12 +114,12 @@ export function SiteHeader({ locale }: SiteHeaderProps) {
   const registerHref = locale === "ru" ? "/register" : "/en/register";
 
   return (
-    <header className="site-header wd-site-header">
-      <div className="shell header-inner wd-header-inner">
+    <header className="wd-site-header">
+      <div className="shell wd-header-inner">
         <SiteBrand locale={locale} className="brand wd-brand" variant="header" />
         <NavigationLinks locale={locale} />
 
-        <div className="header-actions wd-header-actions">
+        <div className="wd-header-actions">
           <div id="account-workspace-menu-slot" className="wd-account-menu-slot" />
           <Link
             aria-label={search}
