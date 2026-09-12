@@ -123,7 +123,9 @@ export function AuthTokenForm({ locale, mode, token }: AuthTokenFormProps) {
     setPending(true);
     try {
       const endpoint = isReset ? "/api/auth/reset-password" : "/api/auth/verify-email";
-      const body = isReset ? { token, new_password: password } : { token };
+      const body = isReset
+        ? { token, new_password: password, locale }
+        : { token, locale };
       const response = await fetch(endpoint, {
         method: "POST",
         credentials: "same-origin",

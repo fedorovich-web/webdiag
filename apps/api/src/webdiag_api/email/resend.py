@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 import httpx
 
 from webdiag_api.email.transactional import TransactionalEmail
@@ -23,7 +21,7 @@ class ResendTransport:
         if not normalized_key:
             raise ValueError("Idempotency key must not be empty")
 
-        payload: dict[str, Any] = {
+        payload: dict[str, object] = {
             "from": message.sender,
             "to": [message.to],
             "reply_to": message.reply_to,

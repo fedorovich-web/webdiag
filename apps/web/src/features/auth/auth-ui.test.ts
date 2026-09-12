@@ -10,11 +10,13 @@ describe("WebDiag auth UI contract", () => {
     const routes = [
       "../../../app/(auth-ru)/auth/login/page.tsx",
       "../../../app/(auth-ru)/auth/register/page.tsx",
+      "../../../app/(auth-ru)/auth/resend-verification/page.tsx",
       "../../../app/(auth-ru)/auth/forgot-password/page.tsx",
       "../../../app/(auth-ru)/auth/verify-email/page.tsx",
       "../../../app/(auth-ru)/auth/reset-password/page.tsx",
       "../../../app/(auth-en)/en/auth/login/page.tsx",
       "../../../app/(auth-en)/en/auth/register/page.tsx",
+      "../../../app/(auth-en)/en/auth/resend-verification/page.tsx",
       "../../../app/(auth-en)/en/auth/forgot-password/page.tsx",
       "../../../app/(auth-en)/en/auth/verify-email/page.tsx",
       "../../../app/(auth-en)/en/auth/reset-password/page.tsx",
@@ -68,6 +70,17 @@ describe("WebDiag auth UI contract", () => {
     expect(tokenForm).toContain("new_password");
     expect(tokenForm).toContain("token");
     expect(tokenForm).toContain('minLength={10}');
+    expect(tokenForm).toContain("locale");
+  });
+
+  it("connects registration and unverified login to the resend flow", () => {
+    const form = source("./auth-form.tsx");
+
+    expect(form).toContain('"resend-verification"');
+    expect(form).toContain("/api/auth/resend-verification");
+    expect(form).toContain("/auth/resend-verification");
+    expect(form).toContain("/en/auth/resend-verification");
+    expect(form).toContain("locale");
   });
 
   it("fails closed for missing tokens and shares sanitized API error parsing", () => {

@@ -34,20 +34,33 @@ class Settings(BaseSettings):
             return self
 
         resend_key = self.resend_api_key.get_secret_value().strip()
-        if len(resend_key) < 16:
+        if (
+            not 16 <= len(resend_key) <= 512
+            or any(character.isspace() or not character.isascii() for character in resend_key)
+        ):
             raise ValueError("Production requires a non-empty RESEND_API_KEY")
         if not self.session_cookie_secure:
             raise ValueError("Production requires SESSION_COOKIE_SECURE=true")
         if not self.rate_limit_enabled:
             raise ValueError("Production requires RATE_LIMIT_ENABLED=true")
-        if urlparse(self.public_app_url).scheme != "https":
+        public_url = urlparse(self.public_app_url)
+        if (
+            public_url.scheme != "https"
+            or not public_url.hostname
+            or public_url.username is not None
+            or public_url.password is not None
+            or public_url.query
+            or public_url.fragment
+            or public_url.path not in {"", "/"}
+        ):
             raise ValueError("Production requires HTTPS PUBLIC_APP_URL")
 
         database_url = self.database_url.get_secret_value().strip()
         if "change-me" in database_url or not database_url.startswith("postgresql+asyncpg://"):
             raise ValueError("Production requires a secure PostgreSQL DATABASE_URL")
         redis_url = self.redis_url.get_secret_value().strip()
-        if not redis_url.startswith(("redis://", "rediss://")):
+        parsed_redis_url = urlparse(redis_url)
+        if parsed_redis_url.scheme not in {"redis", "rediss"} or not parsed_redis_url.hostname:
             raise ValueError("Production requires a valid REDIS_URL")
         return self
 

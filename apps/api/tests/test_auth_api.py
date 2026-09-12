@@ -280,3 +280,56 @@ async def test_email_verification_token_replay_is_rejected(auth_client) -> None:
     replay = await client.post("/api/auth/verify-email", json={"token": token})
 
     assert replay.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_english_registration_resend_and_persistent_session_lifecycle(auth_client) -> None:
+    client, delivered = auth_client
+    registration = await client.post(
+        "/api/auth/register",
+        json={"email": "english@example.com", "password": PASSWORD, "locale": "en"},
+    )
+    assert registration.status_code == 202
+    assert registration.json() == {
+        "message": "If the address can be registered, a verification email has been sent."
+    }
+    first_token = _token_from(delivered[-1])
+    assert "/en/auth/verify-email" in delivered[-1].text
+    assert delivered[-1].subject == "Verify your WebDiag email"
+
+    resent = await client.post(
+        "/api/auth/resend-verification",
+        json={"email": "english@example.com", "locale": "en"},
+    )
+    unknown = await client.post(
+        "/api/auth/resend-verification",
+        json={"email": "missing@example.com", "locale": "en"},
+    )
+    assert resent.status_code == unknown.status_code == 202
+    assert resent.json() == unknown.json()
+    second_token = _token_from(delivered[-1])
+    assert second_token != first_token
+
+    stale = await client.post(
+        "/api/auth/verify-email",
+        json={"token": first_token, "locale": "en"},
+    )
+    verified = await client.post(
+        "/api/auth/verify-email",
+        json={"token": second_token, "locale": "en"},
+    )
+    assert stale.status_code == 400
+    assert stale.json() == {"detail": "Invalid or expired token"}
+    assert verified.status_code == 200
+
+    persistent_cookie = client.cookies.get("webdiag_session")
+    assert persistent_cookie is not None
+    reopened_transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(
+        transport=reopened_transport,
+        base_url="http://testserver",
+        cookies={"webdiag_session": persistent_cookie},
+    ) as reopened_client:
+        reopened = await reopened_client.get("/api/auth/me")
+    assert reopened.status_code == 200
+    assert reopened.json()["email"] == "english@example.com"

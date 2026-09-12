@@ -100,6 +100,36 @@
   font-size: 13px;
 }
 
+.error p {
+  margin: 0;
+}
+
+.error a {
+  display: inline-flex;
+  margin-top: 8px;
+  color: inherit;
+  font-weight: 700;
+}
+
+.stateActions {
+  display: grid;
+  gap: 10px;
+}
+
+.secondaryLink {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--brand);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.secondaryLink:hover {
+  color: var(--brand-hover);
+}
+
 .divider {
   display: flex;
   align-items: center;

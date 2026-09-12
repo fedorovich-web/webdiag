@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import select
@@ -122,3 +122,31 @@ async def test_expired_one_time_token_is_rejected(service) -> None:
 
     with pytest.raises(AuthError, match="invalid_or_expired_token"):
         await auth.verify_email(registered.token.raw)
+
+
+@pytest.mark.asyncio
+async def test_token_and_session_lifetimes_are_explicit_service_dependencies(service) -> None:
+    _auth, session = service
+    now = datetime(2026, 9, 11, 12, 0, tzinfo=UTC)
+    auth = AuthService(
+        session,
+        now=lambda: now,
+        session_ttl=timedelta(days=14),
+        verification_ttl=timedelta(minutes=20),
+        password_reset_ttl=timedelta(minutes=10),
+    )
+
+    registered = await auth.register(email="ttl@example.com", password=PASSWORD)
+    assert registered.token.expires_at == now + timedelta(minutes=20)
+    verified = await auth.verify_email(registered.token.raw)
+    reset = await auth.request_password_reset(email="ttl@example.com")
+    assert reset is not None
+    assert reset.token.expires_at == now + timedelta(minutes=10)
+    persisted_session = (
+        await session.execute(
+            select(AuthSession).where(
+                AuthSession.token_digest == digest_token(verified.session_token)
+            )
+        )
+    ).scalar_one()
+    assert persisted_session.expires_at.replace(tzinfo=UTC) == now + timedelta(days=14)

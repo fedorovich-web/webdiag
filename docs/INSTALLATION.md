@@ -79,6 +79,27 @@ cp .env.example .env
 PUBLIC_RELEASE=false
 ```
 
+Для auth runtime используются только server-side переменные с префиксом
+`WEBDIAG_`. Локальные значения PostgreSQL и Redis уже показаны в
+`.env.example`; ключ Resend остаётся пустым до настройки почтового транспорта:
+
+```env
+WEBDIAG_DATABASE_URL=postgresql+asyncpg://webdiag:change-me@127.0.0.1:5432/webdiag
+WEBDIAG_REDIS_URL=redis://127.0.0.1:6379/0
+WEBDIAG_PUBLIC_APP_URL=http://localhost:3000
+WEBDIAG_RESEND_API_KEY=
+WEBDIAG_SESSION_COOKIE_SECURE=false
+WEBDIAG_RATE_LIMIT_ENABLED=false
+```
+
+В production для Dokploy обязательны отдельные реальные secrets/URLs:
+`WEBDIAG_DATABASE_URL`, `WEBDIAG_REDIS_URL`, `WEBDIAG_RESEND_API_KEY` и
+`WEBDIAG_PUBLIC_APP_URL=https://...`; одновременно устанавливаются
+`WEBDIAG_ENVIRONMENT=production`, `WEBDIAG_SESSION_COOKIE_SECURE=true` и
+`WEBDIAG_RATE_LIMIT_ENABLED=true`. API завершится ошибкой при HTTP public URL,
+пустом email key, выключенных secure cookies/rate limiting или некорректных
+PostgreSQL/Redis URLs. Секреты не передаются frontend и не добавляются в Git.
+
 Публичный режим намеренно блокируется release gate.
 
 ## 5. Установка JavaScript-зависимостей

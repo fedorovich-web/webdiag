@@ -44,3 +44,21 @@ def test_production_rejects_insecure_auth_runtime(
 ) -> None:
     with pytest.raises(ValidationError, match=message):
         production_settings(**{field: value})
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("public_app_url", "https://user:pass@webdiag.ru", "PUBLIC_APP_URL"),
+        ("public_app_url", "https://webdiag.ru/auth", "PUBLIC_APP_URL"),
+        ("redis_url", "redis:///0", "REDIS_URL"),
+        ("resend_api_key", "re_key with whitespace", "RESEND_API_KEY"),
+    ],
+)
+def test_production_rejects_ambiguous_or_leaky_auth_configuration(
+    field: str,
+    value: object,
+    message: str,
+) -> None:
+    with pytest.raises(ValidationError, match=message):
+        production_settings(**{field: value})

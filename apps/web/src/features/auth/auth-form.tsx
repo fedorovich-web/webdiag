@@ -7,7 +7,7 @@ import { readAuthMessage } from "./auth-api-response";
 import styles from "./auth-form.module.css";
 import type { AuthLocale } from "./auth-shell";
 
-type AuthMode = "login" | "register" | "forgot-password";
+type AuthMode = "login" | "register" | "forgot-password" | "resend-verification";
 
 type AuthFormProps = {
   locale: AuthLocale;
@@ -69,6 +69,19 @@ const copies: Record<AuthLocale, Record<AuthMode, Copy>> = {
       yandexSoon: "Скоро",
       genericError: "Не удалось обработать запрос. Попробуйте ещё раз позже.",
     },
+    "resend-verification": {
+      email: "Email",
+      password: "",
+      submit: "Отправить письмо повторно",
+      pending: "Отправляем...",
+      forgot: "",
+      alternatePrefix: "Уже подтвердили email?",
+      alternateLabel: "Перейти ко входу",
+      alternateHref: "/auth/login",
+      yandex: "Продолжить с Яндекс ID",
+      yandexSoon: "Скоро",
+      genericError: "Не удалось отправить письмо. Попробуйте ещё раз позже.",
+    },
   },
   en: {
     login: {
@@ -110,11 +123,25 @@ const copies: Record<AuthLocale, Record<AuthMode, Copy>> = {
       yandexSoon: "Soon",
       genericError: "Could not process the request. Try again later.",
     },
+    "resend-verification": {
+      email: "Email",
+      password: "",
+      submit: "Resend verification email",
+      pending: "Sending...",
+      forgot: "",
+      alternatePrefix: "Already verified your email?",
+      alternateLabel: "Go to sign in",
+      alternateHref: "/en/auth/login",
+      yandex: "Continue with Yandex ID",
+      yandexSoon: "Soon",
+      genericError: "Could not send the email. Try again later.",
+    },
   },
 };
 
 function authEndpoint(mode: AuthMode): string {
   if (mode === "forgot-password") return "/api/auth/forgot-password";
+  if (mode === "resend-verification") return "/api/auth/resend-verification";
   return `/api/auth/${mode}`;
 }
 
@@ -125,14 +152,17 @@ export function AuthForm({ locale, mode }: AuthFormProps) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const needsPassword = mode !== "forgot-password";
+  const [verificationRequired, setVerificationRequired] = useState(false);
+  const needsPassword = mode === "login" || mode === "register";
   const loginHref = locale === "ru" ? "/auth/login" : "/en/auth/login";
   const forgotHref = locale === "ru" ? "/auth/forgot-password" : "/en/auth/forgot-password";
+  const resendHref = locale === "ru" ? "/auth/resend-verification" : "/en/auth/resend-verification";
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
     setMessage(null);
+    setVerificationRequired(false);
     setPending(true);
 
     try {
@@ -141,13 +171,16 @@ export function AuthForm({ locale, mode }: AuthFormProps) {
         credentials: "same-origin",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(
-          needsPassword ? { email: email.trim(), password } : { email: email.trim() },
+          needsPassword
+            ? { email: email.trim(), password, locale }
+            : { email: email.trim(), locale },
         ),
       });
       const payload: unknown = await response.json().catch(() => null);
 
       if (!response.ok) {
         setError(readAuthMessage(payload) ?? copy.genericError);
+        setVerificationRequired(mode === "login" && response.status === 403);
         return;
       }
 
@@ -193,9 +226,16 @@ export function AuthForm({ locale, mode }: AuthFormProps) {
       <div className={styles.state} role="status">
         <strong>{stateTitle}</strong>
         <p>{message}</p>
-        <Link className={styles.primaryLink} href={loginHref}>
-          {locale === "ru" ? "Перейти ко входу" : "Go to sign in"}
-        </Link>
+        <div className={styles.stateActions}>
+          {mode === "register" ? (
+            <Link className={styles.primaryLink} href={resendHref}>
+              {locale === "ru" ? "Отправить письмо повторно" : "Resend verification email"}
+            </Link>
+          ) : null}
+          <Link className={mode === "register" ? styles.secondaryLink : styles.primaryLink} href={loginHref}>
+            {locale === "ru" ? "Перейти ко входу" : "Go to sign in"}
+          </Link>
+        </div>
       </div>
     );
   }
@@ -245,9 +285,14 @@ export function AuthForm({ locale, mode }: AuthFormProps) {
           </Link>
         ) : null}
         {error ? (
-          <p className={styles.error} role="alert">
-            {error}
-          </p>
+          <div className={styles.error} role="alert">
+            <p>{error}</p>
+            {verificationRequired ? (
+              <Link href={resendHref}>
+                {locale === "ru" ? "Отправить письмо ещё раз" : "Resend verification email"}
+              </Link>
+            ) : null}
+          </div>
         ) : null}
 
         <button className={styles.primaryButton} disabled={pending} type="submit">
@@ -255,7 +300,7 @@ export function AuthForm({ locale, mode }: AuthFormProps) {
         </button>
       </form>
 
-      {mode !== "forgot-password" ? (
+      {mode === "login" || mode === "register" ? (
         <div className={styles.socialBlock}>
           <div className={styles.divider}>
             <span>{locale === "ru" ? "или" : "or"}</span>

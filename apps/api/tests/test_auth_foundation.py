@@ -36,6 +36,18 @@ def test_verification_email_uses_webdiag_transactional_identity() -> None:
     assert "opaque-token" in message.html
 
 
+def test_english_verification_email_uses_the_english_route_and_copy() -> None:
+    message = build_verification_email(
+        recipient="roman@example.com",
+        verification_url="https://webdiag.ru/en/auth/verify-email?token=opaque-token",
+        locale="en",
+    )
+
+    assert message.subject == "Verify your WebDiag email"
+    assert "Confirm your email address" in message.text
+    assert "/en/auth/verify-email" in message.html
+
+
 def test_password_reset_email_has_expiry_and_support_reply_to() -> None:
     expires_at = datetime.now(UTC) + timedelta(minutes=30)
     message = build_password_reset_email(

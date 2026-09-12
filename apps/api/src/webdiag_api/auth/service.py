@@ -61,9 +61,17 @@ class AuthService:
         session: AsyncSession,
         *,
         now: Callable[[], datetime] | None = None,
+        session_ttl: timedelta = SESSION_TTL,
+        verification_ttl: timedelta = VERIFY_EMAIL_TTL,
+        password_reset_ttl: timedelta = PASSWORD_RESET_TTL,
     ) -> None:
+        if min(session_ttl, verification_ttl, password_reset_ttl) <= timedelta(0):
+            raise ValueError("Authentication lifetimes must be positive")
         self.session = session
         self._now = now or (lambda: datetime.now(UTC))
+        self._session_ttl = session_ttl
+        self._verification_ttl = verification_ttl
+        self._password_reset_ttl = password_reset_ttl
 
     async def register(self, *, email: str, password: str) -> RegistrationResult:
         normalized_email = self._normalize_email(email)
@@ -88,7 +96,7 @@ class AuthService:
         token = await self._issue_one_time_token(
             user_id=user.id,
             purpose="verify_email",
-            ttl=VERIFY_EMAIL_TTL,
+            ttl=self._verification_ttl,
         )
         return RegistrationResult(user=user, token=token)
 
@@ -148,7 +156,7 @@ class AuthService:
         token = await self._issue_one_time_token(
             user_id=user.id,
             purpose="verify_email",
-            ttl=VERIFY_EMAIL_TTL,
+            ttl=self._verification_ttl,
         )
         return RegistrationResult(user=user, token=token)
 
@@ -159,7 +167,7 @@ class AuthService:
         token = await self._issue_one_time_token(
             user_id=user.id,
             purpose="reset_password",
-            ttl=PASSWORD_RESET_TTL,
+            ttl=self._password_reset_ttl,
         )
         return PasswordResetRequest(user=user, token=token)
 
@@ -231,18 +239,21 @@ class AuthService:
 
     async def _consume_one_time_token(self, raw_token: str, *, purpose: str) -> OneTimeToken:
         digest = digest_token(raw_token)
+        now = self._now()
         result = await self.session.execute(
-            select(OneTimeToken).where(
+            update(OneTimeToken)
+            .where(
                 OneTimeToken.token_digest == digest,
                 OneTimeToken.purpose == purpose,
                 OneTimeToken.consumed_at.is_(None),
+                OneTimeToken.expires_at > now,
             )
+            .values(consumed_at=now)
+            .returning(OneTimeToken)
         )
         token = result.scalar_one_or_none()
-        now = self._now()
-        if token is None or _as_utc(token.expires_at) <= now:
+        if token is None:
             raise AuthError("invalid_or_expired_token")
-        token.consumed_at = now
         return token
 
     async def _issue_session(self, user_id: UUID) -> str:
@@ -251,7 +262,7 @@ class AuthService:
             AuthSession(
                 user_id=user_id,
                 token_digest=digest_token(raw),
-                expires_at=self._now() + SESSION_TTL,
+                expires_at=self._now() + self._session_ttl,
             )
         )
         await self.session.flush()

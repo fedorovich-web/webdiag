@@ -47,9 +47,20 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
     environment:
-      WEBDIAG_ENVIRONMENT: development
+      WEBDIAG_ENVIRONMENT: "${WEBDIAG_ENVIRONMENT:-development}"
+      WEBDIAG_DATABASE_URL: "${WEBDIAG_DATABASE_URL:-postgresql+asyncpg://webdiag:change-me@postgres:5432/webdiag}"
+      WEBDIAG_REDIS_URL: "${WEBDIAG_REDIS_URL:-redis://valkey:6379/0}"
+      WEBDIAG_PUBLIC_APP_URL: "${WEBDIAG_PUBLIC_APP_URL:-http://localhost:3000}"
+      WEBDIAG_RESEND_API_KEY: "${WEBDIAG_RESEND_API_KEY:-}"
+      WEBDIAG_SESSION_COOKIE_SECURE: "${WEBDIAG_SESSION_COOKIE_SECURE:-false}"
+      WEBDIAG_RATE_LIMIT_ENABLED: "${WEBDIAG_RATE_LIMIT_ENABLED:-false}"
     ports:
       - "127.0.0.1:8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
 
   worker:
     build:
@@ -67,8 +78,11 @@ services:
       dockerfile: apps/web/Dockerfile
     environment:
       PUBLIC_RELEASE: "false"
+      WEBDIAG_API_INTERNAL_URL: http://api:8000
     ports:
       - "127.0.0.1:3000:3000"
+    depends_on:
+      - api
 
 volumes:
   postgres_data:

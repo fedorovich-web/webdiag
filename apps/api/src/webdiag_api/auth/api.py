@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import timedelta
 from typing import Annotated, NoReturn
 from urllib.parse import urlencode
 
@@ -15,6 +16,7 @@ from webdiag_api.auth.rate_limit import (
     RateLimitUnavailable,
 )
 from webdiag_api.auth.schemas import (
+    AuthLocale,
     EmailActionRequest,
     LoginRequest,
     MessageResponse,
@@ -48,14 +50,39 @@ rate_limit_redis = Redis.from_url(
 )
 auth_rate_limiter = AuthRateLimiter(rate_limit_redis)
 
-_REGISTERED_MESSAGE = "Если адрес доступен для регистрации, письмо подтверждения отправлено."
-_RESEND_MESSAGE = "Если аккаунту требуется подтверждение, новое письмо будет отправлено."
-_RESET_REQUEST_MESSAGE = "Если аккаунт существует, инструкции по восстановлению будут отправлены."
+_MESSAGES: dict[str, dict[AuthLocale, str]] = {
+    "registered": {
+        "ru": "Если адрес доступен для регистрации, письмо подтверждения отправлено.",
+        "en": "If the address can be registered, a verification email has been sent.",
+    },
+    "resend": {
+        "ru": "Если аккаунту требуется подтверждение, новое письмо будет отправлено.",
+        "en": "If the account needs verification, a new email will be sent.",
+    },
+    "reset_requested": {
+        "ru": "Если аккаунт существует, инструкции по восстановлению будут отправлены.",
+        "en": "If the account exists, password recovery instructions will be sent.",
+    },
+}
 
 
-def _action_url(path: str, token: str) -> str:
+def _message(kind: str, locale: AuthLocale) -> str:
+    return _MESSAGES[kind][locale]
+
+
+def _action_url(path: str, token: str, locale: AuthLocale) -> str:
     query = urlencode({"token": token})
-    return f"{settings.public_app_url.rstrip('/')}{path}?{query}"
+    locale_prefix = "" if locale == "ru" else "/en"
+    return f"{settings.public_app_url.rstrip('/')}{locale_prefix}{path}?{query}"
+
+
+def _auth_service(session: AsyncSession) -> AuthService:
+    return AuthService(
+        session,
+        session_ttl=timedelta(days=settings.auth_session_ttl_days),
+        verification_ttl=timedelta(minutes=settings.verification_ttl_minutes),
+        password_reset_ttl=timedelta(minutes=settings.password_reset_ttl_minutes),
+    )
 
 
 def _email_transport() -> ResendTransport:
@@ -128,30 +155,46 @@ async def _deliver_best_effort(
         )
 
 
-def _raise_auth_error(exc: AuthError) -> NoReturn:
+def _raise_auth_error(exc: AuthError, locale: AuthLocale = "en") -> NoReturn:
     if exc.code in {"invalid_credentials", "invalid_session"}:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication failed",
+            detail="Ошибка аутентификации" if locale == "ru" else "Authentication failed",
         ) from exc
     if exc.code == "email_not_verified":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Email verification is required",
+            detail=(
+                "Требуется подтверждение email"
+                if locale == "ru"
+                else "Email verification is required"
+            ),
         ) from exc
     if exc.code == "invalid_or_expired_token":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid or expired token",
+            detail=(
+                "Токен недействителен или истёк"
+                if locale == "ru"
+                else "Invalid or expired token"
+            ),
         ) from exc
     if exc.code == "invalid_current_password":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Current password is incorrect",
+            detail=(
+                "Текущий пароль указан неверно"
+                if locale == "ru"
+                else "Current password is incorrect"
+            ),
         ) from exc
     raise HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
-        detail="Invalid authentication request",
+        detail=(
+            "Некорректный запрос аутентификации"
+            if locale == "ru"
+            else "Invalid authentication request"
+        ),
     ) from exc
 
 
@@ -174,19 +217,22 @@ async def register(payload: RegisterRequest, session: SessionDep) -> MessageResp
         window_seconds=3600,
     )
 
-    service = AuthService(session)
+    service = _auth_service(session)
     try:
         result = await service.register(email=normalized_email, password=payload.password)
     except AuthError as exc:
         if exc.code == "email_already_registered":
-            return MessageResponse(message=_REGISTERED_MESSAGE)
-        _raise_auth_error(exc)
+            return MessageResponse(message=_message("registered", payload.locale))
+        _raise_auth_error(exc, payload.locale)
 
     try:
         await _deliver_required(
             build_verification_email(
                 recipient=result.user.email,
-                verification_url=_action_url("/auth/verify-email", result.token.raw),
+                verification_url=_action_url(
+                    "/auth/verify-email", result.token.raw, payload.locale
+                ),
+                locale=payload.locale,
             ),
             idempotency_key=f"verify-{digest_token(result.token.raw)}",
         )
@@ -195,7 +241,7 @@ async def register(payload: RegisterRequest, session: SessionDep) -> MessageResp
         raise
 
     await session.commit()
-    return MessageResponse(message=_REGISTERED_MESSAGE)
+    return MessageResponse(message=_message("registered", payload.locale))
 
 
 @router.post("/verify-email", response_model=MessageResponse)
@@ -211,15 +257,17 @@ async def verify_email(
         window_seconds=900,
     )
 
-    service = AuthService(session)
+    service = _auth_service(session)
     try:
         result = await service.verify_email(payload.token)
     except AuthError as exc:
-        _raise_auth_error(exc)
+        _raise_auth_error(exc, payload.locale)
 
     set_session_cookie(response, result.session_token, settings)
     await session.commit()
-    return MessageResponse(message="Email подтверждён.")
+    return MessageResponse(
+        message="Email подтверждён." if payload.locale == "ru" else "Email verified."
+    )
 
 
 @router.post(
@@ -239,16 +287,19 @@ async def resend_verification(
         window_seconds=3600,
     )
 
-    service = AuthService(session)
+    service = _auth_service(session)
     result = await service.request_verification(email=normalized_email)
     if result is None:
-        return MessageResponse(message=_RESEND_MESSAGE)
+        return MessageResponse(message=_message("resend", payload.locale))
 
     try:
         await _deliver_required(
             build_verification_email(
                 recipient=result.user.email,
-                verification_url=_action_url("/auth/verify-email", result.token.raw),
+                verification_url=_action_url(
+                    "/auth/verify-email", result.token.raw, payload.locale
+                ),
+                locale=payload.locale,
             ),
             idempotency_key=f"verify-{digest_token(result.token.raw)}",
         )
@@ -257,7 +308,7 @@ async def resend_verification(
         raise
 
     await session.commit()
-    return MessageResponse(message=_RESEND_MESSAGE)
+    return MessageResponse(message=_message("resend", payload.locale))
 
 
 @router.post("/login", response_model=UserResponse)
@@ -274,11 +325,11 @@ async def login(
         window_seconds=300,
     )
 
-    service = AuthService(session)
+    service = _auth_service(session)
     try:
         result = await service.login(email=normalized_email, password=payload.password)
     except AuthError as exc:
-        _raise_auth_error(exc)
+        _raise_auth_error(exc, payload.locale)
 
     set_session_cookie(response, result.session_token, settings)
     await session.commit()
@@ -292,7 +343,7 @@ async def logout(
     session_token: SessionCookie = None,
 ) -> MessageResponse:
     if session_token:
-        await AuthService(session).logout(session_token)
+        await _auth_service(session).logout(session_token)
         await session.commit()
     clear_session_cookie(response, settings)
     return MessageResponse(message="Logged out")
@@ -305,7 +356,7 @@ async def me(
 ) -> UserResponse:
     token = _require_session_token(session_token)
     try:
-        user = await AuthService(session).authenticate_session(token)
+        user = await _auth_service(session).authenticate_session(token)
     except AuthError as exc:
         _raise_auth_error(exc)
     return UserResponse.model_validate(user)
@@ -328,17 +379,20 @@ async def forgot_password(
         window_seconds=3600,
     )
 
-    service = AuthService(session)
+    service = _auth_service(session)
     result = await service.request_password_reset(email=normalized_email)
     if result is None:
-        return MessageResponse(message=_RESET_REQUEST_MESSAGE)
+        return MessageResponse(message=_message("reset_requested", payload.locale))
 
     try:
         await _deliver_required(
             build_password_reset_email(
                 recipient=result.user.email,
-                reset_url=_action_url("/auth/reset-password", result.token.raw),
+                reset_url=_action_url(
+                    "/auth/reset-password", result.token.raw, payload.locale
+                ),
                 expires_at=result.token.expires_at,
+                locale=payload.locale,
             ),
             idempotency_key=f"reset-{digest_token(result.token.raw)}",
         )
@@ -347,7 +401,7 @@ async def forgot_password(
         raise
 
     await session.commit()
-    return MessageResponse(message=_RESET_REQUEST_MESSAGE)
+    return MessageResponse(message=_message("reset_requested", payload.locale))
 
 
 @router.post("/reset-password", response_model=MessageResponse)
@@ -363,22 +417,28 @@ async def reset_password(
         window_seconds=900,
     )
 
-    service = AuthService(session)
+    service = _auth_service(session)
     try:
         user = await service.reset_password(
             token=payload.token,
             new_password=payload.new_password,
         )
     except AuthError as exc:
-        _raise_auth_error(exc)
+        _raise_auth_error(exc, payload.locale)
 
     await session.commit()
     clear_session_cookie(response, settings)
     await _deliver_best_effort(
-        build_password_changed_email(recipient=user.email),
+        build_password_changed_email(recipient=user.email, locale=payload.locale),
         idempotency_key=f"password-changed-{digest_token(payload.token)}",
     )
-    return MessageResponse(message="Пароль изменён. Войдите с новым паролем.")
+    return MessageResponse(
+        message=(
+            "Пароль изменён. Войдите с новым паролем."
+            if payload.locale == "ru"
+            else "Password changed. Sign in with your new password."
+        )
+    )
 
 
 @router.post("/change-password", response_model=MessageResponse)
@@ -396,7 +456,7 @@ async def change_password(
         window_seconds=3600,
     )
 
-    service = AuthService(session)
+    service = _auth_service(session)
     try:
         user = await service.change_password(
             session_token=token,
@@ -404,12 +464,18 @@ async def change_password(
             new_password=payload.new_password,
         )
     except AuthError as exc:
-        _raise_auth_error(exc)
+        _raise_auth_error(exc, payload.locale)
 
     await session.commit()
     clear_session_cookie(response, settings)
     await _deliver_best_effort(
-        build_password_changed_email(recipient=user.email),
+        build_password_changed_email(recipient=user.email, locale=payload.locale),
         idempotency_key=f"password-changed-{digest_token(token)}",
     )
-    return MessageResponse(message="Пароль изменён. Войдите снова.")
+    return MessageResponse(
+        message=(
+            "Пароль изменён. Войдите снова."
+            if payload.locale == "ru"
+            else "Password changed. Sign in again."
+        )
+    )
