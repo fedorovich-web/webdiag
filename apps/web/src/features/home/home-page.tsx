@@ -134,7 +134,7 @@ export function HomePage({ locale }: { locale: Locale }) {
   const t = (value: { readonly ru: string; readonly en: string }) => localizeValue(value, locale);
   const toolsHref = toolsPath(locale);
   const monitoringHref = locale === "ru" ? "/monitoring" : "/en/monitoring";
-  const faqItems = homeContent.faq.slice(0, 5).map((item) => [t(item.question), t(item.answer)] as const);
+  const faqItems = homeContent.faq.filter((_, index) => index < 5).map((item) => [t(item.question), t(item.answer)] as const);
   const popularTools = homeContent.popularTools.filter((item) => getPublicTool(item.slug));
   const heroDescription = locale === "ru"
     ? "Проверьте страницу или весь сайт: мета-теги, robots.txt, sitemap.xml, редиректы, HTTPS, скорость и другие технические SEO-сигналы. WebDiag показывает найденные проблемы, затронутые URL и помогает понять, что исправлять в первую очередь."
