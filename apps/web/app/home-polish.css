@@ -3,12 +3,12 @@
 .wd-home .wd-section-intro > p,
 .wd-home .wd-product-column .wd-section-intro > p,
 .wd-home .wd-knowledge-faq-section .wd-section-intro > p {
-  margin-top: 8px;
+  margin-top: 10px !important;
 }
 
 .wd-home .wd-process-heading > p,
 .wd-home .wd-final-copy > p {
-  margin-top: 8px;
+  margin-top: 10px !important;
 }
 
 /* CMS compatibility strip: real brand marks, muted by default and restored on hover. */
@@ -258,6 +258,7 @@ html[lang="en"] .wd-home .wd-platform-strip .shell > p::after {
 
 .wd-home .wd-monitoring-chart-visual .area {
   fill: url(#wdMonitoringArea);
+  stroke: none !important;
 }
 
 .wd-home .wd-chart-line-shadow-path {
