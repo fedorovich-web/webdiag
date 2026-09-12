@@ -53,7 +53,7 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
           || runsResult.status !== "fulfilled"
         ) {
           setLoadState("unavailable");
-          setError(ru ? "AI-рабочая область недоступна." : "The AI workspace is unavailable.");
+          setError(ru ? "AI-инструменты временно недоступны." : "AI tools are temporarily unavailable.");
           return;
         }
         setCatalog(catalogResult.value);
@@ -89,12 +89,12 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
     <div className="wd-ai-workspace">
       <header className="wd-ai-workspace-hero">
         <div>
-          <span className="eyebrow">{ru ? "AI ДЛЯ WEB-ОПЕРАЦИЙ" : "AI FOR WEB OPERATIONS"}</span>
-          <h1>{ru ? "AI-инструменты кабинета" : "Account AI tools"}</h1>
-          <p>{ru ? "Текстовые помощники, которые превращают подтверждённые сигналы аудита в следующий понятный шаг." : "Text assistants that turn confirmed audit signals into a clear next step."}</p>
+          <span className="eyebrow">{ru ? "AI-помощники" : "AI assistants"}</span>
+          <h1>{ru ? "AI-инструменты WebDiag" : "WebDiag AI tools"}</h1>
+          <p>{ru ? "Помощники для приоритизации задач и работы с подтверждёнными данными проверок." : "Assistants for prioritizing work and using confirmed audit data."}</p>
         </div>
         <div className="wd-ai-workspace-hero-note">
-          <strong>{ru ? "Контроль результата" : "Outcome control"}</strong>
+          <strong>{ru ? "Проверяйте рекомендации" : "Review recommendations"}</strong>
           <span>{ru ? "AI не публикует изменения и не заменяет проверку специалиста." : "AI never publishes changes and does not replace expert review."}</span>
         </div>
       </header>
@@ -112,7 +112,7 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
         <article>
           <span>{ru ? "Инструменты" : "Tools"}</span>
           <strong>{loadState === "loading" ? "—" : `${availableTools}/6`}</strong>
-          <small>{ru ? "готовы к запуску" : "ready to run"}</small>
+          <small>{ru ? "доступно для запуска" : "available to run"}</small>
         </article>
         <article>
           <span>{ru ? "Кредиты" : "Credits"}</span>
@@ -128,11 +128,11 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
 
       {loadState === "loading" ? (
         <div className="wd-ai-empty-state" aria-busy="true">
-          <strong>{ru ? "Проверяем доступность AI-инструментов…" : "Checking AI tool availability…"}</strong>
+          <strong>{ru ? "Загружаем AI-инструменты…" : "Loading AI tools…"}</strong>
         </div>
       ) : loadState === "unavailable" ? (
         <div className="wd-ai-empty-state">
-          <strong>{ru ? "AI-рабочая область временно недоступна" : "AI workspace is temporarily unavailable"}</strong>
+          <strong>{ru ? "AI-инструменты временно недоступны" : "AI tools are temporarily unavailable"}</strong>
           <p>{aiWorkspaceEmptyCopy(locale)}</p>
         </div>
       ) : (
