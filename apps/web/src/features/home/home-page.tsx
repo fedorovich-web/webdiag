@@ -68,6 +68,12 @@ const heroAccentStyle = {
   color: "transparent",
 } as const;
 
+const ruProcessSteps = [
+  { title: "Укажите URL", description: "Введите адрес страницы или всего сайта" },
+  { title: "Мы проверяем", description: "Анализируем более 100 параметров" },
+  { title: "Получите результат", description: "Список проблем, приоритеты и рекомендации" },
+] as const;
+
 function IconBox({ icon: Icon }: { icon: LucideIcon }) {
   return <span className="wd-icon-box"><Icon aria-hidden="true" /></span>;
 }
@@ -128,8 +134,11 @@ export function HomePage({ locale }: { locale: Locale }) {
   const t = (value: { readonly ru: string; readonly en: string }) => localizeValue(value, locale);
   const toolsHref = toolsPath(locale);
   const monitoringHref = locale === "ru" ? "/monitoring" : "/en/monitoring";
-  const faqItems = homeContent.faq.map((item) => [t(item.question), t(item.answer)] as const);
+  const faqItems = homeContent.faq.slice(0, 5).map((item) => [t(item.question), t(item.answer)] as const);
   const popularTools = homeContent.popularTools.filter((item) => getPublicTool(item.slug));
+  const heroDescription = locale === "ru"
+    ? "Проверьте страницу или весь сайт: мета-теги, robots.txt, sitemap.xml, редиректы, HTTPS, скорость и другие технические SEO-сигналы. WebDiag показывает найденные проблемы, затронутые URL и помогает понять, что исправлять в первую очередь."
+    : t(homeContent.description);
 
   return (
     <main className="wd-home">
@@ -138,9 +147,17 @@ export function HomePage({ locale }: { locale: Locale }) {
           <div className="wd-hero-copy">
             <span className="wd-eyebrow">{t(homeContent.eyebrow)}</span>
             <h1 id="home-title">
-              {locale === "ru" ? <>Проверка сайта на технические и <span style={heroAccentStyle}>SEO-ошибки</span></> : <>Check Your Website for Technical and <span style={heroAccentStyle}>SEO Issues</span></>}
+              {locale === "ru" ? (
+                <>
+                  <span style={{ display: "block" }}>Проверка сайта</span>
+                  <span style={{ display: "block" }}>на технические</span>
+                  <span style={{ ...heroAccentStyle, display: "block" }}>и SEO-ошибки</span>
+                </>
+              ) : (
+                <>Check Your Website for Technical and <span style={heroAccentStyle}>SEO Issues</span></>
+              )}
             </h1>
-            <p className="wd-hero-lead">{t(homeContent.description)}</p>
+            <p className="wd-hero-lead">{heroDescription}</p>
             <HomeUrlCheckForm locale={locale} instance="hero" />
             <p className="wd-hero-note">{t(homeContent.heroNote)}</p>
           </div>
@@ -152,7 +169,11 @@ export function HomePage({ locale }: { locale: Locale }) {
           {homeContent.trustFacts.map((fact, index) => (
             <div className="wd-hero-benefit" key={t(fact)}>
               <img src={benefitArtwork[index]} alt="" width="192" height="192" loading="eager" decoding="async" />
-              <span>{t(fact)}</span>
+              {locale === "ru" && index === 2 ? (
+                <span><strong style={{ display: "block" }}>Экономия времени</strong><small style={{ display: "block", fontWeight: 500 }}>Для владельцев и SEO-специалистов</small></span>
+              ) : (
+                <span>{t(fact)}</span>
+              )}
             </div>
           ))}
         </div>
@@ -191,8 +212,8 @@ export function HomePage({ locale }: { locale: Locale }) {
         <div className="shell wd-process-panel">
           <div className="wd-process-heading"><h2>{t(homeContent.processTitle)}</h2><p>{locale === "ru" ? "3 простых шага — от URL до готового отчёта" : "3 simple steps — from URL to a ready report"}</p></div>
           <div className="wd-process-steps">
-            {homeContent.processSteps.map((step, index) => (
-              <article key={t(step.title)}><span className="wd-step-number">{index + 1}</span><div><h3>{t(step.title)}</h3><p>{t(step.description)}</p></div></article>
+            {(locale === "ru" ? ruProcessSteps : homeContent.processSteps.map((step) => ({ title: t(step.title), description: t(step.description) }))).map((step, index) => (
+              <article key={step.title}><span className="wd-step-number">{index + 1}</span><div><h3>{step.title}</h3><p>{step.description}</p></div></article>
             ))}
           </div>
           <img className="wd-process-accent" src="/home/process-accent.webp" alt="" width="320" height="240" loading="lazy" decoding="async" />
