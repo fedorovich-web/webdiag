@@ -19,7 +19,7 @@
   margin-top: 10px !important;
 }
 
-/* CMS compatibility strip: real brand marks, muted by default and restored on hover. */
+/* CMS compatibility strip: semantic SVG marks, muted by default and restored on hover. */
 .wd-home .wd-platform-strip .shell > p::after {
   content: "Проверяйте сайты на любых CMS и технологиях";
 }
@@ -28,41 +28,38 @@ html[lang="en"] .wd-home .wd-platform-strip .shell > p::after {
   content: "Check websites on any CMS or technology stack";
 }
 
-.wd-home .wd-platform-strip .shell > div span {
+.wd-home .wd-platform-list {
+  flex-wrap: wrap;
+  overflow: visible;
+  padding-bottom: 0;
+}
+
+.wd-home .wd-platform-item {
   transition: color 160ms ease;
 }
 
-.wd-home .wd-platform-strip .shell > div span::before {
-  content: "" !important;
+.wd-home .wd-platform-item::before {
+  display: none !important;
+  content: none !important;
+}
+
+.wd-home .wd-platform-logo {
   width: 27px;
   height: 27px;
   flex: 0 0 27px;
-  border: 0;
-  border-radius: 0;
-  background-color: transparent;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: contain;
-  box-shadow: none;
+  object-fit: contain;
   filter: grayscale(1) saturate(0) opacity(.68);
   transition: filter 160ms ease, transform 160ms ease, opacity 160ms ease;
 }
 
-.wd-home .wd-platform-strip .shell > div span:hover {
+.wd-home .wd-platform-item:hover {
   color: #243553;
 }
 
-.wd-home .wd-platform-strip .shell > div span:hover::before {
+.wd-home .wd-platform-item:hover .wd-platform-logo {
   filter: grayscale(0) saturate(1) opacity(1);
   transform: translateY(-1px);
 }
-
-.wd-home .wd-platform-strip .shell > div span:nth-child(1)::before { background-image: url("/home/cms/wordpress.svg"); }
-.wd-home .wd-platform-strip .shell > div span:nth-child(2)::before { background-image: url("/home/cms/opencart.svg"); }
-.wd-home .wd-platform-strip .shell > div span:nth-child(3)::before { background-image: url("/home/cms/1c-bitrix.svg"); }
-.wd-home .wd-platform-strip .shell > div span:nth-child(4)::before { background-image: url("/home/cms/tilda.svg"); }
-.wd-home .wd-platform-strip .shell > div span:nth-child(5)::before { background-image: url("/home/cms/joomla.svg"); }
-.wd-home .wd-platform-strip .shell > div span:nth-child(6)::before { background-image: url("/home/cms/modx.svg"); }
 
 /* Report example: preserve live HTML while matching the approved dashboard composition. */
 .wd-home .wd-report-example-card {
@@ -351,5 +348,26 @@ html[lang="en"] .wd-home .wd-platform-strip .shell > p::after {
 
   .wd-home .wd-report-recommendation {
     min-height: 150px;
+  }
+}
+
+@media (max-width: 680px) {
+  .wd-home .wd-platform-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px 8px;
+    width: 100%;
+  }
+
+  .wd-home .wd-platform-item {
+    min-width: 0;
+    gap: 6px;
+    font-size: 11px;
+  }
+
+  .wd-home .wd-platform-logo {
+    width: 22px;
+    height: 22px;
+    flex-basis: 22px;
   }
 }
