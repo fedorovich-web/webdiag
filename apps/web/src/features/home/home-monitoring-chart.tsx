@@ -39,7 +39,7 @@ const points: Record<Locale, readonly ChartPoint[]> = {
 const linePath =
   "M0 94 C18 93 28 90 40 88 C72 84 104 83 136 82 C168 81 200 76 232 72 C264 68 296 62 328 58 C360 54 392 50 424 48 C456 46 488 41 520 34 C536 31 548 28 560 25";
 const areaPath =
-  "M0 108 L0 94 C18 93 28 90 40 88 C72 84 104 83 136 82 C168 81 200 76 232 72 C264 68 296 62 328 58 C360 54 392 50 424 48 C456 46 488 41 520 34 C536 31 548 28 560 25 L560 108 Z";
+  "M0 132 L0 94 C18 93 28 90 40 88 C72 84 104 83 136 82 C168 81 200 76 232 72 C264 68 296 62 328 58 C360 54 392 50 424 48 C456 46 488 41 520 34 C536 31 548 28 560 25 L560 132 Z";
 
 export function HomeMonitoringChart({ locale }: HomeMonitoringChartProps) {
   const chartPoints = points[locale];
@@ -58,7 +58,7 @@ export function HomeMonitoringChart({ locale }: HomeMonitoringChartProps) {
         <path className="wd-chart-grid-line" d="M0 34 H560" />
         <path className="wd-chart-grid-line" d="M0 62 H560" />
         <path className="wd-chart-grid-line" d="M0 90 H560" />
-        <path className="area" d={areaPath} />
+        <path className="area" d={areaPath} stroke="none" />
         <path className="wd-chart-line-shadow-path" d={linePath} />
         <path className="line" d={linePath} />
       </svg>
@@ -76,7 +76,7 @@ export function HomeMonitoringChart({ locale }: HomeMonitoringChartProps) {
           <span aria-hidden="true" className="wd-chart-dot-marker" />
         </button>
       ))}
-      <div className="wd-chart-axis-labels" aria-hidden="true">
+      <div aria-hidden="true" className="wd-chart-axis-labels">
         {chartPoints.map((point) => (
           <span key={point.label} style={{ left: `${(point.x / viewBox.width) * 100}%` }}>{point.label}</span>
         ))}
