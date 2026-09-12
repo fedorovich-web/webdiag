@@ -10,6 +10,9 @@ body[data-theme="light"] {
   --surface-muted: #f4f9fa;
   --line: #dbe6e8;
   --line-strong: #c9dadd;
+  --wd-accent: #08758b;
+  --wd-accent-strong: #076b80;
+  --wd-ms: #5b6974;
 }
 
 body[data-theme="dark"] {
