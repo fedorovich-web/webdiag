@@ -61,27 +61,6 @@ html[lang="en"] .wd-platform-strip .shell > p::after {
   font-weight: 720;
 }
 
-.wd-platform-strip .shell > div span::before {
-  width: 25px;
-  height: 25px;
-  flex: 0 0 25px;
-  display: grid;
-  place-items: center;
-  border: 1.5px solid #7183a3;
-  border-radius: 50%;
-  color: #7183a3;
-  font-size: 11px;
-  font-weight: 850;
-  line-height: 1;
-}
-
-.wd-platform-strip .shell > div span:nth-child(1)::before { content: "W"; font-family: Georgia, serif; }
-.wd-platform-strip .shell > div span:nth-child(2)::before { content: "↗"; border-radius: 8px; font-size: 14px; }
-.wd-platform-strip .shell > div span:nth-child(3)::before { content: "b"; font-size: 14px; text-transform: uppercase; }
-.wd-platform-strip .shell > div span:nth-child(4)::before { content: "T"; font-family: Georgia, serif; }
-.wd-platform-strip .shell > div span:nth-child(5)::before { content: "✣"; border: 0; font-size: 22px; }
-.wd-platform-strip .shell > div span:nth-child(6)::before { content: "M"; border-radius: 7px; }
-
 /* Process: reproduce the approved mint corner, small illustration and handwritten cue. */
 .wd-process-panel {
   isolation: isolate;
@@ -461,12 +440,6 @@ html[lang="en"] .wd-platform-strip .shell > p::after {
 
   .wd-footer-brand {
     grid-column: 1 / -1;
-  }
-
-  .wd-platform-strip .shell > div span::before {
-    width: 22px;
-    height: 22px;
-    flex-basis: 22px;
   }
 
   .wd-process-accent {
