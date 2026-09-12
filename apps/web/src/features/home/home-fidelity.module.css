@@ -73,28 +73,6 @@
   font-size: 14px;
   font-weight: 700;
 }
-.fidelity :global(.wd-platform-strip .shell > div span)::before {
-  width: 27px;
-  height: 27px;
-  flex: 0 0 27px;
-  display: grid;
-  place-items: center;
-  border: 1px solid #dbe6f2;
-  border-radius: 50%;
-  background: #fff;
-  color: #6d7d99;
-  box-shadow: 0 3px 9px rgb(50 88 129 / .05);
-  font-size: 9px;
-  font-weight: 850;
-  line-height: 1;
-}
-.fidelity :global(.wd-platform-strip .shell > div span:nth-child(1))::before { content: "W"; font-family: Georgia, serif; font-size: 15px; }
-.fidelity :global(.wd-platform-strip .shell > div span:nth-child(2))::before { content: "OC"; border-radius: 8px; color: #2ea3f2; }
-.fidelity :global(.wd-platform-strip .shell > div span:nth-child(3))::before { content: "1C"; border-radius: 8px; color: #d44747; }
-.fidelity :global(.wd-platform-strip .shell > div span:nth-child(4))::before { content: "T"; font-size: 14px; color: #111827; }
-.fidelity :global(.wd-platform-strip .shell > div span:nth-child(5))::before { content: "✣"; font-size: 14px; color: #61708d; }
-.fidelity :global(.wd-platform-strip .shell > div span:nth-child(6))::before { content: "M"; border-radius: 8px; color: #5b6f92; }
-.fidelity :global(.wd-platform-strip .shell > div span:nth-child(n+7)) { display: none; }
 
 .fidelity :global(.wd-monitoring-dashboard) {
   padding: 15px 15px 12px;
