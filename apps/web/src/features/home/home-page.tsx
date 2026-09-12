@@ -62,6 +62,15 @@ const knowledgeArtwork = [
   "/home/knowledge-core-web-vitals.webp",
 ] as const;
 
+const platformLogos: Record<string, string> = {
+  WordPress: "/home/cms/wordpress.svg",
+  OpenCart: "/home/cms/opencart.svg",
+  "1C-Битрикс": "/home/cms/1c-bitrix.svg",
+  Tilda: "/home/cms/tilda.svg",
+  Joomla: "/home/cms/joomla.svg",
+  MODX: "/home/cms/modx.svg",
+};
+
 const heroAccentStyle = {
   background: "var(--wd-button-bg)",
   WebkitBackgroundClip: "text",
@@ -183,7 +192,14 @@ export function HomePage({ locale }: { locale: Locale }) {
       <section className="wd-platform-strip" aria-label={t(homeContent.platformsTitle)}>
         <div className="shell">
           <p>{locale === "ru" ? "Нам доверяют веб-мастера, SEO-специалисты и бизнесы" : "Used by webmasters, SEO specialists and businesses"}</p>
-          <div>{homeContent.platforms.map((platform) => <span key={platform}>{platform}</span>)}</div>
+          <div className="wd-platform-list">
+            {homeContent.platforms.map((platform) => (
+              <span className="wd-platform-item" key={platform}>
+                <img className="wd-platform-logo" src={platformLogos[platform]} alt="" width="27" height="27" loading="lazy" decoding="async" />
+                {platform}
+              </span>
+            ))}
+          </div>
           <span className="wd-platform-more">{locale === "ru" ? "и другие" : "and more"}</span>
         </div>
       </section>
