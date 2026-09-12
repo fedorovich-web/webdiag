@@ -38,11 +38,6 @@ html[lang="en"] .wd-home .wd-platform-strip .shell > p::after {
   transition: color 160ms ease;
 }
 
-.wd-home .wd-platform-item::before {
-  display: none !important;
-  content: none !important;
-}
-
 .wd-home .wd-platform-logo {
   width: 27px;
   height: 27px;
