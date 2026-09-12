@@ -30,8 +30,14 @@ def test_public_tools_are_limited_to_ready_entries() -> None:
     response = asyncio.run(get("/v1/tools"))
     assert response.status_code == 200
     payload = response.json()
-    assert payload["count"] == 112
-    assert len(payload["items"]) == 112
+    assert payload["count"] == 115
+    assert len(payload["items"]) == 115
+    public_slugs = {item["slug"] for item in payload["items"]}
+    assert {
+        "orphan-page-finder",
+        "render-blocking-resources-checker",
+        "resource-waterfall-analyzer",
+    } <= public_slugs
 
 
 def test_public_openapi_excludes_internal_operational_routes() -> None:
