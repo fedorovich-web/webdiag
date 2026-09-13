@@ -27,6 +27,32 @@ export function accountWorkspacePath(parts: readonly string[]): string | null {
   return null;
 }
 
+export function accountLocaleQuery(searchParams: URLSearchParams): string | null {
+  let valid = true;
+  searchParams.forEach((_value, key) => {
+    if (key !== "locale" || searchParams.getAll(key).length !== 1) valid = false;
+  });
+  const locale = searchParams.get("locale");
+  if (!valid || (locale !== null && locale !== "ru" && locale !== "en")) return null;
+  return locale ? `?locale=${locale}` : "";
+}
+
+export function accountWorkspaceLifecyclePath(
+  projectId: string,
+  action: "archive" | "restore",
+): string | null {
+  return validAccountResourceId(projectId)
+    ? `/v1/account/projects/${projectId}/${action}`
+    : null;
+}
+
+export function accountCrawlPath(projectId: string, jobId?: string): string | null {
+  if (!validAccountResourceId(projectId) || (jobId && !validAccountResourceId(jobId))) {
+    return null;
+  }
+  return `/v1/account/projects/${projectId}/crawls${jobId ? `/${jobId}` : ""}`;
+}
+
 export async function proxyAccountWorkspace(
   request: NextRequest,
   options: { readonly method: "GET" | "POST" | "PATCH"; readonly path: string; readonly body?: boolean },

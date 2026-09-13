@@ -51,3 +51,8 @@ export function selectAccountSetCookie(setCookie: string | null): string | null 
   if (!setCookie) return null;
   return setCookie.startsWith(`${SESSION_COOKIE_NAME}=`) ? setCookie : null;
 }
+
+export function selectAccountRetryAfter(status: number, retryAfter: string | null): string | null {
+  if (status !== 429 || !retryAfter || !/^\d{1,10}$/u.test(retryAfter)) return null;
+  return retryAfter;
+}

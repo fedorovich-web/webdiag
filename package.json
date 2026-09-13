@@ -18,25 +18,45 @@
     "lint:web": "npm --workspace @webdiag/web run lint",
     "test": "npm run test:workspace && npm run test:registry && npm run test:core && npm run test:web",
     "test:web": "npm --workspace @webdiag/web run test",
-    "typecheck": "npm --workspace @webdiag/web run typecheck",
+    "typecheck": "npm --workspace @webdiag/tool-core run typecheck && npm --workspace @webdiag/tool-registry run typecheck && npm --workspace @webdiag/web run typecheck",
     "verify:registry": "node scripts/verify-registry.mjs && node scripts/verify-tool-catalog-quality.mjs",
     "verify:release": "node scripts/verify-release.mjs",
     "test:registry": "npm --workspace @webdiag/tool-registry run test",
     "test:core": "npm --workspace @webdiag/tool-core run test",
-    "python:install": "node scripts/run-python.mjs -m pip install -c requirements-dev.lock.txt -e \"./apps/api[dev]\" -e \"./apps/worker[dev]\"",
+    "python:install": "node scripts/install-python-dependencies.mjs",
+    "python:lock:refresh": "node scripts/refresh-python-lock-hashes.mjs",
     "test:python": "node scripts/run-python.mjs -m pytest apps/api/tests apps/worker/tests",
     "lint:python": "node scripts/run-python.mjs -m ruff check apps/api apps/worker",
     "verify:local": "npm run verify:registry && npm test && npm run lint && npm run typecheck && npm run build && npm run test:browser && npm run test:python && npm run lint:python && npm run verify:python-lock",
-    "test:workspace": "node --test scripts/tests-workspace-integrity.test.mjs scripts/tests-python-runtime.test.mjs scripts/tests-python-lock.test.mjs scripts/tests-ui-foundation.test.mjs scripts/tests-tool-catalog-quality.test.mjs",
+    "test:workspace": "node --test scripts/tests-workspace-integrity.test.mjs scripts/tests-python-runtime.test.mjs scripts/tests-python-lock.test.mjs scripts/tests-python-hashes.test.mjs scripts/tests-ui-foundation.test.mjs scripts/tests-tool-catalog-quality.test.mjs scripts/tests-release-gate.test.mjs scripts/tests-typescript-quality-gates.test.mjs scripts/tests-workflow-security.test.mjs",
     "python:where": "node scripts/run-python.mjs -c \"import sys; print(sys.executable)\"",
     "verify:built-site": "node scripts/verify-built-site.mjs",
+    "verify:production-compose": "node scripts/verify-production-compose.mjs",
+    "verify:production-ai-compose": "node scripts/verify-production-ai-compose.mjs",
     "source:manifest": "node scripts/build-source-manifest.mjs",
     "test:browser": "npm --workspace @webdiag/web run test:browser",
     "verify:python-lock": "node scripts/verify-python-lock.mjs"
   },
   "overrides": {
     "next": {
-      "postcss": "8.5.19"
+      "postcss": "8.5.23"
+    },
+    "eslint": {
+      "@eslint/eslintrc": {
+        "js-yaml": "4.3.2"
+      }
+    },
+    "minimatch@3.1.5": {
+      "brace-expansion": "1.1.18"
+    },
+    "eslint-config-next": {
+      "typescript-eslint": {
+        "@typescript-eslint/typescript-estree": {
+          "minimatch": {
+            "brace-expansion": "5.0.9"
+          }
+        }
+      }
     }
   }
 }

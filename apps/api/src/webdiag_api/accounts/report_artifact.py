@@ -88,14 +88,64 @@ def _labels(locale: str) -> dict[str, str]:
     }
 
 
+def _check_category_label(locale: str, category: str) -> str:
+    labels = {
+        "ru": {
+            "http": "HTTP",
+            "redirects": "Перенаправления",
+            "metadata": "Метаданные",
+            "content": "Содержимое",
+            "indexability": "Индексируемость",
+            "crawlability": "Сканирование",
+            "structured_data": "Структурированные данные",
+            "security": "Безопасность",
+        },
+        "en": {
+            "http": "HTTP",
+            "redirects": "Redirects",
+            "metadata": "Metadata",
+            "content": "Content",
+            "indexability": "Indexability",
+            "crawlability": "Crawlability",
+            "structured_data": "Structured data",
+            "security": "Security",
+        },
+    }
+    return labels.get(locale, {}).get(category, category)
+
+
+def _check_status_label(locale: str, status: str) -> str:
+    labels = {
+        "ru": {
+            "passed": "Пройдено",
+            "failed": "Не пройдено",
+            "warning": "Требует внимания",
+            "error": "Ошибка проверки",
+            "running": "Выполняется",
+            "pending": "Ожидает запуска",
+            "skipped": "Пропущено",
+        },
+        "en": {
+            "passed": "Passed",
+            "failed": "Failed",
+            "warning": "Needs attention",
+            "error": "Check error",
+            "running": "Running",
+            "pending": "Pending",
+            "skipped": "Skipped",
+        },
+    }
+    return labels.get(locale, {}).get(status, status)
+
+
 def render_report_html(snapshot: ReportSnapshot) -> bytes:
     labels = _labels(snapshot.locale)
     score = "—" if snapshot.score is None else f"{snapshot.score}/100"
     check_rows = "".join(
         "<tr>"
         f"<td>{_escape(check.name)}</td>"
-        f"<td>{_escape(check.category)}</td>"
-        f"<td>{_escape(check.status)}</td>"
+        f"<td>{_escape(_check_category_label(snapshot.locale, check.category))}</td>"
+        f"<td>{_escape(_check_status_label(snapshot.locale, check.status))}</td>"
         "</tr>"
         for check in snapshot.checks
     )
@@ -114,7 +164,7 @@ def render_report_html(snapshot: ReportSnapshot) -> bytes:
         )
         steps_block = f"<h4>{_escape(labels['steps'])}</h4><ol>{steps}</ol>" if steps else ""
         issue_blocks.append(
-            "<article class=\"issue\">"
+            '<article class="issue">'
             f"<header><span>{_escape(issue.priority.upper())}</span>"
             f"<h3>{_escape(issue.title)}</h3></header>"
             f"<p>{_escape(issue.description)}</p>"
@@ -210,10 +260,10 @@ ul, ol {{ padding-left: 22px; }}
 </head>
 <body>
 <main>
-<p class="print-note">{_escape(labels['print_note'])}</p>
+<p class="print-note">{_escape(labels["print_note"])}</p>
 <header class="hero">
   <div>
-    <span class="eyebrow">{_escape(labels['subtitle'])}</span>
+    <span class="eyebrow">{_escape(labels["subtitle"])}</span>
     <h1>{_escape(snapshot.title)}</h1>
     <p>{_escape(snapshot.project_name)}</p>
   </div>
@@ -221,32 +271,32 @@ ul, ol {{ padding-left: 22px; }}
 </header>
 <div class="meta">
   <div>
-    <strong>{_escape(labels['origin'])}</strong><br>
+    <strong>{_escape(labels["origin"])}</strong><br>
     {_escape(snapshot.target_origin)}
   </div>
   <div>
-    <strong>{_escape(labels['audit_date'])}</strong><br>
+    <strong>{_escape(labels["audit_date"])}</strong><br>
     {_escape(snapshot.audit_completed_at.isoformat())}
   </div>
   <div>
-    <strong>{_escape(labels['generated'])}</strong><br>
+    <strong>{_escape(labels["generated"])}</strong><br>
     {_escape(snapshot.generated_at.isoformat())}
   </div>
 </div>
 <section>
-  <h2>{_escape(labels['checks'])}</h2>
+  <h2>{_escape(labels["checks"])}</h2>
   <table>
     <thead>
       <tr>
-        <th>{_escape(labels['name'])}</th>
-        <th>{_escape(labels['category'])}</th>
-        <th>{_escape(labels['status'])}</th>
+        <th>{_escape(labels["name"])}</th>
+        <th>{_escape(labels["category"])}</th>
+        <th>{_escape(labels["status"])}</th>
       </tr>
     </thead>
     <tbody>{check_rows}</tbody>
   </table>
 </section>
-<section><h2>{_escape(labels['issues'])}</h2>{issues_html}</section>
+<section><h2>{_escape(labels["issues"])}</h2>{issues_html}</section>
 </main>
 </body>
 </html>

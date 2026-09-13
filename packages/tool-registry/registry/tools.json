@@ -11,23 +11,29 @@
     "riskTier": "R2",
     "access": "optional",
     "implementationWave": "W4",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Выполняет ограниченный технический аудит одного публичного URL: HTTP, редиректы, HTML, метаданные, indexability, Open Graph, JSON-LD, security headers, robots.txt и sitemap.xml.",
+      "en": "Runs a bounded technical audit of one public URL: HTTP, redirects, HTML, metadata, indexability, Open Graph, JSON-LD, security headers, robots.txt, and sitemap.xml."
+    }
   },
   {
     "id": "WD-002",
     "slug": "whole-site-audit",
     "title": {
-      "ru": "Аудит сайта с обходом страниц",
-      "en": "Whole-Site Audit"
+      "ru": "Ограниченный аудит сайта",
+      "en": "Bounded Site Audit"
     },
     "category": "seo-audit",
     "executorClass": "crawler",
     "riskTier": "R3",
     "access": "required",
     "implementationWave": "W4",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Запускает из авторизованного проекта ограниченный обход одного origin: до 100 публичных HTML-страниц с учётом robots.txt, без JavaScript и без заявления о полном покрытии сайта.",
+      "en": "Runs an authenticated, project-bound crawl of one origin: up to 100 public HTML pages with robots.txt handling, no JavaScript execution, and no claim of complete site coverage."
+    }
   },
   {
     "id": "WD-003",
@@ -96,6 +102,7 @@
     "access": "none",
     "implementationWave": "W2",
     "state": "internal",
+    "supersededBy": "open-graph-preview",
     "description": null
   },
   {
@@ -234,10 +241,13 @@
     "category": "seo-audit",
     "executorClass": "safe_fetch",
     "riskTier": "R2",
-    "access": "optional",
+    "access": "none",
     "implementationWave": "W3",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Проверяет HTTP-статусы и редиректы для списка до 50 URL через безопасный WebDiag API с отдельным результатом для каждого адреса.",
+      "en": "Checks HTTP statuses and redirects for up to 50 URLs through the safe WebDiag API with an isolated result for each address."
+    }
   },
   {
     "id": "WD-015",
@@ -377,23 +387,29 @@
     "riskTier": "R3",
     "access": "required",
     "implementationWave": "W4",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Группирует одинаковые непустые title и description в выборке до 100 HTML-страниц одного ограниченного обхода проекта.",
+      "en": "Groups identical non-empty titles and descriptions within the sample of up to 100 HTML pages from one bounded project crawl."
+    }
   },
   {
     "id": "WD-023",
     "slug": "orphan-page-finder",
     "title": {
-      "ru": "Поиск страниц-сирот",
-      "en": "Orphan Page Finder"
+      "ru": "Кандидаты в страницы без внутренних ссылок",
+      "en": "Unlinked Page Candidates"
     },
     "category": "seo-audit",
     "executorClass": "crawler",
     "riskTier": "R3",
     "access": "required",
     "implementationWave": "W4",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Показывает кандидатов из sitemap, на которые не найдены внутренние ссылки в выборке до 100 HTML-страниц; результат не доказывает, что страница является сиротой на всём сайте.",
+      "en": "Shows sitemap candidates with no internal links found in a sample of up to 100 HTML pages; the result does not prove that a page is orphaned across the complete site."
+    }
   },
   {
     "id": "WD-024",
@@ -931,8 +947,8 @@
     "implementationWave": "W4",
     "state": "ready",
     "description": {
-      "ru": "Проверяет Core Web Vitals и PageSpeed через backend-интеграцию с Google PageSpeed API: mobile/desktop, lab metrics, field data и Lighthouse opportunities.",
-      "en": "Checks Core Web Vitals and PageSpeed through a backend Google PageSpeed API integration: mobile/desktop, lab metrics, field data, and Lighthouse opportunities."
+      "ru": "Проверяет Core Web Vitals и PageSpeed через backend-интеграцию с Google PageSpeed API: mobile/desktop, lab и field data, оценки четырёх категорий Lighthouse и ограниченный список проверок для исправления.",
+      "en": "Checks Core Web Vitals and PageSpeed through a backend Google PageSpeed API integration: mobile/desktop, lab and field data, four Lighthouse category scores, and a bounded fix list."
     }
   },
   {
@@ -948,6 +964,7 @@
     "access": "optional",
     "implementationWave": "W4",
     "state": "internal",
+    "supersededBy": "core-web-vitals-checker",
     "description": null
   },
   {
@@ -980,8 +997,11 @@
     "riskTier": "R3",
     "access": "optional",
     "implementationWave": "W4",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Показывает до 40 строк временной шкалы network-requests из Google PageSpeed Lighthouse: тип, начало, длительность и известный размер. Query и fragment удаляются; response bodies, headers, cookies и trace не сохраняются.",
+      "en": "Shows up to 40 network-requests timeline rows from Google PageSpeed Lighthouse: type, start, duration, and known size. Query strings and fragments are removed; response bodies, headers, cookies, and traces are not stored."
+    }
   },
   {
     "id": "WD-055",
@@ -1049,8 +1069,11 @@
     "riskTier": "R3",
     "access": "optional",
     "implementationWave": "W4",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Показывает до 20 строк точного audit render-blocking-resources из Google PageSpeed Lighthouse. Если provider не вернул этот audit, результат помечается недоступным без эвристической подмены.",
+      "en": "Shows up to 20 rows from the exact Google PageSpeed Lighthouse render-blocking-resources audit. If the provider omits the audit, the result is marked unavailable without a heuristic substitute."
+    }
   },
   {
     "id": "WD-059",
@@ -1065,7 +1088,8 @@
     "access": "none",
     "implementationWave": "W3",
     "state": "internal",
-    "description": null
+    "description": null,
+    "supersededBy": "html-validator"
   },
   {
     "id": "WD-060",
@@ -1080,6 +1104,7 @@
     "access": "optional",
     "implementationWave": "W4",
     "state": "internal",
+    "supersededBy": "core-web-vitals-checker",
     "description": null
   },
   {
@@ -1203,6 +1228,7 @@
     "access": "none",
     "implementationWave": "W1",
     "state": "internal",
+    "supersededBy": "csv-json-converter",
     "description": null
   },
   {
@@ -1308,6 +1334,7 @@
     "access": "none",
     "implementationWave": "W1",
     "state": "internal",
+    "supersededBy": "cron-expression-workbench",
     "description": null
   },
   {
@@ -1341,6 +1368,7 @@
     "access": "none",
     "implementationWave": "W1",
     "state": "internal",
+    "supersededBy": "url-normalization-analyzer",
     "description": null
   },
   {
@@ -1481,8 +1509,11 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Извлекает детерминированную палитру из уменьшенной выборки одного JPEG, PNG, WebP или AVIF локально в браузере и показывает HEX, RGB и долю выборки.",
+      "en": "Extracts a deterministic sampled palette from one JPEG, PNG, WebP, or AVIF locally in the browser and reports HEX, RGB, and sample share."
+    }
   },
   {
     "id": "WD-084",
@@ -1748,8 +1779,11 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Создаёт пять PNG favicon и web app icon файлов из центральной квадратной области одного JPEG, PNG, WebP или AVIF локально в браузере.",
+      "en": "Creates five PNG favicon and web app icon files from the centered square crop of one JPEG, PNG, WebP, or AVIF locally in the browser."
+    }
   },
   {
     "id": "WD-099",
@@ -1763,8 +1797,11 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Создаёт QR-код из bounded text и читает один QR-код из локального JPEG, PNG, WebP или AVIF без загрузки файла на сервер.",
+      "en": "Generates a QR code from bounded text and reads one QR code from a local JPEG, PNG, WebP, or AVIF without uploading the file."
+    }
   },
   {
     "id": "WD-100",
@@ -1797,6 +1834,7 @@
     "access": "none",
     "implementationWave": "W1",
     "state": "internal",
+    "supersededBy": "qr-code-generator",
     "description": null
   },
   {
@@ -1848,6 +1886,7 @@
     "access": "none",
     "implementationWave": "W1",
     "state": "internal",
+    "supersededBy": "image-metadata-viewer",
     "description": null
   },
   {
@@ -1862,8 +1901,11 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Собирает проверенный srcset и экранированный img-фрагмент из 1–20 существующих URL и width descriptors; не создаёт и не загружает файлы.",
+      "en": "Builds a validated srcset and escaped img fragment from 1–20 existing URLs and width descriptors; it does not create or upload image files."
+    }
   },
   {
     "id": "WD-106",
@@ -1895,8 +1937,11 @@
     "riskTier": "R0",
     "access": "none",
     "implementationWave": "W1",
-    "state": "internal",
-    "description": null
+    "state": "ready",
+    "description": {
+      "ru": "Создаёт точный Data URI для одного JPEG, PNG, WebP или AVIF до 1 МиБ и отдельный PNG placeholder до 24 px локально в браузере.",
+      "en": "Creates an exact Data URI for one JPEG, PNG, WebP, or AVIF up to 1 MiB and a separate PNG placeholder up to 24 px locally in the browser."
+    }
   },
   {
     "id": "WD-108",
@@ -1911,6 +1956,7 @@
     "access": "none",
     "implementationWave": "W1",
     "state": "internal",
+    "supersededBy": "image-data-uri-converter",
     "description": null
   },
   {

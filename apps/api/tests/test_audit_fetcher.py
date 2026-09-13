@@ -142,6 +142,56 @@ def test_safe_fetcher_blocks_unsafe_redirect_target_before_request() -> None:
     assert requested_urls == [f"https://{SAFE_IP}"]
 
 
+def test_safe_fetcher_blocks_cross_origin_redirect_when_origin_is_pinned() -> None:
+    requested_hosts: list[str | None] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requested_hosts.append(request.headers.get("host"))
+        return streaming_response(
+            302,
+            headers={"location": "https://other.example/landing"},
+            request=request,
+        )
+
+    fetcher = SafeHttpFetcher(
+        resolver=public_resolver,
+        peer_address_provider=verified_peer,
+        transport=httpx.MockTransport(handler),
+    )
+
+    with pytest.raises(UrlPolicyError, match="outside the allowed origin"):
+        fetcher.fetch("https://example.com/start", allowed_origin="https://example.com")
+
+    assert requested_hosts == ["example.com"]
+
+
+def test_safe_fetcher_applies_caller_policy_before_redirect_request() -> None:
+    requested_paths: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requested_paths.append(request.url.path)
+        return streaming_response(
+            302,
+            headers={"location": "/private"},
+            request=request,
+        )
+
+    def reject_private(url: str) -> None:
+        if url.endswith("/private"):
+            raise UrlPolicyError("URL is disallowed by the crawl policy.")
+
+    fetcher = SafeHttpFetcher(
+        resolver=public_resolver,
+        peer_address_provider=verified_peer,
+        transport=httpx.MockTransport(handler),
+    )
+
+    with pytest.raises(UrlPolicyError, match="disallowed by the crawl policy"):
+        fetcher.fetch("https://example.com/start", redirect_validator=reject_private)
+
+    assert requested_paths == ["/start"]
+
+
 def test_safe_fetcher_enforces_redirect_limit() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return streaming_response(

@@ -1,5 +1,7 @@
 "use client";
 
+import { toolErrorMessage } from "./tool-error-presentation";
+
 import { useMemo, useState, type ReactNode } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { CopyButton } from "../../components/copy-button";
@@ -217,7 +219,7 @@ export function ColorConverterTool({ locale }: { locale: Locale }) {
     try {
       return { result: convertHexColor(input), error: "" };
     } catch (caught) {
-      return { result: null, error: caught instanceof Error ? caught.message : dictionary[locale].error };
+      return { result: null, error: toolErrorMessage(locale, caught, "invalid_input") };
     }
   }, [input, locale]);
 
@@ -236,7 +238,7 @@ export function CssSpecificityCalculatorTool({ locale }: { locale: Locale }) {
     try {
       return { results: calculateSelectorSpecificity(selector), error: "" };
     } catch (caught) {
-      return { results: [] as readonly SpecificityResult[], error: caught instanceof Error ? caught.message : dictionary[locale].error };
+      return { results: [] as readonly SpecificityResult[], error: toolErrorMessage(locale, caught, "invalid_input") };
     }
   }, [selector, locale]);
   const output = state.results.map((result) => `${result.score}  ${result.selector}`).join("\n");
@@ -262,7 +264,7 @@ export function TypographyScaleGeneratorTool({ locale }: { locale: Locale }) {
     try {
       return { rows: generateTypographyScale(Number(base), Number(ratio), Number(minStep), Number(maxStep)), error: "" };
     } catch (caught) {
-      return { rows: [] as readonly TypographyScaleStep[], error: caught instanceof Error ? caught.message : dictionary[locale].error };
+      return { rows: [] as readonly TypographyScaleStep[], error: toolErrorMessage(locale, caught, "invalid_input") };
     }
   }, [base, ratio, minStep, maxStep, locale]);
   const css = state.rows.map((row) => row.cssVar).join("\n");

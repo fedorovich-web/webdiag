@@ -4,8 +4,8 @@ import { pageMetadata } from "../../../src/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
   locale: "ru",
-  title: "Цены на технический аудит и мониторинг сайта",
-  description: "Предварительные тарифы WebDiag: бесплатная проверка URL, разовые проверки, полный аудит сайта и мониторинг.",
+  title: "Тарифы WebDiag — инструменты и личный кабинет",
+  description: "Условия доступа к инструментам и личному кабинету WebDiag. Учитывайте только стоимость, лимиты и условия, явно опубликованные в интерфейсе сервиса.",
   canonical: "/pricing",
   ruPath: "/pricing",
   enPath: "/en/pricing",
@@ -16,18 +16,18 @@ export default function Page() {
     <main className="shell page-main wd-internal-page">
       <header className="page-heading wd-internal-hero">
         <span className="eyebrow">WebDiag</span>
-        <h1>Цены на аудит сайта, разовые проверки и мониторинг</h1>
-        <p>Базовые проверки остаются бесплатными. Полный аудит, расширенные лимиты и мониторинг оплачиваются отдельно.</p>
+        <h1>Тарифы WebDiag</h1>
+        <p>Выбирайте формат работы по задаче: быстрые публичные проверки или личный кабинет для проектов, сохранённой истории и повторной работы с результатами.</p>
       </header>
-      <section className="wd-internal-grid" aria-label="Модель тарифов">
-        <article><h2>Бесплатно — 0 ₽</h2><p>Экспресс-проверка одного URL и базовые инструменты без истории проекта.</p></article>
-        <article><h2>Разовые проверки — от 99 ₽</h2><p>Sitemap, битые ссылки, изображения, HTML validation и AI-помощники оплачиваются за запуск.</p></article>
-        <article><h2>Полный аудит — от 490 ₽</h2><p>Технический SEO-аудит сайта с приоритетами и затронутыми URL.</p></article>
-        <article><h2>Мониторинг — от 299 ₽/мес</h2><p>Регулярный контроль сайта после релизов и SEO-изменений.</p></article>
+      <section className="wd-internal-grid wd-availability-grid" aria-label="Условия использования WebDiag">
+        <article><h2>Публичные инструменты</h2><p>Подходят для точечных технических и SEO-проверок. Доступность конкретного инструмента всегда видна в каталоге.</p><Link className="wd-text-link" href="/tools">Все инструменты</Link></article>
+        <article><h2>Личный кабинет</h2><p>Используйте аккаунт для проектов, сохранённых результатов, приоритетов, отчётов и повторных проверок.</p><Link className="wd-text-link" href="/register">Создать аккаунт</Link></article>
+        <article><h2>Стоимость</h2><p>WebDiag не показывает неподтверждённые цены. Учитывайте только стоимость, которая явно указана на этой странице или непосредственно в интерфейсе сервиса.</p></article>
+        <article><h2>Лимиты и условия</h2><p>Ориентируйтесь только на лимиты и условия, явно показанные рядом с соответствующей функцией WebDiag.</p></article>
       </section>
       <section className="wd-internal-note">
-        <strong>Цены предварительные</strong>
-        <p>Итоговые тарифы будут уточняться после проверки себестоимости audit engine, лимитов страниц и частоты мониторинга.</p>
+        <strong>Нужно начать с проверки сайта?</strong>
+        <p>Откройте каталог и выберите конкретную техническую или SEO-проверку для своей задачи.</p>
         <Link className="wd-button wd-button-primary" href="/tools">Открыть инструменты</Link>
       </section>
     </main>

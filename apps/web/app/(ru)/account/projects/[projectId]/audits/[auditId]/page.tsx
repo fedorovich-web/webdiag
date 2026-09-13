@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Сохранённый аудит", 
 export default async function Page({ params }: { readonly params: Promise<{ readonly projectId: string; readonly auditId: string }> }) {
   const { projectId, auditId } = await params;
   return (
-    <AccountWorkspaceShell locale="ru" section="audit" currentProjectId={projectId}>
+    <AccountWorkspaceShell locale="ru" section="audit" currentProjectId={projectId} currentAuditId={auditId}>
       <AccountSavedAudit locale="ru" projectId={projectId} auditId={auditId} />
     </AccountWorkspaceShell>
   );

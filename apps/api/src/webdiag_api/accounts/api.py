@@ -3,15 +3,15 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Annotated
 
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response
-from fastapi.exception_handlers import request_validation_exception_handler
-from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Response
 
 from webdiag_api.accounts.models import (
     AccountLogoutResponse,
     AccountSessionResponse,
+    AccountSessionsRevokedResponse,
+    AccountSessionSummaryResponse,
     LoginRequest,
+    PasswordChangeRequest,
     RegisterRequest,
 )
 from webdiag_api.accounts.security import ScryptParameters
@@ -35,6 +35,9 @@ def get_account_service() -> AccountService:
             p=settings.account_scrypt_p,
             length=settings.account_scrypt_dklen,
         ),
+        login_attempt_limit=settings.account_login_attempt_limit,
+        login_attempt_window_seconds=settings.account_login_attempt_window_seconds,
+        login_block_seconds=settings.account_login_block_seconds,
     )
 
 
@@ -47,11 +50,24 @@ def _detail(error: AccountServiceError) -> dict[str, str]:
 
 
 def _http_error(error: AccountServiceError) -> HTTPException:
+    headers = {"Cache-Control": "no-store"}
+    if error.retry_after is not None:
+        headers["Retry-After"] = str(error.retry_after)
     return HTTPException(
         status_code=error.status_code,
         detail=_detail(error),
-        headers={"Cache-Control": "no-store"},
+        headers=headers,
     )
+
+
+def current_account_user_id(
+    service: AccountService,
+    session_token: str | None,
+) -> str:
+    try:
+        return service.get_session(session_token).user.id
+    except AccountServiceError as error:
+        raise _http_error(error) from error
 
 
 def _set_session_cookie(response: Response, token: str) -> None:
@@ -65,24 +81,6 @@ def _set_session_cookie(response: Response, token: str) -> None:
         path="/",
     )
     response.headers["cache-control"] = "no-store"
-
-
-async def account_validation_exception_handler(
-    request: Request,
-    error: RequestValidationError,
-) -> Response:
-    if not request.url.path.startswith("/v1/account/"):
-        return await request_validation_exception_handler(request, error)
-    return JSONResponse(
-        status_code=422,
-        content={
-            "detail": {
-                "code": "account_invalid_request",
-                "message": "Invalid account request.",
-            }
-        },
-        headers={"Cache-Control": "no-store"},
-    )
 
 
 @router.post("/register", response_model=AccountSessionResponse, status_code=201)
@@ -142,3 +140,47 @@ def logout(
     )
     response.headers["cache-control"] = "no-store"
     return AccountLogoutResponse()
+
+
+@router.post("/password", response_model=AccountSessionResponse)
+def change_password(
+    request: PasswordChangeRequest,
+    response: Response,
+    service: AccountServiceDependency,
+    webdiag_session: SessionCookie = None,
+) -> AccountSessionResponse:
+    try:
+        session = service.change_password(webdiag_session, request)
+    except AccountServiceError as error:
+        raise _http_error(error) from error
+    _set_session_cookie(response, session.token)
+    return session.response
+
+
+@router.get("/sessions", response_model=AccountSessionSummaryResponse)
+def sessions(
+    response: Response,
+    service: AccountServiceDependency,
+    webdiag_session: SessionCookie = None,
+) -> AccountSessionSummaryResponse:
+    response.headers["cache-control"] = "no-store"
+    try:
+        return service.session_summary(webdiag_session)
+    except AccountServiceError as error:
+        raise _http_error(error) from error
+
+
+@router.post(
+    "/sessions/revoke-others",
+    response_model=AccountSessionsRevokedResponse,
+)
+def revoke_other_sessions(
+    response: Response,
+    service: AccountServiceDependency,
+    webdiag_session: SessionCookie = None,
+) -> AccountSessionsRevokedResponse:
+    response.headers["cache-control"] = "no-store"
+    try:
+        return service.revoke_other_sessions(webdiag_session)
+    except AccountServiceError as error:
+        raise _http_error(error) from error

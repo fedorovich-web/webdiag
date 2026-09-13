@@ -1,15 +1,22 @@
 import asyncio
 import sqlite3
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import httpx
 import pytest
 from pydantic import ValidationError
 
-from webdiag_api.accounts.api import get_account_service
-from webdiag_api.accounts.models import LoginRequest, RegisterRequest
-from webdiag_api.accounts.security import ScryptParameters, hash_password, verify_password
+from webdiag_api.accounts.api import _http_error, get_account_service
+from webdiag_api.accounts.models import LoginRequest, PasswordChangeRequest, RegisterRequest
+from webdiag_api.accounts.security import (
+    ScryptParameters,
+    hash_password,
+    password_needs_rehash,
+    verify_password,
+)
 from webdiag_api.accounts.service import AccountService, AccountServiceError
 from webdiag_api.accounts.storage import SqliteAccountStore
 from webdiag_api.config import Settings
@@ -21,6 +28,7 @@ async def request(
     path: str,
     *,
     json: dict[str, object] | None = None,
+    content: bytes | None = None,
     cookies: httpx.Cookies | None = None,
 ) -> tuple[httpx.Response, httpx.Cookies]:
     transport = httpx.ASGITransport(app=app)
@@ -29,7 +37,7 @@ async def request(
         base_url="http://test",
         cookies=cookies,
     ) as client:
-        response = await client.request(method, path, json=json)
+        response = await client.request(method, path, json=json, content=content)
         return response, client.cookies
 
 
@@ -44,7 +52,10 @@ def build_service(
         SqliteAccountStore(str(tmp_path / "accounts.sqlite3")),
         session_ttl_seconds=session_ttl_seconds,
         active_session_limit=active_session_limit,
-        scrypt_parameters=scrypt_parameters or ScryptParameters(),
+        scrypt_parameters=scrypt_parameters or ScryptParameters(n=2**12),
+        login_attempt_limit=5,
+        login_attempt_window_seconds=900,
+        login_block_seconds=900,
     )
 
 
@@ -64,8 +75,16 @@ def test_settings_reject_insecure_production_and_unsafe_storage_paths() -> None:
     with pytest.raises(ValidationError):
         Settings(environment="production", account_cookie_secure=False)
 
-    production = Settings(environment="production", account_cookie_secure=True)
+    production = Settings(
+        environment="production",
+        account_cookie_secure=True,
+        monitoring_internal_token="x" * 32,
+        crawler_internal_token="c" * 32,
+    )
     assert production.account_cookie_secure is True
+    assert production.ai_runtime_enabled is False
+    assert production.ai_internal_token == ""
+    assert production.ai_safety_identifier_secret == ""
 
     for unsafe_path in (
         "../outside.sqlite3",
@@ -82,8 +101,46 @@ def test_settings_reject_insecure_production_and_unsafe_storage_paths() -> None:
     assert Settings(account_database_path=".webdiag/accounts.sqlite3").account_database_path
     assert Settings(account_database_path="/data/accounts.sqlite3").account_database_path
 
+    for unsafe_prefix in ("../outside", "ai uploads", "ai//generated"):
+        with pytest.raises(ValidationError):
+            Settings(ai_artifact_prefix=unsafe_prefix)
+    assert Settings(ai_artifact_prefix="/private/generated/").ai_artifact_prefix == (
+        "private/generated"
+    )
+
+
+def test_settings_require_distinct_account_and_audit_databases(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    shared = str(tmp_path / "shared.sqlite3")
+
+    with pytest.raises(
+        ValidationError,
+        match="account and audit database paths must be distinct",
+    ):
+        Settings(
+            account_database_path=shared,
+            audit_database_path=shared,
+        )
+
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(
+        ValidationError,
+        match="account and audit database paths must be distinct",
+    ):
+        Settings(
+            account_database_path="shared.sqlite3",
+            audit_database_path=shared,
+        )
+
 
 def test_settings_bound_session_and_scrypt_parameters() -> None:
+    defaults = Settings()
+    assert defaults.account_scrypt_n == 2**15
+    assert defaults.account_scrypt_r == 8
+    assert defaults.account_scrypt_p == 3
+
     for payload in (
         {"account_session_ttl_seconds": 0},
         {"account_session_ttl_seconds": 60 * 60 * 24 * 91},
@@ -93,6 +150,9 @@ def test_settings_bound_session_and_scrypt_parameters() -> None:
         {"account_scrypt_r": 0},
         {"account_scrypt_p": 0},
         {"account_scrypt_dklen": 15},
+        {"account_login_attempt_limit": 2},
+        {"account_login_attempt_window_seconds": 59},
+        {"account_login_block_seconds": 29},
     ):
         with pytest.raises(ValidationError):
             Settings(**payload)
@@ -104,6 +164,140 @@ def test_settings_bound_session_and_scrypt_parameters() -> None:
         account_scrypt_dklen=32,
     )
     assert settings.account_scrypt_n == 2**15
+
+
+def test_settings_bound_request_body_limits() -> None:
+    defaults = Settings()
+    assert defaults.http_request_body_max_bytes == 2_000_000
+    assert defaults.account_request_body_max_bytes == 16_384
+    assert defaults.ai_text_request_body_max_bytes == 300_000
+    assert defaults.ai_image_upload_body_max_bytes == 4 * 1024 * 1024
+
+    for payload in (
+        {"http_request_body_max_bytes": 16_383},
+        {"http_request_body_max_bytes": 10_000_001},
+        {"account_request_body_max_bytes": 1_023},
+        {"account_request_body_max_bytes": 10_000_001},
+        {"ai_text_request_body_max_bytes": 1_023},
+        {"ai_text_request_body_max_bytes": 2_000_001},
+        {"ai_image_upload_body_max_bytes": 1_023},
+        {"ai_image_upload_body_max_bytes": 4 * 1024 * 1024 + 1},
+        {
+            "http_request_body_max_bytes": 16_384,
+            "account_request_body_max_bytes": 16_385,
+        },
+        {
+            "http_request_body_max_bytes": 299_999,
+            "ai_text_request_body_max_bytes": 300_000,
+        },
+        {
+            "ai_input_max_bytes": 299_000,
+            "ai_text_request_body_max_bytes": 300_000,
+        },
+    ):
+        with pytest.raises(ValidationError):
+            Settings(**payload)
+
+
+def test_settings_bound_site_audit_budget_and_runtime() -> None:
+    defaults = Settings()
+    assert defaults.crawler_page_limit == 100
+    assert defaults.crawler_deadline_seconds == 240
+    assert defaults.crawler_lease_seconds == 300
+    assert defaults.crawler_active_job_limit_per_user == 2
+    assert defaults.crawler_active_job_limit_global == 25
+
+    for payload in (
+        {"crawler_page_limit": 0},
+        {"crawler_page_limit": 501},
+        {"crawler_deadline_seconds": 241},
+        {"crawler_lease_seconds": 269, "crawler_deadline_seconds": 240},
+        {"crawler_active_job_limit_per_user": 0},
+        {"crawler_active_job_limit_global": 1, "crawler_active_job_limit_per_user": 2},
+    ):
+        with pytest.raises(ValidationError):
+            Settings(**payload)
+
+
+def test_settings_require_bounded_distinct_ai_worker_credentials() -> None:
+    with pytest.raises(ValidationError, match="production AI internal token is required"):
+        Settings(
+            environment="production",
+            account_cookie_secure=True,
+            monitoring_internal_token="m" * 32,
+            crawler_internal_token="c" * 32,
+            ai_runtime_enabled=True,
+        )
+
+    with pytest.raises(ValidationError, match="must be distinct"):
+        Settings(
+            environment="production",
+            account_cookie_secure=True,
+            monitoring_internal_token="x" * 32,
+            ai_internal_token="x" * 32,
+            crawler_internal_token="c" * 32,
+            ai_safety_identifier_secret="z" * 32,
+            ai_runtime_enabled=True,
+        )
+
+    with pytest.raises(ValidationError, match="safety identifier secret is required"):
+        Settings(
+            environment="production",
+            account_cookie_secure=True,
+            monitoring_internal_token="m" * 32,
+            ai_internal_token="a" * 32,
+            crawler_internal_token="c" * 32,
+            ai_runtime_enabled=True,
+        )
+
+    with pytest.raises(ValidationError, match="must be distinct"):
+        Settings(
+            environment="production",
+            account_cookie_secure=True,
+            monitoring_internal_token="m" * 32,
+            ai_internal_token="a" * 32,
+            crawler_internal_token="c" * 32,
+            ai_safety_identifier_secret="a" * 32,
+            ai_runtime_enabled=True,
+        )
+
+    with pytest.raises(ValidationError, match="production crawler internal token is required"):
+        Settings(
+            environment="production",
+            account_cookie_secure=True,
+            monitoring_internal_token="m" * 32,
+            ai_internal_token="a" * 32,
+            ai_safety_identifier_secret="s" * 32,
+            ai_runtime_enabled=True,
+        )
+
+    for payload in (
+        {"ai_internal_token": "short"},
+        {"ai_internal_token": "x" * 16 + "\n" + "y" * 16},
+        {"crawler_internal_token": "replace-with-a-distinct-32-character-random-token"},
+        {"ai_safety_identifier_secret": "short"},
+        {"ai_lease_seconds": 59},
+        {"ai_lease_seconds": 3_601},
+        {"ai_lease_renew_interval_seconds": 9},
+        {"ai_input_max_bytes": 1_023},
+        {"ai_output_max_bytes": 2_000_001},
+        {"ai_lease_seconds": 60, "ai_lease_renew_interval_seconds": 60},
+    ):
+        with pytest.raises(ValidationError):
+            Settings(**payload)
+
+
+def test_account_api_rejects_oversized_direct_request_with_proxy_envelope() -> None:
+    response, _ = asyncio.run(request("POST", "/v1/account/login", content=b"x" * 16_385))
+
+    assert response.status_code == 413
+    assert response.headers["cache-control"] == "no-store"
+    assert response.json() == {
+        "detail": {
+            "code": "account_request_too_large",
+            "message": "Request body is too large.",
+        }
+    }
 
 
 def test_configured_scrypt_hash_and_bounded_verification() -> None:
@@ -121,6 +315,105 @@ def test_configured_scrypt_hash_and_bounded_verification() -> None:
 
     malicious = stronger.replace("scrypt$8192$", f"scrypt${2**20}$", 1)
     assert not verify_password("a sufficiently long password", malicious)
+
+    desired = ScryptParameters(n=2**13, r=8, p=1, length=32)
+    assert password_needs_rehash(encoded, desired)
+    assert not password_needs_rehash(stronger, desired)
+
+
+def test_successful_login_rehashes_legacy_password_parameters(tmp_path: Path) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    legacy = ScryptParameters(n=2**12, r=8, p=1, length=32)
+    current = ScryptParameters(n=2**13, r=8, p=1, length=32)
+    legacy_service = build_service(tmp_path, scrypt_parameters=legacy)
+    register_user(legacy_service)
+
+    current_service = build_service(tmp_path, scrypt_parameters=current)
+    current_service.login(
+        LoginRequest(email="user@example.com", password="correct horse battery staple")
+    )
+
+    with sqlite3.connect(database_path) as connection:
+        password_hash = connection.execute(
+            "SELECT password_hash FROM account_users WHERE email = ?",
+            ("user@example.com",),
+        ).fetchone()[0]
+    assert password_hash.startswith("scrypt$8192$8$1$")
+
+
+def test_login_failures_are_persistently_bounded_and_hashed(
+    tmp_path: Path,
+) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    service = build_service(tmp_path)
+    register_user(service)
+
+    for _ in range(4):
+        with pytest.raises(AccountServiceError) as invalid:
+            service.login(LoginRequest(email="user@example.com", password="wrong password"))
+        assert invalid.value.status_code == 401
+
+    with pytest.raises(AccountServiceError) as limited:
+        service.login(LoginRequest(email="user@example.com", password="wrong password"))
+    assert limited.value.status_code == 429
+    assert limited.value.code == "account_login_rate_limited"
+    assert limited.value.retry_after == 900
+    assert _http_error(limited.value).headers == {
+        "Cache-Control": "no-store",
+        "Retry-After": "900",
+    }
+
+    replacement = build_service(tmp_path)
+    with pytest.raises(AccountServiceError) as still_limited:
+        replacement.login(
+            LoginRequest(email="user@example.com", password="correct horse battery staple")
+        )
+    assert still_limited.value.status_code == 429
+
+    with sqlite3.connect(database_path) as connection:
+        row = connection.execute(
+            "SELECT identity_hash, failed_attempts FROM account_login_attempts"
+        ).fetchone()
+    assert row is not None
+    assert row[0] != "user@example.com"
+    assert row[1] == 5
+
+    second = build_service(tmp_path)
+    second.register(
+        RegisterRequest(
+            email="second@example.com",
+            display_name="Second User",
+            password="another correct horse password",
+        )
+    )
+    with pytest.raises(AccountServiceError):
+        second.login(LoginRequest(email="second@example.com", password="wrong password"))
+    second.login(
+        LoginRequest(
+            email="second@example.com",
+            password="another correct horse password",
+        )
+    )
+    with sqlite3.connect(database_path) as connection:
+        assert connection.execute("SELECT COUNT(*) FROM account_login_attempts").fetchone()[0] == 1
+
+
+def test_missing_account_uses_the_bounded_password_verifier(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    service = build_service(tmp_path)
+    calls: list[str] = []
+
+    def recording_verify(password: str, encoded: str) -> bool:
+        calls.append(password)
+        return False
+
+    monkeypatch.setattr("webdiag_api.accounts.service.verify_password", recording_verify)
+    with pytest.raises(AccountServiceError):
+        service.login(LoginRequest(email="missing@example.com", password="wrong password"))
+    with pytest.raises(AccountServiceError):
+        service.login(LoginRequest(email="bad", password="wrong password"))
+    assert calls == ["wrong password", "wrong password"]
 
 
 def test_account_service_register_login_session_and_logout(tmp_path: Path) -> None:
@@ -193,9 +486,7 @@ def test_storage_is_foundation_only_hashes_tokens_and_caps_sessions(tmp_path: Pa
     tokens = [first_token]
     for _ in range(4):
         tokens.append(
-            service.login(
-                LoginRequest(email="user@example.com", password=raw_password)
-            ).token
+            service.login(LoginRequest(email="user@example.com", password=raw_password)).token
         )
 
     with sqlite3.connect(database_path) as connection:
@@ -211,12 +502,10 @@ def test_storage_is_foundation_only_hashes_tokens_and_caps_sessions(tmp_path: Pa
         ).fetchone()[0]
         session_hashes = {
             row[0]
-            for row in connection.execute(
-                "SELECT token_hash FROM account_sessions"
-            ).fetchall()
+            for row in connection.execute("SELECT token_hash FROM account_sessions").fetchall()
         }
 
-    assert tables == {"account_users", "account_sessions"}
+    assert tables == {"account_users", "account_sessions", "account_login_attempts"}
     assert password_hash != raw_password
     assert raw_password not in database_path.read_bytes().decode("latin-1", errors="ignore")
     assert len(session_hashes) == 3
@@ -246,6 +535,388 @@ def test_expired_session_is_rejected_and_deleted(tmp_path: Path) -> None:
 
     with sqlite3.connect(database_path) as connection:
         assert connection.execute("SELECT COUNT(*) FROM account_sessions").fetchone()[0] == 0
+
+
+def test_account_session_count_and_revoke_others_are_bounded_and_idempotent(
+    tmp_path: Path,
+) -> None:
+    store = SqliteAccountStore(str(tmp_path / "accounts.sqlite3"))
+    user = store.create_user(
+        email="user@example.com",
+        display_name="User",
+        password_hash="scrypt$current",
+    )
+    now = int(time.time())
+    store.create_session(
+        token_hash="expired",
+        user_id=user.id,
+        expires_at=now - 1,
+        active_session_limit=10,
+    )
+    store.create_session(
+        token_hash="current",
+        user_id=user.id,
+        expires_at=now + 600,
+        active_session_limit=10,
+    )
+    store.create_session(
+        token_hash="other",
+        user_id=user.id,
+        expires_at=now + 600,
+        active_session_limit=10,
+    )
+
+    assert store.active_session_count_for_token(current_token_hash="current", now=now) == 2
+    assert (
+        store.delete_other_sessions_for_token(
+            current_token_hash="current",
+            now=now,
+        )
+        == 1
+    )
+    assert (
+        store.delete_other_sessions_for_token(
+            current_token_hash="current",
+            now=now,
+        )
+        == 0
+    )
+    assert store.active_session_count_for_token(current_token_hash="current", now=now) == 1
+    assert store.get_user_id_for_session(token_hash="current", now=now) == user.id
+
+
+def test_rotate_password_and_session_is_atomic_and_compare_and_swap_safe(
+    tmp_path: Path,
+) -> None:
+    store = SqliteAccountStore(str(tmp_path / "accounts.sqlite3"))
+    user = store.create_user(
+        email="user@example.com",
+        display_name="User",
+        password_hash="scrypt$current",
+    )
+    now = int(time.time())
+    for token_hash in ("first", "second"):
+        store.create_session(
+            token_hash=token_hash,
+            user_id=user.id,
+            expires_at=now + 600,
+            active_session_limit=10,
+        )
+
+    assert (
+        store.rotate_password_and_session(
+            user_id=user.id,
+            expected_password_hash="scrypt$current",
+            password_hash="scrypt$replacement",
+            token_hash="fresh",
+            expires_at=now + 1200,
+        )
+        is True
+    )
+    assert store.get_user_by_id(user.id).password_hash == "scrypt$replacement"
+    assert store.active_session_count_for_token(current_token_hash="fresh", now=now) == 1
+    assert store.get_user_id_for_session(token_hash="fresh", now=now) == user.id
+    assert store.get_user_id_for_session(token_hash="first", now=now) is None
+
+    assert (
+        store.rotate_password_and_session(
+            user_id=user.id,
+            expected_password_hash="scrypt$current",
+            password_hash="scrypt$stale",
+            token_hash="stale",
+            expires_at=now + 1200,
+        )
+        is False
+    )
+    assert store.get_user_by_id(user.id).password_hash == "scrypt$replacement"
+    assert store.get_user_id_for_session(token_hash="fresh", now=now) == user.id
+    assert store.get_user_id_for_session(token_hash="stale", now=now) is None
+
+
+def test_change_password_rotates_all_sessions_and_rejects_unsafe_replacements(
+    tmp_path: Path,
+) -> None:
+    service = build_service(tmp_path)
+    current_token, current_password = register_user(service)
+    other_token = service.login(
+        LoginRequest(email="user@example.com", password=current_password)
+    ).token
+
+    with pytest.raises(AccountServiceError) as weak:
+        service.change_password(
+            current_token,
+            PasswordChangeRequest(
+                current_password=current_password,
+                new_password="short",
+            ),
+        )
+    assert (weak.value.status_code, weak.value.code) == (400, "account_weak_password")
+
+    with pytest.raises(AccountServiceError) as unchanged:
+        service.change_password(
+            current_token,
+            PasswordChangeRequest(
+                current_password=current_password,
+                new_password=current_password,
+            ),
+        )
+    assert (unchanged.value.status_code, unchanged.value.code) == (
+        409,
+        "account_password_unchanged",
+    )
+
+    rotated = service.change_password(
+        current_token,
+        PasswordChangeRequest(
+            current_password=current_password,
+            new_password="replacement horse battery staple",
+        ),
+    )
+    assert rotated.token not in {current_token, other_token}
+    assert rotated.response.user.email == "user@example.com"
+    assert service.get_session(rotated.token).user.id == rotated.response.user.id
+    assert service.session_summary(rotated.token).active_session_count == 1
+    for invalidated in (current_token, other_token):
+        with pytest.raises(AccountServiceError) as invalid:
+            service.get_session(invalidated)
+        assert invalid.value.code == "account_unauthenticated"
+    with pytest.raises(AccountServiceError) as old_login:
+        service.login(LoginRequest(email="user@example.com", password=current_password))
+    assert old_login.value.code == "account_invalid_credentials"
+    assert (
+        service.login(
+            LoginRequest(
+                email="user@example.com",
+                password="replacement horse battery staple",
+            )
+        ).response.user.id
+        == rotated.response.user.id
+    )
+
+
+def test_change_password_wrong_current_value_is_persistently_rate_limited(
+    tmp_path: Path,
+) -> None:
+    service = build_service(tmp_path)
+    token, _ = register_user(service)
+    request_payload = PasswordChangeRequest(
+        current_password="wrong current password",
+        new_password="replacement horse battery staple",
+    )
+
+    for _ in range(4):
+        with pytest.raises(AccountServiceError) as invalid:
+            service.change_password(token, request_payload)
+        assert invalid.value.code == "account_invalid_current_password"
+    with pytest.raises(AccountServiceError) as limited:
+        service.change_password(token, request_payload)
+    assert limited.value.status_code == 429
+    assert limited.value.code == "account_credential_rate_limited"
+    assert limited.value.retry_after == 900
+
+    replacement = build_service(tmp_path)
+    with pytest.raises(AccountServiceError) as persisted:
+        replacement.change_password(token, request_payload)
+    assert persisted.value.code == "account_credential_rate_limited"
+
+
+def test_account_sessions_summary_and_revoke_others(tmp_path: Path) -> None:
+    service = build_service(tmp_path)
+    current_token, password = register_user(service)
+    other_tokens = [
+        service.login(LoginRequest(email="user@example.com", password=password)).token
+        for _ in range(2)
+    ]
+
+    summary = service.session_summary(current_token)
+    assert summary.model_dump() == {
+        "contract_version": "webdiag.account.sessions.v1",
+        "active_session_count": 3,
+    }
+    revoked = service.revoke_other_sessions(current_token)
+    assert revoked.model_dump() == {
+        "contract_version": "webdiag.account.sessions_revoked.v1",
+        "active_session_count": 1,
+        "revoked_session_count": 2,
+    }
+    assert service.revoke_other_sessions(current_token).revoked_session_count == 0
+    assert service.get_session(current_token).authenticated is True
+    for other_token in other_tokens:
+        with pytest.raises(AccountServiceError):
+            service.get_session(other_token)
+
+
+def test_login_verified_before_password_rotation_cannot_create_a_stale_session(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    service = build_service(tmp_path)
+    current_token, current_password = register_user(service)
+    verified = threading.Event()
+    release = threading.Event()
+    original_verify = verify_password
+
+    def controlled_verify(password: str, encoded: str) -> bool:
+        result = original_verify(password, encoded)
+        if threading.current_thread().name.startswith("stale-login"):
+            verified.set()
+            assert release.wait(timeout=5)
+        return result
+
+    monkeypatch.setattr("webdiag_api.accounts.service.verify_password", controlled_verify)
+    with ThreadPoolExecutor(max_workers=1, thread_name_prefix="stale-login") as executor:
+        stale_login = executor.submit(
+            service.login,
+            LoginRequest(email="user@example.com", password=current_password),
+        )
+        assert verified.wait(timeout=5)
+        rotated = service.change_password(
+            current_token,
+            PasswordChangeRequest(
+                current_password=current_password,
+                new_password="replacement horse battery staple",
+            ),
+        )
+        release.set()
+        with pytest.raises(AccountServiceError) as conflict:
+            stale_login.result(timeout=5)
+
+    assert conflict.value.code == "account_credentials_changed"
+    assert service.session_summary(rotated.token).active_session_count == 1
+
+
+def test_concurrent_revoke_others_cannot_delete_both_current_sessions(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    service = build_service(tmp_path)
+    first_token, password = register_user(service)
+    second_token = service.login(LoginRequest(email="user@example.com", password=password)).token
+    barrier = threading.Barrier(2)
+    original_resolve = service._resolve_session
+
+    def synchronized_resolve(token: str | None):
+        result = original_resolve(token)
+        barrier.wait(timeout=5)
+        return result
+
+    monkeypatch.setattr(service, "_resolve_session", synchronized_resolve)
+
+    def revoke(token: str) -> str:
+        try:
+            service.revoke_other_sessions(token)
+        except AccountServiceError as error:
+            return error.code
+        return "success"
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        outcomes = list(executor.map(revoke, (first_token, second_token)))
+    monkeypatch.setattr(service, "_resolve_session", original_resolve)
+
+    assert sorted(outcomes) == ["account_unauthenticated", "success"]
+    valid = 0
+    for token in (first_token, second_token):
+        try:
+            service.get_session(token)
+        except AccountServiceError:
+            continue
+        valid += 1
+    assert valid == 1
+
+
+def test_account_lifecycle_api_rotates_cookie_and_returns_exact_no_store_contracts(
+    tmp_path: Path,
+) -> None:
+    service = build_service(tmp_path)
+    app.dependency_overrides[get_account_service] = lambda: service
+    try:
+        registered, cookies = asyncio.run(
+            request(
+                "POST",
+                "/v1/account/register",
+                json={
+                    "email": "user@example.com",
+                    "display_name": "Roman User",
+                    "password": "correct horse battery staple",
+                },
+            )
+        )
+        assert registered.status_code == 201
+        old_token = cookies.get("webdiag_session")
+        service.login(
+            LoginRequest(
+                email="user@example.com",
+                password="correct horse battery staple",
+            )
+        )
+
+        sessions, cookies = asyncio.run(request("GET", "/v1/account/sessions", cookies=cookies))
+        assert sessions.status_code == 200
+        assert sessions.headers["cache-control"] == "no-store"
+        assert sessions.json() == {
+            "contract_version": "webdiag.account.sessions.v1",
+            "active_session_count": 2,
+        }
+
+        invalid, _ = asyncio.run(
+            request(
+                "POST",
+                "/v1/account/password",
+                cookies=cookies,
+                json={
+                    "current_password": "correct horse battery staple",
+                    "new_password": "replacement horse battery staple",
+                    "unexpected": True,
+                },
+            )
+        )
+        assert invalid.status_code == 422
+        assert invalid.headers["cache-control"] == "no-store"
+
+        changed, cookies = asyncio.run(
+            request(
+                "POST",
+                "/v1/account/password",
+                cookies=cookies,
+                json={
+                    "current_password": "correct horse battery staple",
+                    "new_password": "replacement horse battery staple",
+                },
+            )
+        )
+        assert changed.status_code == 200
+        assert changed.headers["cache-control"] == "no-store"
+        assert set(changed.json()) == {"contract_version", "authenticated", "user"}
+        assert "password" not in changed.text.lower()
+        assert "HttpOnly" in changed.headers["set-cookie"]
+        assert "SameSite=lax" in changed.headers["set-cookie"]
+        new_token = cookies.get("webdiag_session")
+        assert new_token and new_token != old_token
+        with pytest.raises(AccountServiceError):
+            service.get_session(old_token)
+
+        service.login(
+            LoginRequest(
+                email="user@example.com",
+                password="replacement horse battery staple",
+            )
+        )
+        revoked, cookies = asyncio.run(
+            request(
+                "POST",
+                "/v1/account/sessions/revoke-others",
+                cookies=cookies,
+            )
+        )
+        assert revoked.status_code == 200
+        assert revoked.headers["cache-control"] == "no-store"
+        assert revoked.json() == {
+            "contract_version": "webdiag.account.sessions_revoked.v1",
+            "active_session_count": 1,
+            "revoked_session_count": 1,
+        }
+    finally:
+        app.dependency_overrides.clear()
 
 
 def test_account_api_register_me_logout_and_validation_envelope(tmp_path: Path) -> None:
@@ -294,9 +965,7 @@ def test_account_api_register_me_logout_and_validation_envelope(tmp_path: Path) 
         assert session.headers["cache-control"] == "no-store"
         assert session.json()["user"]["email"] == "user@example.com"
 
-        logged_out, cookies = asyncio.run(
-            request("POST", "/v1/account/logout", cookies=cookies)
-        )
+        logged_out, cookies = asyncio.run(request("POST", "/v1/account/logout", cookies=cookies))
         assert logged_out.status_code == 200
         assert logged_out.json()["authenticated"] is False
 

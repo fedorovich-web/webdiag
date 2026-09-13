@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import threading
 import time
+from types import TracebackType
 
 from webdiag_api.accounts.monitoring_change import compare_payloads
 from webdiag_api.accounts.monitoring_models import (
@@ -11,7 +13,14 @@ from webdiag_api.accounts.monitoring_models import (
     MonitorRunResponse,
     MonitorUpdateRequest,
 )
-from webdiag_api.accounts.monitoring_storage import SqliteMonitoringStore, StoredMonitor
+from webdiag_api.accounts.monitoring_storage import (
+    MONITOR_LEASE_SECONDS,
+    MonitorLeaseLostError,
+    MonitorProjectInactiveError,
+    MonitorRunIntegrityError,
+    SqliteMonitoringStore,
+    StoredMonitor,
+)
 from webdiag_api.accounts.workspace_service import build_saved_audit_payload
 from webdiag_api.accounts.workspace_storage import SqliteWorkspaceStore
 from webdiag_api.audit.service import AuditExecutionError, AuditExecutionService
@@ -25,6 +34,49 @@ class MonitoringServiceError(RuntimeError):
         self.message = message
 
 
+class _LeaseHeartbeat:
+    def __init__(
+        self,
+        store: SqliteMonitoringStore,
+        monitor: StoredMonitor,
+        *,
+        interval_seconds: float,
+    ) -> None:
+        self._store = store
+        self._monitor = monitor
+        self._interval_seconds = interval_seconds
+        self._stop = threading.Event()
+        self._error: BaseException | None = None
+        self._thread = threading.Thread(
+            target=self._run,
+            name=f"webdiag-monitor-lease-{monitor.id}",
+            daemon=True,
+        )
+
+    def __enter__(self) -> None:
+        self._thread.start()
+
+    def __exit__(
+        self,
+        error_type: type[BaseException] | None,
+        _error: BaseException | None,
+        _traceback: TracebackType | None,
+    ) -> None:
+        self._stop.set()
+        self._thread.join()
+        if error_type is None and self._error is not None:
+            raise self._error
+
+    def _run(self) -> None:
+        while not self._stop.wait(self._interval_seconds):
+            try:
+                self._monitor = self._store.renew_lease(self._monitor)
+            except BaseException as error:
+                self._error = error
+                self._stop.set()
+                return
+
+
 class MonitoringService:
     def __init__(
         self,
@@ -32,10 +84,14 @@ class MonitoringService:
         *,
         workspace_store: SqliteWorkspaceStore,
         audit_service: AuditExecutionService,
+        lease_renew_interval_seconds: float = MONITOR_LEASE_SECONDS / 3,
     ) -> None:
         self._store = store
         self._workspace_store = workspace_store
         self._audit_service = audit_service
+        if lease_renew_interval_seconds <= 0:
+            raise ValueError("monitor lease renewal interval must be positive")
+        self._lease_renew_interval_seconds = lease_renew_interval_seconds
 
     def create_monitor(
         self,
@@ -52,6 +108,8 @@ class MonitoringService:
                 cadence=request.cadence,
                 timezone=request.timezone,
             ).public()
+        except MonitorProjectInactiveError as error:
+            raise self._project_not_found() from error
         except ValueError as error:
             if str(error) == "account_monitor_exists":
                 raise MonitoringServiceError(
@@ -75,21 +133,41 @@ class MonitoringService:
         request: MonitorUpdateRequest,
     ) -> AccountMonitor:
         self._owned_monitor(user_id=user_id, project_id=project_id)
-        updated = self._store.update_monitor(
-            user_id=user_id,
-            project_id=project_id,
-            cadence=request.cadence,
-            timezone=request.timezone,
-            enabled=request.enabled,
-        )
+        try:
+            updated = self._store.update_monitor(
+                user_id=user_id,
+                project_id=project_id,
+                cadence=request.cadence,
+                timezone=request.timezone,
+                enabled=request.enabled,
+            )
+        except MonitorProjectInactiveError as error:
+            raise self._project_not_found() from error
         if updated is None:
             raise MonitoringServiceError(404, "account_monitor_not_found", "Monitor not found.")
         return updated.public()
 
     def run_monitor(self, *, user_id: str, project_id: str) -> MonitorRunResponse:
-        monitor = self._owned_monitor(user_id=user_id, project_id=project_id)
+        self._owned_monitor(user_id=user_id, project_id=project_id)
         project = self._owned_project(user_id=user_id, project_id=project_id)
-        return self._execute(monitor, origin=project.origin)
+        try:
+            monitor = self._store.claim_manual(user_id=user_id, project_id=project_id)
+        except MonitorProjectInactiveError as error:
+            raise self._project_not_found() from error
+        if monitor is None:
+            raise MonitoringServiceError(
+                409,
+                "account_monitor_already_running",
+                "A monitoring run is already in progress.",
+            )
+        try:
+            return self._execute(monitor, origin=project.origin)
+        except MonitorLeaseLostError as error:
+            raise MonitoringServiceError(
+                409,
+                "account_monitor_run_lease_lost",
+                "The monitoring run no longer owns its execution lease.",
+            ) from error
 
     def get_history(self, *, user_id: str, project_id: str) -> MonitorHistoryResponse:
         monitor = self._owned_monitor(user_id=user_id, project_id=project_id)
@@ -109,29 +187,43 @@ class MonitoringService:
                 user_id=monitor.user_id,
                 project_id=monitor.project_id,
             )
-            if project is None:
-                self._record_failure(monitor, "account_project_not_found")
-            else:
-                self._execute(monitor, origin=project.origin)
+            try:
+                if project is None:
+                    self._record_failure(monitor, "account_project_not_found")
+                else:
+                    self._execute(monitor, origin=project.origin)
+            except MonitorLeaseLostError:
+                pass
             completed += 1
         return completed
 
     def _execute(self, monitor: StoredMonitor, *, origin: str) -> MonitorRunResponse:
         started_at = int(time.time())
-        previous = self._store.latest_successful_payload(
-            user_id=monitor.user_id,
-            monitor_id=monitor.id,
-        )
         try:
-            snapshot = self._audit_service.start_single_url_audit(origin)
-            if snapshot.run is None:
-                raise AuditExecutionError(
-                    "Audit did not produce a run.",
-                    job_id=snapshot.job.job_id,
+            previous = self._store.latest_successful_payload(
+                user_id=monitor.user_id,
+                monitor_id=monitor.id,
+            )
+            with _LeaseHeartbeat(
+                self._store,
+                monitor,
+                interval_seconds=self._lease_renew_interval_seconds,
+            ):
+                snapshot = self._audit_service.start_single_url_audit(origin)
+                if snapshot.run is None:
+                    raise AuditExecutionError(
+                        "Audit did not produce a run.",
+                        job_id=snapshot.job.job_id,
                 )
-            payload = build_saved_audit_payload(snapshot.run, target_origin=origin)
-        except Exception as error:
-            run = self._record_failure(monitor, type(error).__name__)
+                payload = build_saved_audit_payload(snapshot.run, target_origin=origin)
+        except MonitorRunIntegrityError:
+            run = self._record_failure(monitor, "monitoring_history_unavailable")
+            return MonitorRunResponse(run=run.public())
+        except AuditExecutionError:
+            run = self._record_failure(monitor, "monitoring_audit_failed")
+            return MonitorRunResponse(run=run.public())
+        except Exception:
+            run = self._record_failure(monitor, "monitoring_execution_failed")
             return MonitorRunResponse(run=run.public())
         completed_at = int(time.time())
         change = compare_payloads(previous, payload)
@@ -167,6 +259,10 @@ class MonitoringService:
         if project is None:
             raise MonitoringServiceError(404, "account_project_not_found", "Project not found.")
         return project
+
+    @staticmethod
+    def _project_not_found() -> MonitoringServiceError:
+        return MonitoringServiceError(404, "account_project_not_found", "Project not found.")
 
     def _owned_monitor(self, *, user_id: str, project_id: str) -> StoredMonitor:
         monitor = self._store.get_monitor(user_id=user_id, project_id=project_id)

@@ -77,32 +77,47 @@ describe("account issue contracts", () => {
     };
 
     await listAccountIssues(project.id, audit.id, {
+      locale: "ru",
       category: "security",
       priority: "p0",
       sort: "title",
       order: "desc",
     }, fetcher);
-    await getAccountIssue(project.id, audit.id, issue.issue_id, fetcher);
+    await getAccountIssue(project.id, audit.id, issue.issue_id, "en", fetcher);
 
     expect(calls[0]?.[0]).toBe(
-      `/api/account/projects/${project.id}/audits/${audit.id}/issues?category=security&priority=p0&sort=title&order=desc`,
+      `/api/account/projects/${project.id}/audits/${audit.id}/issues?locale=ru&category=security&priority=p0&sort=title&order=desc`,
+    );
+    expect(calls[1]?.[0]).toBe(
+      `/api/account/projects/${project.id}/audits/${audit.id}/issues/${issue.issue_id}?locale=en`,
     );
     expect(calls.every(([, init]) => init?.credentials === "same-origin")).toBe(true);
   });
 
   it("confines dynamic proxy paths and rejects duplicate or unknown filters", () => {
     expect(accountIssueListPath(project.id, audit.id, new URLSearchParams(
-      "order=desc&sort=title&priority=p0&category=security",
+      "order=desc&sort=title&priority=p0&category=security&locale=ru",
     ))).toBe(
-      `/v1/account/projects/${project.id}/audits/${audit.id}/issues?category=security&priority=p0&sort=title&order=desc`,
+      `/v1/account/projects/${project.id}/audits/${audit.id}/issues?locale=ru&category=security&priority=p0&sort=title&order=desc`,
     );
     expect(accountIssueListPath(project.id, audit.id, new URLSearchParams(
       "category=security&category=seo",
     ))).toBeNull();
     expect(accountIssueListPath(project.id, audit.id, new URLSearchParams("unknown=1"))).toBeNull();
-    expect(accountIssueDetailPath(project.id, audit.id, issue.issue_id)).toBe(
-      `/v1/account/projects/${project.id}/audits/${audit.id}/issues/${issue.issue_id}`,
+    expect(accountIssueDetailPath(
+      project.id,
+      audit.id,
+      issue.issue_id,
+      new URLSearchParams("locale=en"),
+    )).toBe(
+      `/v1/account/projects/${project.id}/audits/${audit.id}/issues/${issue.issue_id}?locale=en`,
     );
-    expect(accountIssueDetailPath(project.id, audit.id, "../secret")).toBeNull();
+    expect(accountIssueDetailPath(project.id, audit.id, "../secret", new URLSearchParams())).toBeNull();
+    expect(accountIssueDetailPath(
+      project.id,
+      audit.id,
+      issue.issue_id,
+      new URLSearchParams("locale=de"),
+    )).toBeNull();
   });
 });

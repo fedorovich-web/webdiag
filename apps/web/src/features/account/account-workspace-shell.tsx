@@ -1,32 +1,43 @@
 "use client";
 
 import Link from "next/link";
+import { Menu, X } from "lucide-react";
+import { createPortal } from "react-dom";
 import {
   useEffect,
+  useCallback,
   useRef,
   useState,
+  useSyncExternalStore,
   type ChangeEvent,
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { AccountDashboard } from "./account-dashboard";
+import { AccountSettings } from "./account-settings";
 import { AccountClientError, getAccountSession, logoutAccount } from "./account-client";
 import type { AccountSessionResponse } from "./account-contract";
 import { accountErrorMessage } from "./account-messages";
+import { ACCOUNT_AUTHENTICATION_LOST_EVENT } from "./account-authentication-state";
+import { getAccountOverview } from "./account-overview-client";
+import type { AccountOverviewResponse } from "./account-overview-contract";
 import { listAccountProjects } from "./account-workspace-client";
-import type { AccountProject } from "./account-workspace-contract";
+import { isAccountProject, type AccountProject } from "./account-workspace-contract";
 import {
   buildAccountWorkspaceNavigation,
+  ownedAccountProjectContextId,
+  projectLandingAfterSwitch,
   resolveActiveAccountProject,
   type AccountWorkspaceSection,
 } from "./account-workspace-shell-contract";
-import { loginPath, projectPath } from "../../lib/routes";
+import { loginPath } from "../../lib/routes";
 
 interface AccountWorkspaceShellProps {
   readonly locale: Locale;
   readonly section: AccountWorkspaceSection;
   readonly currentProjectId?: string;
+  readonly currentAuditId?: string;
   readonly children?: ReactNode;
 }
 
@@ -35,6 +46,7 @@ interface WorkspaceNavigationProps {
   readonly section: AccountWorkspaceSection;
   readonly projects: readonly AccountProject[];
   readonly currentProjectId?: string;
+  readonly latestAuditId?: string;
   readonly onNavigate?: () => void;
 }
 
@@ -46,36 +58,70 @@ const focusableSelector = [
   "[tabindex]:not([tabindex='-1'])",
 ].join(",");
 
+function subscribeToHeaderMenuSlot() {
+  return () => undefined;
+}
+
+function getHeaderMenuSlot() {
+  return document.getElementById("account-workspace-menu-slot");
+}
+
+function getServerHeaderMenuSlot() {
+  return null;
+}
+
 function WorkspaceNavigation({
   locale,
   section,
   projects,
   currentProjectId,
+  latestAuditId,
   onNavigate,
 }: WorkspaceNavigationProps) {
   const ru = locale === "ru";
-  const navigation = buildAccountWorkspaceNavigation(locale, section);
+  const activeProjectId = ownedAccountProjectContextId(projects, currentProjectId);
+  const navigation = buildAccountWorkspaceNavigation(
+    locale,
+    section,
+    activeProjectId,
+    latestAuditId,
+  );
   const activeProject = resolveActiveAccountProject(projects, currentProjectId);
 
   function selectProject(projectId: string) {
     if (!projectId) return;
     onNavigate?.();
-    window.location.assign(projectPath(locale, projectId));
+    window.location.assign(projectLandingAfterSwitch(locale, projectId));
+  }
+
+  function items(values: ReturnType<typeof buildAccountWorkspaceNavigation>["portfolio"]) {
+    return values.map((item) => item.href ? (
+      <Link
+        key={item.id}
+        href={item.href}
+        aria-current={item.active ? "page" : undefined}
+        onClick={onNavigate}
+      >
+        {item.label}
+      </Link>
+    ) : (
+      <span key={item.id} aria-disabled="true">{item.label}</span>
+    ));
   }
 
   return (
     <>
       <nav className="wd-workspace-navigation" aria-label={ru ? "Навигация кабинета" : "Workspace navigation"}>
-        {navigation.map((item) => (
-          <Link
-            key={item.id}
-            href={item.href}
-            aria-current={item.active ? "page" : undefined}
-            onClick={onNavigate}
-          >
-            {item.label}
-          </Link>
-        ))}
+        <div className="wd-workspace-navigation-group">
+          <span>{ru ? "Рабочая область" : "Workspace"}</span>
+          {items(navigation.portfolio)}
+        </div>
+        {navigation.project && (
+          <div className="wd-workspace-navigation-group">
+            <span>{ru ? "Текущий проект" : "Current project"}</span>
+            {items(navigation.project)}
+          </div>
+        )}
       </nav>
 
       <div className="wd-workspace-project-switcher">
@@ -103,48 +149,102 @@ export function AccountWorkspaceShell({
   locale,
   section,
   currentProjectId,
+  currentAuditId,
   children,
 }: AccountWorkspaceShellProps) {
   const ru = locale === "ru";
   const [session, setSession] = useState<AccountSessionResponse | null>(null);
   const [projects, setProjects] = useState<readonly AccountProject[]>([]);
+  const [overview, setOverview] = useState<AccountOverviewResponse | null>(null);
+  const [overviewError, setOverviewError] = useState("");
   const [loadedToken, setLoadedToken] = useState<number | null>(null);
   const [loadState, setLoadState] = useState<"ready" | "unauthenticated" | "unavailable">("ready");
   const [reloadToken, setReloadToken] = useState(0);
   const [logoutPending, setLogoutPending] = useState(false);
   const [error, setError] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const headerMenuSlot = useSyncExternalStore(
+    subscribeToHeaderMenuSlot,
+    getHeaderMenuSlot,
+    getServerHeaderMenuSlot,
+  );
   const drawerTriggerRef = useRef<HTMLButtonElement>(null);
   const drawerCloseRef = useRef<HTMLButtonElement>(null);
   const drawerPanelRef = useRef<HTMLElement>(null);
   const loading = loadedToken !== reloadToken;
 
+  const handleUnauthenticated = useCallback(() => {
+    setSession(null);
+    setProjects([]);
+    setOverview(null);
+    setOverviewError("");
+    setLoadState("unauthenticated");
+    setDrawerOpen(false);
+  }, []);
+
   useEffect(() => {
     let active = true;
-    Promise.all([getAccountSession(), listAccountProjects()])
-      .then(([sessionValue, projectValue]) => {
+    Promise.allSettled([getAccountSession(), listAccountProjects(), getAccountOverview()])
+      .then(([sessionResult, projectResult, overviewResult]) => {
         if (!active) return;
-        setSession(sessionValue);
-        setProjects(projectValue.projects);
+        function failRequiredLoad(caught: unknown) {
+          setSession(null);
+          setProjects([]);
+          setOverview(null);
+          setOverviewError("");
+          setLoadState(
+            caught instanceof AccountClientError && caught.status === 401
+              ? "unauthenticated"
+              : "unavailable",
+          );
+          setLoadedToken(reloadToken);
+        }
+        if (sessionResult.status === "rejected") {
+          failRequiredLoad(sessionResult.reason);
+          return;
+        }
+        if (projectResult.status === "rejected") {
+          failRequiredLoad(projectResult.reason);
+          return;
+        }
+        setSession(sessionResult.value);
+        setProjects(projectResult.value.projects);
         setLoadState("ready");
         setError("");
-        setLoadedToken(reloadToken);
-      })
-      .catch((caught) => {
-        if (!active) return;
-        setSession(null);
-        setProjects([]);
-        setLoadState(
-          caught instanceof AccountClientError && caught.status === 401
-            ? "unauthenticated"
-            : "unavailable",
-        );
+        if (overviewResult.status === "fulfilled") {
+          setOverview(overviewResult.value);
+          setOverviewError("");
+        } else {
+          setOverview(null);
+          setOverviewError(accountErrorMessage(locale, overviewResult.reason));
+        }
         setLoadedToken(reloadToken);
       });
     return () => {
       active = false;
     };
-  }, [reloadToken]);
+  }, [locale, reloadToken]);
+
+  useEffect(() => {
+    function updateProject(event: Event) {
+      if (!(event instanceof CustomEvent) || !isAccountProject(event.detail)) return;
+      const project = event.detail;
+      setProjects((current) => current.map((item) => item.id === project.id ? project : item));
+      setOverview((current) => current ? {
+        ...current,
+        projects: current.projects.map((item) => item.project.id === project.id
+          ? { ...item, project }
+          : item),
+      } : current);
+    }
+    window.addEventListener("webdiag:account-project-updated", updateProject);
+    return () => window.removeEventListener("webdiag:account-project-updated", updateProject);
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener(ACCOUNT_AUTHENTICATION_LOST_EVENT, handleUnauthenticated);
+    return () => window.removeEventListener(ACCOUNT_AUTHENTICATION_LOST_EVENT, handleUnauthenticated);
+  }, [handleUnauthenticated]);
 
   useEffect(() => {
     if (!drawerOpen) return;
@@ -200,6 +300,20 @@ export function AccountWorkspaceShell({
 
   function addProject(project: AccountProject) {
     setProjects((current) => [project, ...current.filter((item) => item.id !== project.id)]);
+    setOverview((current) => current ? {
+      ...current,
+      projects: [
+        {
+          project,
+          latest_audit: null,
+          monitor: null,
+          report_count: 0,
+          shared_report_count: 0,
+          latest_report_created_at: null,
+        },
+        ...current.projects.filter((item) => item.project.id !== project.id),
+      ],
+    } : current);
   }
 
   if (loading) {
@@ -234,23 +348,31 @@ export function AccountWorkspaceShell({
     section,
     projects,
     currentProjectId,
+    latestAuditId: currentAuditId ?? overview?.projects.find(
+      (item) => item.project.id === currentProjectId,
+    )?.latest_audit?.id,
   };
 
+  const menuLabel = ru ? "Меню кабинета" : "Workspace menu";
+
   return (
-    <main className="shell wd-account-workspace-page">
-      <div className="wd-workspace-mobile-bar">
+    <>
+      {headerMenuSlot && createPortal(
         <button
           ref={drawerTriggerRef}
-          className="wd-button wd-button-secondary wd-workspace-menu-trigger"
+          className="wd-account-menu-trigger"
           type="button"
+          aria-label={menuLabel}
           aria-expanded={drawerOpen}
           aria-controls="account-workspace-drawer"
           onClick={() => setDrawerOpen(true)}
         >
-          {ru ? "Меню кабинета" : "Workspace menu"}
-        </button>
-        <strong>{session.user.display_name}</strong>
-      </div>
+          <Menu aria-hidden="true" />
+        </button>,
+        headerMenuSlot,
+      )}
+
+      <main className="shell wd-account-workspace-page">
 
       <div className="wd-workspace-layout">
         <aside className="wd-workspace-sidebar" aria-label={ru ? "Панель кабинета" : "Workspace panel"}>
@@ -267,12 +389,28 @@ export function AccountWorkspaceShell({
 
         <section className="wd-workspace-content" aria-label={ru ? "Содержимое кабинета" : "Workspace content"}>
           {error && <p className="wd-account-error" role="alert">{error}</p>}
+          {overviewError && section === "overview" && (
+            <div className="wd-account-error" role="alert">
+              <span>{overviewError}</span>
+              <button type="button" onClick={() => setReloadToken((value) => value + 1)}>
+                {ru ? "Повторить загрузку обзора" : "Retry overview"}
+              </button>
+            </div>
+          )}
           {section === "overview" || section === "projects" ? (
             <AccountDashboard
               locale={locale}
               session={session}
               projects={projects}
+              overview={overview}
               onProjectCreated={addProject}
+              onProjectRestored={() => setReloadToken((value) => value + 1)}
+            />
+          ) : section === "settings" ? (
+            <AccountSettings
+              locale={locale}
+              session={session}
+              onUnauthenticated={handleUnauthenticated}
             />
           ) : children}
         </section>
@@ -287,7 +425,7 @@ export function AccountWorkspaceShell({
             className="wd-workspace-drawer-panel"
             role="dialog"
             aria-modal="true"
-            aria-label={ru ? "Меню кабинета" : "Workspace menu"}
+            aria-label={menuLabel}
             onKeyDown={handleDrawerKeyDown}
           >
             <div className="wd-workspace-drawer-head">
@@ -297,11 +435,12 @@ export function AccountWorkspaceShell({
               </div>
               <button
                 ref={drawerCloseRef}
-                className="wd-button wd-button-secondary"
+                className="wd-account-drawer-close"
                 type="button"
+                aria-label={ru ? "Закрыть" : "Close"}
                 onClick={() => closeDrawer()}
               >
-                {ru ? "Закрыть" : "Close"}
+                <X aria-hidden="true" />
               </button>
             </div>
             <WorkspaceNavigation {...navigationProps} onNavigate={() => closeDrawer(false)} />
@@ -311,6 +450,7 @@ export function AccountWorkspaceShell({
           </aside>
         </div>
       )}
-    </main>
+      </main>
+    </>
   );
 }

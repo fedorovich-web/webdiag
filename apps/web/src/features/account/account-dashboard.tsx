@@ -1,34 +1,64 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type ChangeEvent, type FormEvent } from "react";
+import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import type { AccountSessionResponse } from "./account-contract";
+import {
+  accountNextActionHref,
+  accountOverviewMetrics,
+  formatAccountDate,
+  formatMonitorStatus,
+  formatNullableScore,
+} from "./account-dashboard-contract";
 import { accountErrorMessage } from "./account-messages";
-import { createAccountProject } from "./account-workspace-client";
-import type { AccountProject } from "./account-workspace-contract";
-import { recentAccountProjects } from "./account-workspace-shell-contract";
+import { announceAccountAuthenticationLost } from "./account-authentication-state";
+import {
+  deriveAccountNextActions,
+  type AccountOverviewProject,
+  type AccountOverviewResponse,
+} from "./account-overview-contract";
+import {
+  createAccountProject,
+  listArchivedAccountProjects,
+  restoreAccountProject,
+} from "./account-workspace-client";
+import type { AccountProject, ArchivedAccountProject } from "./account-workspace-contract";
 import { projectPath } from "../../lib/routes";
 
 interface AccountDashboardProps {
   readonly locale: Locale;
   readonly session: AccountSessionResponse;
   readonly projects: readonly AccountProject[];
+  readonly overview: AccountOverviewResponse | null;
   readonly onProjectCreated: (project: AccountProject) => void;
+  readonly onProjectRestored: () => void;
 }
 
 export function AccountDashboard({
   locale,
   session,
   projects,
+  overview,
   onProjectCreated,
+  onProjectRestored,
 }: AccountDashboardProps) {
   const ru = locale === "ru";
   const [error, setError] = useState("");
   const [createPending, setCreatePending] = useState(false);
   const [name, setName] = useState("");
   const [origin, setOrigin] = useState("");
-  const recent = recentAccountProjects(projects, 3);
+  const [archivedProjects, setArchivedProjects] = useState<readonly ArchivedAccountProject[]>([]);
+  const [archiveState, setArchiveState] = useState<"idle" | "loading" | "ready" | "failed">("idle");
+  const [restorePendingId, setRestorePendingId] = useState<string | null>(null);
+  const createDetailsRef = useRef<HTMLDetailsElement>(null);
+
+  function openProjectCreation() {
+    const details = createDetailsRef.current;
+    if (!details) return;
+    details.open = true;
+    details.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   async function createProject(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -40,77 +70,272 @@ export function AccountDashboard({
       setName("");
       setOrigin("");
     } catch (caught) {
+      if (announceAccountAuthenticationLost(caught)) return;
       setError(accountErrorMessage(locale, caught));
     } finally {
       setCreatePending(false);
     }
   }
 
-  return (
-    <div className="wd-account-overview">
-      <header className="wd-account-dashboard-head">
-        <div>
-          <span className="eyebrow">WebDiag Account</span>
-          <h1>{ru ? `Обзор аккаунта ${session.user.display_name}` : `${session.user.display_name}'s account overview`}</h1>
-          <p>{ru ? "Проекты и сохранённые аудиты без фиктивных показателей." : "Projects and saved audits without synthetic metrics."}</p>
-        </div>
-        <div className="wd-workspace-real-metric" aria-label={ru ? "Количество проектов" : "Project count"}>
-          <strong>{projects.length}</strong>
-          <span>{ru ? "проектов" : "projects"}</span>
-        </div>
-      </header>
+  async function loadArchivedProjects() {
+    if (archiveState === "loading" || archiveState === "ready") return;
+    setArchiveState("loading");
+    setError("");
+    try {
+      const response = await listArchivedAccountProjects();
+      setArchivedProjects(response.projects);
+      setArchiveState("ready");
+    } catch (caught) {
+      if (announceAccountAuthenticationLost(caught)) return;
+      setError(accountErrorMessage(locale, caught));
+      setArchiveState("failed");
+    }
+  }
 
-      {error && <p className="wd-account-error" role="alert">{error}</p>}
+  async function restoreProject(projectId: string) {
+    setRestorePendingId(projectId);
+    setError("");
+    try {
+      await restoreAccountProject(projectId);
+      setArchivedProjects((current) => current.filter((item) => item.id !== projectId));
+      onProjectRestored();
+    } catch (caught) {
+      if (announceAccountAuthenticationLost(caught)) return;
+      setError(accountErrorMessage(locale, caught));
+    } finally {
+      setRestorePendingId(null);
+    }
+  }
 
-      <section className="wd-project-create" aria-labelledby="project-create-title">
-        <div>
-          <span className="eyebrow">{ru ? "Новый проект" : "New project"}</span>
-          <h2 id="project-create-title">{ru ? "Добавьте сайт для аудитов" : "Add a site for audits"}</h2>
-          <p>{ru ? "Сохраняется только нормализованный публичный origin. Произвольные пути и приватные адреса отклоняются." : "Only a normalized public origin is stored. Paths and private addresses are rejected."}</p>
-        </div>
-        <form className="wd-project-create-form" onSubmit={createProject} aria-busy={createPending}>
-          <label>{ru ? "Название проекта" : "Project name"}<input value={name} onChange={(event: ChangeEvent<HTMLInputElement>) => setName(event.target.value)} minLength={2} maxLength={80} required disabled={createPending} autoComplete="off" /></label>
-          <label>{ru ? "Домен или origin" : "Domain or origin"}<input value={origin} onChange={(event: ChangeEvent<HTMLInputElement>) => setOrigin(event.target.value)} placeholder="example.com" required disabled={createPending} inputMode="url" autoComplete="url" /></label>
-          <button className="wd-button wd-button-primary" type="submit" disabled={createPending}>{createPending ? (ru ? "Создаём…" : "Creating…") : (ru ? "Создать проект" : "Create project")}</button>
-        </form>
-      </section>
-
-      {recent.length > 0 && (
-        <section className="wd-workspace-recent" aria-labelledby="recent-projects-title">
-          <div className="wd-project-list-head">
-            <div><span className="eyebrow">{ru ? "Недавние" : "Recent"}</span><h2 id="recent-projects-title">{ru ? "Недавно обновлённые проекты" : "Recently updated projects"}</h2></div>
-          </div>
-          <div className="wd-project-grid">
-            {recent.map((project) => (
-              <article key={project.id} className="wd-project-card">
-                <h3>{project.name}</h3>
-                <p>{project.origin}</p>
-                <Link className="wd-button wd-button-secondary" href={projectPath(locale, project.id)}>{ru ? "Открыть проект" : "Open project"}</Link>
-              </article>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <section id="projects" className="wd-project-list" aria-labelledby="project-list-title">
+  function projectArchivePanel() {
+    return (
+      <section className="wd-project-archive-list" aria-labelledby="project-archive-title">
         <div className="wd-project-list-head">
-          <div><span className="eyebrow">{ru ? "Рабочая область" : "Workspace"}</span><h2 id="project-list-title">{ru ? "Все проекты" : "All projects"}</h2></div>
-          <strong>{projects.length}</strong>
+          <div><span className="eyebrow">{ru ? "Архив" : "Archive"}</span><h2 id="project-archive-title">{ru ? "Архивированные проекты" : "Archived projects"}</h2></div>
+          {archiveState === "ready" && <strong>{archivedProjects.length}</strong>}
         </div>
-        {projects.length === 0 ? (
-          <div className="wd-account-empty"><p>{ru ? "Проектов пока нет. Создайте первый проект выше." : "No projects yet. Create the first project above."}</p></div>
-        ) : (
-          <div className="wd-project-grid">
-            {projects.map((project) => (
-              <article key={project.id} className="wd-project-card">
-                <h3>{project.name}</h3>
-                <p>{project.origin}</p>
-                <Link className="wd-button wd-button-secondary" href={projectPath(locale, project.id)}>{ru ? "Открыть проект" : "Open project"}</Link>
+        {archiveState === "idle" || archiveState === "failed" ? <button className="wd-button wd-button-secondary" type="button" onClick={loadArchivedProjects}>{ru ? "Открыть архив" : "Open archive"}</button> : archiveState === "loading" ? <p aria-live="polite">{ru ? "Загружаем архив…" : "Loading archive…"}</p> : archivedProjects.length === 0 ? <p>{ru ? "Архивированных проектов нет." : "There are no archived projects."}</p> : (
+          <div className="wd-project-archive-items">
+            {archivedProjects.map((project) => (
+              <article key={project.id}>
+                <div><strong>{project.name}</strong><p>{project.origin}</p><small>{ru ? "В архиве с" : "Archived"}: {formatAccountDate(project.archived_at, locale)}</small></div>
+                <button className="wd-button wd-button-secondary" type="button" onClick={() => restoreProject(project.id)} disabled={restorePendingId !== null} aria-busy={restorePendingId === project.id}>{restorePendingId === project.id ? (ru ? "Восстанавливаем…" : "Restoring…") : (ru ? "Восстановить" : "Restore")}</button>
               </article>
             ))}
           </div>
         )}
       </section>
+    );
+  }
+
+  function projectCreatePanel(primary: boolean) {
+    return (
+      <section
+        id={primary ? "project-create" : undefined}
+        className={primary ? "wd-project-create is-primary" : "wd-project-create"}
+        aria-labelledby={primary ? "project-create-title" : "project-create-title-secondary"}
+      >
+        <div>
+          <span className="eyebrow">{ru ? "Новый проект" : "New project"}</span>
+          <h2 id={primary ? "project-create-title" : "project-create-title-secondary"}>
+            {ru ? "Добавьте сайт в WebDiag" : "Add a website to WebDiag"}
+          </h2>
+          <p>
+            {ru
+              ? "Укажите название проекта и адрес сайта. Этот домен будет использоваться для аудитов, отчётов и мониторинга."
+              : "Enter a project name and website address. This domain will be used for audits, reports and monitoring."}
+          </p>
+        </div>
+        <form className="wd-project-create-form" onSubmit={createProject} aria-busy={createPending}>
+          <label>
+            {ru ? "Название проекта" : "Project name"}
+            <input
+              value={name}
+              onChange={(event: ChangeEvent<HTMLInputElement>) => setName(event.target.value)}
+              minLength={2}
+              maxLength={80}
+              required
+              disabled={createPending}
+              autoComplete="off"
+            />
+          </label>
+          <label>
+            {ru ? "Адрес сайта" : "Website address"}
+            <input
+              value={origin}
+              onChange={(event: ChangeEvent<HTMLInputElement>) => setOrigin(event.target.value)}
+              placeholder="example.com"
+              required
+              disabled={createPending}
+              inputMode="url"
+              autoComplete="url"
+            />
+          </label>
+          <button className="wd-button wd-button-primary" type="submit" disabled={createPending}>
+            {createPending
+              ? (ru ? "Добавляем…" : "Adding…")
+              : (ru ? "Добавить проект" : "Add project")}
+          </button>
+        </form>
+      </section>
+    );
+  }
+
+  function projectCard(item: AccountOverviewProject) {
+    const audit = item.latest_audit;
+    const monitor = item.monitor;
+    const monitorTone = monitor?.status === "failed"
+      ? "danger"
+      : monitor?.status === "changed"
+        ? "warning"
+        : "neutral";
+    return (
+      <article key={item.project.id} className="wd-operation-project-card">
+        <header>
+          <div>
+            <h3><Link href={projectPath(locale, item.project.id)}>{item.project.name}</Link></h3>
+            <p>{item.project.origin}</p>
+          </div>
+          {monitor && (
+            <span className="wd-operation-status" data-tone={monitorTone}>
+              {formatMonitorStatus(monitor.status, locale)}
+            </span>
+          )}
+        </header>
+        <dl>
+          <div>
+            <dt>{ru ? "Последняя проверка" : "Latest check"}</dt>
+            <dd>{audit ? formatAccountDate(audit.completed_at, locale) : (ru ? "Ещё не запускалась" : "Not run yet")}</dd>
+          </div>
+          <div>
+            <dt>{ru ? "Оценка" : "Score"}</dt>
+            <dd>{audit ? formatNullableScore(audit.score, locale) : "—"}</dd>
+          </div>
+          <div>
+            <dt>{ru ? "Найдено проблем" : "Issues"}</dt>
+            <dd>{audit ? audit.issue_count : "—"}</dd>
+          </div>
+          <div>
+            <dt>{ru ? "Отчёты" : "Reports"}</dt>
+            <dd>{item.report_count}</dd>
+          </div>
+        </dl>
+        <div className="wd-operation-project-footer">
+          <span>
+            {monitor?.next_run_at
+              ? `${ru ? "Следующая проверка" : "Next check"}: ${formatAccountDate(monitor.next_run_at, locale)}`
+              : (ru ? "Автопроверки не настроены" : "Scheduled checks are not configured")}
+          </span>
+          <Link className="wd-button wd-button-secondary" href={projectPath(locale, item.project.id)}>
+            {ru ? "Открыть проект" : "Open project"}
+          </Link>
+        </div>
+      </article>
+    );
+  }
+
+  if (projects.length === 0) {
+    return (
+      <div className="wd-account-overview is-first-use">
+        <header className="wd-account-dashboard-head">
+          <div>
+            <span className="eyebrow">{ru ? "Личный кабинет" : "Account"}</span>
+            <h1>{ru ? "Добавьте первый сайт" : "Add your first website"}</h1>
+            <p>
+              {ru
+                ? `${session.user.display_name}, создайте проект, чтобы запускать проверки и сохранять результаты.`
+                : `${session.user.display_name}, create a project to run checks and keep the results.`}
+            </p>
+          </div>
+        </header>
+        {error && <p className="wd-account-error" role="alert">{error}</p>}
+        {projectCreatePanel(true)}
+        {projectArchivePanel()}
+      </div>
+    );
+  }
+
+  const metrics = overview ? accountOverviewMetrics(overview) : null;
+  const actions = overview ? deriveAccountNextActions(overview, locale) : [];
+
+  return (
+    <div className="wd-account-overview">
+      <header className="wd-account-dashboard-head wd-operation-heading">
+        <div>
+          <span className="eyebrow">{ru ? "Личный кабинет" : "Account"}</span>
+          <h1>{ru ? "Обзор проектов" : "Project overview"}</h1>
+          <p>
+            {ru
+              ? `${session.user.display_name}, здесь видно состояние сайтов, последние проверки и задачи, которые требуют внимания.`
+              : `${session.user.display_name}, review website health, recent checks and tasks that need attention.`}
+          </p>
+        </div>
+        <button className="wd-button wd-button-primary" type="button" onClick={openProjectCreation}>
+          {ru ? "Добавить проект" : "Add project"}
+        </button>
+      </header>
+
+      {error && <p className="wd-account-error" role="alert">{error}</p>}
+
+      {metrics && (
+        <section className="wd-operation-metrics" aria-label={ru ? "Сводка по проектам" : "Project summary"}>
+          <article><strong>{metrics.projectCount}</strong><span>{ru ? "Проекты" : "Projects"}</span></article>
+          <article><strong>{metrics.projectsWithAudit}</strong><span>{ru ? "Проверены" : "Checked"}</span></article>
+          <article><strong>{metrics.projectsRequiringAttention}</strong><span>{ru ? "Требуют внимания" : "Need attention"}</span></article>
+          <article><strong>{metrics.readyReportCount}</strong><span>{ru ? "Готовые отчёты" : "Ready reports"}</span></article>
+        </section>
+      )}
+
+      {overview && actions.length > 0 && (
+        <section className="wd-operation-actions" aria-labelledby="account-next-actions-title">
+          <div>
+            <span className="eyebrow">{ru ? "Следующие шаги" : "Next steps"}</span>
+            <h2 id="account-next-actions-title">{ru ? "Что требует внимания" : "What needs attention"}</h2>
+          </div>
+          <div className="wd-operation-action-list">
+            {actions.map((action) => (
+              <Link
+                key={`${action.kind}:${action.projectId ?? "account"}`}
+                href={accountNextActionHref(locale, action, overview)}
+              >
+                <span>{action.projectName ?? (ru ? "Все проекты" : "All projects")}</span>
+                <strong>{action.label}</strong>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section id="projects" className="wd-operation-projects" aria-labelledby="project-list-title">
+        <div className="wd-project-list-head">
+          <div>
+            <span className="eyebrow">{ru ? "Проекты" : "Projects"}</span>
+            <h2 id="project-list-title">{ru ? "Все сайты" : "All websites"}</h2>
+          </div>
+          <strong>{projects.length}</strong>
+        </div>
+        {overview ? (
+          <div className="wd-operation-project-list">{overview.projects.map(projectCard)}</div>
+        ) : (
+          <div className="wd-operation-project-list">
+            {projects.map((project) => (
+              <article key={project.id} className="wd-operation-project-card">
+                <header><div><h3><Link href={projectPath(locale, project.id)}>{project.name}</Link></h3><p>{project.origin}</p></div></header>
+                <div className="wd-operation-project-footer">
+                  <span>{ru ? "Сводка временно недоступна" : "Summary temporarily unavailable"}</span>
+                  <Link className="wd-button wd-button-secondary" href={projectPath(locale, project.id)}>{ru ? "Открыть проект" : "Open project"}</Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <details ref={createDetailsRef} id="project-create" className="wd-operation-add-project">
+        <summary>{ru ? "Добавить ещё один сайт" : "Add another website"}</summary>
+        {projectCreatePanel(false)}
+      </details>
+      {projectArchivePanel()}
     </div>
   );
 }

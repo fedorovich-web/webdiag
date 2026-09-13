@@ -1,5 +1,7 @@
 "use client";
 
+import { toolErrorMessage } from "./tool-error-presentation";
+
 import { useMemo, useState } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import {
@@ -38,13 +40,16 @@ import {
   ResourceHintsAnalyzerTool,
   ThirdPartyScriptAnalyzerTool,
 } from "./client-delivery-tools";
-import { AddWatermarkImageTool, ImageMetadataViewerTool, SvgOptimizerTool } from "./image-advanced-tools";
+import { AddWatermarkImageTool, FaviconGeneratorTool, ImageMetadataViewerTool, SvgOptimizerTool } from "./image-advanced-tools";
 import { ImageCropperTool, ImageFormatConverterTool, ImageOptimizerTool, ImageResizerTool } from "./image-tools";
+import { ImagePaletteExtractorTool } from "./image-palette-extractor";
+import { ImageDataUriWorkbenchTool } from "./image-data-uri-workbench";
+import { QrCodeWorkbenchTool } from "./qr-code-workbench";
 import { BrokenImageCheckerTool, BrokenLinkCheckerTool, LinkAnalyzerTool } from "./link-health-tools";
 import { HeadingStructureTool, KeywordFrequencyTool, ReadabilityAnalyzerTool } from "./content-analysis-tools";
 import { FaviconCheckerTool, ImagePerformanceCheckerTool, ImageSeoAuditTool } from "./image-audit-tools";
 import { MetaTagsCheckerTool, SerpPreviewTool, SocialPreviewTool } from "./metadata-preview-tools";
-import { CachePolicyTool, CoreWebVitalsTool, PageWeightTool } from "./performance-tools";
+import { CachePolicyTool, CoreWebVitalsTool, LighthouseNetworkTool, PageWeightTool } from "./performance-tools";
 import { HtmlMarkupValidatorTool, SchemaMarkupGeneratorTool, StructuredDataValidatorTool } from "./markup-tools";
 import {
   CookiePolicyCheckerTool,
@@ -58,7 +63,9 @@ import {
   TlsConfigurationCheckerTool,
 } from "./protocol-security-tools";
 import { RedirectChainTool } from "./redirect-chain-tool";
+import { BulkHttpStatusTool } from "./bulk-http-status-tool";
 import { RobotsTxtTool } from "./robots-txt-tool";
+import { ResponsiveSrcsetGeneratorTool } from "./responsive-srcset";
 import { SecurityHeadersTool } from "./security-headers-tool";
 import { FaqSchemaGeneratorTool, RobotsTxtGeneratorTool, SitemapGeneratorTool } from "./seo-generator-tools";
 import {
@@ -126,7 +133,9 @@ import {
   HtmlEntitiesConverterTool,
 } from "./text-encoding-diff-tools";
 import { PemCertificateViewerTool } from "./pem-certificate-tool";
+import { SinglePageAuditTool } from "./single-page-audit-tool";
 import { dictionary } from "../../lib/i18n";
+import { AccountCrawlerEntry } from "./account-crawler-entry";
 
 interface ToolRendererProps {
   slug: string;
@@ -209,7 +218,7 @@ function JsonTool({ locale }: { locale: Locale }) {
   const [output, setOutput] = useState("");
   const [error, setError] = useState("");
   function run() {
-    try { setOutput(formatJson(input)); setError(""); } catch (caught) { setOutput(""); setError(caught instanceof Error ? caught.message : dictionary[locale].error); }
+    try { setOutput(formatJson(input)); setError(""); } catch (caught) { setOutput(""); setError(toolErrorMessage(locale, caught, "invalid_input")); }
   }
   return <div className="tool-grid"><Panel title={dictionary[locale].input}><label className="field"><span>JSON</span><textarea className="code-input" value={input} onChange={(event) => setInput(event.target.value)} rows={12} /></label><button className="button" type="button" onClick={run}>{locale === "ru" ? "Проверить и форматировать" : "Validate and format"}</button><ErrorMessage value={error} /></Panel><Panel title={dictionary[locale].result}><Output value={output} locale={locale} /></Panel></div>;
 }
@@ -265,6 +274,10 @@ function AspectRatioTool({ locale }: { locale: Locale }) {
 }
 
 export const SUPPORTED_TOOL_SLUGS = [
+  "single-page-audit",
+  "whole-site-audit",
+  "duplicate-meta-checker",
+  "orphan-page-finder",
   "uuid-generator",
   "ulid-generator",
   "unix-timestamp-converter",
@@ -288,6 +301,7 @@ export const SUPPORTED_TOOL_SLUGS = [
   "px-rem-converter",
   "color-contrast-checker",
   "color-converter",
+  "color-palette-extractor",
   "css-specificity-calculator",
   "typography-scale-generator",
   "clip-path-generator",
@@ -302,10 +316,15 @@ export const SUPPORTED_TOOL_SLUGS = [
   "image-format-converter",
   "image-resizer",
   "image-cropper",
+  "favicon-generator",
+  "responsive-image-srcset-generator",
+  "image-data-uri-converter",
+  "qr-code-generator",
   "svg-optimizer",
   "add-watermark-to-image",
   "image-metadata-viewer",
   "redirect-chain-checker",
+  "bulk-http-status-checker",
   "robots-txt-tester",
   "sitemap-validator",
   "canonical-checker",
@@ -319,6 +338,8 @@ export const SUPPORTED_TOOL_SLUGS = [
   "core-web-vitals-checker",
   "cache-policy-checker",
   "page-weight-analyzer",
+  "resource-waterfall-analyzer",
+  "render-blocking-resources-checker",
   "image-performance-checker",
   "image-seo-audit",
   "favicon-checker",
@@ -372,6 +393,10 @@ export const SUPPORTED_TOOL_SLUGS = [
 
 export function ToolRenderer({ slug, locale }: ToolRendererProps) {
   switch (slug) {
+    case "single-page-audit": return <SinglePageAuditTool locale={locale} />;
+    case "whole-site-audit": return <AccountCrawlerEntry slug={slug} locale={locale} />;
+    case "duplicate-meta-checker": return <AccountCrawlerEntry slug={slug} locale={locale} />;
+    case "orphan-page-finder": return <AccountCrawlerEntry slug={slug} locale={locale} />;
     case "uuid-generator": return <Generator locale={locale} kind="uuid" />;
     case "ulid-generator": return <Generator locale={locale} kind="ulid" />;
     case "unix-timestamp-converter": return <UnixTimestampTool locale={locale} />;
@@ -395,6 +420,7 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "px-rem-converter": return <PxRemTool locale={locale} />;
     case "color-contrast-checker": return <ContrastTool locale={locale} />;
     case "color-converter": return <ColorConverterTool locale={locale} />;
+    case "color-palette-extractor": return <ImagePaletteExtractorTool locale={locale} />;
     case "css-specificity-calculator": return <CssSpecificityCalculatorTool locale={locale} />;
     case "typography-scale-generator": return <TypographyScaleGeneratorTool locale={locale} />;
     case "clip-path-generator": return <ClipPathGeneratorTool locale={locale} />;
@@ -409,10 +435,15 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "image-format-converter": return <ImageFormatConverterTool locale={locale} />;
     case "image-resizer": return <ImageResizerTool locale={locale} />;
     case "image-cropper": return <ImageCropperTool locale={locale} />;
+    case "favicon-generator": return <FaviconGeneratorTool locale={locale} />;
+    case "responsive-image-srcset-generator": return <ResponsiveSrcsetGeneratorTool locale={locale} />;
+    case "image-data-uri-converter": return <ImageDataUriWorkbenchTool locale={locale} />;
+    case "qr-code-generator": return <QrCodeWorkbenchTool locale={locale} />;
     case "svg-optimizer": return <SvgOptimizerTool locale={locale} />;
     case "add-watermark-to-image": return <AddWatermarkImageTool locale={locale} />;
     case "image-metadata-viewer": return <ImageMetadataViewerTool locale={locale} />;
     case "redirect-chain-checker": return <RedirectChainTool locale={locale} />;
+    case "bulk-http-status-checker": return <BulkHttpStatusTool locale={locale} />;
     case "robots-txt-tester": return <RobotsTxtTool locale={locale} />;
     case "sitemap-validator": return <SitemapValidatorTool locale={locale} />;
     case "canonical-checker": return <CanonicalCheckerTool locale={locale} />;
@@ -426,6 +457,8 @@ export function ToolRenderer({ slug, locale }: ToolRendererProps) {
     case "core-web-vitals-checker": return <CoreWebVitalsTool locale={locale} />;
     case "cache-policy-checker": return <CachePolicyTool locale={locale} />;
     case "page-weight-analyzer": return <PageWeightTool locale={locale} />;
+    case "resource-waterfall-analyzer": return <LighthouseNetworkTool locale={locale} view="resources" />;
+    case "render-blocking-resources-checker": return <LighthouseNetworkTool locale={locale} view="blocking" />;
     case "image-performance-checker": return <ImagePerformanceCheckerTool locale={locale} />;
     case "image-seo-audit": return <ImageSeoAuditTool locale={locale} />;
     case "favicon-checker": return <FaviconCheckerTool locale={locale} />;

@@ -1,5 +1,7 @@
 "use client";
 
+import { toolErrorMessage } from "./tool-error-presentation";
+
 import { useState, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { CopyButton } from "../../components/copy-button";
@@ -140,7 +142,7 @@ function ToolForm({
     try {
       await onRun(parsed.toString());
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Metadata tool request failed.");
+      setError(toolErrorMessage(locale, caught));
     } finally {
       setIsLoading(false);
     }

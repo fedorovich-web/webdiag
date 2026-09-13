@@ -18,8 +18,8 @@ const copy = {
     empty: "Введите адрес сайта или страницы.",
     invalid: "Введите полный URL, например https://example.ru.",
     successPrefix: "Проверка завершена:",
-    errorPrefix: "Проверка не запущена:",
-    apiUnavailable: "backend API сейчас недоступен. Демонстрационный отчёт ниже остаётся открытым.",
+    errorPrefix: "Не удалось запустить проверку:",
+    apiUnavailable: "сервис проверки временно недоступен. Ниже можно посмотреть пример отчёта.",
     resultTitle: "Результат быстрой проверки",
     score: "Оценка",
     issues: "Проблемы",
@@ -27,7 +27,7 @@ const copy = {
     severity: "Риск",
     topIssues: "Первые проблемы",
     noIssues: "Критичных проблем в быстрой проверке не найдено.",
-    reportLink: "Открыть пример полного отчёта",
+    reportLink: "Посмотреть пример подробного отчёта",
   },
   en: {
     label: "Website or page URL",
@@ -37,8 +37,8 @@ const copy = {
     empty: "Enter a website or page URL.",
     invalid: "Enter a full URL, for example https://example.com.",
     successPrefix: "Check completed:",
-    errorPrefix: "Check was not started:",
-    apiUnavailable: "backend API is unavailable right now. The demo report below remains available.",
+    errorPrefix: "Could not start the check:",
+    apiUnavailable: "the checking service is temporarily unavailable. You can still view the sample report below.",
     resultTitle: "Quick check result",
     score: "Score",
     issues: "Issues",
@@ -46,7 +46,7 @@ const copy = {
     severity: "Risk",
     topIssues: "First issues",
     noIssues: "No critical issues were found in the quick check.",
-    reportLink: "Open full report example",
+    reportLink: "View detailed report example",
   },
 } as const;
 
@@ -73,13 +73,14 @@ const priorityLabels = {
 } as const;
 
 type SubmitState = "idle" | "loading" | "success" | "error";
+type FormInstance = "hero" | "final";
 
 function getClientErrorMessage(error: unknown, locale: Locale): string {
   if (error instanceof AuditClientError) {
     if (error.code === "audit_api_unavailable" || error.code === "audit_api_timeout") return copy[locale].apiUnavailable;
     return error.message;
   }
-  return locale === "ru" ? "неизвестная ошибка запуска проверки." : "unknown check start error.";
+  return locale === "ru" ? "произошла неизвестная ошибка." : "an unknown error occurred.";
 }
 
 function scrollToReportPreview() {
@@ -135,13 +136,13 @@ function AuditResultPreview({ locale, snapshot }: { locale: Locale; snapshot: Au
   );
 }
 
-export function HomeUrlCheckForm({ locale }: { locale: Locale }) {
+export function HomeUrlCheckForm({ locale, instance = "hero" }: { locale: Locale; instance?: FormInstance }) {
   const t = copy[locale];
   const [value, setValue] = useState("");
   const [message, setMessage] = useState("");
   const [state, setState] = useState<SubmitState>("idle");
   const [snapshot, setSnapshot] = useState<AuditSnapshotResponse | null>(null);
-  const inputId = useMemo(() => `wd-url-check-${locale}`, [locale]);
+  const inputId = useMemo(() => `wd-url-check-${locale}-${instance}`, [instance, locale]);
   const isLoading = state === "loading";
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -178,7 +179,7 @@ export function HomeUrlCheckForm({ locale }: { locale: Locale }) {
   }
 
   return (
-    <form className="wd-url-check" id="check-url" onSubmit={submit} noValidate>
+    <form className={`wd-url-check wd-url-check-${instance}`} id={`check-url-${instance}`} onSubmit={submit} noValidate>
       <label htmlFor={inputId}>{t.label}</label>
       <div>
         <input
@@ -207,4 +208,3 @@ export function HomeUrlCheckForm({ locale }: { locale: Locale }) {
     </form>
   );
 }
-

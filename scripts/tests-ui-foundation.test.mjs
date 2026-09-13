@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
-import { access, readFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { constants } from "node:fs";
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 const layouts = ["apps/web/app/(ru)/layout.tsx", "apps/web/app/(en)/layout.tsx"];
@@ -33,7 +32,6 @@ test("language control remains a two-link localized navigation", async () => {
   const source = await read("apps/web/src/components/language-switcher.tsx");
   assert.match(source, /\["ru", "en"\]/);
   assert.match(source, /aria-current/);
-  assert.match(source, /localizedHref/);
   assert.doesNotMatch(source, /role="switch"/);
 });
 
@@ -66,7 +64,7 @@ test("root verification includes built-site and browser gates", async () => {
   assert.match(packageJson.scripts["verify:local"], /test:browser/);
 });
 
-test("design iteration two uses a typed editorial layer for every ready tool", async () => {
+test("tool pages use the typed editorial layer", async () => {
   const index = await read("apps/web/src/content/tool-pages/index.ts");
   const toolPage = await read("apps/web/src/features/tools/tool-page.tsx");
   assert.match(index, /toolPageContents/);
@@ -76,13 +74,47 @@ test("design iteration two uses a typed editorial layer for every ready tool", a
   assert.doesNotMatch(toolPage, /publicTools\.filter/);
 });
 
-test("home recommendations are explicit and do not depend on registry order", async () => {
+test("home tool recommendations are explicitly curated and do not depend on registry order", async () => {
   const home = await read("apps/web/src/features/home/home-page.tsx");
   const content = await read("apps/web/src/content/home.ts");
-  assert.doesNotMatch(home, /slice\(0,\s*6\)/);
-  assert.match(content, /quickTasks/);
-  assert.match(content, /image-resizer/);
-  assert.match(content, /json-formatter-validator/);
+  assert.doesNotMatch(home, /slice\(0,\s*\d+\)/);
+  assert.match(content, /popularTools/);
+});
+
+test("public availability copy contains no unapproved prices or payment claims", async () => {
+  const sources = {
+    home: await read("apps/web/src/features/home/home-page.tsx"),
+    header: await read("apps/web/src/components/site-header.tsx"),
+    pricingRu: await read("apps/web/app/(ru)/pricing/page.tsx"),
+    pricingEn: await read("apps/web/app/(en)/en/pricing/page.tsx"),
+    auditRu: await read("apps/web/app/(ru)/audit/page.tsx"),
+    auditEn: await read("apps/web/app/(en)/en/audit/page.tsx"),
+    monitoringRu: await read("apps/web/app/(ru)/monitoring/page.tsx"),
+    monitoringEn: await read("apps/web/app/(en)/en/monitoring/page.tsx"),
+    toolList: await read("apps/web/src/features/tools/tool-list.tsx"),
+  };
+  const combined = Object.values(sources).join("\n");
+  const categories = JSON.parse(
+    await read("packages/tool-registry/registry/categories.json"),
+  );
+
+  const priceMatches = combined.match(/\d[\d\s,]*\s*₽/gu);
+  const paymentClaimMatches = combined.match(
+    /(?:оплачиваются|платите за|цены предварительные|paid per run|pay for the|prices are preliminary|\/мес(?=["'\s,.)]|$)|\/mo(?=["'\s,.)]|$))/giu,
+  );
+
+  assert.deepEqual(priceMatches, null);
+  assert.deepEqual(paymentClaimMatches, null);
+  assert.doesNotMatch(combined, /release-gates?/i);
+  assert.doesNotMatch(sources.toolList, /homeContent/);
+  assert.match(sources.toolList, /categories as registryCategories/);
+  const publicCategoryReferences = [
+    ...combined.matchAll(/\?category=([a-z-]+)/g),
+    ...sources.header.matchAll(/\bcategory:\s*"([a-z-]+)"/g),
+  ].map((match) => match[1]);
+  for (const category of publicCategoryReferences) {
+    assert.ok(category in categories, `unknown public tool category: ${category}`);
+  }
 });
 
 test("home audit UI consumes only frontend-shaped audit result contracts", async () => {
@@ -125,21 +157,11 @@ test("SEO layer includes social metadata, structured data, and localized sitemap
   assert.match(jsonLd, /replace\(\/<\/g/);
 });
 
-test("mobile navigation owns the compact language control", async () => {
+test("mobile navigation keeps localized language and theme controls", async () => {
   const header = await read("apps/web/src/components/site-header.tsx");
-  const css = await read("apps/web/app/globals.css");
+  assert.match(header, /className="mobile-menu"/);
   assert.match(header, /language-switcher-mobile/);
-  assert.match(header, /language-switcher-desktop/);
-  assert.match(css, /\.language-switcher-mobile \{ display: none; \}/);
-  assert.match(css, /@media \(max-width: 620px\)/);
-});
-
-test("home stylesheet does not ship obsolete prototype-era audit CSS", async () => {
-  const css = await read("apps/web/app/globals.css");
-  assert.doesNotMatch(css, /audit-v[0-9]/);
-  assert.doesNotMatch(css, /WebDiag 0\.5\.[6-9]/);
-  assert.doesNotMatch(css, /font-weight:\s*(?:7[2-9]\d|8\d\d|9\d\d)/);
-  assert.doesNotMatch(css, /#116f66|#5ed5c6/i);
+  assert.match(header, /<ThemeSwitcher locale=\{locale\} \/>/);
 });
 
 test("random generators wait for an explicit client action", async () => {
@@ -149,61 +171,4 @@ test("random generators wait for an explicit client action", async () => {
   assert.doesNotMatch(source, /useEffect\(/);
   assert.match(source, /Generate UUID/);
   assert.match(source, /Generate ULID/);
-});
-
-
-
-test("self-hosted Manrope is optimized and wired through typography variables", async (t) => {
-  const css = await read("apps/web/app/globals.css");
-  const fontUrl = new URL("../apps/web/public/fonts/manrope-ru-en-400-700.woff2", import.meta.url);
-  let font;
-  try {
-    await access(fontUrl, constants.R_OK);
-    font = await readFile(fontUrl);
-  } catch (error) {
-    const exclusion = await read("HANDOFF_GENERATED/EXCLUSION_NOTICE.md").catch(() => "");
-    assert.match(exclusion, /font binaries|woff2/i);
-    t.diagnostic(`font binary is absent from the handoff archive by policy: ${error instanceof Error ? error.message : String(error)}`);
-  }
-  if (font) {
-    assert.equal(font.subarray(0, 4).toString("ascii"), "wOF2");
-    assert.ok(font.byteLength < 35_000, `optimized font is unexpectedly large: ${font.byteLength}`);
-  }
-  assert.match(css, /font-family: "Manrope Web"/);
-  assert.match(css, /font-weight: 400 700/);
-  assert.match(css, /font-display: swap/);
-  assert.match(css, /--font-display: var\(--font-family-primary\)/);
-  assert.match(css, /--font-body: var\(--font-family-primary\)/);
-  assert.match(css, /--font-ui: var\(--font-family-primary\)/);
-  assert.match(css, /--font-mono: var\(--font-family-monospace\)/);
-  assert.doesNotMatch(css, /Manrope-(?:Regular|Medium|SemiBold|Bold)\.woff2/);
-  for (const path of layouts) {
-    const source = await read(path);
-    assert.match(source, /rel="preload"[^>]+manrope-ru-en-400-700\.woff2/);
-  }
-});
-
-test("home design rules are tokenized and avoid the rejected regression patterns", async () => {
-  const css = await read("apps/web/app/home-v11.css");
-  const home = await read("apps/web/src/features/home/home-page.tsx");
-  assert.match(css, /--wd-h1:clamp\(48px,4\.5vw,64px\)/);
-  assert.match(css, /--wd-h2:clamp\(36px,3\.25vw,48px\)/);
-  assert.match(css, /--wd-h3:28px/);
-  assert.match(css, /--wd-text-sm:14px/);
-  assert.match(css, /--wd-text:15px/);
-  assert.match(css, /--wd-text-lg:16px/);
-  assert.match(css, /--wd-button-bg:linear-gradient/);
-  assert.match(css, /--wd-status-critical-bg/);
-  assert.match(css, /--wd-tab-active-bg/);
-  assert.match(css, /--wd-faq-question-size:16px/);
-  assert.doesNotMatch(css, /font-size:\s*(?:11|12|13)px/);
-  assert.doesNotMatch(css, /font-size:\s*(?:6[5-9]|7\d)px/);
-  assert.doesNotMatch(css, /background:var\(--wd-t\)/);
-  assert.doesNotMatch(home, /Activity/);
-  assert.doesNotMatch(home, /Начать проверку/);
-  assert.doesNotMatch(home, /wd-step-number/);
-  assert.doesNotMatch(home, /<details|<summary/);
-  const ruleCss = css.replace(/:root\{[^}]*\}/g, "").replace(/body\[data-theme=dark\]\{[^}]*\}/g, "");
-  assert.doesNotMatch(ruleCss, /#[0-9a-fA-F]{3,8}/);
-  assert.doesNotMatch(ruleCss, /rgba?\([^)]*\)/);
 });

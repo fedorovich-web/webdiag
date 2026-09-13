@@ -4,8 +4,8 @@ import { pageMetadata } from "../../../../src/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
   locale: "en",
-  title: "Pricing for technical audits and site monitoring",
-  description: "Preliminary WebDiag pricing: free URL check, one-off checks, full site audit, and monitoring.",
+  title: "WebDiag Pricing — Tools and Account Workspace",
+  description: "Access terms for WebDiag tools and the account workspace. Rely only on pricing, limits, and conditions explicitly published in the service interface.",
   canonical: "/en/pricing",
   ruPath: "/pricing",
   enPath: "/en/pricing",
@@ -16,18 +16,18 @@ export default function Page() {
     <main className="shell page-main wd-internal-page">
       <header className="page-heading wd-internal-hero">
         <span className="eyebrow">WebDiag</span>
-        <h1>Pricing for site audits, one-off checks, and monitoring</h1>
-        <p>Basic checks stay free. Full audits, higher limits, and monitoring are paid separately.</p>
+        <h1>WebDiag pricing</h1>
+        <p>Choose the workflow that fits the task: focused public checks or an account workspace for projects, saved history, and repeated work with results.</p>
       </header>
-      <section className="wd-internal-grid" aria-label="Pricing model">
-        <article><h2>Free — 0 ₽</h2><p>One express URL check and basic tools without project history.</p></article>
-        <article><h2>One-off checks — from 99 ₽</h2><p>Sitemap, broken links, images, HTML validation, and AI helpers are paid per run.</p></article>
-        <article><h2>Full audit — from 490 ₽</h2><p>Technical SEO audit with priorities and affected URLs.</p></article>
-        <article><h2>Monitoring — from 299 ₽/mo</h2><p>Ongoing control after releases and SEO changes.</p></article>
+      <section className="wd-internal-grid wd-availability-grid" aria-label="WebDiag access terms">
+        <article><h2>Public tools</h2><p>Use focused tools for individual technical and SEO checks. Availability of each tool is shown directly in the catalog.</p><Link className="wd-text-link" href="/en/tools">All tools</Link></article>
+        <article><h2>Account workspace</h2><p>Use an account for projects, saved results, priorities, reports, and repeated checks.</p><Link className="wd-text-link" href="/en/register">Create an account</Link></article>
+        <article><h2>Pricing</h2><p>WebDiag does not display unconfirmed prices. Rely only on pricing explicitly shown on this page or directly in the service interface.</p></article>
+        <article><h2>Limits and conditions</h2><p>Use only limits and conditions explicitly shown alongside the relevant WebDiag feature.</p></article>
       </section>
       <section className="wd-internal-note">
-        <strong>Prices are preliminary</strong>
-        <p>Final plans will be adjusted after audit engine cost, page limits, and monitoring cadence are validated.</p>
+        <strong>Want to start with a website check?</strong>
+        <p>Open the catalog and choose the technical or SEO check that matches your task.</p>
         <Link className="wd-button wd-button-primary" href="/en/tools">Open tools</Link>
       </section>
     </main>

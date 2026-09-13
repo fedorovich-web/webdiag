@@ -1,3 +1,4 @@
+import "../../home-fidelity.css";
 import type { Metadata } from "next";
 import { HomePage } from "../../../src/features/home/home-page";
 import { JsonLd } from "../../../src/components/json-ld";
@@ -7,7 +8,7 @@ import { homeContent } from "../../../src/content/home";
 
 export const metadata: Metadata = pageMetadata({
   locale: "en",
-  title: "Technical SEO Audit and Website Diagnostics",
+  title: homeContent.seoTitle.en,
   description: homeContent.description.en,
   canonical: "/en",
   ruPath: "/",

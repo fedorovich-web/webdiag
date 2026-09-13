@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "../globals.css";
 import "../account.css";
+import "../brand-system.css";
 import { SiteFooter } from "../../src/components/site-footer";
 import { SiteHeader } from "../../src/components/site-header";
 import { ThemeBootstrapScript } from "../../src/components/theme-bootstrap-script";

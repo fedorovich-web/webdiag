@@ -1,5 +1,7 @@
 "use client";
 
+import { toolErrorMessage } from "./tool-error-presentation";
+
 import { useState, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import {
@@ -564,7 +566,7 @@ function ProtocolSecurityTool({
       setResult(await runProtocolSecurityTool(endpoint, { hostname, port }));
     } catch (caught) {
       setResult(null);
-      setError(caught instanceof Error ? caught.message : "Tool request failed.");
+      setError(toolErrorMessage(locale, caught));
     } finally {
       setLoading(false);
     }
@@ -577,7 +579,7 @@ function ProtocolSecurityTool({
       setResult(await runProtocolSecurityTool(endpoint, { url }));
     } catch (caught) {
       setResult(null);
-      setError(caught instanceof Error ? caught.message : "Tool request failed.");
+      setError(toolErrorMessage(locale, caught));
     } finally {
       setLoading(false);
     }
@@ -590,7 +592,7 @@ function ProtocolSecurityTool({
       setResult(await runProtocolSecurityTool(endpoint, { url, origin }));
     } catch (caught) {
       setResult(null);
-      setError(caught instanceof Error ? caught.message : "Tool request failed.");
+      setError(toolErrorMessage(locale, caught));
     } finally {
       setLoading(false);
     }

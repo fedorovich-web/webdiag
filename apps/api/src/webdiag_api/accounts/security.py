@@ -25,9 +25,9 @@ class AccountValidationError(ValueError):
 
 @dataclass(frozen=True, slots=True)
 class ScryptParameters:
-    n: int = 2**14
+    n: int = 2**15
     r: int = 8
-    p: int = 1
+    p: int = 3
     length: int = 32
 
     def __post_init__(self) -> None:
@@ -47,7 +47,11 @@ def _encode(value: bytes) -> str:
 
 def _decode(value: str) -> bytes:
     padding = "=" * (-len(value) % 4)
-    return base64.urlsafe_b64decode(f"{value}{padding}")
+    return base64.b64decode(f"{value}{padding}", altchars=b"-_", validate=True)
+
+
+def _scrypt_maxmem(parameters: ScryptParameters) -> int:
+    return max(64 * 1024 * 1024, 256 * parameters.n * parameters.r)
 
 
 def normalize_email(value: str) -> str:
@@ -96,6 +100,7 @@ def hash_password(password: str, parameters: ScryptParameters | None = None) -> 
         n=selected.n,
         r=selected.r,
         p=selected.p,
+        maxmem=_scrypt_maxmem(selected),
         dklen=selected.length,
     )
     return (
@@ -117,17 +122,40 @@ def verify_password(password: str, encoded: str) -> bool:
         )
         salt = _decode(raw_salt)
         expected = _decode(raw_digest)
+        if len(salt) != 16:
+            return False
         actual = hashlib.scrypt(
             password.encode("utf-8"),
             salt=salt,
             n=parameters.n,
             r=parameters.r,
             p=parameters.p,
+            maxmem=_scrypt_maxmem(parameters),
             dklen=parameters.length,
         )
     except (MemoryError, OverflowError, TypeError, ValueError):
         return False
     return hmac.compare_digest(actual, expected)
+
+
+def password_needs_rehash(encoded: str, desired: ScryptParameters) -> bool:
+    try:
+        algorithm, raw_n, raw_r, raw_p, raw_salt, raw_digest = encoded.split("$", 5)
+        if algorithm != "scrypt" or len(_decode(raw_salt)) != 16:
+            return True
+        current = ScryptParameters(
+            n=int(raw_n),
+            r=int(raw_r),
+            p=int(raw_p),
+            length=len(_decode(raw_digest)),
+        )
+    except (TypeError, ValueError):
+        return True
+    return current != desired
+
+
+def hash_login_identity(email: str) -> str:
+    return hashlib.sha256(email.encode("utf-8")).hexdigest()
 
 
 @dataclass(frozen=True, slots=True)

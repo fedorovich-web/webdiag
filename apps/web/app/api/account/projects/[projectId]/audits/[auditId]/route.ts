@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import {
+  accountLocaleQuery,
   accountWorkspacePath,
   proxyAccountWorkspace,
 } from "../../../../../../../src/features/account/account-workspace-proxy";
@@ -15,9 +16,10 @@ export async function GET(
 ) {
   const { projectId, auditId } = await context.params;
   const path = accountWorkspacePath([projectId, auditId]);
-  if (!path) return Response.json(
+  const localeQuery = accountLocaleQuery(request.nextUrl.searchParams);
+  if (!path || localeQuery === null) return Response.json(
     { detail: { code: "account_invalid_request", message: "Invalid audit identifier." } },
     { status: 400, headers: { "cache-control": "no-store" } },
   );
-  return proxyAccountWorkspace(request, { method: "GET", path });
+  return proxyAccountWorkspace(request, { method: "GET", path: `${path}${localeQuery}` });
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import { toolErrorMessage } from "./tool-error-presentation";
+
 import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { CopyButton } from "../../components/copy-button";
@@ -54,7 +56,7 @@ export function SqlFormatterTool({ locale }: { readonly locale: Locale }) {
     } catch (caught) {
       setOutput("");
       setDetails("");
-      setError(caught instanceof Error ? caught.message : locale === "ru" ? "Не удалось отформатировать SQL." : "Unable to format SQL.");
+      setError(toolErrorMessage(locale, caught, "sql_format_failed"));
     }
   }
 
@@ -97,7 +99,7 @@ export function GraphqlFormatterTool({ locale }: { readonly locale: Locale }) {
     } catch (caught) {
       setOutput("");
       setDetails("");
-      setError(caught instanceof Error ? caught.message : locale === "ru" ? "Не удалось отформатировать GraphQL." : "Unable to format GraphQL.");
+      setError(toolErrorMessage(locale, caught, "graphql_format_failed"));
     }
   }
 
@@ -221,7 +223,7 @@ export function SafeRegexLabTool({ locale }: { readonly locale: Locale }) {
     } catch (caught) {
       setRunning(false);
       setRiskOutput("");
-      setError(caught instanceof Error ? caught.message : locale === "ru" ? "Не удалось выполнить регулярное выражение." : "Unable to run the regular expression.");
+      setError(toolErrorMessage(locale, caught, "regex_failed"));
       cleanupWorker();
     }
   }

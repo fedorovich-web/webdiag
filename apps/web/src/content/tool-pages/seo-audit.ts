@@ -3,6 +3,180 @@ import { toolPage } from "./shared";
 export const seoAuditToolPages = [
 
   toolPage({
+    slug: "whole-site-audit",
+    lastReviewedAt: "2026-08-13",
+    reviewDueAt: "2027-02-13",
+    seoTitle: { ru: "Ограниченный аудит сайта по проекту", en: "Bounded Project Site Audit" },
+    metaDescription: { ru: "Запустите из проекта ограниченный обход одного origin: до 25 публичных HTML-страниц, статусы, метаданные, ссылки, robots.txt и sitemap без обещания полного покрытия.", en: "Run a project-bound crawl of one origin: up to 25 public HTML pages with status, metadata, links, robots.txt, and sitemap evidence without claiming complete coverage." },
+    h1: { ru: "Ограниченный аудит сайта", en: "Bounded Site Audit" },
+    lead: { ru: "Авторизованный обход проекта получает до 25 публичных HTML-страниц одного origin и сохраняет результат в истории. Он показывает фактически собранную выборку, а не притворяется полным аудитом каждого URL.", en: "The authenticated project crawl fetches up to 25 public HTML pages on one origin and stores the result in project history. It reports the sample actually collected instead of presenting it as a complete audit of every URL." },
+    quickFacts: [
+      { ru: "До 25 HTML-страниц", en: "Up to 25 HTML pages" },
+      { ru: "Один origin", en: "One origin" },
+      { ru: "История в проекте", en: "Project history" },
+    ],
+    howToSteps: [
+      { ru: "Авторизуйтесь и откройте проект с подтверждённым origin.", en: "Sign in and open a project with the intended origin." },
+      { ru: "Запустите ограниченный обход из обзора проекта.", en: "Start the bounded crawl from the project overview." },
+      { ru: "Проверьте полученные страницы, частичные ошибки, повторы и кандидатов без ссылок с учётом лимита выборки.", en: "Review fetched pages, partial failures, duplicates, and unlinked candidates in the context of the sample limit." },
+    ],
+    supportedFeatures: [
+      { ru: "Собирает HTTP status, title, description и внутренние ссылки из статического HTML.", en: "Collects HTTP status, title, description, and internal links from static HTML." },
+      { ru: "Остаётся в пределах одного origin и применяет SSRF/DNS/IP policy к переходам.", en: "Stays on one origin and applies SSRF and DNS/IP policy to navigation." },
+      { ru: "Учитывает robots.txt и пытается прочитать один sitemap urlset для сопоставления URL.", en: "Handles robots.txt and attempts to read one sitemap urlset for URL comparison." },
+    ],
+    limitations: [
+      { ru: "Лимит — 25 HTML-страниц; это не доказательство полного покрытия сайта.", en: "The limit is 25 HTML pages; this does not prove complete site coverage." },
+      { ru: "JavaScript, авторизованные страницы, формы, sitemap index и вложенные sitemap не исполняются и не обходятся.", en: "JavaScript, authenticated pages, forms, sitemap indexes, and nested sitemaps are not executed or crawled." },
+    ],
+    useCases: [
+      { ru: "Получить ограниченную техническую выборку небольшого публичного сайта.", en: "Collect a bounded technical sample of a small public site." },
+      { ru: "Зафиксировать состояние доступных страниц перед изменением шаблона.", en: "Record the state of reachable pages before a template change." },
+      { ru: "Использовать один результат для проверки повторов и кандидатов без ссылок.", en: "Use one result to review duplicates and unlinked candidates." },
+    ],
+    technicalNotes: [
+      { ru: "Запуск привязан к сессии и owned project; browser не передаёт произвольный origin обходчику.", en: "A run is bound to the session and owned project; the browser does not provide an arbitrary crawl origin." },
+      { ru: "Результат хранится как ограниченный versioned DTO; ошибки отдельных страниц не подменяются успешными данными.", en: "Results are stored as a bounded, versioned DTO; individual page failures are not replaced with successful data." },
+    ],
+    faq: [
+      { question: { ru: "Это полный аудит сайта?", en: "Is this a complete site audit?" }, answer: { ru: "Нет. Обход ограничен 25 HTML-страницами и показывает только фактически полученную выборку.", en: "No. The crawl is capped at 25 HTML pages and reports only the sample actually fetched." } },
+      { question: { ru: "Обход видит страницы, отрисованные JavaScript?", en: "Does the crawl see JavaScript-rendered pages?" }, answer: { ru: "Нет. Он анализирует полученный HTML без исполнения JavaScript. Для runtime-страниц нужен отдельный browser-инструмент.", en: "No. It analyzes fetched HTML without executing JavaScript. Runtime pages need a separate browser tool." } },
+    ],
+    relatedToolSlugs: ["duplicate-meta-checker", "orphan-page-finder", "single-page-audit"],
+    sourceUrls: ["https://developers.google.com/search/docs/crawling-indexing/robots/intro", "https://www.sitemaps.org/protocol.html"],
+  }),
+
+  toolPage({
+    slug: "duplicate-meta-checker",
+    lastReviewedAt: "2026-08-13",
+    reviewDueAt: "2027-02-13",
+    seoTitle: { ru: "Повторяющиеся title и description в обходе", en: "Duplicate Titles and Descriptions in a Crawl" },
+    metaDescription: { ru: "Найдите одинаковые непустые title и description в выборке до 25 HTML-страниц одного авторизованного обхода проекта без заявления о проверке всего сайта.", en: "Find identical non-empty titles and descriptions within a sample of up to 25 HTML pages from one authenticated project crawl without claiming a full-site check." },
+    h1: { ru: "Повторы title и description", en: "Duplicate Titles and Descriptions" },
+    lead: { ru: "Представление группирует одинаковые непустые title и meta description среди страниц, фактически полученных одним ограниченным обходом проекта. URL вне выборки в вывод не попадают.", en: "This view groups identical non-empty titles and meta descriptions among pages actually fetched by one bounded project crawl. URLs outside the sample are not represented." },
+    quickFacts: [
+      { ru: "Один результат обхода", en: "One crawl result" },
+      { ru: "Title + description", en: "Title + description" },
+      { ru: "До 25 HTML-страниц", en: "Up to 25 HTML pages" },
+    ],
+    howToSteps: [
+      { ru: "Откройте авторизованный проект и запустите ограниченный обход.", en: "Open an authenticated project and run a bounded crawl." },
+      { ru: "Дождитесь сохранённого результата и откройте группы повторов.", en: "Wait for the stored result and open the duplicate groups." },
+      { ru: "Проверьте смысл каждой группы вручную: одинаковые метаданные не всегда являются дефектом.", en: "Review the intent of each group manually: identical metadata is not always a defect." },
+    ],
+    supportedFeatures: [
+      { ru: "Отдельно группирует точные совпадения непустых title и description.", en: "Groups exact matches of non-empty titles and descriptions separately." },
+      { ru: "Показывает URL из сохранённого результата без повторного сетевого запроса.", en: "Shows URLs from the stored result without making another network request." },
+      { ru: "Использует тот же ownership-protected результат, что и обзор обхода проекта.", en: "Uses the same ownership-protected result as the project crawl overview." },
+    ],
+    limitations: [
+      { ru: "Сравнение ограничено полученной выборкой до 25 HTML-страниц и не охватывает неизвестные URL.", en: "Comparison is limited to the fetched sample of up to 25 HTML pages and does not cover unknown URLs." },
+      { ru: "Инструмент не определяет поисковый intent и не решает, когда повтор допустим.", en: "The tool does not determine search intent or decide when a duplicate is acceptable." },
+    ],
+    useCases: [
+      { ru: "Найти шаблонные title в полученной выборке категорий или услуг.", en: "Find template-level title duplication in the fetched category or service sample." },
+      { ru: "Проверить повторяющиеся descriptions после изменения CMS-шаблона.", en: "Review repeated descriptions after a CMS template change." },
+      { ru: "Подготовить список URL для ручной редакционной проверки.", en: "Prepare a URL list for manual editorial review." },
+    ],
+    technicalNotes: [
+      { ru: "Группировка выполняется по точному сохранённому тексту; семантическое сходство и AI-классификация не используются.", en: "Grouping uses exact stored text; semantic similarity and AI classification are not used." },
+      { ru: "Пустые значения не считаются группой повторов и должны оцениваться как отдельная проблема наличия метаданных.", en: "Empty values are not duplicate groups and should be reviewed separately as missing metadata." },
+    ],
+    faq: [
+      { question: { ru: "Проверяются все страницы сайта?", en: "Does it check every page on the site?" }, answer: { ru: "Нет. Группы строятся только по страницам одного ограниченного обхода, максимум по 25 HTML-страницам.", en: "No. Groups are built only from one bounded crawl, with at most 25 HTML pages." } },
+      { question: { ru: "Похожий, но не идентичный текст считается повтором?", en: "Is similar but non-identical text considered a duplicate?" }, answer: { ru: "Нет. Текущая реализация группирует точные совпадения и не выдаёт эвристику или AI-оценку за факт.", en: "No. The current implementation groups exact matches and does not present heuristics or AI judgment as fact." } },
+    ],
+    relatedToolSlugs: ["whole-site-audit", "meta-tags-checker", "orphan-page-finder"],
+    sourceUrls: ["https://developers.google.com/search/docs/appearance/title-link", "https://developers.google.com/search/docs/appearance/snippet"],
+  }),
+
+  toolPage({
+    slug: "orphan-page-finder",
+    lastReviewedAt: "2026-08-13",
+    reviewDueAt: "2027-02-13",
+    seoTitle: { ru: "Кандидаты без внутренних ссылок по sitemap", en: "Sitemap URLs Without Discovered Internal Links" },
+    metaDescription: { ru: "Сравните URL из одного sitemap urlset с внутренними ссылками в выборке до 25 HTML-страниц и получите кандидатов для ручной проверки, а не недоказанный список сирот.", en: "Compare URLs from one sitemap urlset with internal links in a sample of up to 25 HTML pages and get review candidates rather than an unproven orphan list." },
+    h1: { ru: "Кандидаты без внутренних ссылок", en: "Unlinked Page Candidates" },
+    lead: { ru: "Представление показывает URL из одного sitemap urlset, на которые не найдены внутренние ссылки в ограниченной выборке обхода. Это кандидаты для проверки: лимит и неполный link graph не позволяют доказать, что страница является сиротой на всём сайте.", en: "This view shows URLs from one sitemap urlset for which no internal links were found in the bounded crawl sample. These are review candidates: the limit and incomplete link graph cannot prove that a page is orphaned across the full site." },
+    quickFacts: [
+      { ru: "Sitemap vs links", en: "Sitemap vs links" },
+      { ru: "Только кандидаты", en: "Candidates only" },
+      { ru: "До 25 HTML-страниц", en: "Up to 25 HTML pages" },
+    ],
+    howToSteps: [
+      { ru: "Убедитесь, что проект использует нужный origin и публичный sitemap urlset.", en: "Confirm that the project uses the intended origin and a public sitemap urlset." },
+      { ru: "Запустите ограниченный обход и дождитесь сохранённого результата.", en: "Run the bounded crawl and wait for the stored result." },
+      { ru: "Проверьте каждый кандидат по навигации, контекстным ссылкам и более полным данным до изменения сайта.", en: "Review each candidate against navigation, contextual links, and broader evidence before changing the site." },
+    ],
+    supportedFeatures: [
+      { ru: "Сравнивает нормализованные URL одного sitemap urlset с обнаруженными внутренними ссылками.", en: "Compares normalized URLs from one sitemap urlset with discovered internal links." },
+      { ru: "Остаётся в пределах одного origin и не принимает cross-origin URL за часть проекта.", en: "Stays on one origin and does not treat cross-origin URLs as part of the project." },
+      { ru: "Показывает кандидатов из сохранённого обхода вместе с размером sitemap-выборки.", en: "Shows candidates from the stored crawl together with the sitemap sample size." },
+    ],
+    limitations: [
+      { ru: "До 25 HTML-страниц недостаточно для доказательства отсутствия ссылки на всём сайте.", en: "A sample of up to 25 HTML pages cannot prove the absence of a link across the full site." },
+      { ru: "Поддерживается один sitemap urlset; sitemap index и вложенные sitemap не разворачиваются.", en: "One sitemap urlset is supported; sitemap indexes and nested sitemaps are not expanded." },
+    ],
+    useCases: [
+      { ru: "Найти URL для ручной проверки внутренней перелинковки.", en: "Find URLs for manual internal-link review." },
+      { ru: "Сопоставить небольшую sitemap-выборку с фактически обнаруженными ссылками.", en: "Compare a small sitemap sample with links actually discovered." },
+      { ru: "Проверить кандидатов после изменения меню или структуры разделов.", en: "Review candidates after changing navigation or section structure." },
+    ],
+    technicalNotes: [
+      { ru: "Кандидат — это разность URL sitemap и обнаруженного link graph после нормализации в пределах origin.", en: "A candidate is the difference between sitemap URLs and the discovered link graph after same-origin normalization." },
+      { ru: "Термин orphan намеренно не используется как подтверждённый статус без полного графа и дополнительных источников.", en: "The term orphan is intentionally not used as a confirmed status without a complete graph and additional evidence." },
+    ],
+    faq: [
+      { question: { ru: "Кандидат точно является страницей-сиротой?", en: "Is a candidate definitely an orphan page?" }, answer: { ru: "Нет. Это означает только, что ссылка не найдена в ограниченной выборке. Нужна ручная или более полная проверка.", en: "No. It only means no link was found in the bounded sample. Manual or broader verification is required." } },
+      { question: { ru: "Почему sitemap index не разворачивается?", en: "Why is a sitemap index not expanded?" }, answer: { ru: "Текущий контур намеренно ограничен одним urlset и 25 HTML-страницами. Поддержка индексов потребует отдельного безопасного лимита и контракта.", en: "The current scope is intentionally bounded to one urlset and 25 HTML pages. Index support needs a separate safe limit and contract." } },
+    ],
+    relatedToolSlugs: ["whole-site-audit", "duplicate-meta-checker", "sitemap-validator"],
+    sourceUrls: ["https://www.sitemaps.org/protocol.html", "https://developers.google.com/search/docs/crawling-indexing/links-crawlable"],
+  }),
+
+  toolPage({
+    slug: "single-page-audit",
+    seoTitle: { ru: "Технический аудит одной страницы сайта", en: "Single Page Technical Audit" },
+    metaDescription: { ru: "Проверьте один публичный URL: HTTP, редиректы, метаданные, indexability, JSON-LD, security headers, robots.txt и sitemap.xml с порядком исправлений.", en: "Audit one public URL for HTTP, redirects, metadata, indexability, JSON-LD, security headers, robots.txt, and sitemap.xml with a clear fix order." },
+    h1: { ru: "Технический аудит страницы", en: "Single Page Technical Audit" },
+    lead: { ru: "WebDiag безопасно загружает один публичный URL и два origin-level ресурса, выполняет набор статических проверок и возвращает приоритетный список проблем с рекомендациями. Это аудит одной страницы, а не обход сайта или browser performance test.", en: "WebDiag safely fetches one public URL and two origin-level resources, runs a static check set, and returns prioritized issues with recommendations. This is a single-page audit, not a site crawl or browser performance test." },
+    quickFacts: [
+      { ru: "13 статических проверок", en: "13 static checks" },
+      { ru: "Один URL без обхода", en: "One URL without crawling" },
+      { ru: "SSRF-safe bounded fetch", en: "SSRF-safe bounded fetch" },
+    ],
+    howToSteps: [
+      { ru: "Введите публичный HTTP(S) URL конкретной страницы.", en: "Enter the public HTTP(S) URL of one page." },
+      { ru: "Дождитесь bounded fetch страницы, robots.txt и одного sitemap.xml.", en: "Wait for the bounded fetch of the page, robots.txt, and one sitemap.xml." },
+      { ru: "Исправляйте проблемы в порядке P0-P3 и повторите аудит после изменений.", en: "Fix issues in P0-P3 order and rerun the audit after changes." },
+    ],
+    supportedFeatures: [
+      { ru: "HTTP status, redirect chain и HTML content type.", en: "HTTP status, redirect chain, and HTML content type." },
+      { ru: "Title, description, H1, canonical, robots meta, Open Graph и JSON-LD.", en: "Title, description, H1, canonical, robots meta, Open Graph, and JSON-LD." },
+      { ru: "Security headers, robots.txt и discovery одного sitemap.xml.", en: "Security headers, robots.txt, and discovery of one sitemap.xml." },
+    ],
+    limitations: [
+      { ru: "Статический fetch не исполняет JavaScript и не измеряет layout, accessibility tree, Core Web Vitals или Lighthouse.", en: "The static fetch does not execute JavaScript or measure layout, the accessibility tree, Core Web Vitals, or Lighthouse." },
+      { ru: "Проверяется один URL; ссылки и страницы из sitemap не обходятся.", en: "Only one URL is audited; links and sitemap pages are not crawled." },
+    ],
+    useCases: [
+      { ru: "Проверить страницу перед публикацией или после релиза.", en: "Review a page before publishing or after a release." },
+      { ru: "Получить единый порядок исправления технических проблем.", en: "Get one ordered list of technical fixes." },
+      { ru: "Сравнить повторный результат после исправлений вручную.", en: "Manually compare a rerun after fixes." },
+    ],
+    technicalNotes: [
+      { ru: "Backend валидирует URL, DNS и фактический peer IP на каждом redirect и ограничивает redirects, timeout, compressed и decoded body.", en: "The backend validates the URL, DNS, and connected peer IP at every redirect and bounds redirects, timeouts, compressed bodies, and decoded bodies." },
+      { ru: "Публичный frontend получает checks, issues, affected URLs и рекомендации без raw evidence, response headers и внутренних metadata.", en: "The public frontend receives checks, issues, affected URLs, and recommendations without raw evidence, response headers, or internal metadata." },
+    ],
+    faq: [
+      { question: { ru: "Это полный аудит сайта?", en: "Is this a full-site audit?" }, answer: { ru: "Нет. Инструмент проверяет один URL и не обходит внутренние ссылки или sitemap entries.", en: "No. The tool audits one URL and does not crawl internal links or sitemap entries." } },
+      { question: { ru: "Что означает оценка?", en: "What does the score mean?" }, answer: { ru: "Это детерминированная оценка найденных проблем по severity в текущем наборе проверок. Она не предсказывает позиции, трафик или uptime.", en: "It is a deterministic severity-based score for issues in the current check set. It does not predict rankings, traffic, or uptime." } },
+    ],
+    relatedToolSlugs: ["meta-tags-checker", "indexability-checker", "security-headers-checker"],
+    sourceUrls: ["https://developer.mozilla.org/docs/Web/HTTP", "https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag"],
+  }),
+
+  toolPage({
     slug: "javascript-bundle-surface-analyzer",
     seoTitle: { ru: "Анализ JavaScript-бандлов страницы", en: "JavaScript Bundle Surface Analyzer" },
     metaDescription: { ru: "Проверьте bounded static JavaScript delivery surface: script src, status, MIME, Content-Length, compression, cache, redirects и parser-blocking candidates.", en: "Check a bounded static JavaScript delivery surface: script src, status, MIME, Content-Length, compression, cache, redirects, and parser-blocking candidates." },
@@ -129,27 +303,30 @@ export const seoAuditToolPages = [
   toolPage({
     slug: "core-web-vitals-checker",
     seoTitle: { ru: "Проверка Core Web Vitals и PageSpeed", en: "Core Web Vitals and PageSpeed Checker" },
-    metaDescription: { ru: "Проверьте PageSpeed, Core Web Vitals, Lighthouse lab metrics, field data и opportunities через backend-интеграцию Google PageSpeed API.", en: "Check PageSpeed, Core Web Vitals, Lighthouse lab metrics, field data, and opportunities through the backend Google PageSpeed API integration." },
+    metaDescription: { ru: "Проверьте Core Web Vitals, lab и field data, четыре категории Lighthouse и порядок исправлений через Google PageSpeed API.", en: "Check Core Web Vitals, lab and field data, four Lighthouse categories, and a fix order through the Google PageSpeed API." },
     h1: { ru: "Проверка Core Web Vitals", en: "Core Web Vitals Checker" },
-    lead: { ru: "Запустите mobile, desktop или обе стратегии PageSpeed, чтобы увидеть performance score, LCP, FCP, CLS, TBT, INP field data и главные Lighthouse opportunities.", en: "Run mobile, desktop, or both PageSpeed strategies to see performance score, LCP, FCP, CLS, TBT, INP field data, and key Lighthouse opportunities." },
+    lead: { ru: "Запустите mobile, desktop или обе стратегии PageSpeed, чтобы увидеть Core Web Vitals, оценки Performance, Accessibility, Best Practices и SEO, а также приоритетные проверки для исправления.", en: "Run mobile, desktop, or both PageSpeed strategies to review Core Web Vitals, Performance, Accessibility, Best Practices, and SEO scores, plus prioritized checks to fix." },
     quickFacts: [
       { ru: "Google PageSpeed API", en: "Google PageSpeed API" },
       { ru: "Mobile/Desktop", en: "Mobile/Desktop" },
       { ru: "Lab + Field data", en: "Lab + Field data" },
+      { ru: "4 категории Lighthouse", en: "4 Lighthouse categories" },
     ],
     howToSteps: [
       { ru: "Вставьте публичный URL страницы.", en: "Paste a public page URL." },
       { ru: "Выберите mobile, desktop или обе стратегии.", en: "Choose mobile, desktop, or both strategies." },
-      { ru: "Проверьте score, lab metrics, field data availability и top opportunities.", en: "Review score, lab metrics, field data availability, and top opportunities." },
+      { ru: "Проверьте оценки категорий, lab metrics, field data и порядок исправления проверок.", en: "Review category scores, lab metrics, field data, and the ordered checks to fix." },
     ],
     supportedFeatures: [
       { ru: "Backend-интеграция с Google PageSpeed API через env GOOGLE_PAGESPEED_API_KEY.", en: "Backend Google PageSpeed API integration through GOOGLE_PAGESPEED_API_KEY env." },
       { ru: "Разделяет Lighthouse lab metrics и Chrome UX field data, если field data доступна.", en: "Separates Lighthouse lab metrics from Chrome UX field data when field data is available." },
+      { ru: "Показывает оценки четырёх категорий и до 20 failed или partial проверок из их auditRefs.", en: "Shows four category scores and up to 20 failed or partial checks from their auditRefs." },
       { ru: "Graceful unavailable state: отсутствие ключа или ошибка провайдера не превращается в fake score.", en: "Graceful unavailable state: missing key or provider errors never become a fake score." },
     ],
     limitations: [
       { ru: "PageSpeed проверяет только публично доступные URL и не работает для закрытого localhost/staging без отдельной инфраструктуры.", en: "PageSpeed checks only publicly accessible URLs and does not work for private localhost/staging without separate infrastructure." },
       { ru: "Результат зависит от Google API, лимитов, региона и доступности field data.", en: "The result depends on Google API, quotas, region, and field data availability." },
+      { ru: "Инструмент не отдаёт raw audit details, trace, screenshot или network waterfall.", en: "The tool does not expose raw audit details, traces, screenshots, or a network waterfall." },
     ],
     useCases: [
       { ru: "Оценить релиз landing page перед запуском трафика.", en: "Evaluate a landing page release before driving traffic." },
@@ -248,6 +425,88 @@ export const seoAuditToolPages = [
     ],
     relatedToolSlugs: ["core-web-vitals-checker", "cache-policy-checker", "image-format-converter"],
     sourceUrls: ["https://web.dev/learn/performance/image-performance", "https://developer.chrome.com/docs/lighthouse/performance/uses-webp-images/"],
+  }),
+
+  toolPage({
+    slug: "resource-waterfall-analyzer",
+    seoTitle: { ru: "Временная шкала загрузки ресурсов", en: "Resource Loading Timeline Analyzer" },
+    metaDescription: { ru: "Проверьте до 40 network-requests из Google PageSpeed Lighthouse: тип, начало, длительность и известный размер без raw trace.", en: "Inspect up to 40 Google PageSpeed Lighthouse network requests: type, start, duration, and known size without exposing a raw trace." },
+    h1: { ru: "Анализ загрузки ресурсов", en: "Resource Waterfall Analyzer" },
+    lead: { ru: "Введите публичный URL, чтобы получить ограниченную временную шкалу network-requests из Google PageSpeed Lighthouse. WebDiag показывает нормализованные строки, а не полный DevTools trace.", en: "Enter a public URL to get a bounded network-requests timeline from Google PageSpeed Lighthouse. WebDiag shows normalized rows, not a full DevTools trace." },
+    quickFacts: [{ ru: "До 40 запросов", en: "Up to 40 requests" }, { ru: "Mobile / Desktop", en: "Mobile / Desktop" }, { ru: "Query удаляется", en: "Query strings removed" }],
+    howToSteps: [
+      { ru: "Вставьте публичный http(s) URL.", en: "Paste a public http(s) URL." },
+      { ru: "Выберите mobile или desktop стратегию.", en: "Choose a mobile or desktop strategy." },
+      { ru: "Сравните начало, длительность и известный transfer size показанных ресурсов.", en: "Compare start time, duration, and known transfer size for the returned resources." },
+    ],
+    supportedFeatures: [
+      { ru: "Использует audit network-requests из ответа Google PageSpeed Lighthouse.", en: "Uses the network-requests audit from the Google PageSpeed Lighthouse response." },
+      { ru: "Показывает не более 40 строк и явно разделяет найденные и возвращённые запросы.", en: "Returns no more than 40 rows and explicitly separates found and returned requests." },
+      { ru: "Удаляет userinfo, query и fragment из URL ресурсов.", en: "Removes user info, query strings, and fragments from resource URLs." },
+    ],
+    limitations: [
+      { ru: "Это ограниченная визуализация provider evidence, а не полный Chrome DevTools waterfall или trace.", en: "This is a bounded view of provider evidence, not a complete Chrome DevTools waterfall or trace." },
+      { ru: "PageSpeed может не вернуть audit или отдельные размеры; такие поля остаются недоступными.", en: "PageSpeed may omit the audit or individual sizes; those fields remain unavailable." },
+      { ru: "Порядок и длительность зависят от конкретного provider run и не являются field data.", en: "Order and duration depend on the specific provider run and are not field data." },
+    ],
+    useCases: [
+      { ru: "Найти поздно стартующие или долгие ресурсы в конкретном Lighthouse run.", en: "Find late-starting or long-running resources in a specific Lighthouse run." },
+      { ru: "Сопоставить transfer size и resource type перед более глубоким профилированием.", en: "Compare transfer size and resource type before deeper profiling." },
+      { ru: "Проверить mobile и desktop стратегии без передачи PageSpeed API key в браузер.", en: "Check mobile and desktop strategies without exposing the PageSpeed API key to the browser." },
+    ],
+    technicalNotes: [
+      { ru: "Backend сначала валидирует URL, затем вызывает PageSpeed API с server-side key.", en: "The backend validates the URL before calling PageSpeed API with a server-side key." },
+      { ru: "Response bodies, request/response headers, cookies, screenshots и trace не входят в контракт.", en: "Response bodies, request/response headers, cookies, screenshots, and traces are excluded from the contract." },
+    ],
+    faq: [
+      { question: { ru: "Почему показано не больше 40 запросов?", en: "Why are no more than 40 requests shown?" }, answer: { ru: "Это явный лимит безопасного и читаемого ответа. Счётчик найденных запросов сохраняется отдельно.", en: "This is an explicit limit for a safe, readable response. The found request count is retained separately." } },
+      { question: { ru: "Почему URL не содержит query?", en: "Why does the URL not include a query string?" }, answer: { ru: "WebDiag удаляет query и fragment, чтобы не показывать токены и другие чувствительные параметры из provider payload.", en: "WebDiag removes query strings and fragments so tokens and other sensitive parameters from provider payloads are not displayed." } },
+    ],
+    relatedToolSlugs: ["core-web-vitals-checker", "page-weight-analyzer", "render-blocking-resources-checker"],
+    sourceUrls: ["https://developers.google.com/speed/docs/insights/rest/v5/pagespeedapi/runpagespeed", "https://github.com/GoogleChrome/lighthouse/blob/main/docs/understanding-results.md"],
+    lastReviewedAt: "2026-08-14",
+    reviewDueAt: "2027-02-14",
+  }),
+
+  toolPage({
+    slug: "render-blocking-resources-checker",
+    seoTitle: { ru: "Проверка блокирующих рендер ресурсов", en: "Render-Blocking Resources Checker" },
+    metaDescription: { ru: "Проверьте точный audit render-blocking-resources из Google PageSpeed Lighthouse с оценкой экономии и bounded rows.", en: "Inspect the exact Google PageSpeed Lighthouse render-blocking-resources audit with estimated savings and bounded rows." },
+    h1: { ru: "Поиск блокирующих рендер ресурсов", en: "Render-Blocking Resources Checker" },
+    lead: { ru: "Введите публичный URL, чтобы проверить точный legacy audit render-blocking-resources из PageSpeed. Если provider не вернул audit, WebDiag показывает unavailable state и не придумывает результат.", en: "Enter a public URL to inspect the exact legacy render-blocking-resources audit from PageSpeed. If the provider omits the audit, WebDiag shows an unavailable state instead of inventing a result." },
+    quickFacts: [{ ru: "Точный Lighthouse audit", en: "Exact Lighthouse audit" }, { ru: "До 20 строк", en: "Up to 20 rows" }, { ru: "Без эвристики", en: "No heuristic fallback" }],
+    howToSteps: [
+      { ru: "Вставьте публичный URL и выберите mobile или desktop.", en: "Paste a public URL and choose mobile or desktop." },
+      { ru: "Запустите provider check через WebDiag backend.", en: "Run the provider check through the WebDiag backend." },
+      { ru: "Проверьте audit score, provider display value, estimated savings и возвращённые строки.", en: "Review the audit score, provider display value, estimated savings, and returned rows." },
+    ],
+    supportedFeatures: [
+      { ru: "Читает только audit с ID render-blocking-resources и не выводит догадки по CSS/JS.", en: "Reads only the audit with the render-blocking-resources ID and does not infer results from CSS or JavaScript." },
+      { ru: "Показывает до 20 нормализованных строк с known bytes и estimated wasted time.", en: "Shows up to 20 normalized rows with known bytes and estimated wasted time." },
+      { ru: "Удаляет query и fragment из resource URL перед ответом frontend.", en: "Removes query strings and fragments from resource URLs before responding to the frontend." },
+    ],
+    limitations: [
+      { ru: "Lighthouse развивает Performance Insights и может не вернуть legacy audit в конкретной версии или запуске.", en: "Lighthouse is evolving toward Performance Insights and may omit this legacy audit in a specific version or run." },
+      { ru: "Estimated savings — lab estimate provider, а не измеренная экономия после исправления.", en: "Estimated savings are a provider lab estimate, not measured savings after a fix." },
+      { ru: "Инструмент не изменяет CSS/JS и не доказывает, что удаление конкретного файла безопасно.", en: "The tool does not modify CSS or JavaScript and cannot prove that removing a specific file is safe." },
+    ],
+    useCases: [
+      { ru: "Проверить наличие provider-confirmed blocking resources перед оптимизацией critical path.", en: "Check for provider-confirmed blocking resources before optimizing the critical path." },
+      { ru: "Сравнить mobile и desktop audit для одной страницы.", en: "Compare mobile and desktop audits for one page." },
+      { ru: "Зафиксировать unavailable state при смене Lighthouse contract без ложного зелёного результата.", en: "Record an unavailable state when the Lighthouse contract changes without producing a false green result." },
+    ],
+    technicalNotes: [
+      { ru: "Backend принимает только публичный URL, вызывает PageSpeed и возвращает strict DTO.", en: "The backend accepts only a public URL, calls PageSpeed, and returns a strict DTO." },
+      { ru: "Отсутствие audit отличается от доступного audit без возвращённых item rows.", en: "A missing audit is distinct from an available audit with no returned item rows." },
+    ],
+    faq: [
+      { question: { ru: "Почему audit может быть недоступен?", en: "Why can the audit be unavailable?" }, answer: { ru: "Provider payload зависит от версии Lighthouse и выбранных insights. WebDiag требует точный ID и не подменяет его собственной классификацией.", en: "The provider payload depends on the Lighthouse version and selected insights. WebDiag requires the exact ID and does not substitute its own classification." } },
+      { question: { ru: "Нулевая строка означает отсутствие проблем?", en: "Do zero rows mean there are no issues?" }, answer: { ru: "Не обязательно. Смотрите доступность audit и score; отсутствие item rows само по себе не является универсальным доказательством.", en: "Not necessarily. Check audit availability and score; missing item rows alone are not universal proof." } },
+    ],
+    relatedToolSlugs: ["resource-waterfall-analyzer", "core-web-vitals-checker", "css-delivery-analyzer"],
+    sourceUrls: ["https://developers.google.com/speed/docs/insights/rest/v5/pagespeedapi/runpagespeed", "https://github.com/GoogleChrome/lighthouse/discussions/16462"],
+    lastReviewedAt: "2026-08-14",
+    reviewDueAt: "2027-02-14",
   }),
 
 
@@ -910,6 +1169,48 @@ export const seoAuditToolPages = [
     sourceUrls: ["https://www.sitemaps.org/protocol.html", "https://developers.google.com/search/docs/crawling-indexing/sitemaps/overview"],
   }),
   toolPage({
+    slug: "bulk-http-status-checker",
+    seoTitle: { ru: "Массовая проверка HTTP-статусов до 50 URL", en: "Bulk HTTP Status Checker for Up to 50 URLs" },
+    metaDescription: { ru: "Проверьте HTTP-статусы, финальные URL и ошибки для списка до 50 адресов через backend WebDiag с SSRF-защитой.", en: "Check HTTP statuses, final URLs, and per-address errors for up to 50 URLs through the SSRF-protected WebDiag backend." },
+    h1: { ru: "Массовая проверка HTTP-статусов", en: "Bulk HTTP Status Checker" },
+    lead: { ru: "Вставьте до 50 HTTP(S) URL, чтобы получить упорядоченный результат по каждому адресу без скрытого сканирования сайта.", en: "Paste up to 50 HTTP(S) URLs to get an ordered result for each address without a hidden site crawl." },
+    quickFacts: [
+      { ru: "До 50 URL", en: "Up to 50 URLs" },
+      { ru: "Пять одновременных запросов", en: "Five concurrent requests" },
+      { ru: "Отдельные ошибки", en: "Isolated errors" },
+    ],
+    howToSteps: [
+      { ru: "Вставьте URL по одному в строке.", en: "Paste one URL per line." },
+      { ru: "Запустите проверку и дождитесь завершения ограниченной пачки.", en: "Run the check and wait for the bounded batch to finish." },
+      { ru: "Разберите успешные статусы, редиректы и ошибки отдельных адресов.", en: "Review successful statuses, redirects, and per-address errors." },
+    ],
+    supportedFeatures: [
+      { ru: "Сохраняет исходный порядок и возвращает результат для каждого введённого URL.", en: "Preserves input order and returns one result for every submitted URL." },
+      { ru: "Показывает финальный URL, HTTP-статус, количество редиректов и доступные заголовки ответа.", en: "Shows the final URL, HTTP status, redirect count, and available response headers." },
+      { ru: "Изолирует ошибки URL: один недоступный или запрещённый адрес не отменяет всю пачку.", en: "Isolates URL failures so one unavailable or rejected address does not cancel the batch." },
+    ],
+    limitations: [
+      { ru: "Инструмент проверяет только явно введённые URL и не ищет ссылки на сайте.", en: "The tool checks only submitted URLs and does not discover links across a site." },
+      { ru: "Тело страницы не скачивается и содержимое HTML не анализируется.", en: "Page bodies are not downloaded and HTML content is not analyzed." },
+    ],
+    useCases: [
+      { ru: "Проверить список посадочных страниц после миграции или релиза.", en: "Check a list of landing pages after a migration or release." },
+      { ru: "Найти 404 и 5xx в подготовленном наборе важных URL.", en: "Find 404 and 5xx responses in a prepared set of important URLs." },
+      { ru: "Сверить финальные адреса после настройки массовых редиректов.", en: "Verify final destinations after configuring a redirect batch." },
+    ],
+    technicalNotes: [
+      { ru: "Каждый URL проходит backend-проверку публичного HTTP(S) адреса, DNS/IP policy и peer verification.", en: "Every URL passes backend public HTTP(S), DNS/IP policy, and connected-peer verification." },
+      { ru: "Backend выполняет не более пяти проверок одновременно и ограничивает пачку 50 URL.", en: "The backend runs no more than five checks concurrently and caps each batch at 50 URLs." },
+    ],
+    faq: [
+      { question: { ru: "Это crawler всего сайта?", en: "Is this a full-site crawler?" }, answer: { ru: "Нет. Проверяются только URL, которые вы ввели. Поиск и обход ссылок относится к отдельному crawler-инструменту.", en: "No. Only submitted URLs are checked. Link discovery and traversal belong to a separate crawler tool." } },
+      { question: { ru: "Почему один URL может завершиться ошибкой, а остальные — успешно?", en: "Why can one URL fail while the others succeed?" }, answer: { ru: "Каждый адрес проверяется независимо. Ошибка сети, SSRF policy или недоступный хост фиксируются для конкретного элемента и не скрывают результаты остальных.", en: "Each address is checked independently. A network error, SSRF policy rejection, or unavailable host is recorded for that item without hiding other results." } },
+    ],
+    relatedToolSlugs: ["redirect-chain-checker", "broken-link-checker", "redirect-map-validator"],
+    sourceUrls: ["https://developer.mozilla.org/docs/Web/HTTP/Status", "https://developer.mozilla.org/docs/Web/HTTP/Redirections"],
+  }),
+
+  toolPage({
     slug: "redirect-chain-checker",
     seoTitle: { ru: "Проверка HTTP-статуса и цепочки редиректов", en: "HTTP Status & Redirect Chain Checker" },
     metaDescription: { ru: "Проверьте HTTP-статус, финальный URL, content-type и цепочку редиректов для одной страницы через безопасный WebDiag API.", en: "Check the HTTP status, final URL, content type, and redirect chain for a single page through the safe WebDiag API." },
@@ -945,7 +1246,7 @@ export const seoAuditToolPages = [
     ],
     faq: [
       { question: { ru: "Почему проверка идёт через сервер, а не локально в браузере?", en: "Why does this check run through the server instead of locally in the browser?" }, answer: { ru: "Браузер ограничен CORS и не даёт надёжно прочитать redirect chain и заголовки чужого сайта. Поэтому проверка выполняется через безопасный backend WebDiag.", en: "Browsers are limited by CORS and cannot reliably read another site's redirect chain and headers. The check therefore runs through the safe WebDiag backend." } },
-      { question: { ru: "Это массовая проверка статусов?", en: "Is this a bulk status checker?" }, answer: { ru: "Нет. Текущий инструмент проверяет один URL. Массовая проверка должна идти отдельным этапом с лимитами, очередью и защитой от злоупотреблений.", en: "No. This tool checks one URL. Bulk checking needs a separate stage with limits, queueing, and abuse protection." } },
+      { question: { ru: "Это массовая проверка статусов?", en: "Is this a bulk status checker?" }, answer: { ru: "Нет. Этот инструмент подробно проверяет один URL. Для подготовленного списка используйте отдельную массовую проверку с лимитом 50 адресов.", en: "No. This tool inspects one URL in detail. Use the separate bulk checker for a prepared list of up to 50 addresses." } },
     ],
     relatedToolSlugs: ["url-encoder-decoder", "json-formatter-validator", "hash-generator"],
     sourceUrls: ["https://developer.mozilla.org/docs/Web/HTTP/Status", "https://developer.mozilla.org/docs/Web/HTTP/Redirections"],

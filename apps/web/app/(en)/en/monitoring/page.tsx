@@ -21,13 +21,13 @@ export default function Page() {
       </header>
       <section className="wd-internal-grid" aria-label="Monitoring capabilities">
         <article><h2>Scheduled checks</h2><p>Recurring control of availability, SSL, sitemap, robots.txt, canonical, noindex, and response statuses.</p></article>
-        <article><h2>Regressions</h2><p>Comparing post-release health with previous checks.</p></article>
-        <article><h2>History</h2><p>Dynamics of issues, fixes, and technical site health.</p></article>
+        <article><h2>Regressions</h2><p>Compare site health after a release with previous checks.</p></article>
+        <article><h2>History</h2><p>Track changes in issues, fixes, and technical site health over time.</p></article>
       </section>
       <section className="wd-internal-note">
-        <strong>Subscription instead of one-off runs</strong>
-        <p>Preliminary monitoring starts from 299 ₽/mo. Limits depend on projects, URL volume, and check frequency.</p>
-        <Link className="wd-button wd-button-primary" href="/en/pricing">View pricing</Link>
+        <strong>Monitoring is available in the account workspace</strong>
+        <p>Add a project, run checks manually or on a schedule, and use saved history to track new and resolved issues.</p>
+        <Link className="wd-button wd-button-primary" href="/en/register">Create an account</Link>
       </section>
     </main>
   );

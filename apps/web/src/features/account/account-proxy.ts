@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   AccountProxyConfigurationError,
   resolveAccountApiBaseUrl,
+  selectAccountRetryAfter,
   selectAccountSessionCookie,
   selectAccountSetCookie,
 } from "./account-proxy-contract";
@@ -10,7 +11,14 @@ const REQUEST_TIMEOUT_MS = 12_000;
 const MAX_BODY_BYTES = 16_384;
 
 type AccountMethod = "GET" | "POST";
-type AccountPath = "/v1/account/register" | "/v1/account/login" | "/v1/account/logout" | "/v1/account/me";
+type AccountPath =
+  | "/v1/account/register"
+  | "/v1/account/login"
+  | "/v1/account/logout"
+  | "/v1/account/me"
+  | "/v1/account/password"
+  | "/v1/account/sessions"
+  | "/v1/account/sessions/revoke-others";
 
 interface ProxyOptions {
   readonly method: AccountMethod;
@@ -18,13 +26,20 @@ interface ProxyOptions {
   readonly body: boolean;
 }
 
-function toResponse(payload: unknown, status: number, setCookie?: string | null) {
+function toResponse(
+  payload: unknown,
+  status: number,
+  setCookie?: string | null,
+  retryAfter?: string | null,
+) {
   const response = NextResponse.json(payload, {
     status,
     headers: { "cache-control": "no-store" },
   });
   const sessionCookie = selectAccountSetCookie(setCookie ?? null);
   if (sessionCookie) response.headers.set("set-cookie", sessionCookie);
+  const selectedRetryAfter = selectAccountRetryAfter(status, retryAfter ?? null);
+  if (selectedRetryAfter) response.headers.set("retry-after", selectedRetryAfter);
   return response;
 }
 
@@ -83,7 +98,12 @@ export function createAccountProxy(options: ProxyOptions) {
           502,
         );
       }
-      return toResponse(payload, upstream.status, upstream.headers.get("set-cookie"));
+      return toResponse(
+        payload,
+        upstream.status,
+        upstream.headers.get("set-cookie"),
+        upstream.headers.get("retry-after"),
+      );
     } catch (error) {
       const timedOut = error instanceof Error && error.name === "AbortError";
       return toResponse(

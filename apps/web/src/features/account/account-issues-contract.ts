@@ -1,4 +1,5 @@
 import { AccountClientError } from "./account-client";
+import type { Locale } from "@webdiag/tool-registry";
 import { isAccountErrorPayload } from "./account-contract";
 import {
   isAccountProject,
@@ -48,6 +49,7 @@ export interface AccountIssueDetailResponse {
 }
 
 export interface AccountIssueFilters {
+  readonly locale?: Locale;
   readonly category?: AccountIssueCategory;
   readonly priority?: AccountIssuePriority;
   readonly sort?: AccountIssueSort;
@@ -64,7 +66,7 @@ const CATEGORIES = new Set<AccountIssueCategory>([
 const PRIORITIES = new Set<AccountIssuePriority>(["p0", "p1", "p2", "p3"]);
 const SORTS = new Set<AccountIssueSort>(["priority", "category", "title"]);
 const ORDERS = new Set<AccountIssueOrder>(["asc", "desc"]);
-const FILTER_ORDER = ["category", "priority", "sort", "order"] as const;
+const FILTER_ORDER = ["locale", "category", "priority", "sort", "order"] as const;
 
 function record(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -158,6 +160,7 @@ export function isAccountIssueDetailResponse(value: unknown): value is AccountIs
 
 function canonicalFilters(filters: AccountIssueFilters): string {
   const params = new URLSearchParams();
+  if (filters.locale) params.set("locale", filters.locale);
   if (filters.category) params.set("category", filters.category);
   if (filters.priority) params.set("priority", filters.priority);
   if (filters.sort) params.set("sort", filters.sort);
@@ -173,15 +176,18 @@ function parseFilters(searchParams: URLSearchParams): AccountIssueFilters | null
     if (!allowed.has(key) || searchParams.getAll(key).length !== 1) valid = false;
   });
   if (!valid) return null;
+  const locale = searchParams.get("locale");
   const category = searchParams.get("category");
   const priority = searchParams.get("priority");
   const sort = searchParams.get("sort");
   const order = searchParams.get("order");
+  if (locale && locale !== "ru" && locale !== "en") return null;
   if (category && !CATEGORIES.has(category as AccountIssueCategory)) return null;
   if (priority && !PRIORITIES.has(priority as AccountIssuePriority)) return null;
   if (sort && !SORTS.has(sort as AccountIssueSort)) return null;
   if (order && !ORDERS.has(order as AccountIssueOrder)) return null;
   return {
+    ...(locale ? { locale: locale as Locale } : {}),
     ...(category ? { category: category as AccountIssueCategory } : {}),
     ...(priority ? { priority: priority as AccountIssuePriority } : {}),
     ...(sort ? { sort: sort as AccountIssueSort } : {}),
@@ -204,9 +210,18 @@ export function accountIssueDetailPath(
   projectId: string,
   auditId: string,
   issueId: string,
+  searchParams: URLSearchParams = new URLSearchParams(),
 ): string | null {
   if (!UUID.test(projectId) || !UUID.test(auditId) || !ISSUE_ID.test(issueId)) return null;
-  return `/v1/account/projects/${projectId}/audits/${auditId}/issues/${issueId}`;
+  let valid = true;
+  searchParams.forEach((_value, key) => {
+    if (key !== "locale" || searchParams.getAll(key).length !== 1) valid = false;
+  });
+  const locale = searchParams.get("locale");
+  if (!valid || (locale && locale !== "ru" && locale !== "en")) return null;
+  return `/v1/account/projects/${projectId}/audits/${auditId}/issues/${issueId}${
+    locale ? `?locale=${locale}` : ""
+  }`;
 }
 
 async function parse<T>(response: Response, validator: (value: unknown) => value is T): Promise<T> {
@@ -256,11 +271,12 @@ export async function getAccountIssue(
   projectId: string,
   auditId: string,
   issueId: string,
+  locale: Locale,
   fetcher: Fetcher = fetch,
 ): Promise<AccountIssueDetailResponse> {
   return parse(
     await fetcher(
-      `/api/account/projects/${projectId}/audits/${auditId}/issues/${issueId}`,
+      `/api/account/projects/${projectId}/audits/${auditId}/issues/${issueId}?locale=${locale}`,
       { ...common, method: "GET", headers: { accept: "application/json" } },
     ),
     isAccountIssueDetailResponse,

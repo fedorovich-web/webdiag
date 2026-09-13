@@ -6,6 +6,8 @@ import httpx
 from webdiag_api.audit.fetcher import SafeFetchConfig, SafeHttpFetcher
 from webdiag_api.main import app
 from webdiag_api.tools.performance import (
+    LIGHTHOUSE_CATEGORIES,
+    GooglePageSpeedClient,
     get_cache_policy_fetcher,
     get_page_weight_fetcher,
     get_pagespeed_client,
@@ -54,10 +56,12 @@ class MockPageSpeedClient:
     ) -> None:
         self.payload = payload
         self.error = error
-        self.calls: list[tuple[str, str]] = []
+        self.calls: list[tuple[str, str, tuple[str, ...]]] = []
 
-    def run(self, *, url: str, strategy: str) -> dict[str, object]:
-        self.calls.append((url, strategy))
+    def run(
+        self, *, url: str, strategy: str, categories: tuple[str, ...]
+    ) -> dict[str, object]:
+        self.calls.append((url, strategy, categories))
         if self.error:
             raise self.error
         assert self.payload is not None
@@ -73,7 +77,21 @@ def pagespeed_payload() -> dict[str, object]:
         "lighthouseResult": {
             "lighthouseVersion": "13.0.0",
             "fetchTime": "2026-07-21T12:00:00Z",
-            "categories": {"performance": {"score": 0.91}},
+            "categories": {
+                "performance": {
+                    "score": 0.91,
+                    "auditRefs": [
+                        {"id": "largest-contentful-paint", "weight": 25},
+                        {"id": "render-blocking-resources", "weight": 10},
+                    ],
+                },
+                "accessibility": {
+                    "score": 0.87,
+                    "auditRefs": [{"id": "color-contrast", "weight": 7}],
+                },
+                "best-practices": {"score": 1, "auditRefs": []},
+                "seo": {"score": 0.92, "auditRefs": []},
+            },
             "audits": {
                 "first-contentful-paint": {
                     "title": "First Contentful Paint",
@@ -106,9 +124,121 @@ def pagespeed_payload() -> dict[str, object]:
                     "displayValue": "Potential savings of 450 ms",
                     "details": {"overallSavingsMs": 450},
                 },
+                "render-blocking-resources": {
+                    "title": "Eliminate render-blocking resources",
+                    "score": 0.42,
+                    "scoreDisplayMode": "numeric",
+                    "displayValue": "Potential savings of 350 ms",
+                    "details": {
+                        "overallSavingsMs": 350,
+                        "items": [
+                            {
+                                "url": "https://example.com/private.js?token=secret#fragment",
+                                "totalBytes": 42000,
+                                "wastedBytes": 18000,
+                                "wastedMs": 350,
+                            }
+                        ]
+                    },
+                },
+                "network-requests": {
+                    "title": "Network Requests",
+                    "score": None,
+                    "scoreDisplayMode": "informative",
+                    "details": {
+                        "type": "table",
+                        "items": [
+                            {
+                                "url": "https://example.com/?session=secret#fragment",
+                                "protocol": "h2",
+                                "startTime": 0,
+                                "endTime": 210.5,
+                                "transferSize": 12000,
+                                "resourceSize": 32000,
+                                "statusCode": 200,
+                                "mimeType": "text/html",
+                                "resourceType": "Document",
+                            },
+                            {
+                                "url": "https://cdn.example.com/app.js?v=secret",
+                                "protocol": "h3",
+                                "startTime": 200,
+                                "endTime": 480,
+                                "transferSize": 8000,
+                                "resourceSize": 24000,
+                                "statusCode": 200,
+                                "mimeType": "application/javascript",
+                                "resourceType": "Script",
+                            },
+                            {
+                                "url": "http://127.0.0.1/metadata?token=secret",
+                                "startTime": 0,
+                                "endTime": 10,
+                                "transferSize": 999,
+                                "resourceSize": 999,
+                                "statusCode": 200,
+                                "resourceType": "Other",
+                            },
+                        ],
+                    },
+                },
+                "color-contrast": {
+                    "title": "Background and foreground colors have sufficient contrast",
+                    "score": 0,
+                    "scoreDisplayMode": "binary",
+                },
             },
         },
     }
+
+
+def test_google_pagespeed_client_requests_all_lighthouse_categories(monkeypatch) -> None:
+    observed: dict[str, object] = {}
+
+    class FakeResponse:
+        status_code = 200
+
+        @staticmethod
+        def json() -> dict[str, object]:
+            return pagespeed_payload()
+
+    class FakeClient:
+        def __init__(self, **kwargs: object) -> None:
+            observed["client_kwargs"] = kwargs
+
+        def __enter__(self) -> "FakeClient":
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            return None
+
+        def get(
+            self,
+            url: str,
+            *,
+            params: list[tuple[str, str]],
+            headers: dict[str, str],
+        ) -> FakeResponse:
+            observed.update(url=url, params=params, headers=headers)
+            return FakeResponse()
+
+    monkeypatch.setattr(httpx, "Client", FakeClient)
+
+    payload = GooglePageSpeedClient(api_key="test-key").run(
+        url="https://example.com/",
+        strategy="mobile",
+        categories=LIGHTHOUSE_CATEGORIES,
+    )
+
+    assert payload == pagespeed_payload()
+    assert observed["client_kwargs"] == {"timeout": 35.0, "trust_env": False}
+    params = observed["params"]
+    assert isinstance(params, list)
+    assert [value for key, value in params if key == "category"] == list(
+        LIGHTHOUSE_CATEGORIES
+    )
+    assert ("strategy", "mobile") in params
+    assert ("key", "test-key") in params
 
 
 def test_core_web_vitals_parses_mocked_pagespeed_mobile_and_desktop() -> None:
@@ -123,7 +253,7 @@ def test_core_web_vitals_parses_mocked_pagespeed_mobile_and_desktop() -> None:
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["contract_version"] == "webdiag.tool.core_web_vitals.v1"
+    assert payload["contract_version"] == "webdiag.tool.core_web_vitals.v2"
     assert payload["normalized_url"] == "https://example.com/"
     assert [result["strategy"] for result in payload["results"]] == ["mobile", "desktop"]
     assert payload["results"][0]["available"] is True
@@ -131,12 +261,29 @@ def test_core_web_vitals_parses_mocked_pagespeed_mobile_and_desktop() -> None:
     assert payload["results"][0]["field_data_available"] is True
     assert payload["results"][0]["metrics"][-1]["id"] == "interaction_to_next_paint"
     assert payload["results"][0]["opportunities"][0]["id"] == "uses-optimized-images"
-    assert client.calls == [("https://example.com/", "mobile"), ("https://example.com/", "desktop")]
+    assert payload["results"][0]["category_scores"] == {
+        "performance": 91,
+        "accessibility": 87,
+        "best-practices": 100,
+        "seo": 92,
+    }
+    assert [item["id"] for item in payload["results"][0]["audit_findings"]] == [
+        "color-contrast",
+        "render-blocking-resources",
+    ]
+    assert "token=secret" not in response.text
+    categories = ("performance", "accessibility", "best-practices", "seo")
+    assert client.calls == [
+        ("https://example.com/", "mobile", categories),
+        ("https://example.com/", "desktop", categories),
+    ]
 
 
 def test_core_web_vitals_returns_config_message_without_api_key() -> None:
     class MissingKeyClient:
-        def run(self, *, url: str, strategy: str) -> dict[str, object]:
+        def run(
+            self, *, url: str, strategy: str, categories: tuple[str, ...]
+        ) -> dict[str, object]:
             from webdiag_api.tools.performance import MissingPageSpeedApiKeyError
 
             raise MissingPageSpeedApiKeyError("Google PageSpeed API key is not configured.")
@@ -151,6 +298,104 @@ def test_core_web_vitals_returns_config_message_without_api_key() -> None:
     result = response.json()["results"][0]
     assert result["available"] is False
     assert result["fetch_error"] == "Google PageSpeed API key is not configured."
+
+
+def test_lighthouse_network_returns_bounded_redacted_provider_evidence() -> None:
+    client = MockPageSpeedClient(pagespeed_payload())
+    app.dependency_overrides[get_pagespeed_client] = lambda: client
+    try:
+        response = asyncio.run(
+            post(
+                "/v1/tools/lighthouse-network",
+                {"url": "https://example.com/?source=private", "strategy": "desktop"},
+            )
+        )
+    finally:
+        clear_overrides()
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["contract_version"] == "webdiag.tool.lighthouse_network.v1"
+    assert payload["strategy"] == "desktop"
+    assert payload["requested_url"] == "https://example.com/"
+    assert payload["normalized_url"] == "https://example.com/"
+    assert payload["available"] is True
+    assert payload["resources_available"] is True
+    assert payload["request_count"] == 3
+    assert payload["total_transfer_bytes"] == 20000
+    assert payload["resources"][0] == {
+        "url": "https://example.com/",
+        "protocol": "h2",
+        "start_ms": 0.0,
+        "end_ms": 210.5,
+        "duration_ms": 210.5,
+        "transfer_bytes": 12000,
+        "resource_bytes": 32000,
+        "status_code": 200,
+        "mime_type": "text/html",
+        "resource_type": "document",
+    }
+    assert payload["render_blocking_available"] is True
+    assert payload["render_blocking_score"] == 0.42
+    assert payload["render_blocking_savings_ms"] == 350.0
+    assert payload["render_blocking_items"] == [
+        {
+            "url": "https://example.com/private.js",
+            "total_bytes": 42000,
+            "wasted_bytes": 18000,
+            "wasted_ms": 350.0,
+        }
+    ]
+    assert "source=private" not in response.text
+    assert "secret" not in response.text
+    assert "127.0.0.1" not in response.text
+    assert client.calls == [
+        (
+            "https://example.com/?source=private",
+            "desktop",
+            ("performance", "accessibility", "best-practices", "seo"),
+        )
+    ]
+
+
+def test_lighthouse_network_marks_missing_audits_unavailable_without_fake_empty_success() -> None:
+    provider_payload = pagespeed_payload()
+    audits = provider_payload["lighthouseResult"]["audits"]  # type: ignore[index]
+    assert isinstance(audits, dict)
+    audits.pop("network-requests")
+    audits.pop("render-blocking-resources")
+    client = MockPageSpeedClient(provider_payload)
+    app.dependency_overrides[get_pagespeed_client] = lambda: client
+    try:
+        response = asyncio.run(
+            post("/v1/tools/lighthouse-network", {"url": "https://example.com/"})
+        )
+    finally:
+        clear_overrides()
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["available"] is True
+    assert payload["resources_available"] is False
+    assert payload["resources"] == []
+    assert payload["render_blocking_available"] is False
+    assert payload["render_blocking_items"] == []
+    assert "unavailable" in payload["recommendation"].lower()
+
+
+def test_lighthouse_network_rejects_private_targets_before_provider_call() -> None:
+    client = MockPageSpeedClient(pagespeed_payload())
+    app.dependency_overrides[get_pagespeed_client] = lambda: client
+    try:
+        response = asyncio.run(
+            post("/v1/tools/lighthouse-network", {"url": "http://169.254.169.254/"})
+        )
+    finally:
+        clear_overrides()
+
+    assert response.status_code == 400
+    assert response.json()["detail"]["code"] == "tool_url_rejected"
+    assert client.calls == []
 
 
 def test_core_web_vitals_rejects_private_targets_before_provider_call() -> None:

@@ -6,6 +6,7 @@ import {
   Gauge,
   Grid3X3,
   Image as ImageIcon,
+  Search,
   SearchCheck,
   ShieldCheck,
   Sparkles,
@@ -31,61 +32,50 @@ const toolCategories = [
   { icon: Braces, ru: "Разметка и сниппеты", en: "Markup and snippets", descriptionRu: "Schema.org, JSON-LD, FAQ, OG", descriptionEn: "Schema.org, JSON-LD, and Open Graph", category: "development-data" },
   { icon: ImageIcon, ru: "Изображения и медиа", en: "Images and media", descriptionRu: "Размеры, вес, форматы, alt", descriptionEn: "Optimization, dimensions, and formats", category: "media-utilities" },
   { icon: Code2, ru: "Разработка и данные", en: "Development and data", descriptionRu: "JSON, Base64, hash, UUID, URL", descriptionEn: "JSON, Base64, hash, UUID, and URL", category: "development-data" },
-  { icon: Sparkles, ru: "AI / GEO / контент", en: "AI / GEO / content", descriptionRu: "Мета-теги, FAQ, структура текста", descriptionEn: "Metadata, FAQ, and content structure", category: "ai-geo-content" },
+  { icon: Sparkles, ru: "Контент и Schema.org", en: "Content and Schema.org", descriptionRu: "Мета-теги, FAQ, читаемость и разметка", descriptionEn: "Metadata, FAQ, readability, and markup", category: "seo-audit" },
 ] as const;
 
 function NavigationLinks({ locale, compact = false }: { locale: Locale; compact?: boolean }) {
   const tools = toolsPath(locale);
   const pages = locale === "ru"
-    ? { audit: "/audit", monitoring: "/monitoring", pricing: "/pricing", blog: "/blog", knowledge: "/knowledge", account: "/login" }
-    : { audit: "/en/audit", monitoring: "/en/monitoring", pricing: "/en/pricing", blog: "/en/blog", knowledge: "/en/knowledge", account: "/en/login" };
+    ? { audit: "/audit", pricing: "/pricing", materials: "/knowledge", account: "/login" }
+    : { audit: "/en/audit", pricing: "/en/pricing", materials: "/en/knowledge", account: "/en/login" };
   const text = locale === "ru"
     ? {
-        audit: "Аудит сайта",
+        audit: "SEO-аудит",
         tools: "Инструменты",
-        monitoring: "Мониторинг",
-        pricing: "Цены",
-        blog: "Блог",
-        knowledge: "База знаний",
+        pricing: "Тарифы",
+        materials: "Материалы",
         account: "Личный кабинет",
         categories: "Категории инструментов",
         all: "Все инструменты",
-        planned: "планируется",
-        blogPlanned: "Блог — планируется",
-        knowledgePlanned: "База знаний — планируется",
+        unavailable: "недоступно",
       }
     : {
-        audit: "Site audit",
+        audit: "SEO audit",
         tools: "Tools",
-        monitoring: "Monitoring",
         pricing: "Pricing",
-        blog: "Blog",
-        knowledge: "Knowledge base",
+        materials: "Resources",
         account: "Account",
         categories: "Tool categories",
         all: "All tools",
-        planned: "planned",
-        blogPlanned: "Blog — planned",
-        knowledgePlanned: "Knowledge base — planned",
+        unavailable: "unavailable",
       };
 
   if (compact) {
     return (
       <nav className="mobile-nav wd-mobile-nav" aria-label={locale === "ru" ? "Основная навигация" : "Main navigation"}>
-        <Link href={pages.audit}>{text.audit}</Link>
         <Link href={tools}>{text.tools}</Link>
-        <Link href={pages.monitoring}>{text.monitoring}</Link>
+        <Link href={pages.audit}>{text.audit}</Link>
         <Link href={pages.pricing}>{text.pricing}</Link>
-        <Link href={pages.blog}>{text.blog}</Link>
-        <Link href={pages.knowledge}>{text.knowledge}</Link>
+        <Link href={pages.materials}>{text.materials}</Link>
         <Link href={pages.account}>{text.account}</Link>
       </nav>
     );
   }
 
   return (
-    <nav className="main-nav wd-main-nav" aria-label={locale === "ru" ? "Основная навигация" : "Main navigation"}>
-      <Link href={pages.audit}>{text.audit}</Link>
+    <nav className="wd-main-nav" aria-label={locale === "ru" ? "Основная навигация" : "Main navigation"}>
       <ToolsMenuShell className="wd-tools-menu">
         <summary><Grid3X3 aria-hidden="true" />{text.tools}</summary>
         <div className="wd-tools-dropdown">
@@ -98,7 +88,7 @@ function NavigationLinks({ locale, compact = false }: { locale: Locale; compact?
               const content = (
                 <>
                   <span><Icon aria-hidden="true" /></span>
-                  <span><b>{title}</b><small>{description}</small>{!available && <em>{text.planned}</em>}</span>
+                  <span><b>{title}</b><small>{description}</small>{!available && <em>{text.unavailable}</em>}</span>
                 </>
               );
               return available
@@ -109,31 +99,39 @@ function NavigationLinks({ locale, compact = false }: { locale: Locale; compact?
           <footer><Link href={tools}>{text.all}<span aria-hidden="true">→</span></Link></footer>
         </div>
       </ToolsMenuShell>
-      <Link href={pages.monitoring}>{text.monitoring}</Link>
+      <Link href={pages.audit}>{text.audit}</Link>
       <Link href={pages.pricing}>{text.pricing}</Link>
-      <Link href={pages.blog}>{text.blog}</Link>
-      <Link href={pages.knowledge}>{text.knowledge}</Link>
+      <Link href={pages.materials}>{text.materials}</Link>
     </nav>
   );
 }
 
 export function SiteHeader({ locale }: SiteHeaderProps) {
-  const openAudit = locale === "ru" ? "Попробовать бесплатно" : "Try for free";
+  const createAccount = locale === "ru" ? "Создать аккаунт" : "Create account";
   const login = locale === "ru" ? "Войти" : "Sign in";
   const menu = locale === "ru" ? "Открыть меню" : "Open menu";
+  const search = locale === "ru" ? "Найти инструмент" : "Find a tool";
+  const registerHref = locale === "ru" ? "/register" : "/en/register";
 
   return (
-    <header className="site-header wd-site-header">
-      <div className="shell header-inner wd-header-inner">
+    <header className="wd-site-header">
+      <div className="shell wd-header-inner">
         <SiteBrand locale={locale} className="brand wd-brand" variant="header" />
-
         <NavigationLinks locale={locale} />
 
-        <div className="header-actions wd-header-actions">
-          <LanguageSwitcher locale={locale} className="language-switcher-desktop" />
-          <ThemeSwitcher locale={locale} />
+        <div className="wd-header-actions">
+          <div id="account-workspace-menu-slot" className="wd-account-menu-slot" />
+          <Link
+            aria-label={search}
+            className="wd-header-login"
+            href={toolsPath(locale)}
+            title={search}
+            style={{ width: 38, minHeight: 38, justifyContent: "center", padding: 0, borderRadius: 999 }}
+          >
+            <Search aria-hidden="true" size={16} />
+          </Link>
           <Link className="wd-header-login" href={loginPath(locale)}>{login}</Link>
-          <Link className="wd-header-cta" href={locale === "ru" ? "/audit" : "/en/audit"}>{openAudit}</Link>
+          <Link className="wd-header-cta" href={registerHref}>{createAccount}</Link>
           <details className="mobile-menu">
             <summary aria-label={menu}>
               <span aria-hidden="true" />
@@ -142,8 +140,9 @@ export function SiteHeader({ locale }: SiteHeaderProps) {
             </summary>
             <div className="mobile-menu-panel">
               <LanguageSwitcher locale={locale} className="language-switcher-mobile" />
+              <ThemeSwitcher locale={locale} />
               <NavigationLinks locale={locale} compact />
-              <Link className="wd-header-cta" href={locale === "ru" ? "/audit" : "/en/audit"}>{openAudit}</Link>
+              <Link className="wd-header-cta" href={registerHref}>{createAccount}</Link>
             </div>
           </details>
         </div>

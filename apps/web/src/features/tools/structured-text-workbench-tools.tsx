@@ -1,5 +1,7 @@
 "use client";
 
+import { toolErrorMessage } from "./tool-error-presentation";
+
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { CopyButton } from "../../components/copy-button";
@@ -67,7 +69,7 @@ export function JsonPathTesterTool({ locale }: { readonly locale: Locale }) {
       setError("");
     } catch (caught) {
       setResult(null);
-      setError(caught instanceof Error ? caught.message : locale === "ru" ? "Не удалось выполнить JSONPath." : "Unable to run JSONPath.");
+      setError(toolErrorMessage(locale, caught, "jsonpath_failed"));
     }
   }
 
@@ -126,7 +128,7 @@ export function TomlJsonConverterTool({ locale }: { readonly locale: Locale }) {
     } catch (caught) {
       setOutput("");
       setDetails("");
-      setError(caught instanceof Error ? caught.message : locale === "ru" ? "Не удалось преобразовать TOML." : "Unable to convert TOML.");
+      setError(toolErrorMessage(locale, caught, "toml_convert_failed"));
     }
   }
 
@@ -219,7 +221,7 @@ export function CsvDataWorkbenchTool({ locale }: { readonly locale: Locale }) {
     } catch (caught) {
       setOutput("");
       setReport("");
-      setError(caught instanceof Error ? caught.message : locale === "ru" ? "Не удалось обработать CSV." : "Unable to process CSV.");
+      setError(toolErrorMessage(locale, caught, "csv_process_failed"));
     }
   }
 

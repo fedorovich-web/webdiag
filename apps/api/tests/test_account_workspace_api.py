@@ -1,13 +1,18 @@
 import asyncio
+import hashlib
 import sqlite3
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
 import pytest
 
+import webdiag_api.accounts.workspace_storage as workspace_storage_module
 from webdiag_api.accounts.api import get_account_service
 from webdiag_api.accounts.models import RegisterRequest
+from webdiag_api.accounts.monitoring_storage import SqliteMonitoringStore
 from webdiag_api.accounts.security import ScryptParameters
 from webdiag_api.accounts.service import AccountService
 from webdiag_api.accounts.storage import SqliteAccountStore
@@ -176,11 +181,9 @@ def test_project_origin_normalization_and_duplicate_limit(tmp_path: Path) -> Non
 
     project = workspace.create_project(
         user_id=user_id,
-        request=ProjectCreateRequest(name="  Main   website ", origin="example.com"),
+        request=ProjectCreateRequest(name="  Main   website ", origin="https://Example.COM:443"),
     )
     assert project.name == "Main website"
-    assert project.origin == "https://example.com"
-    assert workspace.list_projects(user_id=user_id).projects == (project,)
 
     with pytest.raises(WorkspaceServiceError) as duplicate:
         workspace.create_project(
@@ -188,6 +191,150 @@ def test_project_origin_normalization_and_duplicate_limit(tmp_path: Path) -> Non
             request=ProjectCreateRequest(name="Duplicate", origin="https://example.com/"),
         )
     assert duplicate.value.code == "account_project_origin_exists"
+    assert project.origin == "https://example.com"
+    assert workspace.list_projects(user_id=user_id).projects == (project,)
+
+
+def test_project_lifecycle_storage_is_owned_idempotent_and_cancels_monitor_lease(
+    tmp_path: Path,
+) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    account = build_account_service(database_path)
+    owner_id, _ = register(account, "owner@example.com")
+    other_id, _ = register(account, "other@example.com")
+    store = SqliteWorkspaceStore(str(database_path))
+    project = store.create_project(
+        user_id=owner_id,
+        name="Main",
+        origin="https://example.com",
+    )
+    monitoring = SqliteMonitoringStore(str(database_path))
+    monitoring.create_monitor(
+        user_id=owner_id,
+        project_id=project.id,
+        cadence="daily",
+        timezone="Europe/Berlin",
+    )
+    claimed = monitoring.claim_manual(
+        user_id=owner_id,
+        project_id=project.id,
+        now=2_000_000_000,
+    )
+    assert claimed is not None and claimed.lease_token is not None
+
+    assert (
+        store.rename_project(
+            user_id=other_id,
+            project_id=project.id,
+            name="Cross account",
+        )
+        is None
+    )
+    renamed = store.rename_project(
+        user_id=owner_id,
+        project_id=project.id,
+        name="Client's \"); DROP TABLE account_users; --",
+    )
+    assert renamed is not None
+    assert renamed.name == "Client's \"); DROP TABLE account_users; --"
+
+    archived = store.archive_project(user_id=owner_id, project_id=project.id)
+    assert archived is not None and archived.archived_at is not None
+    repeated = store.archive_project(user_id=owner_id, project_id=project.id)
+    assert repeated is not None and repeated.archived_at == archived.archived_at
+    assert store.get_project(user_id=owner_id, project_id=project.id) is None
+    assert store.list_projects(user_id=owner_id) == ()
+    assert store.list_archived_projects(user_id=owner_id) == (archived,)
+    assert store.archive_project(user_id=other_id, project_id=project.id) is None
+
+    paused = monitoring.get_monitor(user_id=owner_id, project_id=project.id)
+    assert paused is not None
+    assert paused.enabled is False
+    assert paused.status == "pending"
+    assert paused.next_run_at is None
+    assert paused.lease_token is None
+    assert paused.lease_expires_at is None
+
+    restored = store.restore_project(user_id=owner_id, project_id=project.id)
+    assert restored is not None and restored.archived_at is None
+    repeated_restore = store.restore_project(user_id=owner_id, project_id=project.id)
+    assert repeated_restore == restored
+    assert store.list_archived_projects(user_id=owner_id) == ()
+    assert store.get_project(user_id=owner_id, project_id=project.id) == restored
+    still_paused = monitoring.get_monitor(user_id=owner_id, project_id=project.id)
+    assert still_paused is not None and still_paused.enabled is False
+
+
+def test_archived_projects_remain_within_total_project_limit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    account = build_account_service(database_path)
+    user_id, _ = register(account, "owner@example.com")
+    monkeypatch.setattr(workspace_storage_module, "MAX_PROJECTS_PER_ACCOUNT", 2)
+    store = SqliteWorkspaceStore(str(database_path))
+    first = store.create_project(
+        user_id=user_id,
+        name="First",
+        origin="https://first.example.com",
+    )
+    store.create_project(
+        user_id=user_id,
+        name="Second",
+        origin="https://second.example.com",
+    )
+    assert store.archive_project(user_id=user_id, project_id=first.id) is not None
+
+    with pytest.raises(ValueError, match="account_project_limit_reached"):
+        store.create_project(
+            user_id=user_id,
+            name="Third",
+            origin="https://third.example.com",
+        )
+
+
+def test_project_schema_adds_archived_timestamp_to_existing_database(tmp_path: Path) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    account = build_account_service(database_path)
+    user_id, _ = register(account, "owner@example.com")
+    with sqlite3.connect(database_path) as connection:
+        connection.execute(
+            """
+            CREATE TABLE account_workspace_projects (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                origin TEXT NOT NULL,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL,
+                UNIQUE(user_id, origin),
+                FOREIGN KEY(user_id) REFERENCES account_users(id) ON DELETE CASCADE
+            )
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO account_workspace_projects(
+                id, user_id, name, origin, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            ("project-1", user_id, "Legacy", "https://example.com", 1, 1),
+        )
+        connection.commit()
+
+    store = SqliteWorkspaceStore(str(database_path))
+    store.ensure_schema()
+
+    with sqlite3.connect(database_path) as connection:
+        columns = {
+            row[1]
+            for row in connection.execute(
+                "PRAGMA table_info(account_workspace_projects)"
+            ).fetchall()
+        }
+    assert "archived_at" in columns
+    assert store.get_project(user_id=user_id, project_id="project-1") is not None
 
 
 def test_project_and_audit_ownership_are_hidden(tmp_path: Path) -> None:
@@ -258,6 +405,7 @@ def test_saved_audit_is_versioned_bounded_and_excludes_internal_fields(tmp_path:
     assert tables == {
         "account_users",
         "account_sessions",
+        "account_login_attempts",
         "account_workspace_projects",
         "account_workspace_saved_audits",
     }
@@ -265,10 +413,150 @@ def test_saved_audit_is_versioned_bounded_and_excludes_internal_fields(tmp_path:
     assert "evidence" not in payload_json
 
 
+def test_saved_audit_hash_migration_detects_tampering_without_reblessing(
+    tmp_path: Path,
+) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    account = build_account_service(database_path)
+    user_id, _ = register(account, "owner@example.com")
+    workspace = build_workspace(database_path)
+    project = workspace.create_project(
+        user_id=user_id,
+        request=ProjectCreateRequest(name="Main", origin="https://example.com"),
+    )
+    saved = workspace.run_and_save_audit(user_id=user_id, project_id=project.id)
+
+    with sqlite3.connect(database_path) as connection:
+        columns = {
+            row[1]
+            for row in connection.execute(
+                "PRAGMA table_info(account_workspace_saved_audits)"
+            ).fetchall()
+        }
+        if "payload_sha256" in columns:
+            connection.execute(
+                "ALTER TABLE account_workspace_saved_audits DROP COLUMN payload_sha256"
+            )
+        connection.commit()
+
+    migrated_store = SqliteWorkspaceStore(str(database_path))
+    migrated_store.ensure_schema()
+    with sqlite3.connect(database_path) as connection:
+        payload_json, payload_sha256 = connection.execute(
+            """
+            SELECT payload_json, payload_sha256
+            FROM account_workspace_saved_audits
+            WHERE id = ?
+            """,
+            (saved.audit.id,),
+        ).fetchone()
+        assert payload_sha256 == hashlib.sha256(payload_json.encode("utf-8")).hexdigest()
+        connection.execute(
+            """
+            UPDATE account_workspace_saved_audits
+            SET payload_json = replace(payload_json, 'Title tag is missing', 'Tampered title')
+            WHERE id = ?
+            """,
+            (saved.audit.id,),
+        )
+        connection.commit()
+
+    restarted = WorkspaceService(
+        SqliteWorkspaceStore(str(database_path)),
+        audit_service=StubAuditService(),
+    )
+    with pytest.raises(WorkspaceServiceError) as unavailable:
+        restarted.get_saved_audit(
+            user_id=user_id,
+            project_id=project.id,
+            audit_id=saved.audit.id,
+        )
+    assert unavailable.value.status_code == 500
+    assert unavailable.value.code == "account_saved_audit_unavailable"
+
+
+def test_saved_audit_hash_migration_is_safe_across_store_instances(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    SqliteWorkspaceStore(str(database_path)).ensure_schema()
+    with sqlite3.connect(database_path) as connection:
+        connection.execute("ALTER TABLE account_workspace_saved_audits DROP COLUMN payload_sha256")
+        connection.commit()
+
+    migration_barrier = threading.Barrier(2)
+
+    class BarrierConnection(sqlite3.Connection):
+        def execute(self, sql: str, parameters=(), /):  # type: ignore[no-untyped-def]
+            if sql.strip() == "BEGIN IMMEDIATE":
+                migration_barrier.wait(timeout=5)
+            return super().execute(sql, parameters)
+
+    def connect_with_barrier(store: SqliteWorkspaceStore) -> sqlite3.Connection:
+        connection = sqlite3.connect(
+            store._path,  # noqa: SLF001 - test-only connection factory
+            timeout=10,
+            isolation_level=None,
+            factory=BarrierConnection,
+        )
+        connection.row_factory = sqlite3.Row
+        connection.execute("PRAGMA foreign_keys = ON")
+        connection.execute("PRAGMA journal_mode = WAL")
+        connection.execute("PRAGMA busy_timeout = 10000")
+        return connection
+
+    monkeypatch.setattr(SqliteWorkspaceStore, "_connect", connect_with_barrier)
+    stores = (
+        SqliteWorkspaceStore(str(database_path)),
+        SqliteWorkspaceStore(str(database_path)),
+    )
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [executor.submit(store.ensure_schema) for store in stores]
+        for future in futures:
+            future.result(timeout=15)
+
+    with sqlite3.connect(database_path) as connection:
+        columns = {
+            row[1]
+            for row in connection.execute(
+                "PRAGMA table_info(account_workspace_saved_audits)"
+            ).fetchall()
+        }
+    assert "payload_sha256" in columns
+
+
+def test_saved_audit_rejects_summary_payload_mismatch(tmp_path: Path) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    account = build_account_service(database_path)
+    user_id, _ = register(account, "owner@example.com")
+    workspace = build_workspace(database_path)
+    project = workspace.create_project(
+        user_id=user_id,
+        request=ProjectCreateRequest(name="Main", origin="https://example.com"),
+    )
+    saved = workspace.run_and_save_audit(user_id=user_id, project_id=project.id)
+
+    with sqlite3.connect(database_path) as connection:
+        connection.execute(
+            "UPDATE account_workspace_saved_audits SET score = 1 WHERE id = ?",
+            (saved.audit.id,),
+        )
+        connection.commit()
+
+    with pytest.raises(WorkspaceServiceError) as unavailable:
+        workspace.get_saved_audit(
+            user_id=user_id,
+            project_id=project.id,
+            audit_id=saved.audit.id,
+        )
+    assert unavailable.value.status_code == 500
+    assert unavailable.value.code == "account_saved_audit_unavailable"
+
+
 def test_workspace_api_create_run_history_and_detail(tmp_path: Path) -> None:
     database_path = tmp_path / "accounts.sqlite3"
     account = build_account_service(database_path)
-    _, token = register(account, "owner@example.com")
+    user_id, token = register(account, "owner@example.com")
     workspace = build_workspace(database_path)
     app.dependency_overrides[get_account_service] = lambda: account
     app.dependency_overrides[get_workspace_service] = lambda: workspace
@@ -299,6 +587,8 @@ def test_workspace_api_create_run_history_and_detail(tmp_path: Path) -> None:
         assert saved.json()["payload"]["contract_version"] == (
             "webdiag.account.saved_audit_payload.v1"
         )
+        assert saved.json()["payload"]["checks"][0]["name"] == "Тег title"
+        assert saved.json()["payload"]["issues"][0]["title"] == "Отсутствует тег title"
 
         detail = asyncio.run(request("GET", f"/v1/account/projects/{project_id}", cookie=token))
         assert detail.status_code == 200
@@ -307,17 +597,162 @@ def test_workspace_api_create_run_history_and_detail(tmp_path: Path) -> None:
         audit = asyncio.run(
             request(
                 "GET",
-                f"/v1/account/projects/{project_id}/audits/{audit_id}",
+                f"/v1/account/projects/{project_id}/audits/{audit_id}?locale=en",
                 cookie=token,
             )
         )
         assert audit.status_code == 200
         assert set(audit.json()) == {"contract_version", "project", "audit", "payload"}
-
-        invalid = asyncio.run(
-            request("GET", "/v1/account/projects/not-a-uuid", cookie=token)
+        assert audit.json()["payload"]["checks"][0]["name"] == "Title tag"
+        assert audit.json()["payload"]["issues"][0]["title"] == "Title tag is missing"
+        stored = workspace.get_saved_audit(
+            user_id=user_id,
+            project_id=project_id,
+            audit_id=audit_id,
         )
+        assert stored.payload.checks[0].name == "Title tag"
+        assert stored.payload.issues[0].title == "Title tag is missing"
+
+        invalid = asyncio.run(request("GET", "/v1/account/projects/not-a-uuid", cookie=token))
         assert invalid.status_code == 422
         assert invalid.json()["detail"]["code"] == "account_invalid_request"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_project_lifecycle_api_is_versioned_owned_idempotent_and_no_store(
+    tmp_path: Path,
+) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    account = build_account_service(database_path)
+    _, owner_token = register(account, "owner@example.com")
+    _, other_token = register(account, "other@example.com")
+    workspace = build_workspace(database_path)
+    app.dependency_overrides[get_account_service] = lambda: account
+    app.dependency_overrides[get_workspace_service] = lambda: workspace
+    try:
+        created = asyncio.run(
+            request(
+                "POST",
+                "/v1/account/projects",
+                json={"name": "Main", "origin": "https://example.com"},
+                cookie=owner_token,
+            )
+        )
+        project_id = created.json()["id"]
+
+        invalid = asyncio.run(
+            request(
+                "PATCH",
+                f"/v1/account/projects/{project_id}",
+                json={"name": "Renamed", "origin": "https://attacker.example"},
+                cookie=owner_token,
+            )
+        )
+        assert invalid.status_code == 422
+        assert invalid.headers["cache-control"] == "no-store"
+
+        renamed = asyncio.run(
+            request(
+                "PATCH",
+                f"/v1/account/projects/{project_id}",
+                json={"name": "  Client's   project  "},
+                cookie=owner_token,
+            )
+        )
+        assert renamed.status_code == 200
+        assert renamed.headers["cache-control"] == "no-store"
+        assert renamed.json()["name"] == "Client's project"
+        assert set(renamed.json()) == {
+            "id",
+            "name",
+            "origin",
+            "created_at",
+            "updated_at",
+        }
+
+        hidden = asyncio.run(
+            request(
+                "POST",
+                f"/v1/account/projects/{project_id}/archive",
+                cookie=other_token,
+            )
+        )
+        assert hidden.status_code == 404
+        assert hidden.json()["detail"]["code"] == "account_project_not_found"
+
+        archived = asyncio.run(
+            request(
+                "POST",
+                f"/v1/account/projects/{project_id}/archive",
+                cookie=owner_token,
+            )
+        )
+        assert archived.status_code == 200
+        assert archived.headers["cache-control"] == "no-store"
+        assert archived.json()["contract_version"] == "webdiag.account.archived_project.v1"
+        assert archived.json()["archived_at"] is not None
+        assert set(archived.json()) == {
+            "contract_version",
+            "id",
+            "name",
+            "origin",
+            "created_at",
+            "updated_at",
+            "archived_at",
+        }
+
+        repeated_archive = asyncio.run(
+            request(
+                "POST",
+                f"/v1/account/projects/{project_id}/archive",
+                cookie=owner_token,
+            )
+        )
+        assert repeated_archive.status_code == 200
+        assert repeated_archive.json()["archived_at"] == archived.json()["archived_at"]
+
+        active_list = asyncio.run(request("GET", "/v1/account/projects", cookie=owner_token))
+        assert active_list.json()["projects"] == []
+        detail = asyncio.run(
+            request("GET", f"/v1/account/projects/{project_id}", cookie=owner_token)
+        )
+        assert detail.status_code == 404
+
+        archived_list = asyncio.run(
+            request("GET", "/v1/account/projects/archived", cookie=owner_token)
+        )
+        assert archived_list.status_code == 200
+        assert archived_list.headers["cache-control"] == "no-store"
+        assert archived_list.json() == {
+            "contract_version": "webdiag.account.archived_project_list.v1",
+            "projects": [archived.json()],
+        }
+
+        restored = asyncio.run(
+            request(
+                "POST",
+                f"/v1/account/projects/{project_id}/restore",
+                cookie=owner_token,
+            )
+        )
+        assert restored.status_code == 200
+        assert restored.headers["cache-control"] == "no-store"
+        assert set(restored.json()) == {
+            "id",
+            "name",
+            "origin",
+            "created_at",
+            "updated_at",
+        }
+        repeated_restore = asyncio.run(
+            request(
+                "POST",
+                f"/v1/account/projects/{project_id}/restore",
+                cookie=owner_token,
+            )
+        )
+        assert repeated_restore.status_code == 200
+        assert repeated_restore.json() == restored.json()
     finally:
         app.dependency_overrides.clear()
