@@ -35,13 +35,36 @@ test("pins every external GitHub Action to an immutable commit SHA", async () =>
   }
 });
 
-test("uses committed Python hashes without an unpinned pip upgrade", () => {
+test("uses committed Python hashes and exposes every Windows verification gate", () => {
   assert.doesNotMatch(ciWorkflow, /pip install --upgrade pip/);
   const windowsJob = ciWorkflow.split(/^  python-locks:/m)[0];
   const installIndex = windowsJob.indexOf("run: npm run python:install");
-  const verifyIndex = windowsJob.indexOf("run: npm run verify:local");
   assert.ok(installIndex !== -1, "Windows verification does not install the Python lock");
-  assert.ok(verifyIndex > installIndex, "Windows full verification runs before hashed install");
+
+  const verificationCommands = [
+    "npm run verify:registry",
+    "npm test",
+    "npm run lint",
+    "npm run typecheck",
+    "npm run build",
+    "npm run test:browser",
+    "npm run test:python",
+    "npm run lint:python",
+    "npm run verify:python-lock",
+  ];
+
+  for (const command of verificationCommands) {
+    const commandIndex = windowsJob.indexOf(`run: ${command}`);
+    assert.ok(
+      commandIndex > installIndex,
+      `Windows verification is missing or runs before hashed install: ${command}`,
+    );
+  }
+  assert.doesNotMatch(
+    windowsJob,
+    /run: npm run verify:local/,
+    "Windows CI must expose individual verification gates instead of one opaque aggregate step",
+  );
 });
 
 test("verifies Python locks on Ubuntu with Python 3.13 and 3.14", () => {
