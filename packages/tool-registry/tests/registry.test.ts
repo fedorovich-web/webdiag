@@ -87,10 +87,16 @@ describe("tool registry", () => {
       expect(tool?.description?.en).toContain("100");
     }
 
-    expect(crawlerTools[0]?.title.en).toBe("Bounded Site Audit");
-    expect(crawlerTools[0]?.description.ru).toContain("без заявления о полном покрытии");
-    expect(crawlerTools[0]?.description.en).toContain("no claim of complete site coverage");
-    expect(crawlerTools[2]?.title.en).toBe("Unlinked Page Candidates");
+    const siteAudit = crawlerTools[0];
+    const orphanPageFinder = crawlerTools[2];
+    if (!siteAudit) throw new Error("whole-site-audit is missing from the registry");
+    if (!siteAudit.description) throw new Error("whole-site-audit is missing its localized description");
+    if (!orphanPageFinder) throw new Error("orphan-page-finder is missing from the registry");
+
+    expect(siteAudit.title.en).toBe("Bounded Site Audit");
+    expect(siteAudit.description.ru).toContain("без заявления о полном покрытии");
+    expect(siteAudit.description.en).toContain("no claim of complete site coverage");
+    expect(orphanPageFinder.title.en).toBe("Unlinked Page Candidates");
   });
 
   it("publishes bounded PageSpeed network evidence and supersedes the viewport microtool", () => {
