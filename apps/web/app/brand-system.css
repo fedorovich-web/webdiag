@@ -61,6 +61,17 @@ body[data-theme="dark"] {
   outline-color: var(--focus);
 }
 
+/* Account controls share one minimum interactive target across desktop and mobile. */
+.wd-account-page .wd-button,
+.wd-account-workspace-page .wd-button {
+  min-height: 44px;
+}
+
+/* Keep the compact homepage report action readable at WCAG AA contrast. */
+body[data-theme="light"] .wd-home .wd-report-recommendation > span {
+  color: #0774dc;
+}
+
 /* Full production footer. */
 .site-footer .wd-footer-grid {
   grid-template-columns: minmax(240px, 1.35fr) repeat(5, minmax(120px, .72fr));
