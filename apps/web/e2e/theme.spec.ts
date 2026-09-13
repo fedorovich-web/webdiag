@@ -27,11 +27,17 @@ async function firstPaint(page: import("@playwright/test").Page) {
   return page.evaluate(() => window.__webdiagFirstPaint);
 }
 
+async function openMobileMenu(page: import("@playwright/test").Page) {
+  await page.locator(".mobile-menu summary").click();
+  await expect(page.locator(".mobile-menu")).toHaveAttribute("open", "");
+}
+
 test.describe("explicit theme model", () => {
   let assertBrowserClean: Awaited<ReturnType<typeof installBrowserGuard>>;
 
   test.beforeEach(async ({ page }) => {
     assertBrowserClean = installBrowserGuard(page);
+    await page.setViewportSize({ width: 390, height: 844 });
   });
 
   test.afterEach(async ({}, testInfo) => {
@@ -44,9 +50,11 @@ test.describe("explicit theme model", () => {
     await page.goto("/");
 
     await expect(page.locator("body")).toHaveAttribute("data-theme", "light");
-    await expect(page.getByRole("switch", { name: "Тёмная тема" })).toHaveAttribute("aria-checked", "false");
     expect(await firstPaint(page)).toEqual({ theme: "light" });
     expect(await page.evaluate((key) => localStorage.getItem(key), storageKey)).toBeNull();
+
+    await openMobileMenu(page);
+    await expect(page.getByRole("switch", { name: "Тёмная тема" })).toHaveAttribute("aria-checked", "false");
   });
 
   test("stored dark is applied before first paint and survives reload", async ({ page }) => {
@@ -56,6 +64,7 @@ test.describe("explicit theme model", () => {
 
     expect(await firstPaint(page)).toEqual({ theme: "dark" });
     await expect(page.locator("body")).toHaveAttribute("data-theme", "dark");
+    await openMobileMenu(page);
     await expect(page.getByRole("switch", { name: "Тёмная тема" })).toHaveAttribute("aria-checked", "true");
     await page.reload();
     await expect(page.locator("body")).toHaveAttribute("data-theme", "dark");
@@ -73,6 +82,7 @@ test.describe("explicit theme model", () => {
     await page.goto("/");
     await page.evaluate((key) => localStorage.removeItem(key), storageKey);
     await page.reload();
+    await openMobileMenu(page);
     const themeSwitch = page.getByRole("switch", { name: "Тёмная тема" });
 
     await themeSwitch.focus();
@@ -91,6 +101,7 @@ test.describe("explicit theme model", () => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await installFirstPaintProbe(page, null);
     await page.goto("/en");
+    await openMobileMenu(page);
 
     const themeSwitch = page.getByRole("switch", { name: "Dark theme" });
     await themeSwitch.click();
