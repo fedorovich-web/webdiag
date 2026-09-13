@@ -42,7 +42,7 @@ body[data-theme="dark"] {
 .button:not(.button-secondary),
 .wd-account-page .wd-button:not(.wd-button-secondary),
 .wd-account-workspace-page .wd-button:not(.wd-button-secondary) {
-  border-color: transparent;
+  border: 1px solid transparent;
   background: linear-gradient(120deg, #34d399 0%, #22d3ee 52%, #60a5fa 100%);
   color: #06191b;
   box-shadow: 0 14px 30px rgb(34 211 238 / 0.16);
