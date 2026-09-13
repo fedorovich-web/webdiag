@@ -67,6 +67,11 @@ body[data-theme="dark"] {
   min-height: 44px;
 }
 
+/* clientHeight excludes the 1px button borders; keep 44px of usable crawler target area. */
+.wd-account-workspace-page .wd-crawl-console-head > .wd-button {
+  min-height: 46px;
+}
+
 /* Keep the compact homepage report action readable at WCAG AA contrast. */
 body[data-theme="light"] .wd-home .wd-report-recommendation > span {
   color: #0774dc;
