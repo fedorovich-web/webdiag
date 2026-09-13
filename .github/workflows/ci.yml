@@ -52,8 +52,32 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install chromium
 
-      - name: Run full project verification
-        run: npm run verify:local
+      - name: Verify tool registry
+        run: npm run verify:registry
+
+      - name: Run JavaScript tests
+        run: npm test
+
+      - name: Lint web app
+        run: npm run lint
+
+      - name: Typecheck web app
+        run: npm run typecheck
+
+      - name: Build production web app
+        run: npm run build
+
+      - name: Run browser tests
+        run: npm run test:browser
+
+      - name: Run Python tests
+        run: npm run test:python
+
+      - name: Lint Python
+        run: npm run lint:python
+
+      - name: Verify Python lock
+        run: npm run verify:python-lock
 
       - name: Upload homepage QA screenshot
         if: always()
