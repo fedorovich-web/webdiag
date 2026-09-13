@@ -43,6 +43,10 @@ test.describe("pricing availability", () => {
       "href",
       "/en/tools",
     );
+
+    const mobileMenu = page.locator(".mobile-menu");
+    await mobileMenu.locator("summary").click();
+    await expect(mobileMenu).toHaveAttribute("open", "");
     await expect(
       page.getByRole("banner").getByRole("link", { name: "Create an account" }),
     ).toHaveAttribute("href", "/en/register");
