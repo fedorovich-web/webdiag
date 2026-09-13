@@ -179,6 +179,10 @@ body[data-theme="dark"] {
 }
 
 @media (max-width: 1180px) {
+  .wd-site-header .mobile-menu-panel .wd-header-cta {
+    display: inline-flex;
+  }
+
   .site-footer .wd-footer-grid {
     grid-template-columns: 1.25fr repeat(3, minmax(140px, .75fr));
   }
