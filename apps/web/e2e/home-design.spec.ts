@@ -109,7 +109,12 @@ test.describe("home functional smoke", () => {
     const platformLogos = page.locator(".wd-platform-strip .wd-platform-logo");
     await expect(platformLogos).toHaveCount(6);
     for (let index = 0; index < 6; index += 1) {
-      await expect(platformLogos.nth(index)).toBeInViewport();
+      const logo = platformLogos.nth(index);
+      await expect(logo).toBeVisible();
+      const box = await logo.boundingBox();
+      expect(box, `CMS logo ${index + 1} should have layout geometry`).not.toBeNull();
+      expect(box?.x ?? -1).toBeGreaterThanOrEqual(0);
+      expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(dimensions.viewport);
     }
 
     await expect(page.locator(".language-switcher-desktop")).toBeHidden();
