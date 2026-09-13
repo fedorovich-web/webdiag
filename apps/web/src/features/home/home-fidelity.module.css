@@ -187,3 +187,32 @@
   .fidelity :global(.wd-platform-strip .shell > div span) { font-size: 12px; }
   .fidelity :global(.wd-final-copy h2) { font-size: 25px; }
 }
+
+/* WCAG 2.2 AA: preserve the approved layout while strengthening light-theme text contrast. */
+:global(body[data-theme="light"]) .fidelity :global(.wd-eyebrow) { color: #127d7d; }
+:global(body[data-theme="light"]) .fidelity :global(.wd-section-link),
+:global(body[data-theme="light"]) .fidelity :global(.wd-card-link),
+:global(body[data-theme="light"]) .fidelity :global(.wd-report-bottom-row > a) { color: #0774dc; }
+:global(body[data-theme="light"]) .fidelity :global(.wd-popular-tool-card p) { color: #68758e; }
+:global(body[data-theme="light"]) .fidelity :global(.wd-report-tabs span) { color: #6c7588; }
+:global(body[data-theme="light"]) .fidelity :global(.wd-report-tabs .is-active) { color: #1375d8; }
+:global(body[data-theme="light"]) .fidelity :global(.wd-report-table-head) { color: #6d7582; }
+:global(body[data-theme="light"]) .fidelity :global(.wd-report-issue-list b) { color: #69768b; }
+:global(body[data-theme="light"]) .fidelity :global(.wd-priority-mark.is-critical) { color: #c3354a; }
+:global(body[data-theme="light"]) .fidelity :global(.wd-priority-mark.is-high) { color: #a95718; }
+:global(body[data-theme="light"]) .fidelity :global(.wd-priority-mark.is-warning) { color: #956710; }
+:global(body[data-theme="light"]) .fidelity :global(.wd-report-recommendation > small) { color: #6b7484; }
+:global(body[data-theme="light"]) .fidelity :global(.wd-report-recommendation > p) { color: #607089; }
+:global(body[data-theme="light"]) .fidelity :global(.wd-score-chip small) { color: #16846f; }
+:global(body[data-theme="light"]) .fidelity :global(.wd-monitoring-score-row span) { color: #697486; }
+:global(body[data-theme="light"]) .fidelity :global(.wd-monitoring-score-row strong.is-critical) { color: #d33950; }
+:global(body[data-theme="light"]) .fidelity :global(.wd-resource-label) { color: #126fcd; }
+:global(body[data-theme="light"]) .fidelity :global(.wd-platform-strip p)::after { color: #68758e; }
+:global(body[data-theme="light"]) .fidelity :global(.wd-platform-strip .shell > div span) { color: #68758e; }
+
+/* Footer links remain visually compact, but each interactive target meets the 24px minimum. */
+:global(.site-footer .footer-column a) {
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+}
