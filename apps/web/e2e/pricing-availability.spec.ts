@@ -48,7 +48,7 @@ test.describe("pricing availability", () => {
     await mobileMenu.locator("summary").click();
     await expect(mobileMenu).toHaveAttribute("open", "");
     await expect(
-      page.getByRole("banner").getByRole("link", { name: "Create an account" }),
+      page.getByRole("banner").getByRole("link", { name: "Create account" }),
     ).toHaveAttribute("href", "/en/register");
     await expect(page.locator("main")).not.toContainText(/₽|\/mo/i);
 
