@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - audit/product-readiness-review
+    paths-ignore:
+      - browser-audit.log
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   product-readiness:
@@ -217,4 +219,26 @@ jobs:
         run: npx playwright install chromium
 
       - name: Run every ready tool page in production browser
-        run: npm --workspace @webdiag/web exec playwright test e2e/product-readiness-audit.spec.ts
+        id: browser-audit
+        shell: bash
+        run: |
+          set +e
+          npm --workspace @webdiag/web exec playwright test e2e/product-readiness-audit.spec.ts 2>&1 | tee browser-audit.log
+          status=${PIPESTATUS[0]}
+          set -e
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Persist browser audit log
+        if: always()
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add browser-audit.log
+          git commit -m "chore(audit): capture browser audit log" || exit 0
+          git push origin HEAD:audit/product-readiness-review
+
+      - name: Fail on browser audit regressions
+        if: steps.browser-audit.outputs.status != '0'
+        run: exit 1
