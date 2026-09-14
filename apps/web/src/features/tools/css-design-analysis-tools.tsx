@@ -98,22 +98,65 @@ export function convertHexColor(input: string): ColorConversionResult {
   };
 }
 
+function readAttributeSelector(source: string, start: number): { readonly end: number } | null {
+  if (source[start] !== "[") return null;
+
+  let quote: "\"" | "'" | null = null;
+  let escaped = false;
+  for (let index = start + 1; index < source.length; index += 1) {
+    const character = source[index];
+    if (!character) continue;
+
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (character === "\\") {
+      escaped = true;
+      continue;
+    }
+    if (quote) {
+      if (character === quote) quote = null;
+      continue;
+    }
+    if (character === "\"" || character === "'") {
+      quote = character;
+      continue;
+    }
+    if (character === "]") return { end: index };
+  }
+
+  throw new Error("Unbalanced attribute selector.");
+}
+
 function splitSelectorList(value: string): string[] {
   const selectors: string[] = [];
   let current = "";
   let depth = 0;
-  let inAttribute = false;
-  for (const character of value) {
-    if (character === "[" && depth === 0) inAttribute = true;
-    if (character === "]" && depth === 0) inAttribute = false;
-    if (character === "(" && !inAttribute) depth += 1;
-    if (character === ")" && !inAttribute && depth > 0) depth -= 1;
-    if (character === "," && depth === 0 && !inAttribute) {
+
+  for (let index = 0; index < value.length;) {
+    const attribute = readAttributeSelector(value, index);
+    if (attribute) {
+      current += value.slice(index, attribute.end + 1);
+      index = attribute.end + 1;
+      continue;
+    }
+
+    const character = value[index] ?? "";
+    if (character === "\\" && index + 1 < value.length) {
+      current += value.slice(index, index + 2);
+      index += 2;
+      continue;
+    }
+    if (character === "(") depth += 1;
+    if (character === ")" && depth > 0) depth -= 1;
+    if (character === "," && depth === 0) {
       selectors.push(current.trim());
       current = "";
     } else {
       current += character;
     }
+    index += 1;
   }
   if (current.trim()) selectors.push(current.trim());
   return selectors;
@@ -186,6 +229,26 @@ function readFunctionalPseudo(
   throw new Error("Unbalanced functional pseudo-class.");
 }
 
+function stripAttributeSelectors(source: string): { readonly source: string; readonly count: number } {
+  let stripped = "";
+  let count = 0;
+
+  for (let index = 0; index < source.length;) {
+    const attribute = readAttributeSelector(source, index);
+    if (!attribute) {
+      stripped += source[index] ?? "";
+      index += 1;
+      continue;
+    }
+
+    stripped += " ";
+    count += 1;
+    index = attribute.end + 1;
+  }
+
+  return { source: stripped, count };
+}
+
 function computeSpecificityTuple(selector: string): readonly [number, number, number] {
   if (selector.length > 500) throw new Error("Selector is too long for the bounded calculator.");
   let source = selector.replace(/\/\*[\s\S]*?\*\//g, " ");
@@ -193,6 +256,19 @@ function computeSpecificityTuple(selector: string): readonly [number, number, nu
   let stripped = "";
 
   for (let index = 0; index < source.length;) {
+    const attribute = readAttributeSelector(source, index);
+    if (attribute) {
+      stripped += source.slice(index, attribute.end + 1);
+      index = attribute.end + 1;
+      continue;
+    }
+
+    if (source[index] === "\\" && index + 1 < source.length) {
+      stripped += source.slice(index, index + 2);
+      index += 2;
+      continue;
+    }
+
     const functional = source[index] === ":" && source[index - 1] !== ":"
       ? readFunctionalPseudo(source, index)
       : null;
@@ -211,14 +287,14 @@ function computeSpecificityTuple(selector: string): readonly [number, number, nu
   }
   source = stripped;
 
-  const ids = (source.match(/#[A-Za-z0-9_-]+/g) ?? []).length;
-  const attributes = (source.match(/\[[^\]]+\]/g) ?? []).length;
-  const classes = (source.match(/\.[A-Za-z0-9_-]+/g) ?? []).length;
-  const pseudoElements = (source.match(/::[A-Za-z0-9_-]+/g) ?? []).length;
-  const pseudoClasses = (source.replace(/::[A-Za-z0-9_-]+/g, " ").match(/:[A-Za-z0-9_-]+(?:\([^)]*\))?/g) ?? []).length;
+  const attributeSelectors = stripAttributeSelectors(source);
+  const searchable = attributeSelectors.source;
+  const ids = (searchable.match(/#[A-Za-z0-9_-]+/g) ?? []).length;
+  const classes = (searchable.match(/\.[A-Za-z0-9_-]+/g) ?? []).length;
+  const pseudoElements = (searchable.match(/::[A-Za-z0-9_-]+/g) ?? []).length;
+  const pseudoClasses = (searchable.replace(/::[A-Za-z0-9_-]+/g, " ").match(/:[A-Za-z0-9_-]+(?:\([^)]*\))?/g) ?? []).length;
 
-  const withoutNonTypes = source
-    .replace(/\[[^\]]+\]/g, " ")
+  const withoutNonTypes = searchable
     .replace(/#[A-Za-z0-9_-]+/g, " ")
     .replace(/\.[A-Za-z0-9_-]+/g, " ")
     .replace(/::?[A-Za-z0-9_-]+(?:\([^)]*\))?/g, " ")
@@ -227,7 +303,7 @@ function computeSpecificityTuple(selector: string): readonly [number, number, nu
   const typeMatches = withoutNonTypes.match(/(?:^|\s)([A-Za-z][A-Za-z0-9_-]*)/g) ?? [];
   const types = typeMatches.map((match) => match.trim()).filter(Boolean).length + pseudoElements;
 
-  return addSpecificity(extra, [ids, attributes + classes + pseudoClasses, types]);
+  return addSpecificity(extra, [ids, attributeSelectors.count + classes + pseudoClasses, types]);
 }
 
 export function calculateSelectorSpecificity(input: string): readonly SpecificityResult[] {
