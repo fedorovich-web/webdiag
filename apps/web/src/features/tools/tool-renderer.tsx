@@ -154,6 +154,12 @@ function ErrorMessage({ value }: { value: string }) {
   return value ? <p className="form-error" role="alert">{value}</p> : null;
 }
 
+function requiredNumber(value: string): number {
+  const normalized = value.trim();
+  if (!normalized) throw new TypeError("Numeric input is required.");
+  return Number(normalized);
+}
+
 function Generator({ locale, kind }: { locale: Locale; kind: "uuid" | "ulid" }) {
   const [value, setValue] = useState("");
   const createValue = () => kind === "uuid" ? generateUuid() : generateUlid();
@@ -172,7 +178,7 @@ function UnixTimestampTool({ locale }: { locale: Locale }) {
   const [error, setError] = useState("");
 
   function fromTimestamp() {
-    try { setIso(unixSecondsToIso(Number(timestamp))); setError(""); } catch { setError(dictionary[locale].error); }
+    try { setIso(unixSecondsToIso(requiredNumber(timestamp))); setError(""); } catch { setError(dictionary[locale].error); }
   }
   function fromIso() {
     try { setTimestamp(String(isoToUnixSeconds(iso))); setError(""); } catch { setError(dictionary[locale].error); }
@@ -239,8 +245,8 @@ function PxRemTool({ locale }: { locale: Locale }) {
   const [rem, setRem] = useState("1");
   const [root, setRoot] = useState("16");
   const [error, setError] = useState("");
-  function toRem() { try { setRem(String(pxToRem(Number(pixels), Number(root)))); setError(""); } catch { setError(dictionary[locale].error); } }
-  function toPixels() { try { setPixels(String(remToPx(Number(rem), Number(root)))); setError(""); } catch { setError(dictionary[locale].error); } }
+  function toRem() { try { setRem(String(pxToRem(requiredNumber(pixels), requiredNumber(root)))); setError(""); } catch { setError(dictionary[locale].error); } }
+  function toPixels() { try { setPixels(String(remToPx(requiredNumber(rem), requiredNumber(root)))); setError(""); } catch { setError(dictionary[locale].error); } }
   return <div className="tool-grid"><Panel title="px → rem"><label className="field"><span>px</span><input value={pixels} onChange={(event) => setPixels(event.target.value)} inputMode="decimal" /></label><label className="field"><span>{locale === "ru" ? "Базовый размер, px" : "Root size, px"}</span><input value={root} onChange={(event) => setRoot(event.target.value)} inputMode="decimal" /></label><button className="button" type="button" onClick={toRem}>{locale === "ru" ? "Перевести в rem" : "Convert to rem"}</button></Panel><Panel title="rem → px"><label className="field"><span>rem</span><input value={rem} onChange={(event) => setRem(event.target.value)} inputMode="decimal" /></label><p className="calculated-value">{pixels} px = {rem} rem</p><button className="button" type="button" onClick={toPixels}>{locale === "ru" ? "Перевести в px" : "Convert to px"}</button></Panel><ErrorMessage value={error} /></div>;
 }
 
