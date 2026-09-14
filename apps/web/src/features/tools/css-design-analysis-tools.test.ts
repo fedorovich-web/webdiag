@@ -43,6 +43,10 @@ describe("css design analysis tools", () => {
     expect(calculateSelectorSpecificity(":is(:not(#app), .card)")[0]?.score).toBe("1-0-0");
   });
 
+  it("does not parse pseudo-like text inside attribute values", () => {
+    expect(calculateSelectorSpecificity('[data-value=":is(#fake)"]')[0]?.score).toBe("0-1-0");
+  });
+
   it("generates a bounded typography scale", () => {
     const scale = generateTypographyScale(16, 1.25, -1, 2);
 
