@@ -28,7 +28,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ["/monitoring", "/en/monitoring", 0.85, 0.75],
     ["/pricing", "/en/pricing", 0.85, 0.75],
     ["/tools", "/en/tools", 0.9, 0.8],
-    ["/blog", "/en/blog", 0.65, 0.55],
     ["/knowledge", "/en/knowledge", 0.7, 0.6],
     ["/privacy", "/en/privacy", 0.35, 0.3],
   ] as const;
