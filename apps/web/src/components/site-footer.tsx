@@ -19,7 +19,6 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         tools: "Все инструменты",
         pricing: "Тарифы",
         knowledge: "Руководства",
-        blog: "Блог",
         home: "О проекте",
         privacy: "Политика конфиденциальности",
         copyright: "© 2026 WebDiag. Все права защищены.",
@@ -35,7 +34,6 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         tools: "All tools",
         pricing: "Pricing",
         knowledge: "Guides",
-        blog: "Blog",
         home: "About WebDiag",
         privacy: "Privacy policy",
         copyright: "© 2026 WebDiag. All rights reserved.",
@@ -59,7 +57,6 @@ export function SiteFooter({ locale }: { locale: Locale }) {
 
         <div className="footer-column">
           <strong>{text.materials}</strong>
-          <Link href={`${prefix}/blog`}>{text.blog}</Link>
           <Link href={`${prefix}/knowledge`}>{text.knowledge}</Link>
         </div>
 
