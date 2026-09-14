@@ -9,6 +9,8 @@ import { dictionary } from "../../lib/i18n";
 
 const HEX_RE = /^#?(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 
+type FunctionalPseudoName = "where" | "is" | "not" | "has";
+
 export interface ColorConversionResult {
   readonly hex: string;
   readonly rgb: readonly [number, number, number];
@@ -132,17 +134,82 @@ function maxSpecificity(values: readonly (readonly [number, number, number])[]):
   }, [0, 0, 0]);
 }
 
+function readFunctionalPseudo(
+  source: string,
+  start: number,
+): { readonly name: FunctionalPseudoName; readonly inner: string; readonly end: number } | null {
+  const match = source.slice(start).match(/^:(where|is|not|has)\(/);
+  if (!match?.[1]) return null;
+
+  const name = match[1] as FunctionalPseudoName;
+  const open = start + match[0].length - 1;
+  let depth = 1;
+  let quote: "\"" | "'" | null = null;
+  let escaped = false;
+
+  for (let index = open + 1; index < source.length; index += 1) {
+    const character = source[index];
+    if (!character) continue;
+
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (character === "\\") {
+      escaped = true;
+      continue;
+    }
+    if (quote) {
+      if (character === quote) quote = null;
+      continue;
+    }
+    if (character === "\"" || character === "'") {
+      quote = character;
+      continue;
+    }
+    if (character === "(") {
+      depth += 1;
+      continue;
+    }
+    if (character === ")") {
+      depth -= 1;
+      if (depth === 0) {
+        return {
+          name,
+          inner: source.slice(open + 1, index),
+          end: index,
+        };
+      }
+    }
+  }
+
+  throw new Error("Unbalanced functional pseudo-class.");
+}
+
 function computeSpecificityTuple(selector: string): readonly [number, number, number] {
   if (selector.length > 500) throw new Error("Selector is too long for the bounded calculator.");
   let source = selector.replace(/\/\*[\s\S]*?\*\//g, " ");
   let extra: readonly [number, number, number] = [0, 0, 0];
+  let stripped = "";
 
-  source = source.replace(/:where\(([^()]*)\)/g, " ");
-  source = source.replace(/:(is|not|has)\(([^()]*)\)/g, (_match, _name, inner: string) => {
-    const choices = splitSelectorList(inner).map(computeSpecificityTuple);
-    extra = addSpecificity(extra, maxSpecificity(choices));
-    return " ";
-  });
+  for (let index = 0; index < source.length;) {
+    const functional = source[index] === ":" && source[index - 1] !== ":"
+      ? readFunctionalPseudo(source, index)
+      : null;
+    if (!functional) {
+      stripped += source[index] ?? "";
+      index += 1;
+      continue;
+    }
+
+    if (functional.name !== "where") {
+      const choices = splitSelectorList(functional.inner).map(computeSpecificityTuple);
+      extra = addSpecificity(extra, maxSpecificity(choices));
+    }
+    stripped += " ";
+    index = functional.end + 1;
+  }
+  source = stripped;
 
   const ids = (source.match(/#[A-Za-z0-9_-]+/g) ?? []).length;
   const attributes = (source.match(/\[[^\]]+\]/g) ?? []).length;
