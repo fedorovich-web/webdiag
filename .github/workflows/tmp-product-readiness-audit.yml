@@ -1,0 +1,211 @@
+name: Temporary Product Readiness Audit
+
+on:
+  push:
+    branches:
+      - audit/product-readiness-review
+
+permissions:
+  contents: read
+
+jobs:
+  product-readiness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout audit branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit registry, renderer, coverage, and production smells
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const assert = require('node:assert/strict');
+          const fs = require('node:fs');
+          const path = require('node:path');
+
+          const tools = JSON.parse(fs.readFileSync('packages/tool-registry/registry/tools.json', 'utf8'));
+          const ready = tools.filter((tool) => tool.state === 'ready');
+          const readySlugs = ready.map((tool) => tool.slug).sort();
+          const renderer = fs.readFileSync('apps/web/src/features/tools/tool-renderer.tsx', 'utf8');
+          const rendererStart = renderer.indexOf('export function ToolRenderer');
+          assert.notEqual(rendererStart, -1, 'ToolRenderer export not found');
+          const rendererBody = renderer.slice(rendererStart);
+          const caseSlugs = [...rendererBody.matchAll(/case\s+"([^"]+)"\s*:/g)].map((match) => match[1]).sort();
+          const duplicateCases = caseSlugs.filter((slug, index) => caseSlugs.indexOf(slug) !== index);
+          assert.deepEqual(duplicateCases, [], 'Duplicate ToolRenderer cases');
+          assert.deepEqual(caseSlugs, readySlugs, 'Ready registry slugs and ToolRenderer cases diverge');
+
+          const supportedMatch = renderer.match(/SUPPORTED_TOOL_SLUGS\s*=\s*\[([\s\S]*?)\]\s*as const;/);
+          assert.ok(supportedMatch, 'SUPPORTED_TOOL_SLUGS declaration not found');
+          const supportedSlugs = [...supportedMatch[1].matchAll(/"([^"]+)"/g)].map((match) => match[1]).sort();
+          assert.deepEqual(supportedSlugs, readySlugs, 'Ready registry slugs and SUPPORTED_TOOL_SLUGS diverge');
+
+          function walk(root) {
+            if (!fs.existsSync(root)) return [];
+            const out = [];
+            for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
+              const full = path.join(root, entry.name);
+              if (entry.isDirectory()) out.push(...walk(full));
+              else out.push(full.replaceAll('\\', '/'));
+            }
+            return out;
+          }
+
+          const testFiles = [
+            ...walk('apps/web/src'),
+            ...walk('apps/web/e2e'),
+            ...walk('packages'),
+            ...walk('scripts'),
+          ].filter((file) => /(?:\.test\.[cm]?[jt]sx?|\.spec\.[cm]?[jt]sx?)$/.test(file));
+          const testCorpus = testFiles.map((file) => fs.readFileSync(file, 'utf8')).join('\n');
+          const literalCoverage = ready.map((tool) => ({
+            slug: tool.slug,
+            executorClass: tool.executorClass,
+            mentionedInTests: testCorpus.includes(tool.slug),
+          }));
+          const unmentioned = literalCoverage.filter((row) => !row.mentionedInTests);
+
+          const productionRoots = ['apps/web/src', 'apps/web/app', 'packages', 'services', 'scripts'];
+          const sourceFiles = productionRoots.flatMap(walk).filter((file) => {
+            if (/\.(test|spec)\.[cm]?[jt]sx?$/.test(file)) return false;
+            if (file.includes('/e2e/') || file.includes('/tests/') || file.includes('/__tests__/')) return false;
+            if (file.startsWith('docs/') || file.includes('/node_modules/') || file.includes('/.next/')) return false;
+            return /\.(?:[cm]?[jt]sx?|py|sh)$/.test(file);
+          });
+
+          const smellPatterns = [
+            ['task-marker', /\b(?:TODO|FIXME|HACK|XXX)\b/i],
+            ['ts-suppression', /@ts-(?:ignore|nocheck)/i],
+            ['eslint-suppression', /eslint-disable/i],
+            ['debug-console', /console\.(?:log|debug)\s*\(/],
+            ['fake-or-stub', /\b(?:mock|fake)\s+(?:data|result|response|implementation)\b|\bnot implemented\b|\bcoming soon\b|\bstub\b/i],
+            ['dynamic-code', /\beval\s*\(|\bnew Function\s*\(/],
+          ];
+          const smells = [];
+          const highRiskSinks = [];
+          const broadAny = [];
+          for (const file of sourceFiles) {
+            const text = fs.readFileSync(file, 'utf8');
+            const lines = text.split(/\r?\n/);
+            lines.forEach((line, index) => {
+              for (const [kind, regex] of smellPatterns) {
+                if (regex.test(line)) smells.push({ kind, file, line: index + 1, text: line.trim().slice(0, 240) });
+              }
+              if (/dangerouslySetInnerHTML|\.innerHTML\s*=/.test(line)) {
+                highRiskSinks.push({ file, line: index + 1, text: line.trim().slice(0, 240) });
+              }
+              if (/(?:\bas any\b|:\s*any\b)/.test(line)) {
+                broadAny.push({ file, line: index + 1, text: line.trim().slice(0, 240) });
+              }
+            });
+            for (const match of text.matchAll(/catch\s*(?:\([^)]*\))?\s*\{\s*\}/g)) {
+              const line = text.slice(0, match.index).split(/\r?\n/).length;
+              smells.push({ kind: 'empty-catch', file, line, text: match[0] });
+            }
+          }
+
+          const byExecutor = Object.fromEntries(
+            [...new Set(ready.map((tool) => tool.executorClass))]
+              .sort()
+              .map((executorClass) => [executorClass, ready.filter((tool) => tool.executorClass === executorClass).length]),
+          );
+
+          const report = {
+            readyTools: ready.length,
+            rendererCases: caseSlugs.length,
+            executorClasses: byExecutor,
+            testFiles: testFiles.length,
+            literalSlugCoverage: {
+              mentioned: literalCoverage.length - unmentioned.length,
+              unmentioned: unmentioned.map((row) => `${row.slug} [${row.executorClass}]`),
+            },
+            productionSmells: smells,
+            highRiskSinks,
+            broadAny,
+          };
+          fs.writeFileSync('product-readiness-report.json', `${JSON.stringify(report, null, 2)}\n`);
+          console.log(JSON.stringify(report, null, 2));
+
+          assert.equal(ready.length, 125, `Expected 125 ready tools, got ${ready.length}`);
+          NODE
+
+      - name: Verify npm security state
+        shell: bash
+        run: |
+          npm audit --json > npm-audit.json || true
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const audit = JSON.parse(fs.readFileSync('npm-audit.json', 'utf8'));
+          const vulnerabilities = audit.metadata?.vulnerabilities ?? {};
+          console.log(JSON.stringify(vulnerabilities, null, 2));
+          if ((vulnerabilities.total ?? 0) !== 0) throw new Error('npm vulnerabilities remain');
+          NODE
+
+      - name: Build production web app
+        run: npm run build
+
+      - name: Generate all-ready-tools browser audit
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const tools = JSON.parse(fs.readFileSync('packages/tool-registry/registry/tools.json', 'utf8'));
+          const ready = tools.filter((tool) => tool.state === 'ready').map((tool) => ({
+            slug: tool.slug,
+            ru: tool.title.ru,
+            en: tool.title.en,
+          }));
+          const source = `import { expect, test } from "@playwright/test";
+          import { installBrowserGuard } from "./browser-guard";
+
+          const tools = ${JSON.stringify(ready, null, 2)} as const;
+          let assertBrowserClean: ReturnType<typeof installBrowserGuard>;
+
+          test.use({ viewport: { width: 390, height: 844 } });
+
+          test.beforeEach(async ({ page }) => {
+            assertBrowserClean = installBrowserGuard(page);
+          });
+
+          test.afterEach(async ({}, testInfo) => {
+            await assertBrowserClean(testInfo);
+          });
+
+          for (const tool of tools) {
+            test(\`\${tool.slug} renders cleanly in both locales\`, async ({ page }) => {
+              for (const locale of ["ru", "en"] as const) {
+                await test.step(locale, async () => {
+                  const route = locale === "ru" ? \`/tools/\${tool.slug}\` : \`/en/tools/\${tool.slug}\`;
+                  const title = tool[locale];
+                  const response = await page.goto(route);
+                  expect(response?.status(), \`HTTP status for \${route}\`).toBe(200);
+                  await expect(page.getByRole("heading", { level: 1, name: title })).toBeVisible();
+                  await expect(page.locator(".tool-workspace")).toBeVisible();
+                  const overflow = await page.evaluate(() => {
+                    const documentWidth = Math.max(document.documentElement.scrollWidth, document.body?.scrollWidth ?? 0);
+                    return documentWidth - document.documentElement.clientWidth;
+                  });
+                  expect(overflow, \`horizontal overflow for \${route}\`).toBeLessThanOrEqual(1);
+                });
+              }
+            });
+          }
+          `;
+          fs.writeFileSync('apps/web/e2e/product-readiness-audit.spec.ts', source);
+          NODE
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium
+
+      - name: Run every ready tool page in production browser
+        run: npm --workspace @webdiag/web exec playwright test e2e/product-readiness-audit.spec.ts
