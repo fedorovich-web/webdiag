@@ -81,7 +81,7 @@ jobs:
 
       - name: Upload homepage QA screenshot
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: homepage-qa-screenshot
           path: apps/web/test-results/homepage-current.png
@@ -90,7 +90,7 @@ jobs:
 
       - name: Upload Playwright failure artifacts
         if: failure()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: playwright-test-results
           path: apps/web/test-results/
@@ -129,7 +129,7 @@ jobs:
 
       - name: Upload homepage screenshot
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: homepage-visual-qa
           path: apps/web/test-results/homepage-current.png
