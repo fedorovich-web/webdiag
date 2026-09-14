@@ -1,0 +1,100 @@
+name: Temporary Vitest 4 security upgrade
+
+on:
+  push:
+    branches:
+      - audit/vitest-4-security-upgrade
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout staging branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: audit/vitest-4-security-upgrade
+          persist-credentials: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Upgrade only direct Vitest pins and refresh lockfile
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const paths = [
+            'apps/web/package.json',
+            'packages/tool-core/package.json',
+            'packages/tool-registry/package.json',
+          ];
+          for (const path of paths) {
+            const pkg = JSON.parse(fs.readFileSync(path, 'utf8'));
+            if (pkg.devDependencies?.vitest !== '3.2.6') {
+              throw new Error(`${path}: expected vitest 3.2.6, got ${pkg.devDependencies?.vitest}`);
+            }
+            pkg.devDependencies.vitest = '4.1.11';
+            fs.writeFileSync(path, `${JSON.stringify(pkg, null, 2)}\n`);
+          }
+          NODE
+          npm install --package-lock-only --ignore-scripts
+          git diff --check
+          git diff --stat -- apps/web/package.json packages/tool-core/package.json packages/tool-registry/package.json package-lock.json
+
+      - name: Verify clean install and advisories
+        shell: bash
+        run: |
+          npm ci
+          npm ls vitest @vitest/mocker vite --all
+          npm audit --json > full-audit.json || true
+          npm audit --omit=dev --json > prod-audit.json || true
+          node - <<'NODE'
+          const fs = require('fs');
+          const full = JSON.parse(fs.readFileSync('full-audit.json', 'utf8'));
+          const prod = JSON.parse(fs.readFileSync('prod-audit.json', 'utf8'));
+          const counts = full.metadata?.vulnerabilities ?? {};
+          const prodCounts = prod.metadata?.vulnerabilities ?? {};
+          console.log(JSON.stringify({ full: counts, production: prodCounts }, null, 2));
+          if ((counts.high ?? 0) !== 0 || (counts.critical ?? 0) !== 0) {
+            throw new Error('High/critical npm advisories remain');
+          }
+          if ((counts.moderate ?? 0) !== 0) {
+            throw new Error('Moderate npm advisories remain');
+          }
+          if ((prodCounts.total ?? 0) !== 0) {
+            throw new Error('Production npm advisories remain');
+          }
+          NODE
+          npm install-scripts ls
+          npm install-scripts prune --dry-run || true
+
+      - name: Run JavaScript verification
+        run: |
+          npm test
+          npm run lint
+          npm run typecheck
+          npm run build
+
+      - name: Run browser regression suite
+        run: |
+          npx playwright install chromium
+          npm run test:browser
+
+      - name: Commit staging result and remove temporary workflow
+        shell: bash
+        run: |
+          rm .github/workflows/tmp-vitest-4-security-upgrade.yml full-audit.json prod-audit.json
+          git config user.name "webdiag-audit-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/web/package.json packages/tool-core/package.json packages/tool-registry/package.json package-lock.json .github/workflows/tmp-vitest-4-security-upgrade.yml
+          git diff --cached --check
+          git commit -m "chore(audit): stage Vitest 4.1.11 security upgrade"
+          git push origin HEAD:audit/vitest-4-security-upgrade
