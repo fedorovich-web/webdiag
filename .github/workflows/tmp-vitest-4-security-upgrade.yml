@@ -26,7 +26,7 @@ jobs:
           node-version: "24"
           cache: npm
 
-      - name: Upgrade only direct Vitest pins and refresh lockfile
+      - name: Upgrade Vitest pins and test transform config
         shell: bash
         run: |
           node - <<'NODE'
@@ -44,10 +44,20 @@ jobs:
             pkg.devDependencies.vitest = '4.1.11';
             fs.writeFileSync(path, `${JSON.stringify(pkg, null, 2)}\n`);
           }
+
+          const configPath = 'apps/web/vitest.config.ts';
+          let config = fs.readFileSync(configPath, 'utf8');
+          const marker = 'export default defineConfig({\n  test: {';
+          if (!config.includes(marker)) throw new Error('Unexpected Vitest config shape');
+          config = config.replace(
+            marker,
+            'export default defineConfig({\n  oxc: {\n    jsx: {\n      runtime: "automatic",\n    },\n  },\n  test: {',
+          );
+          fs.writeFileSync(configPath, config);
           NODE
           npm install --package-lock-only --ignore-scripts
           git diff --check
-          git diff --stat -- apps/web/package.json packages/tool-core/package.json packages/tool-registry/package.json package-lock.json
+          git diff --stat -- apps/web/package.json packages/tool-core/package.json packages/tool-registry/package.json apps/web/vitest.config.ts package-lock.json
 
       - name: Verify clean install and advisories
         shell: bash
@@ -63,18 +73,22 @@ jobs:
           const counts = full.metadata?.vulnerabilities ?? {};
           const prodCounts = prod.metadata?.vulnerabilities ?? {};
           console.log(JSON.stringify({ full: counts, production: prodCounts }, null, 2));
-          if ((counts.high ?? 0) !== 0 || (counts.critical ?? 0) !== 0) {
-            throw new Error('High/critical npm advisories remain');
-          }
-          if ((counts.moderate ?? 0) !== 0) {
-            throw new Error('Moderate npm advisories remain');
-          }
-          if ((prodCounts.total ?? 0) !== 0) {
-            throw new Error('Production npm advisories remain');
+          if ((counts.total ?? 0) !== 0) throw new Error('npm advisories remain');
+          if ((prodCounts.total ?? 0) !== 0) throw new Error('Production npm advisories remain');
+          NODE
+          npm install-scripts prune
+          pending="$(npm install-scripts ls)"
+          printf '%s\n' "$pending"
+          grep -Fq 'No packages with unreviewed install scripts.' <<<"$pending"
+          node - <<'NODE'
+          const fs = require('fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          const expected = { 'unrs-resolver@1.12.2': true };
+          if (JSON.stringify(pkg.allowScripts) !== JSON.stringify(expected)) {
+            throw new Error(`Unexpected allowScripts after prune: ${JSON.stringify(pkg.allowScripts)}`);
           }
           NODE
-          npm install-scripts ls
-          npm install-scripts prune --dry-run || true
+          npm ci
 
       - name: Run JavaScript verification
         run: |
@@ -94,7 +108,7 @@ jobs:
           rm .github/workflows/tmp-vitest-4-security-upgrade.yml full-audit.json prod-audit.json
           git config user.name "webdiag-audit-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add apps/web/package.json packages/tool-core/package.json packages/tool-registry/package.json package-lock.json .github/workflows/tmp-vitest-4-security-upgrade.yml
+          git add package.json apps/web/package.json packages/tool-core/package.json packages/tool-registry/package.json apps/web/vitest.config.ts package-lock.json .github/workflows/tmp-vitest-4-security-upgrade.yml
           git diff --cached --check
           git commit -m "chore(audit): stage Vitest 4.1.11 security upgrade"
           git push origin HEAD:audit/vitest-4-security-upgrade
