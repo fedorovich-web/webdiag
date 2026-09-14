@@ -38,6 +38,11 @@ describe("css design analysis tools", () => {
     expect(calculateSelectorSpecificity("section:is(#main, .featured) a")[0]?.score).toBe("1-0-2");
   });
 
+  it("preserves functional pseudo-class specificity when they are nested", () => {
+    expect(calculateSelectorSpecificity(":where(:is(#app, .card))")[0]?.score).toBe("0-0-0");
+    expect(calculateSelectorSpecificity(":is(:not(#app), .card)")[0]?.score).toBe("1-0-0");
+  });
+
   it("generates a bounded typography scale", () => {
     const scale = generateTypographyScale(16, 1.25, -1, 2);
 
