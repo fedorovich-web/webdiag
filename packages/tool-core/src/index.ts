@@ -111,7 +111,7 @@ export function contrastRatio(first: string, second: string): number {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
-export function greatestCommonDivisor(first: number, second: number): number {
+function greatestCommonDivisor(first: number, second: number): number {
   let a = Math.abs(Math.trunc(first));
   let b = Math.abs(Math.trunc(second));
   if (a === 0 && b === 0) throw new TypeError("At least one dimension must be greater than zero.");
