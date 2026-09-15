@@ -66,6 +66,14 @@ describe("bounded GraphQL formatter", () => {
     expect(result.output).toContain('"""line 1\nline 2"""');
   });
 
+  it("accepts only the GraphQL ignored-source whitespace set", () => {
+    expect(() => formatGraphql("\uFEFFquery\tQ {\r\nfield }")).not.toThrow();
+    for (const unsupportedWhitespace of ["\u000B", "\u000C", "\u00A0", "\u2028", "\u2029"]) {
+      expect(() => formatGraphql(`query${unsupportedWhitespace}Q{field}`))
+        .toThrow(/unsupported GraphQL character/iu);
+    }
+  });
+
   it("rejects invalid characters and unbalanced delimiters", () => {
     expect(() => formatGraphql("query Q { field ] }")).toThrow(/closing bracket/iu);
     expect(() => formatGraphql("query Q { field")).toThrow(/unclosed selection/iu);
