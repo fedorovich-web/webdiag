@@ -10,6 +10,7 @@ describe("SQL quoted lexical preservation", () => {
     ["PostgreSQL Unicode string", String.raw`U&'d\0061t\+000061'`],
     ["PostgreSQL Unicode identifier", String.raw`U&"d\0061t"`],
     ["SQL Server Unicode", "N'Michél'"],
+    ["MySQL lowercase national string", "n'some text'"],
   ])("preserves %s adjacency", (_label, literal) => {
     const result = formatSql(`select ${literal} as value;`);
     expect(result.output).toContain(literal);
