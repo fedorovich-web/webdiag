@@ -90,6 +90,15 @@ describe("bounded GraphQL formatter", () => {
     }
   });
 
+  it("enforces GraphQL numeric token boundaries", () => {
+    expect(() => formatGraphql("query Q { field(a: 0 b: -0 c: 123 d: -123 e: 1.0 f: 1e50 g: 6.0221413e23) }")).not.toThrow();
+
+    for (const invalidNumber of ["00", "01", "-01", "0x123", "123L", "1e", "1e2foo"]) {
+      expect(() => formatGraphql(`query Q { field(value: ${invalidNumber}) }`))
+        .toThrow(/GraphQL number/iu);
+    }
+  });
+
   it("rejects invalid characters and unbalanced delimiters", () => {
     expect(() => formatGraphql("query Q { field ] }")).toThrow(/closing bracket/iu);
     expect(() => formatGraphql("query Q { field")).toThrow(/unclosed selection/iu);
