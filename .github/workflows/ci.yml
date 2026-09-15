@@ -137,13 +137,9 @@ jobs:
           retention-days: 7
 
   python-locks:
-    name: Python locks (${{ matrix.python-version }})
+    name: Python locks (3.14)
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.13", "3.14"]
     env:
       CI: "true"
       PUBLIC_RELEASE: "false"
@@ -161,7 +157,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.14"
 
       - name: Install JavaScript dependencies
         run: npm ci
@@ -185,14 +181,12 @@ jobs:
         run: node scripts/run-python.mjs -m pip check
 
       - name: Verify production Compose policy
-        if: matrix.python-version == '3.14'
         env:
           WEBDIAG_MONITORING_INTERNAL_TOKEN: M123456789012345678901234567890123456789
           WEBDIAG_CRAWLER_INTERNAL_TOKEN: C123456789012345678901234567890123456789
         run: npm run verify:production-compose
 
       - name: Verify optional production AI Compose policy
-        if: matrix.python-version == '3.14'
         env:
           RABBITMQ_DEFAULT_PASS: ci-rabbit-password-1234567890
           WEBDIAG_MONITORING_INTERNAL_TOKEN: M123456789012345678901234567890123456789
@@ -203,7 +197,6 @@ jobs:
         run: npm run verify:production-ai-compose
 
       - name: Build production images
-        if: matrix.python-version == '3.14'
         shell: bash
         run: |
           printf 'WEBDIAG_DOCKER_CONTEXT_SENTINEL=must-not-be-copied\n' > .env.production
@@ -212,14 +205,12 @@ jobs:
           docker build --build-arg PUBLIC_RELEASE=true -f apps/web/Dockerfile -t webdiag-web:ci .
 
       - name: Smoke production Python images
-        if: matrix.python-version == '3.14'
         shell: bash
         run: |
           docker run --rm --entrypoint python webdiag-api:ci -c "from webdiag_api.main import app; assert app.title == 'WebDiag API'"
           docker run --rm --env WEBDIAG_BROKER_BACKEND=stub --entrypoint python webdiag-worker:ci -c "import webdiag_worker.actors as actors; assert actors.health_probe is not None"
 
       - name: Smoke production web image
-        if: matrix.python-version == '3.14'
         shell: bash
         run: |
           web_container="$(docker run --detach --publish 127.0.0.1:3010:3000 --env PUBLIC_RELEASE=true --env WEBDIAG_API_INTERNAL_URL=http://127.0.0.1:8000 webdiag-web:ci)"

@@ -206,7 +206,7 @@ def test_google_pagespeed_client_requests_all_lighthouse_categories(monkeypatch)
         def __init__(self, **kwargs: object) -> None:
             observed["client_kwargs"] = kwargs
 
-        def __enter__(self) -> "FakeClient":
+        def __enter__(self) -> FakeClient:
             return self
 
         def __exit__(self, *args: object) -> None:

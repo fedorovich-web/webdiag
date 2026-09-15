@@ -7,6 +7,8 @@ import { fileURLToPath } from "node:url";
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const workflowsDir = path.join(rootDir, ".github", "workflows");
 const ciWorkflow = await readFile(path.join(workflowsDir, "ci.yml"), "utf8");
+const apiProject = await readFile(path.join(rootDir, "apps", "api", "pyproject.toml"), "utf8");
+const workerProject = await readFile(path.join(rootDir, "apps", "worker", "pyproject.toml"), "utf8");
 
 test("pins every external GitHub Action to an immutable commit SHA", async () => {
   const files = (await readdir(workflowsDir, { withFileTypes: true }))
@@ -67,11 +69,16 @@ test("uses committed Python hashes and exposes every Windows verification gate",
   );
 });
 
-test("verifies Python locks on Ubuntu with Python 3.13 and 3.14", () => {
+test("uses Python 3.14 as the sole supported Python runtime", () => {
   const linuxJob = ciWorkflow.split(/^  python-locks:/m)[1];
   assert.ok(linuxJob, "python-locks job is missing");
   assert.match(linuxJob, /runs-on: ubuntu-latest/);
-  assert.match(linuxJob, /python-version: \["3\.13", "3\.14"\]/);
+  assert.doesNotMatch(linuxJob, /matrix:/);
+  assert.match(linuxJob, /python-version: "3\.14"/);
+  assert.doesNotMatch(ciWorkflow, /3\.13/);
+  assert.match(apiProject, /^requires-python = ">=3\.14,<3\.15"$/m);
+  assert.match(workerProject, /^requires-python = ">=3\.14,<3\.15"$/m);
+  assert.match(apiProject, /^target-version = "py314"$/m);
   for (const command of [
     "npm run python:install",
     "npm run verify:python-lock",
@@ -83,9 +90,9 @@ test("verifies Python locks on Ubuntu with Python 3.13 and 3.14", () => {
   }
 });
 
-test("builds and runtime-smokes all production images only on 3.14", () => {
+test("builds and runtime-smokes all production images on Python 3.14", () => {
   const linuxJob = ciWorkflow.split(/^  python-locks:/m)[1];
-  const conditionalSteps = linuxJob.match(
+  const buildStep = linuxJob.match(
     /- name: Build production images[\s\S]*?(?=\n      - name:|$)/,
   )?.[0];
   const smokeStep = linuxJob.match(
@@ -94,20 +101,20 @@ test("builds and runtime-smokes all production images only on 3.14", () => {
   const webSmokeStep = linuxJob.match(
     /- name: Smoke production web image[\s\S]*?(?=\n      - name:|$)/,
   )?.[0];
-  assert.ok(conditionalSteps, "Docker build step is missing");
+  assert.ok(buildStep, "Docker build step is missing");
   assert.ok(smokeStep, "Docker smoke step is missing");
   assert.ok(webSmokeStep, "web Docker runtime smoke step is missing");
-  for (const step of [conditionalSteps, smokeStep, webSmokeStep]) {
-    assert.match(step, /if: matrix\.python-version == '3\.14'/);
+  for (const step of [buildStep, smokeStep, webSmokeStep]) {
+    assert.doesNotMatch(step, /matrix\.python-version/);
   }
-  assert.match(conditionalSteps, /docker build -f apps\/api\/Dockerfile -t webdiag-api:ci \./);
-  assert.match(conditionalSteps, /WEBDIAG_DOCKER_CONTEXT_SENTINEL=must-not-be-copied/);
+  assert.match(buildStep, /docker build -f apps\/api\/Dockerfile -t webdiag-api:ci \./);
+  assert.match(buildStep, /WEBDIAG_DOCKER_CONTEXT_SENTINEL=must-not-be-copied/);
   assert.match(
-    conditionalSteps,
+    buildStep,
     /docker build -f apps\/worker\/Dockerfile -t webdiag-worker:ci \./,
   );
   assert.match(
-    conditionalSteps,
+    buildStep,
     /docker build --build-arg PUBLIC_RELEASE=true -f apps\/web\/Dockerfile -t webdiag-web:ci \./,
   );
   assert.match(smokeStep, /--entrypoint python webdiag-api:ci -c/);

@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "webdiag-worker"
 version = "0.5.11"
-requires-python = ">=3.13,<3.15"
+requires-python = ">=3.14,<3.15"
 dependencies = [
   "boto3==1.43.70",
   "dramatiq==2.2.0",

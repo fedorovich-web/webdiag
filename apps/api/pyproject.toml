@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "webdiag-api"
 version = "0.5.11"
-requires-python = ">=3.13,<3.15"
+requires-python = ">=3.14,<3.15"
 dependencies = [
   "boto3==1.43.70",
   "fastapi==0.139.1",
@@ -30,7 +30,7 @@ pythonpath = ["src"]
 testpaths = ["tests"]
 
 [tool.ruff]
-target-version = "py313"
+target-version = "py314"
 line-length = 100
 
 [tool.ruff.lint]
