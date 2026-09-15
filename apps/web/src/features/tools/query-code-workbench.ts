@@ -570,6 +570,10 @@ function tokenizeGraphql(input: string): Token[] {
     if (character === "-" || /\d/u.test(character)) {
       const match = input.slice(index).match(/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/u);
       if (!match) throw new Error(`Invalid GraphQL number at character ${index + 1}.`);
+      const nextCharacter = input[index + match[0].length] ?? "";
+      if (nextCharacter === "." || /[A-Za-z0-9_]/u.test(nextCharacter)) {
+        throw new Error(`Invalid GraphQL number at character ${index + 1}.`);
+      }
       push(createToken("number", match[0]));
       index += match[0].length;
       continue;
