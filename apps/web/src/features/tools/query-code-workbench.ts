@@ -183,6 +183,7 @@ function readQuoted(
   quote: string,
   doubledEscape: string | null,
   allowLineBreaks = true,
+  backslashEscapes = false,
 ): [string, number] {
   let index = start + quote.length;
   while (index < input.length) {
@@ -198,8 +199,11 @@ function readQuoted(
       index = readGraphqlStringEscape(input, index);
       continue;
     }
-    if (quote === '"' && input[index] === "\\") index += 2;
-    else index += 1;
+    if (backslashEscapes && input[index] === "\\") {
+      index += 2;
+      continue;
+    }
+    index += 1;
   }
   throw new Error(`Unterminated quoted value starting at character ${start + 1}.`);
 }
@@ -236,6 +240,30 @@ function tokenizeSql(input: string): { readonly tokens: Token[]; readonly warnin
       push(createToken("comment", input.slice(index, end + 2)));
       index = end + 2;
       continue;
+    }
+
+    if ((character === "E" || character === "e") && input[index + 1] === "'") {
+      const [, next] = readQuoted(input, index + 1, "'", "''", true, true);
+      push(createToken("string", input.slice(index, next)));
+      index = next;
+      continue;
+    }
+
+    if (("BbXx".includes(character) || character === "N") && input[index + 1] === "'") {
+      const [, next] = readQuoted(input, index + 1, "'", "''");
+      push(createToken("string", input.slice(index, next)));
+      index = next;
+      continue;
+    }
+
+    if ((character === "U" || character === "u") && input[index + 1] === "&") {
+      const quote = input[index + 2] ?? "";
+      if (quote === "'" || quote === '"') {
+        const [, next] = readQuoted(input, index + 2, quote, quote + quote);
+        push(createToken(quote === "'" ? "string" : "identifier", input.slice(index, next)));
+        index = next;
+        continue;
+      }
     }
 
     if (character === "'") {
