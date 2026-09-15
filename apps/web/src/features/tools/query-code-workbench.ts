@@ -113,6 +113,53 @@ function createToken(kind: Token["kind"], value: string): Token {
   return { kind, value, upper: value.toUpperCase() };
 }
 
+function isGraphqlUnicodeScalar(value: number): boolean {
+  return value <= 0x10FFFF && !(value >= 0xD800 && value <= 0xDFFF);
+}
+
+function readGraphqlStringEscape(input: string, index: number): number {
+  const escaped = input[index + 1] ?? "";
+  if ('"\\/bfnrt'.includes(escaped)) return index + 2;
+  if (escaped !== "u") throw new Error(`Invalid GraphQL string escape at character ${index + 1}.`);
+
+  if (input[index + 2] === "{") {
+    const end = input.indexOf("}", index + 3);
+    const digits = end === -1 ? "" : input.slice(index + 3, end);
+    if (end === -1 || !/^[0-9A-Fa-f]+$/u.test(digits)) {
+      throw new Error(`Invalid GraphQL string escape at character ${index + 1}.`);
+    }
+    const value = Number.parseInt(digits, 16);
+    if (!isGraphqlUnicodeScalar(value)) {
+      throw new Error(`Invalid GraphQL string escape at character ${index + 1}: Unicode escape must encode a scalar value.`);
+    }
+    return end + 1;
+  }
+
+  const digits = input.slice(index + 2, index + 6);
+  if (!/^[0-9A-Fa-f]{4}$/u.test(digits)) {
+    throw new Error(`Invalid GraphQL string escape at character ${index + 1}.`);
+  }
+  const value = Number.parseInt(digits, 16);
+  if (value >= 0xD800 && value <= 0xDBFF) {
+    const trailingStart = index + 6;
+    const trailingDigits = input.startsWith("\\u", trailingStart)
+      ? input.slice(trailingStart + 2, trailingStart + 6)
+      : "";
+    if (!/^[0-9A-Fa-f]{4}$/u.test(trailingDigits)) {
+      throw new Error(`Invalid GraphQL string escape at character ${index + 1}: leading surrogate must be followed by a trailing surrogate escape.`);
+    }
+    const trailingValue = Number.parseInt(trailingDigits, 16);
+    if (trailingValue < 0xDC00 || trailingValue > 0xDFFF) {
+      throw new Error(`Invalid GraphQL string escape at character ${index + 1}: leading surrogate must be followed by a trailing surrogate escape.`);
+    }
+    return trailingStart + 6;
+  }
+  if (!isGraphqlUnicodeScalar(value)) {
+    throw new Error(`Invalid GraphQL string escape at character ${index + 1}: Unicode escape must encode a scalar value.`);
+  }
+  return index + 6;
+}
+
 function readQuoted(
   input: string,
   start: number,
@@ -129,6 +176,10 @@ function readQuoted(
     if (input.startsWith(quote, index)) return [input.slice(start, index + quote.length), index + quote.length];
     if (!allowLineBreaks && (input[index] === "\n" || input[index] === "\r")) {
       throw new Error(`GraphQL strings cannot contain an unescaped line break at character ${index + 1}.`);
+    }
+    if (!allowLineBreaks && quote === '"' && input[index] === "\\") {
+      index = readGraphqlStringEscape(input, index);
+      continue;
     }
     if (quote === '"' && input[index] === "\\") index += 2;
     else index += 1;
