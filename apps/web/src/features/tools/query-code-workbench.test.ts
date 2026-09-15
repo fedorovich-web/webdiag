@@ -66,6 +66,13 @@ describe("bounded GraphQL formatter", () => {
     expect(result.output).toContain('"""line 1\nline 2"""');
   });
 
+  it("terminates comments at every GraphQL line terminator", () => {
+    for (const lineTerminator of ["\n", "\r\n", "\r"]) {
+      expect(formatGraphql(`# note${lineTerminator}query Q{field}`).output)
+        .toBe("# note\nquery Q {\n  field\n}");
+    }
+  });
+
   it("accepts only the GraphQL ignored-source whitespace set", () => {
     expect(() => formatGraphql("\uFEFFquery\tQ {\r\nfield }")).not.toThrow();
     for (const unsupportedWhitespace of ["\u000B", "\u000C", "\u00A0", "\u2028", "\u2029"]) {
