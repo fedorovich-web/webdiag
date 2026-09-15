@@ -336,18 +336,26 @@ function tokenizeSql(input: string): { readonly tokens: Token[]; readonly warnin
       continue;
     }
 
+    const operator = [
+      "#>>", "->>", "!~*", "<=>",
+      "::", "<=", ">=", "<>", "!=", "||", "&&", "->", "#>", "#-", ":=", "=>", "!~", "~*",
+      "<<", ">>", "!<", "!>", "@>", "<@", "?|", "?&", "@?", "@@",
+      "+=", "-=", "*=", "/=", "%=", "&=", "^=", "|=",
+    ].find((value) => input.startsWith(value, index));
+    if (operator) {
+      if ([
+        "::", "->", "->>", "#>", "#>>", "~*", "!~", "!~*", "<=>", "<<", ">>", "!<", "!>",
+        "@>", "<@", "?|", "?&", "#-", "@?", "@@", "+=", "-=", "*=", "/=", "%=", "&=", "^=", "|=",
+      ].includes(operator)) warnings.push("dialect-specific-operator");
+      push(createToken("operator", operator));
+      index += operator.length;
+      continue;
+    }
+
     const placeholderMatch = input.slice(index).match(/^(?:\?|:[A-Za-z_][A-Za-z0-9_]*|@[A-Za-z_][A-Za-z0-9_]*|\$\d+)/u);
     if (placeholderMatch) {
       push(createToken("placeholder", placeholderMatch[0]));
       index += placeholderMatch[0].length;
-      continue;
-    }
-
-    const operator = ["#>>", "->>", "::", "<=", ">=", "<>", "!=", "||", "&&", "->", "#>", ":=", "=>", "!~*", "!~", "~*"].find((value) => input.startsWith(value, index));
-    if (operator) {
-      if (["::", "->", "->>", "#>", "#>>", "~*", "!~", "!~*"].includes(operator)) warnings.push("dialect-specific-operator");
-      push(createToken("operator", operator));
-      index += operator.length;
       continue;
     }
 
