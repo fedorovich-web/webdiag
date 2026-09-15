@@ -249,7 +249,7 @@ function tokenizeSql(input: string): { readonly tokens: Token[]; readonly warnin
       continue;
     }
 
-    if (("BbXx".includes(character) || character === "N") && input[index + 1] === "'") {
+    if ("BbXxNn".includes(character) && input[index + 1] === "'") {
       const [, next] = readQuoted(input, index + 1, "'", "''");
       push(createToken("string", input.slice(index, next)));
       index = next;
