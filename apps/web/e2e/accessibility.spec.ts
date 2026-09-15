@@ -30,14 +30,19 @@ test.describe("accessibility smoke", () => {
   }
 
   test("keyboard focus reaches the theme and language controls", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
     await page.keyboard.press("Tab");
     await expect(page.locator(".skip-link")).toBeFocused();
 
-    await page.getByRole("switch", { name: "Тёмная тема" }).focus();
-    await expect(page.getByRole("switch", { name: "Тёмная тема" })).toBeFocused();
+    await page.locator(".mobile-menu summary").click();
 
-    await page.getByRole("link", { name: "English version" }).focus();
-    await expect(page.getByRole("link", { name: "English version" })).toBeFocused();
+    const themeSwitch = page.getByRole("switch", { name: "Тёмная тема" });
+    await themeSwitch.focus();
+    await expect(themeSwitch).toBeFocused();
+
+    const englishVersion = page.getByRole("link", { name: "English version" });
+    await englishVersion.focus();
+    await expect(englishVersion).toBeFocused();
   });
 });

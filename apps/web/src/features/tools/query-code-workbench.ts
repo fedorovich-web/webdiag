@@ -113,12 +113,77 @@ function createToken(kind: Token["kind"], value: string): Token {
   return { kind, value, upper: value.toUpperCase() };
 }
 
+function isGraphqlUnicodeScalar(value: number): boolean {
+  return value <= 0x10FFFF && !(value >= 0xD800 && value <= 0xDFFF);
+}
+
+function assertGraphqlSourceCharacters(input: string): void {
+  for (let index = 0; index < input.length; index += 1) {
+    const codeUnit = input.charCodeAt(index);
+    if (codeUnit >= 0xD800 && codeUnit <= 0xDBFF) {
+      const trailing = input.charCodeAt(index + 1);
+      if (trailing >= 0xDC00 && trailing <= 0xDFFF) {
+        index += 1;
+        continue;
+      }
+      throw new Error(`Invalid GraphQL source character at character ${index + 1}: expected a Unicode scalar value.`);
+    }
+    if (codeUnit >= 0xDC00 && codeUnit <= 0xDFFF) {
+      throw new Error(`Invalid GraphQL source character at character ${index + 1}: expected a Unicode scalar value.`);
+    }
+  }
+}
+
+function readGraphqlStringEscape(input: string, index: number): number {
+  const escaped = input[index + 1] ?? "";
+  if ('"\\/bfnrt'.includes(escaped)) return index + 2;
+  if (escaped !== "u") throw new Error(`Invalid GraphQL string escape at character ${index + 1}.`);
+
+  if (input[index + 2] === "{") {
+    const end = input.indexOf("}", index + 3);
+    const digits = end === -1 ? "" : input.slice(index + 3, end);
+    if (end === -1 || !/^[0-9A-Fa-f]+$/u.test(digits)) {
+      throw new Error(`Invalid GraphQL string escape at character ${index + 1}.`);
+    }
+    const value = Number.parseInt(digits, 16);
+    if (!isGraphqlUnicodeScalar(value)) {
+      throw new Error(`Invalid GraphQL string escape at character ${index + 1}: Unicode escape must encode a scalar value.`);
+    }
+    return end + 1;
+  }
+
+  const digits = input.slice(index + 2, index + 6);
+  if (!/^[0-9A-Fa-f]{4}$/u.test(digits)) {
+    throw new Error(`Invalid GraphQL string escape at character ${index + 1}.`);
+  }
+  const value = Number.parseInt(digits, 16);
+  if (value >= 0xD800 && value <= 0xDBFF) {
+    const trailingStart = index + 6;
+    const trailingDigits = input.startsWith("\\u", trailingStart)
+      ? input.slice(trailingStart + 2, trailingStart + 6)
+      : "";
+    if (!/^[0-9A-Fa-f]{4}$/u.test(trailingDigits)) {
+      throw new Error(`Invalid GraphQL string escape at character ${index + 1}: leading surrogate must be followed by a trailing surrogate escape.`);
+    }
+    const trailingValue = Number.parseInt(trailingDigits, 16);
+    if (trailingValue < 0xDC00 || trailingValue > 0xDFFF) {
+      throw new Error(`Invalid GraphQL string escape at character ${index + 1}: leading surrogate must be followed by a trailing surrogate escape.`);
+    }
+    return trailingStart + 6;
+  }
+  if (!isGraphqlUnicodeScalar(value)) {
+    throw new Error(`Invalid GraphQL string escape at character ${index + 1}: Unicode escape must encode a scalar value.`);
+  }
+  return index + 6;
+}
+
 function readQuoted(
   input: string,
   start: number,
   quote: string,
   doubledEscape: string | null,
   allowLineBreaks = true,
+  backslashEscapes = false,
 ): [string, number] {
   let index = start + quote.length;
   while (index < input.length) {
@@ -130,8 +195,15 @@ function readQuoted(
     if (!allowLineBreaks && (input[index] === "\n" || input[index] === "\r")) {
       throw new Error(`GraphQL strings cannot contain an unescaped line break at character ${index + 1}.`);
     }
-    if (quote === '"' && input[index] === "\\") index += 2;
-    else index += 1;
+    if (!allowLineBreaks && quote === '"' && input[index] === "\\") {
+      index = readGraphqlStringEscape(input, index);
+      continue;
+    }
+    if (backslashEscapes && input[index] === "\\") {
+      index += 2;
+      continue;
+    }
+    index += 1;
   }
   throw new Error(`Unterminated quoted value starting at character ${start + 1}.`);
 }
@@ -168,6 +240,30 @@ function tokenizeSql(input: string): { readonly tokens: Token[]; readonly warnin
       push(createToken("comment", input.slice(index, end + 2)));
       index = end + 2;
       continue;
+    }
+
+    if ((character === "E" || character === "e") && input[index + 1] === "'") {
+      const [, next] = readQuoted(input, index + 1, "'", "''", true, true);
+      push(createToken("string", input.slice(index, next)));
+      index = next;
+      continue;
+    }
+
+    if ("BbXxNn".includes(character) && input[index + 1] === "'") {
+      const [, next] = readQuoted(input, index + 1, "'", "''");
+      push(createToken("string", input.slice(index, next)));
+      index = next;
+      continue;
+    }
+
+    if ((character === "U" || character === "u") && input[index + 1] === "&") {
+      const quote = input[index + 2] ?? "";
+      if (quote === "'" || quote === '"') {
+        const [, next] = readQuoted(input, index + 2, quote, quote + quote);
+        push(createToken(quote === "'" ? "string" : "identifier", input.slice(index, next)));
+        index = next;
+        continue;
+      }
     }
 
     if (character === "'") {
@@ -456,6 +552,7 @@ export function formatSql(input: string, options: FormatOptions = {}): FormatRes
 
 function tokenizeGraphql(input: string): Token[] {
   assertInput(input, "GraphQL input");
+  assertGraphqlSourceCharacters(input);
   const tokens: Token[] = [];
   let index = 0;
   const push = (token: Token): void => {
@@ -465,13 +562,20 @@ function tokenizeGraphql(input: string): Token[] {
 
   while (index < input.length) {
     const character = input[index] ?? "";
-    if (/\s|,/u.test(character)) {
+    if (
+      character === "\uFEFF"
+      || character === "\t"
+      || character === " "
+      || character === "\n"
+      || character === "\r"
+      || character === ","
+    ) {
       index += 1;
       continue;
     }
     if (character === "#") {
-      const end = input.indexOf("\n", index + 1);
-      const next = end === -1 ? input.length : end;
+      let next = index + 1;
+      while (next < input.length && input[next] !== "\n" && input[next] !== "\r") next += 1;
       push(createToken("comment", input.slice(index, next).trimEnd()));
       index = next;
       continue;
@@ -512,6 +616,10 @@ function tokenizeGraphql(input: string): Token[] {
     if (character === "-" || /\d/u.test(character)) {
       const match = input.slice(index).match(/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/u);
       if (!match) throw new Error(`Invalid GraphQL number at character ${index + 1}.`);
+      const nextCharacter = input[index + match[0].length] ?? "";
+      if (nextCharacter === "." || /[A-Za-z0-9_]/u.test(nextCharacter)) {
+        throw new Error(`Invalid GraphQL number at character ${index + 1}.`);
+      }
       push(createToken("number", match[0]));
       index += match[0].length;
       continue;

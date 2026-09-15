@@ -22,9 +22,8 @@ export async function GET(
     }>;
   },
 ) {
-  if (request.nextUrl.search) return invalid();
   const { projectId, auditId, issueId } = await context.params;
-  const path = accountIssueDetailPath(projectId, auditId, issueId);
+  const path = accountIssueDetailPath(projectId, auditId, issueId, request.nextUrl.searchParams);
   if (!path) return invalid();
   return proxyAccountWorkspace(request, { method: "GET", path });
 }

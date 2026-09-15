@@ -1,5 +1,7 @@
 "use client";
 
+import { toolErrorMessage } from "./tool-error-presentation";
+
 import { useState, type FormEvent, type ReactNode } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { CopyButton } from "../../components/copy-button";
@@ -219,7 +221,7 @@ export function DnsResolverComparisonTool({ locale }: { locale: Locale }) {
       if (!isDnsResolverComparisonResponse(value)) throw new NetworkIntelligenceError("Invalid result.");
       setResult(value);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Tool failed.");
+      setError(toolErrorMessage(locale, reason));
     } finally { setLoading(false); }
   }
 
@@ -247,7 +249,7 @@ export function DomainRdapLookupTool({ locale }: { locale: Locale }) {
       if (!isDomainRdapResponse(value)) throw new NetworkIntelligenceError("Invalid result.");
       setResult(value);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Tool failed.");
+      setError(toolErrorMessage(locale, reason));
     } finally { setLoading(false); }
   }
 
@@ -274,7 +276,7 @@ export function IpRdapLookupTool({ locale }: { locale: Locale }) {
       if (!isIpRdapResponse(value)) throw new NetworkIntelligenceError("Invalid result.");
       setResult(value);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Tool failed.");
+      setError(toolErrorMessage(locale, reason));
     } finally { setLoading(false); }
   }
 

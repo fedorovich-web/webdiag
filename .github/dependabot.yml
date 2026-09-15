@@ -1,0 +1,16 @@
+version: 2
+
+updates:
+  - package-ecosystem: "docker"
+    directories:
+      - "/"
+      - "/apps/api"
+      - "/apps/worker"
+      - "/apps/web"
+    schedule:
+      interval: "weekly"
+    groups:
+      container-images:
+        patterns:
+          - "*"
+        group-by: "dependency-name"

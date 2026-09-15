@@ -1,4 +1,6 @@
 const CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+const ISO_TIMESTAMP_RE = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?(Z|([+-])(\d{2}):(\d{2}))$/;
+const MONTH_DAYS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] as const;
 
 export type HashAlgorithm = "SHA-256" | "SHA-384" | "SHA-512";
 
@@ -34,9 +36,46 @@ export function unixSecondsToIso(value: number): string {
   return date.toISOString();
 }
 
+function invalidIsoTimestamp(): never {
+  throw new TypeError("Date must be a valid ISO 8601 timestamp with an explicit UTC offset.");
+}
+
+function isLeapYear(year: number): boolean {
+  return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+}
+
 export function isoToUnixSeconds(value: string): number {
-  const milliseconds = Date.parse(value);
-  if (Number.isNaN(milliseconds)) throw new TypeError("Date must be a valid ISO 8601 value.");
+  const match = value.trim().match(ISO_TIMESTAMP_RE);
+  if (!match) return invalidIsoTimestamp();
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const hour = Number(match[4]);
+  const minute = Number(match[5]);
+  const second = Number(match[6]);
+  const zone = match[8];
+  const offsetSign = match[9];
+  const offsetHour = Number(match[10] ?? 0);
+  const offsetMinute = Number(match[11] ?? 0);
+
+  if (month < 1 || month > 12 || hour > 23 || minute > 59 || second > 59) {
+    return invalidIsoTimestamp();
+  }
+  const maxDay = month === 2 && isLeapYear(year) ? 29 : (MONTH_DAYS[month - 1] ?? 0);
+  if (day < 1 || day > maxDay || offsetHour > 23 || offsetMinute > 59) {
+    return invalidIsoTimestamp();
+  }
+
+  let offsetMinutes = offsetHour * 60 + offsetMinute;
+  if (zone === "Z") offsetMinutes = 0;
+  else if (offsetSign === "-") offsetMinutes *= -1;
+
+  const date = new Date(0);
+  date.setUTCFullYear(year, month - 1, day);
+  date.setUTCHours(hour, minute, second, 0);
+  const milliseconds = date.getTime() - offsetMinutes * 60_000;
+  if (!Number.isFinite(milliseconds)) return invalidIsoTimestamp();
   return Math.floor(milliseconds / 1000);
 }
 
@@ -111,7 +150,7 @@ export function contrastRatio(first: string, second: string): number {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
-export function greatestCommonDivisor(first: number, second: number): number {
+function greatestCommonDivisor(first: number, second: number): number {
   let a = Math.abs(Math.trunc(first));
   let b = Math.abs(Math.trunc(second));
   if (a === 0 && b === 0) throw new TypeError("At least one dimension must be greater than zero.");

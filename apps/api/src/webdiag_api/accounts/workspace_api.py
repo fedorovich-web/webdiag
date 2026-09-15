@@ -11,6 +11,10 @@ from webdiag_api.accounts.api import (
     AccountServiceDependency,
     SessionCookie,
 )
+from webdiag_api.accounts.audit_presentation import (
+    PresentationLocale,
+    localize_saved_audit_detail,
+)
 from webdiag_api.accounts.service import AccountServiceError
 from webdiag_api.accounts.workspace_issues import (
     AccountIssueDetailResponse,
@@ -27,7 +31,10 @@ from webdiag_api.accounts.workspace_models import (
     AccountProject,
     AccountProjectDetailResponse,
     AccountProjectListResponse,
+    ArchivedAccountProject,
+    ArchivedAccountProjectListResponse,
     ProjectCreateRequest,
+    ProjectRenameRequest,
     SavedAuditDetailResponse,
 )
 from webdiag_api.accounts.workspace_service import WorkspaceService, WorkspaceServiceError
@@ -99,6 +106,71 @@ def list_projects(
     return workspace.list_projects(user_id=user_id)
 
 
+@router.get("/projects/archived", response_model=ArchivedAccountProjectListResponse)
+def list_archived_projects(
+    response: Response,
+    workspace: WorkspaceServiceDependency,
+    account_service: AccountServiceDependency,
+    webdiag_session: SessionCookie = None,
+) -> ArchivedAccountProjectListResponse:
+    response.headers["cache-control"] = "no-store"
+    user_id = _current_user_id(account_service, webdiag_session)
+    return workspace.list_archived_projects(user_id=user_id)
+
+
+@router.patch("/projects/{project_id}", response_model=AccountProject)
+def rename_project(
+    project_id: UUID,
+    request: ProjectRenameRequest,
+    response: Response,
+    workspace: WorkspaceServiceDependency,
+    account_service: AccountServiceDependency,
+    webdiag_session: SessionCookie = None,
+) -> AccountProject:
+    response.headers["cache-control"] = "no-store"
+    user_id = _current_user_id(account_service, webdiag_session)
+    try:
+        return workspace.rename_project(
+            user_id=user_id,
+            project_id=str(project_id),
+            request=request,
+        )
+    except WorkspaceServiceError as error:
+        raise _workspace_error(error) from error
+
+
+@router.post("/projects/{project_id}/archive", response_model=ArchivedAccountProject)
+def archive_project(
+    project_id: UUID,
+    response: Response,
+    workspace: WorkspaceServiceDependency,
+    account_service: AccountServiceDependency,
+    webdiag_session: SessionCookie = None,
+) -> ArchivedAccountProject:
+    response.headers["cache-control"] = "no-store"
+    user_id = _current_user_id(account_service, webdiag_session)
+    try:
+        return workspace.archive_project(user_id=user_id, project_id=str(project_id))
+    except WorkspaceServiceError as error:
+        raise _workspace_error(error) from error
+
+
+@router.post("/projects/{project_id}/restore", response_model=AccountProject)
+def restore_project(
+    project_id: UUID,
+    response: Response,
+    workspace: WorkspaceServiceDependency,
+    account_service: AccountServiceDependency,
+    webdiag_session: SessionCookie = None,
+) -> AccountProject:
+    response.headers["cache-control"] = "no-store"
+    user_id = _current_user_id(account_service, webdiag_session)
+    try:
+        return workspace.restore_project(user_id=user_id, project_id=str(project_id))
+    except WorkspaceServiceError as error:
+        raise _workspace_error(error) from error
+
+
 @router.get("/projects/{project_id}", response_model=AccountProjectDetailResponse)
 def get_project(
     project_id: UUID,
@@ -125,12 +197,14 @@ def run_project_audit(
     response: Response,
     workspace: WorkspaceServiceDependency,
     account_service: AccountServiceDependency,
+    locale: Annotated[PresentationLocale, Query()] = "ru",
     webdiag_session: SessionCookie = None,
 ) -> SavedAuditDetailResponse:
     response.headers["cache-control"] = "no-store"
     user_id = _current_user_id(account_service, webdiag_session)
     try:
-        return workspace.run_and_save_audit(user_id=user_id, project_id=str(project_id))
+        detail = workspace.run_and_save_audit(user_id=user_id, project_id=str(project_id))
+        return localize_saved_audit_detail(detail, locale)
     except WorkspaceServiceError as error:
         raise _workspace_error(error) from error
 
@@ -145,16 +219,18 @@ def get_saved_audit(
     response: Response,
     workspace: WorkspaceServiceDependency,
     account_service: AccountServiceDependency,
+    locale: Annotated[PresentationLocale, Query()] = "ru",
     webdiag_session: SessionCookie = None,
 ) -> SavedAuditDetailResponse:
     response.headers["cache-control"] = "no-store"
     user_id = _current_user_id(account_service, webdiag_session)
     try:
-        return workspace.get_saved_audit(
+        detail = workspace.get_saved_audit(
             user_id=user_id,
             project_id=str(project_id),
             audit_id=str(audit_id),
         )
+        return localize_saved_audit_detail(detail, locale)
     except WorkspaceServiceError as error:
         raise _workspace_error(error) from error
 
@@ -173,6 +249,7 @@ def list_saved_audit_issues(
     priority: Annotated[IssuePriority | None, Query()] = None,
     sort: Annotated[IssueSort, Query()] = "priority",
     order: Annotated[IssueOrder, Query()] = "asc",
+    locale: Annotated[PresentationLocale, Query()] = "ru",
     webdiag_session: SessionCookie = None,
 ) -> AccountIssueListResponse:
     response.headers["cache-control"] = "no-store"
@@ -186,7 +263,7 @@ def list_saved_audit_issues(
     except WorkspaceServiceError as error:
         raise _workspace_error(error) from error
     return project_saved_audit_issues(
-        detail,
+        localize_saved_audit_detail(detail, locale),
         IssueListOptions(
             category=category,
             priority=priority,
@@ -207,6 +284,7 @@ def get_saved_audit_issue(
     response: Response,
     workspace: WorkspaceServiceDependency,
     account_service: AccountServiceDependency,
+    locale: Annotated[PresentationLocale, Query()] = "ru",
     webdiag_session: SessionCookie = None,
 ) -> AccountIssueDetailResponse:
     response.headers["cache-control"] = "no-store"
@@ -219,7 +297,10 @@ def get_saved_audit_issue(
         )
     except WorkspaceServiceError as error:
         raise _workspace_error(error) from error
-    projected = project_saved_audit_issue(detail, issue_id)
+    projected = project_saved_audit_issue(
+        localize_saved_audit_detail(detail, locale),
+        issue_id,
+    )
     if projected is None:
         raise HTTPException(
             status_code=404,

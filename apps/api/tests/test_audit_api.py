@@ -1,14 +1,22 @@
 import asyncio
+import sqlite3
 from collections.abc import Callable
 
 import httpx
 import pytest
 
 from webdiag_api.audit import service as audit_service_module
-from webdiag_api.audit.api import get_audit_service
+from webdiag_api.audit.admission import AuditAdmissionError
+from webdiag_api.audit.api import get_audit_admission, get_audit_service
 from webdiag_api.audit.fetcher import SafeHttpFetcher
 from webdiag_api.audit.models import AuditJob, AuditJobStatus
-from webdiag_api.audit.service import AuditExecutionService, InMemoryAuditStore
+from webdiag_api.audit.service import (
+    AuditExecutionError,
+    AuditExecutionService,
+    InMemoryAuditStore,
+)
+from webdiag_api.audit.storage import AuditStoreIntegrityError, SqliteAuditStore
+from webdiag_api.config import Settings
 from webdiag_api.main import app
 
 SAFE_IP = "93.184.216.34"
@@ -57,18 +65,45 @@ async def request(
     path: str,
     *,
     json: dict[str, object] | None = None,
+    raise_app_exceptions: bool = True,
 ) -> httpx.Response:
-    transport = httpx.ASGITransport(app=app)
+    transport = httpx.ASGITransport(
+        app=app,
+        raise_app_exceptions=raise_app_exceptions,
+    )
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
         return await client.request(method, path, json=json)
 
 
 def with_service(service: AuditExecutionService) -> None:
     app.dependency_overrides[get_audit_service] = lambda: service
+    app.dependency_overrides.setdefault(get_audit_admission, lambda: StubAdmission())
 
 
 def clear_overrides() -> None:
     app.dependency_overrides.clear()
+
+
+class StubAdmission:
+    def __init__(
+        self,
+        error: AuditAdmissionError | None = None,
+        *,
+        release_error: Exception | None = None,
+    ) -> None:
+        self.error = error
+        self.release_error = release_error
+        self.released: list[str] = []
+
+    def acquire(self) -> str:
+        if self.error:
+            raise self.error
+        return "lease-fixture"
+
+    def release(self, lease_id: str) -> None:
+        self.released.append(lease_id)
+        if self.release_error:
+            raise self.release_error
 
 
 def healthy_html() -> bytes:
@@ -158,6 +193,79 @@ def test_start_audit_runs_single_url_check_and_returns_snapshot() -> None:
     }
 
 
+@pytest.mark.parametrize(
+    ("error", "status_code", "code"),
+    [
+        (
+            AuditAdmissionError(
+                429, "audit_rate_limited", "Public audit rate limit reached.", 37
+            ),
+            429,
+            "audit_rate_limited",
+        ),
+        (
+            AuditAdmissionError(
+                503,
+                "audit_capacity_unavailable",
+                "Public audit capacity is temporarily unavailable.",
+                12,
+            ),
+            503,
+            "audit_capacity_unavailable",
+        ),
+    ],
+)
+def test_public_audit_admission_returns_stable_bounded_error(error, status_code, code) -> None:
+    admission = StubAdmission(error)
+    app.dependency_overrides[get_audit_admission] = lambda: admission
+    with_service(build_service(healthy_resource_response))
+    try:
+        response = asyncio.run(request("POST", "/v1/audits", json={"url": "https://example.com/"}))
+    finally:
+        clear_overrides()
+
+    assert response.status_code == status_code
+    assert response.headers["retry-after"] == str(error.retry_after)
+    assert response.headers["cache-control"] == "no-store"
+    assert response.json() == {"detail": {"code": code, "message": error.message}}
+
+
+def test_public_audit_releases_admission_lease_after_execution_error() -> None:
+    admission = StubAdmission()
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.TimeoutException("timeout", request=request)
+
+    app.dependency_overrides[get_audit_admission] = lambda: admission
+    with_service(build_service(handler))
+    try:
+        response = asyncio.run(request("POST", "/v1/audits", json={"url": "https://example.com/"}))
+    finally:
+        clear_overrides()
+
+    assert response.status_code == 502
+    assert admission.released == ["lease-fixture"]
+
+
+def test_admission_release_failure_does_not_expose_or_replace_audit_result(
+    caplog,
+) -> None:
+    admission = StubAdmission(release_error=RuntimeError("private database detail"))
+    app.dependency_overrides[get_audit_admission] = lambda: admission
+    with_service(build_service(healthy_resource_response))
+    try:
+        response = asyncio.run(
+            request("POST", "/v1/audits", json={"url": "https://example.com/"})
+        )
+    finally:
+        clear_overrides()
+
+    assert response.status_code == 201
+    assert response.json()["summary"]["status"] == "succeeded"
+    assert "private database detail" not in response.text
+    assert "private database detail" not in caplog.text
+
+
 def test_get_audit_returns_stored_snapshot() -> None:
     service = build_service(healthy_resource_response)
     with_service(service)
@@ -176,6 +284,55 @@ def test_get_audit_returns_stored_snapshot() -> None:
     assert payload["run"]["job_id"] == job_id
     assert payload["summary"]["job_id"] == job_id
     assert payload["summary"]["run"]["status"] == "succeeded"
+
+
+def test_sqlite_audit_store_survives_restart_and_bounds_history(tmp_path) -> None:
+    database = tmp_path / "audits.sqlite3"
+    first_store = SqliteAuditStore(str(database), history_limit=2)
+    first_service = build_service(healthy_resource_response, store=first_store)
+    first = first_service.start_single_url_audit("https://example.com/")
+
+    restarted = SqliteAuditStore(str(database), history_limit=2)
+    restored = restarted.get_snapshot(first.job.job_id)
+    assert restored == first
+
+    second_service = build_service(healthy_resource_response, store=restarted)
+    second = second_service.start_single_url_audit("https://example.org/")
+    third = second_service.start_single_url_audit("https://www.example.com/")
+    assert restarted.get_snapshot(first.job.job_id) is None
+    assert restarted.get_snapshot(second.job.job_id) is not None
+    assert restarted.get_snapshot(third.job.job_id) is not None
+
+    with sqlite3.connect(database) as connection:
+        assert connection.execute("PRAGMA foreign_key_check").fetchall() == []
+        assert connection.execute("SELECT COUNT(*) FROM audit_jobs").fetchone()[0] == 2
+        assert connection.execute("SELECT COUNT(*) FROM audit_runs").fetchone()[0] == 2
+
+
+def test_default_audit_database_configuration_is_file_backed() -> None:
+    configured = Settings()
+    assert configured.audit_database_path == ".webdiag/audits.sqlite3"
+    assert configured.audit_history_limit == 1_000
+    assert configured.audit_public_request_limit == 60
+    assert configured.audit_public_window_seconds == 60
+    assert configured.audit_public_concurrency_limit == 4
+    assert configured.audit_public_lease_seconds == 45
+
+
+def test_sqlite_audit_store_rejects_tampered_payload(tmp_path) -> None:
+    database = tmp_path / "audits.sqlite3"
+    store = SqliteAuditStore(str(database))
+    service = build_service(healthy_resource_response, store=store)
+    snapshot = service.start_single_url_audit("https://example.com/")
+
+    with sqlite3.connect(database) as connection:
+        connection.execute(
+            "UPDATE audit_runs SET payload_json = replace(payload_json, 'succeeded', 'failed')"
+        )
+        connection.commit()
+
+    with pytest.raises(AuditStoreIntegrityError):
+        store.get_snapshot(snapshot.job.job_id)
 
 
 def test_start_audit_rejects_disallowed_url_before_fetch() -> None:
@@ -299,8 +456,12 @@ def test_unexpected_execution_failure_still_persists_failed_state(monkeypatch) -
 
     monkeypatch.setattr(audit_service_module, "assemble_single_page_report", fail_report)
 
-    with pytest.raises(RuntimeError, match="report assembly failed"):
+    with pytest.raises(AuditExecutionError, match="Audit execution failed") as failure:
         service.start_single_url_audit("https://example.com/")
+
+    assert failure.value.code == "audit_execution_failed"
+    assert failure.value.status_code == 500
+    assert isinstance(failure.value.__cause__, RuntimeError)
 
     assert [job.status for job in store.saved_jobs] == [
         AuditJobStatus.RUNNING,
@@ -311,6 +472,36 @@ def test_unexpected_execution_failure_still_persists_failed_state(monkeypatch) -
     assert snapshot.job.status is AuditJobStatus.FAILED
     assert snapshot.run is not None
     assert snapshot.run.status is AuditJobStatus.FAILED
+
+
+def test_unexpected_execution_failure_returns_stable_private_error(monkeypatch) -> None:
+    service = build_service(healthy_resource_response)
+
+    def fail_report(**_kwargs):
+        raise RuntimeError("private report assembly detail")
+
+    monkeypatch.setattr(audit_service_module, "assemble_single_page_report", fail_report)
+    with_service(service)
+    try:
+        response = asyncio.run(
+            request(
+                "POST",
+                "/v1/audits",
+                json={"url": "https://example.com/"},
+                raise_app_exceptions=False,
+            )
+        )
+    finally:
+        clear_overrides()
+
+    assert response.status_code == 500
+    assert response.headers["cache-control"] == "no-store"
+    detail = response.json()["detail"]
+    assert detail["code"] == "audit_execution_failed"
+    assert detail["message"] == "Audit execution failed."
+    assert detail["job_id"]
+    assert detail["run_id"]
+    assert "private report assembly detail" not in response.text
 
 
 def test_get_unknown_audit_returns_404() -> None:
@@ -324,3 +515,78 @@ def test_get_unknown_audit_returns_404() -> None:
 
     assert response.status_code == 404
     assert response.json()["detail"]["code"] == "audit_not_found"
+
+
+def test_audit_api_uses_stable_no_store_contracts() -> None:
+    with_service(build_service(healthy_resource_response))
+    try:
+        created = asyncio.run(
+            request("POST", "/v1/audits", json={"url": "https://example.com/?token=secret"})
+        )
+        fetched = asyncio.run(
+            request("GET", f"/v1/audits/{created.json()['job']['job_id']}")
+        )
+        rejected = asyncio.run(
+            request("POST", "/v1/audits", json={"url": "http://127.0.0.1/"})
+        )
+        invalid = asyncio.run(request("POST", "/v1/audits", json={"url": ""}))
+        malformed_id = asyncio.run(request("GET", "/v1/audits/not-a-uuid"))
+    finally:
+        clear_overrides()
+
+    assert [
+        created.status_code,
+        fetched.status_code,
+        rejected.status_code,
+        invalid.status_code,
+        malformed_id.status_code,
+    ] == [201, 200, 400, 422, 422]
+    for response in (created, fetched, rejected, invalid, malformed_id):
+        assert response.headers["cache-control"] == "no-store"
+    for response in (invalid, malformed_id):
+        assert response.json() == {
+            "detail": {
+                "code": "audit_invalid_request",
+                "message": "Invalid audit request.",
+            }
+        }
+
+
+def test_audit_query_is_fetched_but_not_persisted_or_returned(tmp_path) -> None:
+    database = tmp_path / "audits.sqlite3"
+    requested_urls: list[str] = []
+    requested_hosts: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requested_urls.append(str(request.url))
+        requested_hosts.append(request.headers["host"])
+        return healthy_resource_response(request)
+
+    store = SqliteAuditStore(str(database))
+    with_service(build_service(handler, store=store))
+    try:
+        created = asyncio.run(
+            request(
+                "POST",
+                "/v1/audits",
+                json={"url": "https://example.com/page?token=secret#private"},
+            )
+        )
+        fetched = asyncio.run(
+            request("GET", f"/v1/audits/{created.json()['job']['job_id']}")
+        )
+    finally:
+        clear_overrides()
+
+    assert requested_urls[0].endswith("/page?token=secret#private")
+    assert requested_hosts[0] == "example.com"
+    assert created.status_code == 201
+    assert fetched.status_code == 200
+    assert "token=secret" not in created.text
+    assert "token=secret" not in fetched.text
+    with sqlite3.connect(database) as connection:
+        payloads = connection.execute(
+            "SELECT payload_json FROM audit_jobs UNION ALL SELECT payload_json FROM audit_runs"
+        ).fetchall()
+    assert payloads
+    assert all("token=secret" not in payload for (payload,) in payloads)

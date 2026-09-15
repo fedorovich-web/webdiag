@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   AccountProxyConfigurationError,
   resolveAccountApiBaseUrl,
+  selectAccountRetryAfter,
   selectAccountSessionCookie,
   selectAccountSetCookie,
 } from "./account-proxy-contract";
@@ -35,5 +36,12 @@ describe("account proxy contract", () => {
     expect(selectAccountSetCookie("webdiag_session=token; Path=/; HttpOnly")).toContain(
       "webdiag_session=token",
     );
+  });
+
+  it("forwards only bounded decimal Retry-After values from rate limits", () => {
+    expect(selectAccountRetryAfter(429, "60")).toBe("60");
+    expect(selectAccountRetryAfter(401, "60")).toBeNull();
+    expect(selectAccountRetryAfter(429, "Wed, 21 Oct 2015 07:28:00 GMT")).toBeNull();
+    expect(selectAccountRetryAfter(429, "9".repeat(11))).toBeNull();
   });
 });

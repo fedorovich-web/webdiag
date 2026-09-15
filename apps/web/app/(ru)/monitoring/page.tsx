@@ -25,9 +25,9 @@ export default function Page() {
         <article><h2>История</h2><p>Динамика ошибок, исправлений и технического состояния проекта.</p></article>
       </section>
       <section className="wd-internal-note">
-        <strong>Подписка вместо разовых запусков</strong>
-        <p>Предварительный старт мониторинга — от 299 ₽/мес. Лимиты будут зависеть от количества проектов, URL и частоты проверок.</p>
-        <Link className="wd-button wd-button-primary" href="/pricing">Посмотреть цены</Link>
+        <strong>Мониторинг доступен в личном кабинете</strong>
+        <p>Добавьте проект, запускайте проверки вручную или по расписанию и используйте историю, чтобы отслеживать новые и исправленные проблемы.</p>
+        <Link className="wd-button wd-button-primary" href="/register">Создать аккаунт</Link>
       </section>
     </main>
   );

@@ -74,7 +74,13 @@ export function AccountAuthForm({ locale, mode }: AccountAuthFormProps) {
   return (
     <section className="wd-account-card" aria-labelledby="account-auth-title">
       <h1 id="account-auth-title">{text.title}</h1>
-      <form className="wd-account-form" onSubmit={onSubmit} aria-busy={pending}>
+      <form
+        className="wd-account-form"
+        method="post"
+        action={register ? registerPath(locale) : loginPath(locale)}
+        onSubmit={onSubmit}
+        aria-busy={pending}
+      >
         {register && (
           <label>
             <span>{text.name}</span>

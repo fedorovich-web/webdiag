@@ -69,6 +69,7 @@ export function SiteBrand({ locale, className = "brand", variant }: SiteBrandPro
       className={className}
       data-brand-variant={variant}
       href={home}
+      prefetch={false}
       aria-label={label}
     >
       <BrandArtwork />

@@ -68,13 +68,14 @@ test.describe("production browser smoke", () => {
     }));
     expect(dimensions.scroll).toBe(dimensions.viewport);
 
-    const themeBox = await page.getByRole("switch", { name: "Тёмная тема" }).boundingBox();
     const menu = page.locator(".mobile-menu summary");
     const menuBox = await menu.boundingBox();
-    expect(themeBox?.height).toBeGreaterThanOrEqual(44);
     expect(menuBox?.height).toBeGreaterThanOrEqual(44);
     await menu.click();
+
+    const themeBox = await page.getByRole("switch", { name: "Тёмная тема" }).boundingBox();
     const localeBox = await page.getByRole("navigation", { name: "Выбор языка" }).boundingBox();
+    expect(themeBox?.height).toBeGreaterThanOrEqual(44);
     expect(localeBox?.height).toBeGreaterThanOrEqual(44);
   });
 
@@ -87,10 +88,11 @@ test.describe("production browser smoke", () => {
       scroll: document.documentElement.scrollWidth,
     }));
     expect(dimensions.scroll).toBe(dimensions.viewport);
-    await expect(page.getByRole("switch", { name: "Dark theme" })).toBeVisible();
     await expect(page.locator('.wd-brand[data-brand-variant="header"] .brand-picture')).toBeHidden();
     await expect(page.locator('.wd-brand[data-brand-variant="header"] .brand-mark')).toBeVisible();
+
     await page.locator(".mobile-menu summary").click();
+    await expect(page.getByRole("switch", { name: "Dark theme" })).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Language selection" })).toBeVisible();
   });
 });

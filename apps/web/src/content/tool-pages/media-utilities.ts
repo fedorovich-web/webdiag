@@ -330,4 +330,180 @@ export const mediaUtilityToolPages = [
     relatedToolSlugs: ["image-optimizer", "image-format-converter", "add-watermark-to-image"],
     sourceUrls: ["https://developer.mozilla.org/docs/Web/API/Canvas_API"],
   }),
+  toolPage({
+    slug: "favicon-generator",
+    seoTitle: { ru: "Генератор PNG favicon и web app icons", en: "PNG Favicon and Web App Icon Generator" },
+    metaDescription: { ru: "Создайте пять PNG favicon и web app icons из центральной квадратной области JPEG, PNG, WebP или AVIF локально в браузере.", en: "Create five PNG favicon and web app icons from the centered square crop of a JPEG, PNG, WebP, or AVIF locally in your browser." },
+    h1: { ru: "Генератор PNG favicon и web app icons", en: "PNG Favicon and Web App Icon Generator" },
+    lead: { ru: "Подготовьте пять PNG-файлов и точные HTML/manifest фрагменты без серверной загрузки исходного изображения.", en: "Prepare five PNG files and exact HTML/manifest snippets without uploading the source image to a server." },
+    quickFacts: [
+      { ru: "5 PNG-файлов", en: "5 PNG files" },
+      { ru: "32–512 px", en: "32–512 px" },
+      { ru: "Локальная обработка", en: "Local processing" },
+    ],
+    howToSteps: [
+      { ru: "Выберите JPEG, PNG, WebP или AVIF.", en: "Choose a JPEG, PNG, WebP, or AVIF file." },
+      { ru: "Проверьте, подходит ли центральная квадратная область.", en: "Confirm that the centered square crop fits your composition." },
+      { ru: "Создайте файлы, скачайте их и скопируйте фрагменты подключения.", en: "Generate and download the files, then copy the integration snippets." },
+    ],
+    supportedFeatures: [
+      { ru: "favicon-32x32.png и favicon-48x48.png для favicon.", en: "favicon-32x32.png and favicon-48x48.png for favicon." },
+      { ru: "PNG 180 × 180 для apple-touch-icon.", en: "180 × 180 PNG for apple-touch-icon." },
+      { ru: "PNG 192 × 192 и 512 × 512 и manifest icons fragment.", en: "192 × 192 and 512 × 512 PNG files plus a manifest icons fragment." },
+    ],
+    limitations: [
+      { ru: "Инструмент не создаёт .ico, ZIP, SVG и maskable padding.", en: "The tool does not create .ico, ZIP, SVG, or maskable padding." },
+      { ru: "Используется только центральная квадратная область; автоматическая установка на сайт не выполняется.", en: "Only a centered square crop is used; the generated assets are not installed on a site automatically." },
+    ],
+    useCases: [
+      { ru: "Подготовка базового набора PNG favicon.", en: "Preparing a basic PNG favicon set." },
+      { ru: "Создание apple-touch-icon из квадратного логотипа.", en: "Creating an apple-touch-icon from a square logo." },
+      { ru: "Подготовка двух размеров web app icon для manifest.", en: "Preparing two web app icon sizes for a manifest." },
+    ],
+    technicalNotes: [
+      { ru: "Canvas drawImage применяет центральную квадратную обрезку и масштабирование.", en: "Canvas drawImage applies the centered square crop and scaling." },
+      { ru: "Каждый результат кодируется отдельно через Canvas PNG encoder браузера.", en: "Each result is encoded separately through the browser Canvas PNG encoder." },
+    ],
+    faq: [
+      { question: { ru: "Генератор создаёт favicon.ico?", en: "Does it create favicon.ico?" }, answer: { ru: "Нет. Текущий инструмент создаёт только пять явно перечисленных PNG-файлов.", en: "No. The current tool creates only the five explicitly listed PNG files; it does not create .ico." } },
+      { question: { ru: "Файл отправляется на сервер?", en: "Is the file uploaded?" }, answer: { ru: "Нет. Декодирование, обрезка и PNG-кодирование происходят в браузере.", en: "No. Decoding, cropping, and PNG encoding happen in the browser." } },
+    ],
+    relatedToolSlugs: ["favicon-checker", "image-cropper", "image-resizer"],
+    sourceUrls: [
+      "https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/rel/icon",
+      "https://developer.mozilla.org/docs/Web/Progressive_web_apps/Manifest/Reference/icons",
+    ],
+  }),
+  toolPage({
+    slug: "qr-code-generator",
+    seoTitle: { ru: "Генератор и чтение QR-кодов", en: "QR Code Workbench" },
+    metaDescription: { ru: "Создавайте QR-коды из текста и читайте один QR-код из локального JPEG, PNG, WebP или AVIF без загрузки файла.", en: "Generate QR codes from text and read one QR code from a local JPEG, PNG, WebP, or AVIF without uploading the file." },
+    h1: { ru: "Генератор и чтение QR-кодов", en: "QR Code Workbench" },
+    lead: { ru: "Создайте PNG с выбранным уровнем коррекции или прочитайте текст из локального изображения. Результат не открывается автоматически.", en: "Create a PNG with the selected error-correction level or read text from a local image. Decoded content is never opened automatically." },
+    quickFacts: [
+      { ru: "До 2 000 символов", en: "Up to 2,000 characters" },
+      { ru: "PNG 256–512 px", en: "256–512 px PNG" },
+      { ru: "Локальная обработка", en: "Local processing" },
+    ],
+    howToSteps: [
+      { ru: "Введите текст, выберите коррекцию ошибок и размер PNG.", en: "Enter text, choose error correction, and select the PNG size." },
+      { ru: "Создайте и скачайте QR-код либо выберите локальное изображение.", en: "Generate and download the QR code or choose a local image." },
+      { ru: "Прочитайте результат и проверьте текст перед использованием.", en: "Read the result and inspect the text before using it." },
+    ],
+    supportedFeatures: [
+      { ru: "Уровни коррекции L, M, Q и H и quiet zone в четыре модуля.", en: "L, M, Q, and H error-correction levels with a four-module quiet zone." },
+      { ru: "UTF-8 text, PNG export и чтение одного QR-кода из raster image.", en: "UTF-8 text, PNG export, and reading one QR code from a raster image." },
+      { ru: "JPEG, PNG, WebP и AVIF при поддержке декодирования браузером.", en: "JPEG, PNG, WebP, and AVIF when the browser can decode the format." },
+    ],
+    limitations: [
+      { ru: "Камера, пакетное чтение, barcode formats и проверка безопасности URL не поддерживаются.", en: "Camera scanning, batch reading, barcode formats, and URL safety validation are not included." },
+      { ru: "Фактическая ёмкость зависит от текста и уровня коррекции; неподходящее содержимое возвращает ошибку.", en: "Actual capacity depends on content and error correction; content that does not fit returns an error." },
+    ],
+    useCases: [
+      { ru: "Передать короткий URL или текст между устройствами.", en: "Transfer a short URL or text between devices." },
+      { ru: "Подготовить QR PNG для ручной вставки в документ.", en: "Prepare a QR PNG for manual placement in a document." },
+      { ru: "Проверить содержимое QR-кода из локального скриншота.", en: "Inspect QR content from a local screenshot." },
+    ],
+    technicalNotes: [
+      { ru: "QR matrix создаётся локально и растеризуется в Canvas PNG с чёрными и белыми модулями.", en: "The QR matrix is generated locally and rasterized into a black-and-white Canvas PNG." },
+      { ru: "Изображение декодируется в RGBA pixels; найденный текст показывается только в read-only textarea.", en: "The image is decoded to RGBA pixels; found text is shown only in a read-only textarea." },
+    ],
+    faq: [
+      { question: { ru: "Инструмент открывает найденную ссылку?", en: "Does the tool open a decoded link?" }, answer: { ru: "Нет. Любое содержимое остаётся обычным текстом и требует ручной проверки.", en: "No. All decoded content remains plain text and requires manual inspection." } },
+      { question: { ru: "Файл отправляется на сервер?", en: "Is the image uploaded?" }, answer: { ru: "Нет. Генерация, декодирование и PNG export выполняются локально в браузере.", en: "No. Generation, decoding, and PNG export happen locally in the browser." } },
+    ],
+    relatedToolSlugs: ["image-data-uri-converter", "image-optimizer", "responsive-image-srcset-generator"],
+    sourceUrls: [
+      "https://github.com/paulmillr/qr",
+      "https://developer.mozilla.org/docs/Web/API/Canvas_API",
+    ],
+  }),
+  toolPage({
+    slug: "image-data-uri-converter",
+    seoTitle: { ru: "Data URI и PNG placeholder для изображения", en: "Image Data URI Workbench" },
+    metaDescription: { ru: "Создайте точный Data URI для JPEG, PNG, WebP или AVIF до 1 МиБ и отдельный PNG placeholder до 24 px локально в браузере.", en: "Create an exact Data URI for a JPEG, PNG, WebP, or AVIF up to 1 MiB and a separate PNG placeholder up to 24 px locally in your browser." },
+    h1: { ru: "Data URI и placeholder для изображения", en: "Image Data URI Workbench" },
+    lead: { ru: "Получите точное base64-представление исходного файла и отдельную миниатюрную PNG-заглушку без загрузки изображения на сервер.", en: "Get an exact base64 representation of the source file and a separate tiny PNG placeholder without uploading the image." },
+    quickFacts: [
+      { ru: "До 1 МиБ", en: "Up to 1 MiB" },
+      { ru: "Placeholder до 24 px", en: "Placeholder up to 24 px" },
+      { ru: "Локальная обработка", en: "Local processing" },
+    ],
+    howToSteps: [
+      { ru: "Выберите один JPEG, PNG, WebP или AVIF.", en: "Choose one JPEG, PNG, WebP, or AVIF file." },
+      { ru: "Создайте точный Data URI исходника и миниатюрный PNG placeholder.", en: "Create the exact source Data URI and a tiny PNG placeholder." },
+      { ru: "Скопируйте нужный Data URI или готовое CSS-свойство.", en: "Copy the required Data URI or the ready-to-use CSS declaration." },
+    ],
+    supportedFeatures: [
+      { ru: "Определение формата по сигнатуре байтов, а не по заявленному MIME type.", en: "Format detection from the byte signature rather than the declared MIME type." },
+      { ru: "Точное base64-кодирование всех байтов исходного файла.", en: "Exact base64 encoding of every source-file byte." },
+      { ru: "PNG placeholder с сохранением пропорций и стороной не более 24 px.", en: "An aspect-preserving PNG placeholder with no side larger than 24 px." },
+    ],
+    limitations: [
+      { ru: "Data URI увеличивает текстовый размер и не оптимизирует исходное изображение.", en: "A Data URI increases text size and does not optimize the source image." },
+      { ru: "Placeholder не является BlurHash или рекомендацией по загрузке изображения.", en: "The placeholder is not BlurHash or an image-loading recommendation." },
+    ],
+    useCases: [
+      { ru: "Встраивание небольшого локального изображения в CSS или HTML.", en: "Embedding a small local image in CSS or HTML." },
+      { ru: "Подготовка отдельной миниатюрной заглушки для ручной интеграции.", en: "Preparing a separate tiny placeholder for manual integration." },
+      { ru: "Проверка фактического MIME type по содержимому файла.", en: "Checking the effective MIME type from file content." },
+    ],
+    technicalNotes: [
+      { ru: "Исходный Data URI строится непосредственно из прочитанных байтов и показывается только как текст.", en: "The source Data URI is built directly from the read bytes and displayed only as text." },
+      { ru: "Placeholder декодируется и кодируется через Canvas API текущего браузера.", en: "The placeholder is decoded and encoded through the current browser's Canvas API." },
+    ],
+    faq: [
+      { question: { ru: "Файл отправляется на сервер?", en: "Is the file uploaded?" }, answer: { ru: "Нет. Чтение, декодирование и кодирование выполняются локально в браузере.", en: "No. Reading, decoding, and encoding happen locally in the browser." } },
+      { question: { ru: "Это оптимизатор изображений?", en: "Is this an image optimizer?" }, answer: { ru: "Нет. Точный Data URI сохраняет все байты исходника, а PNG placeholder создаётся отдельно.", en: "No. The exact Data URI preserves every source byte, while the PNG placeholder is generated separately." } },
+    ],
+    relatedToolSlugs: ["image-optimizer", "responsive-image-srcset-generator", "color-palette-extractor"],
+    sourceUrls: [
+      "https://developer.mozilla.org/docs/Web/API/FileReader/readAsDataURL",
+      "https://developer.mozilla.org/docs/Web/API/Canvas_API",
+    ],
+  }),
+  toolPage({
+    slug: "responsive-image-srcset-generator",
+    seoTitle: { ru: "Генератор srcset для адаптивных изображений", en: "Responsive Image Srcset Generator" },
+    metaDescription: { ru: "Соберите srcset и экранированный img-фрагмент из существующих HTTPS или root-relative URL и фактической ширины файлов.", en: "Build a srcset and escaped img fragment from existing HTTPS or root-relative URLs and the files' actual intrinsic widths." },
+    h1: { ru: "Генератор srcset для адаптивных изображений", en: "Responsive Image Srcset Generator" },
+    lead: { ru: "Упорядочьте до 20 существующих ресурсов по width descriptor и получите текст для безопасного ручного подключения.", en: "Order up to 20 existing resources by width descriptor and get text for safe manual integration." },
+    quickFacts: [
+      { ru: "1–20 URL", en: "1–20 URLs" },
+      { ru: "Width descriptors", en: "Width descriptors" },
+      { ru: "HTML escaping", en: "HTML escaping" },
+    ],
+    howToSteps: [
+      { ru: "Введите URL и фактическую ширину через разделитель |.", en: "Enter each URL and actual intrinsic width separated by |." },
+      { ru: "Укажите резервный src, sizes и осмысленный alt.", en: "Provide the fallback src, sizes value, and meaningful alt text." },
+      { ru: "Создайте и скопируйте srcset или экранированный img-фрагмент.", en: "Generate and copy the srcset or escaped img fragment." },
+    ],
+    supportedFeatures: [
+      { ru: "HTTPS и root-relative URL без credentials и fragments.", en: "HTTPS and root-relative URLs without credentials or fragments." },
+      { ru: "Уникальные width descriptors от 1 до 8192.", en: "Unique width descriptors from 1 through 8192." },
+      { ru: "Сортировка кандидатов и экранирование HTML attributes.", en: "Candidate sorting and HTML attribute escaping." },
+    ],
+    limitations: [
+      { ru: "Инструмент не создаёт, не загружает и не проверяет image-файлы или их размеры.", en: "The tool does not create image files, upload them, or verify their dimensions." },
+      { ru: "Нет picture art direction, DPR descriptors, CDN transforms и полного парсера media conditions.", en: "Picture art direction, DPR descriptors, CDN transforms, and full media-condition parsing are not included." },
+    ],
+    useCases: [
+      { ru: "Подготовка srcset для заранее созданных WebP-файлов.", en: "Preparing a srcset for pre-generated WebP files." },
+      { ru: "Сортировка набора изображений по фактической ширине.", en: "Sorting an image set by intrinsic width." },
+      { ru: "Безопасная вставка пользовательского alt в HTML-фрагмент.", en: "Safely placing user-supplied alt text in an HTML fragment." },
+    ],
+    technicalNotes: [
+      { ru: "URL с raw comma или whitespace блокируются, чтобы не менять грамматику srcset.", en: "URLs containing raw commas or whitespace are blocked so they cannot alter srcset grammar." },
+      { ru: "Результат показывается как текст и не исполняется в DOM.", en: "The result is rendered as text and is not executed in the DOM." },
+    ],
+    faq: [
+      { question: { ru: "Инструмент создаёт изображения нужных размеров?", en: "Does it create images at the requested widths?" }, answer: { ru: "Нет. Все файлы должны существовать заранее, а ширину вводит пользователь.", en: "No. The tool does not create image files; every file must already exist and the user supplies its intrinsic width." } },
+      { question: { ru: "URL проверяются по сети?", en: "Are URLs checked over the network?" }, answer: { ru: "Нет. Инструмент проверяет только форму введённых данных локально в браузере.", en: "No. It validates only the entered text locally in the browser." } },
+    ],
+    relatedToolSlugs: ["image-resizer", "image-format-converter", "image-performance-checker"],
+    sourceUrls: [
+      "https://developer.mozilla.org/docs/Web/API/HTMLImageElement/srcset",
+      "https://developer.mozilla.org/docs/Web/API/HTMLImageElement/sizes",
+    ],
+  }),
 ] as const;
