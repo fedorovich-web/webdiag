@@ -66,6 +66,12 @@ describe("bounded GraphQL formatter", () => {
     expect(result.output).toContain('"""line 1\nline 2"""');
   });
 
+  it("treats commas as insignificant GraphQL tokens", () => {
+    const commaSeparated = "query Q($a:Int,$b:Int,){pair(a:$a,b:$b,){left,right,}}";
+    const whitespaceSeparated = "query Q($a:Int $b:Int){pair(a:$a b:$b){left right}}";
+    expect(formatGraphql(commaSeparated).output).toBe(formatGraphql(whitespaceSeparated).output);
+  });
+
   it("rejects invalid characters and unbalanced delimiters", () => {
     expect(() => formatGraphql("query Q { field ] }")).toThrow(/closing bracket/iu);
     expect(() => formatGraphql("query Q { field")).toThrow(/unclosed selection/iu);
