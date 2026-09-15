@@ -487,9 +487,7 @@ export function queryJsonPath(jsonText: string, pathText: string): JsonPathQuery
   let nodes: JsonPathNode[] = [{ value: root, path: [] }];
   const visitCounter = { value: 1 };
   for (const selector of selectors) nodes = applyJsonPathSelector(nodes, selector, visitCounter);
-  const deduplicated = new Map<string, JsonPathNode>();
-  for (const node of nodes) deduplicated.set(pointerPath(node.path), node);
-  const allMatches = [...deduplicated.values()];
+  const allMatches = nodes;
   const truncated = allMatches.length > MAX_JSONPATH_MATCHES;
   const matches = allMatches.slice(0, MAX_JSONPATH_MATCHES).map((node) => ({
     path: pointerPath(node.path),
