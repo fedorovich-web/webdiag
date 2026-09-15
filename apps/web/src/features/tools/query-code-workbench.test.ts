@@ -74,6 +74,22 @@ describe("bounded GraphQL formatter", () => {
     }
   });
 
+  it("validates GraphQL string escape sequences and Unicode scalar values", () => {
+    expect(() => formatGraphql(String.raw`query Q { field(value: "\"\\\/\b\f\n\r\t\u0041\u{1F4A9}\uD83D\uDCA9") }`)).not.toThrow();
+
+    for (const invalidString of [
+      String.raw`query Q { field(value: "\q") }`,
+      String.raw`query Q { field(value: "\x41") }`,
+      String.raw`query Q { field(value: "\u12") }`,
+      String.raw`query Q { field(value: "\u{}") }`,
+      String.raw`query Q { field(value: "\u{110000}") }`,
+      String.raw`query Q { field(value: "\uDEAD") }`,
+      String.raw`query Q { field(value: "\uD83D\u0041") }`,
+    ]) {
+      expect(() => formatGraphql(invalidString)).toThrow(/GraphQL string escape/iu);
+    }
+  });
+
   it("rejects invalid characters and unbalanced delimiters", () => {
     expect(() => formatGraphql("query Q { field ] }")).toThrow(/closing bracket/iu);
     expect(() => formatGraphql("query Q { field")).toThrow(/unclosed selection/iu);
