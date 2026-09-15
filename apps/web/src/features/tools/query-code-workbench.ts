@@ -528,8 +528,8 @@ function tokenizeGraphql(input: string): Token[] {
       continue;
     }
     if (character === "#") {
-      const end = input.indexOf("\n", index + 1);
-      const next = end === -1 ? input.length : end;
+      let next = index + 1;
+      while (next < input.length && input[next] !== "\n" && input[next] !== "\r") next += 1;
       push(createToken("comment", input.slice(index, next).trimEnd()));
       index = next;
       continue;
