@@ -319,8 +319,14 @@ function parseJsonPath(path: string): readonly JsonPathSelector[] {
     if (content === "*") selectors.push({ kind: "wildcard" });
     else if (content.startsWith("(") && content.endsWith(")")) {
       throw new Error("Unsupported JSONPath script-style selector syntax.");
-    } else if (content.startsWith("?(") && content.endsWith(")")) {
-      selectors.push({ kind: "filter", filter: parseJsonPathFilter(content.slice(2, -1)) });
+    } else if (content.startsWith("?")) {
+      const expression = content.slice(1).trim();
+      if (!expression) throw new Error("JSONPath filter expression is empty.");
+      const normalizedExpression = expression.startsWith("(") && expression.endsWith(")")
+        ? expression.slice(1, -1).trim()
+        : expression;
+      if (!normalizedExpression) throw new Error("JSONPath filter expression is empty.");
+      selectors.push({ kind: "filter", filter: parseJsonPathFilter(normalizedExpression) });
     } else if (content.includes(":")) {
       const parts = content.split(":");
       if (parts.length < 2 || parts.length > 3) throw new Error("JSONPath slices use [start:end:step].");
