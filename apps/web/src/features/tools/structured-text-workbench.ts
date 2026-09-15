@@ -148,6 +148,42 @@ function parseQuotedJsonPathProperty(value: string): string {
   return result;
 }
 
+function jsonPathCharacterAt(input: string, index: number): string | null {
+  const codePoint = input.codePointAt(index);
+  return codePoint === undefined ? null : String.fromCodePoint(codePoint);
+}
+
+function isJsonPathMemberNameFirst(character: string): boolean {
+  const codePoint = character.codePointAt(0);
+  if (codePoint === undefined) return false;
+  return character === "_"
+    || (codePoint >= 0x41 && codePoint <= 0x5A)
+    || (codePoint >= 0x61 && codePoint <= 0x7A)
+    || (codePoint >= 0x80 && codePoint <= 0xD7FF)
+    || (codePoint >= 0xE000 && codePoint <= 0x10FFFF);
+}
+
+function isJsonPathMemberNameCharacter(character: string): boolean {
+  const codePoint = character.codePointAt(0);
+  return isJsonPathMemberNameFirst(character)
+    || (codePoint !== undefined && codePoint >= 0x30 && codePoint <= 0x39);
+}
+
+function readJsonPathMemberNameShorthand(
+  input: string,
+  start: number,
+): { readonly name: string; readonly next: number } | null {
+  const first = jsonPathCharacterAt(input, start);
+  if (first === null || !isJsonPathMemberNameFirst(first)) return null;
+  let next = start + first.length;
+  while (next < input.length) {
+    const character = jsonPathCharacterAt(input, next);
+    if (character === null || !isJsonPathMemberNameCharacter(character)) break;
+    next += character.length;
+  }
+  return { name: input.slice(start, next), next };
+}
+
 function splitTopLevel(value: string, separator: string): string[] {
   const parts: string[] = [];
   let start = 0;
@@ -200,10 +236,10 @@ function parseFilterPath(value: string): readonly (string | number)[] {
   while (index < value.length) {
     if (value[index] === ".") {
       index += 1;
-      const match = /^[A-Za-z_$][A-Za-z0-9_$-]*/u.exec(value.slice(index));
-      if (!match) throw new Error("Invalid JSONPath filter property.");
-      segments.push(match[0]);
-      index += match[0].length;
+      const shorthand = readJsonPathMemberNameShorthand(value, index);
+      if (!shorthand) throw new Error("Invalid JSONPath filter property.");
+      segments.push(shorthand.name);
+      index = shorthand.next;
       continue;
     }
     if (value[index] === "[") {
@@ -270,10 +306,10 @@ function parseJsonPath(path: string): readonly JsonPathSelector[] {
         index += 1;
         continue;
       }
-      const match = /^[A-Za-z_$][A-Za-z0-9_$-]*/u.exec(input.slice(index));
-      if (!match) throw new Error("Invalid JSONPath dot-property syntax.");
-      selectors.push({ kind: recursive ? "recursive-property" : "property", name: match[0] });
-      index += match[0].length;
+      const shorthand = readJsonPathMemberNameShorthand(input, index);
+      if (!shorthand) throw new Error("Invalid JSONPath dot-property syntax.");
+      selectors.push({ kind: recursive ? "recursive-property" : "property", name: shorthand.name });
+      index = shorthand.next;
       continue;
     }
     if (input[index] !== "[") throw new Error(`Unexpected JSONPath token at position ${index}.`);
