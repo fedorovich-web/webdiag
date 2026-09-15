@@ -117,6 +117,23 @@ function isGraphqlUnicodeScalar(value: number): boolean {
   return value <= 0x10FFFF && !(value >= 0xD800 && value <= 0xDFFF);
 }
 
+function assertGraphqlSourceCharacters(input: string): void {
+  for (let index = 0; index < input.length; index += 1) {
+    const codeUnit = input.charCodeAt(index);
+    if (codeUnit >= 0xD800 && codeUnit <= 0xDBFF) {
+      const trailing = input.charCodeAt(index + 1);
+      if (trailing >= 0xDC00 && trailing <= 0xDFFF) {
+        index += 1;
+        continue;
+      }
+      throw new Error(`Invalid GraphQL source character at character ${index + 1}: expected a Unicode scalar value.`);
+    }
+    if (codeUnit >= 0xDC00 && codeUnit <= 0xDFFF) {
+      throw new Error(`Invalid GraphQL source character at character ${index + 1}: expected a Unicode scalar value.`);
+    }
+  }
+}
+
 function readGraphqlStringEscape(input: string, index: number): number {
   const escaped = input[index + 1] ?? "";
   if ('"\\/bfnrt'.includes(escaped)) return index + 2;
@@ -507,6 +524,7 @@ export function formatSql(input: string, options: FormatOptions = {}): FormatRes
 
 function tokenizeGraphql(input: string): Token[] {
   assertInput(input, "GraphQL input");
+  assertGraphqlSourceCharacters(input);
   const tokens: Token[] = [];
   let index = 0;
   const push = (token: Token): void => {
