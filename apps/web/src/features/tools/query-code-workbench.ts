@@ -465,7 +465,14 @@ function tokenizeGraphql(input: string): Token[] {
 
   while (index < input.length) {
     const character = input[index] ?? "";
-    if (/\s|,/u.test(character)) {
+    if (
+      character === "\uFEFF"
+      || character === "\t"
+      || character === " "
+      || character === "\n"
+      || character === "\r"
+      || character === ","
+    ) {
       index += 1;
       continue;
     }
