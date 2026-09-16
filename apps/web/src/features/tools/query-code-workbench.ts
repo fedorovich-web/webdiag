@@ -227,8 +227,8 @@ function tokenizeSql(input: string): { readonly tokens: Token[]; readonly warnin
     }
 
     if (input.startsWith("--", index)) {
-      const end = input.indexOf("\n", index + 2);
-      const next = end === -1 ? input.length : end;
+      const end = input.slice(index + 2).search(/[\r\n]/u);
+      const next = end === -1 ? input.length : index + 2 + end;
       push(createToken("comment", input.slice(index, next).trimEnd()));
       index = next;
       continue;
