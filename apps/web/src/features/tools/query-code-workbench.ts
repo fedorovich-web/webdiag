@@ -320,9 +320,10 @@ function tokenizeSql(
     }
 
     if (character === '"' || character === "`") {
-      const [value, next] = readQuoted(input, index, character, character + character);
+      const mysqlDoubleQuotedString = mysql && character === '"';
+      const [value, next] = readQuoted(input, index, character, character + character, true, mysqlDoubleQuotedString);
       if (character === "`") warnings.push("mysql-backtick-identifier");
-      push(createToken("identifier", value));
+      push(createToken(mysqlDoubleQuotedString ? "string" : "identifier", value));
       index = next;
       continue;
     }
