@@ -329,7 +329,7 @@ function tokenizeSql(input: string): { readonly tokens: Token[]; readonly warnin
     }
 
     if (/\d/u.test(character) || (character === "." && /\d/u.test(input[index + 1] ?? ""))) {
-      const match = input.slice(index).match(/^(?:0[xX][0-9A-Fa-f]+|(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)/u);
+      const match = input.slice(index).match(/^(?:0[xX]_?[0-9A-Fa-f](?:_?[0-9A-Fa-f])*|0[oO]_?[0-7](?:_?[0-7])*|0[bB]_?[01](?:_?[01])*|(?:\d(?:_?\d)*(?:\.(?:\d(?:_?\d)*)?)?|\.\d(?:_?\d)*)(?:[eE][+-]?\d(?:_?\d)*)?)/u);
       if (!match) throw new Error(`Unable to tokenize SQL number at character ${index + 1}.`);
       push(createToken("number", match[0]));
       index += match[0].length;
