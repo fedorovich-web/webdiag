@@ -3,6 +3,7 @@ export type KeywordCase = "upper" | "lower" | "preserve";
 export interface FormatOptions {
   readonly indentSize?: 2 | 4;
   readonly keywordCase?: KeywordCase;
+  readonly mysqlBackslashEscapes?: boolean;
 }
 
 export interface FormatResult {
@@ -208,7 +209,10 @@ function readQuoted(
   throw new Error(`Unterminated quoted value starting at character ${start + 1}.`);
 }
 
-function tokenizeSql(input: string): { readonly tokens: Token[]; readonly warnings: string[] } {
+function tokenizeSql(
+  input: string,
+  mysqlBackslashEscapes = false,
+): { readonly tokens: Token[]; readonly warnings: string[] } {
   assertInput(input, "SQL input");
   const tokens: Token[] = [];
   const warnings: string[] = [];
@@ -250,7 +254,8 @@ function tokenizeSql(input: string): { readonly tokens: Token[]; readonly warnin
     }
 
     if ("BbXxNn".includes(character) && input[index + 1] === "'") {
-      const [, next] = readQuoted(input, index + 1, "'", "''");
+      const mysqlNationalString = character === "N" || character === "n";
+      const [, next] = readQuoted(input, index + 1, "'", "''", true, mysqlNationalString && mysqlBackslashEscapes);
       push(createToken("string", input.slice(index, next)));
       index = next;
       continue;
@@ -267,7 +272,7 @@ function tokenizeSql(input: string): { readonly tokens: Token[]; readonly warnin
     }
 
     if (character === "'") {
-      const [value, next] = readQuoted(input, index, "'", "''");
+      const [value, next] = readQuoted(input, index, "'", "''", true, mysqlBackslashEscapes);
       push(createToken("string", value));
       index = next;
       continue;
@@ -429,7 +434,7 @@ class LineWriter {
 export function formatSql(input: string, options: FormatOptions = {}): FormatResult {
   const indentSize = options.indentSize ?? 2;
   const keywordCase = options.keywordCase ?? "upper";
-  const { tokens, warnings } = tokenizeSql(input);
+  const { tokens, warnings } = tokenizeSql(input, options.mysqlBackslashEscapes ?? false);
   const writer = new LineWriter(" ".repeat(indentSize));
   let indent = 0;
   let maximumDepth = 0;
