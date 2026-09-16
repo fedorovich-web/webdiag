@@ -230,6 +230,20 @@ function readSqlBlockComment(input: string, start: number, nested: boolean): [st
   throw new Error(`Unterminated SQL block comment starting at character ${start + 1}.`);
 }
 
+function readSqlLineComment(input: string, start: number, markerLength: number): [string, number] {
+  const end = input.slice(start + markerLength).search(/[\r\n]/u);
+  const next = end === -1 ? input.length : start + markerLength + end;
+  return [input.slice(start, next).trimEnd(), next];
+}
+
+function isMysqlDashCommentStart(input: string, index: number): boolean {
+  if (!input.startsWith("--", index)) return false;
+  const following = input[index + 2] ?? "";
+  if (!following) return false;
+  const code = following.charCodeAt(0);
+  return /\s/u.test(following) || code <= 0x1F || (code >= 0x7F && code <= 0x9F);
+}
+
 function tokenizeSql(
   input: string,
   sqlDialect: SqlDialect = "standard",
@@ -252,10 +266,16 @@ function tokenizeSql(
       continue;
     }
 
-    if (input.startsWith("--", index)) {
-      const end = input.slice(index + 2).search(/[\r\n]/u);
-      const next = end === -1 ? input.length : index + 2 + end;
-      push(createToken("comment", input.slice(index, next).trimEnd()));
+    if (mysql && character === "#") {
+      const [value, next] = readSqlLineComment(input, index, 1);
+      push(createToken("comment", value));
+      index = next;
+      continue;
+    }
+
+    if (input.startsWith("--", index) && (!mysql || isMysqlDashCommentStart(input, index))) {
+      const [value, next] = readSqlLineComment(input, index, 2);
+      push(createToken("comment", value));
       index = next;
       continue;
     }
