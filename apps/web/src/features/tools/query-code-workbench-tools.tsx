@@ -16,6 +16,7 @@ import {
   type RegexRiskReport,
   type RegexWorkerMessage,
   type RegexWorkerResponse,
+  type SqlDialect,
 } from "./query-code-workbench";
 
 function Panel({ title, children }: { readonly title: string; readonly children: React.ReactNode }) {
@@ -42,7 +43,7 @@ export function SqlFormatterTool({ locale }: { readonly locale: Locale }) {
   const [input, setInput] = useState("select u.id,u.email,count(o.id) order_count from users u left join orders o on o.user_id=u.id where u.active=true group by u.id,u.email order by order_count desc;");
   const [keywordCase, setKeywordCase] = useState<KeywordCase>("upper");
   const [indentSize, setIndentSize] = useState<2 | 4>(2);
-  const [mysqlBackslashEscapes, setMysqlBackslashEscapes] = useState(false);
+  const [sqlDialect, setSqlDialect] = useState<SqlDialect>("standard");
   const [output, setOutput] = useState("");
   const [details, setDetails] = useState("");
   const [error, setError] = useState("");
@@ -50,7 +51,7 @@ export function SqlFormatterTool({ locale }: { readonly locale: Locale }) {
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     try {
-      const result = formatSql(input, { keywordCase, indentSize, mysqlBackslashEscapes });
+      const result = formatSql(input, { keywordCase, indentSize, sqlDialect });
       setOutput(result.output);
       setDetails(formatReport(result, locale));
       setError("");
@@ -68,7 +69,7 @@ export function SqlFormatterTool({ locale }: { readonly locale: Locale }) {
           <label className="field"><span>{locale === "ru" ? "Регистр ключевых слов" : "Keyword case"}</span><select value={keywordCase} onChange={(event: ChangeEvent<HTMLSelectElement>) => setKeywordCase(event.target.value as KeywordCase)}><option value="upper">UPPER</option><option value="lower">lower</option><option value="preserve">Preserve</option></select></label>
           <label className="field"><span>{locale === "ru" ? "Отступ" : "Indentation"}</span><select value={indentSize} onChange={(event: ChangeEvent<HTMLSelectElement>) => setIndentSize(Number(event.target.value) as 2 | 4)}><option value={2}>2 spaces</option><option value={4}>4 spaces</option></select></label>
         </div>
-        <label className="field"><span>{locale === "ru" ? "Экранирование строк" : "String escaping"}</span><select value={mysqlBackslashEscapes ? "mysql" : "standard"} onChange={(event: ChangeEvent<HTMLSelectElement>) => setMysqlBackslashEscapes(event.target.value === "mysql")}><option value="standard">{locale === "ru" ? "Стандартное" : "Standard"}</option><option value="mysql">MySQL backslash</option></select></label>
+        <label className="field"><span>{locale === "ru" ? "Режим SQL" : "SQL mode"}</span><select value={sqlDialect} onChange={(event: ChangeEvent<HTMLSelectElement>) => setSqlDialect(event.target.value as SqlDialect)}><option value="standard">{locale === "ru" ? "Standard / PostgreSQL / SQL Server" : "Standard / PostgreSQL / SQL Server"}</option><option value="mysql">MySQL</option></select></label>
         <label className="field"><span>SQL</span><textarea className="code-input" rows={20} value={input} onChange={(event: ChangeEvent<HTMLTextAreaElement>) => setInput(event.target.value)} spellCheck={false} /></label>
         <button className="button" type="submit">{locale === "ru" ? "Форматировать SQL" : "Format SQL"}</button>
         <ErrorMessage value={error} />
@@ -78,8 +79,8 @@ export function SqlFormatterTool({ locale }: { readonly locale: Locale }) {
       <Output value={output} locale={locale} />
       {details ? <pre className="tool-muted">{details}</pre> : null}
       <p className="tool-muted">{locale === "ru"
-        ? "По умолчанию обратный слеш в обычных SQL-строках трактуется буквально. Режим MySQL backslash включает MySQL-экранирование строк. Консервативный tokenizer сохраняет строки, комментарии и quoted identifiers; semantic validation и выполнение SQL не выполняются."
-        : "By default, backslashes in ordinary SQL strings are treated literally. MySQL backslash mode enables MySQL string escaping. The conservative tokenizer preserves strings, comments, and quoted identifiers; it does not perform semantic validation or execute SQL."}</p>
+        ? "Режим Standard / PostgreSQL / SQL Server трактует обратный слеш в обычных строках буквально и поддерживает вложенные /* ... */ комментарии. Режим MySQL включает backslash-экранирование строк и завершает block comment первым */. Formatter сохраняет строки, комментарии и quoted identifiers; semantic validation и выполнение SQL не выполняются."
+        : "Standard / PostgreSQL / SQL Server mode treats backslashes in ordinary strings literally and supports nested /* ... */ comments. MySQL mode enables backslash string escapes and ends a block comment at the first */. The formatter preserves strings, comments, and quoted identifiers; it does not perform semantic validation or execute SQL."}</p>
     </Panel>
   </div>;
 }

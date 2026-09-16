@@ -1,9 +1,10 @@
 export type KeywordCase = "upper" | "lower" | "preserve";
+export type SqlDialect = "standard" | "mysql";
 
 export interface FormatOptions {
   readonly indentSize?: 2 | 4;
   readonly keywordCase?: KeywordCase;
-  readonly mysqlBackslashEscapes?: boolean;
+  readonly sqlDialect?: SqlDialect;
 }
 
 export interface FormatResult {
@@ -209,13 +210,34 @@ function readQuoted(
   throw new Error(`Unterminated quoted value starting at character ${start + 1}.`);
 }
 
+function readSqlBlockComment(input: string, start: number, nested: boolean): [string, number] {
+  let index = start + 2;
+  let depth = 1;
+  while (index < input.length) {
+    if (nested && input.startsWith("/*", index)) {
+      depth += 1;
+      index += 2;
+      continue;
+    }
+    if (input.startsWith("*/", index)) {
+      depth -= 1;
+      index += 2;
+      if (depth === 0) return [input.slice(start, index), index];
+      continue;
+    }
+    index += 1;
+  }
+  throw new Error(`Unterminated SQL block comment starting at character ${start + 1}.`);
+}
+
 function tokenizeSql(
   input: string,
-  mysqlBackslashEscapes = false,
+  sqlDialect: SqlDialect = "standard",
 ): { readonly tokens: Token[]; readonly warnings: string[] } {
   assertInput(input, "SQL input");
   const tokens: Token[] = [];
   const warnings: string[] = [];
+  const mysql = sqlDialect === "mysql";
   let index = 0;
 
   const push = (token: Token): void => {
@@ -239,10 +261,9 @@ function tokenizeSql(
     }
 
     if (input.startsWith("/*", index)) {
-      const end = input.indexOf("*/", index + 2);
-      if (end === -1) throw new Error(`Unterminated SQL block comment starting at character ${index + 1}.`);
-      push(createToken("comment", input.slice(index, end + 2)));
-      index = end + 2;
+      const [value, next] = readSqlBlockComment(input, index, !mysql);
+      push(createToken("comment", value));
+      index = next;
       continue;
     }
 
@@ -255,7 +276,7 @@ function tokenizeSql(
 
     if ("BbXxNn".includes(character) && input[index + 1] === "'") {
       const mysqlNationalString = character === "N" || character === "n";
-      const [, next] = readQuoted(input, index + 1, "'", "''", true, mysqlNationalString && mysqlBackslashEscapes);
+      const [, next] = readQuoted(input, index + 1, "'", "''", true, mysqlNationalString && mysql);
       push(createToken("string", input.slice(index, next)));
       index = next;
       continue;
@@ -272,7 +293,7 @@ function tokenizeSql(
     }
 
     if (character === "'") {
-      const [value, next] = readQuoted(input, index, "'", "''", true, mysqlBackslashEscapes);
+      const [value, next] = readQuoted(input, index, "'", "''", true, mysql);
       push(createToken("string", value));
       index = next;
       continue;
@@ -434,7 +455,8 @@ class LineWriter {
 export function formatSql(input: string, options: FormatOptions = {}): FormatResult {
   const indentSize = options.indentSize ?? 2;
   const keywordCase = options.keywordCase ?? "upper";
-  const { tokens, warnings } = tokenizeSql(input, options.mysqlBackslashEscapes ?? false);
+  const sqlDialect = options.sqlDialect ?? "standard";
+  const { tokens, warnings } = tokenizeSql(input, sqlDialect);
   const writer = new LineWriter(" ".repeat(indentSize));
   let indent = 0;
   let maximumDepth = 0;
