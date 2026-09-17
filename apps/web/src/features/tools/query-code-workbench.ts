@@ -299,7 +299,7 @@ function readPostgresqlOperator(input: string, start: number): [string, number] 
 
 function isPostgresqlContinuationString(token: Token | null): boolean {
   if (!token || token.kind !== "string") return false;
-  return token.value.startsWith("'") || /^[EeBbXx]'/u.test(token.value);
+  return token.value.startsWith("'") || /^(?:[EeBbXx]'|[Uu]&')/u.test(token.value);
 }
 
 function tokenizeSql(
