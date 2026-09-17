@@ -244,6 +244,33 @@ function isMysqlDashCommentStart(input: string, index: number): boolean {
   return /\s/u.test(following) || code <= 0x1F || (code >= 0x7F && code <= 0x9F);
 }
 
+function readCodePoint(input: string, index: number): { readonly value: string; readonly next: number } {
+  const codePoint = input.codePointAt(index);
+  if (codePoint === undefined) return { value: "", next: index };
+  const value = String.fromCodePoint(codePoint);
+  return { value, next: index + value.length };
+}
+
+function isPostgresqlIdentifierStart(value: string): boolean {
+  return value === "_" || /^\p{L}$/u.test(value);
+}
+
+function isPostgresqlIdentifierContinuation(value: string, allowDollar: boolean): boolean {
+  return isPostgresqlIdentifierStart(value) || /^[0-9]$/u.test(value) || (allowDollar && value === "$");
+}
+
+function readPostgresqlIdentifier(input: string, start: number, allowDollar = true): [string, number] {
+  const first = readCodePoint(input, start);
+  if (!isPostgresqlIdentifierStart(first.value)) return ["", start];
+  let index = first.next;
+  while (index < input.length) {
+    const current = readCodePoint(input, index);
+    if (!isPostgresqlIdentifierContinuation(current.value, allowDollar)) break;
+    index = current.next;
+  }
+  return [input.slice(start, index), index];
+}
+
 function tokenizeSql(
   input: string,
   sqlDialect: SqlDialect = "standard",
@@ -345,7 +372,23 @@ function tokenizeSql(
       continue;
     }
 
-    if (character === "$" && /[A-Za-z_]/u.test(input[index + 1] ?? "")) {
+    if (!mysql && character === "$") {
+      const tagStart = readCodePoint(input, index + 1);
+      if (isPostgresqlIdentifierStart(tagStart.value)) {
+        const [tag, tagEnd] = readPostgresqlIdentifier(input, index + 1, false);
+        if (tag && input[tagEnd] === "$") {
+          const marker = `$${tag}$`;
+          const end = input.indexOf(marker, tagEnd + 1);
+          if (end === -1) throw new Error(`Unterminated PostgreSQL dollar-quoted string starting at character ${index + 1}.`);
+          warnings.push("postgres-dollar-quoted-string");
+          push(createToken("string", input.slice(index, end + marker.length)));
+          index = end + marker.length;
+          continue;
+        }
+      }
+    }
+
+    if (mysql && character === "$" && /[A-Za-z_]/u.test(input[index + 1] ?? "")) {
       const markerMatch = input.slice(index).match(/^\$[A-Za-z_][A-Za-z0-9_]*\$/u);
       if (markerMatch) {
         const marker = markerMatch[0];
@@ -367,7 +410,17 @@ function tokenizeSql(
       continue;
     }
 
-    if (/[A-Za-z_]/u.test(character)) {
+    if (!mysql) {
+      const current = readCodePoint(input, index);
+      if (isPostgresqlIdentifierStart(current.value)) {
+        const [value, next] = readPostgresqlIdentifier(input, index);
+        push(createToken("word", value));
+        index = next;
+        continue;
+      }
+    }
+
+    if (mysql && /[A-Za-z_]/u.test(character)) {
       const match = input.slice(index).match(/^[A-Za-z_][A-Za-z0-9_$]*/u);
       if (!match) throw new Error(`Unable to tokenize SQL at character ${index + 1}.`);
       push(createToken("word", match[0]));
