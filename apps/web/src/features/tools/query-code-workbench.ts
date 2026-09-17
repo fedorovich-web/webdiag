@@ -71,6 +71,7 @@ interface Token {
   readonly kind: "word" | "number" | "string" | "identifier" | "comment" | "operator" | "punctuation" | "placeholder";
   readonly value: string;
   readonly upper: string;
+  readonly lineBreakBefore?: boolean;
 }
 
 const MAXIMUM_INPUT_CHARACTERS = 500_000;
@@ -296,6 +297,11 @@ function readPostgresqlOperator(input: string, start: number): [string, number] 
   return [value, end];
 }
 
+function isPostgresqlContinuationString(token: Token | null): boolean {
+  if (!token || token.kind !== "string") return false;
+  return token.value.startsWith("'") || /^[EeBbXx]'/u.test(token.value);
+}
+
 function tokenizeSql(
   input: string,
   sqlDialect: SqlDialect = "standard",
@@ -305,15 +311,18 @@ function tokenizeSql(
   const warnings: string[] = [];
   const mysql = sqlDialect === "mysql";
   let index = 0;
+  let lineBreakBeforeNextToken = false;
 
   const push = (token: Token): void => {
-    tokens.push(token);
+    tokens.push(lineBreakBeforeNextToken ? { ...token, lineBreakBefore: true } : token);
+    lineBreakBeforeNextToken = false;
     if (tokens.length > MAXIMUM_TOKENS) throw new Error(`SQL input exceeds the ${MAXIMUM_TOKENS.toLocaleString("en-US")}-token limit.`);
   };
 
   while (index < input.length) {
     const character = input[index] ?? "";
     if (/\s/u.test(character)) {
+      if (character === "\n" || character === "\r") lineBreakBeforeNextToken = true;
       index += 1;
       continue;
     }
@@ -676,6 +685,15 @@ export function formatSql(input: string, options: FormatOptions = {}): FormatRes
       writer.write(token.value, true);
       previous = token;
       continue;
+    }
+
+    if (
+      sqlDialect === "standard"
+      && token.lineBreakBefore
+      && isPostgresqlContinuationString(previous)
+      && isPostgresqlContinuationString(token)
+    ) {
+      writer.newline(indent);
     }
 
     const isKeyword = token.kind === "word" && SQL_KEYWORDS.has(token.upper);
