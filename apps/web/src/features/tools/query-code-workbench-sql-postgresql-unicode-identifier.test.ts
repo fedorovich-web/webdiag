@@ -39,9 +39,9 @@ describe("PostgreSQL Unicode identifier preservation", () => {
       .toBe(`SELECT ${literal} AS value;`);
   });
 
-  it("does not treat a digit as a bare-identifier start", () => {
-    expect(formatSql("select 1alpha from data;").output)
-      .toBe("SELECT 1 alpha\nFROM data;");
+  it("rejects a digit-prefixed identifier as PostgreSQL numeric junk", () => {
+    expect(() => formatSql("select 1alpha from data;"))
+      .toThrow(/PostgreSQL numeric literal/iu);
   });
 
   it("does not reinterpret an attached dollar delimiter after an identifier", () => {
