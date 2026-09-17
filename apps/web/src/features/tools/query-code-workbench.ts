@@ -290,6 +290,20 @@ function assertPostgresqlParameterBoundary(input: string, index: number, start: 
   }
 }
 
+const POSTGRESQL_MAXIMUM_POSITIONAL_PARAMETER = "2147483647";
+
+function assertPostgresqlParameterRange(value: string, start: number): void {
+  const digits = value.slice(1).replace(/^0+/u, "") || "0";
+  const tooLarge = digits.length > POSTGRESQL_MAXIMUM_POSITIONAL_PARAMETER.length
+    || (
+      digits.length === POSTGRESQL_MAXIMUM_POSITIONAL_PARAMETER.length
+      && digits > POSTGRESQL_MAXIMUM_POSITIONAL_PARAMETER
+    );
+  if (tooLarge) {
+    throw new Error(`PostgreSQL positional parameter number too large at character ${start + 1}.`);
+  }
+}
+
 const POSTGRESQL_OPERATOR_CHARACTERS = "+-*/<>=~!@#%^&|?";
 const POSTGRESQL_TRAILING_SIGN_EXEMPT_CHARACTERS = "~!@#%^&|?";
 
@@ -511,6 +525,7 @@ function tokenizeSql(
       const value = placeholderMatch[0];
       if (!mysql && value.startsWith("$")) {
         assertPostgresqlParameterBoundary(input, index + value.length, index);
+        assertPostgresqlParameterRange(value, index);
       }
       push(createToken("placeholder", value));
       index += value.length;
