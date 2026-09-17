@@ -388,6 +388,19 @@ function tokenizeSql(
       }
     }
 
+    if (mysql && character === "$" && /[A-Za-z_]/u.test(input[index + 1] ?? "")) {
+      const markerMatch = input.slice(index).match(/^\$[A-Za-z_][A-Za-z0-9_]*\$/u);
+      if (markerMatch) {
+        const marker = markerMatch[0];
+        const end = input.indexOf(marker, index + marker.length);
+        if (end === -1) throw new Error(`Unterminated PostgreSQL dollar-quoted string starting at character ${index + 1}.`);
+        warnings.push("postgres-dollar-quoted-string");
+        push(createToken("string", input.slice(index, end + marker.length)));
+        index = end + marker.length;
+        continue;
+      }
+    }
+
     if (character === "$" && input[index + 1] === "$") {
       const end = input.indexOf("$$", index + 2);
       if (end === -1) throw new Error(`Unterminated PostgreSQL dollar-quoted string starting at character ${index + 1}.`);
