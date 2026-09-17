@@ -272,6 +272,24 @@ function readPostgresqlIdentifier(input: string, start: number, allowDollar = tr
   return [input.slice(start, index), index];
 }
 
+function isPostgresqlNumericJunkStart(value: string): boolean {
+  return isPostgresqlIdentifierStart(value) || /^[0-9]$/u.test(value);
+}
+
+function assertPostgresqlNumericBoundary(input: string, index: number, start: number): void {
+  const next = readCodePoint(input, index);
+  if (isPostgresqlNumericJunkStart(next.value)) {
+    throw new Error(`Invalid PostgreSQL SQL token boundary at character ${start + 1}.`);
+  }
+}
+
+function assertPostgresqlParameterBoundary(input: string, index: number, start: number): void {
+  const next = readCodePoint(input, index);
+  if (isPostgresqlIdentifierStart(next.value)) {
+    throw new Error(`Invalid PostgreSQL SQL token boundary at character ${start + 1}.`);
+  }
+}
+
 const POSTGRESQL_OPERATOR_CHARACTERS = "+-*/<>=~!@#%^&|?";
 const POSTGRESQL_TRAILING_SIGN_EXEMPT_CHARACTERS = "~!@#%^&|?";
 
@@ -465,8 +483,10 @@ function tokenizeSql(
     if (/\d/u.test(character) || (character === "." && /\d/u.test(input[index + 1] ?? ""))) {
       const match = input.slice(index).match(/^(?:0[xX]_?[0-9A-Fa-f](?:_?[0-9A-Fa-f])*|0[oO]_?[0-7](?:_?[0-7])*|0[bB]_?[01](?:_?[01])*|(?:\d(?:_?\d)*(?:\.(?:\d(?:_?\d)*)?)?|\.\d(?:_?\d)*)(?:[eE][+-]?\d(?:_?\d)*)?)/u);
       if (!match) throw new Error(`Unable to tokenize SQL number at character ${index + 1}.`);
-      push(createToken("number", match[0]));
-      index += match[0].length;
+      const value = match[0];
+      if (!mysql) assertPostgresqlNumericBoundary(input, index + value.length, index);
+      push(createToken("number", value));
+      index += value.length;
       continue;
     }
 
@@ -488,8 +508,12 @@ function tokenizeSql(
 
     const placeholderMatch = input.slice(index).match(/^(?:\?|:[A-Za-z_][A-Za-z0-9_]*|@[A-Za-z_][A-Za-z0-9_]*|\$\d+)/u);
     if (placeholderMatch) {
-      push(createToken("placeholder", placeholderMatch[0]));
-      index += placeholderMatch[0].length;
+      const value = placeholderMatch[0];
+      if (!mysql && value.startsWith("$")) {
+        assertPostgresqlParameterBoundary(input, index + value.length, index);
+      }
+      push(createToken("placeholder", value));
+      index += value.length;
       continue;
     }
 
