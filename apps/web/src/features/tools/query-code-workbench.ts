@@ -279,14 +279,14 @@ function isPostgresqlNumericJunkStart(value: string): boolean {
 function assertPostgresqlNumericBoundary(input: string, index: number, start: number): void {
   const next = readCodePoint(input, index);
   if (isPostgresqlNumericJunkStart(next.value)) {
-    throw new Error(`Invalid PostgreSQL SQL token boundary at character ${start + 1}.`);
+    throw new Error(`Invalid PostgreSQL numeric literal at character ${start + 1}.`);
   }
 }
 
 function assertPostgresqlParameterBoundary(input: string, index: number, start: number): void {
   const next = readCodePoint(input, index);
   if (isPostgresqlIdentifierStart(next.value)) {
-    throw new Error(`Invalid PostgreSQL SQL token boundary at character ${start + 1}.`);
+    throw new Error(`Invalid PostgreSQL positional parameter at character ${start + 1}.`);
   }
 }
 
@@ -788,7 +788,7 @@ function tokenizeGraphql(input: string): Token[] {
       continue;
     }
     if (input.startsWith("...", index)) {
-      push(createToken("operator", "..."));
+      push(createToken("operator", "...") );
       index += 3;
       continue;
     }
