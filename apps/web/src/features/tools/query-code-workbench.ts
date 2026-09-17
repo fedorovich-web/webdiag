@@ -788,7 +788,7 @@ function tokenizeGraphql(input: string): Token[] {
       continue;
     }
     if (input.startsWith("...", index)) {
-      push(createToken("operator", "...") );
+      push(createToken("operator", "..."));
       index += 3;
       continue;
     }
