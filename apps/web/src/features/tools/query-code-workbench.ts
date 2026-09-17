@@ -334,6 +334,44 @@ function isPostgresqlContinuationString(token: Token | null): boolean {
   return token.value.startsWith("'") || /^(?:[EeBbXx]'|[Uu]&')/u.test(token.value);
 }
 
+type PostgresqlBitStringKind = "binary" | "hexadecimal";
+
+function postgresqlBitStringKind(token: Token): PostgresqlBitStringKind | null {
+  if (token.kind !== "string") return null;
+  if (/^[Bb]'/u.test(token.value)) return "binary";
+  if (/^[Xx]'/u.test(token.value)) return "hexadecimal";
+  return null;
+}
+
+function assertPostgresqlBitStringSegment(token: Token, kind: PostgresqlBitStringKind): void {
+  const prefixed = postgresqlBitStringKind(token) !== null;
+  const content = token.value.slice(prefixed ? 2 : 1, -1);
+  const valid = kind === "binary" ? /^[01]*$/u.test(content) : /^[0-9A-Fa-f]*$/u.test(content);
+  if (!valid) throw new Error(`Invalid PostgreSQL ${kind} bit string.`);
+}
+
+function validatePostgresqlBitStrings(tokens: readonly Token[]): void {
+  let continuationKind: PostgresqlBitStringKind | null = null;
+  for (const token of tokens) {
+    const prefixedKind = postgresqlBitStringKind(token);
+    if (prefixedKind) {
+      assertPostgresqlBitStringSegment(token, prefixedKind);
+      continuationKind = prefixedKind;
+      continue;
+    }
+    if (
+      continuationKind
+      && token.kind === "string"
+      && token.value.startsWith("'")
+      && token.lineBreakBefore
+    ) {
+      assertPostgresqlBitStringSegment(token, continuationKind);
+      continue;
+    }
+    continuationKind = null;
+  }
+}
+
 function tokenizeSql(
   input: string,
   sqlDialect: SqlDialect = "standard",
@@ -557,6 +595,7 @@ function tokenizeSql(
     throw new Error(`Unsupported SQL character ${JSON.stringify(character)} at position ${index + 1}.`);
   }
 
+  if (!mysql) validatePostgresqlBitStrings(tokens);
   return { tokens, warnings: unique(warnings) };
 }
 
