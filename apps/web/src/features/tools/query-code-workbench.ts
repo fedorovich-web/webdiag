@@ -271,6 +271,31 @@ function readPostgresqlIdentifier(input: string, start: number, allowDollar = tr
   return [input.slice(start, index), index];
 }
 
+const POSTGRESQL_OPERATOR_CHARACTERS = "+-*/<>=~!@#%^&|?";
+const POSTGRESQL_TRAILING_SIGN_EXEMPT_CHARACTERS = "~!@#%^&|?";
+
+function readPostgresqlOperator(input: string, start: number): [string, number] {
+  if (!POSTGRESQL_OPERATOR_CHARACTERS.includes(input[start] ?? "")) return ["", start];
+  let end = start;
+  while (end < input.length) {
+    if (input.startsWith("--", end) || input.startsWith("/*", end)) break;
+    const character = input[end] ?? "";
+    if (!POSTGRESQL_OPERATOR_CHARACTERS.includes(character)) break;
+    end += 1;
+  }
+
+  let value = input.slice(start, end);
+  const hasTrailingSignExemption = [...value]
+    .some((character) => POSTGRESQL_TRAILING_SIGN_EXEMPT_CHARACTERS.includes(character));
+  if (value.length > 1 && !hasTrailingSignExemption) {
+    while (value.length > 1 && (value.endsWith("+") || value.endsWith("-"))) {
+      value = value.slice(0, -1);
+      end -= 1;
+    }
+  }
+  return [value, end];
+}
+
 function tokenizeSql(
   input: string,
   sqlDialect: SqlDialect = "standard",
@@ -457,6 +482,16 @@ function tokenizeSql(
       push(createToken("placeholder", placeholderMatch[0]));
       index += placeholderMatch[0].length;
       continue;
+    }
+
+    if (!mysql) {
+      const [operatorName, next] = readPostgresqlOperator(input, index);
+      if (operatorName.length > 1) {
+        warnings.push("dialect-specific-operator");
+        push(createToken("operator", operatorName));
+        index = next;
+        continue;
+      }
     }
 
     if ("(),;.".includes(character)) {
