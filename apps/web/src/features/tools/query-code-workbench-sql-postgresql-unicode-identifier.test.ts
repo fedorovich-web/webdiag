@@ -33,6 +33,12 @@ describe("PostgreSQL Unicode identifier preservation", () => {
       .toBe(`SELECT ${literal} AS value;`);
   });
 
+  it("keeps existing ASCII tagged dollar quotes in MySQL mode", () => {
+    const literal = "$tag$from where$tag$";
+    expect(formatSql(`select ${literal} as value;`, MYSQL_OPTIONS).output)
+      .toBe(`SELECT ${literal} AS value;`);
+  });
+
   it("does not treat a digit as a bare-identifier start", () => {
     expect(formatSql("select 1alpha from data;").output)
       .toBe("SELECT 1 alpha\nFROM data;");
