@@ -42,6 +42,34 @@ def validate_resolved_addresses(addresses: list[str]) -> None:
             raise UrlPolicyError("Resolved address is not allowed.")
 
 
+def _has_valid_dns_labels(hostname: str) -> bool:
+    if len(hostname) > 253:
+        return False
+    return all(
+        0 < len(label) <= 63
+        and label[0].isalnum()
+        and label[-1].isalnum()
+        and all(character.isalnum() or character == "-" for character in label)
+        for label in hostname.split(".")
+    )
+
+
+def _canonicalize_hostname(
+    hostname: str,
+) -> tuple[str, ipaddress.IPv4Address | ipaddress.IPv6Address | None]:
+    try:
+        address = ipaddress.ip_address(hostname)
+    except ValueError:
+        try:
+            canonical_hostname = hostname.encode("idna").decode("ascii").lower()
+        except UnicodeError as exc:
+            raise UrlPolicyError("Hostname cannot be encoded as IDNA.") from exc
+        if not _has_valid_dns_labels(canonical_hostname):
+            raise UrlPolicyError("Hostname contains an invalid DNS label.") from None
+        return canonical_hostname, None
+    return str(address), address
+
+
 def validate_url(raw: str) -> ValidatedUrl:
     value = raw.strip()
     if not value:
@@ -55,24 +83,24 @@ def validate_url(raw: str) -> ValidatedUrl:
         raise UrlPolicyError("Only HTTP and HTTPS are allowed.")
     if parsed.username is not None or parsed.password is not None:
         raise UrlPolicyError("Credentials in URLs are not allowed.")
-    hostname = (parsed.hostname or "").rstrip(".").lower()
+    raw_hostname = (parsed.hostname or "").rstrip(".")
+    hostname, address = _canonicalize_hostname(raw_hostname)
     if not hostname:
         raise UrlPolicyError("Hostname is required.")
     if hostname == "localhost" or hostname.endswith(BLOCKED_HOST_SUFFIXES):
         raise UrlPolicyError("Local hostnames are not allowed.")
-    try:
-        address = ipaddress.ip_address(hostname)
-    except ValueError:
-        address = None
     if address is not None and _is_blocked_ip(address):
         raise UrlPolicyError("Private or reserved addresses are not allowed.")
     try:
-        port = parsed.port or (443 if scheme == "https" else 80)
+        parsed_port = parsed.port
     except ValueError as exc:
         raise UrlPolicyError("Port is invalid.") from exc
+    default_port = 443 if scheme == "https" else 80
+    port = default_port if parsed_port is None else parsed_port
     if port not in {80, 443}:
         raise UrlPolicyError("Only ports 80 and 443 are allowed.")
-    netloc = hostname if parsed.port is None else f"{hostname}:{port}"
+    authority_hostname = f"[{hostname}]" if isinstance(address, ipaddress.IPv6Address) else hostname
+    netloc = authority_hostname if port == default_port else f"{authority_hostname}:{port}"
     normalized = parsed._replace(scheme=scheme, netloc=netloc).geturl()
     return ValidatedUrl(
         original=raw,

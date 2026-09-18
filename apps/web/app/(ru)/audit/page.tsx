@@ -4,8 +4,8 @@ import { pageMetadata } from "../../../src/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
   locale: "ru",
-  title: "Технический аудит сайта и SEO-отчёт",
-  description: "Технический SEO-аудит сайта: обход страниц, проблемы, приоритеты, затронутые URL и повторная проверка исправлений.",
+  title: "Технический SEO-аудит сайта — ошибки и рекомендации | WebDiag",
+  description: "Технический SEO-аудит сайта: индексация, robots.txt, sitemap.xml, canonical, статусы, редиректы, мета-теги, скорость, HTTPS и другие сигналы.",
   canonical: "/audit",
   ruPath: "/audit",
   enPath: "/en/audit",
@@ -16,18 +16,18 @@ export default function Page() {
     <main className="shell page-main wd-internal-page">
       <header className="page-heading wd-internal-hero">
         <span className="eyebrow">WebDiag</span>
-        <h1>Технический аудит сайта с приоритетами исправлений</h1>
-        <p>Будущий audit engine WebDiag будет проходить по URL, sitemap и внутренним ссылкам, собирать технические проблемы и показывать, какие страницы затронуты.</p>
+        <h1>Технический SEO-аудит сайта с приоритетами исправлений</h1>
+        <p>Проверяйте ключевые технические и SEO-сигналы, находите проблемы на конкретных страницах и переходите от найденной ошибки к понятному следующему шагу.</p>
       </header>
       <section className="wd-internal-grid" aria-label="Состав аудита">
-        <article><h2>Что проверяется</h2><p>Индексация, robots.txt, sitemap, canonical, статусы ответа, редиректы, мета-теги, скорость, SSL и доступность.</p></article>
-        <article><h2>Что получает пользователь</h2><p>Сводная оценка, список проблем, приоритеты, затронутые URL, рекомендации и повторная проверка после исправлений.</p></article>
-        <article><h2>Статус</h2><p>До запуска audit engine доступны пример отчёта и рабочие вспомогательные инструменты.</p></article>
+        <article><h2>Что проверяется</h2><p>Индексация, robots.txt, sitemap.xml, canonical, статусы ответа, редиректы, мета-теги, скорость, HTTPS и доступность.</p></article>
+        <article><h2>Что показывает результат</h2><p>Найденные проблемы, затронутые URL, приоритет и рекомендации, которые помогают понять, что исправлять в первую очередь.</p></article>
+        <article><h2>Как работать с результатом</h2><p>Начните с критичных проблем, исправьте их и перепроверьте нужные страницы или отдельные технические сигналы инструментами WebDiag.</p></article>
       </section>
       <section className="wd-internal-note">
-        <strong>Полный аудит будет платным по объёму сайта</strong>
-        <p>Предварительная цена начинается от 490 ₽ для небольших сайтов. Перед запуском проверки WebDiag должен показывать лимиты и стоимость.</p>
-        <Link className="wd-button wd-button-primary" href="/pricing">Посмотреть тарифы</Link>
+        <strong>Нужна точечная проверка?</strong>
+        <p>Для отдельной задачи — robots.txt, sitemap.xml, canonical, редиректов, мета-тегов, скорости и других сигналов — используйте специализированные инструменты WebDiag.</p>
+        <Link className="wd-button wd-button-primary" href="/tools">Открыть инструменты</Link>
       </section>
     </main>
   );

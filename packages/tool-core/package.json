@@ -7,10 +7,11 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "test": "vitest run --pool=forks --maxWorkers=1"
+    "test": "vitest run --pool=forks --maxWorkers=1",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "typescript": "5.9.3",
-    "vitest": "3.2.6"
+    "vitest": "4.1.11"
   }
 }

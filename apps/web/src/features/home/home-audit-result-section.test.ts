@@ -44,6 +44,8 @@ const snapshot: AuditFrontendResult = {
         priority: "p1",
         title: "Title is missing",
         description: "The page has no title tag.",
+        affectedUrls: ["https://example.ru/page"],
+        recommendation: { summary: "Add a title.", steps: [], expectedImpact: null },
       },
     ],
   },

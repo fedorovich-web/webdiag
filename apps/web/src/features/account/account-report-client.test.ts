@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   createAccountReport,
   enableAccountReportShare,
+  getAccountReport,
   getPublicReport,
   listAccountReports,
+  revokeAccountReportShare,
 } from "./account-report-client";
 
 const summary = {
@@ -29,6 +31,12 @@ const snapshot = {
   checks: [],
   issues: [],
   generated_at: "2026-08-01T10:00:00Z",
+} as const;
+const listItem = {
+  ...summary,
+  project_name: snapshot.project_name,
+  target_origin: snapshot.target_origin,
+  audit_completed_at: snapshot.audit_completed_at,
 } as const;
 
 describe("account report client", () => {
@@ -60,18 +68,47 @@ describe("account report client", () => {
           snapshot,
         });
       }
-      return Response.json({ contract_version: "webdiag.account.report_list.v1", reports: [summary] });
+      return Response.json({ contract_version: "webdiag.account.report_list.v2", reports: [listItem] });
     };
 
     await createAccountReport(summary.project_id, summary.audit_id, { title: summary.title, locale: "en" }, fetcher);
-    await listAccountReports(fetcher);
+    await listAccountReports({ projectId: summary.project_id }, fetcher);
     await enableAccountReportShare(summary.id, 7, fetcher);
     await getPublicReport("A".repeat(43), fetcher);
 
     expect(calls[0]?.input.endsWith(`/audits/${summary.audit_id}/reports`)).toBe(true);
     expect(calls[0]?.init?.credentials).toBe("same-origin");
     expect(calls[0]?.init?.body).toBe(JSON.stringify({ title: summary.title, locale: "en" }));
+    expect(calls[1]?.input).toBe(`/api/account/reports?project_id=${summary.project_id}`);
     expect(calls[2]?.init?.body).toBe(JSON.stringify({ expires_in_days: 7 }));
     expect(calls[3]?.init?.credentials).toBe("omit");
+  });
+
+  it("rejects a share response bound to a different report", async () => {
+    await expect(enableAccountReportShare(summary.id, 7, async () => Response.json({
+      contract_version: "webdiag.account.report_share.v1",
+      report_id: "99999999-9999-4999-8999-999999999999",
+      share_token: "A".repeat(43),
+      share_path: `/reports/share/${"A".repeat(43)}`,
+      expires_at: "2026-08-08T10:00:00Z",
+    }))).rejects.toMatchObject({ code: "account_invalid_response" });
+  });
+
+  it("rejects detail responses bound to a different requested resource", async () => {
+    const wrong = {
+      contract_version: "webdiag.account.report_detail.v1",
+      report: { ...summary, id: "99999999-9999-4999-8999-999999999999" },
+      snapshot,
+    };
+    const fetcher = async () => Response.json(wrong);
+    await expect(getAccountReport(summary.id, fetcher)).rejects.toMatchObject({ code: "account_invalid_response" });
+    await expect(revokeAccountReportShare(summary.id, fetcher)).rejects.toMatchObject({ code: "account_invalid_response" });
+    await expect(createAccountReport(summary.project_id, summary.audit_id, {
+      title: summary.title,
+      locale: "en",
+    }, async () => Response.json({
+      ...wrong,
+      report: { ...summary, project_id: "99999999-9999-4999-8999-999999999999" },
+    }))).rejects.toMatchObject({ code: "account_invalid_response" });
   });
 });

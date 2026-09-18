@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  AccountClientError,
   getAccountSession,
   loginAccount,
   logoutAccount,
   registerAccount,
 } from "./account-client";
+import { accountAuthenticationWasLost } from "./account-authentication-state";
 
 const session = {
   contract_version: "webdiag.account.session.v1",
@@ -25,6 +27,16 @@ function jsonResponse(payload: unknown, status = 200): Response {
 }
 
 describe("account client", () => {
+  it("recognizes only account-wide authentication loss", () => {
+    expect(accountAuthenticationWasLost(new AccountClientError("Expired", {
+      status: 401,
+      code: "account_unauthenticated",
+    }))).toBe(true);
+    expect(accountAuthenticationWasLost(new AccountClientError("Wrong password", {
+      status: 401,
+      code: "account_invalid_current_password",
+    }))).toBe(false);
+  });
   it("sends same-origin bounded register and login contracts", async () => {
     const calls: Array<{ input: string; init?: RequestInit }> = [];
     const fetcher = async (input: string, init?: RequestInit) => {

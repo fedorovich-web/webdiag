@@ -6,14 +6,20 @@ from urllib.parse import urlsplit, urlunsplit
 from webdiag_api.accounts.workspace_models import (
     AccountProjectDetailResponse,
     AccountProjectListResponse,
+    ArchivedAccountProject,
+    ArchivedAccountProjectListResponse,
     ProjectCreateRequest,
+    ProjectRenameRequest,
     SavedAuditCheck,
     SavedAuditDetailResponse,
     SavedAuditIssue,
     SavedAuditPayload,
     SavedAuditRecommendation,
 )
-from webdiag_api.accounts.workspace_storage import SqliteWorkspaceStore
+from webdiag_api.accounts.workspace_storage import (
+    SqliteWorkspaceStore,
+    WorkspaceStoreIntegrityError,
+)
 from webdiag_api.audit.models import AuditJobStatus, AuditRun
 from webdiag_api.audit.service import AuditExecutionError, AuditExecutionService
 from webdiag_api.security.url_policy import UrlPolicyError, validate_url
@@ -161,6 +167,55 @@ class WorkspaceService:
             projects=tuple(project.public() for project in projects)
         )
 
+    def rename_project(
+        self,
+        *,
+        user_id: str,
+        project_id: str,
+        request: ProjectRenameRequest,
+    ):
+        project = self._store.rename_project(
+            user_id=user_id,
+            project_id=project_id,
+            name=normalize_project_name(request.name),
+        )
+        if project is None:
+            raise WorkspaceServiceError(
+                404, "account_project_not_found", "Project was not found."
+            )
+        return project.public()
+
+    def list_archived_projects(
+        self,
+        *,
+        user_id: str,
+    ) -> ArchivedAccountProjectListResponse:
+        projects = self._store.list_archived_projects(user_id=user_id)
+        return ArchivedAccountProjectListResponse(
+            projects=tuple(project.archived_public() for project in projects)
+        )
+
+    def archive_project(
+        self,
+        *,
+        user_id: str,
+        project_id: str,
+    ) -> ArchivedAccountProject:
+        project = self._store.archive_project(user_id=user_id, project_id=project_id)
+        if project is None:
+            raise WorkspaceServiceError(
+                404, "account_project_not_found", "Project was not found."
+            )
+        return project.archived_public()
+
+    def restore_project(self, *, user_id: str, project_id: str):
+        project = self._store.restore_project(user_id=user_id, project_id=project_id)
+        if project is None:
+            raise WorkspaceServiceError(
+                404, "account_project_not_found", "Project was not found."
+            )
+        return project.public()
+
     def get_project(self, *, user_id: str, project_id: str) -> AccountProjectDetailResponse:
         project = self._owned_project(user_id=user_id, project_id=project_id)
         audits = self._store.list_audits(user_id=user_id, project_id=project_id)
@@ -180,7 +235,7 @@ class WorkspaceService:
             snapshot = self._audit_service.start_single_url_audit(project.origin)
         except AuditExecutionError as error:
             raise WorkspaceServiceError(
-                502,
+                error.status_code,
                 "account_audit_failed",
                 "The website audit could not be completed.",
             ) from error
@@ -231,10 +286,18 @@ class WorkspaceService:
             raise WorkspaceServiceError(
                 404, "account_saved_audit_not_found", "Audit was not found."
             )
+        try:
+            payload = audit.payload()
+        except WorkspaceStoreIntegrityError as error:
+            raise WorkspaceServiceError(
+                500,
+                "account_saved_audit_unavailable",
+                "The stored audit is temporarily unavailable.",
+            ) from error
         return SavedAuditDetailResponse(
             project=project.public(),
             audit=audit.summary(),
-            payload=audit.payload(),
+            payload=payload,
         )
 
     def _owned_project(self, *, user_id: str, project_id: str):

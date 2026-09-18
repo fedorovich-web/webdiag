@@ -66,6 +66,46 @@ describe("bounded GraphQL formatter", () => {
     expect(result.output).toContain('"""line 1\nline 2"""');
   });
 
+  it("terminates comments at every GraphQL line terminator", () => {
+    for (const lineTerminator of ["\n", "\r\n", "\r"]) {
+      expect(formatGraphql(`# note${lineTerminator}query Q{field}`).output)
+        .toBe("# note\nquery Q {\n  field\n}");
+    }
+  });
+
+  it("accepts only the GraphQL ignored-source whitespace set", () => {
+    expect(() => formatGraphql("\uFEFFquery\tQ {\r\nfield }")).not.toThrow();
+    for (const unsupportedWhitespace of ["\u000B", "\u000C", "\u00A0", "\u2028", "\u2029"]) {
+      expect(() => formatGraphql(`query${unsupportedWhitespace}Q{field}`))
+        .toThrow(/unsupported GraphQL character/iu);
+    }
+  });
+
+  it("validates GraphQL string escape sequences and Unicode scalar values", () => {
+    expect(() => formatGraphql(String.raw`query Q { field(value: "\"\\\/\b\f\n\r\t\u0041\u{1F4A9}\uD83D\uDCA9") }`)).not.toThrow();
+
+    for (const invalidString of [
+      String.raw`query Q { field(value: "\q") }`,
+      String.raw`query Q { field(value: "\x41") }`,
+      String.raw`query Q { field(value: "\u12") }`,
+      String.raw`query Q { field(value: "\u{}") }`,
+      String.raw`query Q { field(value: "\u{110000}") }`,
+      String.raw`query Q { field(value: "\uDEAD") }`,
+      String.raw`query Q { field(value: "\uD83D\u0041") }`,
+    ]) {
+      expect(() => formatGraphql(invalidString)).toThrow(/GraphQL string escape/iu);
+    }
+  });
+
+  it("enforces GraphQL numeric token boundaries", () => {
+    expect(() => formatGraphql("query Q { field(a: 0 b: -0 c: 123 d: -123 e: 1.0 f: 1e50 g: 6.0221413e23) }")).not.toThrow();
+
+    for (const invalidNumber of ["00", "01", "-01", "0x123", "123L", "1e", "1e2foo"]) {
+      expect(() => formatGraphql(`query Q { field(value: ${invalidNumber}) }`))
+        .toThrow(/GraphQL number/iu);
+    }
+  });
+
   it("rejects invalid characters and unbalanced delimiters", () => {
     expect(() => formatGraphql("query Q { field ] }")).toThrow(/closing bracket/iu);
     expect(() => formatGraphql("query Q { field")).toThrow(/unclosed selection/iu);

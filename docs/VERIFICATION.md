@@ -1,5 +1,602 @@
 # Verification Notes
 
+# Owned-page snapshots for content AI — 2026-09-11
+
+## Scope
+
+- extended server-owned snapshot resolution to `ai_content_optimizer` and
+  `ai_search_intent_page_fit`;
+- public contracts now accept an owned page URL without browser-provided page
+  content, while provider contracts still require a canonical resolved snapshot;
+- active-project ownership, SSRF-safe bounded HTML capture, final-origin checks,
+  query/fragment stripping, and provider-contract revalidation happen before a
+  run is persisted or queued;
+- optional browser title/H1/content hints remain backward compatible but are
+  replaced and cannot become provider evidence;
+- client factual constraints for Content Optimizer are accepted only when each
+  is an exact substring of the server-resolved owned-page snapshot;
+- RU account forms now request the URL and task inputs only; provider policies
+  prohibit additional crawling or fetching.
+
+## Verification
+
+```text
+content/resolver/worker targeted pytest       PASS — 32 passed
+API/worker pytest                              PASS — 684 passed / 3 Windows skips
+web Vitest                                     PASS — 438 passed / 111 files
+Ruff / TypeScript                             PASS / PASS
+Next.js production build                      PASS — 273 generated pages
+account Playwright                             PASS — 17 passed
+ESLint / Impeccable changed-component scan     PASS — 0 errors / 0 findings
+```
+
+All fetches in tests use an injected in-memory fixture. No live site, provider,
+payment, activation, release, deployment, merge, tag, or main-branch operation
+was performed.
+
+# AI catalog availability semantics — 2026-09-11
+
+## Scope
+
+- aligned account UI status copy with the API contract: the authenticated
+  catalog returns only `ready` tools, so a returned tool is now labelled
+  `Доступен` / `Available` rather than `Внутренняя оценка`;
+- retained the fail-closed empty-catalog state: internal tools remain omitted,
+  render as unavailable, and cannot open a run form;
+- replaced the misleading project-evidence action on unavailable cards with an
+  explicit unavailable state; a ready Audit Copilot points users to a saved
+  audit, where its server-owned evidence flow starts;
+- added browser coverage proving that competitor-gap and internal-linking forms
+  accept URL references without exposing the removed client evidence fields.
+
+## Verification
+
+```text
+web Vitest                                  PASS — 438 passed / 111 files
+API/worker pytest                           PASS — 680 passed / 3 Windows skips
+Next.js production build                    PASS — 273 generated pages
+account Playwright                          PASS — 17 passed
+ESLint / TypeScript / git diff              PASS — 0 errors / PASS / PASS
+```
+
+ESLint retains the pre-existing `site-brand.tsx` `no-img-element` warning.
+Impeccable reported two pre-existing side-accent rules outside this patch; the
+changed AI status uses the existing semantic success tokens. Controlled browser
+fixtures do not represent live provider availability, and no provider, payment,
+release, deployment, merge, tag, or catalog activation was performed.
+
+# AI activation gate — 2026-09-10
+
+## Scope
+
+- added a read-only operator gate for the six portfolio MVP text tools:
+  `ai_audit_action_plan`, `ai_competitor_gap_report`, `ai_content_brief`,
+  `ai_content_optimizer`, `ai_search_intent_page_fit`, and
+  `ai_internal_linking_planner`;
+- validates an exact approval schema, immutable provider-evidence SHA-256,
+  balanced RU/EN sample counts, minimum representative corpus size, observed
+  maximum cost, and positive fixed credit-price approval;
+- requires explicit `passed` values for semantic review, provider smoke, safety
+  review, and production preflight while rejecting binary/image tools;
+- reads only a verified recovery snapshot and bounded non-linked approval file;
+  it never changes catalog state, prices, credits, runs, evidence, or provider
+  state and prints no private IDs, prompts, responses, URLs, or secrets.
+
+## Verification
+
+```text
+activation-gate regression                   PASS — 18 passed
+Ruff (activation module, CLI, tests)          PASS
+```
+
+The gate is an evidence-consistency check, not an activation command. A
+separate reviewed catalog commit is still required for each tool, and no real
+provider, payment, release, deployment, domain, or TLS operation was performed.
+
+# Server-owned AI page snapshots — 2026-09-10
+
+## Scope
+
+- changed `ai_competitor_gap_report` and `ai_internal_linking_planner` public
+  inputs to accept URL references without requiring browser-provided evidence;
+- added an ownership-scoped resolver that verifies the own/project origin,
+  rejects foreign page inventories, fetches only bounded HTML through the
+  existing SSRF-safe `SafeHttpFetcher`, strips query/fragment data, extracts
+  title/H1/body text, and revalidates the provider contract before persistence;
+- retained backward-compatible optional client hints but never uses them as
+  authoritative provider evidence; resolved snapshots replace them before the
+  run is stored or queued;
+- updated the worker policy and RU/EN form copy to state that WebDiag fetches
+  bounded snapshots and that AI cannot publish changes.
+
+## Verification
+
+```text
+context resolver / planning / service / worker  PASS — 19 passed
+Ruff (resolver, contracts, service, API, worker) PASS
+```
+
+Tests use an injected in-memory fetcher and make no external HTTP request. A
+real provider, live site, payment, release, deployment, or catalog activation
+was not performed.
+
+# Production blocker closure — 2026-08-16
+
+## Scope
+
+- localized saved audits, issues, immutable account reports, public share views,
+  and safe HTML/print presentation without changing the canonical stored
+  snapshot or its ownership and integrity checks;
+- replaced raw tool exception presentation with a bounded RU/EN code catalog
+  and rejected prototype-inherited pseudo-codes;
+- split the production model into a three-service core and an explicit
+  five-service AI overlay, with the AI runtime disabled by default;
+- synchronized browser fixtures with the bounded locale contract and the
+  locale-preserving share URL;
+- inspected fresh controlled-fixture account overview/report screenshots at
+  desktop and mobile widths, including dark theme and the public share view.
+
+## Fresh verification
+
+```text
+registry verification                         PASS — 125 unique definitions
+workspace / registry / core Vitest             PASS — 79/79, 10/10, 17/17
+web Vitest                                     PASS — 413/413 across 105 files
+TypeScript / production build                  PASS — 271 generated pages
+built-site verification                       PASS — 236 public / 234 HTML routes
+full Playwright Chromium                      PASS — 82/82
+full API/worker pytest                        PASS — 657 passed, 3 platform skips on Windows
+ESLint / Ruff / Python lock                   PASS — 0 errors / 44 selected packages
+production core / AI overlay preflight        PASS — 3 / 5 rendered services
+git diff --check                              PASS
+```
+
+ESLint retains the pre-existing `site-brand.tsx` `no-img-element` warning and
+reported no errors. The Impeccable source detector reported one pre-existing
+false positive in a string that generates an escaped responsive-`srcset` HTML
+sample; the string includes the validated `src` attribute and does not render a
+broken image. No OpenRouter, S3, payment, release, deployment, domain, or TLS
+operation was performed. The optional AI overlay remains blocked on real
+provider evaluation, approved billed cost and credit prices, production
+S3/recovery evidence, and manual image review.
+
+# Operator-only AI provider evaluation runner — 2026-08-16
+
+## Scope
+
+- added a repository operator runner that validates bounded canonical RU/EN
+  case manifests without constructing a provider by default;
+- requires the literal `--execute-paid-provider` opt-in before using the
+  existing OpenRouter adapter and current API input/output contracts;
+- reserves a direct private evidence file in ignored `.webdiag/ai-evals` before
+  provider initialization, rejects link/reparse path components, never
+  overwrites it, and removes it after failure only while its file and full
+  `.webdiag/ai-evals` ancestor identity still match the reservation;
+- records raw provider inputs/outputs, request IDs, measured nano-USD cost, and
+  image artifact metadata only in the private evidence file while stdout is an
+  aggregate redacted report;
+- classifies known-safe failure, unknown provider outcome, invalid result,
+  invalid semantic output, and mismatched image artifacts as incomplete
+  without retry;
+- creates private image artifact reservations and keeps manual image review
+  mandatory, with separate configured input and evaluation-output storage
+  prefixes;
+- does not claim atomicity between external image storage and local evidence:
+  interrupted runs require operator inventory of the dedicated evaluation
+  prefix before activation.
+
+## Verification
+
+```text
+focused runner regression                    PASS — 20 passed, 2 POSIX rename scenarios skipped on Windows
+full API/worker pytest                        PASS — 651 passed, 3 platform skips on Windows
+full API/worker Ruff plus runner Ruff         PASS
+independent final review                      PASS — 0 Critical / 0 Important / 0 Minor
+git diff --check                              PASS
+```
+
+MockTransport and local private artifact storage exercise the real provider
+adapter without an external request. No real OpenRouter, S3, payment, release,
+deployment, domain, or TLS operation was performed.
+
+# Immutable AI evaluation evidence — 2026-08-16
+
+## Scope
+
+- added a bounded operator report over successful AI runs in a verified
+  immutable recovery snapshot;
+- revalidates the current tool contract/model snapshot, stored input/output
+  digests, JSON objects, existing per-tool semantic grounding rules, RU/EN
+  coverage, generation ID for text tools, provider usage, and measured cost;
+- emits only aggregate counts, usage/cost bounds, manual image-review status,
+  and a deterministic evidence SHA-256;
+- does not emit account, run, provider request, prompt, output, artifact, or URL
+  data and does not initialize or migrate the snapshot;
+- does not create provider runs, activate tools, assign prices, or claim the
+  remaining manual quality/security/integration gates passed.
+- is report-only over account recovery snapshots. The separate direct-provider
+  operator runner now collects private RU/EN evidence without changing public
+  catalog state or inventing a price, but it does not create account lifecycle
+  records for this snapshot report.
+
+## Verification
+
+```text
+focused eval/cost/contract regression         PASS — 52/52
+full API/worker pytest                        PASS — 631/631, 1 POSIX-mode skip on Windows
+full API/worker Ruff                          PASS
+independent final review                      PASS — 0 Critical / 0 Important / 0 Minor
+git diff --check                              PASS
+```
+
+That report stage made no OpenRouter, S3, payment, release, deployment, domain,
+or TLS request. Real RU/EN provider evidence, account-lifecycle evaluation,
+manual quality review, fixed credit prices, production S3 proof, and tool
+activation remain open gates.
+
+# Factual public availability — 2026-08-16
+
+## Scope
+
+- removed unapproved ruble prices, monthly amounts, and paid-run claims from
+  linked RU/EN home, pricing, audit, and monitoring surfaces;
+- kept the stable pricing routes as factual availability explanations, with
+  working actions only for the public tools and account workspace;
+- made unavailable AI and payment cards non-interactive and described the AI,
+  price, and payment state without provider or launch claims;
+- replaced nonexistent category links and made the catalog consume every
+  `publicTools` entry and category title from the authoritative registry;
+- added RU/EN browser coverage for availability, category deep links, all 115
+  ready catalog cards, desktop/mobile overflow, and 180-pixel availability
+  cards;
+- manually inspected the changed home and full catalog screenshots before
+  updating their approved visual baselines.
+
+## Fresh verification
+
+```text
+registry verification                         PASS — 125 unique definitions / 115 ready
+workspace integrity tests                     PASS — 79/79
+registry Vitest                               PASS — 10/10
+core Vitest                                   PASS — 17/17
+web Vitest                                    PASS — 408/408 across 104 files
+production build                              PASS — 271 generated pages
+built-site verification                       PASS — 236 public / 234 HTML routes
+full Playwright Chromium                      PASS — 82/82
+full API/worker pytest                        PASS — 615 passed, 1 POSIX-only skip on Windows
+ESLint / TypeScript / Ruff / Python lock      PASS — 0 errors / 44 selected packages
+independent final review                      PASS — 0 Critical / 0 Important
+```
+
+ESLint retains the pre-existing `site-brand.tsx` `no-img-element` warning; it
+reported no error. No OpenRouter, S3, payment, release, deployment, domain, or
+TLS operation was performed. AI tools and commercial activation remain blocked
+until their external evidence and product decisions are supplied.
+
+# Production core and optional AI overlay — 2026-08-16
+
+The production topology now has two independently rendered policies:
+
+- core: web, API, and monitoring/crawler scheduler; AI runtime is false and no
+  RabbitMQ, OpenRouter, S3, or AI secret reaches the model;
+- optional AI overlay: RabbitMQ and worker plus the existing private S3 and
+  OpenRouter boundaries; AI runtime is true only in this combined model.
+
+Observed targeted verification:
+
+```text
+production settings                         PASS — 23/23
+production topology static contract         PASS — 14/14
+production core rendered preflight          PASS — 3 services
+production AI overlay rendered preflight    PASS — 5 services
+```
+
+Both renders used synthetic credentials and started no service. The overlay
+remains blocked on provider evaluation, approved billed cost and credit prices,
+production S3/recovery evidence, and manual image review. No provider, S3,
+payment, domain, TLS, release, or deployment action was performed.
+
+The earlier five-service preflight record below is retained as historical
+evidence for the stage that originally introduced the combined topology.
+
+# Fail-closed production Compose preflight — 2026-08-16
+
+## Scope
+
+- added an explicit single-host production override over the existing base and
+  account Compose files;
+- built the web public-release decision from a safe false-default Docker build
+  argument, with literal true only in the production profile;
+- replaced inherited development environments with exact production maps,
+  secure cookies, distinct required internal secrets, S3-only private
+  artifacts, health checks, restart policies, and loopback published ports;
+- removed unused PostgreSQL and Valkey services from the production model while
+  retaining RabbitMQ for the active worker topology;
+- added a privacy-safe rendered-model preflight that accepts the current
+  environment or `--env-file` and never prints Compose stderr or environment
+  values;
+- reset inherited artifact volumes, enforced an exact per-service environment
+  allowlist, and excluded every `.env` file from Docker build contexts;
+- added a web-image runtime smoke that verifies the public robots/sitemap policy
+  and a synthetic context sentinel that must remain outside the builder.
+
+## Fresh verification
+
+```text
+production Compose static/workflow tests         PASS — 78/78 workspace tests
+production Compose rendered preflight            PASS — 5 services
+empty production environment template            PASS — rejected fail-closed
+PUBLIC_RELEASE=true registry/build                PASS — 115 ready / 10 superseded
+public production build                           PASS — 271 generated pages
+built-site verification                           PASS — 236 public / 234 HTML routes
+full web Vitest                                   PASS — 408/408 across 104 files
+full Playwright Chromium                          PASS — 77/77
+full API/worker pytest                            PASS — 615/615, 1 POSIX-mode test skipped on Windows
+ESLint / TypeScript / Ruff / Python lock          PASS — 0 errors / 44 selected packages
+git diff --check                                  PASS
+```
+
+The local Docker CLI rendered the production model, but Docker Desktop's Linux
+engine was not running, so no local production image or container was started.
+The updated Python 3.14 CI job must build all three production images, including
+the web image with `PUBLIC_RELEASE=true`, before this stage is accepted. No real
+domain, TLS proxy, credential, OpenRouter, S3, payment, release, or deployment
+request was made.
+
+# OpenRouter billed-cost evidence — 2026-08-16
+
+## Scope
+
+- non-streaming chat and image responses now require the documented numeric
+  OpenRouter `usage.cost` field and convert it conservatively to integer
+  nano-USD with decimal arithmetic;
+- the private worker completion envelope and SQLite attempt row persist cost in
+  the same transaction as generation ID, token usage, validated output, and
+  credit capture;
+- historical attempts remain explicitly unmeasured instead of being rewritten
+  as zero-cost runs;
+- the bounded operator report emits only per-tool aggregate count, usage, and
+  min/max/nearest-rank-p95/total cost evidence from a verified immutable
+  recovery snapshot, never from the live WAL database.
+
+## Fresh verification
+
+```text
+initial worker/API cost suite                  PASS — 94/94
+review regressions: exact cost/snapshot safety PASS — 5/5
+previous full-run fixture regressions          PASS — 8/8 after adding usage.cost
+full API/worker pytest                         PASS — 615/615, 1 POSIX-mode test skipped on Windows
+full API/worker Ruff                           PASS
+git diff --check                               PASS
+```
+
+Context7 was used to check current official OpenRouter response and generation
+metadata documentation before implementing the field. No OpenRouter or S3
+credential was present in the local environment, and no provider, object
+storage, public URL, marketplace, payment, release, or deployment request was
+made. The 15 AI tools remain internal pending real RU/EN evaluation, independent
+generation-cost cross-checks, production S3 evidence, and approved fixed credit
+prices.
+
+# Runtime configuration and capability audit — 2026-08-16
+
+## Scope
+
+- runtime settings now reject account and audit database paths that resolve to
+  the same file, including relative/absolute aliases;
+- the non-AI registry remains 125 unique definitions: all 115 `ready` slugs
+  match the 115 renderer contracts, while the 10 `internal` definitions are
+  explicitly superseded by ready tools;
+- the authenticated AI catalog remains fail closed: all 15 tools are
+  `internal`, have no credit price, and are unavailable to users;
+- thirteen text/vision-analysis policies use `openai/gpt-5.6-luna`; the two
+  image policies use the separate `openai/gpt-image-2` Image API path.
+- every external action in `.github/workflows` is pinned to a full commit SHA;
+  the workspace gate rejects mutable action tags in current or future workflows.
+
+## Fresh verification
+
+```text
+settings pytest                                PASS — 5/5
+registry verification                         PASS — 125 unique tools
+registry/renderer inventory                    PASS — 115 ready / 115 supported / 0 missing
+workspace integrity tests                      PASS — 54/54
+full API/worker pytest                         PASS — 599/599, 1 POSIX-mode test skipped on Windows
+full API/worker Ruff                           PASS
+git diff --check                               PASS
+```
+
+OpenRouter documentation was reviewed without a provider request. Real model
+evaluation, billed-cost verification, fixed credit pricing, provider runtime
+certification, marketplace, payment, release, and deployment remain unverified
+and were not performed. Python package artifact hashes also remain unverified:
+the current cross-platform constraint lock pins versions but does not yet use
+pip hash-checking mode.
+
+# A12.5 — staged SQLite recovery
+
+## Scope
+
+- added an operator-only standard-library CLI for online backup, strict bundle
+  verification, and preparation of a new restore candidate for the account and
+  audit SQLite databases;
+- fixed the v1 bundle to `accounts.sqlite3`, `audits.sqlite3`, and
+  `manifest.json`, with exact schema parsing, SHA-256, SQLite integrity, and
+  foreign-key checks;
+- backup and restore publish only through a private sibling staging directory,
+  reject symlinks and existing destinations, and never overwrite live state;
+- documented the persistent Compose invocation and offline two-database cutover.
+
+## Fresh verification
+
+```text
+recovery pytest                                PASS — 20/20, 1 POSIX-mode test skipped on Windows
+full API/worker pytest                         PASS — 598/598, 1 POSIX-mode test skipped on Windows
+full API/worker Ruff                           PASS
+git diff --check                               PASS
+```
+
+The two SQLite snapshots are independently consistent, not cross-database
+atomic. SHA-256 detects changed bundle bytes but is not an authenticity
+signature. No live or production restore ran. Production S3 recovery remains
+unverified; no provider, object-storage, marketplace, payment, release, or
+deployment request was made.
+
+# A12.8 — direct private S3 artifact transport
+
+## Scope
+
+- API and worker S3 artifact factories now set Botocore `Config.proxies={}`;
+- explicit private HTTPS artifact endpoints and bearer/provider traffic no
+  longer inherit ambient HTTP(S) proxy routes;
+- SigV4, explicit credentials, bounded timeouts/retries, private ACL, object-key
+  validation, streaming bounds, and production S3-only policy are unchanged;
+- both factories have regression coverage for the exact no-proxy configuration.
+
+## Targeted verification
+
+```text
+artifact/provider pytest                        PASS — 66/66
+full API/worker pytest                          PASS — 525/525
+affected Ruff                                   PASS
+full API/worker Ruff                            PASS
+Python lock verification                        PASS — 39 packages
+git diff --check                                PASS
+```
+
+No real S3, provider, marketplace, payment, release, or deployment request was
+made.
+
+# A10.38 — responsive srcset text workbench
+
+## Scope
+
+- promoted `WD-105` as `responsive-image-srcset-generator`;
+- parses 1–20 HTTPS or root-relative `URL | width` candidates, rejects grammar
+  ambiguity and unsafe URL forms, enforces unique 1–8192 width descriptors, and
+  sorts output deterministically;
+- emits plain srcset plus an HTML-escaped img fragment with explicit fallback,
+  sizes, and alt fields;
+- does not create, upload, probe, transform, or validate image files and does not
+  execute the generated HTML;
+- public tool count is now 106; registry entry count remains 125.
+
+## Fresh verification
+
+```text
+registry verification                         PASS — 125 unique tools
+web targeted Vitest                           PASS — 22/22
+tool-registry Vitest                          PASS — 4/4
+API registry/API pytest                       PASS — 14/14
+affected ESLint                               PASS
+web TypeScript                                PASS
+production build                              PASS — 253 generated pages
+built-site verification                       PASS — 218 public routes / 216 HTML routes
+focused Playwright                            PASS — 8/8
+registry/API mirror byte parity               PASS
+```
+
+Controlled desktop/mobile visual review passed. No external URL, provider,
+object-storage, marketplace, payment, release, or deployment request was made.
+
+# A12.7 — direct internal worker bearer transport
+
+## Scope
+
+- both the AI and monitoring worker bridges now construct `urllib` openers with
+  an explicit empty `ProxyHandler`;
+- ambient `HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`, Windows proxy settings, and
+  macOS system proxy settings cannot become an unreviewed bearer-token route;
+- the existing clean-origin validation, redirect rejection, response bounds,
+  timeout bounds, and stable internal contracts are unchanged;
+- added regressions for the explicit no-proxy handler in both worker bridges.
+
+## Fresh verification
+
+```text
+affected worker pytest                         PASS — 27/27
+full API/worker pytest                         PASS — 524/524
+full API/worker Ruff                           PASS
+Python lock verification                       PASS — 39 packages
+git diff --check                               PASS
+```
+
+## Remaining artifact lifecycle blocker
+
+A generated image is written to private object storage before the internal
+completion transaction registers it. If that completion request succeeds but
+its response is lost, immediate worker-side deletion would corrupt a successful
+run; if it fails before commit, the object is not in the database cleanup set.
+Production activation therefore still requires a two-phase artifact staging or
+bounded orphan reconciliation design. No unsafe best-effort deletion was added.
+
+No real provider, object-storage, marketplace, payment, release, or deployment
+request was made.
+
+# A12.6 — explicit OpenRouter transport environment boundary
+
+## Scope
+
+- configured the production OpenRouter HTTPX client with `trust_env=False`;
+- the worker no longer inherits ambient `HTTP_PROXY`, `HTTPS_PROXY`,
+  `ALL_PROXY`, `SSL_CERT_FILE`, or `SSL_CERT_DIR` settings for provider traffic;
+- the fixed OpenRouter endpoints, bearer header, timeouts, model policies,
+  structured outputs, ZDR/data-collection controls, disabled fallbacks, and
+  provider outcome classification are unchanged;
+- added a factory regression that captures and proves the exact HTTPX client
+  configuration without making a provider request.
+
+## Targeted verification
+
+```text
+provider/worker/API AI and injection pytest    PASS — 128/128
+full API/worker pytest                         PASS — 522/522
+Ruff affected files                            PASS
+full API/worker Ruff                           PASS
+Python lock verification                       PASS — 39 packages
+git diff --check                               PASS
+```
+
+No real OpenRouter, object-storage, marketplace, payment, release, or deployment
+request was made.
+
+# A10.37 — browser-local favicon generator
+
+## Scope
+
+- promoted `WD-098` as `favicon-generator` with five fixed PNG outputs:
+  32 × 32, 48 × 48, 180 × 180, 192 × 192, and 512 × 512;
+- applies a documented centered square crop to one bounded JPEG, PNG, WebP, or
+  AVIF source entirely in the browser;
+- emits only the matching HTML and manifest snippets and does not claim ICO,
+  ZIP, SVG, maskable padding, deployment, or website validation;
+- added deterministic geometry/asset/snippet tests plus real desktop/mobile
+  browser generation and overflow coverage;
+- synchronized the API registry mirror with the already public
+  `bulk-http-status-checker` contract found during byte-parity verification;
+- public tool count is now 105; registry entry count remains 125.
+
+## Fresh verification
+
+```text
+registry verification                         PASS — 125 unique tools
+web targeted Vitest                           PASS — 15/15
+tool-registry Vitest                          PASS — 3/3
+API registry/API pytest                       PASS — 14/14
+affected ESLint                               PASS
+web TypeScript                                PASS
+production build                              PASS — 251 generated pages
+built-site verification                       PASS — 216 public routes / 214 HTML routes
+focused Playwright                            PASS — 8/8
+registry/API mirror byte parity               PASS
+git diff --check                              PASS
+temporary screenshot/debug hook search        PASS — absent
+```
+
+The browser test used the repository's local `logo.webp` as a controlled
+fixture. No marketplace, provider, OpenRouter, object-storage, payment, release,
+or deployment request was made.
+
 Patch scope: A10.36 HTML entity and bounded text diff tools. No commit or push was performed by the assistant.
 
 ## Scope
@@ -959,3 +1556,458 @@ npm --workspace @webdiag/web exec -- `
 ```
 
 The backend test pins the exact SHA-256 of a deterministic, self-contained HTML artifact and verifies that public report responses do not contain account, project, audit, session, token, or raw-evidence fields.
+
+## A12.0 AI execution and credit foundation
+
+Fresh verification on 2026-08-12:
+
+```text
+npm run verify:local
+PASS — exit code 0
+
+registry
+PASS — 125 unique tools
+
+workspace tests
+PASS — 49/49
+
+browser tests
+PASS — 51/51
+
+Python API and worker tests
+PASS — 324/324
+
+Python lint
+PASS — Ruff reported no findings
+
+Python lock
+PASS — 31 locked packages match the installed win32 environment
+```
+
+The same gate also completed web tests, ESLint, TypeScript, the production Next.js build, release verification, and built-site verification successfully. No visual baseline, frontend design, OpenAI call, Lava.top call, release, deployment, or external side effect was performed.
+
+A12.0-specific TDD evidence before the full gate:
+
+```text
+AI catalog and configuration: 17 passed
+credit ledger and operator CLI: 5 passed
+account AI API: 4 passed
+internal lease API and storage: 5 passed
+worker bridge and actor: 11 passed
+```
+
+These tests cover the internal-only 15-tool catalog, distinct production bearer configuration, immutable ledger and reconciliation, idempotent run reservation, ownership-scoped access, pending-run release, hashed renewable claims, stale completion rejection, safe and unknown failure settlement, bounded internal HTTP, and disabled real-provider behavior.
+
+### A12.0 hardening follow-up
+
+After adding type-separated opaque cursor pagination, bounded provider usage persistence, a stable internal-AI validation envelope, and timing-safe lease-hash comparison, the affected backend packages were verified once:
+
+```text
+npm run test:python
+PASS — 326/326
+
+npm run lint:python
+PASS — Ruff reported no findings
+
+npm run verify:python-lock
+PASS — 31 locked packages match the installed win32 environment
+```
+
+Frontend sources were not changed in this follow-up, so the unchanged local frontend suites were not repeated. The push-triggered GitHub `Full verification` remains the complete repository gate.
+
+## A12.1c grounded content workbench
+
+Fresh backend verification on 2026-08-13:
+
+```text
+npm run test:python
+PASS — 441/441
+
+npm run lint:python
+PASS — Ruff reported no findings
+
+npm run verify:python-lock
+PASS — 39 locked packages match the installed win32 environment
+
+git diff --check
+PASS
+```
+
+The new coverage includes 15 API contract/security cases, three worker OpenRouter policy
+cases, and RU/EN fixtures for Content Brief, Content Optimizer, and Search Intent/Page Fit.
+One additional regression confirms that query strings and fragments are removed from content
+page URLs before persistence or provider submission. No frontend source, visual baseline,
+OpenRouter endpoint, object storage, payment system, release, or deployment was touched.
+
+GitHub Actions `Full verification` run 31677113866 subsequently passed on the pushed A12.1c
+head, including the complete workspace, frontend, build, browser, Python, Ruff, and lock gates.
+
+## A12.1d grounded planning tools
+
+Fresh backend verification on 2026-08-13:
+
+```text
+npm run test:python
+PASS — 453/453
+
+npm run lint:python
+PASS — Ruff reported no findings
+
+npm run verify:python-lock
+PASS — 39 locked packages match the installed win32 environment
+
+git diff --check
+PASS
+```
+
+The package adds a route-specific 300,000-byte AI run request limit with a 262,144-byte service
+payload ceiling while ordinary account routes remain at 16,384 bytes. New tests cover exact
+Competitor Gap evidence, comparison-page indexes, duplicate page rejection, Internal Linking
+self/existing/duplicate pair rejection, exact source/target evidence, strict OpenRouter request
+policies, and RU/EN fixtures. No real provider, crawler, site mutation, payment, release, or
+deployment action occurred.
+
+GitHub Actions `Full verification` run 31677797031 subsequently passed on the pushed A12.1d
+head, including the complete workspace, frontend, build, browser, Python, Ruff, and lock gates.
+
+## A12.9 generated artifact staging
+
+Fresh affected-package verification on 2026-08-13:
+
+```text
+AI API and worker aggregate
+PASS — 200/200
+
+final affected regression set
+PASS — 87/87
+
+npm run test:python
+PASS — 531/531
+
+npm run lint:python
+PASS — Ruff reported no findings
+
+npm run verify:python-lock
+PASS — 39 locked packages match the installed win32 environment
+
+git diff --check
+PASS
+```
+
+Image claims now persist one private artifact reservation before a worker can
+write generated bytes. Reclaimed unsubmitted claims reuse the same ID and key;
+completion accepts only the exact reservation and is idempotent for an identical
+lost-response retry; failed or provider-unknown runs enter bounded cleanup.
+Malformed reservation keys are rejected before provider submission, generated
+objects use exact-key local/S3 writes, and public run output still excludes the
+object key. No real provider, object storage, payment, release, or deployment
+action occurred.
+
+## A13.0 production-readiness aggregate
+
+Fresh repository-wide verification on 2026-08-13 reached the browser gate with
+registry, workspace, registry/core/web unit tests, ESLint, TypeScript, release
+verification, the production build, and built-site verification passing. The
+first browser run reported 55/59 because four approved PNG baselines still
+represented the prior home and 123-tool catalog.
+
+The four actual/diff pairs were inspected before any snapshot update. Light and
+dark home renders had no overflow or broken sections and matched the previously
+approved home redesign. Catalog desktop/mobile changes were confined to the two
+new ready image tools. Only those four baselines were regenerated; a fresh full
+browser run then passed 59/59. The backend gate passed 531/531, Ruff reported no
+findings, and all 39 locked packages matched the installed win32 environment.
+
+No visual threshold was loosened, no failing screenshot was hidden, and no
+release, provider call, object-storage call, payment, merge, or deployment was
+performed.
+
+## A10.39 browser-local sampled image palette
+
+Fresh affected-package verification on 2026-08-13:
+
+```text
+registry
+PASS — 125 total / 107 ready / 18 internal
+
+web unit tests
+PASS — 379/379
+
+API registry parity
+PASS — 14/14
+
+browser tests
+PASS — 61/61
+
+production build
+PASS — 255 pages; 220 public routes; 218 localized HTML routes
+
+ESLint / TypeScript / git diff
+PASS — no errors; one pre-existing site-brand img warning; diff check clean
+```
+
+WD-083 now extracts four to eight colors from a bounded 160-pixel sample of one
+local raster image. Unit coverage fixes alpha compositing, five-bit quantization,
+stable ordering, percentages, transparent input, and count bounds. Browser tests
+confirm no file upload and no 390-pixel overflow. Desktop/mobile screenshots were
+inspected before the two catalog baselines were updated; the diff contained only
+the new UI/CSS card and downstream row movement. No dependency, remote image
+service, provider call, release, or deployment was added.
+
+## A10.40 browser-local image Data URI workbench
+
+Fresh affected-package verification on 2026-08-13:
+
+```text
+registry
+PASS — 125 total / 108 ready / 17 internal
+
+web unit tests
+PASS — 383/383
+
+Python tests
+PASS — 531/531
+
+browser tests
+PASS — 63/63 after the sole expected mobile catalog baseline change was
+inspected and regenerated
+
+production build
+PASS — 257 pages; 222 public routes; 220 localized HTML routes
+
+ESLint / TypeScript / git diff
+PASS — no errors; one pre-existing site-brand img warning; diff check clean
+```
+
+WD-107 now creates an exact Data URI from the byte-signature-identified source
+and a separate aspect-preserving PNG placeholder with no side larger than 24
+pixels. One JPEG, PNG, WebP, or AVIF up to 1 MiB is processed locally; output is
+shown only in read-only text controls. Browser coverage confirms that source
+bytes are not uploaded and that long outputs do not overflow 390 pixels.
+
+WD-108 remains internal because its bounded placeholder capability is already
+included in WD-107. Desktop and mobile results were inspected before the only
+changed catalog baseline was approved. Dark-theme inspection also exposed and
+fixed a late catalog-token override that left editorial cards on a light
+surface; the regression test now asserts the existing dark surface token's
+computed color. No dependency, remote image service, provider call, release,
+or deployment was added.
+
+The subsequent root workspace gate also confirmed that shipped declarations
+stay within the self-hosted Manrope 400–700 range. The palette hex label now
+uses the loaded 700 weight rather than requesting synthetic 750 weight.
+
+## A10.41 browser-local QR code workbench
+
+Fresh affected-package verification on 2026-08-13:
+
+```text
+registry
+PASS — 125 total / 109 ready / 16 internal
+
+web unit tests
+PASS — 387/387
+
+workspace tests
+PASS — 49/49
+
+Python tests
+PASS — 531/531
+
+browser tests
+PASS — 65/65 after both expected catalog baselines were inspected and updated
+
+production build
+PASS — 259 pages; 224 public routes; 222 localized HTML routes
+
+dependency audit
+PASS — qr@0.6.0 has zero runtime dependencies; npm audit reports 0 known vulnerabilities
+
+ESLint / TypeScript / git diff
+PASS — no errors; one pre-existing site-brand img warning; diff check clean
+```
+
+WD-099 now combines bounded QR generation and local raster decoding. It accepts
+at most 2,000 characters and 2,953 UTF-8 bytes, creates a 256–512 pixel PNG with
+four error-correction levels, and reads one QR symbol from a signature-checked
+JPEG, PNG, WebP, or AVIF up to 5 MiB and 25 million pixels. WD-101 remains
+internal because a separate decoder would duplicate this workflow.
+
+Unit coverage includes a real encoder/decoder round trip. Browser coverage
+decodes the generated PNG, proves script-like payloads remain inert text, proves
+the payload is not uploaded, and checks RU dark mode at 390 pixels. Desktop and
+mobile screenshots were inspected before the two catalog baselines were
+updated. No camera, automatic navigation, provider call, release, or deployment
+was added.
+
+## A12.1e final grounded text contracts
+
+Fresh backend verification on 2026-08-13:
+
+```text
+npm run test:python
+PASS — 467/467
+
+npm run lint:python
+PASS — Ruff reported no findings
+
+npm run verify:python-lock
+PASS — 39 locked packages match the installed win32 environment
+
+git diff --check
+PASS
+```
+
+The first full attempt found one test-only contract-version mismatch after generic infrastructure
+tests were decoupled from production catalog IDs: 466 passed and one assertion failed. The
+single failing test then passed after the fixture correction, and the complete gate above was
+rerun successfully.
+
+The final package adds ten API contract cases, three worker policy cases, three RU/EN fixtures,
+and a catalog invariant proving every one of the 13 internal text/vision-analysis entries has an
+executable contract while both text-incompatible image-generation entries remain disabled.
+Redirect outputs require explicit nullable targets under strict JSON Schema. Regex outputs are
+always `unverified`; no model-produced pattern is compiled or executed. No real provider,
+translation certification, crawler, redirect mutation, payment, release, or deployment action
+occurred.
+
+## A12.5 AI/API boundary hardening
+
+Fresh backend and dependency evidence on 2026-08-14:
+
+```text
+npm run test:python
+PASS — 578/578
+
+npm run lint:python
+PASS — Ruff reported no findings
+
+affected AI/OpenAPI tests
+PASS — 54/54 OpenAPI/internal-route cases and 20/20 artifact/account cases
+
+affected monitoring/workspace tests
+PASS — 43/43, including lease migration and archive races
+
+affected AI lease/reservation/artifact tests
+PASS — 22/22, including expired submitted runs and cleanup state
+
+npm audit --audit-level=high --json
+PASS — 0 known vulnerabilities across 508 lockfile dependencies
+
+pip-audit 2.10.1 -r requirements-dev.lock.txt --no-deps --disable-pip
+PASS — no known vulnerabilities in the 39 exact-pinned Python packages
+
+git diff --check
+PASS
+```
+
+Image uploads now fail closed until a ready image-input AI tool exists. A ready
+generation-only image tool does not enable upload storage. Artifact downloads
+verify `(user_id, run_id, artifact_id)` ownership before storage configuration
+and repeat the ownership check in the service before object reads. Public
+OpenAPI output omits eight worker-only routes while the existing bearer-protected
+runtime endpoints remain unchanged and directly tested.
+
+Monitoring worker leases are now stored only as SHA-256 digests. The nullable
+legacy plaintext column remains as an additive-migration shim and is cleared
+during migration; an already active worker can still renew with its in-memory
+token. A submitted AI run whose lease expires is atomically classified as
+`provider_unknown`, releases its credit reservation, schedules bound upload and
+reserved artifact cleanup, and cannot be completed by the stale worker. It is
+never resubmitted automatically.
+
+The npm audit covered production and development dependencies. The Python lock
+audit used `--no-deps` because the shared lock includes `uvloop`, which cannot be
+resolved in the Windows audit environment; every audited requirement is pinned
+to an exact version. `pip-audit` also reported that the lock has no hashes, so
+hash-based supply-chain verification remains unverified. No provider request,
+credit price, AI catalog activation, payment, release, or deployment occurred.
+Backup/restore remains unverified: the repository still has no database recovery
+command or runbook, and the production private-artifact topology is not configured.
+
+## Cross-platform Python wheel hash hardening
+
+Fresh local verification on 2026-08-16:
+
+```text
+clean Windows Python 3.14 environment
+PASS — hashed wheel-only install, editable API/worker build without isolation,
+pip check, and offline environment comparison 44/44
+
+npm run test:workspace
+PASS — 74/74
+
+npm run test:python
+PASS — 599 passed, 1 skipped
+
+npm run lint:python
+PASS — Ruff reported no findings
+
+npm run verify:python-lock
+PASS — 44 selected packages match the installed win32 environment
+
+node scripts/run-python.mjs -m pip check
+PASS — no broken requirements
+
+npm audit --audit-level=high --json
+PASS — 0 known vulnerabilities across 508 lockfile dependencies
+
+pip-audit 2.10.1, exact dev source and generated hash lock
+PASS — no known vulnerabilities found
+
+git diff --check
+PASS
+```
+
+The committed source groups contain 6 build, 33 API runtime, 21 worker runtime,
+and 45 development rows. Platform markers select 44 rows on Windows and 44 on
+Linux. The first clean editable installation exposed Hatchling's undeclared
+runtime import of `editables`; `editables==0.6` was audited, added explicitly to
+both build-system declarations and the build/dev locks, and then verified in a
+new clean environment. No application dependency version was upgraded.
+
+Third-party installation now uses pip isolated mode, the fixed public PyPI
+index, exact versions, wheel-only artifacts, and committed SHA-256 hashes. The
+API and worker Dockerfiles build local WebDiag wheels in separate builder
+stages and install distinct runtime locks without dependency resolution in the
+final images. Hash checking verifies approved bytes; it does not certify the
+publisher or package behavior.
+
+Local Docker image builds are `непроверено`: Docker CLI is installed, but the
+Docker Desktop Linux engine was not running. GitHub Actions run `31937461464`
+passed the Ubuntu Python 3.13/3.14 matrix and its Python 3.14 Docker build/import
+smoke against commit `4ec4b71`. The digest-pinned references were added after
+that run and require a new CI result. No provider, RabbitMQ, S3, public URL,
+release, or deployment call occurred.
+
+## Container base-image provenance
+
+Registry and configuration verification on 2026-08-16:
+
+```text
+docker buildx imagetools inspect for all five external image tags
+PASS — each committed SHA-256 value matches the current registry manifest digest
+
+docker compose config --images
+PASS — Compose accepts all three pinned service-image references
+
+node --test scripts/tests-workspace-integrity.test.mjs
+PASS — 12/12
+
+npm run test:workspace
+PASS — 76/76
+```
+
+All seven external `FROM` references and all three external Compose image
+references retain a readable version tag and pin a full lowercase SHA-256
+multi-platform manifest digest. Repeated Python and Node stages must resolve to
+one digest per tag. The workspace security test rejects a missing tag, missing
+digest, malformed digest, or absent Docker update coverage.
+
+`.github/dependabot.yml` covers the root Compose file and the API, worker, and
+web Dockerfile directories on a weekly schedule. Updates are pull requests;
+they are not automatically merged or deployed. GitHub Actions run `31938086167`
+passed full verification plus the Python 3.14 pinned API/worker image builds and
+import smokes against commit `3c026fa`. Dependabot activation and its first real
+update pull request remain `непроверено` until the configuration exists on the
+default branch.

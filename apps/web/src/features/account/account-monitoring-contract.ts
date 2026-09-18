@@ -56,6 +56,11 @@ function record(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
+function only(value: Record<string, unknown>, keys: readonly string[]): boolean {
+  const actual = Object.keys(value);
+  return actual.length === keys.length && actual.every((key) => keys.includes(key));
+}
+
 function string(value: unknown): value is string {
   return typeof value === "string";
 }
@@ -73,16 +78,26 @@ const statuses = new Set(["pending", "running", "passed", "changed", "failed"]);
 
 export function isAccountMonitor(value: unknown): value is AccountMonitor {
   return record(value)
+    && only(value, [
+      "contract_version", "id", "project_id", "cadence", "timezone", "enabled",
+      "status", "next_run_at", "last_run_at", "consecutive_failures", "created_at",
+      "updated_at",
+    ])
     && value.contract_version === "webdiag.account.monitor.v1"
     && string(value.id) && string(value.project_id) && cadences.has(String(value.cadence))
     && string(value.timezone) && typeof value.enabled === "boolean"
     && statuses.has(String(value.status)) && nullableString(value.next_run_at)
     && nullableString(value.last_run_at) && Number.isInteger(value.consecutive_failures)
+    && Number(value.consecutive_failures) >= 0
     && string(value.created_at) && string(value.updated_at);
 }
 
 function isChange(value: unknown): value is MonitorChange {
   return record(value)
+    && only(value, [
+      "contract_version", "kind", "previous_score", "current_score", "score_delta",
+      "previous_issue_count", "current_issue_count", "added_issue_ids", "resolved_issue_ids",
+    ])
     && value.contract_version === "webdiag.account.monitor_change.v1"
     && ["baseline", "unchanged", "changed", "failed"].includes(String(value.kind))
     && nullableNumber(value.previous_score) && nullableNumber(value.current_score)
@@ -93,20 +108,33 @@ function isChange(value: unknown): value is MonitorChange {
 }
 
 function isRun(value: unknown): value is MonitorRun {
-  return record(value) && string(value.id) && string(value.monitor_id)
+  return record(value)
+    && only(value, [
+      "id", "monitor_id", "project_id", "status", "score", "issue_count", "started_at",
+      "completed_at", "change", "error_code",
+    ])
+    && string(value.id) && string(value.monitor_id)
     && string(value.project_id) && statuses.has(String(value.status))
     && nullableNumber(value.score) && Number.isInteger(value.issue_count)
+    && Number(value.issue_count) >= 0
     && string(value.started_at) && string(value.completed_at) && isChange(value.change)
     && nullableString(value.error_code);
 }
 
 export function isMonitorRunResponse(value: unknown): value is MonitorRunResponse {
-  return record(value) && value.contract_version === "webdiag.account.monitor_run.v1"
+  return record(value) && only(value, ["contract_version", "run"])
+    && value.contract_version === "webdiag.account.monitor_run.v1"
     && isRun(value.run);
 }
 
 export function isMonitorHistoryResponse(value: unknown): value is MonitorHistoryResponse {
-  return record(value) && value.contract_version === "webdiag.account.monitor_history.v1"
-    && isAccountMonitor(value.monitor) && Array.isArray(value.runs)
-    && value.runs.every(isRun);
+  if (!record(value)
+    || !only(value, ["contract_version", "monitor", "runs"])
+    || value.contract_version !== "webdiag.account.monitor_history.v1"
+    || !isAccountMonitor(value.monitor)
+    || !Array.isArray(value.runs)) return false;
+  const monitor = value.monitor;
+  return value.runs.every((run) => isRun(run)
+    && run.monitor_id === monitor.id
+    && run.project_id === monitor.project_id);
 }

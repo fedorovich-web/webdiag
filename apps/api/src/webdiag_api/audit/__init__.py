@@ -52,6 +52,7 @@ from webdiag_api.audit.site_resources import (
     collect_site_resources,
 )
 from webdiag_api.audit.sitemap import SitemapXmlSummary, parse_sitemap_xml
+from webdiag_api.audit.storage import SqliteAuditStore
 from webdiag_api.audit.structured_data import (
     StructuredDataBlock,
     StructuredDataReport,
@@ -77,6 +78,7 @@ __all__ = [
     "AuditRequestError",
     "AuditSnapshot",
     "InMemoryAuditStore",
+    "SqliteAuditStore",
     "AuditIssue",
     "AuditJob",
     "AuditJobStatus",

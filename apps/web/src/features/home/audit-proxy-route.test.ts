@@ -97,6 +97,22 @@ describe("audit proxy route", () => {
     });
   });
 
+  it("preserves Retry-After for bounded audit admission errors", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(JSON.stringify({ detail: { code: "audit_rate_limited", message: "Public audit rate limit reached." } }), {
+          status: 429,
+          headers: { "content-type": "application/json", "retry-after": "37" },
+        }),
+      ),
+    );
+
+    const response = await POST(request({ url: "https://example.ru/" }));
+    expect(response.status).toBe(429);
+    expect(response.headers.get("retry-after")).toBe("37");
+  });
+
   it("maps successful non-JSON upstream responses to invalid contract errors", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response("not-json", { status: 201, headers: { "content-type": "text/plain" } })));
 

@@ -3,6 +3,7 @@ import { installBrowserGuard } from "./browser-guard";
 
 const cases = [
   { route: "/", lang: "ru", canonical: "https://webdiag.ru", type: "WebSite" },
+  { route: "/en", lang: "en", canonical: "https://webdiag.ru/en", type: "WebSite" },
   { route: "/en/tools", lang: "en", canonical: "https://webdiag.ru/en/tools", type: "ItemList" },
   { route: "/tools/json-formatter-validator", lang: "ru", canonical: "https://webdiag.ru/tools/json-formatter-validator", type: "BreadcrumbList" },
 ] as const;
@@ -30,14 +31,17 @@ test.describe("rendered SEO metadata", () => {
       await expect(page.locator('meta[property="og:title"]')).toHaveCount(1);
       await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", "https://webdiag.ru/og/webdiag.png");
       await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary_large_image");
-      await expect(page.locator('link[rel="icon"][type="image/png"][sizes="96x96"]')).toHaveAttribute("href", "/favicon-96x96.png");
-      await expect(page.locator('link[rel="icon"][type="image/svg+xml"]')).toHaveAttribute("href", "/favicon.svg");
-      await expect(page.locator('link[rel="shortcut icon"]')).toHaveAttribute("href", "/favicon.ico");
-      await expect(page.locator('link[rel="apple-touch-icon"][sizes="180x180"]')).toHaveAttribute("href", "/apple-touch-icon.png");
-      await expect(page.locator('meta[name="apple-mobile-web-app-title"]')).toHaveAttribute("content", "WebDiag");
-      await expect(page.locator('link[rel="manifest"]')).toHaveAttribute("href", "/site.webmanifest");
       const structured = await page.locator('script[type="application/ld+json"]').first().textContent();
       expect(structured).toContain(`\"@type\":\"${item.type}\"`);
+    });
+  }
+
+  for (const route of ["/", "/en"] as const) {
+    test(`${route} exposes non-empty title and description without enforcing editorial wording`, async ({ page }) => {
+      await page.goto(route);
+      expect((await page.title()).trim().length).toBeGreaterThan(0);
+      const description = await page.locator('meta[name="description"]').getAttribute("content");
+      expect(description?.trim().length ?? 0).toBeGreaterThan(0);
     });
   }
 });

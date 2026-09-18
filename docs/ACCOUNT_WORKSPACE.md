@@ -2,6 +2,11 @@
 
 A11.0 provides registration, login, current-session state, server-side logout, bounded scrypt hashing, opaque sessions, and the private same-origin account proxy.
 
+Login failures are stored as bounded SHA-256 identity keys rather than submitted email
+addresses. Five failures within 15 minutes block that identity for 15 minutes; the API
+returns `429 account_login_rate_limited` with `Retry-After`. Successful authentication
+clears the failure record and upgrades a legacy scrypt hash to the configured work factors.
+
 A11.1 adds the first real data layer:
 
 - ownership-scoped projects;
@@ -51,7 +56,17 @@ account_workspace_monitor_runs
 account_workspace_reports
 ```
 
-Projects are limited to 100 per account. Saved audits are limited to 100 per project. A11.2 does not change storage or introduce delete/archive behavior.
+Projects are limited to 100 per account, including archived projects. Saved audits are limited to 100 per project. Project storage has a nullable `archived_at` lifecycle field; the ownership-scoped origin uniqueness constraint remains active while a project is archived.
+
+Project lifecycle is recoverable:
+
+- the project name can be changed, but its canonical origin cannot;
+- archiving removes the project from active project/detail queries;
+- archiving atomically disables its monitor and clears the next run and active lease;
+- saved audits, reports, report artifacts, and public share links are retained;
+- existing public share links remain valid until their normal expiry or explicit revocation;
+- restoring returns the project to the active list but does not re-enable monitoring;
+- there is no permanent project deletion endpoint.
 
 The saved payload contract is:
 
@@ -66,6 +81,10 @@ It contains only the target origin, score, safe check summaries, safe issue fiel
 ```text
 POST /v1/account/projects
 GET  /v1/account/projects
+GET  /v1/account/projects/archived
+PATCH /v1/account/projects/{projectId}
+POST /v1/account/projects/{projectId}/archive
+POST /v1/account/projects/{projectId}/restore
 GET  /v1/account/projects/{projectId}
 POST /v1/account/projects/{projectId}/audits
 GET  /v1/account/projects/{projectId}/audits/{auditId}
@@ -92,7 +111,7 @@ All account workspace responses use `Cache-Control: no-store`.
 /en/account/projects/{projectId}/audits/{auditId}/issues/{issueId}
 ```
 
-The shell loads the current session and project list once per route. Project and saved-audit detail components continue to use their ownership-scoped detail endpoints.
+The shell loads the current session and active project list once per route. The archived list is fetched only when the user opens the archive section. Rename updates the owned project identity in the shell; restore reloads the authoritative active project list and overview so retained audit, monitor, and report state is not replaced with synthetic values. A lifecycle response that reports lost authentication clears the cached shell state and returns to the sign-in state.
 
 ## Local environment
 
@@ -113,7 +132,13 @@ Production requires:
 WEBDIAG_ENVIRONMENT=production
 WEBDIAG_ACCOUNT_COOKIE_SECURE=true
 WEBDIAG_API_INTERNAL_URL=http://api:8000
+WEBDIAG_MONITORING_INTERNAL_TOKEN=<at-least-32-random-characters>
 ```
+
+Public audit jobs and runs are persisted in the configured SQLite file
+(`WEBDIAG_AUDIT_DATABASE_PATH`) with SHA-256 integrity checks and bounded retention
+(`WEBDIAG_AUDIT_HISTORY_LIMIT`, default 1000). The Docker account override stores this
+database in the same durable `/data` volume as account state.
 
 `NEXT_PUBLIC_WEBDIAG_API_BASE_URL` is not used for account-cookie proxying.
 
@@ -156,7 +181,7 @@ npm run verify:local
 
 ## Deliberately deferred
 
-- archive/delete semantics;
+- permanent project deletion;
 - password recovery, email verification, billing, and operator administration.
 
 ## A11.4 monitoring foundation
@@ -166,7 +191,8 @@ A11.4 adds a real monitoring execution path rather than a presentation-only dash
 - one ownership-scoped monitor per project;
 - cadence values from one hour to one week;
 - canonical IANA timezone input;
-- atomic SQLite due claiming with a 15-minute lease;
+- timezone-aware daily and weekly scheduling that preserves the local wall-clock hour across DST changes;
+- atomic SQLite due claiming with a 15-minute lease and a five-minute heartbeat;
 - scheduled execution through the existing audit service;
 - persisted baseline, unchanged, changed, and failed outcomes;
 - bounded retry delays and a maximum history of 100 runs;
@@ -174,6 +200,14 @@ A11.4 adds a real monitoring execution path rather than a presentation-only dash
 
 Monitoring stores its own safe versioned audit snapshots and does not consume the A11.1 saved-audit limit.
 It does not expose raw evidence, internal tokens, provider destinations, or worker lease values.
+
+Saved-audit payloads carry a SHA-256 integrity digest. Legacy A11.1 rows are
+additively backfilled once; reads verify the digest, schema, and summary metadata before
+issues or reports can consume the snapshot.
+
+Successful monitoring baselines use the same one-time additive digest migration. A
+corrupted baseline produces a real failed run with `monitoring_history_unavailable` and
+releases the claim; it is never used to calculate a change fingerprint.
 
 Monitoring tables:
 
@@ -194,7 +228,7 @@ POST  /v1/account/projects/{projectId}/monitor/run
 POST  /v1/internal/monitoring/run-due
 ```
 
-The internal endpoint requires `WEBDIAG_MONITORING_INTERNAL_TOKEN`. The worker sends it only as a Bearer header over the configured private HTTP(S) origin.
+The internal endpoint requires `WEBDIAG_MONITORING_INTERNAL_TOKEN`. The worker sends it only as a Bearer header over the configured private HTTP(S) origin. Authenticated internal calls reject redirects, so the token cannot be forwarded to a redirect target.
 
 The notification boundary is contract-only:
 

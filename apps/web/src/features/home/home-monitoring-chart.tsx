@@ -15,27 +15,31 @@ interface ChartPoint {
   readonly text: string;
 }
 
-const viewBox = { width: 560, height: 128, floor: 106 } as const;
+const viewBox = { width: 560, height: 128 } as const;
 
 const points: Record<Locale, readonly ChartPoint[]> = {
   ru: [
-    { x: 82, y: 82, label: "Пн", title: "Стартовая проверка", text: "128 страниц, 7 критичных проблем" },
-    { x: 214, y: 58, label: "Вт", title: "Первые исправления", text: "исправлено 8 alt-ошибок" },
-    { x: 342, y: 73, label: "Чт", title: "Найдена регрессия", text: "цепочка редиректов на посадочной" },
-    { x: 496, y: 50, label: "Сегодня", title: "Состояние стабильнее", text: "SSL, sitemap и canonical без ошибок" },
+    { x: 40, y: 88, label: "Янв", title: "Стартовая проверка", text: "SEO-здоровье проекта: 31" },
+    { x: 136, y: 82, label: "Фев", title: "Первые исправления", text: "исправлены критичные ошибки" },
+    { x: 232, y: 72, label: "Мар", title: "Стабильный рост", text: "улучшены мета-теги и структура" },
+    { x: 328, y: 58, label: "Апр", title: "Рост качества", text: "устранены технические проблемы" },
+    { x: 424, y: 48, label: "Май", title: "Стабильный результат", text: "основные проверки проходят успешно" },
+    { x: 520, y: 34, label: "Июн", title: "Текущее состояние", text: "SEO-здоровье проекта: 78" },
   ],
   en: [
-    { x: 82, y: 82, label: "Mon", title: "Initial check", text: "128 pages, 7 critical issues" },
-    { x: 214, y: 58, label: "Tue", title: "First fixes", text: "8 alt issues resolved" },
-    { x: 342, y: 73, label: "Thu", title: "Regression detected", text: "redirect chain on a landing page" },
-    { x: 496, y: 50, label: "Today", title: "Health is steadier", text: "SSL, sitemap, and canonical pass" },
+    { x: 40, y: 88, label: "Jan", title: "Initial check", text: "project SEO health: 31" },
+    { x: 136, y: 82, label: "Feb", title: "First fixes", text: "critical issues resolved" },
+    { x: 232, y: 72, label: "Mar", title: "Steady growth", text: "metadata and structure improved" },
+    { x: 328, y: 58, label: "Apr", title: "Quality improved", text: "technical issues resolved" },
+    { x: 424, y: 48, label: "May", title: "Stable result", text: "core checks pass successfully" },
+    { x: 520, y: 34, label: "Jun", title: "Current state", text: "project SEO health: 78" },
   ],
 };
 
 const linePath =
-  "M0 90 C40 88 54 84 82 82 C128 78 166 62 214 58 C260 55 298 74 342 73 C398 72 438 51 496 50 C522 50 542 51 560 53";
+  "M0 94 C18 93 28 90 40 88 C72 84 104 83 136 82 C168 81 200 76 232 72 C264 68 296 62 328 58 C360 54 392 50 424 48 C456 46 488 41 520 34 C536 31 548 28 560 25";
 const areaPath =
-  "M0 106 L0 90 C40 88 54 84 82 82 C128 78 166 62 214 58 C260 55 298 74 342 73 C398 72 438 51 496 50 C522 50 542 51 560 53 L560 106 Z";
+  "M0 132 L0 94 C18 93 28 90 40 88 C72 84 104 83 136 82 C168 81 200 76 232 72 C264 68 296 62 328 58 C360 54 392 50 424 48 C456 46 488 41 520 34 C536 31 548 28 560 25 L560 132 Z";
 
 export function HomeMonitoringChart({ locale }: HomeMonitoringChartProps) {
   const chartPoints = points[locale];
@@ -54,8 +58,7 @@ export function HomeMonitoringChart({ locale }: HomeMonitoringChartProps) {
         <path className="wd-chart-grid-line" d="M0 34 H560" />
         <path className="wd-chart-grid-line" d="M0 62 H560" />
         <path className="wd-chart-grid-line" d="M0 90 H560" />
-        <path className="wd-chart-grid-floor" d={`M0 ${viewBox.floor} H560`} />
-        <path className="area" d={areaPath} />
+        <path className="area" d={areaPath} stroke="none" />
         <path className="wd-chart-line-shadow-path" d={linePath} />
         <path className="line" d={linePath} />
       </svg>
@@ -73,6 +76,11 @@ export function HomeMonitoringChart({ locale }: HomeMonitoringChartProps) {
           <span aria-hidden="true" className="wd-chart-dot-marker" />
         </button>
       ))}
+      <div aria-hidden="true" className="wd-chart-axis-labels">
+        {chartPoints.map((point) => (
+          <span key={point.label} style={{ left: `${(point.x / viewBox.width) * 100}%` }}>{point.label}</span>
+        ))}
+      </div>
       {active && (
         <div className="wd-chart-tooltip" style={{ left: `${(active.x / viewBox.width) * 100}%`, top: `${(active.y / viewBox.height) * 100}%` }}>
           <span>{active.label}</span>
