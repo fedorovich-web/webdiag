@@ -306,6 +306,7 @@ function assertPostgresqlParameterRange(value: string, start: number): void {
 
 const POSTGRESQL_OPERATOR_CHARACTERS = "+-*/<>=~!@#%^&|?";
 const POSTGRESQL_TRAILING_SIGN_EXEMPT_CHARACTERS = "~!@#%^&|?";
+const POSTGRESQL_MAXIMUM_OPERATOR_LENGTH = 63;
 
 function readPostgresqlOperator(input: string, start: number): [string, number] {
   if (!POSTGRESQL_OPERATOR_CHARACTERS.includes(input[start] ?? "")) return ["", start];
@@ -325,6 +326,9 @@ function readPostgresqlOperator(input: string, start: number): [string, number] 
       value = value.slice(0, -1);
       end -= 1;
     }
+  }
+  if (value.length > POSTGRESQL_MAXIMUM_OPERATOR_LENGTH) {
+    throw new Error(`PostgreSQL operator too long at character ${start + 1}.`);
   }
   return [value, end];
 }
