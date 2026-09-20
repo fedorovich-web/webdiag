@@ -334,6 +334,10 @@ function isPostgresqlContinuationString(token: Token | null): boolean {
   return token.value.startsWith("'") || /^(?:[EeBbXxNn]'|[Uu]&')/u.test(token.value);
 }
 
+function assertPostgresqlDelimitedIdentifierNotEmpty(value: string): void {
+  if (value === '""') throw new Error("PostgreSQL zero-length delimited identifier.");
+}
+
 type PostgresqlBitStringKind = "binary" | "hexadecimal";
 
 function postgresqlBitStringKind(token: Token): PostgresqlBitStringKind | null {
@@ -436,7 +440,8 @@ function tokenizeSql(
     if ((character === "U" || character === "u") && input[index + 1] === "&") {
       const quote = input[index + 2] ?? "";
       if (quote === "'" || quote === '"') {
-        const [, next] = readQuoted(input, index + 2, quote, quote + quote);
+        const [value, next] = readQuoted(input, index + 2, quote, quote + quote);
+        if (!mysql && quote === '"') assertPostgresqlDelimitedIdentifierNotEmpty(value);
         push(createToken(quote === "'" ? "string" : "identifier", input.slice(index, next)));
         index = next;
         continue;
@@ -453,6 +458,7 @@ function tokenizeSql(
     if (character === '"' || character === "`") {
       const mysqlDoubleQuotedString = mysql && character === '"';
       const [value, next] = readQuoted(input, index, character, character + character, true, mysqlDoubleQuotedString);
+      if (!mysql && character === '"') assertPostgresqlDelimitedIdentifierNotEmpty(value);
       if (character === "`") warnings.push("mysql-backtick-identifier");
       push(createToken(mysqlDoubleQuotedString ? "string" : "identifier", value));
       index = next;
