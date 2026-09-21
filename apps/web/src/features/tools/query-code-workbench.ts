@@ -545,7 +545,10 @@ function tokenizeSql(
     if (/\d/u.test(character) || (character === "." && /\d/u.test(input[index + 1] ?? ""))) {
       const match = input.slice(index).match(/^(?:0[xX]_?[0-9A-Fa-f](?:_?[0-9A-Fa-f])*|0[oO]_?[0-7](?:_?[0-7])*|0[bB]_?[01](?:_?[01])*|(?:\d(?:_?\d)*(?:\.(?:\d(?:_?\d)*)?)?|\.\d(?:_?\d)*)(?:[eE][+-]?\d(?:_?\d)*)?)/u);
       if (!match) throw new Error(`Unable to tokenize SQL number at character ${index + 1}.`);
-      const value = match[0];
+      let value = match[0];
+      if (!mysql && value.endsWith(".") && input[index + value.length] === ".") {
+        value = value.slice(0, -1);
+      }
       if (!mysql) assertPostgresqlNumericBoundary(input, index + value.length, index);
       push(createToken("number", value));
       index += value.length;
@@ -588,6 +591,12 @@ function tokenizeSql(
         index = next;
         continue;
       }
+    }
+
+    if (!mysql && input.startsWith("..", index)) {
+      push(createToken("punctuation", ".."));
+      index += 2;
+      continue;
     }
 
     if ("(),;.".includes(character)) {
@@ -762,9 +771,9 @@ export function formatSql(input: string, options: FormatOptions = {}): FormatRes
       continue;
     }
 
-    if (token.value === ".") {
+    if (token.value === "." || token.value === "..") {
       writer.trimEnd();
-      writer.write(".", false);
+      writer.write(token.value, false);
       previous = token;
       continue;
     }
@@ -786,7 +795,7 @@ export function formatSql(input: string, options: FormatOptions = {}): FormatRes
 
     const isKeyword = token.kind === "word" && SQL_KEYWORDS.has(token.upper);
     const value = isKeyword ? applyKeywordCase(token.value, keywordCase) : token.value;
-    const noSpace = previous?.value === "(" || previous?.value === "." || previous?.value === ":";
+    const noSpace = previous?.value === "(" || previous?.value === "." || previous?.value === ".." || previous?.value === ":";
     writer.write(value, !noSpace);
     previous = token;
   }
