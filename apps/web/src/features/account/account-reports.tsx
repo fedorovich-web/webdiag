@@ -51,12 +51,17 @@ export function AccountReports({
   if (loading) return <section className="wd-account-card" aria-busy="true"><p>{ru ? "Загружаем отчёты…" : "Loading reports…"}</p></section>;
 
   return (
-    <section className="wd-account-dashboard wd-reports-page">
-      <header className="wd-account-dashboard-head wd-reports-hero">
+    <section className="wd-account-dashboard wd-reports-page wd-reports-render">
+      <header className="wd-account-dashboard-head wd-reports-hero wd-reports-render-hero">
         <div>
           <span className="eyebrow">{projectId ? (ru ? "Отчёты проекта" : "Project reports") : (ru ? "Для команды и клиентов" : "For teams and clients")}</span>
           <h1>{ru ? "Сохранённые отчёты" : "Saved reports"}</h1>
           <p>{ru ? "Сохраняйте версии результатов для чтения, экспорта и контролируемого общего доступа." : "Save result versions for review, export, and controlled sharing."}</p>
+        </div>
+        <div className="wd-reports-render-meta">
+          <img src="/design/icons/issues.webp" alt="" width="120" height="120" />
+          <strong>{reports.length}</strong>
+          <span>{ru ? "сохранено" : "saved"}</span>
         </div>
         {projectId && <Link className="wd-button wd-button-secondary" href={reportsPath(locale)}>{ru ? "Все отчёты" : "All reports"}</Link>}
       </header>
