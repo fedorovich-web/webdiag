@@ -21,7 +21,7 @@ export default function Page() {
         <p>Проверяйте ключевые технические и SEO-сигналы, находите проблемы на конкретных страницах и переходите от найденной ошибки к понятному следующему шагу.</p>
               </div>
         <div className="wd-internal-hero-visual" aria-hidden="true">
-          <img src="/design/hero/audit.webp" alt="" width="1600" height="1000" fetchPriority="high" decoding="async" />
+          <img src="/design/hero/audit.webp" alt="" width="1600" height="1000" loading="eager" decoding="async" />
         </div>
       </header>
       <section className="wd-internal-grid" aria-label="Состав аудита">
