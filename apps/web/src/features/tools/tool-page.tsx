@@ -61,7 +61,7 @@ export function ToolPage({ locale, slug }: { locale: Locale; slug: string }) {
             </div>
 
             <div className="wd-tool-hero-art" aria-hidden="true" data-specific={slug === "robots-txt-tester" ? "true" : "false"}>
-              <img src={art} alt="" width={900} height={900} fetchPriority="high" decoding="async" />
+              <img src={art} alt="" width={900} height={900} loading="eager" decoding="async" />
             </div>
           </div>
         </div>
