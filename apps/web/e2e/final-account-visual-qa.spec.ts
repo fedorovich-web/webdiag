@@ -141,6 +141,8 @@ test.describe("final account visual QA captures", () => {
   for (const [name, route] of [["dashboard-ru", "/account"], ["dashboard-en", "/en/account"]] as const) {
     test(`${name} desktop and mobile browser renders`, async ({ page }) => {
       await capture(page, name, route, 1440, 1000);
+      await capture(page, name, route, 1024, 768);
+      await capture(page, name, route, 768, 1024);
       await capture(page, name, route, 390, 844);
     });
   }
