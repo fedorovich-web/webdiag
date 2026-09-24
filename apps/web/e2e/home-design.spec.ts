@@ -54,7 +54,7 @@ test.describe("home functional smoke", () => {
   test("homepage uses the approved standalone artwork without duplicate hero callouts", async ({ page }) => {
     await page.goto("/");
 
-    await expect(page.locator('img.wd-hero-dashboard[src="/design/hero/home.webp"]')).toHaveCount(1);
+    await expect(page.locator('img.wd-hero-dashboard[src="/home/hero-dashboard.webp"]')).toHaveCount(1);
     await expect(page.locator(".wd-hero-callout")).toHaveCount(0);
 
     for (const src of [

@@ -174,7 +174,8 @@
 :global(body[data-theme="light"]) .fidelity :global(.wd-section-link),
 :global(body[data-theme="light"]) .fidelity :global(.wd-card-link),
 :global(body[data-theme="light"]) .fidelity :global(.wd-report-bottom-row > a) { color: #0774dc; }
-:global(body[data-theme="light"]) .fidelity :global(.wd-popular-tool-card p) { color: #68758e; }
+:global(body[data-theme="light"]) .fidelity :global(.wd-popular-tool-card p),
+:global(body[data-theme="light"]) .fidelity :global(.wd-resource-card p) { color: #68758e; }
 :global(body[data-theme="light"]) .fidelity :global(.wd-report-tabs span) { color: #6c7588; }
 :global(body[data-theme="light"]) .fidelity :global(.wd-report-tabs .is-active) { color: #1375d8; }
 :global(body[data-theme="light"]) .fidelity :global(.wd-report-table-head) { color: #6d7582; }

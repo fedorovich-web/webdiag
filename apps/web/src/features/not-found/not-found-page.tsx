@@ -85,7 +85,7 @@ export function NotFoundPage({ locale }: { locale: Locale }) {
           </div>
         </div>
         <div className="wd-not-found-art" aria-hidden="true">
-          <img src="/design/hero/404.webp" alt="" width="900" height="900" loading="eager" decoding="async" />
+          <img src="/design/hero/404.webp" alt="" width="900" height="900" loading="lazy" decoding="async" />
         </div>
       </section>
 
