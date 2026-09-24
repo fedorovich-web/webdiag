@@ -53,17 +53,45 @@ const issues = [
   },
 ] as const;
 
-const savedAuditIssues = issues.map((issue) => ({
-  issue_id: issue.issue_id,
-  check_id: issue.check_id,
-  category: issue.category,
-  severity: issue.severity,
-  priority: issue.priority,
-  title: issue.title,
-  description: issue.description,
-  affected_urls: issue.affected_urls,
-  recommendation: issue.recommendation,
-}));
+function localizedIssues(locale: "ru" | "en") {
+  if (locale === "ru") return issues;
+  return [
+    {
+      ...issues[0],
+      title: "Meta description is missing",
+      description: "Some pages do not have a meta description.",
+      recommendation: {
+        summary: "Add unique meta descriptions.",
+        steps: ["Prepare descriptions for the affected pages."],
+        expected_impact: "More complete search snippets.",
+      },
+    },
+    {
+      ...issues[1],
+      title: "Broken links found",
+      description: "Some internal links return an error.",
+      recommendation: {
+        summary: "Fix or remove broken links.",
+        steps: ["Update href values to current URLs."],
+        expected_impact: "Better crawling and user navigation.",
+      },
+    },
+  ] as const;
+}
+
+function savedAuditIssues(locale: "ru" | "en") {
+  return localizedIssues(locale).map((issue) => ({
+    issue_id: issue.issue_id,
+    check_id: issue.check_id,
+    category: issue.category,
+    severity: issue.severity,
+    priority: issue.priority,
+    title: issue.title,
+    description: issue.description,
+    affected_urls: issue.affected_urls,
+    recommendation: issue.recommendation,
+  }));
+}
 
 async function setupAccount(page: import("@playwright/test").Page) {
   await page.route("**/api/account/me", (route) => route.fulfill({ json: session }));
@@ -127,7 +155,7 @@ test.describe("final account visual QA captures", () => {
           project: firstProject,
           audit,
           total: issues.length,
-          items: issues,
+          items: localizedIssues(locale),
         },
       }));
       await capture(page, name, `${prefix}/account/projects/${firstProject.id}/audits/${auditId}/issues`, 1440, 1000);
@@ -154,7 +182,7 @@ test.describe("final account visual QA captures", () => {
               { check_id: "links.broken", name: "Broken links", category: "links", status: "failed" },
               { check_id: "security.headers", name: "Security headers", category: "security", status: "passed" },
             ],
-            issues: savedAuditIssues,
+            issues: savedAuditIssues(locale),
             completed_at: audit.completed_at,
           },
         },
