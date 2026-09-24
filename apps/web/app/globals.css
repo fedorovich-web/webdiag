@@ -3,6 +3,7 @@
 @import "./tool-page-v2.css";
 @import "./contact-page.css";
 @import "./not-found-page.css";
+@import "./auth-page.css";
 @font-face {
   font-family: "Manrope Web";
   src: url("/fonts/manrope-ru-en-400-700.woff2") format("woff2");
