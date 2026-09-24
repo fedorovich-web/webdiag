@@ -53,6 +53,18 @@ const issues = [
   },
 ] as const;
 
+const savedAuditIssues = issues.map((issue) => ({
+  issue_id: issue.issue_id,
+  check_id: issue.check_id,
+  category: issue.category,
+  severity: issue.severity,
+  priority: issue.priority,
+  title: issue.title,
+  description: issue.description,
+  affected_urls: issue.affected_urls,
+  recommendation: issue.recommendation,
+}));
+
 async function setupAccount(page: import("@playwright/test").Page) {
   await page.route("**/api/account/me", (route) => route.fulfill({ json: session }));
   await page.route("**/api/account/projects", (route) => route.fulfill({
@@ -142,7 +154,7 @@ test.describe("final account visual QA captures", () => {
               { check_id: "links.broken", name: "Broken links", category: "links", status: "failed" },
               { check_id: "security.headers", name: "Security headers", category: "security", status: "passed" },
             ],
-            issues,
+            issues: savedAuditIssues,
             completed_at: audit.completed_at,
           },
         },
