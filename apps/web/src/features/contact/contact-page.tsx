@@ -103,7 +103,7 @@ export function ContactPage({ locale }: { locale: Locale }) {
         infoRows: [
           ["Response time", "We usually reply within one business day.", "within 1 day"],
           ["Working hours", "Mon — Fri, 10:00–19:00", "MSK"],
-          ["Support languages", "Русский, English", "RU / EN"],
+          ["Support languages", "Russian, English", "RU / EN"],
           ["Time zone", "Moscow (UTC+3)", "UTC+3"],
           ["Other ways to contact us", "You can also use the website form or contact us from your account.", ""],
         ],
@@ -152,7 +152,7 @@ export function ContactPage({ locale }: { locale: Locale }) {
             <p>{t.lead}</p>
           </div>
           <div className="wd-contact-hero-art" aria-hidden="true">
-            <img src="/design/hero/contacts.webp" alt="" width="900" height="900" loading="eager" decoding="async" />
+            <img src={ru ? "/design/hero/contacts.webp" : "/design/icons/support.webp"} alt="" width="900" height="900" loading="eager" decoding="async" />
           </div>
         </div>
       </section>
