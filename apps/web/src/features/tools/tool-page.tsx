@@ -93,8 +93,8 @@ export function ToolPage({ locale, slug }: { locale: Locale; slug: string }) {
       </section>
 
       <section className="wd-tool-content-section">
-        <div className="shell wd-tool-editorial-layout">
-          <article className="wd-tool-editorial-main">
+        <div className="shell wd-tool-editorial-layout tool-editorial-layout">
+          <article className="wd-tool-editorial-main tool-editorial-main">
             <section aria-labelledby="how-title">
               <span className="wd-tool-section-number">01</span>
               <h2 id="how-title">{text.how}</h2>
@@ -152,7 +152,7 @@ export function ToolPage({ locale, slug }: { locale: Locale; slug: string }) {
             </section>
 
             {related.length > 0 && (
-              <section className="wd-tool-aside-card wd-tool-related">
+              <section className="wd-tool-aside-card wd-tool-related related-tools-card">
                 <h2>{text.related}</h2>
                 <div>
                   {related.map((candidate) => candidate ? (
