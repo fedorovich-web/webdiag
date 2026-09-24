@@ -394,7 +394,7 @@ export function AccountWorkspaceShell({
         <div className="wd-account-topbar-inner">
           <SiteBrand locale={locale} className="brand wd-account-topbar-brand" variant="header" />
           <label className="wd-account-topbar-project">
-            <span className="sr-only">{ru ? "Текущий проект" : "Current project"}</span>
+            <span className="sr-only">{ru ? "Быстрый выбор проекта" : "Quick project switch"}</span>
             <select
               value={activeTopProject?.id ?? ""}
               onChange={(event) => selectTopProject(event.target.value)}
