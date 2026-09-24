@@ -64,11 +64,11 @@ function NavigationLinks({ locale, compact = false }: { locale: Locale; compact?
   if (compact) {
     return (
       <nav className="mobile-nav wd-mobile-nav" aria-label={locale === "ru" ? "Основная навигация" : "Main navigation"}>
-        <Link href={tools}>{text.tools}</Link>
-        <Link href={pages.audit}>{text.audit}</Link>
-        <Link href={pages.pricing}>{text.pricing}</Link>
-        <Link href={pages.materials}>{text.materials}</Link>
-        <Link href={pages.account}>{text.account}</Link>
+        <Link href={tools} prefetch={false}>{text.tools}</Link>
+        <Link href={pages.audit} prefetch={false}>{text.audit}</Link>
+        <Link href={pages.pricing} prefetch={false}>{text.pricing}</Link>
+        <Link href={pages.materials} prefetch={false}>{text.materials}</Link>
+        <Link href={pages.account} prefetch={false}>{text.account}</Link>
       </nav>
     );
   }
@@ -91,16 +91,16 @@ function NavigationLinks({ locale, compact = false }: { locale: Locale; compact?
                 </>
               );
               return available
-                ? <Link href={`${tools}?category=${category}`} key={`${category}-${ru}`}>{content}</Link>
+                ? <Link href={`${tools}?category=${category}`} prefetch={false} key={`${category}-${ru}`}>{content}</Link>
                 : <span className="wd-tools-category is-disabled" aria-disabled="true" key={`${category}-${ru}`}>{content}</span>;
             })}
           </div>
-          <footer><Link href={tools}>{text.all}<span aria-hidden="true">→</span></Link></footer>
+          <footer><Link href={tools} prefetch={false}>{text.all}<span aria-hidden="true">→</span></Link></footer>
         </div>
       </ToolsMenuShell>
-      <Link href={pages.audit}>{text.audit}</Link>
-      <Link href={pages.pricing}>{text.pricing}</Link>
-      <Link href={pages.materials}>{text.materials}</Link>
+      <Link href={pages.audit} prefetch={false}>{text.audit}</Link>
+      <Link href={pages.pricing} prefetch={false}>{text.pricing}</Link>
+      <Link href={pages.materials} prefetch={false}>{text.materials}</Link>
     </nav>
   );
 }
@@ -121,6 +121,7 @@ export function SiteHeader({ locale }: SiteHeaderProps) {
         <div className="wd-header-actions">
           <div id="account-workspace-menu-slot" className="wd-account-menu-slot" />
           <Link
+            prefetch={false}
             aria-label={search}
             className="wd-header-login"
             href={toolsPath(locale)}
@@ -129,8 +130,8 @@ export function SiteHeader({ locale }: SiteHeaderProps) {
           >
             <Search aria-hidden="true" size={16} />
           </Link>
-          <Link className="wd-header-login" href={loginPath(locale)}>{login}</Link>
-          <Link className="wd-header-cta" href={registerHref}>{createAccount}</Link>
+          <Link className="wd-header-login" href={loginPath(locale)} prefetch={false}>{login}</Link>
+          <Link className="wd-header-cta" href={registerHref} prefetch={false}>{createAccount}</Link>
           <details className="mobile-menu">
             <summary aria-label={menu}>
               <span aria-hidden="true" />
@@ -140,7 +141,7 @@ export function SiteHeader({ locale }: SiteHeaderProps) {
             <div className="mobile-menu-panel">
               <LanguageSwitcher locale={locale} className="language-switcher-mobile" />
               <NavigationLinks locale={locale} compact />
-              <Link className="wd-header-cta" href={registerHref}>{createAccount}</Link>
+              <Link className="wd-header-cta" href={registerHref} prefetch={false}>{createAccount}</Link>
             </div>
           </details>
         </div>
