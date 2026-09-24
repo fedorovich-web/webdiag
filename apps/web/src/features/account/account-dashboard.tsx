@@ -8,7 +8,6 @@ import {
   accountNextActionHref,
   formatAccountDate,
   formatMonitorStatus,
-  formatNullableScore,
 } from "./account-dashboard-contract";
 import { accountErrorMessage } from "./account-messages";
 import { announceAccountAuthenticationLost } from "./account-authentication-state";
@@ -178,59 +177,6 @@ export function AccountDashboard({
           </button>
         </form>
       </section>
-    );
-  }
-
-  function projectCard(item: AccountOverviewProject) {
-    const audit = item.latest_audit;
-    const monitor = item.monitor;
-    const monitorTone = monitor?.status === "failed"
-      ? "danger"
-      : monitor?.status === "changed"
-        ? "warning"
-        : "neutral";
-    return (
-      <article key={item.project.id} className="wd-operation-project-card">
-        <header>
-          <div>
-            <h3><Link href={projectPath(locale, item.project.id)}>{item.project.name}</Link></h3>
-            <p>{item.project.origin}</p>
-          </div>
-          {monitor && (
-            <span className="wd-operation-status" data-tone={monitorTone}>
-              {formatMonitorStatus(monitor.status, locale)}
-            </span>
-          )}
-        </header>
-        <dl>
-          <div>
-            <dt>{ru ? "Последняя проверка" : "Latest check"}</dt>
-            <dd>{audit ? formatAccountDate(audit.completed_at, locale) : (ru ? "Ещё не запускалась" : "Not run yet")}</dd>
-          </div>
-          <div>
-            <dt>{ru ? "Оценка" : "Score"}</dt>
-            <dd>{audit ? formatNullableScore(audit.score, locale) : "—"}</dd>
-          </div>
-          <div>
-            <dt>{ru ? "Найдено проблем" : "Issues"}</dt>
-            <dd>{audit ? audit.issue_count : "—"}</dd>
-          </div>
-          <div>
-            <dt>{ru ? "Отчёты" : "Reports"}</dt>
-            <dd>{item.report_count}</dd>
-          </div>
-        </dl>
-        <div className="wd-operation-project-footer">
-          <span>
-            {monitor?.next_run_at
-              ? `${ru ? "Следующая проверка" : "Next check"}: ${formatAccountDate(monitor.next_run_at, locale)}`
-              : (ru ? "Автопроверки не настроены" : "Scheduled checks are not configured")}
-          </span>
-          <Link className="wd-button wd-button-secondary" href={projectPath(locale, item.project.id)}>
-            {ru ? "Открыть проект" : "Open project"}
-          </Link>
-        </div>
-      </article>
     );
   }
 
