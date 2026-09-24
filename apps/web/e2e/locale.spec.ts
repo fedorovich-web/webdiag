@@ -55,6 +55,16 @@ test.describe("RU and EN segmented navigation", () => {
     await expect(page).toHaveURL(/\/tools\/image-resizer\?source=audit&mode=1#privacy$/);
   });
 
+  test("keeps decorative homepage copy in the active locale", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator(".wd-process-callout")).toContainText("Просто.");
+    await expect(page.locator(".wd-process-callout")).not.toContainText("Simple.");
+
+    await page.goto("/en");
+    await expect(page.locator(".wd-process-callout")).toContainText("Simple.");
+    await expect(page.locator(".wd-process-callout")).not.toContainText("Просто.");
+  });
+
   test("keeps home routes stable without duplicating the English prefix", async ({ page }) => {
     await page.goto("/en?ref=header#how-it-works");
     await openMobileMenu(page);
