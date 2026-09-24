@@ -228,7 +228,7 @@ export function ContactPage({ locale }: { locale: Locale }) {
               <div className="wd-contact-address">
                 <span><MapPin aria-hidden="true" /></span>
                 <div><strong>{t.officeAddress}</strong><small>{t.officeDetail}</small></div>
-                <a href="https://www.google.com/maps/search/?api=1&query=55.7784,37.5851" target="_blank" rel="noreferrer">{t.route}<ArrowRight aria-hidden="true" /></a>
+                <a href={ru ? "https://www.google.com/maps/search/?api=1&query=%D0%9B%D0%B5%D1%81%D0%BD%D0%B0%D1%8F+7+%D0%9C%D0%BE%D1%81%D0%BA%D0%B2%D0%B0" : "https://www.google.com/maps/search/?api=1&query=7+Lesnaya+Street+Moscow"} target="_blank" rel="noreferrer">{t.route}<ArrowRight aria-hidden="true" /></a>
               </div>
             </section>
 
