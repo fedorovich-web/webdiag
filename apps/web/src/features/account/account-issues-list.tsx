@@ -15,7 +15,6 @@ import {
 } from "./account-issues-contract";
 import {
   defaultAccountIssueFilters,
-  formatAffectedUrlCount,
   hasActiveAccountIssueFilters,
   issueCategoryLabel,
   issuePriorityLabel,
