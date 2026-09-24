@@ -39,39 +39,60 @@ describe("account workspace shell contract", () => {
     expect(accountAIPath("en")).toBe("/en/account/ai");
 
     const ru = buildAccountWorkspaceNavigation("ru", "overview");
-    expect(ru.portfolio).toHaveLength(5);
-    expect(ru.portfolio[0]?.label).toBe("Обзор");
-    expect(ru.portfolio[0]?.active).toBe(true);
-    expect(ru.portfolio[1]?.href).toBe("/account#projects");
+    expect(ru.portfolio).toHaveLength(8);
+    expect(ru.portfolio[0]).toMatchObject({
+      id: "overview",
+      label: "Панель управления",
+      href: "/account",
+      active: true,
+    });
+    expect(ru.portfolio[1]).toMatchObject({
+      id: "projects",
+      label: "Мои проекты",
+      href: "/account#projects",
+    });
     expect(ru.portfolio[2]).toMatchObject({
-      id: "ai",
-      label: "AI-инструменты",
+      id: "checks",
+      label: "Проверки",
+      href: null,
+      disabled: true,
+    });
+    expect(ru.portfolio[3]).toMatchObject({
+      id: "tools",
+      label: "Инструменты",
       href: "/account/ai",
       active: false,
     });
-    expect(ru.portfolio[3]?.href).toBe("/account/reports");
-    expect(ru.portfolio[4]).toMatchObject({
+    expect(ru.portfolio[4]?.href).toBe("/account/reports");
+    expect(ru.portfolio[5]?.href).toBe("/account#tasks");
+    expect(ru.portfolio[6]).toMatchObject({
+      id: "monitoring",
+      href: null,
+      disabled: true,
+    });
+    expect(ru.portfolio[7]).toMatchObject({
       id: "account",
-      label: "Аккаунт",
+      label: "Настройки",
       href: "/account/settings",
       active: false,
     });
     expect(ru.project).toBeNull();
 
     const en = buildAccountWorkspaceNavigation("en", "projects");
-    expect(en.portfolio[0]?.href).toBe("/en/account");
-    expect(en.portfolio[1]?.label).toBe("Projects");
+    expect(en.portfolio[0]?.label).toBe("Dashboard");
+    expect(en.portfolio[1]?.label).toBe("My projects");
     expect(en.portfolio[1]?.active).toBe(true);
-    expect(en.portfolio[2]?.label).toBe("AI tools");
-    expect(en.portfolio[2]?.active).toBe(false);
-    expect(en.portfolio[3]?.label).toBe("Reports");
-    expect(en.portfolio[4]?.href).toBe("/en/account/settings");
+    expect(en.portfolio[3]?.label).toBe("Tools");
+    expect(en.portfolio[4]?.label).toBe("Reports");
+    expect(en.portfolio[5]?.label).toBe("Tasks");
+    expect(en.portfolio[6]?.label).toBe("Monitoring");
+    expect(en.portfolio[7]?.href).toBe("/en/account/settings");
 
     const settings = buildAccountWorkspaceNavigation("ru", "settings");
-    expect(settings.portfolio[4]?.active).toBe(true);
+    expect(settings.portfolio[7]?.active).toBe(true);
 
     const ai = buildAccountWorkspaceNavigation("ru", "ai");
-    expect(ai.portfolio[2]?.active).toBe(true);
+    expect(ai.portfolio[3]?.active).toBe(true);
   });
 
   it("builds project task navigation only from live routes and known audit context", () => {
@@ -91,6 +112,15 @@ describe("account workspace shell contract", () => {
       "monitoring",
       "project_reports",
     ]);
+    expect(navigation.portfolio.find((item) => item.id === "checks")).toMatchObject({
+      href: `/account/projects/${projectId}#audit-history`,
+      disabled: false,
+    });
+    expect(navigation.portfolio.find((item) => item.id === "monitoring")).toMatchObject({
+      href: `/account/projects/${projectId}/monitoring`,
+      active: true,
+      disabled: false,
+    });
     expect(navigation.project?.find((item) => item.id === "monitoring")).toMatchObject({
       href: `/account/projects/${projectId}/monitoring`,
       active: true,

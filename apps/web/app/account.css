@@ -6628,3 +6628,33 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
     background: transparent;
   }
 }
+
+
+/* Account navigation fidelity: match the approved flat dashboard rail. */
+body:has(.wd-account-workspace-page) .wd-workspace-navigation {
+  gap: 6px;
+}
+body:has(.wd-account-workspace-page) .wd-workspace-navigation-group:first-child {
+  gap: 4px;
+}
+body:has(.wd-account-workspace-page) .wd-workspace-navigation-group:first-child > span:first-child {
+  display: none;
+}
+body:has(.wd-account-workspace-page) .wd-workspace-navigation a,
+body:has(.wd-account-workspace-page) .wd-workspace-navigation > span,
+body:has(.wd-account-workspace-page) .wd-workspace-navigation-group > span[aria-disabled="true"] {
+  min-height: 44px;
+  padding-inline: 12px;
+  font-size: 10px;
+}
+body:has(.wd-account-workspace-page) .wd-workspace-navigation a[aria-current="page"] {
+  border-left-width: 2px;
+  background: #eaf6ff;
+  color: #147fd0;
+}
+body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
+  margin-top: 8px;
+}
+.wd-dashboard-quick-actions > div {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}

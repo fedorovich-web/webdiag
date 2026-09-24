@@ -25,8 +25,11 @@ export type AccountWorkspaceSection =
 export type AccountWorkspaceNavigationId =
   | "overview"
   | "projects"
-  | "ai"
+  | "checks"
+  | "tools"
   | "reports"
+  | "tasks"
+  | "monitoring"
   | "account"
   | "project_overview"
   | "audits"
@@ -61,21 +64,28 @@ export function buildAccountWorkspaceNavigation(
   const portfolio: readonly AccountWorkspaceNavigationItem[] = [
     {
       id: "overview",
-      label: ru ? "Обзор" : "Overview",
+      label: ru ? "Панель управления" : "Dashboard",
       href: root,
       active: section === "overview",
       disabled: false,
     },
     {
       id: "projects",
-      label: ru ? "Проекты" : "Projects",
+      label: ru ? "Мои проекты" : "My projects",
       href: `${root}#projects`,
-      active: section === "projects" || projectSections.has(section),
+      active: section === "projects",
       disabled: false,
     },
     {
-      id: "ai",
-      label: ru ? "AI-инструменты" : "AI tools",
+      id: "checks",
+      label: ru ? "Проверки" : "Checks",
+      href: projectId ? `${projectPath(locale, projectId)}#audit-history` : null,
+      active: section === "audit" || section === "issues",
+      disabled: !projectId,
+    },
+    {
+      id: "tools",
+      label: ru ? "Инструменты" : "Tools",
       href: accountAIPath(locale),
       active: section === "ai",
       disabled: false,
@@ -84,12 +94,26 @@ export function buildAccountWorkspaceNavigation(
       id: "reports",
       label: ru ? "Отчёты" : "Reports",
       href: reportsPath(locale),
-      active: (section === "reports" || section === "report") && !projectId,
+      active: section === "reports" || section === "report",
       disabled: false,
     },
     {
+      id: "tasks",
+      label: ru ? "Задачи" : "Tasks",
+      href: `${root}#tasks`,
+      active: false,
+      disabled: false,
+    },
+    {
+      id: "monitoring",
+      label: ru ? "Мониторинг" : "Monitoring",
+      href: projectId ? projectMonitoringPath(locale, projectId) : null,
+      active: section === "monitoring",
+      disabled: !projectId,
+    },
+    {
       id: "account",
-      label: ru ? "Аккаунт" : "Account",
+      label: ru ? "Настройки" : "Settings",
       href: accountSettingsPath(locale),
       active: section === "settings",
       disabled: false,

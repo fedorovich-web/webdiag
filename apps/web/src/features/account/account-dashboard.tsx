@@ -360,7 +360,7 @@ export function AccountDashboard({
         </article>
       </section>
 
-      <section className="wd-dashboard-main-grid wd-dashboard-bottom-grid">
+      <section id="tasks" className="wd-dashboard-main-grid wd-dashboard-bottom-grid">
         <article className="wd-dashboard-panel">
           <header><div><h2>{ru ? "Мои задачи и рекомендации" : "Tasks and recommendations"}</h2></div></header>
           {actions.length ? (
@@ -378,9 +378,14 @@ export function AccountDashboard({
         <article className="wd-dashboard-panel wd-dashboard-quick-actions">
           <header><div><h2>{ru ? "Быстрые действия" : "Quick actions"}</h2></div></header>
           <div>
-            <Link href={toolsPath(locale)}><img src="/design/icons/seo-audit.webp" alt="" width="72" height="72" /><span>{ru ? "Запустить инструмент" : "Open a tool"}</span></Link>
+            <Link href={toolsPath(locale)}><img src="/design/icons/seo-audit.webp" alt="" width="72" height="72" /><span>{ru ? "Запустить проверку" : "Run a check"}</span></Link>
+            <Link href={`${toolsPath(locale)}/robots-txt-tester`}><img src="/design/icons/robots.webp" alt="" width="72" height="72" /><span>{ru ? "Проверить robots.txt" : "Check robots.txt"}</span></Link>
+            <Link href={`${toolsPath(locale)}/sitemap-validator`}><img src="/design/icons/sitemap.webp" alt="" width="72" height="72" /><span>{ru ? "Проверить sitemap.xml" : "Check sitemap.xml"}</span></Link>
+            <Link href={`${toolsPath(locale)}/core-web-vitals-checker`}><img src="/design/icons/performance.webp" alt="" width="72" height="72" /><span>{ru ? "Анализ скорости" : "Analyze performance"}</span></Link>
+            <Link href={`${toolsPath(locale)}/redirect-chain-checker`}><img src="/design/icons/analytics.webp" alt="" width="72" height="72" /><span>{ru ? "Проверка редиректов" : "Check redirects"}</span></Link>
+            <Link href={`${toolsPath(locale)}/image-seo-audit`}><img src="/design/icons/images.webp" alt="" width="72" height="72" /><span>{ru ? "Проверка изображений" : "Check images"}</span></Link>
+            <Link href={reportsPath(locale)}><img src="/design/icons/issues.webp" alt="" width="72" height="72" /><span>{ru ? "Создать отчёт" : "Create report"}</span></Link>
             <button type="button" onClick={openProjectCreation}><img src="/design/icons/analytics.webp" alt="" width="72" height="72" /><span>{ru ? "Добавить проект" : "Add project"}</span></button>
-            <Link href={reportsPath(locale)}><img src="/design/icons/issues.webp" alt="" width="72" height="72" /><span>{ru ? "Открыть отчёты" : "Open reports"}</span></Link>
           </div>
         </article>
       </section>

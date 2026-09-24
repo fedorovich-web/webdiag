@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Activity, AlertTriangle, FileBarChart2, FileText, FolderKanban, Gauge, History, LayoutDashboard, Menu, Search, Settings, Sparkles, X, type LucideIcon } from "lucide-react";
+import { Activity, AlertTriangle, ClipboardCheck, FileBarChart2, FileText, FolderKanban, Gauge, History, LayoutDashboard, Menu, Search, Settings, Sparkles, Wrench, X, type LucideIcon } from "lucide-react";
 import { createPortal } from "react-dom";
 import {
   useEffect,
@@ -54,8 +54,11 @@ interface WorkspaceNavigationProps {
 const navigationIcons: Readonly<Record<string, LucideIcon>> = {
   overview: LayoutDashboard,
   projects: FolderKanban,
-  ai: Sparkles,
+  checks: History,
+  tools: Wrench,
   reports: FileBarChart2,
+  tasks: ClipboardCheck,
+  monitoring: Activity,
   account: Settings,
   project_overview: Gauge,
   audits: History,
@@ -93,14 +96,14 @@ function WorkspaceNavigation({
   onNavigate,
 }: WorkspaceNavigationProps) {
   const ru = locale === "ru";
-  const activeProjectId = ownedAccountProjectContextId(projects, currentProjectId);
+  const activeProject = resolveActiveAccountProject(projects, currentProjectId) ?? projects[0] ?? null;
+  const activeProjectId = activeProject?.id;
   const navigation = buildAccountWorkspaceNavigation(
     locale,
     section,
     activeProjectId,
     latestAuditId,
   );
-  const activeProject = resolveActiveAccountProject(projects, currentProjectId);
 
   function selectProject(projectId: string) {
     if (!projectId) return;
@@ -137,7 +140,7 @@ function WorkspaceNavigation({
           <span>{ru ? "Рабочая область" : "Workspace"}</span>
           {items(navigation.portfolio)}
         </div>
-        {navigation.project && (
+        {navigation.project && currentProjectId && (
           <div className="wd-workspace-navigation-group">
             <span>{ru ? "Текущий проект" : "Current project"}</span>
             {items(navigation.project)}
