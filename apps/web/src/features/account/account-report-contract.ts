@@ -1,7 +1,9 @@
 import type {
   SavedAuditCheck,
   SavedAuditIssue,
+  SavedAuditPageSpeed,
 } from "./account-workspace-contract";
+import { isSavedAuditPageSpeed } from "./account-workspace-contract";
 
 export type ReportLocale = "ru" | "en";
 
@@ -13,6 +15,7 @@ export interface ReportSnapshot {
   readonly target_origin: string;
   readonly audit_completed_at: string;
   readonly score: number | null;
+  readonly pagespeed?: SavedAuditPageSpeed | null;
   readonly checks: readonly SavedAuditCheck[];
   readonly issues: readonly SavedAuditIssue[];
   readonly generated_at: string;
@@ -156,18 +159,21 @@ function isIssue(value: unknown): value is SavedAuditIssue {
 }
 
 export function isReportSnapshot(value: unknown): value is ReportSnapshot {
-  return record(value)
-    && only(value, [
-      "contract_version", "title", "locale", "project_name", "target_origin",
-      "audit_completed_at", "score", "checks", "issues", "generated_at",
-    ])
-    && value.contract_version === "webdiag.account.report_snapshot.v1"
+  if (!record(value)) return false;
+  const baseKeys = [
+    "contract_version", "title", "locale", "project_name", "target_origin",
+    "audit_completed_at", "score", "checks", "issues", "generated_at",
+  ] as const;
+  const hasPageSpeed = Object.prototype.hasOwnProperty.call(value, "pagespeed");
+  if (!only(value, hasPageSpeed ? [...baseKeys, "pagespeed"] : baseKeys)) return false;
+  return value.contract_version === "webdiag.account.report_snapshot.v1"
     && string(value.title)
     && (value.locale === "ru" || value.locale === "en")
     && string(value.project_name)
     && canonicalHttpOrigin(value.target_origin)
     && timestamp(value.audit_completed_at)
     && score(value.score)
+    && (!hasPageSpeed || value.pagespeed === null || isSavedAuditPageSpeed(value.pagespeed))
     && Array.isArray(value.checks)
     && value.checks.every(isCheck)
     && Array.isArray(value.issues)

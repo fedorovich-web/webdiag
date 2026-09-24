@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import type { ReportSnapshot } from "./account-report-contract";
+import { AccountPageSpeedSnapshot } from "./account-pagespeed-snapshot";
 import {
   formatReportDate,
   orderedReportIssues,
@@ -94,6 +95,8 @@ export function AccountReportSnapshotView({
           </div>
         </article>
       </section>
+
+      {snapshot.pagespeed && <AccountPageSpeedSnapshot locale={locale} pageSpeed={snapshot.pagespeed} />}
 
       <section className="wd-report-render-parameters" aria-labelledby="report-parameters-title">
         <div className="wd-report-render-section-head"><div><span className="eyebrow">{ru ? "Разделы" : "Sections"}</span><h2 id="report-parameters-title">{ru ? "Основные параметры" : "Key areas"}</h2></div></div>

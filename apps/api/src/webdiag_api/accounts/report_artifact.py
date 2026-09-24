@@ -35,6 +35,7 @@ def build_report_snapshot(
         target_origin=detail.payload.target_origin,
         audit_completed_at=detail.payload.completed_at,
         score=detail.payload.score,
+        pagespeed=detail.payload.pagespeed,
         checks=detail.payload.checks,
         issues=detail.payload.issues,
         generated_at=(generated_at or datetime.now(UTC)).astimezone(UTC),
@@ -59,6 +60,9 @@ def _labels(locale: str) -> dict[str, str]:
             "generated": "Отчёт создан",
             "score": "Оценка",
             "checks": "Проверки",
+            "pagespeed": "PageSpeed — мобильная производительность",
+            "performance": "Performance",
+            "metrics": "Ключевые метрики",
             "name": "Проверка",
             "category": "Категория",
             "status": "Статус",
@@ -76,6 +80,9 @@ def _labels(locale: str) -> dict[str, str]:
         "generated": "Report generated",
         "score": "Score",
         "checks": "Checks",
+        "pagespeed": "PageSpeed — mobile performance",
+        "performance": "Performance",
+        "metrics": "Key metrics",
         "name": "Check",
         "category": "Category",
         "status": "Status",
@@ -149,6 +156,34 @@ def render_report_html(snapshot: ReportSnapshot) -> bytes:
         "</tr>"
         for check in snapshot.checks
     )
+    pagespeed_html = ""
+    if snapshot.pagespeed is not None:
+        pagespeed = snapshot.pagespeed
+        if pagespeed.available:
+            category_items = "".join(
+                f"<li><span>{_escape(category)}</span><strong>{_escape(value if value is not None else '—')}</strong></li>"
+                for category, value in pagespeed.category_scores.items()
+            )
+            metric_items = "".join(
+                f"<li><span>{_escape(metric.title)}</span><strong>{_escape(metric.display_value or metric.value or '—')}</strong><small>{_escape(metric.status)}</small></li>"
+                for metric in pagespeed.metrics
+            )
+            pagespeed_html = (
+                '<section class="pagespeed">'
+                f"<h2>{_escape(labels['pagespeed'])}</h2>"
+                f'<div class="pagespeed-score"><span>{_escape(labels["performance"])}</span><strong>{_escape(pagespeed.performance_score if pagespeed.performance_score is not None else "—")}</strong></div>'
+                f'<ul class="pagespeed-categories">{category_items}</ul>'
+                f'<h3>{_escape(labels["metrics"])}</h3><ul class="pagespeed-metrics">{metric_items}</ul>'
+                "</section>"
+            )
+        else:
+            pagespeed_html = (
+                '<section class="pagespeed">'
+                f"<h2>{_escape(labels['pagespeed'])}</h2>"
+                "<p>PageSpeed unavailable for this audit.</p>"
+                "</section>"
+            )
+
     issue_blocks: list[str] = []
     for issue in snapshot.issues:
         affected = "".join(f"<li>{_escape(url)}</li>" for url in issue.affected_urls)
@@ -239,6 +274,11 @@ th, td {{
 }}
 a {{ color: inherit; }}
 .print-note {{ margin: 0 0 16px; color: #49645d; }}
+.pagespeed-score {{ display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 12px 0; padding: 14px; border: 1px solid #dbe5e2; border-radius: 12px; }}
+.pagespeed-score strong {{ font-size: 1.8rem; }}
+.pagespeed-categories, .pagespeed-metrics {{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 0; list-style: none; }}
+.pagespeed-categories li, .pagespeed-metrics li {{ display: grid; gap: 3px; padding: 10px; border: 1px solid #dbe5e2; border-radius: 10px; }}
+.pagespeed-categories span, .pagespeed-metrics span, .pagespeed-metrics small {{ color: #49645d; font-size: .8rem; }}
 ul, ol {{ padding-left: 22px; }}
 @media (max-width: 680px) {{
   header.hero {{ display: block; }}
@@ -296,6 +336,7 @@ ul, ol {{ padding-left: 22px; }}
     <tbody>{check_rows}</tbody>
   </table>
 </section>
+{pagespeed_html}
 <section><h2>{_escape(labels["issues"])}</h2>{issues_html}</section>
 </main>
 </body>

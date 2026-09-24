@@ -216,7 +216,7 @@ function isPageSpeedMetric(value: unknown): value is SavedAuditPageSpeedMetric {
     && string(value.source) && string(value.status);
 }
 
-function isPageSpeed(value: unknown): value is SavedAuditPageSpeed {
+export function isSavedAuditPageSpeed(value: unknown): value is SavedAuditPageSpeed {
   if (!record(value) || !only(value, [
     "strategy", "available", "performance_score", "field_data_available",
     "field_overall_category", "lighthouse_version", "analysis_fetch_time",
@@ -263,7 +263,7 @@ function isPayload(value: unknown): value is SavedAuditPayload {
   return value.contract_version === "webdiag.account.saved_audit_payload.v1"
     && string(value.target_origin) && value.status === "succeeded"
     && nullableNumber(value.score)
-    && (!hasPageSpeed || value.pagespeed === null || isPageSpeed(value.pagespeed))
+    && (!hasPageSpeed || value.pagespeed === null || isSavedAuditPageSpeed(value.pagespeed))
     && Array.isArray(value.checks) && value.checks.every(isCheck)
     && Array.isArray(value.issues) && value.issues.every(isIssue)
     && string(value.completed_at);

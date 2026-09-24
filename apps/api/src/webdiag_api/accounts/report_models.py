@@ -5,7 +5,11 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from webdiag_api.accounts.workspace_models import SavedAuditCheck, SavedAuditIssue
+from webdiag_api.accounts.workspace_models import (
+    SavedAuditCheck,
+    SavedAuditIssue,
+    SavedAuditPageSpeed,
+)
 
 REPORT_SNAPSHOT_VERSION = "webdiag.account.report_snapshot.v1"
 REPORT_LIST_VERSION = "webdiag.account.report_list.v2"
@@ -39,6 +43,7 @@ class ReportSnapshot(BaseModel):
     target_origin: str
     audit_completed_at: datetime
     score: int | None = Field(default=None, ge=0, le=100)
+    pagespeed: SavedAuditPageSpeed | None = None
     checks: tuple[SavedAuditCheck, ...]
     issues: tuple[SavedAuditIssue, ...]
     generated_at: datetime
