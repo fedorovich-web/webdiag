@@ -172,7 +172,7 @@ export function HomePage({ locale }: { locale: Locale }) {
             <p className="wd-hero-note">{t(homeContent.heroNote)}</p>
           </div>
           <div className="wd-hero-visual" aria-hidden="true">
-            <img className="wd-hero-dashboard" src="/design/hero/home.webp" alt="" width="900" height="900" loading="eager" decoding="async" />
+            <img className="wd-hero-dashboard" src="/home/hero-dashboard.webp" alt="" width="900" height="900" loading="eager" decoding="async" />
           </div>
         </div>
         <div className="shell wd-hero-benefits" aria-label={locale === "ru" ? "Преимущества WebDiag" : "WebDiag benefits"}>
