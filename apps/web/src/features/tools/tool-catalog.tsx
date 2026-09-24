@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { FormEvent, useMemo, useState, useSyncExternalStore } from "react";
 import {
   Bot,
   ChevronLeft,
@@ -123,21 +123,16 @@ export function ToolCatalog({
   const categoryIds = categories.map((item) => item.id);
   const urlCategory = useSyncExternalStore(subscribeToLocation, getUrlCategory, getServerUrlCategory);
   const urlQuery = useSyncExternalStore(subscribeToLocation, getUrlQuery, getServerUrlQuery);
-  const [draftQuery, setDraftQuery] = useState("");
-  const [query, setQuery] = useState("");
+  const [draftQueryOverride, setDraftQueryOverride] = useState<string | null>(null);
+  const [queryOverride, setQueryOverride] = useState<string | null>(null);
   const [categoryOverride, setCategoryOverride] = useState<string | null>(null);
   const [sort, setSort] = useState<"popular" | "az">("popular");
   const [page, setPage] = useState(1);
   const [suggestion, setSuggestion] = useState("");
 
   const category = categoryOverride ?? safeInitialCategory(urlCategory, categoryIds);
-
-  useEffect(() => {
-    const normalized = urlQuery.trim();
-    setDraftQuery(urlQuery);
-    setQuery(normalized);
-    setPage(1);
-  }, [urlQuery]);
+  const draftQuery = draftQueryOverride ?? urlQuery;
+  const query = queryOverride ?? urlQuery.trim();
 
   const filtered = useMemo(() => {
     const result = filterCatalogTools(tools, query, category);
@@ -208,13 +203,13 @@ export function ToolCatalog({
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setQuery(draftQuery.trim());
+    setQueryOverride(draftQuery.trim());
     setPage(1);
   }
 
   function reset() {
-    setDraftQuery("");
-    setQuery("");
+    setDraftQueryOverride("");
+    setQueryOverride("");
     setSort("popular");
     chooseCategory("all");
   }
@@ -243,7 +238,7 @@ export function ToolCatalog({
               <input
                 type="search"
                 value={draftQuery}
-                onChange={(event) => setDraftQuery(event.target.value)}
+                onChange={(event) => setDraftQueryOverride(event.target.value)}
                 placeholder={copy.placeholder}
                 aria-label={copy.placeholder}
                 autoComplete="off"
