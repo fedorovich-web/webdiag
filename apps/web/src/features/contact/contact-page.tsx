@@ -1,75 +1,149 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Clock3, Mail, MessageCircle, Send } from "lucide-react";
+import {
+  ArrowRight,
+  BarChart3,
+  ChevronDown,
+  Clock3,
+  FileText,
+  Globe2,
+  Handshake,
+  Headphones,
+  Mail,
+  MapPin,
+  Send,
+} from "lucide-react";
 import type { Locale } from "@webdiag/tool-registry";
 
 const SUPPORT_EMAIL = "support@webdiag.ru";
+const SALES_EMAIL = "sales@webdiag.ru";
+const INFO_EMAIL = "info@webdiag.ru";
 
 export function ContactPage({ locale }: { locale: Locale }) {
+  const ru = locale === "ru";
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [topic, setTopic] = useState("");
   const [message, setMessage] = useState("");
 
-  const t = locale === "ru"
+  const t = ru
     ? {
         eyebrow: "Поддержка WebDiag",
-        title: "Свяжитесь с нами",
-        lead: "Есть вопрос по WebDiag, нашли проблему или хотите предложить улучшение? Напишите нам — разберёмся и ответим по делу.",
-        emailTitle: "Электронная почта",
-        emailText: "Для вопросов по сервису, оплате и аккаунту.",
-        responseTitle: "Время ответа",
-        responseText: "Обычно отвечаем в течение одного рабочего дня.",
-        feedbackTitle: "Идеи и обратная связь",
-        feedbackText: "Присылайте предложения по новым инструментам и улучшениям.",
-        formTitle: "Написать в поддержку",
-        formText: "Заполните форму — письмо откроется в вашем почтовом приложении.",
+        titleA: "Свяжитесь",
+        titleB: "с нами",
+        lead: "Мы всегда готовы помочь — ответим на вопросы, подскажем по инструментам и подберём решение под ваши задачи.",
+        cards: [
+          ["Техническая поддержка", "Поможем с настройкой, ответим на вопросы по работе сервиса и решим технические сложности.", SUPPORT_EMAIL],
+          ["Отдел продаж", "Расскажем о тарифах, возможностях сервиса и подберём подходящее решение для вашего бизнеса.", SALES_EMAIL],
+          ["Сотрудничество и общие вопросы", "Предложения о партнёрстве, прессе, интеграциях и другие вопросы вы можете отправить нам.", INFO_EMAIL],
+        ],
+        formTitle: "Напишите нам",
+        formText: "Заполните форму, и мы ответим вам в ближайшее время.",
         name: "Ваше имя",
-        email: "Email для ответа",
+        email: "Email",
+        topic: "Тема обращения",
+        topicPlaceholder: "Выберите тему",
+        topics: ["Техническая поддержка", "Вопрос по тарифам", "Сотрудничество", "Предложение инструмента", "Другое"],
         message: "Сообщение",
         send: "Отправить сообщение",
-        namePlaceholder: "Как к вам обращаться",
-        emailPlaceholder: "you@example.ru",
-        messagePlaceholder: "Опишите вопрос или предложение...",
+        privacy: "Нажимая кнопку, вы соглашаетесь с нашей Политикой конфиденциальности.",
+        namePlaceholder: "Иван Петров",
+        emailPlaceholder: "ivan@example.ru",
+        messagePlaceholder: "Опишите ваш вопрос или задачу...",
+        onlineTitle: "Мы на связи",
+        onlineText: "Несколько полезных деталей о нашей работе.",
+        infoRows: [
+          ["Время ответа", "Обычно отвечаем в течение одного рабочего дня.", "до 1 дня"],
+          ["Режим работы", "Пн — Пт, 10:00–19:00", "МСК"],
+          ["Языки поддержки", "Русский, English", "RU / EN"],
+          ["Часовой пояс", "Москва (UTC+3)", "UTC+3"],
+          ["Другие способы связи", "Вы также можете написать нам через форму на сайте или в личном кабинете.", ""],
+        ],
+        officeTitle: "Наш офис",
+        officeText: "Мы находимся в Москве. Будем рады видеть вас в гостях!",
+        officeAddress: "г. Москва, ул. Лесная, д. 7, стр. 1",
+        officeDetail: "БЦ «Белые Сады», офис 501",
+        route: "Построить маршрут",
+        faqTitle: "Часто задаваемые вопросы",
+        faqText: "Короткие ответы на популярные вопросы.",
+        faq: [
+          ["Как быстро вы отвечаете на обращения?", "Обычно отвечаем в течение одного рабочего дня."],
+          ["В каком режиме работает поддержка?", "Поддержка работает по будням с 10:00 до 19:00 по московскому времени."],
+          ["Можно ли получить консультацию перед покупкой?", "Да. Напишите в отдел продаж — поможем выбрать подходящий вариант."],
+          ["Вы работаете с юридическими лицами?", "Да, вопросы по документам и условиям можно направить в отдел продаж."],
+          ["Можно ли заказать индивидуальное решение?", "Опишите задачу в форме или напишите нам — рассмотрим возможный формат."],
+        ],
         ctaTitle: "Остались вопросы?",
-        ctaText: "Напишите в поддержку WebDiag — ответим по существу и поможем разобраться с сервисом.",
-        ctaAction: "Написать в поддержку",
+        ctaText: "Напишите нам — мы поможем разобраться и подберём оптимальное решение для ваших задач.",
+        ctaAction: "Написать нам",
       }
     : {
         eyebrow: "WebDiag support",
-        title: "Contact us",
-        lead: "Have a question about WebDiag, found an issue, or want to suggest an improvement? Send us a message and we will get back to you.",
-        emailTitle: "Email",
-        emailText: "For product, billing, and account questions.",
-        responseTitle: "Response time",
-        responseText: "We usually reply within one business day.",
-        feedbackTitle: "Ideas and feedback",
-        feedbackText: "Send suggestions for new tools and product improvements.",
-        formTitle: "Message support",
-        formText: "Fill in the form and the message will open in your email app.",
+        titleA: "Get in",
+        titleB: "touch",
+        lead: "We are ready to help with product questions, tools, and choosing the right solution for your workflow.",
+        cards: [
+          ["Technical support", "Help with setup, product questions, and technical issues.", SUPPORT_EMAIL],
+          ["Sales", "Questions about plans, product capabilities, and choosing the right option for your business.", SALES_EMAIL],
+          ["Partnerships and general questions", "Partnership, media, integration, and other general inquiries.", INFO_EMAIL],
+        ],
+        formTitle: "Send us a message",
+        formText: "Fill in the form and we will get back to you as soon as possible.",
         name: "Your name",
-        email: "Reply email",
+        email: "Email",
+        topic: "Topic",
+        topicPlaceholder: "Choose a topic",
+        topics: ["Technical support", "Plans and pricing", "Partnership", "Tool suggestion", "Other"],
         message: "Message",
         send: "Send message",
-        namePlaceholder: "How should we address you?",
-        emailPlaceholder: "you@example.com",
-        messagePlaceholder: "Describe your question or suggestion...",
+        privacy: "By sending this message, you agree to our Privacy Policy.",
+        namePlaceholder: "Alex Smith",
+        emailPlaceholder: "alex@example.com",
+        messagePlaceholder: "Describe your question or task...",
+        onlineTitle: "We are available",
+        onlineText: "A few useful details about our support.",
+        infoRows: [
+          ["Response time", "We usually reply within one business day.", "within 1 day"],
+          ["Working hours", "Mon — Fri, 10:00–19:00", "MSK"],
+          ["Support languages", "Русский, English", "RU / EN"],
+          ["Time zone", "Moscow (UTC+3)", "UTC+3"],
+          ["Other ways to contact us", "You can also use the website form or contact us from your account.", ""],
+        ],
+        officeTitle: "Our office",
+        officeText: "We are based in Moscow and will be glad to see you.",
+        officeAddress: "7 Lesnaya St., bldg. 1, Moscow",
+        officeDetail: "White Gardens Business Center, office 501",
+        route: "Get directions",
+        faqTitle: "Frequently asked questions",
+        faqText: "Short answers to common questions.",
+        faq: [
+          ["How quickly do you respond?", "We usually reply within one business day."],
+          ["When is support available?", "Support is available on weekdays from 10:00 to 19:00 Moscow time."],
+          ["Can I get advice before purchasing?", "Yes. Contact sales and we will help you choose the appropriate option."],
+          ["Do you work with companies?", "Yes. Send billing and contract questions to the sales team."],
+          ["Can I request a custom solution?", "Describe the task in the form and we will review possible options."],
+        ],
         ctaTitle: "Still have questions?",
-        ctaText: "Contact WebDiag support and we will help you work through the product question.",
-        ctaAction: "Contact support",
+        ctaText: "Send us a message and we will help you find the right answer or product path.",
+        ctaAction: "Message us",
       };
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const subject = locale === "ru" ? "Сообщение с WebDiag" : "Message from WebDiag";
+    const subject = topic.trim() || (ru ? "Сообщение с WebDiag" : "Message from WebDiag");
     const body = [
-      locale === "ru" ? `Имя: ${name || "—"}` : `Name: ${name || "—"}`,
-      locale === "ru" ? `Email: ${email || "—"}` : `Email: ${email || "—"}`,
+      ru ? `Имя: ${name || "—"}` : `Name: ${name || "—"}`,
+      `Email: ${email || "—"}`,
+      ru ? `Тема: ${topic || "—"}` : `Topic: ${topic || "—"}`,
       "",
       message,
     ].join("\n");
     window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   }
+
+  const cardIcons = [Headphones, BarChart3, Handshake] as const;
+  const infoIcons = [Clock3, Clock3, Globe2, Clock3, FileText] as const;
 
   return (
     <main className="wd-contact-page">
@@ -77,12 +151,11 @@ export function ContactPage({ locale }: { locale: Locale }) {
         <div className="shell wd-contact-hero-grid">
           <div className="wd-contact-hero-copy">
             <span className="wd-eyebrow">{t.eyebrow}</span>
-            <h1>{t.title}</h1>
+            <h1>{t.titleA}<br /><span>{t.titleB}</span></h1>
             <p>{t.lead}</p>
-            <a className="wd-contact-primary" href={`mailto:${SUPPORT_EMAIL}`}><Mail aria-hidden="true" />{SUPPORT_EMAIL}</a>
           </div>
           <div className="wd-contact-hero-art" aria-hidden="true">
-            <img src={locale === "ru" ? "/design/hero/contacts.webp" : "/design/icons/support.webp"} alt="" width="900" height="900" loading="eager" decoding="async" />
+            <img src="/design/hero/contacts.webp" alt="" width="900" height="900" loading="eager" decoding="async" />
           </div>
         </div>
       </section>
@@ -90,30 +163,97 @@ export function ContactPage({ locale }: { locale: Locale }) {
       <section className="wd-contact-content">
         <div className="shell">
           <div className="wd-contact-cards">
-            <article><span><Mail aria-hidden="true" /></span><div><h2>{t.emailTitle}</h2><p>{t.emailText}</p><a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a></div></article>
-            <article><span><Clock3 aria-hidden="true" /></span><div><h2>{t.responseTitle}</h2><p>{t.responseText}</p></div></article>
-            <article><span><MessageCircle aria-hidden="true" /></span><div><h2>{t.feedbackTitle}</h2><p>{t.feedbackText}</p></div></article>
+            {t.cards.map(([title, text, address], index) => {
+              const Icon = cardIcons[index] ?? Headphones;
+              return (
+                <article key={address}>
+                  <span><Icon aria-hidden="true" /></span>
+                  <div>
+                    <h2>{title}</h2>
+                    <p>{text}</p>
+                    <a href={`mailto:${address}`}><Mail aria-hidden="true" />{address}</a>
+                  </div>
+                </article>
+              );
+            })}
           </div>
 
-          <section className="wd-contact-form-panel">
-            <div className="wd-contact-form-copy"><span className="wd-eyebrow">{locale === "ru" ? "Обратная связь" : "Feedback"}</span><h2>{t.formTitle}</h2><p>{t.formText}</p></div>
-            <form onSubmit={submit}>
-              <div className="wd-contact-fields">
-                <label><span>{t.name}</span><input value={name} onChange={(event) => setName(event.target.value)} placeholder={t.namePlaceholder} /></label>
-                <label><span>{t.email}</span><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder={t.emailPlaceholder} /></label>
+          <div className="wd-contact-main-grid">
+            <section className="wd-contact-form-panel" aria-labelledby="contact-form-title">
+              <div className="wd-contact-form-copy">
+                <h2 id="contact-form-title">{t.formTitle}</h2>
+                <p>{t.formText}</p>
               </div>
-              <label className="wd-contact-message"><span>{t.message}</span><textarea rows={7} value={message} onChange={(event) => setMessage(event.target.value)} placeholder={t.messagePlaceholder} required /></label>
-              <button type="submit"><Send aria-hidden="true" />{t.send}<span aria-hidden="true">→</span></button>
-            </form>
-          </section>
+              <form onSubmit={submit}>
+                <div className="wd-contact-fields">
+                  <label><span>{t.name} *</span><input value={name} onChange={(event) => setName(event.target.value)} placeholder={t.namePlaceholder} required /></label>
+                  <label><span>{t.email} *</span><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder={t.emailPlaceholder} required /></label>
+                </div>
+                <label><span>{t.topic} *</span>
+                  <select value={topic} onChange={(event) => setTopic(event.target.value)} required>
+                    <option value="">{t.topicPlaceholder}</option>
+                    {t.topics.map((item) => <option value={item} key={item}>{item}</option>)}
+                  </select>
+                </label>
+                <label className="wd-contact-message"><span>{t.message} *</span><textarea rows={6} maxLength={1000} value={message} onChange={(event) => setMessage(event.target.value)} placeholder={t.messagePlaceholder} required /></label>
+                <div className="wd-contact-form-actions">
+                  <button type="submit"><Send aria-hidden="true" />{t.send}<ArrowRight aria-hidden="true" /></button>
+                  <small>{t.privacy}</small>
+                </div>
+              </form>
+            </section>
 
-          <section className="wd-contact-support-cta" aria-labelledby="contact-support-cta-title">
-            <div>
-              <h2 id="contact-support-cta-title">{t.ctaTitle}</h2>
-              <p>{t.ctaText}</p>
-            </div>
-            <a href={`mailto:${SUPPORT_EMAIL}`}><Mail aria-hidden="true" />{t.ctaAction}<span aria-hidden="true">→</span></a>
-          </section>
+            <aside className="wd-contact-online-panel" aria-labelledby="contact-online-title">
+              <h2 id="contact-online-title">{t.onlineTitle}</h2>
+              <p>{t.onlineText}</p>
+              <div>
+                {t.infoRows.map(([title, text, badge], index) => {
+                  const Icon = infoIcons[index] ?? FileText;
+                  return (
+                    <article key={title}>
+                      <span><Icon aria-hidden="true" /></span>
+                      <div><strong>{title}</strong><small>{text}</small></div>
+                      {badge && <b>{badge}</b>}
+                    </article>
+                  );
+                })}
+              </div>
+            </aside>
+          </div>
+
+          <div className="wd-contact-bottom-grid">
+            <section className="wd-contact-office" aria-labelledby="contact-office-title">
+              <header><h2 id="contact-office-title">{t.officeTitle}</h2><p>{t.officeText}</p></header>
+              <div className="wd-contact-map" aria-hidden="true"><span><MapPin /></span><b>WebDiag</b></div>
+              <div className="wd-contact-address">
+                <span><MapPin aria-hidden="true" /></span>
+                <div><strong>{t.officeAddress}</strong><small>{t.officeDetail}</small></div>
+                <a href="https://www.google.com/maps/search/?api=1&query=55.7784,37.5851" target="_blank" rel="noreferrer">{t.route}<ArrowRight aria-hidden="true" /></a>
+              </div>
+            </section>
+
+            <section className="wd-contact-faq" aria-labelledby="contact-faq-title">
+              <header><h2 id="contact-faq-title">{t.faqTitle}</h2><p>{t.faqText}</p></header>
+              <div>
+                {t.faq.map(([question, answer]) => (
+                  <details key={question}>
+                    <summary>{question}<ChevronDown aria-hidden="true" /></summary>
+                    <p>{answer}</p>
+                  </details>
+                ))}
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section className="wd-contact-support-cta" aria-labelledby="contact-support-cta-title">
+        <div className="shell">
+          <div>
+            <h2 id="contact-support-cta-title">{t.ctaTitle}</h2>
+            <p>{t.ctaText}</p>
+          </div>
+          <a href={`mailto:${SUPPORT_EMAIL}`}><Mail aria-hidden="true" />{t.ctaAction}<ArrowRight aria-hidden="true" /></a>
         </div>
       </section>
     </main>
