@@ -6,7 +6,6 @@ import type { Locale } from "@webdiag/tool-registry";
 import type { AccountSessionResponse } from "./account-contract";
 import {
   accountNextActionHref,
-  accountOverviewMetrics,
   formatAccountDate,
   formatMonitorStatus,
   formatNullableScore,
@@ -24,7 +23,8 @@ import {
   restoreAccountProject,
 } from "./account-workspace-client";
 import type { AccountProject, ArchivedAccountProject } from "./account-workspace-contract";
-import { projectPath } from "../../lib/routes";
+import { projectPath, reportsPath, toolsPath } from "../../lib/routes";
+import { HomeUrlCheckForm } from "../home/home-url-check-form";
 
 interface AccountDashboardProps {
   readonly locale: Locale;
@@ -255,87 +255,193 @@ export function AccountDashboard({
     );
   }
 
-  const metrics = overview ? accountOverviewMetrics(overview) : null;
+  const overviewProjects = overview?.projects ?? [];
+  const latestAudits = overviewProjects
+    .map((item) => item.latest_audit)
+    .filter((audit): audit is NonNullable<AccountOverviewProject["latest_audit"]> => audit !== null);
+  const scoreValues = latestAudits
+    .map((audit) => audit.score)
+    .filter((score): score is number => typeof score === "number");
+  const averageScore = scoreValues.length
+    ? Math.round(scoreValues.reduce((sum, score) => sum + score, 0) / scoreValues.length)
+    : null;
+  const issueTotal = latestAudits.reduce((sum, audit) => sum + audit.issue_count, 0);
+  const checkTotal = latestAudits.reduce((sum, audit) => sum + audit.check_count, 0);
   const actions = overview ? deriveAccountNextActions(overview, locale) : [];
+  const recentProjects = [...overviewProjects]
+    .filter((item) => item.latest_audit !== null)
+    .sort((a, b) => {
+      const left = a.latest_audit ? Date.parse(a.latest_audit.completed_at) : 0;
+      const right = b.latest_audit ? Date.parse(b.latest_audit.completed_at) : 0;
+      return right - left;
+    })
+    .slice(0, 5);
+  const trendSource = scoreValues.length > 1
+    ? scoreValues.slice(-8)
+    : scoreValues.length === 1
+      ? [scoreValues[0], scoreValues[0]]
+      : [50, 50];
+  const trendPoints = trendSource
+    .map((score, index) => {
+      const x = trendSource.length === 1 ? 0 : (index * 100) / (trendSource.length - 1);
+      const y = 96 - score * 0.82;
+      return [x, y].join(",");
+    })
+    .join(" ");
 
   return (
-    <div className="wd-account-overview">
-      <header className="wd-account-dashboard-head wd-operation-heading">
-        <div>
+    <div className="wd-account-overview wd-dashboard-render">
+      <header className="wd-dashboard-welcome">
+        <div className="wd-dashboard-welcome-copy">
           <span className="eyebrow">{ru ? "Личный кабинет" : "Account"}</span>
-          <h1>{ru ? "Обзор проектов" : "Project overview"}</h1>
-          <p>
-            {ru
-              ? `${session.user.display_name}, здесь видно состояние сайтов, последние проверки и задачи, которые требуют внимания.`
-              : `${session.user.display_name}, review website health, recent checks and tasks that need attention.`}
-          </p>
+          <h1>{ru ? "Добро пожаловать!" : "Welcome!"}</h1>
+          <p>{ru
+            ? session.user.display_name + ", здесь собраны состояние сайтов, последние проверки и задачи, которые требуют внимания."
+            : session.user.display_name + ", review website health, recent checks and tasks that need attention."}</p>
         </div>
-        <button className="wd-button wd-button-primary" type="button" onClick={openProjectCreation}>
-          {ru ? "Добавить проект" : "Add project"}
-        </button>
+        <div className="wd-dashboard-quick-check">
+          <div className="wd-dashboard-quick-check-copy">
+            <span>{ru ? "Проверьте новый сайт" : "Check another website"}</span>
+            <strong>{ru ? "Быстрая техническая проверка" : "Quick technical check"}</strong>
+          </div>
+          <img src="/design/icons/seo-audit.webp" alt="" width="160" height="160" loading="eager" decoding="async" />
+          <HomeUrlCheckForm locale={locale} instance="final" />
+        </div>
       </header>
 
       {error && <p className="wd-account-error" role="alert">{error}</p>}
 
-      {metrics && (
-        <section className="wd-operation-metrics" aria-label={ru ? "Сводка по проектам" : "Project summary"}>
-          <article><strong>{metrics.projectCount}</strong><span>{ru ? "Проекты" : "Projects"}</span></article>
-          <article><strong>{metrics.projectsWithAudit}</strong><span>{ru ? "Проверены" : "Checked"}</span></article>
-          <article><strong>{metrics.projectsRequiringAttention}</strong><span>{ru ? "Требуют внимания" : "Need attention"}</span></article>
-          <article><strong>{metrics.readyReportCount}</strong><span>{ru ? "Готовые отчёты" : "Ready reports"}</span></article>
-        </section>
-      )}
+      <section className="wd-dashboard-kpis" aria-label={ru ? "Сводка кабинета" : "Workspace summary"}>
+        <article className="is-health">
+          <span>{ru ? "SEO-здоровье" : "SEO health"}</span>
+          <strong>{averageScore ?? "—"}</strong>
+          <small>{averageScore === null ? (ru ? "Нет данных" : "No data") : averageScore >= 80 ? (ru ? "Хорошо" : "Good") : (ru ? "Есть задачи" : "Needs work")}</small>
+        </article>
+        <article>
+          <span>{ru ? "Проекты" : "Projects"}</span>
+          <strong>{projects.length}</strong>
+          <small>{ru ? "Активные сайты" : "Active websites"}</small>
+        </article>
+        <article className="is-danger">
+          <span>{ru ? "Найдено проблем" : "Issues found"}</span>
+          <strong>{issueTotal}</strong>
+          <small>{ru ? "В последних аудитах" : "In latest audits"}</small>
+        </article>
+        <article>
+          <span>{ru ? "Проверок" : "Checks"}</span>
+          <strong>{checkTotal}</strong>
+          <small>{ru ? "В последних аудитах" : "In latest audits"}</small>
+        </article>
+      </section>
 
-      {overview && actions.length > 0 && (
-        <section className="wd-operation-actions" aria-labelledby="account-next-actions-title">
-          <div>
-            <span className="eyebrow">{ru ? "Следующие шаги" : "Next steps"}</span>
-            <h2 id="account-next-actions-title">{ru ? "Что требует внимания" : "What needs attention"}</h2>
+      <section className="wd-dashboard-main-grid">
+        <article className="wd-dashboard-panel wd-dashboard-health-chart">
+          <header>
+            <div><span className="eyebrow">{ru ? "Динамика" : "Trend"}</span><h2>{ru ? "Динамика SEO-здоровья" : "SEO health trend"}</h2></div>
+            <small>{ru ? "Последние оценки проектов" : "Latest project scores"}</small>
+          </header>
+          <div className="wd-dashboard-chart">
+            <svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label={ru ? "График оценок" : "Score chart"}>
+              <defs>
+                <linearGradient id="wd-dashboard-chart-fill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#22d3ee" stopOpacity=".24" />
+                  <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              <polyline className="wd-dashboard-chart-area" points={"0,100 " + trendPoints + " 100,100"} />
+              <polyline className="wd-dashboard-chart-line" points={trendPoints} />
+            </svg>
           </div>
-          <div className="wd-operation-action-list">
-            {actions.map((action) => (
-              <Link
-                key={`${action.kind}:${action.projectId ?? "account"}`}
-                href={accountNextActionHref(locale, action, overview)}
-              >
-                <span>{action.projectName ?? (ru ? "Все проекты" : "All projects")}</span>
-                <strong>{action.label}</strong>
+          <div className="wd-dashboard-chart-summary">
+            <strong>{averageScore ?? "—"}</strong>
+            <span>{ru ? "Средняя оценка по последним аудитам" : "Average latest audit score"}</span>
+          </div>
+        </article>
+
+        <article className="wd-dashboard-panel wd-dashboard-priorities">
+          <header><div><span className="eyebrow">{ru ? "Приоритеты" : "Priorities"}</span><h2>{ru ? "Проблемы и приоритеты" : "Issues and priorities"}</h2></div></header>
+          {overviewProjects.length ? (
+            <div className="wd-dashboard-priority-list">
+              {[...overviewProjects]
+                .sort((a, b) => (b.latest_audit?.issue_count ?? 0) - (a.latest_audit?.issue_count ?? 0))
+                .slice(0, 5)
+                .map((item, index) => (
+                  <Link href={projectPath(locale, item.project.id)} key={item.project.id}>
+                    <span className={"wd-dashboard-priority-icon tone-" + (index < 2 ? "critical" : index < 4 ? "warning" : "info")} aria-hidden="true" />
+                    <span><strong>{item.project.name}</strong><small>{item.latest_audit ? (ru ? item.latest_audit.issue_count + " проблем" : item.latest_audit.issue_count + " issues") : (ru ? "Аудит ещё не запускался" : "No audit yet")}</small></span>
+                    <b>{item.latest_audit?.score ?? "—"}</b>
+                  </Link>
+                ))}
+            </div>
+          ) : <p>{ru ? "Проектов пока нет." : "No projects yet."}</p>}
+        </article>
+      </section>
+
+      <section className="wd-dashboard-main-grid wd-dashboard-lists-grid">
+        <article className="wd-dashboard-panel">
+          <header>
+            <div><span className="eyebrow">{ru ? "Проверки" : "Checks"}</span><h2>{ru ? "Последние проверки" : "Recent checks"}</h2></div>
+          </header>
+          {recentProjects.length ? (
+            <div className="wd-dashboard-check-list">
+              {recentProjects.map((item) => (
+                <Link href={item.latest_audit ? projectPath(locale, item.project.id) : projectPath(locale, item.project.id)} key={item.project.id}>
+                  <span className="wd-dashboard-site-mark" aria-hidden="true">W</span>
+                  <span><strong>{item.project.name}</strong><small>{item.latest_audit ? formatAccountDate(item.latest_audit.completed_at, locale) : "—"}</small></span>
+                  <span className="wd-dashboard-check-meta"><b>{item.latest_audit?.score ?? "—"}</b><small>{item.latest_audit ? (ru ? item.latest_audit.issue_count + " проблем" : item.latest_audit.issue_count + " issues") : ""}</small></span>
+                </Link>
+              ))}
+            </div>
+          ) : <p>{ru ? "Проверок пока нет." : "No checks yet."}</p>}
+        </article>
+
+        <article className="wd-dashboard-panel">
+          <header>
+            <div><span className="eyebrow">{ru ? "Проекты" : "Projects"}</span><h2>{ru ? "Мои проекты" : "My projects"}</h2></div>
+            <button className="wd-dashboard-text-button" type="button" onClick={openProjectCreation}>{ru ? "Добавить" : "Add"}</button>
+          </header>
+          <div className="wd-dashboard-project-list">
+            {overviewProjects.slice(0, 5).map((item) => (
+              <Link href={projectPath(locale, item.project.id)} key={item.project.id}>
+                <span className="wd-dashboard-project-dot" aria-hidden="true" />
+                <span><strong>{item.project.name}</strong><small>{item.project.origin}</small></span>
+                <span className="wd-dashboard-project-status">{item.monitor ? formatMonitorStatus(item.monitor.status, locale) : (ru ? "Без мониторинга" : "No monitoring")}</span>
               </Link>
             ))}
           </div>
-        </section>
-      )}
-
-      <section id="projects" className="wd-operation-projects" aria-labelledby="project-list-title">
-        <div className="wd-project-list-head">
-          <div>
-            <span className="eyebrow">{ru ? "Проекты" : "Projects"}</span>
-            <h2 id="project-list-title">{ru ? "Все сайты" : "All websites"}</h2>
-          </div>
-          <strong>{projects.length}</strong>
-        </div>
-        {overview ? (
-          <div className="wd-operation-project-list">{overview.projects.map(projectCard)}</div>
-        ) : (
-          <div className="wd-operation-project-list">
-            {projects.map((project) => (
-              <article key={project.id} className="wd-operation-project-card">
-                <header><div><h3><Link href={projectPath(locale, project.id)}>{project.name}</Link></h3><p>{project.origin}</p></div></header>
-                <div className="wd-operation-project-footer">
-                  <span>{ru ? "Сводка временно недоступна" : "Summary temporarily unavailable"}</span>
-                  <Link className="wd-button wd-button-secondary" href={projectPath(locale, project.id)}>{ru ? "Открыть проект" : "Open project"}</Link>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
+        </article>
       </section>
 
-      <details ref={createDetailsRef} id="project-create" className="wd-operation-add-project">
-        <summary>{ru ? "Добавить ещё один сайт" : "Add another website"}</summary>
+      <section className="wd-dashboard-main-grid wd-dashboard-bottom-grid">
+        <article className="wd-dashboard-panel">
+          <header><div><span className="eyebrow">{ru ? "Задачи" : "Tasks"}</span><h2>{ru ? "Мои задачи и рекомендации" : "Tasks and recommendations"}</h2></div></header>
+          {actions.length ? (
+            <div className="wd-dashboard-task-list">
+              {actions.map((action) => (
+                <Link key={action.kind + ":" + (action.projectId ?? "account")} href={accountNextActionHref(locale, action, overview!)}>
+                  <span aria-hidden="true">✓</span>
+                  <span><strong>{action.label}</strong><small>{action.projectName ?? (ru ? "Все проекты" : "All projects")}</small></span>
+                </Link>
+              ))}
+            </div>
+          ) : <p>{ru ? "Срочных задач нет." : "No urgent tasks."}</p>}
+        </article>
+
+        <article className="wd-dashboard-panel wd-dashboard-quick-actions">
+          <header><div><span className="eyebrow">{ru ? "Действия" : "Actions"}</span><h2>{ru ? "Быстрые действия" : "Quick actions"}</h2></div></header>
+          <div>
+            <Link href={toolsPath(locale)}><img src="/design/icons/seo-audit.webp" alt="" width="72" height="72" /><span>{ru ? "Запустить инструмент" : "Open a tool"}</span></Link>
+            <button type="button" onClick={openProjectCreation}><img src="/design/icons/analytics.webp" alt="" width="72" height="72" /><span>{ru ? "Добавить проект" : "Add project"}</span></button>
+            <Link href={reportsPath(locale)}><img src="/design/icons/issues.webp" alt="" width="72" height="72" /><span>{ru ? "Открыть отчёты" : "Open reports"}</span></Link>
+          </div>
+        </article>
+      </section>
+
+      <details ref={createDetailsRef} id="project-create" className="wd-operation-add-project wd-dashboard-management">
+        <summary>{ru ? "Добавить сайт или управлять проектами" : "Add or manage projects"}</summary>
         {projectCreatePanel(false)}
+        {projectArchivePanel()}
       </details>
-      {projectArchivePanel()}
     </div>
   );
 }
