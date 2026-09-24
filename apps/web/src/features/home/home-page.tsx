@@ -172,7 +172,7 @@ export function HomePage({ locale }: { locale: Locale }) {
             <p className="wd-hero-note">{t(homeContent.heroNote)}</p>
           </div>
           <div className="wd-hero-visual" aria-hidden="true">
-            <img className="wd-hero-dashboard" src="/home/hero-dashboard.webp" alt="" width="900" height="900" loading="eager" decoding="async" />
+            <img className="wd-hero-dashboard" src={locale === "ru" ? "/home/hero-dashboard.webp" : "/design/icons/seo-audit.webp"} alt="" width="900" height="900" loading="eager" decoding="async" />
           </div>
         </div>
         <div className="shell wd-hero-benefits" aria-label={locale === "ru" ? "Преимущества WebDiag" : "WebDiag benefits"}>
@@ -194,7 +194,7 @@ export function HomePage({ locale }: { locale: Locale }) {
           <p>{locale === "ru" ? "Проверяйте сайты на любых CMS и технологиях" : "Check websites on any CMS or technology stack"}</p>
           <div className="wd-platform-list">
             {homeContent.platforms.map((platform) => (
-              <span className="wd-platform-item" key={platform}>
+              <span className="wd-platform-item" key={locale === "en" && platform === "1C-Битрикс" ? "1C-Bitrix" : platform}>
                 <img className="wd-platform-logo" src={platformLogos[platform]} alt="" width="27" height="27" loading="lazy" decoding="async" />
                 {platform}
               </span>

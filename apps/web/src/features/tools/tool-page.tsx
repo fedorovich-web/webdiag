@@ -16,8 +16,8 @@ const categoryArtwork: Readonly<Record<string, string>> = {
   "development-data": "/design/icons/analytics.webp",
 };
 
-function toolArtwork(slug: string, category: string): string {
-  if (slug === "robots-txt-tester") return "/design/hero/tool-robots.webp";
+function toolArtwork(slug: string, category: string, locale: Locale): string {
+  if (slug === "robots-txt-tester") return locale === "ru" ? "/design/hero/tool-robots.webp" : "/design/icons/robots.webp";
   return categoryArtwork[category] ?? "/design/icons/seo-audit.webp";
 }
 
@@ -31,7 +31,7 @@ export function ToolPage({ locale, slug }: { locale: Locale; slug: string }) {
   const related = content.relatedToolSlugs.map((relatedSlug) => getPublicTool(relatedSlug)).filter(Boolean);
   const t = <T extends { readonly ru: string; readonly en: string }>(value: T) => localizeContent(value, locale);
   const text = getToolPageChromeCopy(locale, tool.executorClass);
-  const art = toolArtwork(slug, tool.category);
+  const art = toolArtwork(slug, tool.category, locale);
 
   return (
     <main className="wd-tool-page">

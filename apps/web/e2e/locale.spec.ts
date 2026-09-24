@@ -65,6 +65,31 @@ test.describe("RU and EN segmented navigation", () => {
     await expect(page.locator(".wd-process-callout")).not.toContainText("Просто.");
   });
 
+
+  test("keeps public English UI free of Cyrillic copy and Russian-labelled hero art", async ({ page }) => {
+    const routes = ["/en", "/en/tools", "/en/tools/robots-txt-tester", "/en/contacts", "/en/login"] as const;
+
+    for (const route of routes) {
+      await page.goto(route);
+      const visibleText = await page.locator("body").innerText();
+      expect(visibleText, `Unexpected Cyrillic copy on ${route}`).not.toMatch(/[А-Яа-яЁё]/u);
+    }
+
+    await page.goto("/en");
+    await expect(page.locator(".wd-hero-dashboard")).toHaveAttribute("src", "/design/icons/seo-audit.webp");
+    await expect(page.locator(".wd-platform-list")).toContainText("1C-Bitrix");
+    await expect(page.locator(".wd-platform-list")).not.toContainText("Битрикс");
+
+    await page.goto("/en/tools");
+    await expect(page.locator(".wd-tools-hero-art img")).toHaveAttribute("src", "/design/icons/analytics.webp");
+
+    await page.goto("/en/tools/robots-txt-tester");
+    await expect(page.locator(".wd-tool-hero-art img")).toHaveAttribute("src", "/design/icons/robots.webp");
+
+    await page.goto("/en/contacts");
+    await expect(page.locator(".wd-contact-hero-art img")).toHaveAttribute("src", "/design/icons/support.webp");
+  });
+
   test("keeps home routes stable without duplicating the English prefix", async ({ page }) => {
     await page.goto("/en?ref=header#how-it-works");
     await openMobileMenu(page);
