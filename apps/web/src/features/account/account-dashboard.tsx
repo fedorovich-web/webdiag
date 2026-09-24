@@ -222,10 +222,11 @@ export function AccountDashboard({
       return right - left;
     })
     .slice(0, 5);
-  const trendSource = scoreValues.length > 1
+  const firstScore = scoreValues[0] ?? 50;
+  const trendSource: number[] = scoreValues.length > 1
     ? scoreValues.slice(-8)
     : scoreValues.length === 1
-      ? [scoreValues[0], scoreValues[0]]
+      ? [firstScore, firstScore]
       : [50, 50];
   const trendPoints = trendSource
     .map((score, index) => {
