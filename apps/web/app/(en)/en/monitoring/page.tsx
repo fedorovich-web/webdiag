@@ -21,7 +21,7 @@ export default function Page() {
         <p>Monitoring helps catch new technical issues, returning fixed problems, and availability failures after site changes.</p>
               </div>
         <div className="wd-internal-hero-visual" aria-hidden="true">
-          <img src="/design/hero/monitoring.webp" alt="" width="1600" height="1000" loading="eager" decoding="async" />
+          <img src="/design/hero/monitoring.webp" alt="" width="1600" height="1000" loading="lazy" decoding="async" />
         </div>
       </header>
       <section className="wd-internal-grid" aria-label="Monitoring capabilities">
