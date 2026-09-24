@@ -9,10 +9,22 @@ const publicRoutes = [
   ["tools-en", "/en/tools"],
   ["robots-ru", "/tools/robots-txt-tester"],
   ["robots-en", "/en/tools/robots-txt-tester"],
+  ["audit-ru", "/audit"],
+  ["audit-en", "/en/audit"],
   ["contacts-ru", "/contacts"],
   ["contacts-en", "/en/contacts"],
+  ["knowledge-ru", "/knowledge"],
+  ["knowledge-en", "/en/knowledge"],
+  ["monitoring-ru", "/monitoring"],
+  ["monitoring-en", "/en/monitoring"],
+  ["pricing-ru", "/pricing"],
+  ["pricing-en", "/en/pricing"],
+  ["privacy-ru", "/privacy"],
+  ["privacy-en", "/en/privacy"],
   ["login-ru", "/login"],
   ["login-en", "/en/login"],
+  ["register-ru", "/register"],
+  ["register-en", "/en/register"],
   ["404-ru", "/__webdiag_visual_qa_missing__"],
   ["404-en", "/en/__webdiag_visual_qa_missing__"],
 ] as const;
@@ -59,6 +71,9 @@ test.describe("final public visual QA captures", () => {
         name.startsWith("404-") ? isExpectedNotFoundNoise : undefined,
       );
       await capture(page, name, route, 1440, 1000);
+      if (name.startsWith("tools-") || name.startsWith("contacts-") || name.startsWith("404-")) {
+        await capture(page, name, route, 1024, 768);
+      }
       await capture(page, name, route, 390, 844);
       await assertBrowserClean(testInfo);
     });
