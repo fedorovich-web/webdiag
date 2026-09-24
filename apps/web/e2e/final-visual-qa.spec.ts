@@ -17,6 +17,13 @@ const publicRoutes = [
   ["404-en", "/en/__webdiag_visual_qa_missing__"],
 ] as const;
 
+function isExpectedNotFoundNoise(error: string): boolean {
+  if (error === "console.error: Failed to load resource: the server responded with a status of 404 (Not Found)") {
+    return true;
+  }
+  return error.startsWith("http 404:") && error.includes("__webdiag_visual_qa_missing__");
+}
+
 async function capture(
   page: import("@playwright/test").Page,
   name: string,
@@ -25,7 +32,12 @@ async function capture(
   height: number,
 ) {
   await page.setViewportSize({ width, height });
-  await page.goto(route);
+  const response = await page.goto(route);
+  if (name.startsWith("404-")) {
+    expect(response?.status()).toBe(404);
+  } else {
+    expect(response?.ok()).toBe(true);
+  }
   await page.locator("body").waitFor({ state: "visible" });
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
   await page.screenshot({
@@ -36,24 +48,19 @@ async function capture(
 }
 
 test.describe("final public visual QA captures", () => {
-  let assertBrowserClean: ReturnType<typeof installBrowserGuard>;
-
   test.beforeAll(async () => {
     await mkdir("test-results/final-visual-qa", { recursive: true });
   });
 
-  test.beforeEach(async ({ page }) => {
-    assertBrowserClean = installBrowserGuard(page);
-  });
-
-  test.afterEach(async ({}, testInfo) => {
-    await assertBrowserClean(testInfo);
-  });
-
   for (const [name, route] of publicRoutes) {
-    test(`${name} desktop and mobile browser renders`, async ({ page }) => {
+    test(`${name} desktop and mobile browser renders`, async ({ page }, testInfo) => {
+      const assertBrowserClean = installBrowserGuard(
+        page,
+        name.startsWith("404-") ? isExpectedNotFoundNoise : undefined,
+      );
       await capture(page, name, route, 1440, 1000);
       await capture(page, name, route, 390, 844);
+      await assertBrowserClean(testInfo);
     });
   }
 });
