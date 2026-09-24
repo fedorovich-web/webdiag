@@ -17,6 +17,10 @@ export function PublicReport({
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
+    document.documentElement.lang = report?.snapshot.locale ?? initialLocale;
+  }, [initialLocale, report]);
+
+  useEffect(() => {
     let active = true;
     getPublicReport(shareToken)
       .then((value) => { if (active) setReport(value); })

@@ -179,6 +179,7 @@ test.describe("account reports", () => {
     expect(publicResponse?.headers()["x-robots-tag"]).toBe("noindex, nofollow, noarchive");
     expect(publicResponse?.headers()["referrer-policy"]).toBe("no-referrer");
     await expect(page.getByRole("heading", { level: 1, name: snapshot.title })).toBeVisible();
+    await expect(page.locator("html")).toHaveAttribute("lang", "ru");
     await expect(page.getByRole("heading", { name: "Результаты проверок" })).toBeVisible();
     await expect(page.getByText(firstProject.id)).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Скачать HTML" })).toHaveAttribute(
