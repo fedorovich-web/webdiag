@@ -76,7 +76,7 @@ export function ContactPage({ locale }: { locale: Locale }) {
             <a className="wd-contact-primary" href={`mailto:${SUPPORT_EMAIL}`}><Mail aria-hidden="true" />{SUPPORT_EMAIL}</a>
           </div>
           <div className="wd-contact-hero-art" aria-hidden="true">
-            <img src="/design/hero/contacts.webp" alt="" width="900" height="900" fetchPriority="high" decoding="async" />
+            <img src="/design/hero/contacts.webp" alt="" width="900" height="900" loading="eager" decoding="async" />
           </div>
         </div>
       </section>
