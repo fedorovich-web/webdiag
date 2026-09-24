@@ -351,21 +351,9 @@
   padding: 27px 34px;
   border: 1px solid #d9ebf1;
   border-radius: 16px;
-  background:
-    radial-gradient(circle at 92% 24%, rgb(45 212 191 / .18), transparent 15rem),
-    linear-gradient(100deg, #edf8ff 0%, #f9fcff 49%, #e6fff7 100%);
+  background: #effaff url("/design/backgrounds/tools-suggestion.webp") center / cover no-repeat;
 }
-.wd-tools-suggest::after {
-  content: "";
-  position: absolute;
-  right: 16px;
-  bottom: -22px;
-  width: 118px;
-  height: 118px;
-  background: url("/design/icons/support.webp") center / contain no-repeat;
-  opacity: .18;
-  pointer-events: none;
-}
+.wd-tools-suggest::after { display: none; }
 .wd-tools-suggest > div,
 .wd-tools-suggest > form { position: relative; z-index: 1; }
 .wd-tools-suggest h2 {
