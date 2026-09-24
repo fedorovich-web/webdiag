@@ -34,7 +34,7 @@ export function AccountAuthForm({ locale, mode }: AccountAuthFormProps) {
         submit: register ? "Создать аккаунт" : "Войти",
         pending: register ? "Создаём аккаунт…" : "Входим…",
         alternate: register ? "Уже есть аккаунт?" : "Нет аккаунта?",
-        alternateAction: register ? "Войти" : "Создать аккаунт",
+        alternateAction: register ? "Войти" : "Зарегистрироваться",
         privacy: "Создавая аккаунт, вы соглашаетесь с обработкой данных согласно политике конфиденциальности.",
         privacyLink: "Политика конфиденциальности",
       }
@@ -54,7 +54,7 @@ export function AccountAuthForm({ locale, mode }: AccountAuthFormProps) {
         submit: register ? "Create account" : "Sign in",
         pending: register ? "Creating account…" : "Signing in…",
         alternate: register ? "Already have an account?" : "Need an account?",
-        alternateAction: register ? "Sign in" : "Create account",
+        alternateAction: register ? "Sign in" : "Register",
         privacy: "By creating an account, you agree to data processing under the privacy policy.",
         privacyLink: "Privacy policy",
       };
