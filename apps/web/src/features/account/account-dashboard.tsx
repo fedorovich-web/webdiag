@@ -278,7 +278,10 @@ export function AccountDashboard({
 
       <section className="wd-dashboard-kpis" aria-label={ru ? "Сводка кабинета" : "Workspace summary"}>
         <article className="is-health">
-          <span className="wd-dashboard-kpi-visual wd-dashboard-kpi-score" aria-hidden="true">
+          <span
+            className="wd-dashboard-kpi-visual wd-dashboard-kpi-score"
+            style={{ "--wd-score-angle": `${Math.max(0, Math.min(100, averageScore ?? 0))}%` } as React.CSSProperties}
+          >
             <b>{averageScore ?? "—"}</b>
           </span>
           <span className="wd-dashboard-kpi-copy">
