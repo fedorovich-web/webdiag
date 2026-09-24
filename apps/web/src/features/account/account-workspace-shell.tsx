@@ -30,7 +30,7 @@ import {
   resolveActiveAccountProject,
   type AccountWorkspaceSection,
 } from "./account-workspace-shell-contract";
-import { loginPath, reportsPath, toolsPath } from "../../lib/routes";
+import { accountSettingsPath, loginPath, reportsPath, toolsPath } from "../../lib/routes";
 import { SiteBrand } from "../../components/site-brand";
 
 interface AccountWorkspaceShellProps {
@@ -463,14 +463,14 @@ export function AccountWorkspaceShell({
             <small>{session.user.email}</small>
           </div>
           <WorkspaceNavigation {...navigationProps} />
-          <aside className="wd-workspace-help" aria-label={ru ? "Помощь" : "Help"}>
+          <section className="wd-workspace-help" aria-label={ru ? "Помощь" : "Help"}>
             <span className="wd-workspace-help-icon" aria-hidden="true"><CircleHelp /></span>
             <strong>{ru ? "Нужна помощь?" : "Need help?"}</strong>
             <p>{ru ? "Загляните в базу знаний или напишите нам." : "Visit the knowledge base or contact us."}</p>
             <Link href={locale === "ru" ? "/knowledge" : "/en/knowledge"}>
               {ru ? "Открыть помощь" : "Open help"} <span aria-hidden="true">→</span>
             </Link>
-          </aside>
+          </section>
         </aside>
 
         <section className="wd-workspace-content" aria-label={ru ? "Содержимое кабинета" : "Workspace content"}>
