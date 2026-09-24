@@ -7458,3 +7458,37 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
     display: none;
   }
 }
+
+
+/* Resolve legacy account-shell rules after the dashboard chrome rebuild. */
+@media (min-width: 901px) {
+  body:has(.wd-account-workspace-page) .wd-workspace-layout {
+    min-height: calc(100vh - 80px);
+    align-items: stretch;
+  }
+
+  body:has(.wd-account-workspace-page) .wd-workspace-sidebar {
+    position: relative;
+    top: auto;
+    min-height: 100%;
+    height: 100%;
+    align-self: stretch;
+  }
+
+  body:has(.wd-account-workspace-page) .wd-workspace-sidebar .wd-workspace-project-switcher {
+    display: none;
+  }
+}
+
+.wd-account-topbar-user {
+  display: block;
+  grid-template-columns: none;
+  gap: 0;
+  align-items: initial;
+}
+
+@media (max-width: 980px) and (min-width: 901px) {
+  .wd-account-topbar-user .wd-account-user-menu {
+    display: grid;
+  }
+}
