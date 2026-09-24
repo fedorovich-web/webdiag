@@ -24,32 +24,16 @@
   width: 154px;
   filter: drop-shadow(0 14px 22px rgb(37 177 213 / .13));
 }
-.fidelity :global(.wd-process-panel)::after {
-  content: "Просто.\AБыстро.\AПолезно.";
-  position: absolute;
+.fidelity :global(.wd-process-callout) {
   right: 15px;
   top: 44px;
-  z-index: 3;
-  white-space: pre;
   color: #4266e8;
-  font-family: "Segoe Print", "Comic Sans MS", cursive;
-  font-size: 14px;
-  font-weight: 700;
   line-height: 1.16;
-  letter-spacing: -.02em;
   transform: rotate(-5deg);
-  pointer-events: none;
 }
-.fidelity :global(.wd-process-panel)::before {
-  content: "↗";
-  position: absolute;
-  right: 92px;
-  top: 77px;
-  z-index: 3;
-  color: #4266e8;
+.fidelity :global(.wd-process-callout > span) {
   font-size: 24px;
   transform: rotate(9deg);
-  pointer-events: none;
 }
 
 .fidelity :global(.wd-platform-strip) {
@@ -58,9 +42,7 @@
   border-color: #eaf1f8;
 }
 .fidelity :global(.wd-platform-strip .shell) { row-gap: 13px; }
-.fidelity :global(.wd-platform-strip p) { font-size: 0; }
-.fidelity :global(.wd-platform-strip p)::after {
-  content: "Работает с сайтами на популярных CMS и конструкторах";
+.fidelity :global(.wd-platform-strip p) {
   color: #7b89a0;
   font-size: 11px;
   font-weight: 600;
@@ -168,16 +150,15 @@
 @media (max-width: 1180px) {
   .fidelity :global(.wd-process-steps) { padding-right: 165px; }
   .fidelity :global(.wd-process-accent) { right: 34px; width: 138px; }
-  .fidelity :global(.wd-process-panel)::after { right: 9px; font-size: 12px; }
+  .fidelity :global(.wd-process-callout) { right: 9px; font-size: 12px; }
   .fidelity :global(.wd-final-panel) { grid-template-columns: .82fr 1.18fr; gap: 34px; }
 }
 @media (max-width: 960px) {
   .fidelity :global(.wd-process-panel) { grid-template-columns: 1fr; gap: 20px; padding-bottom: 110px; }
   .fidelity :global(.wd-process-steps) { padding-right: 0; }
   .fidelity :global(.wd-process-accent) { right: 58px; bottom: 8px; width: 126px; }
-  .fidelity :global(.wd-process-panel)::after { right: 12px; top: auto; bottom: 31px; }
-  .fidelity :global(.wd-process-panel)::before { display: none; }
-  .fidelity :global(.wd-final-panel) { grid-template-columns: 1fr; gap: 15px; padding: 24px 0 28px; }
+  .fidelity :global(.wd-process-callout) { right: 12px; top: auto; bottom: 31px; }
+    .fidelity :global(.wd-final-panel) { grid-template-columns: 1fr; gap: 15px; padding: 24px 0 28px; }
   .fidelity :global(.wd-final-section) { min-height: 0; }
 }
 @media (max-width: 680px) {
@@ -206,7 +187,7 @@
 :global(body[data-theme="light"]) .fidelity :global(.wd-score-chip small) { color: #16846f; }
 :global(body[data-theme="light"]) .fidelity :global(.wd-monitoring-score-row span) { color: #697486; }
 :global(body[data-theme="light"]) .fidelity :global(.wd-monitoring-score-row strong.is-critical) { color: #d33950; }
-:global(body[data-theme="light"]) .fidelity :global(.wd-platform-strip p)::after { color: #68758e; }
+:global(body[data-theme="light"]) .fidelity :global(.wd-platform-strip p) { color: #68758e; }
 :global(body[data-theme="light"]) .fidelity :global(.wd-platform-strip .shell > div span) { color: #68758e; }
 
 /* Footer links remain visually compact, but each interactive target meets the 24px minimum. */
