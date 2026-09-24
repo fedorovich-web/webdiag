@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useMemo, useState, useSyncExternalStore } from "react";
+import { FormEvent, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import {
   Bot,
   ChevronLeft,
@@ -67,7 +67,15 @@ function getUrlCategory(): string {
   return new URLSearchParams(window.location.search).get("category") ?? "";
 }
 
+function getUrlQuery(): string {
+  return new URLSearchParams(window.location.search).get("q") ?? "";
+}
+
 function getServerUrlCategory(): string {
+  return "";
+}
+
+function getServerUrlQuery(): string {
   return "";
 }
 
@@ -114,6 +122,7 @@ export function ToolCatalog({
 }) {
   const categoryIds = categories.map((item) => item.id);
   const urlCategory = useSyncExternalStore(subscribeToLocation, getUrlCategory, getServerUrlCategory);
+  const urlQuery = useSyncExternalStore(subscribeToLocation, getUrlQuery, getServerUrlQuery);
   const [draftQuery, setDraftQuery] = useState("");
   const [query, setQuery] = useState("");
   const [categoryOverride, setCategoryOverride] = useState<string | null>(null);
@@ -122,6 +131,14 @@ export function ToolCatalog({
   const [suggestion, setSuggestion] = useState("");
 
   const category = categoryOverride ?? safeInitialCategory(urlCategory, categoryIds);
+
+  useEffect(() => {
+    const normalized = urlQuery.trim();
+    setDraftQuery(urlQuery);
+    setQuery(normalized);
+    setPage(1);
+  }, [urlQuery]);
+
   const filtered = useMemo(() => {
     const result = filterCatalogTools(tools, query, category);
     return sort === "az"

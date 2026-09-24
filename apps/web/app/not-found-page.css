@@ -1,7 +1,5 @@
 .wd-not-found {
   min-height: calc(100vh - 66px);
-  display: grid;
-  align-items: center;
   overflow: clip;
   background:
     radial-gradient(circle at 77% 27%, rgb(34 211 238 / .09), transparent 24rem),
@@ -15,12 +13,12 @@
   margin-inline: auto;
 }
 .wd-not-found-grid {
-  min-height: 650px;
+  min-height: 520px;
   display: grid;
   grid-template-columns: minmax(0, .9fr) minmax(410px, 1.1fr);
   gap: 42px;
   align-items: center;
-  padding: 52px 0 64px;
+  padding: 46px 0 34px;
 }
 .wd-not-found-copy { position: relative; z-index: 2; }
 .wd-not-found-code {
@@ -107,7 +105,7 @@
 .wd-not-found-links a:hover { color: #1687f8; }
 .wd-not-found-links svg { width: 13px; height: 13px; }
 .wd-not-found-art {
-  min-height: 420px;
+  min-height: 360px;
   display: grid;
   place-items: center;
 }
@@ -130,4 +128,189 @@
   .wd-not-found-copy > p { font-size: 14px; }
   .wd-not-found-actions { display: grid; }
   .wd-not-found-actions a { justify-content: center; }
+}
+
+
+.wd-not-found-search {
+  display: grid;
+  grid-template-columns: minmax(260px, .75fr) minmax(420px, 1.25fr);
+  gap: 34px;
+  align-items: center;
+  margin-bottom: 34px;
+  padding: 24px 26px;
+  border: 1px solid #dfe8f1;
+  border-radius: 16px;
+  background: linear-gradient(110deg, #f8fcff 0%, #f3fbff 55%, #effff9 100%);
+  box-shadow: 0 10px 30px rgb(36 84 124 / .055);
+}
+.wd-not-found-search h2,
+.wd-not-found-section h2,
+.wd-not-found-support h2 {
+  margin: 0;
+  color: #122049;
+  font-size: 24px;
+  line-height: 1.12;
+  letter-spacing: -.025em;
+}
+.wd-not-found-search p,
+.wd-not-found-section header p,
+.wd-not-found-support p {
+  margin: 6px 0 0;
+  color: #75849a;
+  font-size: 11px;
+  line-height: 1.55;
+}
+.wd-not-found-search form {
+  min-height: 54px;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 5px 5px 14px;
+  border: 1px solid #d9e6ef;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 10px 26px rgb(35 82 123 / .08);
+}
+.wd-not-found-search form > svg { width: 18px; height: 18px; color: #238fe5; }
+.wd-not-found-search input {
+  min-width: 0;
+  height: 42px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #18274d;
+  font-size: 12px;
+}
+.wd-not-found-search input::placeholder { color: #98a5b7; }
+.wd-not-found-search button {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  border-radius: 9px;
+  padding: 0 17px;
+  background: var(--wd-button-bg);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.wd-not-found-search button svg { width: 14px; height: 14px; }
+
+.wd-not-found-section { padding: 12px 0 28px; }
+.wd-not-found-section > header { margin-bottom: 14px; }
+.wd-not-found-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.wd-not-found-card-grid > a,
+.wd-not-found-tool-grid > a {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) 16px;
+  gap: 11px;
+  align-items: center;
+  min-height: 82px;
+  padding: 13px;
+  border: 1px solid #dfe8f1;
+  border-radius: 11px;
+  background: #fff;
+  color: inherit;
+  text-decoration: none;
+  box-shadow: 0 4px 16px rgb(39 82 119 / .035);
+  transition: transform var(--wd-transition), border-color var(--wd-transition), box-shadow var(--wd-transition);
+}
+.wd-not-found-card-grid > a:hover,
+.wd-not-found-tool-grid > a:hover {
+  transform: translateY(-2px);
+  border-color: #bcd8ed;
+  box-shadow: 0 10px 24px rgb(39 82 119 / .07);
+}
+.wd-not-found-card-grid > a > span,
+.wd-not-found-tool-grid > a > svg:first-child {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #e8fbf6, #edf6ff);
+  color: #1689d4;
+}
+.wd-not-found-card-grid > a > span svg { width: 19px; height: 19px; }
+.wd-not-found-card-grid strong,
+.wd-not-found-card-grid small,
+.wd-not-found-tool-grid strong,
+.wd-not-found-tool-grid small { display: block; }
+.wd-not-found-card-grid strong,
+.wd-not-found-tool-grid strong { color: #1b2b50; font-size: 11px; }
+.wd-not-found-card-grid small,
+.wd-not-found-tool-grid small {
+  margin-top: 3px;
+  overflow: hidden;
+  color: #7b899e;
+  font-size: 9px;
+  line-height: 1.4;
+}
+.wd-not-found-card-grid > a > svg:last-child,
+.wd-not-found-tool-grid > a > svg:last-child { width: 14px; height: 14px; color: #1687f8; }
+
+.wd-not-found-popular { padding-top: 4px; }
+.wd-not-found-tool-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+}
+.wd-not-found-tool-grid > a {
+  grid-template-columns: 38px minmax(0, 1fr) 14px;
+  min-height: 76px;
+  padding: 11px;
+}
+.wd-not-found-tool-grid > a > svg:first-child { width: 38px; height: 38px; padding: 9px; }
+
+.wd-not-found-support {
+  margin-top: 8px;
+  padding: 24px 0;
+  border-top: 1px solid #e5eef4;
+  border-bottom: 1px solid #e5eef4;
+  background: linear-gradient(100deg, #eff9ff 0%, #f8fbff 55%, #edfff8 100%);
+}
+.wd-not-found-support .shell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+}
+.wd-not-found-support a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  padding: 0 16px;
+  border: 1px solid #cfe3ee;
+  border-radius: 10px;
+  background: #fff;
+  color: #1a385a;
+  font-size: 10px;
+  font-weight: 800;
+  text-decoration: none;
+}
+.wd-not-found-support a svg { width: 15px; height: 15px; color: #1687f8; }
+
+@media (max-width: 900px) {
+  .wd-not-found-search { grid-template-columns: 1fr; gap: 16px; }
+  .wd-not-found-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .wd-not-found-tool-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .wd-not-found-search { padding: 20px 16px; }
+  .wd-not-found-search form { grid-template-columns: 20px minmax(0, 1fr); }
+  .wd-not-found-search button { grid-column: 1 / -1; justify-content: center; }
+  .wd-not-found-card-grid,
+  .wd-not-found-tool-grid { grid-template-columns: 1fr; }
+  .wd-not-found-support .shell { align-items: stretch; flex-direction: column; gap: 14px; }
+  .wd-not-found-support a { justify-content: center; }
 }
