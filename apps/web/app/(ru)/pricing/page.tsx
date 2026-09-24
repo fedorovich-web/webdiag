@@ -21,7 +21,7 @@ export default function Page() {
         <p>Выбирайте формат работы по задаче: быстрые публичные проверки или личный кабинет для проектов, сохранённой истории и повторной работы с результатами.</p>
               </div>
         <div className="wd-internal-hero-visual" aria-hidden="true">
-          <img src="/design/hero/pricing.webp" alt="" width="1600" height="1000" fetchPriority="high" decoding="async" />
+          <img src="/design/hero/pricing.webp" alt="" width="1600" height="1000" loading="eager" decoding="async" />
         </div>
       </header>
       <section className="wd-internal-grid wd-availability-grid" aria-label="Условия использования WebDiag">
