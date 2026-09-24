@@ -397,7 +397,7 @@ export function AccountWorkspaceShell({
       <div className="wd-workspace-layout">
         <aside className="wd-workspace-sidebar" aria-label={ru ? "Панель кабинета" : "Workspace panel"}>
           <div className="wd-workspace-identity">
-            <span className="eyebrow">WebDiag Account</span>
+            <span className="eyebrow">{ru ? "Личный кабинет" : "WebDiag account"}</span>
             <strong>{session.user.display_name}</strong>
             <small>{session.user.email}</small>
           </div>
