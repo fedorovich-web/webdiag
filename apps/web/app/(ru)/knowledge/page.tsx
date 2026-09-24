@@ -21,7 +21,7 @@ export default function Page() {
         <p>Раздел будет объяснять методологию проверок, границы автоматического аудита и практические шаги исправления ошибок.</p>
               </div>
         <div className="wd-internal-hero-visual" aria-hidden="true">
-          <img src="/design/hero/knowledge.webp" alt="" width="1600" height="1000" fetchPriority="high" decoding="async" />
+          <img src="/design/hero/knowledge.webp" alt="" width="1600" height="1000" loading="eager" decoding="async" />
         </div>
       </header>
       <section className="wd-internal-grid" aria-label="Разделы базы знаний">
