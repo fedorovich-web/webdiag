@@ -6411,7 +6411,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   display: none;
 }
 body:has(.wd-account-workspace-page) {
-  background: #f6faff;
+  background: #fff;
 }
 .wd-account-topbar {
   position: sticky;
@@ -6515,9 +6515,14 @@ body:has(.wd-account-workspace-page) {
 .wd-account-topbar-user small { margin-top: 2px; color: #8b98aa; font-size: 8px; }
 
 body:has(.wd-account-workspace-page) .wd-account-workspace-page.shell {
-  width: min(100% - 32px, 1440px);
+  width: min(100%, 1440px);
   max-width: none;
-  padding-block: 16px 32px;
+  min-height: calc(100vh - 62px);
+  margin-block: 0;
+  padding: 16px 16px 32px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 body:has(.wd-account-workspace-page) .wd-workspace-layout {
   grid-template-columns: 210px minmax(0, 1fr);
@@ -6530,9 +6535,13 @@ body:has(.wd-account-workspace-page) .wd-workspace-layout {
 body:has(.wd-account-workspace-page) .wd-workspace-sidebar {
   top: 76px;
   gap: 10px;
-  padding: 12px;
-  border-radius: 13px;
-  box-shadow: 0 5px 18px rgb(28 74 114 / .035);
+  min-height: calc(100vh - 92px);
+  padding: 0 12px 20px;
+  border: 0;
+  border-right: 1px solid #e5edf4;
+  border-radius: 0;
+  background: #f8fbff;
+  box-shadow: none;
 }
 body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-workspace-identity {
   display: none;
