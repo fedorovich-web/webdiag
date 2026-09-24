@@ -45,6 +45,29 @@ export interface SavedAuditCheck {
   readonly status: string;
 }
 
+export interface SavedAuditPageSpeedMetric {
+  readonly id: string;
+  readonly title: string;
+  readonly value: number | null;
+  readonly unit: string;
+  readonly display_value: string | null;
+  readonly source: string;
+  readonly status: string;
+}
+
+export interface SavedAuditPageSpeed {
+  readonly strategy: "mobile";
+  readonly available: boolean;
+  readonly performance_score: number | null;
+  readonly field_data_available: boolean;
+  readonly field_overall_category: string | null;
+  readonly lighthouse_version: string | null;
+  readonly analysis_fetch_time: string | null;
+  readonly category_scores: Readonly<Record<string, number | null>>;
+  readonly metrics: readonly SavedAuditPageSpeedMetric[];
+  readonly opportunities: readonly string[];
+}
+
 export interface SavedAuditRecommendation {
   readonly summary: string;
   readonly steps: readonly string[];
@@ -68,6 +91,7 @@ export interface SavedAuditPayload {
   readonly target_origin: string;
   readonly status: "succeeded";
   readonly score: number | null;
+  readonly pagespeed?: SavedAuditPageSpeed | null;
   readonly checks: readonly SavedAuditCheck[];
   readonly issues: readonly SavedAuditIssue[];
   readonly completed_at: string;
@@ -183,6 +207,33 @@ function isCheck(value: unknown): value is SavedAuditCheck {
     && string(value.status);
 }
 
+function isPageSpeedMetric(value: unknown): value is SavedAuditPageSpeedMetric {
+  return record(value) && only(value, [
+    "id", "title", "value", "unit", "display_value", "source", "status",
+  ])
+    && string(value.id) && string(value.title) && nullableNumber(value.value)
+    && string(value.unit) && (value.display_value === null || string(value.display_value))
+    && string(value.source) && string(value.status);
+}
+
+function isPageSpeed(value: unknown): value is SavedAuditPageSpeed {
+  if (!record(value) || !only(value, [
+    "strategy", "available", "performance_score", "field_data_available",
+    "field_overall_category", "lighthouse_version", "analysis_fetch_time",
+    "category_scores", "metrics", "opportunities",
+  ])) return false;
+  if (value.strategy !== "mobile" || typeof value.available !== "boolean"
+    || !nullableNumber(value.performance_score)
+    || typeof value.field_data_available !== "boolean"
+    || !(value.field_overall_category === null || string(value.field_overall_category))
+    || !(value.lighthouse_version === null || string(value.lighthouse_version))
+    || !(value.analysis_fetch_time === null || string(value.analysis_fetch_time))
+    || !record(value.category_scores)
+    || !Array.isArray(value.metrics) || !value.metrics.every(isPageSpeedMetric)
+    || !Array.isArray(value.opportunities) || !value.opportunities.every(string)) return false;
+  return Object.values(value.category_scores).every(nullableNumber);
+}
+
 function isRecommendation(value: unknown): value is SavedAuditRecommendation {
   return record(value) && only(value, ["summary", "steps", "expected_impact"])
     && string(value.summary) && Array.isArray(value.steps) && value.steps.every(string)
@@ -202,15 +253,20 @@ function isIssue(value: unknown): value is SavedAuditIssue {
 }
 
 function isPayload(value: unknown): value is SavedAuditPayload {
-  return record(value) && only(value, [
+  if (!record(value)) return false;
+  const baseKeys = [
     "contract_version", "target_origin", "status", "score", "checks", "issues",
     "completed_at",
-  ])
-    && value.contract_version === "webdiag.account.saved_audit_payload.v1"
+  ] as const;
+  const hasPageSpeed = Object.prototype.hasOwnProperty.call(value, "pagespeed");
+  if (!only(value, hasPageSpeed ? [...baseKeys, "pagespeed"] : baseKeys)) return false;
+  return value.contract_version === "webdiag.account.saved_audit_payload.v1"
     && string(value.target_origin) && value.status === "succeeded"
-    && nullableNumber(value.score) && Array.isArray(value.checks)
-    && value.checks.every(isCheck) && Array.isArray(value.issues)
-    && value.issues.every(isIssue) && string(value.completed_at);
+    && nullableNumber(value.score)
+    && (!hasPageSpeed || value.pagespeed === null || isPageSpeed(value.pagespeed))
+    && Array.isArray(value.checks) && value.checks.every(isCheck)
+    && Array.isArray(value.issues) && value.issues.every(isIssue)
+    && string(value.completed_at);
 }
 
 export function isAccountProjectListResponse(value: unknown): value is AccountProjectListResponse {

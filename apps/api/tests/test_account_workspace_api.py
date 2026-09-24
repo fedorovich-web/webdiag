@@ -75,6 +75,47 @@ class StubAuditService:
                     ),
                     issue_ids=(issue_id,),
                 ),
+                AuditCheck(
+                    check_id="performance.pagespeed_mobile",
+                    name="Google PageSpeed mobile performance",
+                    category=IssueCategory.PERFORMANCE,
+                    status=CheckStatus.PASSED,
+                    evidence=(
+                        Evidence(
+                            kind=EvidenceKind.TOOL_OUTPUT,
+                            source="google.pagespeed.mobile.performance",
+                            value="91",
+                            metadata={
+                                "strategy": "mobile",
+                                "available": True,
+                                "field_data_available": True,
+                                "field_overall_category": "FAST",
+                                "lighthouse_version": "13.0.0",
+                                "analysis_fetch_time": "2026-09-24T12:00:00Z",
+                                "category_scores": {
+                                    "performance": 91,
+                                    "accessibility": 96,
+                                    "best-practices": 100,
+                                    "seo": 100,
+                                },
+                                "opportunities": ["Serve images efficiently"],
+                            },
+                        ),
+                        Evidence(
+                            kind=EvidenceKind.TOOL_OUTPUT,
+                            source="google.pagespeed.mobile.largest-contentful-paint",
+                            value="2.2 s",
+                            metadata={
+                                "title": "Largest Contentful Paint",
+                                "status": "pass",
+                                "source": "lab",
+                                "unit": "ms",
+                                "value": 2200.0,
+                            },
+                        ),
+                    ),
+                    issue_ids=(),
+                ),
             ),
             issues=(
                 AuditIssue(
@@ -376,9 +417,14 @@ def test_saved_audit_is_versioned_bounded_and_excludes_internal_fields(tmp_path:
     saved = workspace.run_and_save_audit(user_id=user_id, project_id=project.id)
     assert audit_service.origins == ["https://example.com"]
     assert saved.payload.contract_version == "webdiag.account.saved_audit_payload.v1"
-    assert saved.audit.check_count == 1
+    assert saved.audit.check_count == 2
     assert saved.audit.issue_count == 1
     assert saved.payload.issues[0].affected_urls == ("https://example.com/page",)
+    assert saved.payload.pagespeed is not None
+    assert saved.payload.pagespeed.performance_score == 91
+    assert saved.payload.pagespeed.category_scores["performance"] == 91
+    assert saved.payload.pagespeed.metrics[0].id == "largest-contentful-paint"
+    assert saved.payload.pagespeed.metrics[0].display_value == "2.2 s"
 
     serialized = saved.model_dump_json()
     for forbidden in (

@@ -95,6 +95,33 @@ class SavedAuditCheck(BaseModel):
     status: str
 
 
+class SavedAuditPageSpeedMetric(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(min_length=1, max_length=80)
+    title: str = Field(min_length=1, max_length=160)
+    value: float | None = None
+    unit: str = Field(min_length=1, max_length=40)
+    display_value: str | None = Field(default=None, max_length=160)
+    source: str = Field(min_length=1, max_length=40)
+    status: str = Field(min_length=1, max_length=40)
+
+
+class SavedAuditPageSpeed(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    strategy: Literal["mobile"] = "mobile"
+    available: bool
+    performance_score: int | None = Field(default=None, ge=0, le=100)
+    field_data_available: bool
+    field_overall_category: str | None = Field(default=None, max_length=80)
+    lighthouse_version: str | None = Field(default=None, max_length=80)
+    analysis_fetch_time: str | None = Field(default=None, max_length=80)
+    category_scores: dict[str, int | None]
+    metrics: tuple[SavedAuditPageSpeedMetric, ...]
+    opportunities: tuple[str, ...]
+
+
 class SavedAuditRecommendation(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -124,6 +151,7 @@ class SavedAuditPayload(BaseModel):
     target_origin: str
     status: Literal["succeeded"]
     score: int | None = Field(default=None, ge=0, le=100)
+    pagespeed: SavedAuditPageSpeed | None = None
     checks: tuple[SavedAuditCheck, ...]
     issues: tuple[SavedAuditIssue, ...]
     completed_at: datetime

@@ -13,6 +13,8 @@ from webdiag_api.accounts.workspace_models import (
     SavedAuditCheck,
     SavedAuditDetailResponse,
     SavedAuditIssue,
+    SavedAuditPageSpeed,
+    SavedAuditPageSpeedMetric,
     SavedAuditPayload,
     SavedAuditRecommendation,
 )
@@ -83,6 +85,117 @@ def _safe_url(raw_url: str, target_origin: str) -> str | None:
     )
 
 
+
+def _saved_pagespeed_snapshot(run: AuditRun) -> SavedAuditPageSpeed | None:
+    check = next(
+        (item for item in run.checks if item.check_id == "performance.pagespeed_mobile"),
+        None,
+    )
+    if check is None:
+        return None
+
+    primary = next(
+        (
+            item
+            for item in check.evidence
+            if item.source
+            in {"google.pagespeed.mobile", "google.pagespeed.mobile.performance"}
+        ),
+        None,
+    )
+    if primary is None:
+        return None
+
+    metadata = primary.metadata
+    available = bool(metadata.get("available")) and primary.value != "unavailable"
+    score: int | None = None
+    if available:
+        try:
+            candidate = int(primary.value)
+        except (TypeError, ValueError):
+            candidate = -1
+        if 0 <= candidate <= 100:
+            score = candidate
+
+    category_scores: dict[str, int | None] = {}
+    raw_categories = metadata.get("category_scores")
+    if isinstance(raw_categories, dict):
+        for key, value in raw_categories.items():
+            if not isinstance(key, str):
+                continue
+            if value is None:
+                category_scores[key] = None
+            elif isinstance(value, int) and not isinstance(value, bool) and 0 <= value <= 100:
+                category_scores[key] = value
+
+    metrics: list[SavedAuditPageSpeedMetric] = []
+    prefix = "google.pagespeed.mobile."
+    for evidence in check.evidence:
+        if not evidence.source.startswith(prefix) or evidence.source == (
+            "google.pagespeed.mobile.performance"
+        ):
+            continue
+        metric_id = evidence.source.removeprefix(prefix)
+        metric_meta = evidence.metadata
+        title = metric_meta.get("title")
+        unit = metric_meta.get("unit")
+        source = metric_meta.get("source")
+        status = metric_meta.get("status")
+        raw_value = metric_meta.get("value")
+        value = (
+            float(raw_value)
+            if isinstance(raw_value, (int, float)) and not isinstance(raw_value, bool)
+            else None
+        )
+        if not all(isinstance(item, str) and item for item in (title, unit, source, status)):
+            continue
+        metrics.append(
+            SavedAuditPageSpeedMetric(
+                id=metric_id,
+                title=title,
+                value=value,
+                unit=unit,
+                display_value=evidence.value if evidence.value != "unavailable" else None,
+                source=source,
+                status=status,
+            )
+        )
+
+    raw_opportunities = metadata.get("opportunities")
+    opportunities = (
+        tuple(
+            item
+            for item in raw_opportunities[:5]
+            if isinstance(item, str) and 0 < len(item) <= 240
+        )
+        if isinstance(raw_opportunities, list)
+        else ()
+    )
+
+    return SavedAuditPageSpeed(
+        available=available,
+        performance_score=score,
+        field_data_available=bool(metadata.get("field_data_available")),
+        field_overall_category=(
+            metadata.get("field_overall_category")
+            if isinstance(metadata.get("field_overall_category"), str)
+            else None
+        ),
+        lighthouse_version=(
+            metadata.get("lighthouse_version")
+            if isinstance(metadata.get("lighthouse_version"), str)
+            else None
+        ),
+        analysis_fetch_time=(
+            metadata.get("analysis_fetch_time")
+            if isinstance(metadata.get("analysis_fetch_time"), str)
+            else None
+        ),
+        category_scores=category_scores,
+        metrics=tuple(metrics),
+        opportunities=opportunities,
+    )
+
 def build_saved_audit_payload(run: AuditRun, *, target_origin: str) -> SavedAuditPayload:
     if run.status != AuditJobStatus.SUCCEEDED or run.completed_at is None:
         raise WorkspaceServiceError(
@@ -128,6 +241,7 @@ def build_saved_audit_payload(run: AuditRun, *, target_origin: str) -> SavedAudi
         target_origin=target_origin,
         status="succeeded",
         score=run.score,
+        pagespeed=_saved_pagespeed_snapshot(run),
         checks=checks,
         issues=tuple(issues),
         completed_at=run.completed_at.astimezone(UTC),

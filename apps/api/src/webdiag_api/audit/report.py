@@ -918,6 +918,7 @@ def _pagespeed_evidence(pagespeed: PageSpeedStrategyResponse) -> tuple[Evidence,
                     or (str(metric.value) if metric.value is not None else "unavailable")
                 ),
                 metadata={
+                    "title": metric.title,
                     "status": metric.status,
                     "source": metric.source,
                     "unit": metric.unit,
