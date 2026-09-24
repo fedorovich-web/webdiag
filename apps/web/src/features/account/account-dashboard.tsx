@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AlertTriangle, CheckCircle2, FolderKanban, TrendingUp } from "lucide-react";
 import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import type { AccountSessionResponse } from "./account-contract";
@@ -22,7 +23,7 @@ import {
   restoreAccountProject,
 } from "./account-workspace-client";
 import type { AccountProject, ArchivedAccountProject } from "./account-workspace-contract";
-import { projectPath, reportsPath, toolsPath } from "../../lib/routes";
+import { projectPath, reportsPath, savedAuditIssuesPath, toolsPath } from "../../lib/routes";
 import { HomeUrlCheckForm } from "../home/home-url-check-form";
 
 interface AccountDashboardProps {
@@ -222,19 +223,35 @@ export function AccountDashboard({
       return right - left;
     })
     .slice(0, 5);
-  const firstScore = scoreValues[0] ?? 50;
-  const trendSource: number[] = scoreValues.length > 1
-    ? scoreValues.slice(-8)
-    : scoreValues.length === 1
-      ? [firstScore, firstScore]
-      : [50, 50];
-  const trendPoints = trendSource
+  const trendAudits = [...latestAudits]
+    .sort((left, right) => Date.parse(left.completed_at) - Date.parse(right.completed_at))
+    .slice(-8);
+  const trendSource = trendAudits.map((audit) => audit.score).filter((score): score is number => typeof score === "number");
+  const drawableTrend = trendSource.length === 1 ? [trendSource[0]!, trendSource[0]!] : trendSource;
+  const trendPoints = drawableTrend
     .map((score, index) => {
-      const x = trendSource.length === 1 ? 0 : (index * 100) / (trendSource.length - 1);
+      const x = drawableTrend.length === 1 ? 0 : (index * 100) / (drawableTrend.length - 1);
       const y = 96 - score * 0.82;
       return [x, y].join(",");
     })
     .join(" ");
+  const minScore = scoreValues.length ? Math.min(...scoreValues) : null;
+  const maxScore = scoreValues.length ? Math.max(...scoreValues) : null;
+  const chartDateFormatter = new Intl.DateTimeFormat(ru ? "ru-RU" : "en-US", {
+    day: "2-digit",
+    month: "short",
+  });
+  const firstTrendDate = trendAudits[0]?.completed_at
+    ? chartDateFormatter.format(new Date(trendAudits[0].completed_at))
+    : null;
+  const lastTrendDate = trendAudits.at(-1)?.completed_at
+    ? chartDateFormatter.format(new Date(trendAudits.at(-1)!.completed_at))
+    : null;
+  const priorityProjects = [...overviewProjects]
+    .filter((item) => item.latest_audit !== null)
+    .sort((a, b) => (b.latest_audit?.issue_count ?? 0) - (a.latest_audit?.issue_count ?? 0))
+    .slice(0, 4);
+  const highestPriority = priorityProjects[0] ?? null;
 
   return (
     <div className="wd-account-overview wd-dashboard-render">
@@ -261,24 +278,40 @@ export function AccountDashboard({
 
       <section className="wd-dashboard-kpis" aria-label={ru ? "Сводка кабинета" : "Workspace summary"}>
         <article className="is-health">
-          <span>{ru ? "SEO-здоровье" : "SEO health"}</span>
-          <strong>{averageScore ?? "—"}</strong>
-          <small>{averageScore === null ? (ru ? "Нет данных" : "No data") : averageScore >= 80 ? (ru ? "Хорошо" : "Good") : (ru ? "Есть задачи" : "Needs work")}</small>
+          <span className="wd-dashboard-kpi-visual wd-dashboard-kpi-score" aria-hidden="true">
+            <b>{averageScore ?? "—"}</b>
+          </span>
+          <span className="wd-dashboard-kpi-copy">
+            <span className="wd-dashboard-kpi-label">{ru ? "SEO-здоровье" : "SEO health"}</span>
+            <strong className="wd-dashboard-kpi-badge" data-tone={averageScore !== null && averageScore >= 80 ? "good" : "attention"}>
+              {averageScore === null ? (ru ? "Нет данных" : "No data") : averageScore >= 80 ? (ru ? "Хорошо" : "Good") : (ru ? "Есть задачи" : "Needs work")}
+            </strong>
+            <small>{ru ? "Средняя по последним аудитам" : "Average of latest audits"}</small>
+          </span>
         </article>
         <article>
-          <span>{ru ? "Проекты" : "Projects"}</span>
-          <strong>{projects.length}</strong>
-          <small>{ru ? "Активные сайты" : "Active websites"}</small>
+          <span className="wd-dashboard-kpi-visual" aria-hidden="true"><FolderKanban /></span>
+          <span className="wd-dashboard-kpi-copy">
+            <span className="wd-dashboard-kpi-label">{ru ? "Всего проектов" : "Total projects"}</span>
+            <strong>{projects.length}</strong>
+            <small>{ru ? `${latestAudits.length} с завершённым аудитом` : `${latestAudits.length} with a completed audit`}</small>
+          </span>
         </article>
         <article className="is-danger">
-          <span>{ru ? "Найдено проблем" : "Issues found"}</span>
-          <strong>{issueTotal}</strong>
-          <small>{ru ? "В последних аудитах" : "In latest audits"}</small>
+          <span className="wd-dashboard-kpi-visual" aria-hidden="true"><AlertTriangle /></span>
+          <span className="wd-dashboard-kpi-copy">
+            <span className="wd-dashboard-kpi-label">{ru ? "Найдено проблем" : "Issues found"}</span>
+            <strong>{issueTotal}</strong>
+            <small>{ru ? "В последних аудитах проектов" : "Across latest project audits"}</small>
+          </span>
         </article>
         <article>
-          <span>{ru ? "Проверок" : "Checks"}</span>
-          <strong>{checkTotal}</strong>
-          <small>{ru ? "В последних аудитах" : "In latest audits"}</small>
+          <span className="wd-dashboard-kpi-visual" aria-hidden="true"><CheckCircle2 /></span>
+          <span className="wd-dashboard-kpi-copy">
+            <span className="wd-dashboard-kpi-label">{ru ? "Выполнено проверок" : "Checks completed"}</span>
+            <strong>{checkTotal}</strong>
+            <small>{ru ? "Сумма проверок последних аудитов" : "Checks in latest audits"}</small>
+          </span>
         </article>
       </section>
 
@@ -286,42 +319,77 @@ export function AccountDashboard({
         <article className="wd-dashboard-panel wd-dashboard-health-chart">
           <header>
             <div><h2>{ru ? "Динамика SEO-здоровья" : "SEO health trend"}</h2></div>
-            <small>{ru ? "Последние оценки проектов" : "Latest project scores"}</small>
+            <span className="wd-dashboard-chart-scope">{ru ? "Последние аудиты" : "Latest audits"}</span>
           </header>
           <div className="wd-dashboard-chart">
-            <svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label={ru ? "График оценок" : "Score chart"}>
-              <defs>
-                <linearGradient id="wd-dashboard-chart-fill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#22d3ee" stopOpacity=".24" />
-                  <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              <polyline className="wd-dashboard-chart-area" points={"0,100 " + trendPoints + " 100,100"} />
-              <polyline className="wd-dashboard-chart-line" points={trendPoints} />
-            </svg>
+            <div className="wd-dashboard-chart-y" aria-hidden="true">
+              <span>100</span><span>75</span><span>50</span><span>25</span><span>0</span>
+            </div>
+            {trendPoints ? (
+              <svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label={ru ? "Оценки последних аудитов проектов" : "Latest project audit scores"}>
+                <defs>
+                  <linearGradient id="wd-dashboard-chart-fill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#22d3ee" stopOpacity=".24" />
+                    <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                <polyline className="wd-dashboard-chart-area" points={"0,100 " + trendPoints + " 100,100"} />
+                <polyline className="wd-dashboard-chart-line" points={trendPoints} />
+              </svg>
+            ) : (
+              <p className="wd-dashboard-chart-empty">{ru ? "Запустите аудит, чтобы увидеть оценки." : "Run an audit to see scores."}</p>
+            )}
+            {(firstTrendDate || lastTrendDate) && (
+              <div className="wd-dashboard-chart-x" aria-hidden="true">
+                <span>{firstTrendDate}</span>
+                <span>{lastTrendDate}</span>
+              </div>
+            )}
           </div>
           <div className="wd-dashboard-chart-summary">
-            <strong>{averageScore ?? "—"}</strong>
-            <span>{ru ? "Средняя оценка по последним аудитам" : "Average latest audit score"}</span>
+            <div><strong>{averageScore ?? "—"}</strong><span>{ru ? "Средняя оценка" : "Average"}</span></div>
+            <div><strong>{minScore ?? "—"}</strong><span>{ru ? "Минимум" : "Minimum"}</span></div>
+            <div><strong>{maxScore ?? "—"}</strong><span>{ru ? "Максимум" : "Maximum"}</span></div>
+            <div className="wd-dashboard-chart-insight">
+              <TrendingUp aria-hidden="true" />
+              <span><strong>{issueTotal}</strong>{ru ? " проблем в последних аудитах" : " issues in latest audits"}</span>
+            </div>
           </div>
         </article>
 
         <article className="wd-dashboard-panel wd-dashboard-priorities">
-          <header><div><h2>{ru ? "Проблемы и приоритеты" : "Issues and priorities"}</h2></div></header>
-          {overviewProjects.length ? (
-            <div className="wd-dashboard-priority-list">
-              {[...overviewProjects]
-                .sort((a, b) => (b.latest_audit?.issue_count ?? 0) - (a.latest_audit?.issue_count ?? 0))
-                .slice(0, 5)
-                .map((item, index) => (
-                  <Link href={projectPath(locale, item.project.id)} key={item.project.id}>
-                    <span className={"wd-dashboard-priority-icon tone-" + (index < 2 ? "critical" : index < 4 ? "warning" : "info")} aria-hidden="true" />
-                    <span><strong>{item.project.name}</strong><small>{item.latest_audit ? (ru ? item.latest_audit.issue_count + " проблем" : item.latest_audit.issue_count + " issues") : (ru ? "Аудит ещё не запускался" : "No audit yet")}</small></span>
-                    <b>{item.latest_audit?.score ?? "—"}</b>
-                  </Link>
-                ))}
-            </div>
-          ) : <p>{ru ? "Проектов пока нет." : "No projects yet."}</p>}
+          <header>
+            <div><h2>{ru ? "Проблемы и приоритеты" : "Issues and priorities"}</h2></div>
+            {highestPriority?.latest_audit && (
+              <Link className="wd-dashboard-panel-link" href={savedAuditIssuesPath(locale, highestPriority.project.id, highestPriority.latest_audit.id)}>
+                {ru ? "Все проблемы" : "All issues"} <span aria-hidden="true">→</span>
+              </Link>
+            )}
+          </header>
+          {priorityProjects.length ? (
+            <>
+              <div className="wd-dashboard-priority-list">
+                {priorityProjects.map((item) => {
+                  const count = item.latest_audit?.issue_count ?? 0;
+                  const tone = count >= 20 ? "high" : count >= 5 ? "medium" : "low";
+                  return (
+                    <Link href={projectPath(locale, item.project.id)} key={item.project.id}>
+                      <span className={"wd-dashboard-priority-icon tone-" + tone} aria-hidden="true"><AlertTriangle /></span>
+                      <span><strong>{item.project.name}</strong><small>{ru ? `${count} проблем в последнем аудите` : `${count} issues in latest audit`}</small></span>
+                      <b data-tone={tone}>{count}</b>
+                    </Link>
+                  );
+                })}
+              </div>
+              {highestPriority?.latest_audit && (
+                <Link className="wd-dashboard-priority-cta" href={savedAuditIssuesPath(locale, highestPriority.project.id, highestPriority.latest_audit.id)}>
+                  <span><AlertTriangle aria-hidden="true" /></span>
+                  <span><strong>{ru ? "Разобрать проблемы проекта" : "Review project issues"}</strong><small>{highestPriority.project.name}</small></span>
+                  <b aria-hidden="true">→</b>
+                </Link>
+              )}
+            </>
+          ) : <p>{ru ? "Нет завершённых аудитов с данными о проблемах." : "No completed audits with issue data yet."}</p>}
         </article>
       </section>
 
