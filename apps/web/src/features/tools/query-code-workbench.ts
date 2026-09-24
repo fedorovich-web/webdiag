@@ -423,7 +423,7 @@ function validatePostgresqlUnicodeEscapeClauses(tokens: readonly Token[]): void 
 
     const singleByteAscii = escape.length === 1 && escape.charCodeAt(0) <= 0x7F;
     if (!singleByteAscii || /[0-9A-Fa-f+'"\s]/u.test(escape)) {
-      throw new Error("Invalid Unicode escape character.");
+      throw new Error("invalid Unicode escape character.");
     }
   }
 }
