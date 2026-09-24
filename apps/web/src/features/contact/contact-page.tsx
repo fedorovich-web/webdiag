@@ -17,8 +17,6 @@ import {
 import type { Locale } from "@webdiag/tool-registry";
 
 const SUPPORT_EMAIL = "support@webdiag.ru";
-const SALES_EMAIL = "sales@webdiag.ru";
-const INFO_EMAIL = "info@webdiag.ru";
 
 export function ContactPage({ locale }: { locale: Locale }) {
   const ru = locale === "ru";
@@ -35,8 +33,8 @@ export function ContactPage({ locale }: { locale: Locale }) {
         lead: "Мы всегда готовы помочь — ответим на вопросы, подскажем по инструментам и подберём решение под ваши задачи.",
         cards: [
           ["Техническая поддержка", "Поможем с настройкой, ответим на вопросы по работе сервиса и решим технические сложности.", SUPPORT_EMAIL],
-          ["Отдел продаж", "Расскажем о тарифах, возможностях сервиса и подберём подходящее решение для вашего бизнеса.", SALES_EMAIL],
-          ["Сотрудничество и общие вопросы", "Предложения о партнёрстве, прессе, интеграциях и другие вопросы вы можете отправить нам.", INFO_EMAIL],
+          ["Вопросы по сервису", "Если нужно уточнить возможности WebDiag, тарифы или работу инструментов — напишите в поддержку.", SUPPORT_EMAIL],
+          ["Идеи и обратная связь", "Присылайте предложения по новым инструментам, улучшениям и интеграциям.", SUPPORT_EMAIL],
         ],
         formTitle: "Напишите нам",
         formText: "Заполните форму, и мы ответим вам в ближайшее время.",
@@ -60,11 +58,11 @@ export function ContactPage({ locale }: { locale: Locale }) {
           ["Часовой пояс", "Москва (UTC+3)", "UTC+3"],
           ["Другие способы связи", "Вы также можете написать нам через форму на сайте или в личном кабинете.", ""],
         ],
-        officeTitle: "Наш офис",
-        officeText: "Мы находимся в Москве. Будем рады видеть вас в гостях!",
-        officeAddress: "г. Москва, ул. Лесная, д. 7, стр. 1",
-        officeDetail: "БЦ «Белые Сады», офис 501",
-        route: "Построить маршрут",
+        officeTitle: "WebDiag онлайн",
+        officeText: "WebDiag работает как онлайн-сервис — для связи используйте поддержку.",
+        officeAddress: SUPPORT_EMAIL,
+        officeDetail: "Основной канал связи с командой WebDiag",
+        route: "Написать",
         faqTitle: "Часто задаваемые вопросы",
         faqText: "Короткие ответы на популярные вопросы.",
         faq: [
@@ -85,8 +83,8 @@ export function ContactPage({ locale }: { locale: Locale }) {
         lead: "We are ready to help with product questions, tools, and choosing the right solution for your workflow.",
         cards: [
           ["Technical support", "Help with setup, product questions, and technical issues.", SUPPORT_EMAIL],
-          ["Sales", "Questions about plans, product capabilities, and choosing the right option for your business.", SALES_EMAIL],
-          ["Partnerships and general questions", "Partnership, media, integration, and other general inquiries.", INFO_EMAIL],
+          ["Product questions", "Ask about WebDiag capabilities, plans, or how the tools work.", SUPPORT_EMAIL],
+          ["Ideas and feedback", "Send suggestions for new tools, improvements, and integrations.", SUPPORT_EMAIL],
         ],
         formTitle: "Send us a message",
         formText: "Fill in the form and we will get back to you as soon as possible.",
@@ -110,11 +108,11 @@ export function ContactPage({ locale }: { locale: Locale }) {
           ["Time zone", "Moscow (UTC+3)", "UTC+3"],
           ["Other ways to contact us", "You can also use the website form or contact us from your account.", ""],
         ],
-        officeTitle: "Our office",
-        officeText: "We are based in Moscow and will be glad to see you.",
-        officeAddress: "7 Lesnaya St., bldg. 1, Moscow",
-        officeDetail: "White Gardens Business Center, office 501",
-        route: "Get directions",
+        officeTitle: "WebDiag online",
+        officeText: "WebDiag is an online service. Use support to contact the team.",
+        officeAddress: SUPPORT_EMAIL,
+        officeDetail: "Primary contact channel for the WebDiag team",
+        route: "Message us",
         faqTitle: "Frequently asked questions",
         faqText: "Short answers to common questions.",
         faq: [
@@ -224,11 +222,11 @@ export function ContactPage({ locale }: { locale: Locale }) {
           <div className="wd-contact-bottom-grid">
             <section className="wd-contact-office" aria-labelledby="contact-office-title">
               <header><h2 id="contact-office-title">{t.officeTitle}</h2><p>{t.officeText}</p></header>
-              <div className="wd-contact-map" aria-hidden="true"><span><MapPin /></span><b>WebDiag</b></div>
+              <div className="wd-contact-map" aria-hidden="true"><span><Globe2 /></span><b>WebDiag</b></div>
               <div className="wd-contact-address">
-                <span><MapPin aria-hidden="true" /></span>
+                <span><Mail aria-hidden="true" /></span>
                 <div><strong>{t.officeAddress}</strong><small>{t.officeDetail}</small></div>
-                <a href={ru ? "https://www.google.com/maps/search/?api=1&query=%D0%9B%D0%B5%D1%81%D0%BD%D0%B0%D1%8F+7+%D0%9C%D0%BE%D1%81%D0%BA%D0%B2%D0%B0" : "https://www.google.com/maps/search/?api=1&query=7+Lesnaya+Street+Moscow"} target="_blank" rel="noreferrer">{t.route}<ArrowRight aria-hidden="true" /></a>
+                <a href={`mailto:${SUPPORT_EMAIL}`}>{t.route}<ArrowRight aria-hidden="true" /></a>
               </div>
             </section>
 

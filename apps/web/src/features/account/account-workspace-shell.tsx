@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Activity, AlertTriangle, Bell, FileBarChart2, FileText, FolderKanban, Gauge, History, LayoutDashboard, Menu, Search, Settings, Sparkles, X, type LucideIcon } from "lucide-react";
+import { Activity, AlertTriangle, FileBarChart2, FileText, FolderKanban, Gauge, History, LayoutDashboard, Menu, Search, Settings, Sparkles, X, type LucideIcon } from "lucide-react";
 import { createPortal } from "react-dom";
 import {
   useEffect,
@@ -410,7 +410,7 @@ export function AccountWorkspaceShell({
             <kbd>Ctrl + K</kbd>
           </Link>
           <div className="wd-account-topbar-actions">
-            <Link className="wd-account-topbar-icon" href={reportsPath(locale)} aria-label={ru ? "Отчёты" : "Reports"}><Bell aria-hidden="true" /></Link>
+            <Link className="wd-account-topbar-icon" href={reportsPath(locale)} aria-label={ru ? "Отчёты" : "Reports"}><FileBarChart2 aria-hidden="true" /></Link>
             <div className="wd-account-topbar-user">
               <span aria-hidden="true">{initials}</span>
               <div><strong>{session.user.display_name}</strong><small>{session.user.email}</small></div>
