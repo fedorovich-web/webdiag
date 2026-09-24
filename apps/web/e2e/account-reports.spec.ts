@@ -150,7 +150,7 @@ test.describe("account reports", () => {
     await expect(page.getByText("Заголовки безопасности", { exact: true })).toBeVisible();
     await expect(page.getByText("Заголовки безопасности требуют внимания", { exact: true })).toBeVisible();
     await expect(page.locator(".wd-report-render-kpis .is-danger")).toContainText("1");
-    await expect(page.getByText("Высокая", { exact: true })).toBeVisible();
+    await expect(page.getByText("Безопасность", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("P0 — исправить первым", { exact: true }).first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "Что содержит этот отчёт" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Скачать HTML" })).toHaveAttribute(
@@ -190,8 +190,8 @@ test.describe("account reports", () => {
 
     await page.goto(`/account/reports/${reportId}`);
     await expect(page.getByRole("heading", { level: 1, name: snapshot.title })).toBeVisible();
-    const mobileReportLastMeta = await page.locator(".wd-report-meta > div").last().boundingBox();
-    expect(mobileReportLastMeta?.width).toBeGreaterThan(300);
+    const mobileReportLastKpi = await page.locator(".wd-report-render-kpis article").last().boundingBox();
+    expect(mobileReportLastKpi?.width).toBeGreaterThan(300);
     page.once("dialog", (dialog) => dialog.accept());
     await page.getByRole("button", { name: "Отозвать ссылку" }).click();
     await expect(page.getByRole("button", { name: "Включить общий доступ" })).toBeVisible();
