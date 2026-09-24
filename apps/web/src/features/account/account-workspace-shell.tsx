@@ -375,7 +375,7 @@ export function AccountWorkspaceShell({
   };
 
   const menuLabel = ru ? "Меню кабинета" : "Workspace menu";
-  const activeTopProject = resolveActiveAccountProject(projects, currentProjectId);
+  const activeTopProject = resolveActiveAccountProject(projects, currentProjectId) ?? projects[0] ?? null;
   const initials = session.user.display_name
     .split(/\s+/u)
     .filter(Boolean)

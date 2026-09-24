@@ -6515,17 +6515,17 @@ body:has(.wd-account-workspace-page) {
 .wd-account-topbar-user small { margin-top: 2px; color: #8b98aa; font-size: 8px; }
 
 body:has(.wd-account-workspace-page) .wd-account-workspace-page.shell {
-  width: min(100% - 24px, 1440px);
+  width: min(100% - 32px, 1440px);
   max-width: none;
-  padding-block: 12px 28px;
+  padding-block: 16px 32px;
 }
 body:has(.wd-account-workspace-page) .wd-workspace-layout {
   grid-template-columns: 210px minmax(0, 1fr);
-  gap: 14px;
-  padding: 12px;
-  border: 1px solid #dfe8f1;
-  border-radius: 18px;
-  background: #f4f9fd;
+  gap: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 body:has(.wd-account-workspace-page) .wd-workspace-sidebar {
   top: 76px;
