@@ -194,9 +194,9 @@ export function HomePage({ locale }: { locale: Locale }) {
           <p>{locale === "ru" ? "Проверяйте сайты на любых CMS и технологиях" : "Check websites on any CMS or technology stack"}</p>
           <div className="wd-platform-list">
             {homeContent.platforms.map((platform) => (
-              <span className="wd-platform-item" key={locale === "en" && platform === "1C-Битрикс" ? "1C-Bitrix" : platform}>
+              <span className="wd-platform-item" key={platform}>
                 <img className="wd-platform-logo" src={platformLogos[platform]} alt="" width="27" height="27" loading="lazy" decoding="async" />
-                {platform}
+                {locale === "en" && platform === "1C-Битрикс" ? "1C-Bitrix" : platform}
               </span>
             ))}
           </div>
