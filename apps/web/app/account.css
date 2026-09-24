@@ -6134,3 +6134,242 @@ body:has(.wd-account-workspace-page) .site-footer {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Unified account family — issue detail + reports list */
+.wd-issue-detail-render,
+.wd-reports-render {
+  gap: 12px !important;
+}
+
+.wd-account-workspace-page .wd-issue-detail-render-head {
+  min-height: 126px !important;
+  align-items: center !important;
+  padding: 20px 22px !important;
+  border: 1px solid #dfe8f1 !important;
+  border-radius: 14px !important;
+  background:
+    radial-gradient(circle at 92% 22%, rgb(34 211 238 / .10), transparent 25%),
+    linear-gradient(120deg, #fff 0%, #f8fbff 62%, #effcf9 100%) !important;
+  box-shadow: 0 8px 26px rgb(30 75 116 / .045) !important;
+}
+
+.wd-account-workspace-page .wd-issue-detail-render-head h1 {
+  margin: 5px 0 6px;
+  font-size: clamp(27px, 3vw, 38px);
+  line-height: 1.05;
+}
+
+.wd-account-workspace-page .wd-issue-detail-render-head p {
+  font-size: 10px;
+}
+
+.wd-issue-detail-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.wd-issue-detail-summary article {
+  min-height: 78px;
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  padding: 13px 15px;
+  border: 1px solid #dfe8f1;
+  border-radius: 11px;
+  background: #fff;
+}
+
+.wd-issue-detail-summary span {
+  color: #8794a7;
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.wd-issue-detail-summary strong {
+  overflow: hidden;
+  color: #0a1741;
+  font-size: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wd-account-workspace-page .wd-issue-detail-render > .wd-account-card {
+  padding: 16px;
+  border-color: #dfe8f1;
+  border-radius: 12px;
+  box-shadow: 0 7px 24px rgb(30 75 116 / .04);
+}
+
+.wd-account-workspace-page .wd-issue-detail-render > .wd-account-card .eyebrow {
+  margin: 0 0 4px;
+  padding: 0;
+  background: none;
+  font-size: 8px;
+}
+
+.wd-account-workspace-page .wd-issue-detail-render > .wd-account-card .eyebrow::before {
+  display: none;
+}
+
+.wd-account-workspace-page .wd-issue-detail-render > .wd-account-card h2 {
+  margin: 0 0 7px;
+  color: #0a1741;
+  font-size: 15px;
+}
+
+.wd-account-workspace-page .wd-issue-detail-render > .wd-account-card :is(p, li) {
+  color: #697990;
+  font-size: 9px;
+  line-height: 1.6;
+}
+
+.wd-account-workspace-page .wd-issue-detail-render .wd-issue-recommendation {
+  background: linear-gradient(110deg, #f1fff9 0%, #f8fcff 56%, #eef8ff 100%);
+}
+
+.wd-account-workspace-page .wd-issue-detail-render .wd-affected-url-list {
+  gap: 6px;
+}
+
+.wd-account-workspace-page .wd-issue-detail-render .wd-affected-url-list li {
+  padding: 8px 10px;
+  border-color: #e5edf4;
+  border-radius: 8px;
+  background: #f9fbfd;
+  font-size: 8px;
+}
+
+/* Saved reports list */
+.wd-account-workspace-page .wd-reports-render-hero {
+  min-height: 132px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 104px auto;
+  gap: 16px;
+  align-items: center;
+  padding: 20px 22px;
+  border: 1px solid #dfe8f1;
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 82% 18%, rgb(34 211 238 / .11), transparent 23%),
+    linear-gradient(120deg, #fff 0%, #f8fbff 60%, #effcf9 100%);
+  box-shadow: 0 8px 26px rgb(30 75 116 / .045);
+}
+
+.wd-account-workspace-page .wd-reports-render-hero h1 {
+  margin: 5px 0 6px;
+  color: #0a1741;
+  font-size: clamp(28px, 3.1vw, 39px);
+  line-height: 1;
+  letter-spacing: -.04em;
+}
+
+.wd-account-workspace-page .wd-reports-render-hero p {
+  max-width: 680px;
+  margin: 0;
+  color: #6d7c92;
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.wd-reports-render-meta {
+  position: relative;
+  min-height: 90px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+}
+
+.wd-reports-render-meta img {
+  position: absolute;
+  inset: -16px auto auto 50%;
+  width: 104px;
+  height: 104px;
+  transform: translateX(-50%);
+  object-fit: contain;
+  opacity: .7;
+}
+
+.wd-reports-render-meta strong,
+.wd-reports-render-meta span {
+  position: relative;
+  z-index: 2;
+}
+
+.wd-reports-render-meta strong {
+  color: #0a1741;
+  font-size: 23px;
+  line-height: 1;
+}
+
+.wd-reports-render-meta span {
+  margin-top: 3px;
+  color: #74839a;
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.wd-account-workspace-page .wd-reports-render .wd-report-list {
+  gap: 8px;
+}
+
+.wd-account-workspace-page .wd-reports-render .wd-report-list > article {
+  gap: 14px;
+  padding: 15px 16px;
+  border: 1px solid #dfe8f1;
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 6px 20px rgb(30 75 116 / .035);
+}
+
+.wd-reports-render .wd-report-list-heading h2 {
+  font-size: 15px;
+}
+
+.wd-reports-render .wd-report-list-main > p {
+  font-size: 9px;
+}
+
+.wd-reports-render .wd-report-list-main dl > div {
+  padding: 8px 9px;
+  background: #f9fbfd;
+}
+
+.wd-reports-render .wd-report-list-main dt,
+.wd-reports-render .wd-report-list-main dd {
+  font-size: 8px;
+}
+
+.wd-reports-render .wd-report-list-side {
+  min-width: 138px;
+}
+
+.wd-reports-render .wd-report-list-side .wd-button {
+  min-height: 36px;
+  border-radius: 8px;
+  padding-inline: 11px;
+  font-size: 8px;
+}
+
+@media (max-width: 820px) {
+  .wd-account-workspace-page .wd-reports-render-hero {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .wd-reports-render-meta {
+    display: none;
+  }
+}
+
+@media (max-width: 620px) {
+  .wd-issue-detail-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .wd-account-workspace-page .wd-reports-render-hero {
+    grid-template-columns: 1fr;
+  }
+}
