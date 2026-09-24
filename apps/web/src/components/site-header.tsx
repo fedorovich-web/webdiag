@@ -123,10 +123,9 @@ export function SiteHeader({ locale }: SiteHeaderProps) {
           <Link
             prefetch={false}
             aria-label={search}
-            className="wd-header-login"
+            className="wd-header-login wd-header-search"
             href={toolsPath(locale)}
             title={search}
-            style={{ width: 38, minHeight: 38, justifyContent: "center", padding: 0, borderRadius: 999 }}
           >
             <Search aria-hidden="true" size={16} />
           </Link>
