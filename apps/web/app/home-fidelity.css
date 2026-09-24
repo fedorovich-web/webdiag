@@ -536,7 +536,7 @@
 .wd-home .wd-report-table-head {
   grid-template-columns: minmax(0, 1fr) 62px 82px;
   padding: 8px 10px 6px 26px;
-  color: #98a3b5;
+  color: #666d79;
   font-size: 8px;
 }
 
@@ -604,7 +604,7 @@
 .wd-home .wd-report-recommendation > small {
   display: block;
   margin: 5px 0 9px 13px;
-  color: #8a96aa;
+  color: #636c7a;
   font-size: 7px;
 }
 
@@ -614,7 +614,7 @@
   padding: 9px;
   border-radius: 7px;
   background: #eff6ff;
-  color: #667791;
+  color: #5e6d85;
   font-size: 8px;
   line-height: 1.45;
 }
@@ -633,7 +633,7 @@
   border: 1px solid #bcdcff;
   border-radius: 6px;
   background: #fff;
-  color: #087dec;
+  color: #076ccb;
   font-size: 8px;
   font-weight: 800;
 }

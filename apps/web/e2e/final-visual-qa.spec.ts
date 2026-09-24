@@ -42,15 +42,18 @@ async function capture(
   route: string,
   width: number,
   height: number,
+  navigate = false,
 ) {
   await page.setViewportSize({ width, height });
-  const response = await page.goto(route);
-  if (name.startsWith("404-")) {
-    expect(response?.status()).toBe(404);
-  } else {
-    expect(response?.ok()).toBe(true);
+  if (navigate) {
+    const response = await page.goto(route);
+    if (name.startsWith("404-")) {
+      expect(response?.status()).toBe(404);
+    } else {
+      expect(response?.ok()).toBe(true);
+    }
+    await page.locator("body").waitFor({ state: "visible" });
   }
-  await page.locator("body").waitFor({ state: "visible" });
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
   await page.screenshot({
     path: `test-results/final-visual-qa/${name}-${width}.png`,
@@ -70,7 +73,7 @@ test.describe("final public visual QA captures", () => {
         page,
         name.startsWith("404-") ? isExpectedNotFoundNoise : undefined,
       );
-      await capture(page, name, route, 1440, 1000);
+      await capture(page, name, route, 1440, 1000, true);
       if (name.startsWith("tools-") || name.startsWith("contacts-") || name.startsWith("404-")) {
         await capture(page, name, route, 1024, 768);
       }

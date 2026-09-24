@@ -35,7 +35,7 @@ test.describe("browser-local image Data URI workbench", () => {
     await page.getByLabel("JPEG, PNG, WebP или AVIF до 1 МиБ").setInputFiles(path.join(process.cwd(), "public", "logo.webp"));
     await page.getByRole("button", { name: "Создать Data URI" }).click();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
-    await expect(page.locator("body")).toHaveAttribute("data-theme", "light");
+    expect(await page.evaluate(() => getComputedStyle(document.body).colorScheme)).toBe("light");
     await expect(page.locator(".use-case-grid li").first()).toBeVisible();
   });
 });

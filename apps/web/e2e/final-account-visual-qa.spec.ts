@@ -110,10 +110,13 @@ async function capture(
   route: string,
   width: number,
   height: number,
+  navigate = false,
 ) {
   await page.setViewportSize({ width, height });
-  await page.goto(route);
-  await page.locator("body").waitFor({ state: "visible" });
+  if (navigate) {
+    await page.goto(route);
+    await page.locator("body").waitFor({ state: "visible" });
+  }
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
   await page.screenshot({
     path: `test-results/final-visual-qa/${name}-${width}.png`,
@@ -140,7 +143,7 @@ test.describe("final account visual QA captures", () => {
 
   for (const [name, route] of [["dashboard-ru", "/account"], ["dashboard-en", "/en/account"]] as const) {
     test(`${name} desktop and mobile browser renders`, async ({ page }) => {
-      await capture(page, name, route, 1440, 1000);
+      await capture(page, name, route, 1440, 1000, true);
       await capture(page, name, route, 1024, 768);
       await capture(page, name, route, 768, 1024);
       await capture(page, name, route, 390, 844);
@@ -160,7 +163,9 @@ test.describe("final account visual QA captures", () => {
           items: localizedIssues(locale),
         },
       }));
-      await capture(page, name, `${prefix}/account/projects/${firstProject.id}/audits/${auditId}/issues`, 1440, 1000);
+      await capture(page, name, `${prefix}/account/projects/${firstProject.id}/audits/${auditId}/issues`, 1440, 1000, true);
+      await capture(page, name, `${prefix}/account/projects/${firstProject.id}/audits/${auditId}/issues`, 1024, 768);
+      await capture(page, name, `${prefix}/account/projects/${firstProject.id}/audits/${auditId}/issues`, 768, 1024);
       await capture(page, name, `${prefix}/account/projects/${firstProject.id}/audits/${auditId}/issues`, 390, 844);
     });
   }
@@ -189,7 +194,9 @@ test.describe("final account visual QA captures", () => {
           },
         },
       }));
-      await capture(page, name, `${prefix}/account/projects/${firstProject.id}/audits/${auditId}`, 1440, 1000);
+      await capture(page, name, `${prefix}/account/projects/${firstProject.id}/audits/${auditId}`, 1440, 1000, true);
+      await capture(page, name, `${prefix}/account/projects/${firstProject.id}/audits/${auditId}`, 1024, 768);
+      await capture(page, name, `${prefix}/account/projects/${firstProject.id}/audits/${auditId}`, 768, 1024);
       await capture(page, name, `${prefix}/account/projects/${firstProject.id}/audits/${auditId}`, 390, 844);
     });
   }
