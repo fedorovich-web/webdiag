@@ -8339,3 +8339,10 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
     border-top: 0;
   }
 }
+
+
+@media (min-width: 901px) {
+  .wd-account-topbar[data-project-context="true"] .wd-account-topbar-actions {
+    grid-column: 3;
+  }
+}
