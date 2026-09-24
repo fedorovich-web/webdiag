@@ -21,7 +21,7 @@ export default function Page() {
         <p>Мониторинг нужен, чтобы не пропустить новые технические ошибки, возврат исправленных проблем и сбои доступности после изменений на сайте.</p>
               </div>
         <div className="wd-internal-hero-visual" aria-hidden="true">
-          <img src="/design/hero/monitoring.webp" alt="" width="1600" height="1000" fetchPriority="high" decoding="async" />
+          <img src="/design/hero/monitoring.webp" alt="" width="1600" height="1000" loading="eager" decoding="async" />
         </div>
       </header>
       <section className="wd-internal-grid" aria-label="Возможности мониторинга">
