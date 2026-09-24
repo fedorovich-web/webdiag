@@ -13,12 +13,17 @@ export const metadata: Metadata = pageMetadata({
 export default function Page() {
   return (
     <main className="shell page-main wd-internal-page wd-legal-page">
-      <header className="page-heading wd-internal-hero">
+      <header className="page-heading wd-internal-hero wd-internal-hero-split" data-hero="privacy">
+        <div className="wd-internal-hero-copy">
         <span className="eyebrow">WebDiag</span>
         <h1>Политика конфиденциальности</h1>
         <p>
           Документ описывает базовые принципы обработки данных при использовании сайта WebDiag, инструментов, аудита и личного кабинета.
         </p>
+              </div>
+        <div className="wd-internal-hero-visual" aria-hidden="true">
+          <img src="/design/hero/privacy.webp" alt="" width="1600" height="1000" fetchPriority="high" decoding="async" />
+        </div>
       </header>
       <section className="wd-internal-grid wd-legal-grid" aria-label="Разделы политики конфиденциальности">
         <article>
