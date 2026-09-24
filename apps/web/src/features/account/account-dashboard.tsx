@@ -23,7 +23,7 @@ import {
   restoreAccountProject,
 } from "./account-workspace-client";
 import type { AccountProject, ArchivedAccountProject } from "./account-workspace-contract";
-import { projectPath, reportsPath, savedAuditIssuesPath, toolsPath } from "../../lib/routes";
+import { projectMonitoringPath, projectPath, reportsPath, savedAuditIssuesPath, toolsPath } from "../../lib/routes";
 import { HomeUrlCheckForm } from "../home/home-url-check-form";
 
 interface AccountDashboardProps {
@@ -494,7 +494,11 @@ export function AccountDashboard({
             <Link href={`${toolsPath(locale)}/redirect-chain-checker`}><img src="/design/icons/analytics.webp" alt="" width="72" height="72" /><span>{ru ? "Проверка редиректов" : "Check redirects"}</span></Link>
             <Link href={`${toolsPath(locale)}/image-seo-audit`}><img src="/design/icons/images.webp" alt="" width="72" height="72" /><span>{ru ? "Проверка изображений" : "Check images"}</span></Link>
             <Link href={reportsPath(locale)}><img src="/design/icons/issues.webp" alt="" width="72" height="72" /><span>{ru ? "Создать отчёт" : "Create report"}</span></Link>
-            <button type="button" onClick={openProjectCreation}><img src="/design/icons/analytics.webp" alt="" width="72" height="72" /><span>{ru ? "Добавить проект" : "Add project"}</span></button>
+            {overviewProjects[0] ? (
+              <Link href={projectMonitoringPath(locale, overviewProjects[0].project.id)}><img src="/design/icons/analytics.webp" alt="" width="72" height="72" /><span>{ru ? "Настроить мониторинг" : "Set up monitoring"}</span></Link>
+            ) : (
+              <button type="button" onClick={openProjectCreation}><img src="/design/icons/analytics.webp" alt="" width="72" height="72" /><span>{ru ? "Добавить проект" : "Add project"}</span></button>
+            )}
           </div>
         </article>
       </section>
