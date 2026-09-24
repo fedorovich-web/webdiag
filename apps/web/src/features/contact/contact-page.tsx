@@ -11,7 +11,6 @@ import {
   Handshake,
   Headphones,
   Mail,
-  MapPin,
   Send,
 } from "lucide-react";
 import type { Locale } from "@webdiag/tool-registry";
