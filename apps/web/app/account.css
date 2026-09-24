@@ -5681,3 +5681,456 @@ body:has(.wd-account-workspace-page) .site-footer {
     width: 100%;
   }
 }
+
+
+/* Unified account family — project, monitoring, settings and AI */
+.wd-project-render,
+.wd-account-settings-page,
+.wd-monitoring-page,
+.wd-ai-workspace {
+  gap: 12px !important;
+  max-width: none;
+}
+
+.wd-account-workspace-page .wd-project-render-head,
+.wd-account-workspace-page .wd-account-settings-page > .wd-account-dashboard-head,
+.wd-account-workspace-page .wd-monitoring-hero,
+.wd-account-workspace-page .wd-ai-workspace-hero {
+  min-height: 136px;
+  border: 1px solid #dfe8f1;
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 88% 20%, rgb(34 211 238 / .10), transparent 24%),
+    linear-gradient(120deg, #fff 0%, #f8fbff 62%, #effcf9 100%);
+  box-shadow: 0 8px 26px rgb(30 75 116 / .045);
+}
+
+.wd-account-workspace-page .wd-project-render-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 104px auto;
+  gap: 16px;
+  align-items: center;
+  padding: 20px 22px;
+}
+
+.wd-project-render-head h1,
+.wd-account-settings-page > .wd-account-dashboard-head h1,
+.wd-monitoring-hero h1,
+.wd-ai-workspace-hero h1 {
+  margin: 5px 0 6px !important;
+  color: #0a1741;
+  font-size: clamp(28px, 3.2vw, 39px) !important;
+  line-height: 1 !important;
+  letter-spacing: -.04em !important;
+}
+
+.wd-project-render-head p,
+.wd-account-settings-page > .wd-account-dashboard-head p,
+.wd-monitoring-hero p,
+.wd-ai-workspace-hero p {
+  margin: 0 !important;
+  color: #6c7b91 !important;
+  font-size: 10px !important;
+  line-height: 1.55 !important;
+}
+
+.wd-project-render-art {
+  width: 92px;
+  height: 92px;
+  object-fit: contain;
+}
+
+.wd-project-render-head .wd-account-actions {
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.wd-project-render-head .wd-button {
+  min-height: 38px;
+  border-radius: 9px;
+  padding-inline: 12px;
+  font-size: 9px;
+}
+
+.wd-project-render-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.wd-project-render-kpis article {
+  min-height: 84px;
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  padding: 13px 15px;
+  border: 1px solid #dfe8f1;
+  border-radius: 11px;
+  background: #fff;
+}
+
+.wd-project-render-kpis span {
+  color: #8592a6;
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.wd-project-render-kpis strong {
+  color: #0a1741;
+  font-size: 23px;
+  line-height: 1;
+}
+
+.wd-project-render-kpis small {
+  color: #77869c;
+  font-size: 8px;
+}
+
+.wd-project-render-kpis .is-danger strong {
+  color: #ef4860;
+}
+
+.wd-account-workspace-page .wd-project-management,
+.wd-account-workspace-page .wd-crawl-console,
+.wd-account-workspace-page .wd-audit-history,
+.wd-account-workspace-page .wd-monitoring-config,
+.wd-account-workspace-page .wd-monitoring-history,
+.wd-account-settings-page .wd-account-card,
+.wd-ai-workspace-summary article,
+.wd-ai-tool-list > article,
+.wd-ai-run-history {
+  border: 1px solid #dfe8f1;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 7px 24px rgb(30 75 116 / .04);
+}
+
+.wd-account-workspace-page .wd-crawl-console,
+.wd-account-workspace-page .wd-audit-history,
+.wd-account-workspace-page .wd-project-management,
+.wd-account-workspace-page .wd-monitoring-config,
+.wd-account-workspace-page .wd-monitoring-history {
+  padding: 16px;
+}
+
+.wd-account-workspace-page .wd-crawl-console-head h2,
+.wd-account-workspace-page .wd-project-list-head h2,
+.wd-account-workspace-page .wd-project-management h2,
+.wd-account-workspace-page .wd-monitoring-config h2,
+.wd-account-workspace-page .wd-monitoring-history h2,
+.wd-account-settings-page h2,
+.wd-ai-workspace h2 {
+  color: #0a1741;
+  font-size: 15px;
+  letter-spacing: -.02em;
+}
+
+.wd-account-workspace-page .wd-crawl-console-head p,
+.wd-account-workspace-page .wd-project-management p,
+.wd-account-settings-page .wd-account-card > p {
+  color: #718097;
+  font-size: 9px;
+  line-height: 1.55;
+}
+
+.wd-account-workspace-page .wd-crawl-result dl {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.wd-account-workspace-page .wd-crawl-result dl > div,
+.wd-account-workspace-page .wd-crawl-findings > div {
+  border: 1px solid #e4ecf3;
+  border-radius: 9px;
+  background: #f9fbfd;
+  box-shadow: none;
+}
+
+.wd-account-workspace-page .wd-audit-list {
+  gap: 7px;
+}
+
+.wd-account-workspace-page .wd-audit-row {
+  min-height: 58px;
+  padding: 9px 10px;
+  border: 1px solid #e5edf4;
+  border-radius: 9px;
+  background: #fff;
+  box-shadow: none;
+}
+
+.wd-account-workspace-page .wd-audit-row > div > strong {
+  color: #14a68d;
+  font-size: 14px;
+}
+
+.wd-account-workspace-page .wd-audit-row p {
+  color: #78879c;
+  font-size: 8px;
+}
+
+/* Monitoring */
+.wd-account-workspace-page .wd-monitoring-hero {
+  padding: 20px 22px;
+  align-items: center;
+}
+
+.wd-monitoring-hero-actions .wd-button {
+  min-height: 38px;
+  border-radius: 9px;
+  font-size: 9px;
+}
+
+.wd-account-workspace-page .wd-monitoring-facts {
+  gap: 9px;
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.wd-account-workspace-page .wd-monitoring-facts > div {
+  min-height: 82px;
+  padding: 13px 14px;
+  border: 1px solid #dfe8f1;
+  border-radius: 11px;
+  background: #fff;
+}
+
+.wd-account-workspace-page .wd-monitoring-facts span {
+  font-size: 8px;
+}
+
+.wd-account-workspace-page .wd-monitoring-facts strong {
+  color: #0a1741;
+  font-size: 12px;
+}
+
+.wd-account-workspace-page .wd-monitoring-config {
+  gap: 12px;
+}
+
+.wd-monitoring-config-head {
+  padding-bottom: 10px;
+}
+
+.wd-account-workspace-page .wd-monitoring-fields {
+  gap: 9px;
+}
+
+.wd-account-workspace-page .wd-monitoring-fields label {
+  font-size: 8px;
+}
+
+.wd-account-workspace-page .wd-monitoring-fields :is(input, select) {
+  min-height: 39px;
+  padding: 7px 9px;
+  border-radius: 8px;
+  background: #f8fbfd;
+  font-size: 9px;
+}
+
+.wd-account-workspace-page .wd-monitor-run-list article {
+  padding: 12px;
+  border-radius: 9px;
+  background: #fbfdff;
+}
+
+/* Settings */
+.wd-account-workspace-page .wd-account-settings-page > .wd-account-dashboard-head {
+  padding: 20px 22px;
+}
+
+.wd-account-settings-page .wd-account-settings-grid {
+  gap: 10px;
+}
+
+.wd-account-settings-page .wd-account-card {
+  padding: 16px;
+}
+
+.wd-account-settings-page .wd-account-settings-identity {
+  margin-top: 12px;
+}
+
+.wd-account-settings-page .wd-account-settings-identity > div {
+  gap: 12px;
+  padding: 9px 0;
+  font-size: 9px;
+}
+
+.wd-account-settings-page .wd-account-session-count {
+  margin: 12px 0 6px;
+}
+
+.wd-account-settings-page .wd-account-session-count strong {
+  color: #0a1741;
+  font-size: 30px;
+}
+
+.wd-account-settings-page .wd-account-form {
+  gap: 10px;
+}
+
+.wd-account-settings-page .wd-account-form label {
+  gap: 5px;
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.wd-account-settings-page .wd-account-form input {
+  min-height: 40px;
+  border: 1px solid #dfe8f1;
+  border-radius: 8px;
+  background: #f9fbfd;
+  font-size: 10px;
+  text-transform: none;
+}
+
+/* AI */
+.wd-account-workspace-page .wd-ai-workspace-hero {
+  min-height: 148px;
+  padding: 20px 22px;
+  align-items: center;
+}
+
+.wd-ai-workspace-hero-note {
+  max-width: 260px;
+  padding: 11px 12px;
+  border-color: #dbeaf0;
+  border-radius: 10px;
+  background: rgb(255 255 255 / .82);
+}
+
+.wd-ai-workspace-hero-note strong {
+  color: #0d9586;
+  font-size: 10px;
+}
+
+.wd-ai-workspace-hero-note span {
+  font-size: 8px;
+}
+
+.wd-ai-workspace-summary {
+  gap: 9px;
+}
+
+.wd-ai-workspace-summary article {
+  min-height: 84px;
+  gap: 3px;
+  padding: 13px 14px;
+}
+
+.wd-ai-workspace-summary article span {
+  color: #8492a7;
+  font-size: 8px;
+}
+
+.wd-ai-workspace-summary article strong {
+  color: #0a1741;
+  font-size: 23px;
+}
+
+.wd-ai-workspace-summary article small {
+  color: #78879c;
+  font-size: 8px;
+}
+
+.wd-ai-empty-state,
+.wd-ai-tool-list,
+.wd-ai-run-history {
+  border-color: #dfe8f1;
+  border-radius: 12px;
+  box-shadow: 0 7px 24px rgb(30 75 116 / .04);
+}
+
+.wd-saved-audit-render-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -2px;
+}
+
+.wd-create-report-render {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, .7fr) auto;
+  gap: 10px;
+  align-items: end;
+  padding: 16px !important;
+}
+
+.wd-create-report-render > div h2 {
+  margin: 4px 0 4px;
+  color: #0a1741;
+  font-size: 15px;
+}
+
+.wd-create-report-render > div p {
+  margin: 0;
+  color: #78879c;
+  font-size: 8px;
+}
+
+.wd-create-report-render label {
+  gap: 5px;
+  color: #7f8da1;
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.wd-create-report-render input {
+  min-height: 39px;
+  border: 1px solid #dfe8f1;
+  border-radius: 8px;
+  background: #f9fbfd;
+  font-size: 9px;
+  text-transform: none;
+}
+
+@media (max-width: 980px) {
+  .wd-account-workspace-page .wd-project-render-head {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .wd-project-render-art {
+    display: none;
+  }
+
+  .wd-create-report-render {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .wd-account-workspace-page .wd-project-render-head {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .wd-project-render-head .wd-account-actions {
+    justify-content: flex-start;
+  }
+
+  .wd-project-render-kpis,
+  .wd-account-workspace-page .wd-crawl-result dl,
+  .wd-account-settings-page .wd-account-settings-grid,
+  .wd-ai-workspace-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .wd-account-workspace-page .wd-ai-workspace-hero {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 520px) {
+  .wd-project-render-kpis,
+  .wd-account-workspace-page .wd-crawl-result dl,
+  .wd-account-settings-page .wd-account-settings-grid,
+  .wd-ai-workspace-summary {
+    grid-template-columns: 1fr;
+  }
+}
