@@ -21,7 +21,7 @@ export default function Page() {
         <p>This section will explain the check methodology, the limits of automated auditing, and practical issue-fixing steps.</p>
               </div>
         <div className="wd-internal-hero-visual" aria-hidden="true">
-          <img src="/design/hero/knowledge.webp" alt="" width="1600" height="1000" loading="eager" decoding="async" />
+          <img src="/design/hero/knowledge.webp" alt="" width="1600" height="1000" loading="lazy" decoding="async" />
         </div>
       </header>
       <section className="wd-internal-grid" aria-label="Knowledge base sections">
