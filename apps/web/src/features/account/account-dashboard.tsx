@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { AlertTriangle, CheckCircle2, FolderKanban, TrendingUp } from "lucide-react";
-import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useRef, useState, type ChangeEvent, type CSSProperties, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import type { AccountSessionResponse } from "./account-contract";
 import {
@@ -280,7 +280,7 @@ export function AccountDashboard({
         <article className="is-health">
           <span
             className="wd-dashboard-kpi-visual wd-dashboard-kpi-score"
-            style={{ "--wd-score-angle": `${Math.max(0, Math.min(100, averageScore ?? 0))}%` } as React.CSSProperties}
+            style={{ "--wd-score-angle": `${Math.max(0, Math.min(100, averageScore ?? 0))}%` } as CSSProperties}
           >
             <b>{averageScore ?? "—"}</b>
           </span>

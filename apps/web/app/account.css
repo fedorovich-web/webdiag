@@ -7492,3 +7492,29 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
     display: grid;
   }
 }
+
+
+/* Dashboard topbar alignment and sparse-data panel proportions. */
+@media (min-width: 981px) {
+  .wd-account-topbar-inner {
+    grid-template-columns: 220px 180px minmax(0, 1fr) 280px;
+    gap: 18px;
+  }
+
+  .wd-account-topbar-search {
+    width: min(100%, 540px);
+    justify-self: center;
+  }
+}
+
+@media (min-width: 901px) {
+  .wd-dashboard-checks-panel,
+  .wd-dashboard-projects-panel {
+    min-height: 360px;
+  }
+
+  .wd-dashboard-tasks-panel,
+  .wd-dashboard-quick-actions {
+    min-height: 300px;
+  }
+}
