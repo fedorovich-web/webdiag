@@ -58,9 +58,6 @@ export function buildAccountWorkspaceNavigation(
 ): AccountWorkspaceNavigation {
   const root = accountPath(locale);
   const ru = locale === "ru";
-  const projectSections = new Set<AccountWorkspaceSection>([
-    "project", "audit", "issues", "monitoring",
-  ]);
   const portfolio: readonly AccountWorkspaceNavigationItem[] = [
     {
       id: "overview",

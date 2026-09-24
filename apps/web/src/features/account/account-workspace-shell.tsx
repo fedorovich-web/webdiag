@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Activity, AlertTriangle, ClipboardCheck, FileBarChart2, FileText, FolderKanban, Gauge, History, LayoutDashboard, Menu, Search, Settings, Sparkles, Wrench, X, type LucideIcon } from "lucide-react";
+import { Activity, AlertTriangle, ClipboardCheck, FileBarChart2, FileText, FolderKanban, Gauge, History, LayoutDashboard, Menu, Search, Settings, Wrench, X, type LucideIcon } from "lucide-react";
 import { createPortal } from "react-dom";
 import {
   useEffect,
@@ -26,7 +26,6 @@ import { listAccountProjects } from "./account-workspace-client";
 import { isAccountProject, type AccountProject } from "./account-workspace-contract";
 import {
   buildAccountWorkspaceNavigation,
-  ownedAccountProjectContextId,
   projectLandingAfterSwitch,
   resolveActiveAccountProject,
   type AccountWorkspaceSection,
