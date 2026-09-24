@@ -52,8 +52,8 @@ export function AccountReportSnapshotView({
     <article className="wd-report-snapshot wd-report-render">
       <header className="wd-report-render-head">
         <div>
-          <span className="eyebrow">{ru ? "SEO-аудит сайта" : "Website SEO audit"}</span>
-          <h1>{ru ? "Отчёт по проверке сайта" : "Website audit report"}</h1>
+          <span className="eyebrow">{ru ? "Отчёт по проверке сайта" : "Website audit report"}</span>
+          <h1>{snapshot.title}</h1>
           <p>{snapshot.project_name}</p>
           <a href={snapshot.target_origin} target="_blank" rel="noreferrer">{snapshot.target_origin}</a>
         </div>
