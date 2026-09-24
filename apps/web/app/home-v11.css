@@ -257,6 +257,13 @@ body::before { display: none; }
   box-shadow: 0 8px 22px rgb(34 211 238 / .22);
   transition: transform var(--wd-transition), filter var(--wd-transition);
 }
+.wd-header-search {
+  width: 38px;
+  min-height: 38px;
+  justify-content: center;
+  padding: 0;
+  border-radius: 999px;
+}
 .wd-header-cta::after { content: "→"; margin-left: 8px; }
 .wd-header-cta:hover { transform: translateY(-1px); filter: saturate(1.08); color: #fff; }
 
