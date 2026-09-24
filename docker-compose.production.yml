@@ -12,6 +12,7 @@ services:
     environment: !override
       WEBDIAG_ENVIRONMENT: production
       WEBDIAG_PUBLIC_RELEASE: "true"
+      GOOGLE_PAGESPEED_API_KEY: "${GOOGLE_PAGESPEED_API_KEY:-}"
       WEBDIAG_ACCOUNT_DATABASE_PATH: /data/accounts.sqlite3
       WEBDIAG_AUDIT_DATABASE_PATH: /data/audits.sqlite3
       WEBDIAG_AUDIT_HISTORY_LIMIT: "1000"

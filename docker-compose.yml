@@ -48,6 +48,7 @@ services:
       dockerfile: apps/api/Dockerfile
     environment:
       WEBDIAG_ENVIRONMENT: development
+      GOOGLE_PAGESPEED_API_KEY: "${GOOGLE_PAGESPEED_API_KEY:-}"
       WEBDIAG_AI_ARTIFACT_STORAGE: local
       WEBDIAG_AI_ARTIFACT_LOCAL_ROOT: /var/lib/webdiag-ai-artifacts
     ports:
