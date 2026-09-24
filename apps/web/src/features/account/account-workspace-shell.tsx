@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Activity, AlertTriangle, ClipboardCheck, FileBarChart2, FileText, FolderKanban, Gauge, History, LayoutDashboard, Menu, Search, Settings, Wrench, X, type LucideIcon } from "lucide-react";
+import { Activity, AlertTriangle, ChevronDown, CircleHelp, ClipboardCheck, FileBarChart2, FileText, FolderKanban, Gauge, History, LayoutDashboard, Menu, Search, Settings, Wrench, X, type LucideIcon } from "lucide-react";
 import { createPortal } from "react-dom";
 import {
   useEffect,
@@ -397,6 +397,7 @@ export function AccountWorkspaceShell({
           <SiteBrand locale={locale} className="brand wd-account-topbar-brand" variant="header" />
           <label className="wd-account-topbar-project">
             <span className="sr-only">{ru ? "Быстрый выбор проекта" : "Quick project switch"}</span>
+            <FolderKanban aria-hidden="true" />
             <select
               value={activeTopProject?.id ?? ""}
               onChange={(event) => selectTopProject(event.target.value)}
@@ -413,10 +414,26 @@ export function AccountWorkspaceShell({
           </Link>
           <div className="wd-account-topbar-actions">
             <Link className="wd-account-topbar-icon" href={reportsPath(locale)} aria-label={ru ? "Отчёты" : "Reports"}><FileBarChart2 aria-hidden="true" /></Link>
-            <div className="wd-account-topbar-user">
-              <span aria-hidden="true">{initials}</span>
-              <div><strong>{session.user.display_name}</strong><small>{session.user.email}</small></div>
-            </div>
+            <details className="wd-account-topbar-user">
+              <summary>
+                <span className="wd-account-topbar-avatar" aria-hidden="true">{initials}</span>
+                <span className="wd-account-topbar-user-copy">
+                  <strong>{session.user.display_name}</strong>
+                  <small>{session.user.email}</small>
+                </span>
+                <ChevronDown aria-hidden="true" />
+              </summary>
+              <div className="wd-account-user-menu">
+                <div>
+                  <strong>{session.user.display_name}</strong>
+                  <small>{session.user.email}</small>
+                </div>
+                <Link href={accountSettingsPath(locale)}>{ru ? "Настройки аккаунта" : "Account settings"}</Link>
+                <button type="button" onClick={logout} disabled={logoutPending} aria-busy={logoutPending}>
+                  {logoutPending ? (ru ? "Выходим…" : "Signing out…") : (ru ? "Выйти" : "Sign out")}
+                </button>
+              </div>
+            </details>
           </div>
         </div>
       </header>
@@ -446,9 +463,14 @@ export function AccountWorkspaceShell({
             <small>{session.user.email}</small>
           </div>
           <WorkspaceNavigation {...navigationProps} />
-          <button className="wd-button wd-button-secondary" type="button" onClick={logout} disabled={logoutPending} aria-busy={logoutPending}>
-            {logoutPending ? (ru ? "Выходим…" : "Signing out…") : (ru ? "Выйти" : "Sign out")}
-          </button>
+          <aside className="wd-workspace-help" aria-label={ru ? "Помощь" : "Help"}>
+            <span className="wd-workspace-help-icon" aria-hidden="true"><CircleHelp /></span>
+            <strong>{ru ? "Нужна помощь?" : "Need help?"}</strong>
+            <p>{ru ? "Загляните в базу знаний или напишите нам." : "Visit the knowledge base or contact us."}</p>
+            <Link href={locale === "ru" ? "/knowledge" : "/en/knowledge"}>
+              {ru ? "Открыть помощь" : "Open help"} <span aria-hidden="true">→</span>
+            </Link>
+          </aside>
         </aside>
 
         <section className="wd-workspace-content" aria-label={ru ? "Содержимое кабинета" : "Workspace content"}>
