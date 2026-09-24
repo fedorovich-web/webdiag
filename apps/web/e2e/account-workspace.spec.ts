@@ -31,7 +31,7 @@ test.describe("account workspace", () => {
     await expect(page.getByLabel("Имя")).toHaveAttribute("autocomplete", "name");
     await expect(page.getByLabel("Пароль")).toHaveAttribute("autocomplete", "new-password");
     await expect(
-      page.locator(".wd-account-card").getByRole("link", { name: "Войти" }),
+      page.locator(".wd-auth-card").getByRole("link", { name: "Войти" }),
     ).toHaveAttribute("href", "/login");
   });
 
