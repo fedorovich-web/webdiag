@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import test from "node:test";
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
@@ -16,6 +16,36 @@ test("public layouts enforce the approved light-only interface", async () => {
   const globals = await read("apps/web/app/globals.css");
   assert.match(globals, /body\[data-theme="light"\]/);
   assert.doesNotMatch(globals, /data-theme="dark"|prefers-color-scheme|matchMedia/);
+});
+
+test("RU and EN page route trees stay structurally paired", async () => {
+  const appRoot = new URL("../apps/web/app/", import.meta.url);
+  const files = await readdir(appRoot, { recursive: true });
+  const normalize = (prefix, path) => path
+    .replaceAll("\\", "/")
+    .replace(prefix, "")
+    .replace(/\/page\.tsx$/, "");
+
+  const ruPages = files
+    .filter((path) => path.startsWith("(ru)/") && path.endsWith("/page.tsx"))
+    .map((path) => normalize("(ru)", path))
+    .sort();
+  const enPages = files
+    .filter((path) => path.startsWith("(en)/en/") && path.endsWith("/page.tsx"))
+    .map((path) => normalize("(en)/en", path))
+    .sort();
+
+  assert.deepEqual(enPages, ruPages);
+});
+
+test("locale-neutral homepage CSS never injects translated copy", async () => {
+  for (const path of [
+    "apps/web/app/home-fidelity.css",
+    "apps/web/src/features/home/home-fidelity.module.css",
+  ]) {
+    const source = await read(path);
+    assert.doesNotMatch(source, /content\s*:\s*["'][^"']*[А-Яа-яЁё]/u);
+  }
 });
 
 test("language control remains a two-link localized navigation", async () => {
