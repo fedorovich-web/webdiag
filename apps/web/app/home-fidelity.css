@@ -383,7 +383,7 @@
     width: 112px;
   }
 
-  .wd-process-panel::after {
+  .wd-process-callout {
     right: 18px;
     font-size: 12px;
   }
@@ -408,7 +408,7 @@
     width: 118px;
   }
 
-  .wd-process-panel::after {
+  .wd-process-callout {
     right: 22px;
     top: auto;
     bottom: 28px;
