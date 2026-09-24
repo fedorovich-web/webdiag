@@ -288,7 +288,7 @@ test.describe("account workspace", () => {
     await expect(page.getByText(/удалить навсегда/i)).toHaveCount(0);
     await page.getByRole("button", { name: "Восстановить" }).click();
     await expect(page.getByRole("heading", { name: "Сайт клиента" })).toBeVisible();
-    await expect(page.getByText("2", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("Есть изменения", { exact: true })).toBeVisible();
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`/en/account/projects/${firstProject.id}`);
@@ -464,7 +464,7 @@ test.describe("account workspace", () => {
 
     await page.goto(`/account/projects/${firstProject.id}/audits/${auditId}/issues`);
     await expect(page.getByRole("heading", { level: 1, name: "Проблемы проекта" })).toBeVisible();
-    await expect(page.getByText("P0 — исправить первым").first()).toBeVisible();
+    await expect(page.locator(".wd-issues-render-row .wd-issues-priority").first()).toHaveText("P0 — исправить первым");
     await expect(page.getByText(issue.title).first()).toBeVisible();
     await expect(page.getByText("Затронутые URL").first()).toBeVisible();
     await expect(page.getByText(issue.recommendation.summary).first()).toBeVisible();
