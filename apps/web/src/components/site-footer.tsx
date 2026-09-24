@@ -21,6 +21,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         knowledge: "Руководства",
         home: "О проекте",
         privacy: "Политика конфиденциальности",
+        contacts: "Контакты",
         copyright: "© 2026 WebDiag. Все права защищены.",
       }
     : {
@@ -36,6 +37,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         knowledge: "Guides",
         home: "About WebDiag",
         privacy: "Privacy policy",
+        contacts: "Contact",
         copyright: "© 2026 WebDiag. All rights reserved.",
       };
 
@@ -63,6 +65,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         <div className="footer-column">
           <strong>{text.company}</strong>
           <Link href={prefix || "/"}>{text.home}</Link>
+          <Link href={`${prefix}/contacts`}>{text.contacts}</Link>
         </div>
 
         <div className="footer-column">
