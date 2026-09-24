@@ -63,6 +63,7 @@ def _labels(locale: str) -> dict[str, str]:
             "pagespeed": "PageSpeed — мобильная производительность",
             "performance": "Performance",
             "metrics": "Ключевые метрики",
+            "pagespeed_unavailable": "PageSpeed был недоступен во время этого аудита.",
             "name": "Проверка",
             "category": "Категория",
             "status": "Статус",
@@ -83,6 +84,7 @@ def _labels(locale: str) -> dict[str, str]:
         "pagespeed": "PageSpeed — mobile performance",
         "performance": "Performance",
         "metrics": "Key metrics",
+        "pagespeed_unavailable": "PageSpeed was unavailable during this audit.",
         "name": "Check",
         "category": "Category",
         "status": "Status",
@@ -106,6 +108,7 @@ def _check_category_label(locale: str, category: str) -> str:
             "crawlability": "Сканирование",
             "structured_data": "Структурированные данные",
             "security": "Безопасность",
+            "performance": "Производительность",
         },
         "en": {
             "http": "HTTP",
@@ -116,6 +119,7 @@ def _check_category_label(locale: str, category: str) -> str:
             "crawlability": "Crawlability",
             "structured_data": "Structured data",
             "security": "Security",
+            "performance": "Performance",
         },
     }
     return labels.get(locale, {}).get(category, category)
@@ -180,7 +184,7 @@ def render_report_html(snapshot: ReportSnapshot) -> bytes:
             pagespeed_html = (
                 '<section class="pagespeed">'
                 f"<h2>{_escape(labels['pagespeed'])}</h2>"
-                "<p>PageSpeed unavailable for this audit.</p>"
+                f"<p>{_escape(labels['pagespeed_unavailable'])}</p>"
                 "</section>"
             )
 

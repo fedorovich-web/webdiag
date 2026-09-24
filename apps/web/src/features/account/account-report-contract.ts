@@ -1,9 +1,9 @@
-import type {
-  SavedAuditCheck,
-  SavedAuditIssue,
-  SavedAuditPageSpeed,
+import {
+  isSavedAuditPageSpeed,
+  type SavedAuditCheck,
+  type SavedAuditIssue,
+  type SavedAuditPageSpeed,
 } from "./account-workspace-contract";
-import { isSavedAuditPageSpeed } from "./account-workspace-contract";
 
 export type ReportLocale = "ru" | "en";
 
