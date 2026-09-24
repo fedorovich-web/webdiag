@@ -21,7 +21,7 @@ export default function Page() {
         <p>Check key technical and SEO signals, find issues on specific pages, and move from each detected problem to a clear next step.</p>
               </div>
         <div className="wd-internal-hero-visual" aria-hidden="true">
-          <img src="/design/hero/audit.webp" alt="" width="1600" height="1000" loading="eager" decoding="async" />
+          <img src="/design/hero/audit.webp" alt="" width="1600" height="1000" loading="lazy" decoding="async" />
         </div>
       </header>
       <section className="wd-internal-grid" aria-label="Audit scope">
