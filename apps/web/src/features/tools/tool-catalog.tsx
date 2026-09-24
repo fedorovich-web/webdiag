@@ -255,7 +255,7 @@ export function ToolCatalog({
           </div>
 
           <div className="wd-tools-list-head">
-            <h2>{heading} <span>({pageTools.length})</span></h2>
+            <h2>{heading} <span>({filtered.length})</span></h2>
             <label>
               <span>{copy.sort}</span>
               <select value={sort} onChange={(event) => { setSort(event.target.value as "popular" | "az"); setPage(1); }}>
