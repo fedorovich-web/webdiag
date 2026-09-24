@@ -157,14 +157,26 @@ export function AccountProjectDetail({ locale, projectId }: { readonly locale: L
   if (loading) return <section className="wd-account-card" aria-busy="true"><p>{ru ? "Загружаем проект…" : "Loading project…"}</p></section>;
   if (!detail) return <section className="wd-account-card wd-account-empty"><h1>{ru ? "Проект недоступен" : "Project unavailable"}</h1>{error && <p className="wd-account-error" role="alert">{error}</p>}<button className="wd-button wd-button-primary" type="button" onClick={() => setReload((value) => value + 1)}>{ru ? "Повторить" : "Retry"}</button></section>;
 
+  const latestAudit = detail.saved_audits[0] ?? null;
+  const latestCrawl = crawlDetail?.result ?? null;
+
   return (
-    <section className="wd-account-dashboard">
+    <section className="wd-account-dashboard wd-project-render">
       <nav className="wd-account-breadcrumb" aria-label={ru ? "Навигация кабинета" : "Account navigation"}><Link href={accountPath(locale)}>{ru ? "Проекты" : "Projects"}</Link><span aria-hidden="true">/</span><span>{detail.project.name}</span></nav>
-      <header className="wd-account-dashboard-head">
+      <header className="wd-account-dashboard-head wd-project-render-head">
         <div><span className="eyebrow">{ru ? "Проект" : "Project"}</span><h1>{detail.project.name}</h1><p>{detail.project.origin}</p></div>
+        <img className="wd-project-render-art" src="/design/icons/analytics.webp" alt="" width="180" height="180" />
         <div className="wd-account-actions"><a className="wd-button wd-button-secondary" href={projectMonitoringPath(locale, projectId)}>{ru ? "Мониторинг" : "Monitoring"}</a><button className="wd-button wd-button-secondary" type="button" aria-expanded={managementOpen} aria-controls="project-management" onClick={() => setManagementOpen((value) => !value)}>{ru ? "Управление проектом" : "Manage project"}</button><button className="wd-button wd-button-primary" type="button" onClick={runAudit} disabled={running} aria-busy={running}>{running ? (ru ? "Проверяем сайт…" : "Checking website…") : (ru ? "Запустить и сохранить аудит" : "Run and save audit")}</button></div>
       </header>
       {error && <p className="wd-account-error" role="alert">{error}</p>}
+
+      <section className="wd-project-render-kpis" aria-label={ru ? "Сводка проекта" : "Project summary"}>
+        <article className="is-score"><span>{ru ? "Оценка" : "Score"}</span><strong>{latestAudit?.score ?? "—"}</strong><small>{latestAudit ? (ru ? "Последний аудит" : "Latest audit") : (ru ? "Нет аудита" : "No audit")}</small></article>
+        <article className="is-danger"><span>{ru ? "Проблемы" : "Issues"}</span><strong>{latestAudit?.issue_count ?? "—"}</strong><small>{ru ? "В последнем аудите" : "In latest audit"}</small></article>
+        <article><span>{ru ? "Проверки" : "Checks"}</span><strong>{latestAudit?.check_count ?? "—"}</strong><small>{ru ? "Сохранено" : "Saved"}</small></article>
+        <article><span>{ru ? "Страницы" : "Pages"}</span><strong>{latestCrawl?.pages.length ?? "—"}</strong><small>{ru ? "Последний обход" : "Latest crawl"}</small></article>
+      </section>
+
       {managementOpen && (
         <section id="project-management" className="wd-project-management" aria-labelledby="project-management-title">
           <div className="wd-project-management-copy">
