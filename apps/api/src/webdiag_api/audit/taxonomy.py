@@ -105,6 +105,15 @@ CHECK_DEFINITIONS: tuple[CheckDefinition, ...] = (
         category=IssueCategory.CRAWLABILITY,
         description="Checks default sitemap.xml availability, XML validity and target coverage.",
     ),
+    CheckDefinition(
+        check_id="performance.pagespeed_mobile",
+        name="Google PageSpeed mobile performance",
+        category=IssueCategory.PERFORMANCE,
+        description=(
+            "Checks the audited page with Google PageSpeed Insights mobile Lighthouse "
+            "performance evidence when the provider is available."
+        ),
+    ),
 )
 
 
@@ -279,6 +288,24 @@ ISSUE_DEFINITIONS: tuple[IssueDefinition, ...] = (
         priority=Priority.P3,
         title="Sitemap.xml contains no URLs",
         summary="The discovered sitemap.xml does not expose loc entries.",
+    ),
+    IssueDefinition(
+        issue_id="performance.pagespeed_mobile.poor",
+        check_id="performance.pagespeed_mobile",
+        category=IssueCategory.PERFORMANCE,
+        severity=Severity.HIGH,
+        priority=Priority.P1,
+        title="Mobile PageSpeed performance is poor",
+        summary="Mobile PageSpeed performance is poor or a measured metric is failing.",
+    ),
+    IssueDefinition(
+        issue_id="performance.pagespeed_mobile.needs_improvement",
+        check_id="performance.pagespeed_mobile",
+        category=IssueCategory.PERFORMANCE,
+        severity=Severity.MEDIUM,
+        priority=Priority.P2,
+        title="Mobile PageSpeed performance needs improvement",
+        summary="Mobile PageSpeed performance is below the good range.",
     ),
 )
 

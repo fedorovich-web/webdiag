@@ -34,6 +34,7 @@ from webdiag_api.audit.taxonomy import (
     get_check_definition,
     get_issue_definition,
 )
+from webdiag_api.tools.performance import PageSpeedStrategyResponse
 
 SEVERITY_WEIGHTS: dict[Severity, int] = {
     Severity.INFO: 0,
@@ -52,6 +53,7 @@ def assemble_single_page_report(
     target: AuditTarget,
     fetched: SafeFetchResult,
     site_resources: SiteResourceReport | None = None,
+    pagespeed: PageSpeedStrategyResponse | None = None,
 ) -> AuditRun:
     metadata = parse_html_metadata(fetched.body_text)
     structured_data = analyze_json_ld_scripts(metadata.json_ld_scripts)
@@ -61,6 +63,7 @@ def assemble_single_page_report(
         metadata=metadata,
         structured_data=structured_data,
         site_resources=site_resources,
+        pagespeed=pagespeed,
     )
     checks = _collect_checks(
         fetched=fetched,
@@ -68,6 +71,7 @@ def assemble_single_page_report(
         structured_data=structured_data,
         issues=issues,
         site_resources=site_resources,
+        pagespeed=pagespeed,
     )
     score = _score(issues)
     return AuditRun(
@@ -87,6 +91,7 @@ def _collect_checks(
     structured_data: StructuredDataReport,
     issues: list[AuditIssue],
     site_resources: SiteResourceReport | None,
+    pagespeed: PageSpeedStrategyResponse | None,
 ) -> list[AuditCheck]:
     issue_ids_by_check: dict[str, list[str]] = {}
     for issue in issues:
@@ -318,6 +323,27 @@ def _collect_checks(
             ]
         )
 
+    if pagespeed is not None:
+        pagespeed_issue_ids = issue_ids_by_check.get("performance.pagespeed_mobile", [])
+        pagespeed_status = (
+            CheckStatus.SKIPPED
+            if not pagespeed.available
+            else CheckStatus.WARNING
+            if pagespeed_issue_ids
+            else CheckStatus.PASSED
+        )
+        checks.append(
+            _check(
+                check_id="performance.pagespeed_mobile",
+                name="Google PageSpeed mobile performance",
+                category=IssueCategory.PERFORMANCE,
+                failed_when=bool(pagespeed_issue_ids),
+                evidence=_pagespeed_evidence(pagespeed),
+                issue_ids=pagespeed_issue_ids,
+                status=pagespeed_status,
+            )
+        )
+
     return checks
 
 
@@ -328,6 +354,7 @@ def _collect_issues(
     metadata: HtmlMetadata,
     structured_data: StructuredDataReport,
     site_resources: SiteResourceReport | None,
+    pagespeed: PageSpeedStrategyResponse | None,
 ) -> list[AuditIssue]:
     affected = (
         AffectedUrl(
@@ -843,7 +870,156 @@ def _collect_site_resource_issues(
             )
         )
 
+    if pagespeed is not None:
+        issues.extend(_pagespeed_issues(pagespeed, affected_urls=affected))
+
     return issues
+
+
+def _pagespeed_evidence(pagespeed: PageSpeedStrategyResponse) -> tuple[Evidence, ...]:
+    if not pagespeed.available:
+        return (
+            Evidence(
+                kind=EvidenceKind.TOOL_OUTPUT,
+                source="google.pagespeed.mobile",
+                value="unavailable",
+                metadata={"strategy": pagespeed.strategy, "available": False},
+            ),
+        )
+
+    evidence: list[Evidence] = [
+        Evidence(
+            kind=EvidenceKind.TOOL_OUTPUT,
+            source="google.pagespeed.mobile.performance",
+            value=str(
+                pagespeed.performance_score
+                if pagespeed.performance_score is not None
+                else "unavailable"
+            ),
+            metadata={
+                "strategy": pagespeed.strategy,
+                "available": True,
+                "field_data_available": pagespeed.field_data_available,
+                "field_overall_category": pagespeed.field_overall_category,
+                "lighthouse_version": pagespeed.lighthouse_version,
+                "analysis_fetch_time": pagespeed.analysis_fetch_time,
+                "category_scores": dict(pagespeed.category_scores),
+                "opportunities": [item.title for item in pagespeed.opportunities[:5]],
+            },
+        )
+    ]
+    for metric in pagespeed.metrics:
+        evidence.append(
+            Evidence(
+                kind=EvidenceKind.TOOL_OUTPUT,
+                source=f"google.pagespeed.mobile.{metric.id}",
+                value=(
+                    metric.display_value
+                    or (str(metric.value) if metric.value is not None else "unavailable")
+                ),
+                metadata={
+                    "status": metric.status,
+                    "source": metric.source,
+                    "unit": metric.unit,
+                    "value": metric.value,
+                },
+            )
+        )
+    return tuple(evidence)
+
+
+def _pagespeed_issues(
+    pagespeed: PageSpeedStrategyResponse,
+    *,
+    affected_urls: tuple[AffectedUrl, ...],
+) -> list[AuditIssue]:
+    if not pagespeed.available:
+        return []
+
+    metric_statuses = {metric.status for metric in pagespeed.metrics}
+    poor = (
+        (pagespeed.performance_score is not None and pagespeed.performance_score < 50)
+        or "fail" in metric_statuses
+    )
+    needs_improvement = (
+        (pagespeed.performance_score is not None and pagespeed.performance_score < 90)
+        or "warning" in metric_statuses
+    )
+    if not poor and not needs_improvement:
+        return []
+
+    opportunities = tuple(item.title for item in pagespeed.opportunities[:3])
+    steps = opportunities or (
+        "Review the slowest PageSpeed metrics and the highest-impact Lighthouse findings.",
+        "Rerun the mobile PageSpeed check after deploying performance changes.",
+    )
+    evidence = Evidence(
+        kind=EvidenceKind.TOOL_OUTPUT,
+        source="google.pagespeed.mobile.performance",
+        value=str(
+            pagespeed.performance_score
+            if pagespeed.performance_score is not None
+            else "unavailable"
+        ),
+        metadata={
+            "metric_statuses": {metric.id: metric.status for metric in pagespeed.metrics},
+            "affected_metrics": [
+                metric.title
+                for metric in pagespeed.metrics
+                if metric.status in {"warning", "fail"}
+            ],
+            "field_data_available": pagespeed.field_data_available,
+        },
+    )
+
+    if poor:
+        return [
+            _issue(
+                issue_id="performance.pagespeed_mobile.poor",
+                category=IssueCategory.PERFORMANCE,
+                severity=Severity.HIGH,
+                priority=Priority.P1,
+                title="Mobile PageSpeed performance is poor",
+                description=(
+                    "Google PageSpeed reported a poor mobile performance result or at least "
+                    "one failing performance metric for the audited page."
+                ),
+                evidence=evidence,
+                recommendation=Recommendation(
+                    summary="Prioritize the highest-impact PageSpeed performance findings.",
+                    steps=steps,
+                    expected_impact=(
+                        "Improves mobile loading responsiveness and reduces performance risk "
+                        "for users and search experience signals."
+                    ),
+                ),
+                affected_urls=affected_urls,
+            )
+        ]
+
+    return [
+        _issue(
+            issue_id="performance.pagespeed_mobile.needs_improvement",
+            category=IssueCategory.PERFORMANCE,
+            severity=Severity.MEDIUM,
+            priority=Priority.P2,
+            title="Mobile PageSpeed performance needs improvement",
+            description=(
+                "Google PageSpeed reported a mobile performance result below the good range "
+                "or at least one metric that needs improvement."
+            ),
+            evidence=evidence,
+            recommendation=Recommendation(
+                summary="Work through the leading PageSpeed opportunities and rerun the audit.",
+                steps=steps,
+                expected_impact=(
+                    "Moves mobile performance metrics toward the good range without "
+                    "overstating a direct ranking effect."
+                ),
+            ),
+            affected_urls=affected_urls,
+        )
+    ]
 
 
 def _normalize_url_for_comparison(raw_url: str, *, base_url: str | None = None) -> str:
@@ -874,6 +1050,7 @@ def _check(
     failed_when: bool,
     evidence: tuple[Evidence, ...],
     issue_ids: list[str],
+    status: CheckStatus | None = None,
 ) -> AuditCheck:
     started_at = datetime.now(UTC)
     started_ns = perf_counter_ns()
@@ -888,7 +1065,7 @@ def _check(
         taxonomy_version=TAXONOMY_VERSION,
         name=definition.name,
         category=definition.category,
-        status=CheckStatus.WARNING if failed_when else CheckStatus.PASSED,
+        status=status or (CheckStatus.WARNING if failed_when else CheckStatus.PASSED),
         started_at=started_at,
         completed_at=completed_at,
         duration_ms=_elapsed_duration_ms(started_ns),

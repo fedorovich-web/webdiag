@@ -14,6 +14,11 @@ _READY_BINDINGS: dict[IssueCategory, tuple[tuple[str, str, str], ...]] = {
         ("media-utilities", "image-resizer", "Checks target dimensions for image fixes."),
     ),
     IssueCategory.PERFORMANCE: (
+        (
+            "performance",
+            "core-web-vitals-checker",
+            "Rechecks Google PageSpeed and Core Web Vitals evidence for the affected URL.",
+        ),
         ("media-utilities", "image-optimizer", "Reduces oversized image transfer cost."),
     ),
     IssueCategory.STRUCTURED_DATA: (

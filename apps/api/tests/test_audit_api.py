@@ -18,9 +18,15 @@ from webdiag_api.audit.service import (
 from webdiag_api.audit.storage import AuditStoreIntegrityError, SqliteAuditStore
 from webdiag_api.config import Settings
 from webdiag_api.main import app
+from webdiag_api.tools.performance import MissingPageSpeedApiKeyError
 
 SAFE_IP = "93.184.216.34"
 Resolver = Callable[[str, int], list[str]]
+
+
+class UnavailablePageSpeedClient:
+    def run(self, **_kwargs: object) -> dict[str, object]:
+        raise MissingPageSpeedApiKeyError("PageSpeed disabled in audit API tests.")
 
 
 def streaming_response(
@@ -57,6 +63,7 @@ def build_service(
     return AuditExecutionService(
         store=store or InMemoryAuditStore(),
         fetcher_factory=fetcher_factory,
+        pagespeed_client_factory=UnavailablePageSpeedClient,
     )
 
 
@@ -179,7 +186,8 @@ def test_start_audit_runs_single_url_check_and_returns_snapshot() -> None:
     assert payload["summary"]["run"]["score"] == 100
     assert payload["summary"]["run"]["issue_count"] == 0
     assert payload["summary"]["run"]["checks_by_status"] == {
-        "passed": len(payload["run"]["checks"])
+        "passed": len(payload["run"]["checks"]) - 1,
+        "skipped": 1,
     }
     assert payload["job"]["status"] == "succeeded"
     assert payload["run"]["status"] == "succeeded"
@@ -190,6 +198,7 @@ def test_start_audit_runs_single_url_check_and_returns_snapshot() -> None:
     assert {check["check_id"] for check in payload["run"]["checks"]} >= {
         "crawlability.robots_txt",
         "crawlability.sitemap_xml",
+        "performance.pagespeed_mobile",
     }
 
 

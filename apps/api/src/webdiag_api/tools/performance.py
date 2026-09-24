@@ -341,7 +341,7 @@ def inspect_core_web_vitals(
         ("mobile", "desktop") if payload.strategy == "both" else (payload.strategy,)
     )
     results = tuple(
-        _run_pagespeed_strategy(pagespeed_client, url=validated.normalized, strategy=strategy)
+        run_pagespeed_strategy(pagespeed_client, url=validated.normalized, strategy=strategy)
         for strategy in strategies
     )
     return PageSpeedResponse(
@@ -492,7 +492,7 @@ def inspect_page_weight(
     )
 
 
-def _run_pagespeed_strategy(
+def run_pagespeed_strategy(
     client: PageSpeedClient,
     *,
     url: str,

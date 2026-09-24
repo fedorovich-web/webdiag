@@ -18,6 +18,11 @@ from webdiag_api.audit.redaction import (
 from webdiag_api.audit.report import assemble_single_page_report
 from webdiag_api.audit.site_resources import collect_site_resources
 from webdiag_api.security.url_policy import UrlPolicyError
+from webdiag_api.tools.performance import (
+    PageSpeedClient,
+    get_pagespeed_client,
+    run_pagespeed_strategy,
+)
 
 
 class AuditRequestError(ValueError):
@@ -94,6 +99,7 @@ class AuditStore(Protocol):
 
 
 FetcherFactory = Callable[[], SafeHttpFetcher]
+PageSpeedClientFactory = Callable[[], PageSpeedClient]
 
 
 def _utc_now() -> datetime:
@@ -108,9 +114,11 @@ class AuditExecutionService:
         *,
         store: AuditStore | None = None,
         fetcher_factory: FetcherFactory | None = None,
+        pagespeed_client_factory: PageSpeedClientFactory | None = None,
     ) -> None:
         self.store = store or InMemoryAuditStore()
         self._fetcher_factory = fetcher_factory or SafeHttpFetcher
+        self._pagespeed_client_factory = pagespeed_client_factory or get_pagespeed_client
 
     def start_single_url_audit(self, raw_url: str) -> AuditSnapshot:
         target = self._build_target(raw_url)
@@ -127,11 +135,17 @@ class AuditExecutionService:
                 target_url=str(target.normalized_url),
                 final_url=fetched.final_url,
             )
+            pagespeed = run_pagespeed_strategy(
+                self._pagespeed_client_factory(),
+                url=fetched.final_url,
+                strategy="mobile",
+            )
             run = assemble_single_page_report(
                 job_id=job.job_id,
                 target=target,
                 fetched=fetched,
                 site_resources=site_resources,
+                pagespeed=pagespeed,
             )
             run = public_audit_run(run.model_copy(update={"completed_at": _utc_now()}))
         except (SafeFetchError, UrlPolicyError) as exc:
