@@ -4511,6 +4511,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 .wd-dashboard-check-list span > strong,
 .wd-dashboard-check-list span > small,
 .wd-dashboard-project-list span > strong,
+.wd-dashboard-project-list span > h3,
 .wd-dashboard-project-list span > small,
 .wd-dashboard-task-list span > strong,
 .wd-dashboard-task-list span > small {
@@ -4520,9 +4521,15 @@ body:has(.wd-account-workspace-page) .site-footer {
 .wd-dashboard-priority-list strong,
 .wd-dashboard-check-list strong,
 .wd-dashboard-project-list strong,
+.wd-dashboard-project-list h3,
 .wd-dashboard-task-list strong {
   color: #18264a;
   font-size: 10px;
+}
+
+.wd-dashboard-project-list h3 {
+  margin: 0;
+  line-height: 1.25;
 }
 
 .wd-dashboard-priority-list small,
