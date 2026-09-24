@@ -61,7 +61,7 @@ export function ToolPage({ locale, slug }: { locale: Locale; slug: string }) {
             </div>
 
             <div className="wd-tool-hero-art" aria-hidden="true" data-specific={slug === "robots-txt-tester" ? "true" : "false"}>
-              <img src={art} alt="" width={900} height={900} loading="eager" decoding="async" />
+              <img src={art} alt="" width={900} height={900} loading="lazy" decoding="async" />
             </div>
           </div>
         </div>
@@ -77,11 +77,11 @@ export function ToolPage({ locale, slug }: { locale: Locale; slug: string }) {
             <p>{text.note}</p>
           </div>
 
-          <div className="wd-tool-workspace">
+          <div className="wd-tool-workspace tool-workspace">
             <ToolRenderer slug={slug} locale={locale} />
           </div>
 
-          <div className="wd-tool-processing" aria-labelledby="processing-title">
+          <div className="wd-tool-processing processing-note" aria-labelledby="processing-title">
             <span className="wd-tool-processing-icon" aria-hidden="true"><Check /></span>
             <div>
               <h2 id="processing-title">{text.processing}</h2>
@@ -118,7 +118,7 @@ export function ToolPage({ locale, slug }: { locale: Locale; slug: string }) {
             <section aria-labelledby="use-cases-title">
               <span className="wd-tool-section-number">03</span>
               <h2 id="use-cases-title">{text.useCases}</h2>
-              <ul className="wd-tool-use-cases">
+              <ul className="wd-tool-use-cases use-case-grid">
                 {content.useCases.map((item) => <li key={item.en}>{t(item)}</li>)}
               </ul>
             </section>
@@ -146,7 +146,7 @@ export function ToolPage({ locale, slug }: { locale: Locale; slug: string }) {
           </article>
 
           <aside className="wd-tool-editorial-aside">
-            <section className="wd-tool-aside-card">
+            <section className="wd-tool-aside-card limitations-card">
               <h2>{text.limitations}</h2>
               <ul>{content.limitations.map((item) => <li key={item.en}>{t(item)}</li>)}</ul>
             </section>
@@ -156,7 +156,7 @@ export function ToolPage({ locale, slug }: { locale: Locale; slug: string }) {
                 <h2>{text.related}</h2>
                 <div>
                   {related.map((candidate) => candidate ? (
-                    <Link href={`${prefix}/tools/${candidate.slug}`} key={candidate.slug}>
+                    <Link href={`${prefix}/tools/${candidate.slug}`} prefetch={false} key={candidate.slug}>
                       <span>
                         <strong>{localize(candidate.title, locale)}</strong>
                         <small>{getCategoryTitle(candidate.category, locale)}</small>
@@ -165,7 +165,7 @@ export function ToolPage({ locale, slug }: { locale: Locale; slug: string }) {
                     </Link>
                   ) : null)}
                 </div>
-                <Link className="wd-tool-all-link" href={toolsPath(locale)}>{text.allTools}<span aria-hidden="true">→</span></Link>
+                <Link className="wd-tool-all-link" href={toolsPath(locale)} prefetch={false}>{text.allTools}<span aria-hidden="true">→</span></Link>
               </section>
             )}
           </aside>
