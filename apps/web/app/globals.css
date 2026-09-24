@@ -1,6 +1,7 @@
 @import "./home-v11.css";
 @import "./tools-page.css";
 @import "./tool-page-v2.css";
+@import "./contact-page.css";
 @font-face {
   font-family: "Manrope Web";
   src: url("/fonts/manrope-ru-en-400-700.woff2") format("woff2");
