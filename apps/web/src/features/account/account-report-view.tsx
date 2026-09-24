@@ -34,16 +34,18 @@ export function AccountReportSnapshotView({
   const categories = categoryCounts(snapshot);
   const affectedPageCount = new Set(snapshot.issues.flatMap((issue) => issue.affected_urls)).size;
   const passedChecks = Math.max(0, summary.checkCount - summary.nonPassingCheckCount);
-  const totalPriority = Math.max(1, priorities.reduce((sum, item) => sum + item.count, 0));
+  const priorityTotal = priorities.reduce((sum, item) => sum + item.count, 0);
+  const totalPriority = Math.max(1, priorityTotal);
   const p0 = priorities.find((item) => item.priority === "p0")?.count ?? 0;
   const p1 = priorities.find((item) => item.priority === "p1")?.count ?? 0;
   const p2 = priorities.find((item) => item.priority === "p2")?.count ?? 0;
-  const p3 = priorities.find((item) => item.priority === "p3")?.count ?? 0;
   const p0End = (p0 / totalPriority) * 100;
   const p1End = p0End + (p1 / totalPriority) * 100;
   const p2End = p1End + (p2 / totalPriority) * 100;
   const donutStyle: CSSProperties = {
-    background: "conic-gradient(#ef4058 0 " + p0End + "%, #ff9d35 " + p0End + "% " + p1End + "%, #f6c544 " + p1End + "% " + p2End + "%, #2e8df7 " + p2End + "% 100%)",
+    background: priorityTotal === 0
+      ? "#e8eef4"
+      : "conic-gradient(#ef4058 0 " + p0End + "%, #ff9d35 " + p0End + "% " + p1End + "%, #f6c544 " + p1End + "% " + p2End + "%, #2e8df7 " + p2End + "% 100%)",
   };
 
   return (
