@@ -4,7 +4,7 @@ import { pageMetadata } from "../../../src/lib/seo";
 export const metadata: Metadata = pageMetadata({
   locale: "ru",
   title: "Политика конфиденциальности",
-  description: "Политика конфиденциальности WebDiag: какие данные обрабатываются при использовании сайта, инструментов и будущих проверок.",
+  description: "Политика конфиденциальности WebDiag: какие данные обрабатываются при использовании сайта, инструментов, аудита и личного кабинета.",
   canonical: "/privacy",
   ruPath: "/privacy",
   enPath: "/en/privacy",
@@ -13,12 +13,17 @@ export const metadata: Metadata = pageMetadata({
 export default function Page() {
   return (
     <main className="shell page-main wd-internal-page wd-legal-page">
-      <header className="page-heading wd-internal-hero">
+      <header className="page-heading wd-internal-hero wd-internal-hero-split" data-hero="privacy">
+        <div className="wd-internal-hero-copy">
         <span className="eyebrow">WebDiag</span>
         <h1>Политика конфиденциальности</h1>
         <p>
-          Документ описывает базовые принципы обработки данных на сайте WebDiag, в каталоге инструментов и в будущих сценариях технического аудита.
+          Документ описывает базовые принципы обработки данных при использовании сайта WebDiag, инструментов, аудита и личного кабинета.
         </p>
+              </div>
+        <div className="wd-internal-hero-visual" aria-hidden="true">
+          <img src="/design/hero/privacy.webp" alt="" width="1600" height="1000" loading="lazy" decoding="async" />
+        </div>
       </header>
       <section className="wd-internal-grid wd-legal-grid" aria-label="Разделы политики конфиденциальности">
         <article>
@@ -31,12 +36,12 @@ export default function Page() {
         </article>
         <article>
           <h2>Что не является целью</h2>
-          <p>WebDiag не должен использовать введённые URL для публикации закрытой информации, перепродажи данных или несанкционированного доступа к сайтам.</p>
+          <p>WebDiag не использует введённые URL для публикации закрытой информации, перепродажи данных или несанкционированного доступа к сайтам.</p>
         </article>
       </section>
       <section className="wd-internal-note">
-        <strong>Полная юридическая редакция будет уточнена перед публичным запуском</strong>
-        <p>До production-релиза текст политики должен быть проверен с учётом фактической архитектуры, хранения данных, аналитики, платежей и уведомлений.</p>
+        <strong>Контакты по вопросам конфиденциальности</strong>
+        <p>Если у вас есть вопрос об обработке данных, напишите на <a href="mailto:support@webdiag.ru">support@webdiag.ru</a>.</p>
       </section>
     </main>
   );

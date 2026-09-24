@@ -3,7 +3,7 @@
 - npm monorepo for the Next.js application and shared TypeScript packages.
 - FastAPI service in a separate Python package.
 - Dramatiq worker package prepared for RabbitMQ.
-- Registry contains 110 definitions; public selectors expose only the 14 entries with verified implementations.
+- The registry is the source of truth for declared tool definitions; public selectors expose only ready entries with verified implementations.
 - Browser-only tool logic lives in `packages/tool-core` and is covered by unit tests.
 - RU routes have no locale prefix; EN routes use `/en`.
 - Public UI is light-first and supports only explicit `light` and `dark` preferences. Operating-system color preferences are intentionally ignored.
@@ -17,3 +17,8 @@
 - Production verification checks all 32 rendered HTML pages for one H1, title, description, canonical, reciprocal language alternates, social metadata, valid JSON-LD, and unpublished-registry leakage.
 - Public catalog client assets receive a minimal projection and are separately checked for internal fields and definitions.
 - All current public routes remain statically prerendered.
+- A12.0 adds an account-owned AI foundation without enabling a public AI tool: the 15 catalog entries remain `internal` until their provider, evaluation, cost, and fixed-credit gates pass.
+- The FastAPI service is the only writer to AI runs and the append-only credit ledger in the account SQLite database. This SQLite topology supports one API writer; horizontal API replicas require a future PostgreSQL storage adapter.
+- AI workers use a dedicated bearer-protected internal HTTP contract. Run attempts use renewable hashed lease tokens, and a stale worker cannot complete, fail, or charge a run.
+- The AI worker contains a bounded Dramatiq actor and a real OpenRouter adapter, but every AI catalog entry remains internal. The default production core disables the AI runtime and omits RabbitMQ, provider, and artifact-storage credentials; the optional AI overlay is allowed only after the external evaluation, cost, storage, and manual image gates pass.
+- Credits are non-expiring integers. Run creation and reservation, completion and capture, or failure and release occur in the same SQLite transaction.

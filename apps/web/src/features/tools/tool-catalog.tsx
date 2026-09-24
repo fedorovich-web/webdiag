@@ -1,7 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { FormEvent, useMemo, useState, useSyncExternalStore } from "react";
+import {
+  Bot,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  Gauge,
+  Image as ImageIcon,
+  Link2,
+  Map,
+  MonitorCheck,
+  Network,
+  Route,
+  Search,
+  SearchCheck,
+  Send,
+  ShieldCheck,
+  type LucideIcon,
+} from "lucide-react";
 import type { Locale } from "@webdiag/tool-registry";
 import { filterCatalogTools, safeInitialCategory, type CatalogTool } from "./catalog-utils";
 
@@ -11,11 +29,34 @@ interface CategoryOption {
   readonly count: number;
 }
 
-function CatalogGlyph({ category }: { category: string }) {
-  if (category === "development-data") return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 8-4 4 4 4m8-8 4 4-4 4M14 4l-4 16" /></svg>;
-  if (category === "css-design") return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 3v9l6 3" /></svg>;
-  return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3" /><path d="m7 15 3-3 2 2 3-4 2 3" /></svg>;
-}
+const PAGE_SIZE = 20;
+
+const categoryIcons: Record<string, LucideIcon> = {
+  "seo-audit": SearchCheck,
+  performance: Gauge,
+  "security-network": ShieldCheck,
+  "css-design": MonitorCheck,
+  "media-utilities": ImageIcon,
+  "development-data": FileText,
+};
+
+const toolIcons: Record<string, LucideIcon> = {
+  "single-page-audit": SearchCheck,
+  "core-web-vitals-checker": Gauge,
+  "robots-txt-tester": Bot,
+  "sitemap-validator": Map,
+  "redirect-chain-checker": Route,
+  "ssl-certificate-checker": ShieldCheck,
+  "meta-tags-checker": FileText,
+  "image-seo-audit": ImageIcon,
+  "canonical-checker": Link2,
+  "hreflang-checker": Network,
+  "structured-data-validator": FileText,
+  "color-contrast-checker": MonitorCheck,
+  "broken-link-checker": Link2,
+  "heading-structure-checker": FileText,
+  "indexability-checker": SearchCheck,
+};
 
 function subscribeToLocation(callback: () => void) {
   window.addEventListener("popstate", callback);
@@ -30,97 +71,244 @@ function getServerUrlCategory(): string {
   return "";
 }
 
-export function ToolCatalog({ locale, tools, categories }: { locale: Locale; tools: readonly CatalogTool[]; categories: readonly CategoryOption[] }) {
+function categoryLabel(id: string, locale: Locale): string {
+  const ru: Record<string, string> = {
+    all: "Все инструменты",
+    "seo-audit": "SEO-аудит",
+    performance: "Скорость",
+    "security-network": "Безопасность",
+    "css-design": "Доступность",
+    "media-utilities": "Изображения",
+    "development-data": "Разработка",
+  };
+  const en: Record<string, string> = {
+    all: "All tools",
+    "seo-audit": "SEO audit",
+    performance: "Speed",
+    "security-network": "Security",
+    "css-design": "Accessibility",
+    "media-utilities": "Images",
+    "development-data": "Development",
+  };
+  return (locale === "ru" ? ru : en)[id] ?? id;
+}
+
+function CategoryIcon({ id }: { id: string }) {
+  const Icon = id === "all" ? SearchCheck : categoryIcons[id] ?? SearchCheck;
+  return <Icon aria-hidden="true" />;
+}
+
+function ToolGlyph({ tool }: { tool: CatalogTool }) {
+  const Icon = toolIcons[tool.slug] ?? categoryIcons[tool.category] ?? SearchCheck;
+  return <Icon aria-hidden="true" />;
+}
+
+export function ToolCatalog({
+  locale,
+  tools,
+  categories,
+}: {
+  locale: Locale;
+  tools: readonly CatalogTool[];
+  categories: readonly CategoryOption[];
+}) {
   const categoryIds = categories.map((item) => item.id);
   const urlCategory = useSyncExternalStore(subscribeToLocation, getUrlCategory, getServerUrlCategory);
+  const [draftQuery, setDraftQuery] = useState("");
   const [query, setQuery] = useState("");
   const [categoryOverride, setCategoryOverride] = useState<string | null>(null);
+  const [sort, setSort] = useState<"popular" | "az">("popular");
+  const [page, setPage] = useState(1);
+  const [suggestion, setSuggestion] = useState("");
+
   const category = categoryOverride ?? safeInitialCategory(urlCategory, categoryIds);
-  const filtered = useMemo(() => filterCatalogTools(tools, query, category), [tools, query, category]);
+  const filtered = useMemo(() => {
+    const result = filterCatalogTools(tools, query, category);
+    return sort === "az"
+      ? [...result].sort((a, b) => a.title.localeCompare(b.title, locale === "ru" ? "ru" : "en"))
+      : result;
+  }, [tools, query, category, sort, locale]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pageTools = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
   const prefix = locale === "ru" ? "" : "/en";
-  const text = locale === "ru"
+
+  const copy = locale === "ru"
     ? {
-        search: "Поиск по инструментам",
-        placeholder: "Например, JSON, изображение или UUID",
-        all: "Все",
-        found: "Найдено",
-        local: "В браузере",
-        open: "Открыть",
+        eyebrow: "Инструменты WebDiag",
+        title: "Все инструменты",
+        lead: "Более 140+ бесплатных инструментов для анализа, диагностики и улучшения вашего сайта. Выберите нужный инструмент или найдите его через поиск.",
+        placeholder: "Найдите инструмент... например «robots.txt» или «скорость сайта»",
+        find: "Найти",
+        hint: "Например: robots.txt, sitemap, редиректы, скорость, HTTPS, изображения",
+        sort: "Сортировка:",
+        popular: "По популярности",
+        alphabet: "По названию",
+        results: "Найденные инструменты",
         emptyTitle: "Ничего не найдено",
         emptyText: "Измените запрос или выберите другую категорию.",
         reset: "Сбросить фильтры",
-        categoryLabel: "Категория инструментов",
+        prev: "Предыдущая страница",
+        next: "Следующая страница",
+        perPage: "Показывать по:",
+        suggestionTitle: "Не нашли нужный инструмент?",
+        suggestionText: "Расскажите, какой инструмент вам нужен, и мы рассмотрим возможность его добавления в WebDiag.",
+        suggestionPlaceholder: "Опишите нужный инструмент...",
+        suggestionButton: "Предложить инструмент",
       }
     : {
-        search: "Search tools",
-        placeholder: "Try JSON, image, or UUID",
-        all: "All",
-        found: "Found",
-        local: "In browser",
-        open: "Open",
+        eyebrow: "WebDiag tools",
+        title: "All tools",
+        lead: "More than 140 free tools for analyzing, diagnosing and improving your website. Choose a tool or find it through search.",
+        placeholder: "Find a tool... for example “robots.txt” or “site speed”",
+        find: "Find",
+        hint: "For example: robots.txt, sitemap, redirects, speed, HTTPS, images",
+        sort: "Sort:",
+        popular: "Most popular",
+        alphabet: "By name",
+        results: "Matching tools",
         emptyTitle: "No tools found",
         emptyText: "Change the query or select another category.",
         reset: "Reset filters",
-        categoryLabel: "Tool category",
+        prev: "Previous page",
+        next: "Next page",
+        perPage: "Show:",
+        suggestionTitle: "Can't find the tool you need?",
+        suggestionText: "Tell us what you need and we will consider adding it to WebDiag.",
+        suggestionPlaceholder: "Describe the tool you need...",
+        suggestionButton: "Suggest a tool",
       };
 
   function chooseCategory(next: string) {
     setCategoryOverride(next);
+    setPage(1);
     const url = new URL(window.location.href);
     if (next === "all") url.searchParams.delete("category");
     else url.searchParams.set("category", next);
     window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
   }
 
+  function submitSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setQuery(draftQuery.trim());
+    setPage(1);
+  }
+
   function reset() {
+    setDraftQuery("");
     setQuery("");
+    setSort("popular");
     chooseCategory("all");
   }
 
-  const visibleGroups = categories
-    .map((item) => ({ ...item, tools: filtered.filter((tool) => tool.category === item.id) }))
-    .filter((item) => item.tools.length > 0);
+  function submitSuggestion(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const value = suggestion.trim();
+    if (!value) return;
+    const subject = locale === "ru" ? "Предложение инструмента для WebDiag" : "WebDiag tool suggestion";
+    window.location.href = `mailto:support@webdiag.ru?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(value)}`;
+  }
+
+  const heading = category === "all" && !query ? copy.title : copy.results;
+  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
 
   return (
-    <div className="catalog-shell">
-      <div className="catalog-controls">
-        <label className="catalog-search">
-          <span className="sr-only">{text.search}</span>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
-          <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={text.placeholder} autoComplete="off" />
-          {query && <button type="button" onClick={() => setQuery("")} aria-label={locale === "ru" ? "Очистить поиск" : "Clear search"}>×</button>}
-        </label>
-        <div className="category-tabs" role="group" aria-label={locale === "ru" ? "Категории инструментов" : "Tool categories"}>
-          <button type="button" className={category === "all" ? "is-active" : ""} aria-pressed={category === "all"} onClick={() => chooseCategory("all")}>{text.all}<span>{tools.length}</span></button>
-          {categories.map((item) => <button type="button" className={category === item.id ? "is-active" : ""} aria-pressed={category === item.id} onClick={() => chooseCategory(item.id)} key={item.id}>{item.title}<span>{item.count}</span></button>)}
+    <>
+      <section className="wd-tools-hero" aria-labelledby="tools-title">
+        <div className="shell wd-tools-hero-grid">
+          <div className="wd-tools-hero-copy">
+            <span className="wd-eyebrow">{copy.eyebrow}</span>
+            <h1 id="tools-title">{copy.title}</h1>
+            <p>{copy.lead}</p>
+            <form className="wd-tools-search" onSubmit={submitSearch}>
+              <Search aria-hidden="true" />
+              <input
+                type="search"
+                value={draftQuery}
+                onChange={(event) => setDraftQuery(event.target.value)}
+                placeholder={copy.placeholder}
+                aria-label={copy.placeholder}
+                autoComplete="off"
+              />
+              <button type="submit">{copy.find}<span aria-hidden="true">→</span></button>
+            </form>
+            <small className="wd-tools-search-hint">{copy.hint}</small>
+          </div>
+          <div className="wd-tools-hero-art" aria-hidden="true">
+            <img src="/design/hero/tools.webp" alt="" width="900" height="900" loading="lazy" decoding="async" />
+          </div>
         </div>
-      </div>
+      </section>
 
-      <div className="catalog-summary" aria-live="polite"><span>{text.found}: <strong>{filtered.length}</strong></span></div>
+      <section className="wd-tools-catalog-section">
+        <div className="shell">
+          <div className="wd-tools-tabs" role="group" aria-label={locale === "ru" ? "Категории инструментов" : "Tool categories"}>
+            <button type="button" className={category === "all" ? "is-active" : ""} aria-pressed={category === "all"} onClick={() => chooseCategory("all")}>
+              <CategoryIcon id="all" />{categoryLabel("all", locale)}
+            </button>
+            {categories.map((item) => (
+              <button type="button" className={category === item.id ? "is-active" : ""} aria-pressed={category === item.id} onClick={() => chooseCategory(item.id)} key={item.id}>
+                <CategoryIcon id={item.id} />{categoryLabel(item.id, locale)}
+              </button>
+            ))}
+          </div>
 
-      {visibleGroups.length ? (
-        <div className="catalog-groups">
-          {visibleGroups.map((group) => (
-            <section className="catalog-group" id={group.id} key={group.id} aria-labelledby={`catalog-${group.id}`}>
-              <header className="catalog-group-heading">
-                <span className="category-symbol"><CatalogGlyph category={group.id} /></span>
-                <div><span>{text.categoryLabel}</span><h2 id={`catalog-${group.id}`}>{group.title}</h2></div>
-                <strong>{group.tools.length}</strong>
-              </header>
-              <div className="compact-tool-grid">
-                {group.tools.map((tool) => (
-                  <Link className="compact-tool-card" href={`${prefix}/tools/${tool.slug}`} key={tool.slug}>
-                    <div className="compact-tool-card-main"><span className="compact-tool-icon"><CatalogGlyph category={tool.category} /></span><div><h3>{tool.title}</h3><p>{tool.description}</p></div></div>
-                    <footer>{tool.local ? <span className="local-badge"><i aria-hidden="true" />{text.local}</span> : <span />}<span className="tool-open">{text.open}<span aria-hidden="true">↗</span></span></footer>
-                  </Link>
+          <div className="wd-tools-list-head">
+            <h2>{heading} <span>({filtered.length})</span></h2>
+            <label>
+              <span>{copy.sort}</span>
+              <select value={sort} onChange={(event) => { setSort(event.target.value as "popular" | "az"); setPage(1); }}>
+                <option value="popular">{copy.popular}</option>
+                <option value="az">{copy.alphabet}</option>
+              </select>
+            </label>
+          </div>
+
+          {pageTools.length ? (
+            <div className="wd-tools-grid">
+              {pageTools.map((tool) => (
+                <Link className="wd-tool-card compact-tool-card" prefetch={false} href={`${prefix}/tools/${tool.slug}`} key={tool.slug}>
+                  <span className={`wd-tool-card-icon is-${tool.category}`}><ToolGlyph tool={tool} /></span>
+                  <span className="wd-tool-card-copy"><strong>{tool.title}</strong><small>{tool.description}</small></span>
+                  <ChevronRight className="wd-tool-card-arrow" aria-hidden="true" />
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="wd-tools-empty">
+              <Search aria-hidden="true" />
+              <h2>{copy.emptyTitle}</h2>
+              <p>{copy.emptyText}</p>
+              <button type="button" onClick={reset}>{copy.reset}</button>
+            </div>
+          )}
+
+          {filtered.length > PAGE_SIZE && (
+            <div className="wd-tools-pagination" aria-label={locale === "ru" ? "Навигация по страницам" : "Pagination"}>
+              <button type="button" aria-label={copy.prev} disabled={safePage === 1} onClick={() => setPage((value) => Math.max(1, value - 1))}><ChevronLeft aria-hidden="true" /></button>
+              <div>
+                {pageNumbers.map((value) => (
+                  <button type="button" className={value === safePage ? "is-active" : ""} aria-current={value === safePage ? "page" : undefined} onClick={() => setPage(value)} key={value}>{value}</button>
                 ))}
               </div>
-            </section>
-          ))}
+              <button type="button" aria-label={copy.next} disabled={safePage === totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}><ChevronRight aria-hidden="true" /></button>
+              <span className="wd-tools-per-page">{copy.perPage}<b>{PAGE_SIZE}</b></span>
+            </div>
+          )}
+
+          <section className="wd-tools-suggest">
+            <div>
+              <h2>{copy.suggestionTitle}</h2>
+              <p>{copy.suggestionText}</p>
+            </div>
+            <form onSubmit={submitSuggestion}>
+              <span><Send aria-hidden="true" /><input value={suggestion} onChange={(event) => setSuggestion(event.target.value)} placeholder={copy.suggestionPlaceholder} aria-label={copy.suggestionPlaceholder} /></span>
+              <button type="submit">{copy.suggestionButton}<span aria-hidden="true">→</span></button>
+            </form>
+          </section>
         </div>
-      ) : (
-        <div className="empty-state"><span aria-hidden="true">⌕</span><h2>{text.emptyTitle}</h2><p>{text.emptyText}</p><button className="button button-secondary" type="button" onClick={reset}>{text.reset}</button></div>
-      )}
-    </div>
+      </section>
+    </>
   );
 }

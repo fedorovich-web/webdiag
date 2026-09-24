@@ -1,0 +1,51 @@
+services:
+  rabbitmq:
+    image: rabbitmq:4.3.2-management-alpine@sha256:0753b75ce99094c385483d89449d532a0544fb85e4942a478b21cc497ab66d33
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: "${RABBITMQ_DEFAULT_USER:-webdiag}"
+      RABBITMQ_DEFAULT_PASS: "${RABBITMQ_DEFAULT_PASS:?set the production RabbitMQ password}"
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  api:
+    environment:
+      WEBDIAG_AI_RUNTIME_ENABLED: "true"
+      WEBDIAG_AI_INTERNAL_TOKEN: "${WEBDIAG_AI_INTERNAL_TOKEN:?set a distinct AI internal token}"
+      WEBDIAG_AI_SAFETY_IDENTIFIER_SECRET: "${WEBDIAG_AI_SAFETY_IDENTIFIER_SECRET:?set a distinct AI safety identifier secret}"
+      WEBDIAG_AI_ACTIVE_RUN_LIMIT_PER_USER: "${WEBDIAG_AI_ACTIVE_RUN_LIMIT_PER_USER:-3}"
+      WEBDIAG_AI_ACTIVE_RUN_LIMIT_GLOBAL: "${WEBDIAG_AI_ACTIVE_RUN_LIMIT_GLOBAL:-100}"
+
+  worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    restart: unless-stopped
+    command: ["dramatiq", "--processes", "1", "--threads", "1", "webdiag_worker.actors"]
+    volumes: []
+    environment:
+      WEBDIAG_BROKER_URL: "amqp://${RABBITMQ_DEFAULT_USER:-webdiag}:${RABBITMQ_DEFAULT_PASS:?set the production RabbitMQ password}@rabbitmq:5672/"
+      WEBDIAG_ENVIRONMENT: production
+      WEBDIAG_AI_API_INTERNAL_URL: http://api:8000
+      WEBDIAG_AI_INTERNAL_TOKEN: "${WEBDIAG_AI_INTERNAL_TOKEN:?set a distinct AI internal token}"
+      AI_PROVIDER: "${AI_PROVIDER:-vercel}"
+      AI_GATEWAY_API_KEY: "${AI_GATEWAY_API_KEY:?set the Vercel AI Gateway API key}"
+      AI_GATEWAY_BASE_URL: "${AI_GATEWAY_BASE_URL:-https://ai-gateway.vercel.sh/v1}"
+      AI_MODEL: "${AI_MODEL:-openai/gpt-5.6-sol}"
+      AI_REASONING_EFFORT: "${AI_REASONING_EFFORT:-medium}"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+
+  monitoring_scheduler:
+    environment:
+      WEBDIAG_AI_API_INTERNAL_URL: http://api:8000
+      WEBDIAG_AI_INTERNAL_TOKEN: "${WEBDIAG_AI_INTERNAL_TOKEN:?set a distinct AI internal token}"

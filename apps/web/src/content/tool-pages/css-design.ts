@@ -2,6 +2,47 @@ import { toolPage } from "./shared";
 
 export const cssDesignToolPages = [
   toolPage({
+    slug: "color-palette-extractor",
+    seoTitle: { ru: "Извлечение палитры из изображения", en: "Image Color Palette Extractor" },
+    metaDescription: { ru: "Получите детерминированную палитру выборки с HEX, RGB и долей цвета из JPEG, PNG, WebP или AVIF локально в браузере.", en: "Get a deterministic sampled palette with HEX, RGB, and color share from a JPEG, PNG, WebP, or AVIF locally in your browser." },
+    h1: { ru: "Извлечение палитры из изображения", en: "Image Color Palette Extractor" },
+    lead: { ru: "Извлеките до восьми цветов из уменьшенной выборки изображения без отправки файла на сервер.", en: "Extract up to eight colors from a downsampled image without sending the file to a server." },
+    quickFacts: [
+      { ru: "4–8 цветов", en: "4–8 colors" },
+      { ru: "HEX и RGB", en: "HEX and RGB" },
+      { ru: "Локальная обработка", en: "Local processing" },
+    ],
+    howToSteps: [
+      { ru: "Выберите JPEG, PNG, WebP или AVIF.", en: "Choose a JPEG, PNG, WebP, or AVIF file." },
+      { ru: "Укажите количество цветов от четырёх до восьми.", en: "Select four to eight palette colors." },
+      { ru: "Извлеките палитру и скопируйте нужные HEX-значения.", en: "Extract the palette and copy the HEX values you need." },
+    ],
+    supportedFeatures: [
+      { ru: "Детерминированная 5-bit RGB quantization уменьшенной выборки.", en: "Deterministic five-bit RGB quantization of a downsampled image." },
+      { ru: "HEX, RGB, количество и процент пикселей выборки.", en: "HEX, RGB, count, and percentage of sampled pixels." },
+      { ru: "Прозрачные пиксели пропускаются, частичная прозрачность компонуется на белом.", en: "Transparent pixels are skipped; partial transparency is composited onto white." },
+    ],
+    limitations: [
+      { ru: "Это палитра уменьшенной выборки, а не точный список всех цветов и не perceptual clustering.", en: "This is a downsampled palette, not an exact color inventory or perceptual clustering model." },
+      { ru: "Инструмент не определяет названия, брендовые роли, контраст или цветовой профиль.", en: "The tool does not infer color names, brand roles, contrast, or color profiles." },
+    ],
+    useCases: [
+      { ru: "Быстрое получение HEX из референса.", en: "Quickly getting HEX values from a reference image." },
+      { ru: "Подготовка черновой UI-палитры.", en: "Preparing a draft UI palette." },
+      { ru: "Сравнение доминирующих цветов нескольких изображений вручную.", en: "Manually comparing dominant colors across images." },
+    ],
+    technicalNotes: [
+      { ru: "Длинная сторона выборки ограничена 160 пикселями.", en: "The sample's longest side is limited to 160 pixels." },
+      { ru: "При равной частоте цвета сортируются по HEX для стабильного результата.", en: "Equal-frequency colors are sorted by HEX for stable output." },
+    ],
+    faq: [
+      { question: { ru: "Файл загружается на сервер?", en: "Is the file uploaded?" }, answer: { ru: "Нет. Декодирование, Canvas-выборка и quantization выполняются в браузере.", en: "No. Decoding, Canvas sampling, and quantization run in the browser." } },
+      { question: { ru: "Палитра содержит все цвета изображения?", en: "Does the palette contain every image color?" }, answer: { ru: "Нет. Это ограниченная палитра уменьшенной выборки; мелкие детали могут не попасть в результат.", en: "No. It is a bounded downsampled palette, so small details may be omitted." } },
+    ],
+    relatedToolSlugs: ["color-converter", "color-contrast-checker", "image-optimizer"],
+    sourceUrls: ["https://developer.mozilla.org/docs/Web/API/Canvas_API"],
+  }),
+  toolPage({
     slug: "color-contrast-checker",
     seoTitle: {
       ru: "Проверка контраста HEX-цветов по WCAG",

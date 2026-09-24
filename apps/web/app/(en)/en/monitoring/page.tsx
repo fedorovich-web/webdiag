@@ -14,20 +14,25 @@ export const metadata: Metadata = pageMetadata({
 export default function Page() {
   return (
     <main className="shell page-main wd-internal-page">
-      <header className="page-heading wd-internal-hero">
+      <header className="page-heading wd-internal-hero wd-internal-hero-split" data-hero="monitoring">
+        <div className="wd-internal-hero-copy">
         <span className="eyebrow">WebDiag</span>
         <h1>Site monitoring after releases, migrations, and SEO changes</h1>
         <p>Monitoring helps catch new technical issues, returning fixed problems, and availability failures after site changes.</p>
+              </div>
+        <div className="wd-internal-hero-visual" aria-hidden="true">
+          <img src="/design/hero/monitoring.webp" alt="" width="1600" height="1000" loading="lazy" decoding="async" />
+        </div>
       </header>
       <section className="wd-internal-grid" aria-label="Monitoring capabilities">
         <article><h2>Scheduled checks</h2><p>Recurring control of availability, SSL, sitemap, robots.txt, canonical, noindex, and response statuses.</p></article>
-        <article><h2>Regressions</h2><p>Comparing post-release health with previous checks.</p></article>
-        <article><h2>History</h2><p>Dynamics of issues, fixes, and technical site health.</p></article>
+        <article><h2>Regressions</h2><p>Compare site health after a release with previous checks.</p></article>
+        <article><h2>History</h2><p>Track changes in issues, fixes, and technical site health over time.</p></article>
       </section>
       <section className="wd-internal-note">
-        <strong>Subscription instead of one-off runs</strong>
-        <p>Preliminary monitoring starts from 299 ₽/mo. Limits depend on projects, URL volume, and check frequency.</p>
-        <Link className="wd-button wd-button-primary" href="/en/pricing">View pricing</Link>
+        <strong>Monitoring is available in the account workspace</strong>
+        <p>Add a project, run checks manually or on a schedule, and use saved history to track new and resolved issues.</p>
+        <Link className="wd-button wd-button-primary" href="/en/register">Create an account</Link>
       </section>
     </main>
   );

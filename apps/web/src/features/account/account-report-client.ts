@@ -42,13 +42,20 @@ async function parse<T>(response: Response, validator: (value: unknown) => value
   return payload;
 }
 
+function invalidBoundResponse(): AccountClientError {
+  return new AccountClientError("Report API returned an invalid response.", {
+    status: 200,
+    code: "account_invalid_response",
+  });
+}
+
 export async function createAccountReport(
   projectId: string,
   auditId: string,
   input: { readonly title: string; readonly locale: ReportLocale },
   fetcher: Fetcher = fetch,
 ): Promise<AccountReportDetailResponse> {
-  return parse(
+  const detail = await parse(
     await fetcher(`/api/account/projects/${projectId}/audits/${auditId}/reports`, {
       ...common,
       method: "POST",
@@ -57,11 +64,21 @@ export async function createAccountReport(
     }),
     isAccountReportDetailResponse,
   );
+  if (detail.report.project_id !== projectId || detail.report.audit_id !== auditId) {
+    throw invalidBoundResponse();
+  }
+  return detail;
 }
 
-export async function listAccountReports(fetcher: Fetcher = fetch): Promise<AccountReportListResponse> {
+export async function listAccountReports(
+  options: { readonly projectId?: string } = {},
+  fetcher: Fetcher = fetch,
+): Promise<AccountReportListResponse> {
+  const query = options.projectId
+    ? `?project_id=${encodeURIComponent(options.projectId)}`
+    : "";
   return parse(
-    await fetcher("/api/account/reports", {
+    await fetcher(`/api/account/reports${query}`, {
       ...common,
       method: "GET",
       headers: { accept: "application/json" },
@@ -74,7 +91,7 @@ export async function getAccountReport(
   reportId: string,
   fetcher: Fetcher = fetch,
 ): Promise<AccountReportDetailResponse> {
-  return parse(
+  const detail = await parse(
     await fetcher(`/api/account/reports/${reportId}`, {
       ...common,
       method: "GET",
@@ -82,6 +99,8 @@ export async function getAccountReport(
     }),
     isAccountReportDetailResponse,
   );
+  if (detail.report.id !== reportId) throw invalidBoundResponse();
+  return detail;
 }
 
 export async function enableAccountReportShare(
@@ -89,7 +108,7 @@ export async function enableAccountReportShare(
   expiresInDays: number,
   fetcher: Fetcher = fetch,
 ): Promise<AccountReportShareResponse> {
-  return parse(
+  const share = await parse(
     await fetcher(`/api/account/reports/${reportId}/share`, {
       ...common,
       method: "POST",
@@ -98,13 +117,17 @@ export async function enableAccountReportShare(
     }),
     isAccountReportShareResponse,
   );
+  if (share.report_id !== reportId) {
+    throw invalidBoundResponse();
+  }
+  return share;
 }
 
 export async function revokeAccountReportShare(
   reportId: string,
   fetcher: Fetcher = fetch,
 ): Promise<AccountReportDetailResponse> {
-  return parse(
+  const detail = await parse(
     await fetcher(`/api/account/reports/${reportId}/share`, {
       ...common,
       method: "DELETE",
@@ -112,6 +135,8 @@ export async function revokeAccountReportShare(
     }),
     isAccountReportDetailResponse,
   );
+  if (detail.report.id !== reportId) throw invalidBoundResponse();
+  return detail;
 }
 
 export async function getPublicReport(

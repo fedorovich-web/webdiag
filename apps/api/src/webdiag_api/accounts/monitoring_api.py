@@ -194,6 +194,7 @@ def run_monitor(
 @router.post(
     "/v1/internal/monitoring/run-due",
     response_model=InternalRunDueResponse,
+    include_in_schema=False,
 )
 def run_due_monitors(
     response: Response,

@@ -14,10 +14,15 @@ export const metadata: Metadata = pageMetadata({
 export default function Page() {
   return (
     <main className="shell page-main wd-internal-page">
-      <header className="page-heading wd-internal-hero">
+      <header className="page-heading wd-internal-hero wd-internal-hero-split" data-hero="monitoring">
+        <div className="wd-internal-hero-copy">
         <span className="eyebrow">WebDiag</span>
         <h1>Мониторинг сайта после релизов, миграций и SEO-правок</h1>
         <p>Мониторинг нужен, чтобы не пропустить новые технические ошибки, возврат исправленных проблем и сбои доступности после изменений на сайте.</p>
+              </div>
+        <div className="wd-internal-hero-visual" aria-hidden="true">
+          <img src="/design/hero/monitoring.webp" alt="" width="1600" height="1000" loading="lazy" decoding="async" />
+        </div>
       </header>
       <section className="wd-internal-grid" aria-label="Возможности мониторинга">
         <article><h2>Регулярные проверки</h2><p>Плановый контроль доступности, SSL, sitemap, robots.txt, canonical, noindex и статусов ответа.</p></article>
@@ -25,9 +30,9 @@ export default function Page() {
         <article><h2>История</h2><p>Динамика ошибок, исправлений и технического состояния проекта.</p></article>
       </section>
       <section className="wd-internal-note">
-        <strong>Подписка вместо разовых запусков</strong>
-        <p>Предварительный старт мониторинга — от 299 ₽/мес. Лимиты будут зависеть от количества проектов, URL и частоты проверок.</p>
-        <Link className="wd-button wd-button-primary" href="/pricing">Посмотреть цены</Link>
+        <strong>Мониторинг доступен в личном кабинете</strong>
+        <p>Добавьте проект, запускайте проверки вручную или по расписанию и используйте историю, чтобы отслеживать новые и исправленные проблемы.</p>
+        <Link className="wd-button wd-button-primary" href="/register">Создать аккаунт</Link>
       </section>
     </main>
   );

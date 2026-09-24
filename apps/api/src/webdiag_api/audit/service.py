@@ -4,11 +4,17 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from threading import Lock
+from typing import Protocol
 from uuid import UUID
 
 from webdiag_api.audit.fetcher import SafeFetchError, SafeHttpFetcher
 from webdiag_api.audit.intake import build_audit_target
 from webdiag_api.audit.models import AuditJob, AuditJobStatus, AuditRun, AuditTarget
+from webdiag_api.audit.redaction import (
+    public_audit_run,
+    public_audit_snapshot,
+    public_audit_target,
+)
 from webdiag_api.audit.report import assemble_single_page_report
 from webdiag_api.audit.site_resources import collect_site_resources
 from webdiag_api.security.url_policy import UrlPolicyError
@@ -21,10 +27,20 @@ class AuditRequestError(ValueError):
 class AuditExecutionError(RuntimeError):
     """Raised when an accepted audit cannot be executed successfully."""
 
-    def __init__(self, message: str, *, job_id: UUID, run_id: UUID | None = None) -> None:
+    def __init__(
+        self,
+        message: str,
+        *,
+        job_id: UUID,
+        run_id: UUID | None = None,
+        code: str = "audit_fetch_failed",
+        status_code: int = 502,
+    ) -> None:
         super().__init__(message)
         self.job_id = job_id
         self.run_id = run_id
+        self.code = code
+        self.status_code = status_code
 
 
 @dataclass(frozen=True, slots=True)
@@ -62,6 +78,20 @@ class InMemoryAuditStore:
                 return None
             return AuditSnapshot(job=job, run=self._runs_by_job.get(job_id))
 
+    def save_snapshot(self, job: AuditJob, run: AuditRun) -> None:
+        self.save_job(job)
+        self.save_run(run)
+
+
+class AuditStore(Protocol):
+    def save_job(self, job: AuditJob) -> AuditJob: ...
+
+    def save_run(self, run: AuditRun) -> AuditRun: ...
+
+    def save_snapshot(self, job: AuditJob, run: AuditRun) -> None: ...
+
+    def get_snapshot(self, job_id: UUID) -> AuditSnapshot | None: ...
+
 
 FetcherFactory = Callable[[], SafeHttpFetcher]
 
@@ -76,7 +106,7 @@ class AuditExecutionService:
     def __init__(
         self,
         *,
-        store: InMemoryAuditStore | None = None,
+        store: AuditStore | None = None,
         fetcher_factory: FetcherFactory | None = None,
     ) -> None:
         self.store = store or InMemoryAuditStore()
@@ -84,7 +114,10 @@ class AuditExecutionService:
 
     def start_single_url_audit(self, raw_url: str) -> AuditSnapshot:
         target = self._build_target(raw_url)
-        job = self.store.save_job(AuditJob(target=target, status=AuditJobStatus.RUNNING))
+        public_target = public_audit_target(target)
+        job = self.store.save_job(
+            AuditJob(target=public_target, status=AuditJobStatus.RUNNING)
+        )
 
         try:
             fetcher = self._fetcher_factory()
@@ -100,26 +133,39 @@ class AuditExecutionService:
                 fetched=fetched,
                 site_resources=site_resources,
             )
-            run = run.model_copy(update={"completed_at": _utc_now()})
+            run = public_audit_run(run.model_copy(update={"completed_at": _utc_now()}))
         except (SafeFetchError, UrlPolicyError) as exc:
-            failed, failed_run = self._record_failed_execution(job=job, target=target)
+            failed, failed_run = self._record_failed_execution(
+                job=job,
+                target=public_target,
+            )
             raise AuditExecutionError(
                 str(exc),
                 job_id=failed.job_id,
                 run_id=failed_run.run_id,
             ) from exc
-        except Exception:
-            self._record_failed_execution(job=job, target=target)
-            raise
+        except Exception as exc:
+            failed, failed_run = self._record_failed_execution(
+                job=job,
+                target=public_target,
+            )
+            raise AuditExecutionError(
+                "Audit execution failed.",
+                job_id=failed.job_id,
+                run_id=failed_run.run_id,
+                code="audit_execution_failed",
+                status_code=500,
+            ) from exc
 
-        job = self.store.save_job(
-            job.model_copy(update={"status": AuditJobStatus.SUCCEEDED, "updated_at": _utc_now()})
+        job = job.model_copy(
+            update={"status": AuditJobStatus.SUCCEEDED, "updated_at": _utc_now()}
         )
-        self.store.save_run(run)
-        return AuditSnapshot(job=job, run=run)
+        self.store.save_snapshot(job, run)
+        return public_audit_snapshot(AuditSnapshot(job=job, run=run))
 
     def get_snapshot(self, job_id: UUID) -> AuditSnapshot | None:
-        return self.store.get_snapshot(job_id)
+        snapshot = self.store.get_snapshot(job_id)
+        return public_audit_snapshot(snapshot) if snapshot else None
 
     def _build_target(self, raw_url: str) -> AuditTarget:
         try:
@@ -135,13 +181,14 @@ class AuditExecutionService:
     ) -> tuple[AuditJob, AuditRun]:
         failed = self._mark_job_failed(job)
         failed_run = self._create_failed_run(job=failed, target=target)
+        self.store.save_snapshot(failed, failed_run)
         return failed, failed_run
 
     def _mark_job_failed(self, job: AuditJob) -> AuditJob:
         failed = job.model_copy(
             update={"status": AuditJobStatus.FAILED, "updated_at": _utc_now()}
         )
-        return self.store.save_job(failed)
+        return failed
 
     def _create_failed_run(self, *, job: AuditJob, target: AuditTarget) -> AuditRun:
         failed_run = AuditRun(
@@ -150,4 +197,4 @@ class AuditExecutionService:
             status=AuditJobStatus.FAILED,
             completed_at=_utc_now(),
         )
-        return self.store.save_run(failed_run)
+        return failed_run

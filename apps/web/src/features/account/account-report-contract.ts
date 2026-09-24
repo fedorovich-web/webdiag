@@ -31,9 +31,15 @@ export interface AccountReportSummary {
   readonly share_expires_at: string | null;
 }
 
+export interface AccountReportListItem extends AccountReportSummary {
+  readonly project_name: string;
+  readonly target_origin: string;
+  readonly audit_completed_at: string;
+}
+
 export interface AccountReportListResponse {
-  readonly contract_version: "webdiag.account.report_list.v1";
-  readonly reports: readonly AccountReportSummary[];
+  readonly contract_version: "webdiag.account.report_list.v2";
+  readonly reports: readonly AccountReportListItem[];
 }
 
 export interface AccountReportDetailResponse {
@@ -78,8 +84,39 @@ function nullableString(value: unknown): value is string | null {
   return value === null || string(value);
 }
 
-function nullableNumber(value: unknown): value is number | null {
-  return value === null || (typeof value === "number" && Number.isFinite(value));
+function uuid(value: unknown): value is string {
+  return string(value) && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(value);
+}
+
+function timestamp(value: unknown): value is string {
+  if (!string(value)) return false;
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,6})?(Z|[+-]\d{2}:\d{2})$/u.exec(value);
+  if (!match) return false;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const hour = Number(match[4]);
+  const minute = Number(match[5]);
+  const second = Number(match[6]);
+  if (hour > 23 || minute > 59 || second > 59 || !Number.isFinite(Date.parse(value))) return false;
+  const calendar = new Date(Date.UTC(year, month - 1, day));
+  return calendar.getUTCFullYear() === year
+    && calendar.getUTCMonth() === month - 1
+    && calendar.getUTCDate() === day;
+}
+
+function canonicalHttpOrigin(value: unknown): value is string {
+  if (!string(value)) return false;
+  try {
+    const url = new URL(value);
+    return (url.protocol === "http:" || url.protocol === "https:") && url.origin === value;
+  } catch {
+    return false;
+  }
+}
+
+function score(value: unknown): value is number | null {
+  return value === null || (typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 100);
 }
 
 function isCheck(value: unknown): value is SavedAuditCheck {
@@ -128,14 +165,14 @@ export function isReportSnapshot(value: unknown): value is ReportSnapshot {
     && string(value.title)
     && (value.locale === "ru" || value.locale === "en")
     && string(value.project_name)
-    && string(value.target_origin)
-    && string(value.audit_completed_at)
-    && nullableNumber(value.score)
+    && canonicalHttpOrigin(value.target_origin)
+    && timestamp(value.audit_completed_at)
+    && score(value.score)
     && Array.isArray(value.checks)
     && value.checks.every(isCheck)
     && Array.isArray(value.issues)
     && value.issues.every(isIssue)
-    && string(value.generated_at);
+    && timestamp(value.generated_at);
 }
 
 function isReportSummary(value: unknown): value is AccountReportSummary {
@@ -144,24 +181,49 @@ function isReportSummary(value: unknown): value is AccountReportSummary {
       "id", "project_id", "audit_id", "title", "locale", "status",
       "created_at", "updated_at", "shared", "share_expires_at",
     ])
-    && string(value.id)
-    && string(value.project_id)
-    && string(value.audit_id)
+    && uuid(value.id)
+    && uuid(value.project_id)
+    && uuid(value.audit_id)
     && string(value.title)
     && (value.locale === "ru" || value.locale === "en")
     && value.status === "ready"
-    && string(value.created_at)
-    && string(value.updated_at)
+    && timestamp(value.created_at)
+    && timestamp(value.updated_at)
     && typeof value.shared === "boolean"
-    && nullableString(value.share_expires_at);
+    && nullableString(value.share_expires_at)
+    && (value.shared ? timestamp(value.share_expires_at) : value.share_expires_at === null);
+}
+
+function isReportListItem(value: unknown): value is AccountReportListItem {
+  return record(value)
+    && only(value, [
+      "id", "project_id", "audit_id", "title", "locale", "status",
+      "created_at", "updated_at", "shared", "share_expires_at",
+      "project_name", "target_origin", "audit_completed_at",
+    ])
+    && isReportSummary({
+      id: value.id,
+      project_id: value.project_id,
+      audit_id: value.audit_id,
+      title: value.title,
+      locale: value.locale,
+      status: value.status,
+      created_at: value.created_at,
+      updated_at: value.updated_at,
+      shared: value.shared,
+      share_expires_at: value.share_expires_at,
+    })
+    && string(value.project_name)
+    && canonicalHttpOrigin(value.target_origin)
+    && timestamp(value.audit_completed_at);
 }
 
 export function isAccountReportListResponse(value: unknown): value is AccountReportListResponse {
   return record(value)
     && only(value, ["contract_version", "reports"])
-    && value.contract_version === "webdiag.account.report_list.v1"
+    && value.contract_version === "webdiag.account.report_list.v2"
     && Array.isArray(value.reports)
-    && value.reports.every(isReportSummary);
+    && value.reports.every(isReportListItem);
 }
 
 export function isAccountReportDetailResponse(value: unknown): value is AccountReportDetailResponse {
@@ -169,17 +231,21 @@ export function isAccountReportDetailResponse(value: unknown): value is AccountR
     && only(value, ["contract_version", "report", "snapshot"])
     && value.contract_version === "webdiag.account.report_detail.v1"
     && isReportSummary(value.report)
-    && isReportSnapshot(value.snapshot);
+    && isReportSnapshot(value.snapshot)
+    && value.report.title === value.snapshot.title
+    && value.report.locale === value.snapshot.locale;
 }
 
 export function isAccountReportShareResponse(value: unknown): value is AccountReportShareResponse {
   return record(value)
     && only(value, ["contract_version", "report_id", "share_token", "share_path", "expires_at"])
     && value.contract_version === "webdiag.account.report_share.v1"
-    && string(value.report_id)
+    && uuid(value.report_id)
     && string(value.share_token)
+    && /^[A-Za-z0-9_-]{40,80}$/u.test(value.share_token)
     && string(value.share_path)
-    && string(value.expires_at);
+    && value.share_path === `/reports/share/${value.share_token}`
+    && timestamp(value.expires_at);
 }
 
 export function isPublicReportResponse(value: unknown): value is PublicReportResponse {
@@ -190,7 +256,9 @@ export function isPublicReportResponse(value: unknown): value is PublicReportRes
     && only(value.report, ["title", "locale", "created_at", "expires_at"])
     && string(value.report.title)
     && (value.report.locale === "ru" || value.report.locale === "en")
-    && string(value.report.created_at)
-    && string(value.report.expires_at)
-    && isReportSnapshot(value.snapshot);
+    && timestamp(value.report.created_at)
+    && timestamp(value.report.expires_at)
+    && isReportSnapshot(value.snapshot)
+    && value.report.title === value.snapshot.title
+    && value.report.locale === value.snapshot.locale;
 }

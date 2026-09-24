@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   buildAccountWorkspaceNavigation,
+  ownedAccountProjectContextId,
+  projectLandingAfterSwitch,
   recentAccountProjects,
   resolveActiveAccountProject,
 } from "./account-workspace-shell-contract";
+import { accountAIPath } from "../../lib/routes";
 import type { AccountProject } from "./account-workspace-contract";
 
 const projects: readonly AccountProject[] = [
@@ -32,19 +35,77 @@ const projects: readonly AccountProject[] = [
 
 describe("account workspace shell contract", () => {
   it("builds localized navigation for the real account routes", () => {
+    expect(accountAIPath("ru")).toBe("/account/ai");
+    expect(accountAIPath("en")).toBe("/en/account/ai");
+
     const ru = buildAccountWorkspaceNavigation("ru", "overview");
-    expect(ru).toHaveLength(3);
-    expect(ru[0]?.label).toBe("Обзор");
-    expect(ru[0]?.active).toBe(true);
-    expect(ru[1]?.href).toBe("/account#projects");
-    expect(ru[2]?.href).toBe("/account/reports");
+    expect(ru.portfolio).toHaveLength(5);
+    expect(ru.portfolio[0]?.label).toBe("Обзор");
+    expect(ru.portfolio[0]?.active).toBe(true);
+    expect(ru.portfolio[1]?.href).toBe("/account#projects");
+    expect(ru.portfolio[2]).toMatchObject({
+      id: "ai",
+      label: "AI-инструменты",
+      href: "/account/ai",
+      active: false,
+    });
+    expect(ru.portfolio[3]?.href).toBe("/account/reports");
+    expect(ru.portfolio[4]).toMatchObject({
+      id: "account",
+      label: "Аккаунт",
+      href: "/account/settings",
+      active: false,
+    });
+    expect(ru.project).toBeNull();
 
     const en = buildAccountWorkspaceNavigation("en", "projects");
-    expect(en[0]?.href).toBe("/en/account");
-    expect(en[1]?.label).toBe("Projects");
-    expect(en[1]?.active).toBe(true);
-    expect(en[2]?.label).toBe("Reports");
-    expect(en[2]?.active).toBe(false);
+    expect(en.portfolio[0]?.href).toBe("/en/account");
+    expect(en.portfolio[1]?.label).toBe("Projects");
+    expect(en.portfolio[1]?.active).toBe(true);
+    expect(en.portfolio[2]?.label).toBe("AI tools");
+    expect(en.portfolio[2]?.active).toBe(false);
+    expect(en.portfolio[3]?.label).toBe("Reports");
+    expect(en.portfolio[4]?.href).toBe("/en/account/settings");
+
+    const settings = buildAccountWorkspaceNavigation("ru", "settings");
+    expect(settings.portfolio[4]?.active).toBe(true);
+
+    const ai = buildAccountWorkspaceNavigation("ru", "ai");
+    expect(ai.portfolio[2]?.active).toBe(true);
+  });
+
+  it("builds project task navigation only from live routes and known audit context", () => {
+    const projectId = projects[0]!.id;
+    const auditId = "44444444-4444-4444-8444-444444444444";
+    const navigation = buildAccountWorkspaceNavigation(
+      "ru",
+      "monitoring",
+      projectId,
+      auditId,
+    );
+
+    expect(navigation.project?.map((item) => item.id)).toEqual([
+      "project_overview",
+      "audits",
+      "issues",
+      "monitoring",
+      "project_reports",
+    ]);
+    expect(navigation.project?.find((item) => item.id === "monitoring")).toMatchObject({
+      href: `/account/projects/${projectId}/monitoring`,
+      active: true,
+      disabled: false,
+    });
+    expect(navigation.project?.find((item) => item.id === "issues")?.href).toBe(
+      `/account/projects/${projectId}/audits/${auditId}/issues`,
+    );
+    expect(navigation.project?.find((item) => item.id === "project_reports")).toMatchObject({
+      href: `/account/reports?project_id=${projectId}`,
+      disabled: false,
+    });
+    expect(projectLandingAfterSwitch("en", projects[1]!.id)).toBe(
+      `/en/account/projects/${projects[1]!.id}`,
+    );
   });
 
   it("orders recent projects and resolves the active project by UUID", () => {
@@ -52,5 +113,7 @@ describe("account workspace shell contract", () => {
     expect(recent.map((project) => project.name)).toEqual(["Newest", "Middle"]);
     expect(resolveActiveAccountProject(projects, projects[1]!.id)?.name).toBe("Newest");
     expect(resolveActiveAccountProject(projects, "not-a-project")).toBeNull();
+    expect(ownedAccountProjectContextId(projects, projects[1]!.id)).toBe(projects[1]!.id);
+    expect(ownedAccountProjectContextId(projects, "44444444-4444-4444-8444-444444444444")).toBeUndefined();
   });
 });

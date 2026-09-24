@@ -1,8 +1,10 @@
 export type KeywordCase = "upper" | "lower" | "preserve";
+export type SqlDialect = "standard" | "mysql";
 
 export interface FormatOptions {
   readonly indentSize?: 2 | 4;
   readonly keywordCase?: KeywordCase;
+  readonly sqlDialect?: SqlDialect;
 }
 
 export interface FormatResult {
@@ -69,6 +71,7 @@ interface Token {
   readonly kind: "word" | "number" | "string" | "identifier" | "comment" | "operator" | "punctuation" | "placeholder";
   readonly value: string;
   readonly upper: string;
+  readonly lineBreakBefore?: boolean;
 }
 
 const MAXIMUM_INPUT_CHARACTERS = 500_000;
@@ -113,12 +116,77 @@ function createToken(kind: Token["kind"], value: string): Token {
   return { kind, value, upper: value.toUpperCase() };
 }
 
+function isGraphqlUnicodeScalar(value: number): boolean {
+  return value <= 0x10FFFF && !(value >= 0xD800 && value <= 0xDFFF);
+}
+
+function assertGraphqlSourceCharacters(input: string): void {
+  for (let index = 0; index < input.length; index += 1) {
+    const codeUnit = input.charCodeAt(index);
+    if (codeUnit >= 0xD800 && codeUnit <= 0xDBFF) {
+      const trailing = input.charCodeAt(index + 1);
+      if (trailing >= 0xDC00 && trailing <= 0xDFFF) {
+        index += 1;
+        continue;
+      }
+      throw new Error(`Invalid GraphQL source character at character ${index + 1}: expected a Unicode scalar value.`);
+    }
+    if (codeUnit >= 0xDC00 && codeUnit <= 0xDFFF) {
+      throw new Error(`Invalid GraphQL source character at character ${index + 1}: expected a Unicode scalar value.`);
+    }
+  }
+}
+
+function readGraphqlStringEscape(input: string, index: number): number {
+  const escaped = input[index + 1] ?? "";
+  if ('"\\/bfnrt'.includes(escaped)) return index + 2;
+  if (escaped !== "u") throw new Error(`Invalid GraphQL string escape at character ${index + 1}.`);
+
+  if (input[index + 2] === "{") {
+    const end = input.indexOf("}", index + 3);
+    const digits = end === -1 ? "" : input.slice(index + 3, end);
+    if (end === -1 || !/^[0-9A-Fa-f]+$/u.test(digits)) {
+      throw new Error(`Invalid GraphQL string escape at character ${index + 1}.`);
+    }
+    const value = Number.parseInt(digits, 16);
+    if (!isGraphqlUnicodeScalar(value)) {
+      throw new Error(`Invalid GraphQL string escape at character ${index + 1}: Unicode escape must encode a scalar value.`);
+    }
+    return end + 1;
+  }
+
+  const digits = input.slice(index + 2, index + 6);
+  if (!/^[0-9A-Fa-f]{4}$/u.test(digits)) {
+    throw new Error(`Invalid GraphQL string escape at character ${index + 1}.`);
+  }
+  const value = Number.parseInt(digits, 16);
+  if (value >= 0xD800 && value <= 0xDBFF) {
+    const trailingStart = index + 6;
+    const trailingDigits = input.startsWith("\\u", trailingStart)
+      ? input.slice(trailingStart + 2, trailingStart + 6)
+      : "";
+    if (!/^[0-9A-Fa-f]{4}$/u.test(trailingDigits)) {
+      throw new Error(`Invalid GraphQL string escape at character ${index + 1}: leading surrogate must be followed by a trailing surrogate escape.`);
+    }
+    const trailingValue = Number.parseInt(trailingDigits, 16);
+    if (trailingValue < 0xDC00 || trailingValue > 0xDFFF) {
+      throw new Error(`Invalid GraphQL string escape at character ${index + 1}: leading surrogate must be followed by a trailing surrogate escape.`);
+    }
+    return trailingStart + 6;
+  }
+  if (!isGraphqlUnicodeScalar(value)) {
+    throw new Error(`Invalid GraphQL string escape at character ${index + 1}: Unicode escape must encode a scalar value.`);
+  }
+  return index + 6;
+}
+
 function readQuoted(
   input: string,
   start: number,
   quote: string,
   doubledEscape: string | null,
   allowLineBreaks = true,
+  backslashEscapes = false,
 ): [string, number] {
   let index = start + quote.length;
   while (index < input.length) {
@@ -130,57 +198,321 @@ function readQuoted(
     if (!allowLineBreaks && (input[index] === "\n" || input[index] === "\r")) {
       throw new Error(`GraphQL strings cannot contain an unescaped line break at character ${index + 1}.`);
     }
-    if (quote === '"' && input[index] === "\\") index += 2;
-    else index += 1;
+    if (!allowLineBreaks && quote === '"' && input[index] === "\\") {
+      index = readGraphqlStringEscape(input, index);
+      continue;
+    }
+    if (backslashEscapes && input[index] === "\\") {
+      index += 2;
+      continue;
+    }
+    index += 1;
   }
   throw new Error(`Unterminated quoted value starting at character ${start + 1}.`);
 }
 
-function tokenizeSql(input: string): { readonly tokens: Token[]; readonly warnings: string[] } {
+function readSqlBlockComment(input: string, start: number, nested: boolean): [string, number] {
+  let index = start + 2;
+  let depth = 1;
+  while (index < input.length) {
+    if (nested && input.startsWith("/*", index)) {
+      depth += 1;
+      index += 2;
+      continue;
+    }
+    if (input.startsWith("*/", index)) {
+      depth -= 1;
+      index += 2;
+      if (depth === 0) return [input.slice(start, index), index];
+      continue;
+    }
+    index += 1;
+  }
+  throw new Error(`Unterminated SQL block comment starting at character ${start + 1}.`);
+}
+
+function readSqlLineComment(input: string, start: number, markerLength: number): [string, number] {
+  const end = input.slice(start + markerLength).search(/[\r\n]/u);
+  const next = end === -1 ? input.length : start + markerLength + end;
+  return [input.slice(start, next).trimEnd(), next];
+}
+
+function isMysqlDashCommentStart(input: string, index: number): boolean {
+  if (!input.startsWith("--", index)) return false;
+  const following = input[index + 2] ?? "";
+  if (!following) return false;
+  const code = following.charCodeAt(0);
+  return /\s/u.test(following) || code <= 0x1F || (code >= 0x7F && code <= 0x9F);
+}
+
+function readCodePoint(input: string, index: number): { readonly value: string; readonly next: number } {
+  const codePoint = input.codePointAt(index);
+  if (codePoint === undefined) return { value: "", next: index };
+  const value = String.fromCodePoint(codePoint);
+  return { value, next: index + value.length };
+}
+
+function isPostgresqlIdentifierStart(value: string): boolean {
+  return value === "_" || /^\p{L}$/u.test(value);
+}
+
+function isPostgresqlIdentifierContinuation(value: string, allowDollar: boolean): boolean {
+  return isPostgresqlIdentifierStart(value) || /^[0-9]$/u.test(value) || (allowDollar && value === "$");
+}
+
+function readPostgresqlIdentifier(input: string, start: number, allowDollar = true): [string, number] {
+  const first = readCodePoint(input, start);
+  if (!isPostgresqlIdentifierStart(first.value)) return ["", start];
+  let index = first.next;
+  while (index < input.length) {
+    const current = readCodePoint(input, index);
+    if (!isPostgresqlIdentifierContinuation(current.value, allowDollar)) break;
+    index = current.next;
+  }
+  return [input.slice(start, index), index];
+}
+
+function isPostgresqlNumericJunkStart(value: string): boolean {
+  return isPostgresqlIdentifierStart(value) || /^[0-9]$/u.test(value);
+}
+
+function assertPostgresqlNumericBoundary(input: string, index: number, start: number): void {
+  const next = readCodePoint(input, index);
+  if (isPostgresqlNumericJunkStart(next.value)) {
+    throw new Error(`Invalid PostgreSQL numeric literal at character ${start + 1}.`);
+  }
+}
+
+function assertPostgresqlParameterBoundary(input: string, index: number, start: number): void {
+  const next = readCodePoint(input, index);
+  if (isPostgresqlIdentifierStart(next.value)) {
+    throw new Error(`Invalid PostgreSQL positional parameter at character ${start + 1}.`);
+  }
+}
+
+const POSTGRESQL_MAXIMUM_POSITIONAL_PARAMETER = "2147483647";
+
+function assertPostgresqlParameterRange(value: string, start: number): void {
+  const digits = value.slice(1).replace(/^0+/u, "") || "0";
+  const tooLarge = digits.length > POSTGRESQL_MAXIMUM_POSITIONAL_PARAMETER.length
+    || (
+      digits.length === POSTGRESQL_MAXIMUM_POSITIONAL_PARAMETER.length
+      && digits > POSTGRESQL_MAXIMUM_POSITIONAL_PARAMETER
+    );
+  if (tooLarge) {
+    throw new Error(`PostgreSQL positional parameter number too large at character ${start + 1}.`);
+  }
+}
+
+const POSTGRESQL_OPERATOR_CHARACTERS = "+-*/<>=~!@#%^&|?";
+const POSTGRESQL_TRAILING_SIGN_EXEMPT_CHARACTERS = "~!@#%^&|?";
+const POSTGRESQL_MAXIMUM_OPERATOR_LENGTH = 63;
+
+function readPostgresqlOperator(input: string, start: number): [string, number] {
+  if (!POSTGRESQL_OPERATOR_CHARACTERS.includes(input[start] ?? "")) return ["", start];
+  let end = start;
+  while (end < input.length) {
+    if (input.startsWith("--", end) || input.startsWith("/*", end)) break;
+    const character = input[end] ?? "";
+    if (!POSTGRESQL_OPERATOR_CHARACTERS.includes(character)) break;
+    end += 1;
+  }
+
+  let value = input.slice(start, end);
+  const hasTrailingSignExemption = [...value]
+    .some((character) => POSTGRESQL_TRAILING_SIGN_EXEMPT_CHARACTERS.includes(character));
+  if (value.length > 1 && !hasTrailingSignExemption) {
+    while (value.length > 1 && (value.endsWith("+") || value.endsWith("-"))) {
+      value = value.slice(0, -1);
+      end -= 1;
+    }
+  }
+  if (value.length > POSTGRESQL_MAXIMUM_OPERATOR_LENGTH) {
+    throw new Error(`PostgreSQL operator too long at character ${start + 1}.`);
+  }
+  return [value, end];
+}
+
+function isPostgresqlContinuationString(token: Token | null): boolean {
+  if (!token || token.kind !== "string") return false;
+  return token.value.startsWith("'") || /^(?:[EeBbXxNn]'|[Uu]&')/u.test(token.value);
+}
+
+function assertPostgresqlDelimitedIdentifierNotEmpty(value: string): void {
+  if (value === '""') throw new Error("PostgreSQL zero-length delimited identifier.");
+}
+
+type PostgresqlBitStringKind = "binary" | "hexadecimal";
+
+function postgresqlBitStringKind(token: Token): PostgresqlBitStringKind | null {
+  if (token.kind !== "string") return null;
+  if (/^[Bb]'/u.test(token.value)) return "binary";
+  if (/^[Xx]'/u.test(token.value)) return "hexadecimal";
+  return null;
+}
+
+function assertPostgresqlBitStringSegment(token: Token, kind: PostgresqlBitStringKind): void {
+  const prefixed = postgresqlBitStringKind(token) !== null;
+  const content = token.value.slice(prefixed ? 2 : 1, -1);
+  const valid = kind === "binary" ? /^[01]*$/u.test(content) : /^[0-9A-Fa-f]*$/u.test(content);
+  if (!valid) throw new Error(`Invalid PostgreSQL ${kind} bit string.`);
+}
+
+function validatePostgresqlBitStrings(tokens: readonly Token[]): void {
+  let continuationKind: PostgresqlBitStringKind | null = null;
+  for (const token of tokens) {
+    const prefixedKind = postgresqlBitStringKind(token);
+    if (prefixedKind) {
+      assertPostgresqlBitStringSegment(token, prefixedKind);
+      continuationKind = prefixedKind;
+      continue;
+    }
+    if (
+      continuationKind
+      && token.kind === "string"
+      && token.value.startsWith("'")
+      && token.lineBreakBefore
+    ) {
+      assertPostgresqlBitStringSegment(token, continuationKind);
+      continue;
+    }
+    continuationKind = null;
+  }
+}
+
+function isPostgresqlUnicodeEscapeToken(token: Token): boolean {
+  return (token.kind === "string" && /^[Uu]&'/u.test(token.value))
+    || (token.kind === "identifier" && /^[Uu]&"/u.test(token.value));
+}
+
+function decodePostgresqlSimpleStringLiteral(token: Token): string | null {
+  if (token.kind !== "string" || !token.value.startsWith("'")) return null;
+  return token.value.slice(1, -1).replace(/''/gu, "'");
+}
+
+function validatePostgresqlUnicodeEscapeClauses(tokens: readonly Token[]): void {
+  for (let index = 0; index < tokens.length; index += 1) {
+    const token = tokens[index];
+    if (!token || !isPostgresqlUnicodeEscapeToken(token)) continue;
+
+    let lookahead = index + 1;
+    if (token.kind === "string") {
+      while (
+        tokens[lookahead]?.kind === "string"
+        && tokens[lookahead]?.value.startsWith("'")
+        && tokens[lookahead]?.lineBreakBefore
+      ) {
+        lookahead += 1;
+      }
+    }
+
+    const uescape = tokens[lookahead];
+    if (uescape?.kind !== "word" || uescape.upper !== "UESCAPE") continue;
+
+    const escapeToken = tokens[lookahead + 1];
+    if (!escapeToken || escapeToken.kind !== "string") {
+      throw new Error("UESCAPE must be followed by a simple string literal.");
+    }
+
+    if (/^(?:[BbXxNn]'|[Uu]&')/u.test(escapeToken.value)) {
+      throw new Error("UESCAPE must be followed by a simple string literal.");
+    }
+
+    const escape = decodePostgresqlSimpleStringLiteral(escapeToken);
+    if (escape === null) continue;
+
+    const singleByteAscii = escape.length === 1 && escape.charCodeAt(0) <= 0x7F;
+    if (!singleByteAscii || /[0-9A-Fa-f+'"\s]/u.test(escape)) {
+      throw new Error("invalid Unicode escape character.");
+    }
+  }
+}
+
+function tokenizeSql(
+  input: string,
+  sqlDialect: SqlDialect = "standard",
+): { readonly tokens: Token[]; readonly warnings: string[] } {
   assertInput(input, "SQL input");
   const tokens: Token[] = [];
   const warnings: string[] = [];
+  const mysql = sqlDialect === "mysql";
   let index = 0;
+  let lineBreakBeforeNextToken = false;
 
   const push = (token: Token): void => {
-    tokens.push(token);
+    tokens.push(lineBreakBeforeNextToken ? { ...token, lineBreakBefore: true } : token);
+    lineBreakBeforeNextToken = false;
     if (tokens.length > MAXIMUM_TOKENS) throw new Error(`SQL input exceeds the ${MAXIMUM_TOKENS.toLocaleString("en-US")}-token limit.`);
   };
 
   while (index < input.length) {
     const character = input[index] ?? "";
     if (/\s/u.test(character)) {
+      if (character === "\n" || character === "\r") lineBreakBeforeNextToken = true;
       index += 1;
       continue;
     }
 
-    if (input.startsWith("--", index)) {
-      const end = input.indexOf("\n", index + 2);
-      const next = end === -1 ? input.length : end;
-      push(createToken("comment", input.slice(index, next).trimEnd()));
+    if (mysql && character === "#") {
+      const [value, next] = readSqlLineComment(input, index, 1);
+      push(createToken("comment", value));
+      index = next;
+      continue;
+    }
+
+    if (input.startsWith("--", index) && (!mysql || isMysqlDashCommentStart(input, index))) {
+      const [value, next] = readSqlLineComment(input, index, 2);
+      push(createToken("comment", value));
       index = next;
       continue;
     }
 
     if (input.startsWith("/*", index)) {
-      const end = input.indexOf("*/", index + 2);
-      if (end === -1) throw new Error(`Unterminated SQL block comment starting at character ${index + 1}.`);
-      push(createToken("comment", input.slice(index, end + 2)));
-      index = end + 2;
+      const [value, next] = readSqlBlockComment(input, index, !mysql);
+      push(createToken("comment", value));
+      index = next;
       continue;
     }
 
+    if ((character === "E" || character === "e") && input[index + 1] === "'") {
+      const [, next] = readQuoted(input, index + 1, "'", "''", true, true);
+      push(createToken("string", input.slice(index, next)));
+      index = next;
+      continue;
+    }
+
+    if ("BbXxNn".includes(character) && input[index + 1] === "'") {
+      const mysqlNationalString = character === "N" || character === "n";
+      const [, next] = readQuoted(input, index + 1, "'", "''", true, mysqlNationalString && mysql);
+      push(createToken("string", input.slice(index, next)));
+      index = next;
+      continue;
+    }
+
+    if ((character === "U" || character === "u") && input[index + 1] === "&") {
+      const quote = input[index + 2] ?? "";
+      if (quote === "'" || quote === '"') {
+        const [value, next] = readQuoted(input, index + 2, quote, quote + quote);
+        if (!mysql && quote === '"') assertPostgresqlDelimitedIdentifierNotEmpty(value);
+        push(createToken(quote === "'" ? "string" : "identifier", input.slice(index, next)));
+        index = next;
+        continue;
+      }
+    }
+
     if (character === "'") {
-      const [value, next] = readQuoted(input, index, "'", "''");
+      const [value, next] = readQuoted(input, index, "'", "''", true, mysql);
       push(createToken("string", value));
       index = next;
       continue;
     }
 
     if (character === '"' || character === "`") {
-      const [value, next] = readQuoted(input, index, character, character + character);
+      const mysqlDoubleQuotedString = mysql && character === '"';
+      const [value, next] = readQuoted(input, index, character, character + character, true, mysqlDoubleQuotedString);
+      if (!mysql && character === '"') assertPostgresqlDelimitedIdentifierNotEmpty(value);
       if (character === "`") warnings.push("mysql-backtick-identifier");
-      push(createToken("identifier", value));
+      push(createToken(mysqlDoubleQuotedString ? "string" : "identifier", value));
       index = next;
       continue;
     }
@@ -202,7 +534,23 @@ function tokenizeSql(input: string): { readonly tokens: Token[]; readonly warnin
       continue;
     }
 
-    if (character === "$" && /[A-Za-z_]/u.test(input[index + 1] ?? "")) {
+    if (!mysql && character === "$") {
+      const tagStart = readCodePoint(input, index + 1);
+      if (isPostgresqlIdentifierStart(tagStart.value)) {
+        const [tag, tagEnd] = readPostgresqlIdentifier(input, index + 1, false);
+        if (tag && input[tagEnd] === "$") {
+          const marker = `$${tag}$`;
+          const end = input.indexOf(marker, tagEnd + 1);
+          if (end === -1) throw new Error(`Unterminated PostgreSQL dollar-quoted string starting at character ${index + 1}.`);
+          warnings.push("postgres-dollar-quoted-string");
+          push(createToken("string", input.slice(index, end + marker.length)));
+          index = end + marker.length;
+          continue;
+        }
+      }
+    }
+
+    if (mysql && character === "$" && /[A-Za-z_]/u.test(input[index + 1] ?? "")) {
       const markerMatch = input.slice(index).match(/^\$[A-Za-z_][A-Za-z0-9_]*\$/u);
       if (markerMatch) {
         const marker = markerMatch[0];
@@ -224,7 +572,17 @@ function tokenizeSql(input: string): { readonly tokens: Token[]; readonly warnin
       continue;
     }
 
-    if (/[A-Za-z_]/u.test(character)) {
+    if (!mysql) {
+      const current = readCodePoint(input, index);
+      if (isPostgresqlIdentifierStart(current.value)) {
+        const [value, next] = readPostgresqlIdentifier(input, index);
+        push(createToken("word", value));
+        index = next;
+        continue;
+      }
+    }
+
+    if (mysql && /[A-Za-z_]/u.test(character)) {
       const match = input.slice(index).match(/^[A-Za-z_][A-Za-z0-9_$]*/u);
       if (!match) throw new Error(`Unable to tokenize SQL at character ${index + 1}.`);
       push(createToken("word", match[0]));
@@ -233,25 +591,59 @@ function tokenizeSql(input: string): { readonly tokens: Token[]; readonly warnin
     }
 
     if (/\d/u.test(character) || (character === "." && /\d/u.test(input[index + 1] ?? ""))) {
-      const match = input.slice(index).match(/^(?:0[xX][0-9A-Fa-f]+|(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)/u);
+      const match = input.slice(index).match(/^(?:0[xX]_?[0-9A-Fa-f](?:_?[0-9A-Fa-f])*|0[oO]_?[0-7](?:_?[0-7])*|0[bB]_?[01](?:_?[01])*|(?:\d(?:_?\d)*(?:\.(?:\d(?:_?\d)*)?)?|\.\d(?:_?\d)*)(?:[eE][+-]?\d(?:_?\d)*)?)/u);
       if (!match) throw new Error(`Unable to tokenize SQL number at character ${index + 1}.`);
-      push(createToken("number", match[0]));
-      index += match[0].length;
+      let value = match[0];
+      if (!mysql && value.endsWith(".") && input[index + value.length] === ".") {
+        value = value.slice(0, -1);
+      }
+      if (!mysql) assertPostgresqlNumericBoundary(input, index + value.length, index);
+      push(createToken("number", value));
+      index += value.length;
+      continue;
+    }
+
+    const operator = [
+      "#>>", "->>", "!~*", "<=>",
+      "::", "<=", ">=", "<>", "!=", "||", "&&", "->", "#>", "#-", ":=", "=>", "!~", "~*",
+      "<<", ">>", "!<", "!>", "@>", "<@", "?|", "?&", "@?", "@@",
+      "+=", "-=", "*=", "/=", "%=", "&=", "^=", "|=",
+    ].find((value) => input.startsWith(value, index));
+    if (operator) {
+      if ([
+        "::", "->", "->>", "#>", "#>>", "~*", "!~", "!~*", "<=>", "<<", ">>", "!<", "!>",
+        "@>", "<@", "?|", "?&", "#-", "@?", "@@", "+=", "-=", "*=", "/=", "%=", "&=", "^=", "|=",
+      ].includes(operator)) warnings.push("dialect-specific-operator");
+      push(createToken("operator", operator));
+      index += operator.length;
       continue;
     }
 
     const placeholderMatch = input.slice(index).match(/^(?:\?|:[A-Za-z_][A-Za-z0-9_]*|@[A-Za-z_][A-Za-z0-9_]*|\$\d+)/u);
     if (placeholderMatch) {
-      push(createToken("placeholder", placeholderMatch[0]));
-      index += placeholderMatch[0].length;
+      const value = placeholderMatch[0];
+      if (!mysql && value.startsWith("$")) {
+        assertPostgresqlParameterBoundary(input, index + value.length, index);
+        assertPostgresqlParameterRange(value, index);
+      }
+      push(createToken("placeholder", value));
+      index += value.length;
       continue;
     }
 
-    const operator = ["#>>", "->>", "::", "<=", ">=", "<>", "!=", "||", "&&", "->", "#>", ":=", "=>", "!~*", "!~", "~*"].find((value) => input.startsWith(value, index));
-    if (operator) {
-      if (["::", "->", "->>", "#>", "#>>", "~*", "!~", "!~*"].includes(operator)) warnings.push("dialect-specific-operator");
-      push(createToken("operator", operator));
-      index += operator.length;
+    if (!mysql) {
+      const [operatorName, next] = readPostgresqlOperator(input, index);
+      if (operatorName.length > 1) {
+        warnings.push("dialect-specific-operator");
+        push(createToken("operator", operatorName));
+        index = next;
+        continue;
+      }
+    }
+
+    if (!mysql && input.startsWith("..", index)) {
+      push(createToken("punctuation", ".."));
+      index += 2;
       continue;
     }
 
@@ -270,6 +662,10 @@ function tokenizeSql(input: string): { readonly tokens: Token[]; readonly warnin
     throw new Error(`Unsupported SQL character ${JSON.stringify(character)} at position ${index + 1}.`);
   }
 
+  if (!mysql) {
+    validatePostgresqlBitStrings(tokens);
+    validatePostgresqlUnicodeEscapeClauses(tokens);
+  }
   return { tokens, warnings: unique(warnings) };
 }
 
@@ -325,7 +721,8 @@ class LineWriter {
 export function formatSql(input: string, options: FormatOptions = {}): FormatResult {
   const indentSize = options.indentSize ?? 2;
   const keywordCase = options.keywordCase ?? "upper";
-  const { tokens, warnings } = tokenizeSql(input);
+  const sqlDialect = options.sqlDialect ?? "standard";
+  const { tokens, warnings } = tokenizeSql(input, sqlDialect);
   const writer = new LineWriter(" ".repeat(indentSize));
   let indent = 0;
   let maximumDepth = 0;
@@ -425,9 +822,9 @@ export function formatSql(input: string, options: FormatOptions = {}): FormatRes
       continue;
     }
 
-    if (token.value === ".") {
+    if (token.value === "." || token.value === "..") {
       writer.trimEnd();
-      writer.write(".", false);
+      writer.write(token.value, false);
       previous = token;
       continue;
     }
@@ -438,9 +835,18 @@ export function formatSql(input: string, options: FormatOptions = {}): FormatRes
       continue;
     }
 
+    if (
+      sqlDialect === "standard"
+      && token.lineBreakBefore
+      && isPostgresqlContinuationString(previous)
+      && isPostgresqlContinuationString(token)
+    ) {
+      writer.newline(indent);
+    }
+
     const isKeyword = token.kind === "word" && SQL_KEYWORDS.has(token.upper);
     const value = isKeyword ? applyKeywordCase(token.value, keywordCase) : token.value;
-    const noSpace = previous?.value === "(" || previous?.value === "." || previous?.value === ":";
+    const noSpace = previous?.value === "(" || previous?.value === "." || previous?.value === ".." || previous?.value === ":";
     writer.write(value, !noSpace);
     previous = token;
   }
@@ -456,6 +862,7 @@ export function formatSql(input: string, options: FormatOptions = {}): FormatRes
 
 function tokenizeGraphql(input: string): Token[] {
   assertInput(input, "GraphQL input");
+  assertGraphqlSourceCharacters(input);
   const tokens: Token[] = [];
   let index = 0;
   const push = (token: Token): void => {
@@ -465,13 +872,20 @@ function tokenizeGraphql(input: string): Token[] {
 
   while (index < input.length) {
     const character = input[index] ?? "";
-    if (/\s|,/u.test(character)) {
+    if (
+      character === "\uFEFF"
+      || character === "\t"
+      || character === " "
+      || character === "\n"
+      || character === "\r"
+      || character === ","
+    ) {
       index += 1;
       continue;
     }
     if (character === "#") {
-      const end = input.indexOf("\n", index + 1);
-      const next = end === -1 ? input.length : end;
+      let next = index + 1;
+      while (next < input.length && input[next] !== "\n" && input[next] !== "\r") next += 1;
       push(createToken("comment", input.slice(index, next).trimEnd()));
       index = next;
       continue;
@@ -512,6 +926,10 @@ function tokenizeGraphql(input: string): Token[] {
     if (character === "-" || /\d/u.test(character)) {
       const match = input.slice(index).match(/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/u);
       if (!match) throw new Error(`Invalid GraphQL number at character ${index + 1}.`);
+      const nextCharacter = input[index + match[0].length] ?? "";
+      if (nextCharacter === "." || /[A-Za-z0-9_]/u.test(nextCharacter)) {
+        throw new Error(`Invalid GraphQL number at character ${index + 1}.`);
+      }
       push(createToken("number", match[0]));
       index += match[0].length;
       continue;

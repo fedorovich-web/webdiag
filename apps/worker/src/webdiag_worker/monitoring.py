@@ -2,11 +2,33 @@ from __future__ import annotations
 
 import json
 import os
+from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
-from urllib.request import Request, urlopen
+from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
 
 MAX_RESPONSE_BYTES = 1_000_000
+
+
+class _RejectRedirects(HTTPRedirectHandler):
+    def redirect_request(
+        self,
+        req: Request,
+        fp: Any,
+        code: int,
+        msg: str,
+        headers: Any,
+        _newurl: str,
+    ) -> None:
+        raise HTTPError(req.full_url, code, "Monitoring API redirect rejected", headers, fp)
+
+
+_NO_PROXY_HANDLER = ProxyHandler({})
+_NO_REDIRECT_OPENER = build_opener(_NO_PROXY_HANDLER, _RejectRedirects())
+
+
+def urlopen(request: Request, *, timeout: int) -> Any:
+    return _NO_REDIRECT_OPENER.open(request, timeout=timeout)
 
 
 def run_due_monitors() -> int:
@@ -27,6 +49,11 @@ def run_due_monitors() -> int:
     timeout = max(5, min(120, int(os.getenv("WEBDIAG_MONITORING_WORKER_TIMEOUT_SECONDS", "60"))))
     if not token:
         raise RuntimeError("WEBDIAG_MONITORING_INTERNAL_TOKEN is required")
+    if any(not 0x21 <= ord(character) <= 0x7E for character in token):
+        raise RuntimeError(
+            "WEBDIAG_MONITORING_INTERNAL_TOKEN must contain only visible ASCII characters "
+            "without spaces"
+        )
     request = Request(
         f"{base}/v1/internal/monitoring/run-due",
         method="POST",

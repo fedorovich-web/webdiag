@@ -1,13 +1,15 @@
-import { getCategoryTitle, localize, publicTools, type Locale } from "@webdiag/tool-registry";
-import { homeContent } from "../../content/home";
-import { localizeValue } from "../../content/types";
+import {
+  categories as registryCategories,
+  getCategoryTitle,
+  localize,
+  publicTools,
+  type Locale,
+} from "@webdiag/tool-registry";
 import { ToolCatalog } from "./tool-catalog";
 
 export function ToolList({ locale }: { locale: Locale }) {
-  const catalogCategoryIds = new Set(homeContent.categories.map((category) => category.id));
   const categoryCounts = new Map<string, number>();
   const tools = publicTools
-    .filter((tool) => catalogCategoryIds.has(tool.category))
     .map((tool) => {
       categoryCounts.set(tool.category, (categoryCounts.get(tool.category) ?? 0) + 1);
       return {
@@ -19,10 +21,12 @@ export function ToolList({ locale }: { locale: Locale }) {
         local: tool.executorClass === "browser",
       };
     });
-  const categories = homeContent.categories.map((category) => ({
-    id: category.id,
-    count: categoryCounts.get(category.id) ?? 0,
-    title: localizeValue(category.title, locale),
-  }));
+  const categories = Object.keys(registryCategories)
+    .filter((id) => categoryCounts.has(id))
+    .map((id) => ({
+      id,
+      count: categoryCounts.get(id) ?? 0,
+      title: getCategoryTitle(id, locale),
+    }));
   return <ToolCatalog locale={locale} tools={tools} categories={categories} />;
 }
