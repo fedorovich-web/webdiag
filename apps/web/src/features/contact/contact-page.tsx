@@ -152,7 +152,7 @@ export function ContactPage({ locale }: { locale: Locale }) {
             <p>{t.lead}</p>
           </div>
           <div className="wd-contact-hero-art" aria-hidden="true">
-            <img src={ru ? "/design/hero/contacts.webp" : "/design/icons/support.webp"} alt="" width="900" height="900" loading="eager" decoding="async" />
+            <img src="/design/hero/contacts.webp" alt="" width="900" height="900" loading="eager" decoding="async" />
           </div>
         </div>
       </section>

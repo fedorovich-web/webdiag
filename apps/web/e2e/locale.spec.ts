@@ -81,13 +81,13 @@ test.describe("RU and EN segmented navigation", () => {
     await expect(page.locator(".wd-platform-list")).not.toContainText("Битрикс");
 
     await page.goto("/en/tools");
-    await expect(page.locator(".wd-tools-hero-art img")).toHaveAttribute("src", "/design/icons/analytics.webp");
+    await expect(page.locator(".wd-tools-hero-art img")).toHaveAttribute("src", "/design/hero/tools.webp");
 
     await page.goto("/en/tools/robots-txt-tester");
-    await expect(page.locator(".wd-tool-hero-art img")).toHaveAttribute("src", "/design/icons/robots.webp");
+    await expect(page.locator(".wd-tool-hero-art img")).toHaveAttribute("src", "/design/hero/tool-robots.webp");
 
     await page.goto("/en/contacts");
-    await expect(page.locator(".wd-contact-hero-art img")).toHaveAttribute("src", "/design/icons/support.webp");
+    await expect(page.locator(".wd-contact-hero-art img")).toHaveAttribute("src", "/design/hero/contacts.webp");
   });
 
   test("keeps home routes stable without duplicating the English prefix", async ({ page }) => {

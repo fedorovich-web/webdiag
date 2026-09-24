@@ -17,7 +17,7 @@ const categoryArtwork: Readonly<Record<string, string>> = {
 };
 
 function toolArtwork(slug: string, category: string, locale: Locale): string {
-  if (slug === "robots-txt-tester") return locale === "ru" ? "/design/hero/tool-robots.webp" : "/design/icons/robots.webp";
+  if (slug === "robots-txt-tester") return "/design/hero/tool-robots.webp";
   return categoryArtwork[category] ?? "/design/icons/seo-audit.webp";
 }
 
