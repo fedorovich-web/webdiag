@@ -10,8 +10,8 @@ const audit = {
   project_id: firstProject.id,
   status: "succeeded",
   score: 78,
-  check_count: 8,
-  issue_count: 4,
+  check_count: 3,
+  issue_count: 2,
   completed_at: "2026-09-12T10:24:00Z",
   created_at: "2026-09-12T10:00:00Z",
 } as const;
@@ -37,7 +37,7 @@ const issues = [
   {
     issue_id: "links.broken",
     check_id: "links.broken",
-    category: "links",
+    category: "technical",
     source_category: "links",
     severity: "high",
     priority: "p1",
