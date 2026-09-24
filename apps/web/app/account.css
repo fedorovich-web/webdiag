@@ -4063,3 +4063,1041 @@ body:has(.wd-account-workspace-page) .site-footer {
     flex-direction: row;
   }
 }
+
+
+/* Unified render fidelity — account dashboard + project issues */
+.wd-account-workspace-page.shell {
+  width: min(1360px, calc(100% - 32px));
+  max-width: none;
+  padding-block: 18px 54px;
+}
+
+.wd-account-workspace-page .wd-workspace-layout {
+  grid-template-columns: 196px minmax(0, 1fr);
+  gap: 18px;
+}
+
+.wd-account-workspace-page .wd-workspace-sidebar {
+  top: 14px;
+  gap: 14px;
+  padding: 14px 10px;
+  border-color: #e3ebf3;
+  border-radius: 14px;
+  box-shadow: 0 8px 26px rgb(31 78 121 / .055);
+}
+
+.wd-account-workspace-page .wd-workspace-identity {
+  padding: 5px 8px 11px;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.wd-account-workspace-page .wd-workspace-identity .eyebrow {
+  margin-bottom: 6px;
+}
+
+.wd-account-workspace-page .wd-workspace-navigation {
+  gap: 4px;
+}
+
+.wd-account-workspace-page .wd-workspace-navigation-group {
+  gap: 3px;
+}
+
+.wd-account-workspace-page .wd-workspace-navigation-group > span {
+  margin: 10px 8px 4px;
+  color: #8b98ab;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.wd-account-workspace-page .wd-workspace-navigation a,
+.wd-account-workspace-page .wd-workspace-navigation > span,
+.wd-account-workspace-page .wd-workspace-navigation-group > a,
+.wd-account-workspace-page .wd-workspace-navigation-group > span[aria-disabled="true"] {
+  min-height: 38px;
+  gap: 9px;
+  padding: 8px 9px;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 740;
+}
+
+.wd-account-workspace-page .wd-workspace-navigation svg {
+  width: 16px;
+  height: 16px;
+  color: #278bed;
+}
+
+.wd-account-workspace-page .wd-workspace-navigation a[aria-current="page"] {
+  background: linear-gradient(110deg, #e9fbf7 0%, #edfaff 58%, #f0f6ff 100%);
+  box-shadow: inset 3px 0 0 #20c6b6, inset 0 0 0 1px #dcecf0;
+}
+
+.wd-account-workspace-page .wd-workspace-project-switcher {
+  gap: 5px;
+  padding: 10px 8px;
+  border-top: 1px solid #edf2f7;
+}
+
+.wd-account-workspace-page .wd-workspace-project-switcher label {
+  font-size: 8px;
+  letter-spacing: .06em;
+}
+
+.wd-account-workspace-page .wd-workspace-project-switcher select {
+  min-height: 38px;
+  padding: 7px 9px;
+  border-color: #dfe8f1;
+  border-radius: 9px;
+  background: #f7faff;
+  font-size: 10px;
+}
+
+.wd-account-workspace-page .wd-workspace-sidebar > .wd-button {
+  min-height: 38px;
+  margin: 0 8px;
+  border-radius: 9px;
+  font-size: 10px;
+}
+
+/* Dashboard */
+.wd-dashboard-render {
+  gap: 14px;
+}
+
+.wd-dashboard-welcome {
+  display: grid;
+  grid-template-columns: minmax(0, .9fr) minmax(440px, 1.1fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.wd-dashboard-welcome-copy {
+  display: grid;
+  align-content: center;
+  min-height: 176px;
+  padding: 22px 24px;
+}
+
+.wd-dashboard-welcome-copy .eyebrow {
+  margin-bottom: 10px;
+}
+
+.wd-dashboard-welcome-copy h1 {
+  margin: 0;
+  color: #0a1741;
+  font-size: clamp(30px, 3.2vw, 45px);
+  line-height: 1;
+  letter-spacing: -.045em;
+}
+
+.wd-dashboard-welcome-copy p {
+  max-width: 610px;
+  margin: 10px 0 0;
+  color: #6d7c94;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.wd-dashboard-quick-check {
+  position: relative;
+  min-height: 176px;
+  overflow: hidden;
+  padding: 20px 22px;
+  border: 1px solid #d7e9ef;
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 82% 24%, rgb(96 165 250 / .22), transparent 28%),
+    radial-gradient(circle at 66% 80%, rgb(34 211 238 / .20), transparent 31%),
+    linear-gradient(110deg, #f1fffb 0%, #effcff 52%, #eef5ff 100%);
+  box-shadow: 0 12px 34px rgb(38 99 143 / .08);
+}
+
+.wd-dashboard-quick-check-copy {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  gap: 3px;
+  max-width: 62%;
+}
+
+.wd-dashboard-quick-check-copy span {
+  color: #0c8f86;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.wd-dashboard-quick-check-copy strong {
+  color: #0a1741;
+  font-size: 17px;
+  letter-spacing: -.02em;
+}
+
+.wd-dashboard-quick-check > img {
+  position: absolute;
+  top: -12px;
+  right: -3px;
+  width: 145px;
+  height: 145px;
+  object-fit: contain;
+  opacity: .93;
+}
+
+.wd-dashboard-quick-check .wd-url-check {
+  position: relative;
+  z-index: 3;
+  width: calc(100% - 20px);
+  margin: 18px 0 0;
+}
+
+.wd-dashboard-quick-check .wd-url-check > label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.wd-dashboard-quick-check .wd-url-check > div:first-of-type {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 5px;
+  padding: 4px;
+  border: 1px solid #d8e6ef;
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 8px 22px rgb(25 79 120 / .07);
+}
+
+.wd-dashboard-quick-check .wd-url-check input {
+  min-width: 0;
+  min-height: 40px;
+  border: 0;
+  padding: 0 10px;
+  background: transparent;
+  color: #13234b;
+  font-size: 10px;
+  outline: 0;
+}
+
+.wd-dashboard-quick-check .wd-url-check button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0 15px;
+  background: linear-gradient(110deg, #2ed1af, #27d2da 54%, #438dff);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.wd-dashboard-quick-check .wd-url-check > p {
+  min-height: 0;
+  margin: 5px 4px 0;
+  color: #77869c;
+  font-size: 8px;
+}
+
+.wd-dashboard-quick-check .wd-live-audit-card {
+  position: relative;
+  z-index: 5;
+  margin-top: 10px;
+  background: #fff;
+}
+
+.wd-dashboard-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.wd-dashboard-kpis article {
+  position: relative;
+  min-height: 98px;
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  padding: 15px 16px 15px 58px;
+  overflow: hidden;
+  border: 1px solid #dfe8f1;
+  border-radius: 13px;
+  background: #fff;
+  box-shadow: 0 7px 22px rgb(30 75 116 / .045);
+}
+
+.wd-dashboard-kpis article::before {
+  content: "";
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  width: 32px;
+  height: 32px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: linear-gradient(145deg, #e8f8ff, #edf2ff);
+  box-shadow: inset 0 0 0 1px rgb(35 139 244 / .08);
+}
+
+.wd-dashboard-kpis article.is-health::before {
+  background: conic-gradient(#23c7aa 0 78%, #dceef0 78% 100%);
+  box-shadow: inset 0 0 0 8px #fff;
+}
+
+.wd-dashboard-kpis article.is-danger::before {
+  background: #fff0f3;
+  box-shadow: inset 0 0 0 1px #ffd8df;
+}
+
+.wd-dashboard-kpis span {
+  color: #8190a5;
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.wd-dashboard-kpis strong {
+  color: #0a1741;
+  font-size: 25px;
+  line-height: 1;
+  letter-spacing: -.035em;
+}
+
+.wd-dashboard-kpis small {
+  color: #6c7c95;
+  font-size: 8px;
+}
+
+.wd-dashboard-main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(270px, .72fr);
+  gap: 12px;
+}
+
+.wd-dashboard-panel {
+  min-width: 0;
+  padding: 17px;
+  border: 1px solid #dfe8f1;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 8px 26px rgb(30 75 116 / .045);
+}
+
+.wd-dashboard-panel > header {
+  min-height: 37px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.wd-dashboard-panel > header .eyebrow {
+  margin-bottom: 4px;
+  padding: 0;
+  background: none;
+  font-size: 8px;
+}
+
+.wd-dashboard-panel > header .eyebrow::before {
+  display: none;
+}
+
+.wd-dashboard-panel h2 {
+  margin: 0;
+  color: #0a1741;
+  font-size: 15px;
+  letter-spacing: -.02em;
+}
+
+.wd-dashboard-panel > header > small {
+  color: #8a97aa;
+  font-size: 8px;
+}
+
+.wd-dashboard-chart {
+  position: relative;
+  height: 175px;
+  overflow: hidden;
+  border-radius: 10px;
+  background:
+    linear-gradient(to bottom, #edf2f7 1px, transparent 1px) 0 0 / 100% 35px,
+    linear-gradient(to right, #f2f5f9 1px, transparent 1px) 0 0 / 64px 100%;
+}
+
+.wd-dashboard-chart svg {
+  position: absolute;
+  inset: 10px 8px 10px;
+  width: calc(100% - 16px);
+  height: calc(100% - 20px);
+  overflow: visible;
+}
+
+.wd-dashboard-chart-area {
+  fill: url(#wd-dashboard-chart-fill);
+  stroke: none;
+}
+
+.wd-dashboard-chart-line {
+  fill: none;
+  stroke: #18c4b3;
+  stroke-width: 2.2;
+  vector-effect: non-scaling-stroke;
+}
+
+.wd-dashboard-chart-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.wd-dashboard-chart-summary strong {
+  color: #0a1741;
+  font-size: 22px;
+}
+
+.wd-dashboard-chart-summary span {
+  color: #7a889e;
+  font-size: 9px;
+}
+
+.wd-dashboard-priority-list,
+.wd-dashboard-check-list,
+.wd-dashboard-project-list,
+.wd-dashboard-task-list {
+  display: grid;
+}
+
+.wd-dashboard-priority-list a,
+.wd-dashboard-check-list a,
+.wd-dashboard-project-list a,
+.wd-dashboard-task-list a {
+  min-width: 0;
+  display: grid;
+  align-items: center;
+  border-top: 1px solid #edf2f6;
+  color: inherit;
+  text-decoration: none;
+}
+
+.wd-dashboard-priority-list a:first-child,
+.wd-dashboard-check-list a:first-child,
+.wd-dashboard-project-list a:first-child,
+.wd-dashboard-task-list a:first-child {
+  border-top: 0;
+}
+
+.wd-dashboard-priority-list a {
+  grid-template-columns: 9px minmax(0, 1fr) auto;
+  gap: 9px;
+  min-height: 50px;
+}
+
+.wd-dashboard-priority-icon {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #3b82f6;
+}
+
+.wd-dashboard-priority-icon.tone-critical { background: #ff5b70; }
+.wd-dashboard-priority-icon.tone-warning { background: #ffb74f; }
+
+.wd-dashboard-priority-list span > strong,
+.wd-dashboard-priority-list span > small,
+.wd-dashboard-check-list span > strong,
+.wd-dashboard-check-list span > small,
+.wd-dashboard-project-list span > strong,
+.wd-dashboard-project-list span > small,
+.wd-dashboard-task-list span > strong,
+.wd-dashboard-task-list span > small {
+  display: block;
+}
+
+.wd-dashboard-priority-list strong,
+.wd-dashboard-check-list strong,
+.wd-dashboard-project-list strong,
+.wd-dashboard-task-list strong {
+  color: #18264a;
+  font-size: 10px;
+}
+
+.wd-dashboard-priority-list small,
+.wd-dashboard-check-list small,
+.wd-dashboard-project-list small,
+.wd-dashboard-task-list small {
+  margin-top: 2px;
+  overflow: hidden;
+  color: #8592a6;
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wd-dashboard-priority-list b {
+  color: #0a1741;
+  font-size: 13px;
+}
+
+.wd-dashboard-lists-grid,
+.wd-dashboard-bottom-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.wd-dashboard-check-list a {
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  gap: 9px;
+  min-height: 48px;
+}
+
+.wd-dashboard-site-mark {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: linear-gradient(145deg, #e9f8ff, #eff2ff);
+  color: #1687f8;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.wd-dashboard-check-meta {
+  text-align: right;
+}
+
+.wd-dashboard-check-meta b {
+  display: block;
+  color: #16a891;
+  font-size: 11px;
+}
+
+.wd-dashboard-text-button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #1687f8;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.wd-dashboard-project-list a {
+  grid-template-columns: 8px minmax(0, 1fr) auto;
+  gap: 9px;
+  min-height: 48px;
+}
+
+.wd-dashboard-project-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #25c8af;
+  box-shadow: 0 0 0 4px #e7fbf6;
+}
+
+.wd-dashboard-project-status {
+  max-width: 120px;
+  overflow: hidden;
+  color: #7a889e;
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wd-dashboard-task-list a {
+  grid-template-columns: 27px minmax(0, 1fr);
+  gap: 9px;
+  min-height: 48px;
+}
+
+.wd-dashboard-task-list > a > span:first-child {
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  background: #e8fbf6;
+  color: #14a991;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.wd-dashboard-quick-actions > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.wd-dashboard-quick-actions a,
+.wd-dashboard-quick-actions button {
+  min-width: 0;
+  min-height: 102px;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 5px;
+  border: 1px solid #e2eaf2;
+  border-radius: 11px;
+  padding: 8px;
+  background: #fafdff;
+  color: #223254;
+  text-align: center;
+  text-decoration: none;
+  font: inherit;
+  font-size: 8px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.wd-dashboard-quick-actions img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+.wd-dashboard-management {
+  overflow: hidden;
+  border: 1px solid #dfe8f1;
+  border-radius: 13px;
+  background: #fff;
+}
+
+.wd-dashboard-management > summary {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  color: #31415f;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.wd-dashboard-management[open] > summary {
+  border-bottom: 1px solid #e8eef4;
+}
+
+/* Project issues screen */
+.wd-account-issues-render {
+  gap: 12px !important;
+}
+
+.wd-account-workspace-page .wd-issues-render-head {
+  min-height: 118px !important;
+  align-items: center !important;
+  padding: 20px 22px !important;
+  background: #fff !important;
+}
+
+.wd-account-workspace-page .wd-issues-render-head h1 {
+  margin: 4px 0 6px;
+  font-size: clamp(28px, 3.2vw, 38px);
+}
+
+.wd-account-workspace-page .wd-issues-render-head p {
+  max-width: 700px;
+  font-size: 11px;
+}
+
+.wd-issues-summary-grid {
+  display: grid;
+  grid-template-columns: 1.25fr repeat(4, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.wd-issues-summary-grid article {
+  min-height: 82px;
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  padding: 13px 14px;
+  border: 1px solid #dfe8f1;
+  border-radius: 11px;
+  background: #fff;
+}
+
+.wd-issues-summary-grid article.is-score {
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+}
+
+.wd-issues-summary-grid article.is-score strong {
+  grid-row: 1 / 3;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  align-self: center;
+  border-radius: 50%;
+  background: conic-gradient(#21c8a7 0 78%, #e4eef0 78% 100%);
+  box-shadow: inset 0 0 0 7px #fff;
+}
+
+.wd-issues-summary-grid span {
+  color: #8794a7;
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.wd-issues-summary-grid strong {
+  color: #0b1740;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.wd-issues-summary-grid small {
+  color: #74839a;
+  font-size: 8px;
+}
+
+.wd-issues-summary-grid .is-critical strong { color: #ef4b63; }
+.wd-issues-summary-grid .is-high strong { color: #e99a22; }
+
+.wd-account-workspace-page .wd-issues-render-filters {
+  padding: 13px 14px;
+  border-radius: 11px;
+  box-shadow: none;
+}
+
+.wd-issues-render-filters .wd-issue-filter-heading {
+  margin-bottom: 9px;
+  padding-bottom: 9px;
+}
+
+.wd-issues-render-filters .wd-issue-filter-heading h2 {
+  font-size: 12px;
+}
+
+.wd-issues-render-filters .wd-issue-filter-heading p {
+  font-size: 8px;
+}
+
+.wd-account-workspace-page .wd-issues-render-filters .wd-issue-filters {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.wd-account-workspace-page .wd-issues-render-filters .wd-issue-filters label {
+  font-size: 8px;
+}
+
+.wd-account-workspace-page .wd-issues-render-filters .wd-issue-filters select {
+  min-height: 38px;
+  padding: 7px 9px;
+  border-radius: 8px;
+  font-size: 9px;
+}
+
+.wd-issues-render-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.62fr) minmax(270px, .72fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.wd-issues-render-table,
+.wd-issues-render-detail {
+  border: 1px solid #dfe8f1;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 7px 24px rgb(30 75 116 / .04);
+}
+
+.wd-issues-render-table {
+  overflow: hidden;
+}
+
+.wd-issues-render-table-head,
+.wd-issues-render-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 106px 58px;
+  gap: 10px;
+  align-items: center;
+}
+
+.wd-issues-render-table-head {
+  min-height: 34px;
+  padding: 0 12px;
+  background: #f7faff;
+  color: #8b97a8;
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.wd-issues-render-row {
+  width: 100%;
+  min-height: 55px;
+  border: 0;
+  border-top: 1px solid #edf2f7;
+  padding: 8px 12px;
+  background: #fff;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.wd-issues-render-row:hover,
+.wd-issues-render-row.is-active {
+  background: linear-gradient(90deg, #f2fbff 0%, #f8fbff 100%);
+}
+
+.wd-issues-render-row.is-active {
+  box-shadow: inset 3px 0 0 #2d8df5;
+}
+
+.wd-issues-render-title {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.wd-issues-render-title > i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ffba45;
+}
+
+.wd-issues-render-title > i[data-priority="p0"] { background: #f0445c; }
+.wd-issues-render-title > i[data-priority="p1"] { background: #ff8a3d; }
+.wd-issues-render-title > i[data-priority="p2"] { background: #f0b62c; }
+.wd-issues-render-title > i[data-priority="p3"] { background: #3e8df6; }
+
+.wd-issues-render-title strong,
+.wd-issues-render-title small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wd-issues-render-title strong {
+  color: #18264a;
+  font-size: 9px;
+}
+
+.wd-issues-render-title small {
+  margin-top: 2px;
+  color: #8a97a9;
+  font-size: 7px;
+}
+
+.wd-issues-priority {
+  justify-self: start;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: #fff5df;
+  color: #b77916;
+  font-size: 7px;
+  font-weight: 800;
+}
+
+.wd-issues-priority.is-p0 { background: #fff0f3; color: #d93f59; }
+.wd-issues-priority.is-p1 { background: #fff3e8; color: #d96c1c; }
+.wd-issues-priority.is-p2 { background: #fff8e8; color: #aa7a12; }
+.wd-issues-priority.is-p3 { background: #edf5ff; color: #2c73cf; }
+
+.wd-issues-pages {
+  justify-self: center;
+  color: #5f708a;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.wd-issues-render-detail {
+  position: sticky;
+  top: 12px;
+  overflow: hidden;
+}
+
+.wd-issues-render-detail-head {
+  padding: 15px 16px 13px;
+}
+
+.wd-issues-render-detail-head h2 {
+  margin: 9px 0 7px;
+  color: #0a1741;
+  font-size: 16px;
+  line-height: 1.15;
+}
+
+.wd-issues-render-detail-head p {
+  margin: 0;
+  color: #65758d;
+  font-size: 9px;
+  line-height: 1.55;
+}
+
+.wd-issues-render-detail-tabs {
+  display: flex;
+  gap: 13px;
+  padding: 0 16px;
+  border-top: 1px solid #edf2f6;
+  border-bottom: 1px solid #edf2f6;
+}
+
+.wd-issues-render-detail-tabs span {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #8390a3;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.wd-issues-render-detail-tabs span.is-active {
+  color: #197fe2;
+  box-shadow: inset 0 -2px 0 #2388ef;
+}
+
+.wd-issues-render-detail-tabs b {
+  min-width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  border-radius: 99px;
+  background: #edf4fb;
+  font-size: 7px;
+}
+
+.wd-issues-render-recommendation {
+  display: grid;
+  gap: 5px;
+  margin: 12px;
+  padding: 11px;
+  border-radius: 9px;
+  background: linear-gradient(110deg, #edfff9, #eefaff);
+}
+
+.wd-issues-render-recommendation > span {
+  color: #12a18f;
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.wd-issues-render-recommendation strong {
+  color: #18304b;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.wd-issues-render-recommendation p {
+  margin: 0;
+  color: #6d7c90;
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+.wd-issues-render-urls {
+  display: grid;
+  gap: 5px;
+  margin: 0 12px 12px;
+}
+
+.wd-issues-render-urls > strong {
+  color: #4b5d76;
+  font-size: 8px;
+}
+
+.wd-issues-render-urls code {
+  overflow: hidden;
+  padding: 6px 7px;
+  border: 1px solid #e6edf4;
+  border-radius: 6px;
+  background: #f8fbfe;
+  color: #5f708a;
+  font-size: 7px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wd-issues-render-detail > .wd-button {
+  width: calc(100% - 24px);
+  min-height: 38px;
+  margin: 0 12px 12px;
+  border-radius: 8px;
+  font-size: 9px;
+}
+
+@media (max-width: 1060px) {
+  .wd-dashboard-welcome,
+  .wd-dashboard-main-grid,
+  .wd-dashboard-lists-grid,
+  .wd-dashboard-bottom-grid,
+  .wd-issues-render-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .wd-dashboard-quick-check-copy {
+    max-width: 70%;
+  }
+
+  .wd-issues-render-detail {
+    position: static;
+  }
+}
+
+@media (max-width: 900px) {
+  .wd-account-workspace-page.shell {
+    width: min(100% - 24px, 1360px);
+  }
+
+  .wd-dashboard-kpis,
+  .wd-issues-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .wd-account-workspace-page .wd-issues-render-filters .wd-issue-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .wd-dashboard-welcome-copy {
+    min-height: 0;
+    padding: 14px 2px;
+  }
+
+  .wd-dashboard-quick-check {
+    min-height: 200px;
+  }
+
+  .wd-dashboard-quick-check-copy {
+    max-width: 62%;
+  }
+
+  .wd-dashboard-kpis,
+  .wd-issues-summary-grid,
+  .wd-account-workspace-page .wd-issues-render-filters .wd-issue-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .wd-dashboard-quick-actions > div {
+    grid-template-columns: 1fr;
+  }
+
+  .wd-issues-render-table-head {
+    display: none;
+  }
+
+  .wd-issues-render-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .wd-issues-pages {
+    display: none;
+  }
+}
