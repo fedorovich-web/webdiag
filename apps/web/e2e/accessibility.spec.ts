@@ -29,17 +29,14 @@ test.describe("accessibility smoke", () => {
     });
   }
 
-  test("keyboard focus reaches the theme and language controls", async ({ page }) => {
+  test("keyboard focus reaches the language control in the light-only mobile menu", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
     await page.keyboard.press("Tab");
     await expect(page.locator(".skip-link")).toBeFocused();
 
     await page.locator(".mobile-menu summary").click();
-
-    const themeSwitch = page.getByRole("switch", { name: "Тёмная тема" });
-    await themeSwitch.focus();
-    await expect(themeSwitch).toBeFocused();
+    await expect(page.getByRole("switch")).toHaveCount(0);
 
     const englishVersion = page.getByRole("link", { name: "English version" });
     await englishVersion.focus();
