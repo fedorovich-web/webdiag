@@ -27,7 +27,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <meta name="apple-mobile-web-app-title" content="WebDiag" />
         <link rel="manifest" href="/site.webmanifest" />
       </head>
-      <body data-theme="light" data-theme-ready="true">
+      <body>
         <a className="skip-link" href="#main-content">Skip to content</a>
         <SiteHeader locale="en" />
         <div id="main-content">{children}</div>

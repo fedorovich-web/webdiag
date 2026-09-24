@@ -9,13 +9,13 @@ test("public layouts enforce the approved light-only interface", async () => {
   for (const path of layouts) {
     const source = await read(path);
     assert.match(source, /<html[^>]*data-scroll-behavior="smooth"/);
-    assert.match(source, /<body data-theme="light" data-theme-ready="true">/);
-    assert.doesNotMatch(source, /ThemeBootstrapScript|ThemeSwitcher|suppressHydrationWarning/);
+    assert.match(source, /<body>/);
+    assert.doesNotMatch(source, /data-theme|ThemeBootstrapScript|ThemeSwitcher|suppressHydrationWarning/);
   }
 
   const globals = await read("apps/web/app/globals.css");
-  assert.match(globals, /body\[data-theme="light"\]/);
-  assert.doesNotMatch(globals, /data-theme="dark"|prefers-color-scheme|matchMedia/);
+  assert.match(globals, /color-scheme:\s*light/);
+  assert.doesNotMatch(globals, /data-theme|prefers-color-scheme|matchMedia/);
 });
 
 test("RU and EN page route trees stay structurally paired", async () => {

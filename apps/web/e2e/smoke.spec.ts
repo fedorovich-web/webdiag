@@ -17,7 +17,7 @@ test.describe("production browser smoke", () => {
     await page.goto("/");
 
     await expect(page.locator("html")).toHaveAttribute("data-scroll-behavior", "smooth");
-    await expect(page.locator("body")).toHaveAttribute("data-theme-ready", "true");
+    expect(await page.evaluate(() => getComputedStyle(document.body).colorScheme)).toBe("light");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 
     const brandAssets = [
