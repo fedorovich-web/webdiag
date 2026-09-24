@@ -62,7 +62,6 @@ const navigationIcons: Readonly<Record<string, LucideIcon>> = {
   project_overview: Gauge,
   audits: History,
   issues: AlertTriangle,
-  monitoring: Activity,
   project_reports: FileText,
 };
 
