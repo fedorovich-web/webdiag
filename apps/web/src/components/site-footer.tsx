@@ -51,21 +51,21 @@ export function SiteFooter({ locale }: { locale: Locale }) {
 
         <div className="footer-column">
           <strong>{text.product}</strong>
-          <Link href={toolsPath(locale)}>{text.tools}</Link>
-          <Link href={`${prefix}/audit`}>{text.audit}</Link>
-          <Link href={`${prefix}/pricing`}>{text.pricing}</Link>
-          <Link href={`${prefix}/monitoring`}>{text.monitoring}</Link>
+          <Link prefetch={false} href={toolsPath(locale)}>{text.tools}</Link>
+          <Link prefetch={false} href={`${prefix}/audit`}>{text.audit}</Link>
+          <Link prefetch={false} href={`${prefix}/pricing`}>{text.pricing}</Link>
+          <Link prefetch={false} href={`${prefix}/monitoring`}>{text.monitoring}</Link>
         </div>
 
         <div className="footer-column">
           <strong>{text.materials}</strong>
-          <Link href={`${prefix}/knowledge`}>{text.knowledge}</Link>
+          <Link prefetch={false} href={`${prefix}/knowledge`}>{text.knowledge}</Link>
         </div>
 
         <div className="footer-column">
           <strong>{text.company}</strong>
-          <Link href={prefix || "/"}>{text.home}</Link>
-          <Link href={`${prefix}/contacts`}>{text.contacts}</Link>
+          <Link prefetch={false} href={prefix || "/"}>{text.home}</Link>
+          <Link prefetch={false} href={`${prefix}/contacts`}>{text.contacts}</Link>
         </div>
 
         <div className="footer-column">
@@ -75,7 +75,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
       </div>
       <div className="shell footer-bottom">
         <span>{text.copyright}</span>
-        <Link className="footer-privacy-link" href={`${prefix}/privacy`}>{text.privacy}</Link>
+        <Link className="footer-privacy-link" prefetch={false} href={`${prefix}/privacy`}>{text.privacy}</Link>
       </div>
     </footer>
   );
