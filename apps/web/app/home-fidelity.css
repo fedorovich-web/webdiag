@@ -36,24 +36,6 @@
   background: linear-gradient(90deg, #f3f8ff 0%, #f8fbff 50%, #f2f8ff 100%);
 }
 
-.wd-platform-strip .shell > p {
-  font-size: 0;
-}
-
-html[lang="ru"] .wd-platform-strip .shell > p::after {
-  content: "Работает с сайтами на любых CMS и технологиях";
-}
-
-html[lang="en"] .wd-platform-strip .shell > p::after {
-  content: "Works with websites on any CMS or technology stack";
-}
-
-.wd-platform-strip .shell > p::after {
-  color: #8290a6;
-  font-size: 11px;
-  font-weight: 600;
-}
-
 .wd-platform-strip .shell > div span {
   display: inline-flex;
   align-items: center;
@@ -106,13 +88,12 @@ html[lang="en"] .wd-platform-strip .shell > p::after {
   filter: drop-shadow(0 10px 18px rgb(52 155 205 / .12));
 }
 
-.wd-process-panel::after {
-  content: "↗  Просто.\A    Быстро.\A    Полезно.";
+.wd-process-callout {
   position: absolute;
   z-index: 3;
   right: 28px;
   top: 47px;
-  white-space: pre;
+  margin: 0;
   color: #376de9;
   font-family: "Segoe Print", "Comic Sans MS", cursive;
   font-size: 14px;
@@ -121,6 +102,11 @@ html[lang="en"] .wd-platform-strip .shell > p::after {
   letter-spacing: -.02em;
   transform: rotate(-7deg);
   pointer-events: none;
+}
+
+.wd-process-callout > span {
+  display: inline-block;
+  margin-right: 5px;
 }
 
 /* Monitoring: teal trend, filled area, visible month labels and compact dashboard proportions. */
@@ -476,14 +462,6 @@ html[lang="en"] .wd-platform-strip .shell > p::after {
 }
 
 /* CMS compatibility strip: semantic SVG marks, muted by default and restored on hover. */
-.wd-home .wd-platform-strip .shell > p::after {
-  content: "Проверяйте сайты на любых CMS и технологиях";
-}
-
-html[lang="en"] .wd-home .wd-platform-strip .shell > p::after {
-  content: "Check websites on any CMS or technology stack";
-}
-
 .wd-home .wd-platform-list {
   flex-wrap: wrap;
   overflow: visible;
