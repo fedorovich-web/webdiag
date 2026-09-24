@@ -236,7 +236,7 @@ export function ToolCatalog({
             <small className="wd-tools-search-hint">{copy.hint}</small>
           </div>
           <div className="wd-tools-hero-art" aria-hidden="true">
-            <img src="/design/hero/tools.webp" alt="" width="900" height="900" loading="eager" decoding="async" />
+            <img src="/design/hero/tools.webp" alt="" width="900" height="900" loading="lazy" decoding="async" />
           </div>
         </div>
       </section>
@@ -268,7 +268,7 @@ export function ToolCatalog({
           {pageTools.length ? (
             <div className="wd-tools-grid">
               {pageTools.map((tool) => (
-                <Link className="wd-tool-card" href={`${prefix}/tools/${tool.slug}`} key={tool.slug}>
+                <Link className="wd-tool-card compact-tool-card" prefetch={false} href={`${prefix}/tools/${tool.slug}`} key={tool.slug}>
                   <span className={`wd-tool-card-icon is-${tool.category}`}><ToolGlyph tool={tool} /></span>
                   <span className="wd-tool-card-copy"><strong>{tool.title}</strong><small>{tool.description}</small></span>
                   <ChevronRight className="wd-tool-card-arrow" aria-hidden="true" />
