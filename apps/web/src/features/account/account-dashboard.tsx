@@ -240,16 +240,17 @@ export function AccountDashboard({
     <div className="wd-account-overview wd-dashboard-render">
       <header className="wd-dashboard-welcome">
         <div className="wd-dashboard-welcome-copy">
-          <span className="eyebrow">{ru ? "Личный кабинет" : "Account"}</span>
           <h1>{ru ? "Добро пожаловать!" : "Welcome!"}</h1>
           <p>{ru
-            ? session.user.display_name + ", здесь собраны состояние сайтов, последние проверки и задачи, которые требуют внимания."
-            : session.user.display_name + ", review website health, recent checks and tasks that need attention."}</p>
+            ? "Здесь вы можете отслеживать состояние своих проектов, проводить проверки и улучшать SEO-показатели."
+            : "Track your projects, run checks and improve SEO performance from one workspace."}</p>
         </div>
         <div className="wd-dashboard-quick-check">
           <div className="wd-dashboard-quick-check-copy">
-            <span>{ru ? "Проверьте новый сайт" : "Check another website"}</span>
-            <strong>{ru ? "Быстрая техническая проверка" : "Quick technical check"}</strong>
+            <strong>{ru ? "Проверьте новый сайт" : "Check a new website"}</strong>
+            <p>{ru
+              ? "Введите URL и получите полный SEO-аудит за несколько минут."
+              : "Enter a URL and get a complete SEO audit in a few minutes."}</p>
           </div>
           <img src="/design/icons/seo-audit.webp" alt="" width="160" height="160" loading="lazy" decoding="async" />
           <HomeUrlCheckForm locale={locale} instance="final" />
@@ -284,7 +285,7 @@ export function AccountDashboard({
       <section className="wd-dashboard-main-grid">
         <article className="wd-dashboard-panel wd-dashboard-health-chart">
           <header>
-            <div><span className="eyebrow">{ru ? "Динамика" : "Trend"}</span><h2>{ru ? "Динамика SEO-здоровья" : "SEO health trend"}</h2></div>
+            <div><h2>{ru ? "Динамика SEO-здоровья" : "SEO health trend"}</h2></div>
             <small>{ru ? "Последние оценки проектов" : "Latest project scores"}</small>
           </header>
           <div className="wd-dashboard-chart">
@@ -306,7 +307,7 @@ export function AccountDashboard({
         </article>
 
         <article className="wd-dashboard-panel wd-dashboard-priorities">
-          <header><div><span className="eyebrow">{ru ? "Приоритеты" : "Priorities"}</span><h2>{ru ? "Проблемы и приоритеты" : "Issues and priorities"}</h2></div></header>
+          <header><div><h2>{ru ? "Проблемы и приоритеты" : "Issues and priorities"}</h2></div></header>
           {overviewProjects.length ? (
             <div className="wd-dashboard-priority-list">
               {[...overviewProjects]
@@ -327,7 +328,7 @@ export function AccountDashboard({
       <section className="wd-dashboard-main-grid wd-dashboard-lists-grid">
         <article className="wd-dashboard-panel">
           <header>
-            <div><span className="eyebrow">{ru ? "Проверки" : "Checks"}</span><h2>{ru ? "Последние проверки" : "Recent checks"}</h2></div>
+            <div><h2>{ru ? "Последние проверки" : "Recent checks"}</h2></div>
           </header>
           {recentProjects.length ? (
             <div className="wd-dashboard-check-list">
@@ -344,7 +345,7 @@ export function AccountDashboard({
 
         <article className="wd-dashboard-panel">
           <header>
-            <div><span className="eyebrow">{ru ? "Проекты" : "Projects"}</span><h2>{ru ? "Мои проекты" : "My projects"}</h2></div>
+            <div><h2>{ru ? "Мои проекты" : "My projects"}</h2></div>
             <button className="wd-dashboard-text-button" type="button" onClick={openProjectCreation}>{ru ? "Добавить" : "Add"}</button>
           </header>
           <div className="wd-dashboard-project-list">
@@ -361,7 +362,7 @@ export function AccountDashboard({
 
       <section className="wd-dashboard-main-grid wd-dashboard-bottom-grid">
         <article className="wd-dashboard-panel">
-          <header><div><span className="eyebrow">{ru ? "Задачи" : "Tasks"}</span><h2>{ru ? "Мои задачи и рекомендации" : "Tasks and recommendations"}</h2></div></header>
+          <header><div><h2>{ru ? "Мои задачи и рекомендации" : "Tasks and recommendations"}</h2></div></header>
           {actions.length ? (
             <div className="wd-dashboard-task-list">
               {actions.map((action) => (
@@ -375,7 +376,7 @@ export function AccountDashboard({
         </article>
 
         <article className="wd-dashboard-panel wd-dashboard-quick-actions">
-          <header><div><span className="eyebrow">{ru ? "Действия" : "Actions"}</span><h2>{ru ? "Быстрые действия" : "Quick actions"}</h2></div></header>
+          <header><div><h2>{ru ? "Быстрые действия" : "Quick actions"}</h2></div></header>
           <div>
             <Link href={toolsPath(locale)}><img src="/design/icons/seo-audit.webp" alt="" width="72" height="72" /><span>{ru ? "Запустить инструмент" : "Open a tool"}</span></Link>
             <button type="button" onClick={openProjectCreation}><img src="/design/icons/analytics.webp" alt="" width="72" height="72" /><span>{ru ? "Добавить проект" : "Add project"}</span></button>

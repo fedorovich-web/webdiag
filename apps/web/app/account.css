@@ -4169,87 +4169,86 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-dashboard-welcome {
   display: grid;
-  grid-template-columns: minmax(0, .9fr) minmax(440px, 1.1fr);
-  gap: 18px;
+  grid-template-columns: minmax(0, .92fr) minmax(460px, 1.08fr);
+  gap: 14px;
   align-items: stretch;
 }
 
 .wd-dashboard-welcome-copy {
   display: grid;
   align-content: center;
-  min-height: 176px;
-  padding: 22px 24px;
-}
-
-.wd-dashboard-welcome-copy .eyebrow {
-  margin-bottom: 10px;
+  min-height: 170px;
+  padding: 24px 12px 24px 10px;
 }
 
 .wd-dashboard-welcome-copy h1 {
   margin: 0;
-  color: #0a1741;
-  font-size: clamp(30px, 3.2vw, 45px);
-  line-height: 1;
+  color: #09163e;
+  font-size: clamp(34px, 3.15vw, 46px);
+  line-height: 1.02;
   letter-spacing: -.045em;
 }
 
 .wd-dashboard-welcome-copy p {
-  max-width: 610px;
-  margin: 10px 0 0;
-  color: #6d7c94;
+  max-width: 520px;
+  margin: 12px 0 0;
+  color: #77869d;
   font-size: 12px;
   line-height: 1.55;
 }
 
 .wd-dashboard-quick-check {
   position: relative;
-  min-height: 176px;
+  min-height: 170px;
   overflow: hidden;
-  padding: 20px 22px;
-  border: 1px solid #d7e9ef;
-  border-radius: 16px;
+  padding: 21px 22px;
+  border: 1px solid #d8e9ef;
+  border-radius: 14px;
   background:
-    radial-gradient(circle at 82% 24%, rgb(96 165 250 / .22), transparent 28%),
-    radial-gradient(circle at 66% 80%, rgb(34 211 238 / .20), transparent 31%),
-    linear-gradient(110deg, #f1fffb 0%, #effcff 52%, #eef5ff 100%);
-  box-shadow: 0 12px 34px rgb(38 99 143 / .08);
+    radial-gradient(circle at 88% 18%, rgb(62 190 255 / .22), transparent 26%),
+    radial-gradient(circle at 70% 92%, rgb(36 211 190 / .18), transparent 32%),
+    linear-gradient(112deg, #f3fffb 0%, #eefcff 51%, #edf5ff 100%);
+  box-shadow: 0 8px 26px rgb(38 99 143 / .065);
 }
 
 .wd-dashboard-quick-check-copy {
   position: relative;
   z-index: 2;
   display: grid;
-  gap: 3px;
+  gap: 5px;
   max-width: 62%;
-}
-
-.wd-dashboard-quick-check-copy span {
-  color: #0c8f86;
-  font-size: 9px;
-  font-weight: 800;
 }
 
 .wd-dashboard-quick-check-copy strong {
   color: #0a1741;
-  font-size: 17px;
-  letter-spacing: -.02em;
+  font-size: 18px;
+  line-height: 1.2;
+  letter-spacing: -.025em;
+}
+
+.wd-dashboard-quick-check-copy p {
+  max-width: 290px;
+  margin: 0;
+  color: #6f8098;
+  font-size: 10px;
+  line-height: 1.45;
 }
 
 .wd-dashboard-quick-check > img {
   position: absolute;
-  top: -12px;
-  right: -3px;
-  width: 145px;
-  height: 145px;
+  top: -7px;
+  right: 7px;
+  width: 142px;
+  height: 142px;
   object-fit: contain;
-  opacity: .93;
+  opacity: .96;
 }
 
 .wd-dashboard-quick-check .wd-url-check {
   position: relative;
   z-index: 3;
-  width: calc(100% - 20px);
-  margin: 18px 0 0;
+  width: calc(100% - 12px);
+  margin: 15px 0 0;
 }
 
 .wd-dashboard-quick-check .wd-url-check > label {
@@ -4408,8 +4407,9 @@ body:has(.wd-account-workspace-page) .site-footer {
 .wd-dashboard-panel h2 {
   margin: 0;
   color: #0a1741;
-  font-size: 15px;
-  letter-spacing: -.02em;
+  font-size: 17px;
+  line-height: 1.2;
+  letter-spacing: -.025em;
 }
 
 .wd-dashboard-panel > header > small {
@@ -4419,7 +4419,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-dashboard-chart {
   position: relative;
-  height: 175px;
+  height: 228px;
   overflow: hidden;
   border-radius: 10px;
   background:
@@ -4549,15 +4549,18 @@ body:has(.wd-account-workspace-page) .site-footer {
   font-size: 13px;
 }
 
-.wd-dashboard-lists-grid,
+.wd-dashboard-lists-grid {
+  grid-template-columns: minmax(0, 1.55fr) minmax(300px, .85fr);
+}
+
 .wd-dashboard-bottom-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1.35fr) minmax(340px, .9fr);
 }
 
 .wd-dashboard-check-list a {
   grid-template-columns: 30px minmax(0, 1fr) auto;
   gap: 9px;
-  min-height: 48px;
+  min-height: 54px;
 }
 
 .wd-dashboard-site-mark {
@@ -4596,7 +4599,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 .wd-dashboard-project-list a {
   grid-template-columns: 8px minmax(0, 1fr) auto;
   gap: 9px;
-  min-height: 48px;
+  min-height: 54px;
 }
 
 .wd-dashboard-project-dot {
@@ -4619,7 +4622,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 .wd-dashboard-task-list a {
   grid-template-columns: 27px minmax(0, 1fr);
   gap: 9px;
-  min-height: 48px;
+  min-height: 52px;
 }
 
 .wd-dashboard-task-list > a > span:first-child {
@@ -4636,24 +4639,25 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-dashboard-quick-actions > div {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
 }
 
 .wd-dashboard-quick-actions a,
 .wd-dashboard-quick-actions button {
   min-width: 0;
-  min-height: 102px;
+  min-height: 62px;
   display: grid;
-  justify-items: center;
-  align-content: center;
-  gap: 5px;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  justify-items: start;
+  gap: 9px;
   border: 1px solid #e2eaf2;
-  border-radius: 11px;
-  padding: 8px;
-  background: #fafdff;
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: #fbfdff;
   color: #223254;
-  text-align: center;
+  text-align: left;
   text-decoration: none;
   font: inherit;
   font-size: 8px;
@@ -4662,8 +4666,8 @@ body:has(.wd-account-workspace-page) .site-footer {
 }
 
 .wd-dashboard-quick-actions img {
-  width: 48px;
-  height: 48px;
+  width: 32px;
+  height: 32px;
   object-fit: contain;
 }
 
@@ -4672,6 +4676,10 @@ body:has(.wd-account-workspace-page) .site-footer {
   border: 1px solid #dfe8f1;
   border-radius: 13px;
   background: #fff;
+}
+
+.wd-dashboard-management:not([open]) {
+  display: none;
 }
 
 .wd-dashboard-management > summary {
