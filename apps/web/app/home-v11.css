@@ -467,7 +467,7 @@ body::before { display: none; }
 .wd-issue-dot.is-critical { background: #ff5367; }
 .wd-issue-dot.is-high { background: #ff8c35; }
 .wd-priority-mark { justify-self: start; padding: 4px 8px; border-radius: 999px; font-size: 8px; font-weight: 800; }
-.wd-priority-mark.is-critical { background: #ffe9ed; color: #c6364b; }
+.wd-priority-mark.is-critical { background: #ffe9ed; color: #c43549; }
 .wd-priority-mark.is-high { background: #fff0e2; color: #a65618; }
 .wd-priority-mark.is-warning { background: #fff6df; color: #916410; }
 .wd-report-bottom-row { display: grid; grid-template-columns: 1fr 210px; gap: 12px; align-items: end; margin-top: 9px; }
@@ -488,7 +488,7 @@ body::before { display: none; }
 .wd-monitoring-score-row > div { padding: 9px; border: 1px solid #edf1f6; border-radius: 8px; background: #fff; }
 .wd-monitoring-score-row strong, .wd-monitoring-score-row span { display: block; }
 .wd-monitoring-score-row strong { color: #12234a; font-size: 15px; }
-.wd-monitoring-score-row strong.is-critical { color: #c6364b; }
+.wd-monitoring-score-row strong.is-critical { color: #c43549; }
 .wd-monitoring-score-row span { margin-top: 2px; color: #626c7d; font-size: 8px; }
 .wd-product-link { margin-top: 10px; }
 
