@@ -134,13 +134,15 @@ function WorkspaceNavigation({
   return (
     <>
       <nav className="wd-workspace-navigation" aria-label={ru ? "Навигация кабинета" : "Workspace navigation"}>
-        <div className="wd-workspace-navigation-group">
-          <span>{ru ? "Рабочая область" : "Workspace"}</span>
-          {items(navigation.portfolio)}
-        </div>
-        {navigation.project && currentProjectId && (
+        {!currentProjectId && (
           <div className="wd-workspace-navigation-group">
-            <span>{ru ? "Текущий проект" : "Current project"}</span>
+            <span>{ru ? "Рабочая область" : "Workspace"}</span>
+            {items(navigation.portfolio)}
+          </div>
+        )}
+        {navigation.project && currentProjectId && (
+          <div className="wd-workspace-navigation-group wd-workspace-project-navigation">
+            <span>{ru ? "Проект" : "Project"}</span>
             {items(navigation.project)}
           </div>
         )}
@@ -391,7 +393,7 @@ export function AccountWorkspaceShell({
 
   return (
     <>
-      <header className="wd-account-topbar">
+      <header className="wd-account-topbar" data-project-context={currentProjectId ? "true" : "false"}>
         <div className="wd-account-topbar-inner">
           <SiteBrand locale={locale} className="brand wd-account-topbar-brand" variant="header" />
           <label className="wd-account-topbar-project">
@@ -455,7 +457,7 @@ export function AccountWorkspaceShell({
       <main className="shell wd-account-workspace-page">
 
       <div className="wd-workspace-layout">
-        <aside className="wd-workspace-sidebar" aria-label={ru ? "Панель кабинета" : "Workspace panel"}>
+        <aside className="wd-workspace-sidebar" data-project-context={currentProjectId ? "true" : "false"} aria-label={ru ? "Панель кабинета" : "Workspace panel"}>
           <div className="wd-workspace-identity">
             <span className="eyebrow">{ru ? "Личный кабинет" : "WebDiag account"}</span>
             <strong>{session.user.display_name}</strong>
