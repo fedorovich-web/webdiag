@@ -6403,3 +6403,211 @@ body:has(.wd-account-workspace-page) .site-footer {
     min-width: 0;
   }
 }
+
+
+/* Final account chrome — mirrors the approved workspace references without changing data contracts. */
+body:has(.wd-account-workspace-page) .wd-site-header,
+body:has(.wd-account-workspace-page) .site-footer {
+  display: none;
+}
+body:has(.wd-account-workspace-page) {
+  background: #f6faff;
+}
+.wd-account-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  border-bottom: 1px solid #dfe8f1;
+  background: rgb(255 255 255 / .96);
+  backdrop-filter: blur(16px);
+}
+.wd-account-topbar-inner {
+  min-height: 62px;
+  width: min(100% - 32px, 1440px);
+  display: grid;
+  grid-template-columns: 170px 180px minmax(260px, 520px) 1fr;
+  gap: 16px;
+  align-items: center;
+  margin-inline: auto;
+}
+.wd-account-topbar-brand {
+  min-width: 0;
+}
+.wd-account-topbar-project select {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid #dbe6ef;
+  border-radius: 9px;
+  padding: 0 30px 0 11px;
+  background: #fff;
+  color: #15254c;
+  font-size: 10px;
+  font-weight: 750;
+}
+.wd-account-topbar-search {
+  min-height: 38px;
+  display: grid;
+  grid-template-columns: 17px minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: center;
+  padding: 0 10px 0 12px;
+  border: 1px solid #dbe6ef;
+  border-radius: 9px;
+  background: #fff;
+  color: #8090a6;
+  font-size: 10px;
+  text-decoration: none;
+}
+.wd-account-topbar-search svg { width: 15px; height: 15px; color: #6f81a0; }
+.wd-account-topbar-search kbd {
+  padding: 3px 6px;
+  border: 1px solid #e0e7ef;
+  border-radius: 5px;
+  background: #f7f9fc;
+  color: #8b98ab;
+  font: inherit;
+  font-size: 8px;
+}
+.wd-account-topbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.wd-account-topbar-icon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #dbe6ef;
+  border-radius: 10px;
+  background: #fff;
+  color: #516583;
+}
+.wd-account-topbar-icon svg { width: 16px; height: 16px; }
+.wd-account-topbar-user {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 9px;
+  align-items: center;
+}
+.wd-account-topbar-user > span {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #dff7ff, #e6efff);
+  color: #1679d8;
+  font-size: 10px;
+  font-weight: 850;
+}
+.wd-account-topbar-user strong,
+.wd-account-topbar-user small {
+  display: block;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wd-account-topbar-user strong { color: #17254b; font-size: 10px; }
+.wd-account-topbar-user small { margin-top: 2px; color: #8b98aa; font-size: 8px; }
+
+body:has(.wd-account-workspace-page) .wd-account-workspace-page.shell {
+  width: min(100% - 24px, 1440px);
+  max-width: none;
+  padding-block: 12px 28px;
+}
+body:has(.wd-account-workspace-page) .wd-workspace-layout {
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid #dfe8f1;
+  border-radius: 18px;
+  background: #f4f9fd;
+}
+body:has(.wd-account-workspace-page) .wd-workspace-sidebar {
+  top: 76px;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 13px;
+  box-shadow: 0 5px 18px rgb(28 74 114 / .035);
+}
+body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-workspace-identity {
+  display: none;
+}
+body:has(.wd-account-workspace-page) .wd-workspace-navigation-group > span {
+  display: block;
+  margin: 9px 8px 6px;
+  color: #9aa6b7;
+  font-size: 7.5px;
+  font-weight: 850;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+body:has(.wd-account-workspace-page) .wd-workspace-navigation a,
+body:has(.wd-account-workspace-page) .wd-workspace-navigation > span {
+  min-height: 42px;
+  gap: 9px;
+  border-radius: 9px;
+  padding: 0 10px;
+  color: #5f718d;
+  font-size: 10px;
+}
+body:has(.wd-account-workspace-page) .wd-workspace-navigation a svg,
+body:has(.wd-account-workspace-page) .wd-workspace-navigation > span svg {
+  width: 16px;
+  height: 16px;
+}
+body:has(.wd-account-workspace-page) .wd-workspace-navigation a[aria-current="page"] {
+  border-left: 3px solid #17c9b6;
+  background: #edf8ff;
+  box-shadow: inset 0 0 0 1px #cde4ef;
+  color: #147d9e;
+}
+body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid #e7eef4;
+}
+body:has(.wd-account-workspace-page) .wd-workspace-project-switcher label {
+  font-size: 8px;
+  text-transform: uppercase;
+}
+body:has(.wd-account-workspace-page) .wd-workspace-project-switcher select {
+  min-height: 40px;
+  border-radius: 8px;
+  background: #f8fbfd;
+  font-size: 9px;
+}
+body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
+  min-height: 38px;
+  margin-top: 10px;
+  border-radius: 8px;
+  font-size: 9px;
+}
+
+@media (max-width: 980px) {
+  .wd-account-topbar-inner {
+    grid-template-columns: 150px minmax(150px, 1fr) auto;
+  }
+  .wd-account-topbar-search { display: none; }
+  .wd-account-topbar-user div { display: none; }
+}
+@media (max-width: 900px) {
+  body:has(.wd-account-workspace-page) .wd-site-header {
+    display: flex;
+  }
+  .wd-account-topbar { display: none; }
+  body:has(.wd-account-workspace-page) .wd-account-workspace-page.shell {
+    width: 100%;
+    padding-inline: 12px;
+  }
+  body:has(.wd-account-workspace-page) .wd-workspace-layout {
+    display: block;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+}

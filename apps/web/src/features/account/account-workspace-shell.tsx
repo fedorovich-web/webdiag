@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Activity, AlertTriangle, FileBarChart2, FileText, FolderKanban, Gauge, History, LayoutDashboard, Menu, Settings, Sparkles, X, type LucideIcon } from "lucide-react";
+import { Activity, AlertTriangle, Bell, FileBarChart2, FileText, FolderKanban, Gauge, History, LayoutDashboard, Menu, Search, Settings, Sparkles, X, type LucideIcon } from "lucide-react";
 import { createPortal } from "react-dom";
 import {
   useEffect,
@@ -31,7 +31,8 @@ import {
   resolveActiveAccountProject,
   type AccountWorkspaceSection,
 } from "./account-workspace-shell-contract";
-import { loginPath } from "../../lib/routes";
+import { loginPath, reportsPath, toolsPath } from "../../lib/routes";
+import { SiteBrand } from "../../components/site-brand";
 
 interface AccountWorkspaceShellProps {
   readonly locale: Locale;
@@ -374,9 +375,50 @@ export function AccountWorkspaceShell({
   };
 
   const menuLabel = ru ? "Меню кабинета" : "Workspace menu";
+  const activeTopProject = resolveActiveAccountProject(projects, currentProjectId);
+  const initials = session.user.display_name
+    .split(/\s+/u)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("") || "WD";
+
+  function selectTopProject(projectId: string) {
+    if (!projectId) return;
+    window.location.assign(projectLandingAfterSwitch(locale, projectId));
+  }
 
   return (
     <>
+      <header className="wd-account-topbar">
+        <div className="wd-account-topbar-inner">
+          <SiteBrand locale={locale} className="brand wd-account-topbar-brand" variant="header" />
+          <label className="wd-account-topbar-project">
+            <span className="sr-only">{ru ? "Текущий проект" : "Current project"}</span>
+            <select
+              value={activeTopProject?.id ?? ""}
+              onChange={(event) => selectTopProject(event.target.value)}
+              disabled={projects.length === 0}
+            >
+              <option value="">{ru ? "Выберите проект" : "Select project"}</option>
+              {projects.map((project) => <option value={project.id} key={project.id}>{project.name}</option>)}
+            </select>
+          </label>
+          <Link className="wd-account-topbar-search" href={toolsPath(locale)}>
+            <Search aria-hidden="true" />
+            <span>{ru ? "Поиск по инструментам и проверкам" : "Search tools and checks"}</span>
+            <kbd>Ctrl + K</kbd>
+          </Link>
+          <div className="wd-account-topbar-actions">
+            <Link className="wd-account-topbar-icon" href={reportsPath(locale)} aria-label={ru ? "Отчёты" : "Reports"}><Bell aria-hidden="true" /></Link>
+            <div className="wd-account-topbar-user">
+              <span aria-hidden="true">{initials}</span>
+              <div><strong>{session.user.display_name}</strong><small>{session.user.email}</small></div>
+            </div>
+          </div>
+        </div>
+      </header>
+
       {headerMenuSlot && createPortal(
         <button
           ref={drawerTriggerRef}
