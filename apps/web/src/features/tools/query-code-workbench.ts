@@ -380,6 +380,54 @@ function validatePostgresqlBitStrings(tokens: readonly Token[]): void {
   }
 }
 
+function isPostgresqlUnicodeEscapeToken(token: Token): boolean {
+  return (token.kind === "string" && /^[Uu]&'/u.test(token.value))
+    || (token.kind === "identifier" && /^[Uu]&"/u.test(token.value));
+}
+
+function decodePostgresqlSimpleStringLiteral(token: Token): string | null {
+  if (token.kind !== "string" || !token.value.startsWith("'")) return null;
+  return token.value.slice(1, -1).replace(/''/gu, "'");
+}
+
+function validatePostgresqlUnicodeEscapeClauses(tokens: readonly Token[]): void {
+  for (let index = 0; index < tokens.length; index += 1) {
+    const token = tokens[index];
+    if (!token || !isPostgresqlUnicodeEscapeToken(token)) continue;
+
+    let lookahead = index + 1;
+    if (token.kind === "string") {
+      while (
+        tokens[lookahead]?.kind === "string"
+        && tokens[lookahead]?.value.startsWith("'")
+        && tokens[lookahead]?.lineBreakBefore
+      ) {
+        lookahead += 1;
+      }
+    }
+
+    const uescape = tokens[lookahead];
+    if (uescape?.kind !== "word" || uescape.upper !== "UESCAPE") continue;
+
+    const escapeToken = tokens[lookahead + 1];
+    if (!escapeToken || escapeToken.kind !== "string") {
+      throw new Error("UESCAPE must be followed by a simple string literal.");
+    }
+
+    if (/^(?:[BbXxNn]'|[Uu]&')/u.test(escapeToken.value)) {
+      throw new Error("UESCAPE must be followed by a simple string literal.");
+    }
+
+    const escape = decodePostgresqlSimpleStringLiteral(escapeToken);
+    if (escape === null) continue;
+
+    const singleByteAscii = escape.length === 1 && escape.charCodeAt(0) <= 0x7F;
+    if (!singleByteAscii || /[0-9A-Fa-f+'"\s]/u.test(escape)) {
+      throw new Error("Invalid Unicode escape character.");
+    }
+  }
+}
+
 function tokenizeSql(
   input: string,
   sqlDialect: SqlDialect = "standard",
@@ -614,7 +662,10 @@ function tokenizeSql(
     throw new Error(`Unsupported SQL character ${JSON.stringify(character)} at position ${index + 1}.`);
   }
 
-  if (!mysql) validatePostgresqlBitStrings(tokens);
+  if (!mysql) {
+    validatePostgresqlBitStrings(tokens);
+    validatePostgresqlUnicodeEscapeClauses(tokens);
+  }
   return { tokens, warnings: unique(warnings) };
 }
 
