@@ -188,6 +188,22 @@ def render_report_html(snapshot: ReportSnapshot) -> bytes:
                 "</section>"
             )
 
+    pagespeed_css = (
+        ".pagespeed-score { display: flex; align-items: center; justify-content: space-between; "
+        "gap: 16px; margin: 12px 0; padding: 14px; border: 1px solid #dbe5e2; "
+        "border-radius: 12px; }\n"
+        ".pagespeed-score strong { font-size: 1.8rem; }\n"
+        ".pagespeed-categories, .pagespeed-metrics { display: grid; "
+        "grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 0; "
+        "list-style: none; }\n"
+        ".pagespeed-categories li, .pagespeed-metrics li { display: grid; gap: 3px; "
+        "padding: 10px; border: 1px solid #dbe5e2; border-radius: 10px; }\n"
+        ".pagespeed-categories span, .pagespeed-metrics span, .pagespeed-metrics small { "
+        "color: #49645d; font-size: .8rem; }\n"
+        if snapshot.pagespeed is not None
+        else ""
+    )
+
     issue_blocks: list[str] = []
     for issue in snapshot.issues:
         affected = "".join(f"<li>{_escape(url)}</li>" for url in issue.affected_urls)
@@ -278,12 +294,7 @@ th, td {{
 }}
 a {{ color: inherit; }}
 .print-note {{ margin: 0 0 16px; color: #49645d; }}
-.pagespeed-score {{ display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 12px 0; padding: 14px; border: 1px solid #dbe5e2; border-radius: 12px; }}
-.pagespeed-score strong {{ font-size: 1.8rem; }}
-.pagespeed-categories, .pagespeed-metrics {{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 0; list-style: none; }}
-.pagespeed-categories li, .pagespeed-metrics li {{ display: grid; gap: 3px; padding: 10px; border: 1px solid #dbe5e2; border-radius: 10px; }}
-.pagespeed-categories span, .pagespeed-metrics span, .pagespeed-metrics small {{ color: #49645d; font-size: .8rem; }}
-ul, ol {{ padding-left: 22px; }}
+{pagespeed_css}ul, ol {{ padding-left: 22px; }}
 @media (max-width: 680px) {{
   header.hero {{ display: block; }}
   .score {{ margin-top: 18px; }}
