@@ -191,7 +191,7 @@ export function HomePage({ locale }: { locale: Locale }) {
 
       <section className="wd-platform-strip" aria-label={t(homeContent.platformsTitle)}>
         <div className="shell">
-          <p>{locale === "ru" ? "Нам доверяют веб-мастера, SEO-специалисты и бизнесы" : "Used by webmasters, SEO specialists and businesses"}</p>
+          <p>{locale === "ru" ? "Проверяйте сайты на любых CMS и технологиях" : "Check websites on any CMS or technology stack"}</p>
           <div className="wd-platform-list">
             {homeContent.platforms.map((platform) => (
               <span className="wd-platform-item" key={platform}>
@@ -234,6 +234,10 @@ export function HomePage({ locale }: { locale: Locale }) {
             ))}
           </div>
           <img className="wd-process-accent" src="/home/process-accent.webp" alt="" width="320" height="240" loading="lazy" decoding="async" />
+          <p className="wd-process-callout" aria-hidden="true">
+            <span>↗</span>
+            {locale === "ru" ? <>Просто.<br />Быстро.<br />Полезно.</> : <>Simple.<br />Fast.<br />Useful.</>}
+          </p>
         </div>
       </section>
 
