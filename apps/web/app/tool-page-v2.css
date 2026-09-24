@@ -30,14 +30,14 @@
   gap: 7px;
   min-height: 28px;
   margin-bottom: 26px;
-  color: #91a0b3;
+  color: #64748b;
   font-size: 10px;
 }
 .wd-tool-breadcrumbs a {
-  color: #71819a;
+  color: #58687f;
   text-decoration: none;
 }
-.wd-tool-breadcrumbs a:hover { color: #1687f8; }
+.wd-tool-breadcrumbs a:hover { color: #0b6fc2; }
 .wd-tool-breadcrumbs svg { width: 12px; height: 12px; color: #b5c0cd; }
 .wd-tool-breadcrumbs span[aria-current="page"] { color: #52627a; }
 
@@ -95,7 +95,7 @@
 .wd-tool-hero-copy > p {
   max-width: 700px;
   margin: 18px 0 0;
-  color: #6e7e98;
+  color: #58687f;
   font-size: 16px;
   line-height: 1.58;
 }
@@ -179,7 +179,7 @@
   max-width: 680px;
   justify-self: end;
   margin: 0 0 2px;
-  color: #75849a;
+  color: #5f6f86;
   font-size: 11px;
   line-height: 1.55;
 }
@@ -262,12 +262,12 @@
 .wd-tool-page .button-secondary:hover {
   border-color: #bcd7ea;
   background: #f8fbfe;
-  color: #1687f8;
+  color: #0b6fc2;
   box-shadow: none;
 }
 .wd-tool-page .muted-text,
 .wd-tool-page .tool-panel p {
-  color: #7a899e;
+  color: #58687f;
   font-size: 10px;
   line-height: 1.55;
 }
@@ -280,7 +280,7 @@
   background: #f8fbfd;
 }
 .wd-tool-page .result-meta dt {
-  color: #8794a7;
+  color: #5f6f86;
   font-size: 9px;
 }
 .wd-tool-page .result-meta dd {
@@ -342,12 +342,12 @@
 }
 .wd-tool-processing p {
   margin: 2px 0 0;
-  color: #6d8a87;
+  color: #506e6b;
   font-size: 9px;
   line-height: 1.45;
 }
 .wd-tool-processing small {
-  color: #8aa29f;
+  color: #5b7470;
   font-size: 8px;
 }
 
@@ -369,7 +369,7 @@
 .wd-tool-section-number {
   display: inline-flex;
   margin-bottom: 9px;
-  color: #1b9bdd;
+  color: #0d6f9f;
   font-size: 9px;
   font-weight: 850;
   letter-spacing: .12em;
@@ -409,7 +409,7 @@
 }
 .wd-tool-instructions p {
   margin: 7px 0 0;
-  color: #65758d;
+  color: #58687f;
   font-size: 12px;
   line-height: 1.55;
 }
@@ -467,7 +467,7 @@
   content: "0" counter(usecase);
   display: block;
   margin-bottom: 10px;
-  color: #1687f8;
+  color: #0b6fc2;
   font-size: 10px;
   font-weight: 850;
 }
@@ -482,7 +482,7 @@
   border-left: 3px solid #4bc6dc;
   border-radius: 0 10px 10px 0;
   background: #f6fbfd;
-  color: #65768e;
+  color: #5f7088;
   font-size: 10px;
   line-height: 1.55;
 }
@@ -516,7 +516,7 @@
 .wd-tool-faq details[open] summary span { transform: rotate(45deg); }
 .wd-tool-faq details p {
   margin: 0 42px 14px 0;
-  color: #74839a;
+  color: #5f6f86;
   font-size: 10px;
   line-height: 1.55;
 }
@@ -540,7 +540,7 @@
   gap: 10px;
   margin: 14px 0 0;
   padding: 0 0 0 17px;
-  color: #718198;
+  color: #5f6f86;
   font-size: 10px;
   line-height: 1.5;
 }
@@ -558,7 +558,7 @@
   color: inherit;
   text-decoration: none;
 }
-.wd-tool-related > div > a:hover strong { color: #1687f8; }
+.wd-tool-related > div > a:hover strong { color: #0b6fc2; }
 .wd-tool-related > div > a > span {
   min-width: 0;
   display: grid;
@@ -572,14 +572,14 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.wd-tool-related small { color: #8c98aa; font-size: 8px; }
-.wd-tool-related svg { width: 15px; height: 15px; color: #1687f8; }
+.wd-tool-related small { color: #66758a; font-size: 8px; }
+.wd-tool-related svg { width: 15px; height: 15px; color: #0b6fc2; }
 .wd-tool-all-link {
   display: inline-flex;
   align-items: center;
   gap: 7px;
   margin-top: 14px;
-  color: #1687f8;
+  color: #0b6fc2;
   font-size: 10px;
   font-weight: 800;
   text-decoration: none;
@@ -618,4 +618,34 @@
   .wd-tool-feature-list,
   .wd-tool-use-cases,
   .wd-tool-editorial-aside { grid-template-columns: 1fr; }
+}
+
+
+/* WCAG AA contrast for interactive tool results */
+.wd-tool-page .tool-badge-success {
+  background: #e5f5ef;
+  color: #0b6847;
+}
+.wd-tool-page .tool-badge-warning {
+  background: #fff3d8;
+  color: #7d4b00;
+}
+.wd-tool-page .tool-badge-danger {
+  background: #fde9ec;
+  color: #a92f3a;
+}
+.wd-tool-page .tool-input-note,
+.wd-tool-page .tool-state-note,
+.wd-tool-page .result-card p,
+.wd-tool-page .metric-row,
+.wd-tool-page .lighthouse-network-list p,
+.wd-tool-page .lighthouse-network-list header > span:last-child,
+.wd-tool-page .lighthouse-blocking-list span,
+.wd-tool-page .lighthouse-blocking-list b {
+  color: #58687f;
+}
+.wd-tool-page .result-meta dt,
+.wd-tool-page .lighthouse-network-summary span,
+.wd-tool-page .lighthouse-network-summary small {
+  color: #5f6f86;
 }
