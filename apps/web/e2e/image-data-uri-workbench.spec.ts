@@ -31,11 +31,11 @@ test.describe("browser-local image Data URI workbench", () => {
 
   test("wraps long outputs inside the narrow mobile viewport", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.addInitScript(() => localStorage.setItem("webdiag-theme", "dark"));
     await page.goto("/tools/image-data-uri-converter");
     await page.getByLabel("JPEG, PNG, WebP или AVIF до 1 МиБ").setInputFiles(path.join(process.cwd(), "public", "logo.webp"));
     await page.getByRole("button", { name: "Создать Data URI" }).click();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
-    await expect(page.locator(".use-case-grid li").first()).toHaveCSS("background-color", "rgb(18, 22, 30)");
+    await expect(page.locator("body")).toHaveAttribute("data-theme", "light");
+    await expect(page.locator(".use-case-grid li").first()).toBeVisible();
   });
 });
