@@ -21,7 +21,7 @@ export default function Page() {
         <p>Choose the workflow that fits the task: focused public checks or an account workspace for projects, saved history, and repeated work with results.</p>
               </div>
         <div className="wd-internal-hero-visual" aria-hidden="true">
-          <img src="/design/hero/pricing.webp" alt="" width="1600" height="1000" fetchPriority="high" decoding="async" />
+          <img src="/design/hero/pricing.webp" alt="" width="1600" height="1000" loading="eager" decoding="async" />
         </div>
       </header>
       <section className="wd-internal-grid wd-availability-grid" aria-label="WebDiag access terms">
