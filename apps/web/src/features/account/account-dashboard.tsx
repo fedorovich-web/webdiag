@@ -251,7 +251,7 @@ export function AccountDashboard({
             <span>{ru ? "Проверьте новый сайт" : "Check another website"}</span>
             <strong>{ru ? "Быстрая техническая проверка" : "Quick technical check"}</strong>
           </div>
-          <img src="/design/icons/seo-audit.webp" alt="" width="160" height="160" loading="eager" decoding="async" />
+          <img src="/design/icons/seo-audit.webp" alt="" width="160" height="160" loading="lazy" decoding="async" />
           <HomeUrlCheckForm locale={locale} instance="final" />
         </div>
       </header>
@@ -351,7 +351,7 @@ export function AccountDashboard({
             {overviewProjects.slice(0, 5).map((item) => (
               <Link href={projectPath(locale, item.project.id)} key={item.project.id}>
                 <span className="wd-dashboard-project-dot" aria-hidden="true" />
-                <span><strong>{item.project.name}</strong><small>{item.project.origin}</small></span>
+                <span><h3>{item.project.name}</h3><small>{item.project.origin}</small></span>
                 <span className="wd-dashboard-project-status">{item.monitor ? formatMonitorStatus(item.monitor.status, locale) : (ru ? "Без мониторинга" : "No monitoring")}</span>
               </Link>
             ))}
