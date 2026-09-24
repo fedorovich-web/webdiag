@@ -4,7 +4,6 @@ import "../account.css";
 import "../brand-system.css";
 import { SiteFooter } from "../../src/components/site-footer";
 import { SiteHeader } from "../../src/components/site-header";
-import { ThemeBootstrapScript } from "../../src/components/theme-bootstrap-script";
 import { publicReleaseEnabled } from "../../src/lib/release";
 
 export const metadata: Metadata = {
@@ -28,8 +27,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <meta name="apple-mobile-web-app-title" content="WebDiag" />
         <link rel="manifest" href="/site.webmanifest" />
       </head>
-      <body data-theme="light" data-theme-ready="false" suppressHydrationWarning>
-        <ThemeBootstrapScript />
+      <body data-theme="light" data-theme-ready="true">
         <a className="skip-link" href="#main-content">Skip to content</a>
         <SiteHeader locale="en" />
         <div id="main-content">{children}</div>
