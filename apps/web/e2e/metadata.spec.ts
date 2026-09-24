@@ -8,6 +8,17 @@ const cases = [
   { route: "/tools/json-formatter-validator", lang: "ru", canonical: "https://webdiag.ru/tools/json-formatter-validator", type: "BreadcrumbList" },
 ] as const;
 
+const localizedPublicPairs = [
+  ["/", "/en"],
+  ["/tools", "/en/tools"],
+  ["/audit", "/en/audit"],
+  ["/contacts", "/en/contacts"],
+  ["/knowledge", "/en/knowledge"],
+  ["/monitoring", "/en/monitoring"],
+  ["/pricing", "/en/pricing"],
+  ["/privacy", "/en/privacy"],
+] as const;
+
 test.describe("rendered SEO metadata", () => {
   let assertBrowserClean: ReturnType<typeof installBrowserGuard>;
 
@@ -17,6 +28,29 @@ test.describe("rendered SEO metadata", () => {
 
   test.afterEach(async ({}, testInfo) => {
     await assertBrowserClean(testInfo);
+  });
+
+  test("all indexable public pages expose a complete RU/EN metadata pair", async ({ page }) => {
+    for (const [ruRoute, enRoute] of localizedPublicPairs) {
+      const expected = {
+        ru: `https://webdiag.ru${ruRoute === "/" ? "" : ruRoute}`,
+        en: `https://webdiag.ru${enRoute}`,
+      };
+
+      await page.goto(ruRoute);
+      await expect(page.locator("html")).toHaveAttribute("lang", "ru");
+      await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", expected.ru);
+      await expect(page.locator('link[rel="alternate"][hreflang="ru"]')).toHaveAttribute("href", expected.ru);
+      await expect(page.locator('link[rel="alternate"][hreflang="en"]')).toHaveAttribute("href", expected.en);
+      await expect(page.locator('link[rel="alternate"][hreflang="x-default"]')).toHaveAttribute("href", expected.ru);
+
+      await page.goto(enRoute);
+      await expect(page.locator("html")).toHaveAttribute("lang", "en");
+      await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", expected.en);
+      await expect(page.locator('link[rel="alternate"][hreflang="ru"]')).toHaveAttribute("href", expected.ru);
+      await expect(page.locator('link[rel="alternate"][hreflang="en"]')).toHaveAttribute("href", expected.en);
+      await expect(page.locator('link[rel="alternate"][hreflang="x-default"]')).toHaveAttribute("href", expected.ru);
+    }
   });
 
   for (const item of cases) {
