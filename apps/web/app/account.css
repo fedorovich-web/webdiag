@@ -6380,3 +6380,26 @@ body:has(.wd-account-workspace-page) .site-footer {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Final desktop fidelity: approved account renders use a wide application canvas. */
+@media (min-width: 901px) {
+  .wd-account-workspace-page.shell {
+    width: min(1480px, calc(100% - 28px));
+  }
+
+  .wd-workspace-layout {
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .wd-workspace-sidebar {
+    padding: 14px;
+    border-radius: 14px;
+    box-shadow: 0 8px 28px rgb(30 75 116 / .06);
+  }
+
+  .wd-workspace-content {
+    min-width: 0;
+  }
+}

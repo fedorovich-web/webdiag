@@ -13,12 +13,12 @@
   margin-inline: auto;
 }
 .wd-not-found-grid {
-  min-height: 520px;
+  min-height: 560px;
   display: grid;
   grid-template-columns: minmax(0, .9fr) minmax(410px, 1.1fr);
   gap: 42px;
   align-items: center;
-  padding: 46px 0 34px;
+  padding: 52px 0 40px;
 }
 .wd-not-found-copy { position: relative; z-index: 2; }
 .wd-not-found-code {
@@ -29,7 +29,7 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  font-size: 86px;
+  font-size: 116px;
   font-weight: 850;
   line-height: .9;
   letter-spacing: -.06em;
@@ -37,7 +37,7 @@
 .wd-not-found h1 {
   margin: 9px 0 13px;
   color: #091642;
-  font-size: clamp(48px, 4vw, 64px);
+  font-size: clamp(50px, 4.2vw, 68px);
   font-weight: 770;
   line-height: .99;
   letter-spacing: -.052em;
@@ -136,7 +136,7 @@
   grid-template-columns: minmax(260px, .75fr) minmax(420px, 1.25fr);
   gap: 34px;
   align-items: center;
-  margin-bottom: 34px;
+  margin-bottom: 40px;
   padding: 24px 26px;
   border: 1px solid #dfe8f1;
   border-radius: 16px;
@@ -199,7 +199,7 @@
 }
 .wd-not-found-search button svg { width: 14px; height: 14px; }
 
-.wd-not-found-section { padding: 12px 0 28px; }
+.wd-not-found-section { padding: 16px 0 34px; }
 .wd-not-found-section > header { margin-bottom: 14px; }
 .wd-not-found-card-grid {
   display: grid;
