@@ -56,6 +56,12 @@ const benefitArtwork = [
   "/home/benefit-time.webp",
 ] as const;
 
+const knowledgeArtwork = [
+  "/home/knowledge-technical-seo.webp",
+  "/home/knowledge-robots.webp",
+  "/home/knowledge-core-web-vitals.webp",
+] as const;
+
 const platformLogos: Record<string, string> = {
   WordPress: "/home/cms/wordpress.svg",
   OpenCart: "/home/cms/opencart.svg",
@@ -257,13 +263,40 @@ export function HomePage({ locale }: { locale: Locale }) {
         </div>
       </section>
 
-      <section className="wd-section wd-faq-section" id="faq">
-        <div className="shell wd-faq-layout">
-          <div className="wd-section-intro">
-            <h2>{t(homeContent.faqTitle)}</h2>
-            <p>{locale === "ru" ? "Короткие ответы на популярные вопросы" : "Short answers to common questions"}</p>
+      <section className="wd-section wd-knowledge-faq-section">
+        <div className="shell wd-knowledge-faq-grid">
+          <div id="knowledge">
+            <div className="wd-section-headline">
+              <div className="wd-section-intro">
+                <h2>{t(homeContent.knowledgeTitle)}</h2>
+                <p>{locale === "ru" ? "Инструкции, гайды и статьи для веб-мастеров" : "Guides and articles for webmasters"}</p>
+              </div>
+              <Link className="wd-section-link" href={locale === "ru" ? "/knowledge" : "/en/knowledge"}>
+                {t(homeContent.knowledgeAction)}<span aria-hidden="true">→</span>
+              </Link>
+            </div>
+            <div className="wd-resource-grid">
+              {homeContent.resources.map((resource, index) => (
+                <Link className="wd-resource-card" href={t(resource.href)} key={t(resource.title)}>
+                  <div className="wd-resource-visual">
+                    <img src={knowledgeArtwork[index]} alt="" width="480" height="360" loading="lazy" decoding="async" />
+                  </div>
+                  <div>
+                    <span className="wd-resource-label">{index === 0 ? "SEO" : index === 1 ? (locale === "ru" ? "Руководство" : "Guide") : (locale === "ru" ? "Аналитика" : "Analytics")}</span>
+                    <h3>{t(resource.title)}</h3>
+                    <p>{t(resource.description)}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
-          <HomeFaqAccordion items={faqItems} />
+          <div className="wd-faq-column" id="faq">
+            <div className="wd-section-intro">
+              <h2>{t(homeContent.faqTitle)}</h2>
+              <p>{locale === "ru" ? "Короткие ответы на популярные вопросы" : "Short answers to common questions"}</p>
+            </div>
+            <HomeFaqAccordion items={faqItems} />
+          </div>
         </div>
       </section>
 
