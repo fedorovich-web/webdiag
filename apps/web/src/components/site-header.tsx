@@ -14,7 +14,6 @@ import {
 import { publicTools, type Locale } from "@webdiag/tool-registry";
 import { LanguageSwitcher } from "./language-switcher";
 import { SiteBrand } from "./site-brand";
-import { ThemeSwitcher } from "./theme-switcher";
 import { ToolsMenuShell } from "./tools-menu-shell";
 import { loginPath, toolsPath } from "../lib/routes";
 
@@ -140,7 +139,6 @@ export function SiteHeader({ locale }: SiteHeaderProps) {
             </summary>
             <div className="mobile-menu-panel">
               <LanguageSwitcher locale={locale} className="language-switcher-mobile" />
-              <ThemeSwitcher locale={locale} />
               <NavigationLinks locale={locale} compact />
               <Link className="wd-header-cta" href={registerHref}>{createAccount}</Link>
             </div>
