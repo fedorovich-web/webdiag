@@ -4,16 +4,20 @@ import { pageMetadata } from "../../../../src/lib/seo";
 
 export const metadata: Metadata = {
   ...pageMetadata({
-  locale: "en",
-  title: "Sign in",
-  description: "Sign in to WebDiag using a secure server-side session.",
-  canonical: "/en/login",
-  ruPath: "/login",
-  enPath: "/en/login",
+    locale: "en",
+    title: "Sign in to WebDiag",
+    description: "Sign in to WebDiag and continue working with projects, audits, and monitoring.",
+    canonical: "/en/login",
+    ruPath: "/login",
+    enPath: "/en/login",
   }),
   robots: { index: false, follow: false },
 };
 
 export default function Page() {
-  return <main className="shell wd-account-page"><AccountAuthForm locale="en" mode="login" /></main>;
+  return (
+    <main className="wd-auth-page">
+      <AccountAuthForm locale="en" mode="login" />
+    </main>
+  );
 }
