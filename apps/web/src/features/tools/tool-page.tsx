@@ -38,9 +38,9 @@ export function ToolPage({ locale, slug }: { locale: Locale; slug: string }) {
       <section className="wd-tool-hero">
         <div className="shell">
           <nav className="wd-tool-breadcrumbs" aria-label={locale === "ru" ? "Хлебные крошки" : "Breadcrumbs"}>
-            <Link href={prefix || "/"}>{text.home}</Link>
+            <Link href={prefix || "/"} prefetch={false}>{text.home}</Link>
             <ChevronRight aria-hidden="true" />
-            <Link href={toolsPath(locale)}>{text.tools}</Link>
+            <Link href={toolsPath(locale)} prefetch={false}>{text.tools}</Link>
             <ChevronRight aria-hidden="true" />
             <span aria-current="page">{t(content.h1)}</span>
           </nav>
