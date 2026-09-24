@@ -31,6 +31,9 @@ export function ContactPage({ locale }: { locale: Locale }) {
         namePlaceholder: "Как к вам обращаться",
         emailPlaceholder: "you@example.ru",
         messagePlaceholder: "Опишите вопрос или предложение...",
+        ctaTitle: "Остались вопросы?",
+        ctaText: "Напишите в поддержку WebDiag — ответим по существу и поможем разобраться с сервисом.",
+        ctaAction: "Написать в поддержку",
       }
     : {
         eyebrow: "WebDiag support",
@@ -51,6 +54,9 @@ export function ContactPage({ locale }: { locale: Locale }) {
         namePlaceholder: "How should we address you?",
         emailPlaceholder: "you@example.com",
         messagePlaceholder: "Describe your question or suggestion...",
+        ctaTitle: "Still have questions?",
+        ctaText: "Contact WebDiag support and we will help you work through the product question.",
+        ctaAction: "Contact support",
       };
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -99,6 +105,14 @@ export function ContactPage({ locale }: { locale: Locale }) {
               <label className="wd-contact-message"><span>{t.message}</span><textarea rows={7} value={message} onChange={(event) => setMessage(event.target.value)} placeholder={t.messagePlaceholder} required /></label>
               <button type="submit"><Send aria-hidden="true" />{t.send}<span aria-hidden="true">→</span></button>
             </form>
+          </section>
+
+          <section className="wd-contact-support-cta" aria-labelledby="contact-support-cta-title">
+            <div>
+              <h2 id="contact-support-cta-title">{t.ctaTitle}</h2>
+              <p>{t.ctaText}</p>
+            </div>
+            <a href={`mailto:${SUPPORT_EMAIL}`}><Mail aria-hidden="true" />{t.ctaAction}<span aria-hidden="true">→</span></a>
           </section>
         </div>
       </section>
