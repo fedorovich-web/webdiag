@@ -49,7 +49,7 @@ export function AccountIssueDetail({
 
   const { issue } = detail;
   return (
-    <article className="wd-account-dashboard wd-issue-detail-page">
+    <article className="wd-account-dashboard wd-issue-detail-page wd-issue-detail-render">
       <nav className="wd-account-breadcrumb" aria-label={ru ? "Навигация кабинета" : "Account navigation"}>
         <Link href={savedAuditIssuesPath(locale, projectId, auditId)}>
           {ru ? "Проблемы и приоритеты" : "Issues and priorities"}
@@ -57,13 +57,18 @@ export function AccountIssueDetail({
         <span aria-hidden="true">/</span>
         <span>{issue.title}</span>
       </nav>
-      <header className="wd-account-section-head">
+      <header className="wd-account-section-head wd-issue-detail-render-head">
         <div>
           <span className="eyebrow">#{issue.fix_order} · {issuePriorityLabel(locale, issue.priority)}</span>
           <h1>{issue.title}</h1>
           <p>{issueCategoryLabel(locale, issue.category)} · {formatAffectedUrlCount(locale, issue.affected_urls.length)}</p>
         </div>
       </header>
+      <section className="wd-issue-detail-summary" aria-label={ru ? "Сводка проблемы" : "Issue summary"}>
+        <article><span>{ru ? "Приоритет" : "Priority"}</span><strong>{issuePriorityLabel(locale, issue.priority)}</strong></article>
+        <article><span>{ru ? "Категория" : "Category"}</span><strong>{issueCategoryLabel(locale, issue.category)}</strong></article>
+        <article><span>{ru ? "Страницы" : "Pages"}</span><strong>{issue.affected_urls.length}</strong></article>
+      </section>
       <section className="wd-account-card wd-issue-impact">
         <span className="eyebrow">{ru ? "Почему это важно" : "Why this matters"}</span>
         <h2>{ru ? "Что обнаружено" : "What was found"}</h2>

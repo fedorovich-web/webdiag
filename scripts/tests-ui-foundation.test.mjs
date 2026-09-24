@@ -5,27 +5,17 @@ import test from "node:test";
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 const layouts = ["apps/web/app/(ru)/layout.tsx", "apps/web/app/(en)/layout.tsx"];
 
-test("theme hydration handling is scoped to the body theme attribute", async () => {
+test("public layouts enforce the approved light-only interface", async () => {
   for (const path of layouts) {
     const source = await read(path);
     assert.match(source, /<html[^>]*data-scroll-behavior="smooth"/);
-    assert.match(source, /<body data-theme="light" data-theme-ready="false" suppressHydrationWarning>/);
-    assert.doesNotMatch(source, /<html[^>]*suppressHydrationWarning/);
+    assert.match(source, /<body data-theme="light" data-theme-ready="true">/);
+    assert.doesNotMatch(source, /ThemeBootstrapScript|ThemeSwitcher|suppressHydrationWarning/);
   }
-});
 
-test("theme production sources expose only explicit light and dark modes", async () => {
-  for (const path of [
-    "apps/web/src/lib/theme.ts",
-    "apps/web/src/components/theme-bootstrap-script.tsx",
-    "apps/web/src/components/theme-switcher.tsx",
-    "apps/web/app/globals.css",
-  ]) {
-    const source = await read(path);
-    assert.doesNotMatch(source, /["']system["']/);
-    assert.doesNotMatch(source, /prefers-color-scheme/);
-    assert.doesNotMatch(source, /matchMedia/);
-  }
+  const globals = await read("apps/web/app/globals.css");
+  assert.match(globals, /body\[data-theme="light"\]/);
+  assert.doesNotMatch(globals, /data-theme="dark"|prefers-color-scheme|matchMedia/);
 });
 
 test("language control remains a two-link localized navigation", async () => {
@@ -157,11 +147,11 @@ test("SEO layer includes social metadata, structured data, and localized sitemap
   assert.match(jsonLd, /replace\(\/<\/g/);
 });
 
-test("mobile navigation keeps localized language and theme controls", async () => {
+test("mobile navigation keeps localized language controls without a theme switch", async () => {
   const header = await read("apps/web/src/components/site-header.tsx");
   assert.match(header, /className="mobile-menu"/);
   assert.match(header, /language-switcher-mobile/);
-  assert.match(header, /<ThemeSwitcher locale=\{locale\} \/>/);
+  assert.doesNotMatch(header, /ThemeSwitcher|theme-switch/);
 });
 
 test("random generators wait for an explicit client action", async () => {

@@ -15,19 +15,6 @@ body[data-theme="light"] {
   --wd-ms: #5b6974;
 }
 
-body[data-theme="dark"] {
-  --brand: #22d3ee;
-  --brand-hover: #67e8f9;
-  --brand-contrast: #06191b;
-  --brand-soft: #12322f;
-  --accent: #60a5fa;
-  --accent-soft: #122b3d;
-  --focus: #34d399;
-  --surface-muted: #0b151a;
-  --line: #26383e;
-  --line-strong: #35505a;
-}
-
 /* Never fall back to the legacy violet accent on shared public surfaces. */
 .eyebrow-on-dark {
   color: #67e8f9;
@@ -235,5 +222,158 @@ body[data-theme="light"] .wd-home .wd-report-recommendation > span {
 @media (prefers-reduced-motion: reduce) {
   .wd-workspace-navigation a {
     transition: none;
+  }
+}
+
+
+/* Unified account workspace — same light product language as the public WebDiag UI. */
+.wd-account-workspace-page {
+  --wd-account-canvas: #f5f9fd;
+  --wd-account-surface: #ffffff;
+  --wd-account-border: #dfe8f1;
+  --wd-account-accent: #1687f8;
+  --wd-account-radius: 14px;
+  --wd-account-rail-width: 244px;
+  width: min(1360px, calc(100% - 32px));
+  border-color: #e1eaf2;
+  background:
+    radial-gradient(circle at 100% 0%, rgb(34 211 238 / .055), transparent 26rem),
+    linear-gradient(180deg, #f7fbff 0%, #f4f8fc 100%);
+}
+
+.wd-account-workspace-page .wd-workspace-sidebar {
+  padding: 13px;
+  border-color: #dfe8f1;
+  background: #fff;
+  box-shadow: 0 10px 30px rgb(31 72 108 / .045);
+}
+
+.wd-account-workspace-page .wd-workspace-identity {
+  background: linear-gradient(135deg, #eefbf8 0%, #f1f8ff 100%);
+}
+
+.wd-account-workspace-page .wd-workspace-navigation a,
+.wd-account-workspace-page .wd-workspace-navigation [aria-disabled="true"] {
+  gap: 10px;
+  color: #5a6a82;
+}
+
+.wd-account-workspace-page .wd-workspace-navigation a > svg,
+.wd-account-workspace-page .wd-workspace-navigation [aria-disabled="true"] > svg {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+  color: #7f91a7;
+  stroke-width: 1.9;
+}
+
+.wd-account-workspace-page .wd-workspace-navigation a:hover > svg {
+  color: #1687f8;
+}
+
+.wd-account-workspace-page .wd-workspace-navigation a[aria-current="page"] {
+  border-color: #cae7ea;
+  background: linear-gradient(110deg, #eafbf6 0%, #eefaff 58%, #eef5ff 100%);
+  color: #0b788d;
+  box-shadow: inset 3px 0 0 #21c8b1;
+}
+
+.wd-account-workspace-page .wd-workspace-navigation a[aria-current="page"] > svg {
+  color: #0e9fba;
+}
+
+.wd-account-workspace-page .wd-workspace-project-switcher select {
+  border: 1px solid #dce6ef;
+  background: #f8fbfd;
+}
+
+.wd-account-workspace-page .wd-account-overview > .wd-account-dashboard-head,
+.wd-account-workspace-page .wd-account-dashboard > .wd-account-dashboard-head {
+  border-color: #dfe8f1;
+  background:
+    radial-gradient(circle at 88% 24%, rgb(34 211 238 / .09), transparent 17rem),
+    linear-gradient(135deg, #ffffff 0%, #fbfdff 58%, #eefbf8 100%);
+}
+
+.wd-account-workspace-page .wd-account-dashboard-head h1 {
+  color: #091642;
+}
+
+.wd-account-workspace-page .wd-account-dashboard-head p {
+  color: #718198;
+}
+
+.wd-account-workspace-page .wd-operation-metrics {
+  border-color: #dfe8f1;
+  background: #dfe8f1;
+}
+
+.wd-account-workspace-page .wd-operation-metrics article {
+  background: #fff;
+}
+
+.wd-account-workspace-page .wd-operation-metrics strong {
+  color: #12234a;
+}
+
+.wd-account-workspace-page .wd-operation-metrics article:nth-child(2) strong {
+  color: #148bc8;
+}
+
+.wd-account-workspace-page .wd-operation-metrics article:nth-child(3) strong {
+  color: #e15b70;
+}
+
+.wd-account-workspace-page .wd-operation-metrics article:nth-child(4) strong {
+  color: #17a889;
+}
+
+.wd-account-workspace-page .wd-operation-actions {
+  border: 1px solid #dcebee;
+  background: linear-gradient(110deg, #eef9ff 0%, #f8fbff 48%, #edfff9 100%);
+}
+
+.wd-account-workspace-page .wd-operation-action-list a,
+.wd-account-workspace-page .wd-operation-project-card,
+.wd-account-workspace-page .wd-project-archive-items article,
+.wd-account-workspace-page .wd-account-card,
+.wd-account-workspace-page .wd-report-list > article {
+  border-color: #dfe8f1;
+  background: #fff;
+}
+
+.wd-account-workspace-page .wd-operation-project-card:hover {
+  border-color: #bfd9e9;
+}
+
+.wd-account-workspace-page .wd-operation-status,
+.wd-account-workspace-page .wd-report-share-state,
+.wd-account-workspace-page .wd-monitor-state,
+.wd-account-workspace-page .wd-enabled-state {
+  border-radius: 999px;
+}
+
+.wd-account-workspace-page :is(input, select, textarea) {
+  border-color: #dce6ef;
+}
+
+.wd-account-workspace-page .wd-button.wd-button-secondary {
+  border-color: #dce6ef;
+  background: #fff;
+  color: #243755;
+}
+
+.wd-account-workspace-page .wd-button.wd-button-secondary:hover {
+  border-color: #bcd6e7;
+  background: #f8fbfd;
+  color: #087f98;
+}
+
+@media (max-width: 900px) {
+  .wd-account-workspace-page {
+    width: 100%;
+    border: 0;
+    border-radius: 0;
+    margin-top: 0;
   }
 }

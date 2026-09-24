@@ -31,7 +31,7 @@ test.describe("account workspace", () => {
     await expect(page.getByLabel("Имя")).toHaveAttribute("autocomplete", "name");
     await expect(page.getByLabel("Пароль")).toHaveAttribute("autocomplete", "new-password");
     await expect(
-      page.locator(".wd-account-card").getByRole("link", { name: "Войти" }),
+      page.locator(".wd-auth-card").getByRole("link", { name: "Войти" }),
     ).toHaveAttribute("href", "/login");
   });
 
@@ -100,8 +100,8 @@ test.describe("account workspace", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/account");
 
-    await expect(page.getByRole("heading", { level: 1, name: "Обзор" })).toBeVisible();
-    await expect(page.getByText("Требуют внимания", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Добро пожаловать!" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Проблемы и приоритеты" })).toBeVisible();
     await expect(page.getByText("Есть изменения")).toBeVisible();
     await expect(page.getByRole("link", { name: "Проверить изменения" })).toBeVisible();
     await expect(page.getByText(/uptime|доступност.*%/i)).toHaveCount(0);
@@ -288,7 +288,7 @@ test.describe("account workspace", () => {
     await expect(page.getByText(/удалить навсегда/i)).toHaveCount(0);
     await page.getByRole("button", { name: "Восстановить" }).click();
     await expect(page.getByRole("heading", { name: "Сайт клиента" })).toBeVisible();
-    await expect(page.getByText("2", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("Есть изменения", { exact: true })).toBeVisible();
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`/en/account/projects/${firstProject.id}`);
@@ -463,17 +463,17 @@ test.describe("account workspace", () => {
     });
 
     await page.goto(`/account/projects/${firstProject.id}/audits/${auditId}/issues`);
-    await expect(page.getByRole("heading", { level: 1, name: "Очередь исправлений" })).toBeVisible();
-    await expect(page.getByRole("article").getByText("P0 — исправить первым")).toBeVisible();
-    await expect(page.getByText("1 страница")).toBeVisible();
-    await expect(page.getByText("Следующее действие")).toBeVisible();
-    await expect(page.getByRole("link", { name: issue.title })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Проблемы проекта" })).toBeVisible();
+    await expect(page.locator(".wd-issues-render-row .wd-issues-priority").first()).toHaveText("P0 — исправить первым");
+    await expect(page.getByText(issue.title).first()).toBeVisible();
+    await expect(page.getByText("Затронутые URL").first()).toBeVisible();
+    await expect(page.getByText(issue.recommendation.summary).first()).toBeVisible();
     await expect(page.getByRole("link", { name: "Проблемы", exact: true })).toHaveAttribute("aria-current", "page");
     await page.locator(".wd-issue-filters label").filter({ hasText: /^Категория/ }).locator("select").selectOption("security");
     await expect.poll(() => filteredRequest).toContain("category=security");
     await expect(page.getByRole("button", { name: "Сбросить" })).toBeVisible();
 
-    await page.getByRole("link", { name: issue.title }).click();
+    await page.getByRole("link", { name: "Открыть проблему" }).click();
     await expect(page.getByRole("heading", { level: 1, name: issue.title })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Что обнаружено" })).toBeVisible();
     await expect(page.getByText(issue.description)).toBeVisible();

@@ -73,9 +73,8 @@ test.describe("production browser smoke", () => {
     expect(menuBox?.height).toBeGreaterThanOrEqual(44);
     await menu.click();
 
-    const themeBox = await page.getByRole("switch", { name: "Тёмная тема" }).boundingBox();
+    await expect(page.getByRole("switch")).toHaveCount(0);
     const localeBox = await page.getByRole("navigation", { name: "Выбор языка" }).boundingBox();
-    expect(themeBox?.height).toBeGreaterThanOrEqual(44);
     expect(localeBox?.height).toBeGreaterThanOrEqual(44);
   });
 
@@ -92,7 +91,7 @@ test.describe("production browser smoke", () => {
     await expect(page.locator('.wd-brand[data-brand-variant="header"] .brand-mark')).toBeVisible();
 
     await page.locator(".mobile-menu summary").click();
-    await expect(page.getByRole("switch", { name: "Dark theme" })).toBeVisible();
+    await expect(page.getByRole("switch")).toHaveCount(0);
     await expect(page.getByRole("navigation", { name: "Language selection" })).toBeVisible();
   });
 });

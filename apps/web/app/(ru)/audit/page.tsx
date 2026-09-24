@@ -14,10 +14,15 @@ export const metadata: Metadata = pageMetadata({
 export default function Page() {
   return (
     <main className="shell page-main wd-internal-page">
-      <header className="page-heading wd-internal-hero">
+      <header className="page-heading wd-internal-hero wd-internal-hero-split" data-hero="audit">
+        <div className="wd-internal-hero-copy">
         <span className="eyebrow">WebDiag</span>
         <h1>Технический SEO-аудит сайта с приоритетами исправлений</h1>
         <p>Проверяйте ключевые технические и SEO-сигналы, находите проблемы на конкретных страницах и переходите от найденной ошибки к понятному следующему шагу.</p>
+              </div>
+        <div className="wd-internal-hero-visual" aria-hidden="true">
+          <img src="/design/hero/audit.webp" alt="" width="1600" height="1000" loading="lazy" decoding="async" />
+        </div>
       </header>
       <section className="wd-internal-grid" aria-label="Состав аудита">
         <article><h2>Что проверяется</h2><p>Индексация, robots.txt, sitemap.xml, canonical, статусы ответа, редиректы, мета-теги, скорость, HTTPS и доступность.</p></article>

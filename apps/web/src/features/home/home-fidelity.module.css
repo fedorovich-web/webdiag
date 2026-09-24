@@ -206,7 +206,6 @@
 :global(body[data-theme="light"]) .fidelity :global(.wd-score-chip small) { color: #16846f; }
 :global(body[data-theme="light"]) .fidelity :global(.wd-monitoring-score-row span) { color: #697486; }
 :global(body[data-theme="light"]) .fidelity :global(.wd-monitoring-score-row strong.is-critical) { color: #d33950; }
-:global(body[data-theme="light"]) .fidelity :global(.wd-resource-label) { color: #126fcd; }
 :global(body[data-theme="light"]) .fidelity :global(.wd-platform-strip p)::after { color: #68758e; }
 :global(body[data-theme="light"]) .fidelity :global(.wd-platform-strip .shell > div span) { color: #68758e; }
 

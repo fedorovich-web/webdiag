@@ -172,13 +172,13 @@ export function HomePage({ locale }: { locale: Locale }) {
             <p className="wd-hero-note">{t(homeContent.heroNote)}</p>
           </div>
           <div className="wd-hero-visual" aria-hidden="true">
-            <img className="wd-hero-dashboard" src="/home/hero-dashboard.webp" alt="" width="1080" height="720" fetchPriority="high" decoding="async" />
+            <img className="wd-hero-dashboard" src="/design/hero/home.webp" alt="" width="900" height="900" loading="eager" decoding="async" />
           </div>
         </div>
         <div className="shell wd-hero-benefits" aria-label={locale === "ru" ? "Преимущества WebDiag" : "WebDiag benefits"}>
           {homeContent.trustFacts.map((fact, index) => (
             <div className="wd-hero-benefit" key={t(fact)}>
-              <img src={benefitArtwork[index]} alt="" width="192" height="192" loading="eager" decoding="async" />
+              <img src={benefitArtwork[index]} alt="" width="192" height="192" loading="lazy" decoding="async" />
               {locale === "ru" && index === 2 ? (
                 <span><strong style={{ display: "block" }}>Экономия времени</strong><small style={{ display: "block", fontWeight: 500 }}>Для владельцев и SEO-специалистов</small></span>
               ) : (
@@ -214,7 +214,7 @@ export function HomePage({ locale }: { locale: Locale }) {
             {popularTools.map((item) => {
               const Icon = popularToolIcons[item.slug] ?? SearchCheck;
               return (
-                <Link className="wd-popular-tool-card" href={`${toolsHref}/${item.slug}`} key={item.slug}>
+                <Link className="wd-popular-tool-card" prefetch={false} href={`${toolsHref}/${item.slug}`} key={item.slug}>
                   <IconBox icon={Icon} />
                   <div><h3>{t(item.title)}</h3><p>{t(item.description)}</p></div>
                   <ChevronRight aria-hidden="true" className="wd-card-arrow" />
@@ -267,19 +267,36 @@ export function HomePage({ locale }: { locale: Locale }) {
         <div className="shell wd-knowledge-faq-grid">
           <div id="knowledge">
             <div className="wd-section-headline">
-              <div className="wd-section-intro"><h2>{t(homeContent.knowledgeTitle)}</h2><p>{locale === "ru" ? "Инструкции, гайды и статьи для веб-мастеров" : "Guides and articles for webmasters"}</p></div>
-              <Link className="wd-section-link" href={locale === "ru" ? "/knowledge" : "/en/knowledge"}>{t(homeContent.knowledgeAction)}<span aria-hidden="true">→</span></Link>
+              <div className="wd-section-intro">
+                <h2>{t(homeContent.knowledgeTitle)}</h2>
+                <p>{locale === "ru" ? "Инструкции, гайды и статьи для веб-мастеров" : "Guides and articles for webmasters"}</p>
+              </div>
+              <Link className="wd-section-link" href={locale === "ru" ? "/knowledge" : "/en/knowledge"}>
+                {t(homeContent.knowledgeAction)}<span aria-hidden="true">→</span>
+              </Link>
             </div>
             <div className="wd-resource-grid">
               {homeContent.resources.map((resource, index) => (
-                <Link className="wd-resource-card" href={t(resource.href)} key={t(resource.title)}>
-                  <div className="wd-resource-visual"><img src={knowledgeArtwork[index]} alt="" width="480" height="360" loading="lazy" decoding="async" /></div>
-                  <div><span className="wd-resource-label">{index === 0 ? "SEO" : index === 1 ? (locale === "ru" ? "Руководство" : "Guide") : (locale === "ru" ? "Аналитика" : "Analytics")}</span><h3>{t(resource.title)}</h3><p>{t(resource.description)}</p></div>
+                <Link className="wd-resource-card" prefetch={false} href={t(resource.href)} key={t(resource.title)}>
+                  <div className="wd-resource-visual">
+                    <img src={knowledgeArtwork[index]} alt="" width="480" height="360" loading="lazy" decoding="async" />
+                  </div>
+                  <div>
+                    <span className="wd-resource-label">{index === 0 ? "SEO" : index === 1 ? (locale === "ru" ? "Руководство" : "Guide") : (locale === "ru" ? "Аналитика" : "Analytics")}</span>
+                    <h3>{t(resource.title)}</h3>
+                    <p>{t(resource.description)}</p>
+                  </div>
                 </Link>
               ))}
             </div>
           </div>
-          <div className="wd-faq-column" id="faq"><div className="wd-section-intro"><h2>{t(homeContent.faqTitle)}</h2><p>{locale === "ru" ? "Короткие ответы на популярные вопросы" : "Short answers to common questions"}</p></div><HomeFaqAccordion items={faqItems} /></div>
+          <div className="wd-faq-column" id="faq">
+            <div className="wd-section-intro">
+              <h2>{t(homeContent.faqTitle)}</h2>
+              <p>{locale === "ru" ? "Короткие ответы на популярные вопросы" : "Short answers to common questions"}</p>
+            </div>
+            <HomeFaqAccordion items={faqItems} />
+          </div>
         </div>
       </section>
 

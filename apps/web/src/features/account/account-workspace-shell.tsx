@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { Activity, AlertTriangle, FileBarChart2, FileText, FolderKanban, Gauge, History, LayoutDashboard, Menu, Settings, Sparkles, X, type LucideIcon } from "lucide-react";
 import { createPortal } from "react-dom";
 import {
   useEffect,
@@ -50,6 +50,19 @@ interface WorkspaceNavigationProps {
   readonly onNavigate?: () => void;
 }
 
+const navigationIcons: Readonly<Record<string, LucideIcon>> = {
+  overview: LayoutDashboard,
+  projects: FolderKanban,
+  ai: Sparkles,
+  reports: FileBarChart2,
+  account: Settings,
+  project_overview: Gauge,
+  audits: History,
+  issues: AlertTriangle,
+  monitoring: Activity,
+  project_reports: FileText,
+};
+
 const focusableSelector = [
   "a[href]",
   "button:not([disabled])",
@@ -95,18 +108,25 @@ function WorkspaceNavigation({
   }
 
   function items(values: ReturnType<typeof buildAccountWorkspaceNavigation>["portfolio"]) {
-    return values.map((item) => item.href ? (
-      <Link
-        key={item.id}
-        href={item.href}
-        aria-current={item.active ? "page" : undefined}
-        onClick={onNavigate}
-      >
-        {item.label}
-      </Link>
-    ) : (
-      <span key={item.id} aria-disabled="true">{item.label}</span>
-    ));
+    return values.map((item) => {
+      const Icon = navigationIcons[item.id] ?? LayoutDashboard;
+      return item.href ? (
+        <Link
+          key={item.id}
+          href={item.href}
+          aria-current={item.active ? "page" : undefined}
+          onClick={onNavigate}
+        >
+          <Icon aria-hidden="true" />
+          <span>{item.label}</span>
+        </Link>
+      ) : (
+        <span key={item.id} aria-disabled="true">
+          <Icon aria-hidden="true" />
+          <span>{item.label}</span>
+        </span>
+      );
+    });
   }
 
   return (
@@ -377,7 +397,7 @@ export function AccountWorkspaceShell({
       <div className="wd-workspace-layout">
         <aside className="wd-workspace-sidebar" aria-label={ru ? "Панель кабинета" : "Workspace panel"}>
           <div className="wd-workspace-identity">
-            <span className="eyebrow">WebDiag Account</span>
+            <span className="eyebrow">{ru ? "Личный кабинет" : "WebDiag account"}</span>
             <strong>{session.user.display_name}</strong>
             <small>{session.user.email}</small>
           </div>

@@ -146,11 +146,11 @@ test.describe("account reports", () => {
 
     await expect(page.getByRole("heading", { level: 1, name: snapshot.title })).toBeVisible();
     await expect(page.locator(".wd-workspace-navigation a[aria-current=\"page\"]")).toHaveText("Отчёты");
-    await expect(page.getByRole("heading", { name: "Результат сохранённого аудита" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Заголовки безопасности" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Заголовки безопасности требуют внимания" })).toBeVisible();
-    await expect(page.getByText("Зафиксировано проблем: 1.", { exact: false })).toBeVisible();
-    await expect(page.getByText("Высокая", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Результаты проверок" })).toBeVisible();
+    await expect(page.getByText("Заголовки безопасности", { exact: true })).toBeVisible();
+    await expect(page.getByText("Заголовки безопасности требуют внимания", { exact: true })).toBeVisible();
+    await expect(page.locator(".wd-report-render-kpis .is-danger")).toContainText("1");
+    await expect(page.getByText("Безопасность", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("P0 — исправить первым", { exact: true }).first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "Что содержит этот отчёт" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Скачать HTML" })).toHaveAttribute(
@@ -179,7 +179,7 @@ test.describe("account reports", () => {
     expect(publicResponse?.headers()["x-robots-tag"]).toBe("noindex, nofollow, noarchive");
     expect(publicResponse?.headers()["referrer-policy"]).toBe("no-referrer");
     await expect(page.getByRole("heading", { level: 1, name: snapshot.title })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Результат сохранённого аудита" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Результаты проверок" })).toBeVisible();
     await expect(page.getByText(firstProject.id)).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Скачать HTML" })).toHaveAttribute(
       "href",
@@ -190,8 +190,8 @@ test.describe("account reports", () => {
 
     await page.goto(`/account/reports/${reportId}`);
     await expect(page.getByRole("heading", { level: 1, name: snapshot.title })).toBeVisible();
-    const mobileReportLastMeta = await page.locator(".wd-report-meta > div").last().boundingBox();
-    expect(mobileReportLastMeta?.width).toBeGreaterThan(300);
+    const mobileReportLastKpi = await page.locator(".wd-report-render-kpis article").last().boundingBox();
+    expect(mobileReportLastKpi?.width).toBeGreaterThan(300);
     page.once("dialog", (dialog) => dialog.accept());
     await page.getByRole("button", { name: "Отозвать ссылку" }).click();
     await expect(page.getByRole("button", { name: "Включить общий доступ" })).toBeVisible();
