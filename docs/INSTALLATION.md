@@ -534,7 +534,10 @@ Copy-Item .env.production.example ..\webdiag.production.env
 
 Monitoring и crawler internal token должны быть разными значениями длиной не
 менее 32 символов. Реальные значения не добавляются в Git, Docker context,
-команды shell history, PR или логи.
+команды shell history, PR или логи. Публичная регистрация дополнительно проходит
+через persistent admission budget: по умолчанию не более 30 принятых попыток в
+минуту и двух одновременных password-hash операций; зависшие leases истекают
+через 30 секунд. Эти лимиты одинаковы для core и opt-in AI topology.
 
 До сборки проверьте полностью объединённую модель. Скрипт не печатает
 отрендеренный environment или stderr Compose:
@@ -545,8 +548,9 @@ npm run verify:production-compose -- --env-file ..\webdiag.production.env
 
 Успех выглядит как `production Compose preflight passed: services=3`. Команда
 проверяет production mode, secure cookies, выключенный AI runtime,
-build/runtime public release, allowlist двух core-секретов, точную topology
-volumes, внутренние origin и loopback ports. Она также проверяет поддержку
+build/runtime public release, allowlist двух core-секретов, registration
+admission limits, точную topology volumes, внутренние origin и loopback ports.
+Она также проверяет поддержку
 Compose merge tags `!reset` и `!override`.
 
 Сборка и запуск подготовленной модели:

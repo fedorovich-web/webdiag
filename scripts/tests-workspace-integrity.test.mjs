@@ -147,6 +147,8 @@ test("production core and opt-in AI overlay have separate fail-closed preflights
 
   assert.match(productionCompose, /WEBDIAG_ENVIRONMENT:\s*production/g);
   assert.match(productionCompose, /WEBDIAG_ACCOUNT_COOKIE_SECURE:\s*["']true["']/);
+  assert.match(productionCompose, /WEBDIAG_ACCOUNT_REGISTRATION_REQUEST_LIMIT:/);
+  assert.match(productionCompose, /WEBDIAG_ACCOUNT_REGISTRATION_CONCURRENCY_LIMIT:/);
   assert.match(productionCompose, /WEBDIAG_AI_RUNTIME_ENABLED:\s*["']false["']/);
   assert.match(productionCompose, /127\.0\.0\.1:8000\/ready/);
   assert.doesNotMatch(
@@ -184,6 +186,15 @@ test("production core and opt-in AI overlay have separate fail-closed preflights
     aiCompose,
     /command:\s*\["dramatiq",\s*"--processes",\s*"1",\s*"--threads",\s*"1",\s*"webdiag_worker\.actors"\]/,
   );
+  for (const name of [
+    "WEBDIAG_ACCOUNT_REGISTRATION_REQUEST_LIMIT",
+    "WEBDIAG_ACCOUNT_REGISTRATION_WINDOW_SECONDS",
+    "WEBDIAG_ACCOUNT_REGISTRATION_CONCURRENCY_LIMIT",
+    "WEBDIAG_ACCOUNT_REGISTRATION_LEASE_SECONDS",
+  ]) {
+    assert.match(environmentExample, new RegExp(`^${name}=`, "m"), name);
+    assert.match(aiEnvironmentExample, new RegExp(`^${name}=`, "m"), name);
+  }
   assert.doesNotMatch(aiEnvironmentExample, /^WEBDIAG_AI_ARTIFACT_/m);
   assert.doesNotMatch(environmentExample, /change-me|replace-with/);
   assert.doesNotMatch(aiEnvironmentExample, /change-me|replace-with/);
@@ -208,6 +219,7 @@ test("production core and opt-in AI overlay have separate fail-closed preflights
   assert.doesNotMatch(verifier, /console\.(?:log|error)\([^\n]*(?:stdout|stderr|environment)/);
   assert.match(aiVerifier, /production AI Compose preflight passed/);
   assert.match(aiVerifier, /allowedEnvironmentPlacements/);
+  assert.match(aiVerifier, /WEBDIAG_ACCOUNT_REGISTRATION_CONCURRENCY_LIMIT/);
   assert.doesNotMatch(aiVerifier, /console\.(?:log|error)\([^\n]*(?:stdout|stderr|environment)/);
 
   const workflow = await readFile(new URL(".github/workflows/ci.yml", root), "utf8");

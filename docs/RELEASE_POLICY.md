@@ -23,7 +23,8 @@ npm run verify:production-compose -- --env-file <path-outside-repository>
 
 It renders the base, account, and production Compose files without starting
 containers and checks the three-service web/API/scheduler single-writer policy,
-exact volume topology, environment allowlists, and the API readiness healthcheck.
+exact volume topology, environment allowlists, bounded public-registration work,
+and the API readiness healthcheck.
 The production healthcheck uses `/ready`, which fails closed when either configured
 SQLite path is not read-write reachable; the cheaper `/health` endpoint remains a
 process liveness check. Readiness does not replace a recovery-bundle integrity
@@ -37,7 +38,8 @@ npm run verify:production-ai-compose -- --env-file <path-outside-repository>
 ```
 
 It adds `docker-compose.production.ai.yml` and verifies RabbitMQ, the AI worker,
-private S3 parity, OpenRouter placement, and distinct AI secrets. Passing this
+private S3 parity, OpenRouter placement, distinct AI secrets, and the same bounded
+public-registration policy as the core topology. Passing this
 preflight does not activate any AI tool and does not replace the provider,
 billed-cost, storage recovery, manual image, or fixed-credit approval gates.
 
