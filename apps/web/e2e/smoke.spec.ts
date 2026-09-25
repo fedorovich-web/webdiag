@@ -20,6 +20,17 @@ test.describe("production browser smoke", () => {
     expect(await page.evaluate(() => getComputedStyle(document.body).colorScheme)).toBe("light");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 
+    const documentResponse = await page.request.get("/");
+    expect(documentResponse.headers()).toMatchObject({
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "DENY",
+      "referrer-policy": "strict-origin-when-cross-origin",
+      "permissions-policy": "camera=(), microphone=(), geolocation=()",
+    });
+    expect(documentResponse.headers()["content-security-policy"]).toContain(
+      "frame-ancestors 'none'",
+    );
+
     const brandAssets = [
       { path: "/logo.avif", contentType: "image/avif" },
       { path: "/logo.webp", contentType: "image/webp" },

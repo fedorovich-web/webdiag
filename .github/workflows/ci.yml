@@ -240,6 +240,9 @@ jobs:
           test -n "$robots"
           grep --fixed-strings 'Allow: /' <<<"$robots"
           grep --fixed-strings 'Sitemap: https://webdiag.ru/sitemap.xml' <<<"$robots"
+          headers="$(curl --connect-timeout 2 --max-time 5 --fail --silent --show-error --head http://127.0.0.1:3010/)"
+          grep -i --fixed-strings 'strict-transport-security: max-age=31536000' <<<"$headers"
+          grep -i --fixed-strings 'x-content-type-options: nosniff' <<<"$headers"
           if grep --fixed-strings 'Disallow: /' <<<"$robots"; then
             exit 1
           fi

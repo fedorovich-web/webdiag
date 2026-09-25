@@ -10,9 +10,17 @@ describe("public report document security", () => {
       "referrer-policy": "no-referrer",
     });
     const rules = typeof nextConfig.headers === "function" ? await nextConfig.headers() : [];
-    expect(rules).toContainEqual({
-      source: "/reports/share/:path*",
-      headers: [...publicReportSecurityHeaders],
+    const reportRule = rules.find((rule) => rule.source === "/reports/share/:path*");
+    expect(reportRule).toBeDefined();
+    const headers = Object.fromEntries(
+      (reportRule?.headers ?? []).map(({ key, value }) => [key.toLowerCase(), value]),
+    );
+    expect(headers).toMatchObject({
+      "cache-control": "no-store",
+      "x-robots-tag": "noindex, nofollow, noarchive",
+      "referrer-policy": "no-referrer",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "DENY",
     });
   });
 });
