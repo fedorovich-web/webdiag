@@ -119,9 +119,9 @@ test.describe("account settings", () => {
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 
     await page.goto("/en/account/settings");
-    await expect(page.getByRole("heading", { level: 1, name: "Account" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Account settings" })).toBeVisible();
     await page.getByRole("button", { name: "Workspace menu" }).click();
-    await expect(page.getByRole("link", { name: "Account" })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("link", { name: "Settings" })).toHaveAttribute("aria-current", "page");
     await page.getByRole("button", { name: "Close" }).click();
 
     await page.unroute("**/api/account/sessions/revoke-others");

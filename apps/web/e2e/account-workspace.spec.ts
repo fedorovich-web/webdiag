@@ -77,7 +77,7 @@ test.describe("account workspace", () => {
     await page.getByLabel("Адрес сайта").fill("example.com");
     await page.getByRole("button", { name: "Добавить проект" }).click();
     await expect(page.getByRole("heading", { name: "Основной сайт" }).first()).toBeVisible();
-    await expect(page.getByLabel("Текущий проект")).toHaveValue("");
+    await expect(page.getByLabel("Текущий проект")).toHaveValue(firstProject.id);
     await expect(page.getByLabel("Текущий проект").locator("option")).toHaveCount(2);
     expect(projectListReads).toBe(1);
 
