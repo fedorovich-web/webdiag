@@ -5,6 +5,8 @@ import { AlertTriangle, CalendarDays, CheckCircle2, ChevronRight, RefreshCw, Sea
 import { useEffect, useState, type ChangeEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { accountErrorMessage } from "./account-messages";
+import { getAccountProject } from "./account-workspace-client";
+import type { AccountProjectDetailResponse } from "./account-workspace-contract";
 import { formatAccountDate } from "./account-dashboard-contract";
 import {
   listAccountIssues,
@@ -64,6 +66,7 @@ export function AccountIssuesList({
   const [filters, setFilters] = useState<AccountIssueFilters>(defaultAccountIssueFilters);
   const [query, setQuery] = useState("");
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
+  const [projectHistory, setProjectHistory] = useState<AccountProjectDetailResponse | null>(null);
   const [requestState, setRequestState] = useState<AccountIssuesRequestState>({
     key: "",
     result: null,
@@ -73,6 +76,18 @@ export function AccountIssuesList({
   const loading = requestState.key !== requestKey;
   const result = requestState.result;
   const error = requestState.key === requestKey ? requestState.error : "";
+
+  useEffect(() => {
+    let active = true;
+    getAccountProject(projectId)
+      .then((value) => {
+        if (active) setProjectHistory(value);
+      })
+      .catch(() => {
+        if (active) setProjectHistory(null);
+      });
+    return () => { active = false; };
+  }, [projectId]);
 
   useEffect(() => {
     let active = true;
@@ -116,6 +131,26 @@ export function AccountIssuesList({
   const p2Count = result?.items.filter((issue) => issue.priority === "p2").length ?? 0;
   const p3Count = result?.items.filter((issue) => issue.priority === "p3").length ?? 0;
   const score = result?.audit.score ?? null;
+  const auditTrend = [...(projectHistory?.saved_audits ?? [])]
+    .sort((left, right) => Date.parse(left.completed_at) - Date.parse(right.completed_at))
+    .slice(-6);
+  const drawableAuditTrend = auditTrend.length === 1 ? [auditTrend[0]!, auditTrend[0]!] : auditTrend;
+  const maxTrendIssues = Math.max(1, ...drawableAuditTrend.map((audit) => audit.issue_count));
+  const trendPoints = drawableAuditTrend
+    .map((audit, index) => {
+      const x = drawableAuditTrend.length <= 1 ? 0 : (index * 100) / (drawableAuditTrend.length - 1);
+      const y = 88 - (audit.issue_count / maxTrendIssues) * 68;
+      return `${x},${y}`;
+    })
+    .join(" ");
+  const firstTrendIssues = auditTrend[0]?.issue_count ?? null;
+  const lastTrendIssues = auditTrend.at(-1)?.issue_count ?? null;
+  const issueTrendPercent = firstTrendIssues !== null
+    && lastTrendIssues !== null
+    && firstTrendIssues > 0
+    && auditTrend.length > 1
+      ? Math.round(((lastTrendIssues - firstTrendIssues) / firstTrendIssues) * 100)
+      : null;
 
   function resetFilters() {
     setFilters(defaultAccountIssueFilters);
@@ -181,16 +216,68 @@ export function AccountIssuesList({
             </div>
           </article>
 
-          <article className="wd-issues-audit-context">
-            <header><h2>{ru ? "Последний аудит" : "Latest audit"}</h2></header>
-            <div className="wd-issues-audit-context-main">
-              <strong>{result.total}</strong>
-              <span>{ru ? "проблем найдено" : "issues found"}</span>
-            </div>
-            <dl>
-              <div><dt>{ru ? "Проверок" : "Checks"}</dt><dd>{result.audit.check_count}</dd></div>
-              <div><dt>{ru ? "Дата" : "Date"}</dt><dd>{formatAccountDate(result.audit.completed_at, locale)}</dd></div>
-            </dl>
+          <article className="wd-issues-trend-card">
+            <header>
+              <div>
+                <h2>{ru ? "Динамика проблем" : "Issue trend"}</h2>
+                <small>{ru ? "Последние сохранённые аудиты" : "Latest saved audits"}</small>
+              </div>
+              {issueTrendPercent !== null && (
+                <strong
+                  className="wd-issues-trend-change"
+                  data-tone={issueTrendPercent <= 0 ? "good" : "bad"}
+                >
+                  {issueTrendPercent > 0 ? "+" : ""}{issueTrendPercent}%
+                </strong>
+              )}
+            </header>
+            {trendPoints ? (
+              <>
+                <div className="wd-issues-trend-chart">
+                  <div className="wd-issues-trend-y" aria-hidden="true">
+                    <span>{maxTrendIssues}</span>
+                    <span>{Math.round(maxTrendIssues / 2)}</span>
+                    <span>0</span>
+                  </div>
+                  <svg
+                    viewBox="0 0 100 100"
+                    preserveAspectRatio="none"
+                    role="img"
+                    aria-label={ru ? "Динамика количества проблем" : "Issue count trend"}
+                  >
+                    <defs>
+                      <linearGradient id="wd-issues-trend-fill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#20c8b7" stopOpacity=".22" />
+                        <stop offset="100%" stopColor="#20c8b7" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    <polyline className="wd-issues-trend-area" points={`0,100 ${trendPoints} 100,100`} />
+                    <polyline className="wd-issues-trend-line" points={trendPoints} />
+                  </svg>
+                </div>
+                <div className="wd-issues-trend-footer">
+                  <span>
+                    {auditTrend[0]
+                      ? formatAccountDate(auditTrend[0].completed_at, locale)
+                      : "—"}
+                  </span>
+                  <strong>
+                    {lastTrendIssues ?? result.total}
+                    <small>{ru ? " проблем" : " issues"}</small>
+                  </strong>
+                  <span>
+                    {auditTrend.at(-1)
+                      ? formatAccountDate(auditTrend.at(-1)!.completed_at, locale)
+                      : formatAccountDate(result.audit.completed_at, locale)}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div className="wd-issues-trend-empty">
+                <strong>{result.total}</strong>
+                <span>{ru ? "проблем в текущем аудите" : "issues in current audit"}</span>
+              </div>
+            )}
           </article>
         </section>
       )}
