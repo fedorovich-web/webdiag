@@ -151,7 +151,7 @@ export function AccountAuthForm({ locale, mode }: AccountAuthFormProps) {
         </button>
       </form>
 
-      <div className="wd-auth-divider" aria-hidden="true"><span>{ru ? "или" : "or"}</span></div>
+      {!register && <div className="wd-auth-divider" aria-hidden="true"><span>{ru ? "или" : "or"}</span></div>}
 
       <p className="wd-auth-alternate">
         {text.alternate}{" "}
