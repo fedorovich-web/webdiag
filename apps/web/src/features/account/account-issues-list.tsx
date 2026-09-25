@@ -111,6 +111,13 @@ export function AccountIssuesList({
   const sort = filters.sort ?? "priority";
   const order = filters.order ?? "asc";
   const sortOrder = `${sort}:${order}`;
+  const sortSummary = sort === "priority"
+    ? (order === "asc"
+      ? (ru ? "по приоритету" : "by priority")
+      : (ru ? "по низкому приоритету" : "by low priority"))
+    : sort === "category"
+      ? (ru ? "по типу" : "by type")
+      : (ru ? "по названию" : "by title");
   const normalizedQuery = query.trim().toLowerCase();
   const visibleItems = result?.items.filter((issue) => {
     if (!normalizedQuery) return true;
@@ -309,8 +316,13 @@ export function AccountIssuesList({
 
       {result && (
         <div className="wd-issues-results-heading">
-          <h2>{ru ? `Найдено проблем: ${visibleItems.length}` : `Issues found: ${visibleItems.length}`}</h2>
-          <span>{ru ? "Выберите проблему, чтобы увидеть подробности" : "Select an issue to review details"}</span>
+          <div>
+            <h2>{ru ? `Найдено проблем: ${visibleItems.length}` : `Issues found: ${visibleItems.length}`}</h2>
+            <span>{ru ? "Выберите проблему, чтобы увидеть подробности" : "Select an issue to review details"}</span>
+          </div>
+          <span className="wd-issues-sort-summary">
+            {ru ? "Сортировка:" : "Sort:"} <strong>{sortSummary}</strong>
+          </span>
         </div>
       )}
 
@@ -344,7 +356,11 @@ export function AccountIssuesList({
                   <span className="wd-issues-row-check" aria-hidden="true">{active ? "✓" : ""}</span>
                   <span className="wd-issues-render-title">
                     <i data-priority={issue.priority} aria-hidden="true"><AlertTriangle /></i>
-                    <span><strong>{issue.title}</strong><small>{issueCategoryLabel(locale, issue.category)}</small></span>
+                    <span>
+                      <strong>{issue.title}</strong>
+                      <small>{issue.description}</small>
+                      <em>{issueCategoryLabel(locale, issue.category)}</em>
+                    </span>
                   </span>
                   <span className="wd-issues-pages">{issue.affected_urls.length}</span>
                   <span className={"wd-issues-priority is-" + issue.priority}>{issuePriorityLabel(locale, issue.priority)}</span>
@@ -385,6 +401,9 @@ export function AccountIssuesList({
                 </div>
                 {selectedIssue.affected_urls.length > 0 ? (
                   <div className="wd-issues-affected-list">
+                    <div className="wd-issues-affected-list-head" aria-hidden="true">
+                      <span>{ru ? "URL страницы" : "Page URL"}</span>
+                    </div>
                     {selectedIssue.affected_urls.slice(0, 8).map((url) => (
                       <div key={url}><code>{url}</code></div>
                     ))}
@@ -398,8 +417,13 @@ export function AccountIssuesList({
                 {selectedIssue.recommendation.steps.length > 0 && (
                   <ol>{selectedIssue.recommendation.steps.map((step, index) => <li key={step}><b>{index + 1}</b><span>{step}</span></li>)}</ol>
                 )}
-                {selectedIssue.recommendation.expected_impact && <p>{selectedIssue.recommendation.expected_impact}</p>}
               </section>
+              {selectedIssue.recommendation.expected_impact && (
+                <section className="wd-issues-impact-note">
+                  <span>{ru ? "Ожидаемый эффект" : "Expected impact"}</span>
+                  <p>{selectedIssue.recommendation.expected_impact}</p>
+                </section>
+              )}
             </aside>
           )}
         </div>
