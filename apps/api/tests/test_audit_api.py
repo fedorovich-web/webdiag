@@ -18,7 +18,7 @@ from webdiag_api.audit.service import (
 from webdiag_api.audit.storage import AuditStoreIntegrityError, SqliteAuditStore
 from webdiag_api.config import Settings
 from webdiag_api.main import app
-from webdiag_api.tools.performance import MissingPageSpeedApiKeyError
+from webdiag_api.tools.performance import MissingPageSpeedApiKeyError, PageSpeedClient
 
 SAFE_IP = "93.184.216.34"
 Resolver = Callable[[str, int], list[str]]
@@ -26,6 +26,22 @@ Resolver = Callable[[str, int], list[str]]
 
 class UnavailablePageSpeedClient:
     def run(self, **_kwargs: object) -> dict[str, object]:
+        raise MissingPageSpeedApiKeyError("PageSpeed disabled in audit API tests.")
+
+
+class RecordingUnavailablePageSpeedClient:
+    def __init__(self, requested_urls: list[str]) -> None:
+        self.requested_urls = requested_urls
+
+    def run(
+        self,
+        *,
+        url: str,
+        strategy: str,
+        categories: tuple[str, ...],
+    ) -> dict[str, object]:
+        del strategy, categories
+        self.requested_urls.append(url)
         raise MissingPageSpeedApiKeyError("PageSpeed disabled in audit API tests.")
 
 
@@ -49,6 +65,7 @@ def build_service(
     *,
     resolver: Resolver | None = None,
     store: InMemoryAuditStore | None = None,
+    pagespeed_client_factory: Callable[[], PageSpeedClient] | None = None,
 ) -> AuditExecutionService:
     transport = httpx.MockTransport(handler)
     effective_resolver = resolver or (lambda _hostname, _port: [SAFE_IP])
@@ -63,7 +80,7 @@ def build_service(
     return AuditExecutionService(
         store=store or InMemoryAuditStore(),
         fetcher_factory=fetcher_factory,
-        pagespeed_client_factory=UnavailablePageSpeedClient,
+        pagespeed_client_factory=pagespeed_client_factory or UnavailablePageSpeedClient,
     )
 
 
@@ -565,6 +582,7 @@ def test_audit_query_is_fetched_but_not_persisted_or_returned(tmp_path) -> None:
     database = tmp_path / "audits.sqlite3"
     requested_urls: list[str] = []
     requested_hosts: list[str] = []
+    pagespeed_urls: list[str] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
         requested_urls.append(str(request.url))
@@ -572,7 +590,11 @@ def test_audit_query_is_fetched_but_not_persisted_or_returned(tmp_path) -> None:
         return healthy_resource_response(request)
 
     store = SqliteAuditStore(str(database))
-    with_service(build_service(handler, store=store))
+    with_service(build_service(
+        handler,
+        store=store,
+        pagespeed_client_factory=lambda: RecordingUnavailablePageSpeedClient(pagespeed_urls),
+    ))
     try:
         created = asyncio.run(
             request(
@@ -589,6 +611,7 @@ def test_audit_query_is_fetched_but_not_persisted_or_returned(tmp_path) -> None:
 
     assert requested_urls[0].endswith("/page?token=secret#private")
     assert requested_hosts[0] == "example.com"
+    assert pagespeed_urls == ["https://example.com/page"]
     assert created.status_code == 201
     assert fetched.status_code == 200
     assert "token=secret" not in created.text

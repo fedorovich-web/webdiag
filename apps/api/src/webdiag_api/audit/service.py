@@ -14,6 +14,7 @@ from webdiag_api.audit.redaction import (
     public_audit_run,
     public_audit_snapshot,
     public_audit_target,
+    public_url,
 )
 from webdiag_api.audit.report import assemble_single_page_report
 from webdiag_api.audit.site_resources import collect_site_resources
@@ -137,7 +138,7 @@ class AuditExecutionService:
             )
             pagespeed = run_pagespeed_strategy(
                 self._pagespeed_client_factory(),
-                url=fetched.final_url,
+                url=public_url(fetched.final_url),
                 strategy="mobile",
             )
             run = assemble_single_page_report(
