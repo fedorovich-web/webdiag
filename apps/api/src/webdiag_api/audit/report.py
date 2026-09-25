@@ -758,6 +758,9 @@ def _collect_issues(
             )
         )
 
+    if pagespeed is not None:
+        issues.extend(_pagespeed_issues(pagespeed, affected_urls=affected))
+
     return issues
 
 
@@ -869,9 +872,6 @@ def _collect_site_resource_issues(
                 affected_urls=affected_urls,
             )
         )
-
-    if pagespeed is not None:
-        issues.extend(_pagespeed_issues(pagespeed, affected_urls=affected))
 
     return issues
 
