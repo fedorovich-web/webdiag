@@ -251,12 +251,9 @@
 
 /* Auth-only desktop chrome: keep the page focused without removing real navigation. */
 @media (min-width: 1181px) {
-  body:has(.wd-auth-page) .wd-site-header .wd-header-inner {
-    grid-template-columns: auto minmax(0, 1fr);
-  }
-
   body:has(.wd-auth-page) .wd-site-header .wd-main-nav {
-    justify-self: end;
+    justify-content: flex-end;
+    padding-left: 0;
   }
 
   body:has(.wd-auth-page) .wd-site-header .wd-main-nav > a,
