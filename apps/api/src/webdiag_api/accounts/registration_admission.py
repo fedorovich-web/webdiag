@@ -86,7 +86,7 @@ class RegistrationAdmissionController:
             return self._acquire()
         except RegistrationAdmissionError:
             raise
-        except sqlite3.Error as error:
+        except (OSError, sqlite3.Error) as error:
             raise RegistrationAdmissionError(
                 503,
                 "account_registration_unavailable",

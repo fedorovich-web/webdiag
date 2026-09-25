@@ -73,6 +73,24 @@ def test_registration_admission_bounds_rate_and_concurrency(tmp_path: Path) -> N
     replacement.release(replacement.acquire())
 
 
+def test_registration_admission_maps_storage_failure_to_503(tmp_path: Path) -> None:
+    blocked_parent = tmp_path / "not-a-directory"
+    blocked_parent.write_text("blocked", encoding="utf-8")
+    controller = RegistrationAdmissionController(
+        str(blocked_parent / "accounts.sqlite3"),
+        request_limit=30,
+        window_seconds=60,
+        concurrency_limit=2,
+        lease_seconds=30,
+    )
+
+    with pytest.raises(RegistrationAdmissionError) as unavailable:
+        controller.acquire()
+    assert unavailable.value.status_code == 503
+    assert unavailable.value.code == "account_registration_unavailable"
+    assert unavailable.value.retry_after == 5
+
+
 def test_expired_registration_lease_does_not_block_capacity(tmp_path: Path) -> None:
     now = [2_000]
     controller = RegistrationAdmissionController(
