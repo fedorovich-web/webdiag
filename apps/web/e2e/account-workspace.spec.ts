@@ -402,7 +402,9 @@ test.describe("account workspace", () => {
     await page.goto("/en/login");
     await expect(page.getByRole("heading", { level: 1, name: "Sign in to WebDiag" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Register" })).toHaveAttribute("href", "/en/register");
-    await expect(page.getByRole("banner").getByRole("link", { name: "Sign in", exact: true })).toHaveAttribute("href", "/en/login");
+    const headerSignIn = page.locator('.wd-site-header a[href="/en/login"]');
+    await expect(headerSignIn).toHaveAttribute("href", "/en/login");
+    await expect(headerSignIn).toBeHidden();
   });
 
   test("saved audit exposes deterministic issues, filters, and issue detail", async ({ page }) => {
