@@ -1,0 +1,10 @@
+services:
+  api:
+    ports: !reset []
+    expose:
+      - "8000"
+
+  web:
+    ports: !reset []
+    expose:
+      - "3000"

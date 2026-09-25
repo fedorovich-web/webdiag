@@ -35,7 +35,8 @@
     "verify:production-ai-compose": "node scripts/verify-production-ai-compose.mjs",
     "source:manifest": "node scripts/build-source-manifest.mjs",
     "test:browser": "npm --workspace @webdiag/web run test:browser",
-    "verify:python-lock": "node scripts/verify-python-lock.mjs"
+    "verify:python-lock": "node scripts/verify-python-lock.mjs",
+    "verify:production-dokploy-compose": "node scripts/verify-production-dokploy-compose.mjs"
   },
   "overrides": {
     "next": {
