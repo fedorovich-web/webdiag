@@ -9,12 +9,18 @@ import {
   archiveAccountProject,
   getAccountCrawl,
   getAccountProject,
+  getAccountSavedAudit,
   listAccountCrawls,
   renameAccountProject,
   runAccountProjectAudit,
   startAccountCrawl,
 } from "./account-workspace-client";
-import type { AccountCrawlDetail, AccountCrawlJob, AccountProjectDetailResponse } from "./account-workspace-contract";
+import type {
+  AccountCrawlDetail,
+  AccountCrawlJob,
+  AccountProjectDetailResponse,
+  SavedAuditPageSpeed,
+} from "./account-workspace-contract";
 import { accountPath, projectMonitoringPath, savedAuditPath } from "../../lib/routes";
 
 export function AccountProjectDetail({ locale, projectId }: { readonly locale: Locale; readonly projectId: string }) {
@@ -24,6 +30,7 @@ export function AccountProjectDetail({ locale, projectId }: { readonly locale: L
   const [running, setRunning] = useState(false);
   const [crawlDetail, setCrawlDetail] = useState<AccountCrawlDetail | null>(null);
   const [crawlHistory, setCrawlHistory] = useState<readonly AccountCrawlJob[]>([]);
+  const [latestPageSpeed, setLatestPageSpeed] = useState<SavedAuditPageSpeed | null>(null);
   const [crawlPending, setCrawlPending] = useState(false);
   const [crawlError, setCrawlError] = useState("");
   const [managementOpen, setManagementOpen] = useState(false);
@@ -56,6 +63,24 @@ export function AccountProjectDetail({ locale, projectId }: { readonly locale: L
       });
     return () => { active = false; };
   }, [locale, projectId, requestKey]);
+
+  useEffect(() => {
+    const latestAuditId = detail?.saved_audits[0]?.id;
+    if (!latestAuditId) {
+      setLatestPageSpeed(null);
+      return;
+    }
+    let active = true;
+    getAccountSavedAudit(projectId, latestAuditId, locale)
+      .then((value) => {
+        if (active) setLatestPageSpeed(value.payload.pagespeed ?? null);
+      })
+      .catch((caught) => {
+        if (!active || announceAccountAuthenticationLost(caught)) return;
+        setLatestPageSpeed(null);
+      });
+    return () => { active = false; };
+  }, [detail?.saved_audits, locale, projectId]);
 
   useEffect(() => {
     let active = true;
@@ -99,7 +124,11 @@ export function AccountProjectDetail({ locale, projectId }: { readonly locale: L
     setError("");
     try {
       const saved = await runAccountProjectAudit(projectId, locale);
-      setDetail((current) => current ? { ...current, saved_audits: [saved.audit, ...current.saved_audits] } : current);
+      setLatestPageSpeed(saved.payload.pagespeed ?? null);
+      setDetail((current) => current ? {
+        ...current,
+        saved_audits: [saved.audit, ...current.saved_audits],
+      } : current);
     } catch (caught) {
       if (announceAccountAuthenticationLost(caught)) return;
       setError(accountErrorMessage(locale, caught));
@@ -177,6 +206,14 @@ export function AccountProjectDetail({ locale, projectId }: { readonly locale: L
         <article><span>{ru ? "Страницы" : "Pages"}</span><strong>{latestCrawl?.pages.length ?? "—"}</strong><small>{ru ? "Последний обход" : "Latest crawl"}</small></article>
       </section>
 
+      {latestAudit && latestPageSpeed && (
+        <ProjectPageSpeedSummary
+          locale={locale}
+          pageSpeed={latestPageSpeed}
+          auditHref={savedAuditPath(locale, projectId, latestAudit.id)}
+        />
+      )}
+
       {managementOpen && (
         <section id="project-management" className="wd-project-management" aria-labelledby="project-management-title">
           <div className="wd-project-management-copy">
@@ -240,6 +277,90 @@ export function AccountProjectDetail({ locale, projectId }: { readonly locale: L
           </div>
         )}
       </section>
+    </section>
+  );
+}
+
+
+function ProjectPageSpeedSummary({
+  locale,
+  pageSpeed,
+  auditHref,
+}: {
+  readonly locale: Locale;
+  readonly pageSpeed: SavedAuditPageSpeed;
+  readonly auditHref: string;
+}) {
+  const ru = locale === "ru";
+  const metricOrder = [
+    "largest-contentful-paint",
+    "cumulative-layout-shift",
+    "interaction_to_next_paint",
+  ];
+  const metrics = metricOrder
+    .map((id) => pageSpeed.metrics.find((metric) => metric.id === id))
+    .filter((metric): metric is NonNullable<typeof metric> => Boolean(metric));
+
+  return (
+    <section className="wd-project-pagespeed" aria-labelledby="project-pagespeed-title">
+      <div className="wd-project-pagespeed-copy">
+        <span className="eyebrow">PageSpeed · Mobile</span>
+        <h2 id="project-pagespeed-title">
+          {ru ? "Производительность последнего аудита" : "Latest audit performance"}
+        </h2>
+        <p>
+          {pageSpeed.available
+            ? (ru
+              ? "Сохранённые показатели Google PageSpeed Insights для главной страницы проекта."
+              : "Saved Google PageSpeed Insights metrics for the project homepage.")
+            : (ru
+              ? "PageSpeed был недоступен в последнем аудите; итоговая оценка сайта за это не снижалась."
+              : "PageSpeed was unavailable in the latest audit; the site score was not penalized.")}
+        </p>
+      </div>
+
+      {pageSpeed.available ? (
+        <div className="wd-project-pagespeed-values">
+          <article className="is-performance">
+            <span>Performance</span>
+            <strong>{pageSpeed.performance_score ?? "—"}</strong>
+            <small>{ru ? "из 100" : "out of 100"}</small>
+          </article>
+          {metrics.map((metric) => (
+            <article key={metric.id} data-status={metric.status}>
+              <span>{
+                metric.id === "largest-contentful-paint"
+                  ? "LCP"
+                  : metric.id === "cumulative-layout-shift"
+                    ? "CLS"
+                    : "INP"
+              }</span>
+              <strong>{metric.display_value ?? metric.value ?? "—"}</strong>
+              <small>{
+                metric.status === "pass"
+                  ? (ru ? "Хорошо" : "Good")
+                  : metric.status === "warning"
+                    ? (ru ? "Нужно улучшить" : "Needs work")
+                    : metric.status === "fail"
+                      ? (ru ? "Плохо" : "Poor")
+                      : (ru ? "Нет данных" : "No data")
+              }</small>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="wd-project-pagespeed-values is-unavailable">
+          <article>
+            <span>Performance</span>
+            <strong>—</strong>
+            <small>{ru ? "Нет данных" : "Unavailable"}</small>
+          </article>
+        </div>
+      )}
+
+      <Link className="wd-button wd-button-secondary" href={auditHref}>
+        {ru ? "Открыть полный аудит" : "Open full audit"}
+      </Link>
     </section>
   );
 }

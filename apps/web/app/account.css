@@ -8700,3 +8700,107 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Project-level PageSpeed summary */
+.wd-project-pagespeed {
+  display: grid;
+  grid-template-columns: minmax(210px, .78fr) minmax(0, 1.7fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 15px 16px;
+  border: 1px solid #dfe8f1;
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 92% 18%, rgb(37 132 232 / .08), transparent 26%),
+    #fff;
+  box-shadow: 0 7px 24px rgb(30 75 116 / .04);
+}
+
+.wd-project-pagespeed-copy h2 {
+  margin: 4px 0 5px;
+  color: #0a1741;
+  font-size: 15px;
+  letter-spacing: -.02em;
+}
+
+.wd-project-pagespeed-copy p {
+  margin: 0;
+  color: #718097;
+  font-size: 8px;
+  line-height: 1.5;
+}
+
+.wd-project-pagespeed-values {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.wd-project-pagespeed-values article {
+  min-height: 70px;
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  padding: 10px;
+  border: 1px solid #e4ebf2;
+  border-radius: 9px;
+  background: #f9fbfd;
+}
+
+.wd-project-pagespeed-values span {
+  color: #8290a4;
+  font-size: 7px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.wd-project-pagespeed-values strong {
+  color: #0a1741;
+  font-size: 17px;
+  line-height: 1.1;
+}
+
+.wd-project-pagespeed-values small {
+  color: #178f73;
+  font-size: 7px;
+}
+
+.wd-project-pagespeed-values article[data-status="warning"] small {
+  color: #cf8918;
+}
+
+.wd-project-pagespeed-values article[data-status="fail"] small {
+  color: #df4660;
+}
+
+.wd-project-pagespeed-values.is-unavailable {
+  grid-template-columns: minmax(120px, 180px);
+}
+
+.wd-project-pagespeed > .wd-button {
+  min-height: 38px;
+  white-space: nowrap;
+  font-size: 8px;
+}
+
+@media (max-width: 980px) {
+  .wd-project-pagespeed {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .wd-project-pagespeed > .wd-button {
+    justify-self: start;
+  }
+}
+
+@media (max-width: 620px) {
+  .wd-project-pagespeed-values {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .wd-project-pagespeed > .wd-button {
+    width: 100%;
+  }
+}
