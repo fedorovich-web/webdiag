@@ -101,6 +101,13 @@ async function setupAccount(page: import("@playwright/test").Page) {
       projects: [firstProject],
     },
   }));
+  await page.route(`**/api/account/projects/${firstProject.id}`, (route) => route.fulfill({
+    json: {
+      contract_version: "webdiag.account.project_detail.v1",
+      project: firstProject,
+      saved_audits: [audit],
+    },
+  }));
   await page.route("**/api/account/overview", (route) => route.fulfill({ json: operationsOverview }));
 }
 

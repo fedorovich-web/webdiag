@@ -7475,7 +7475,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
     align-self: stretch;
   }
 
-  body:has(.wd-account-workspace-page) .wd-workspace-sidebar .wd-workspace-project-switcher {
+  body:has(.wd-account-workspace-page) .wd-workspace-sidebar[data-project-context="false"] .wd-workspace-project-switcher {
     display: none;
   }
 }

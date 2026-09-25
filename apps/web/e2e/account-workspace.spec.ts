@@ -147,6 +147,7 @@ test.describe("account workspace", () => {
     await expect(
       page.getByRole("complementary", { name: "Панель кабинета" }).getByRole("link", { name: "Обзор проекта" }),
     ).toHaveAttribute("aria-current", "page");
+    await expect(page.getByLabel("Текущий проект")).toBeVisible();
     await expect(page.getByLabel("Текущий проект")).toHaveValue(firstProject.id);
     await expect(page.getByRole("heading", { level: 1, name: "Основной сайт" })).toBeVisible();
     await expect(page.getByRole("heading", { level: 2, name: "Проверка страниц проекта" })).toBeVisible();
@@ -440,6 +441,13 @@ test.describe("account workspace", () => {
       json: {
         contract_version: "webdiag.account.project_list.v1",
         projects: [firstProject],
+      },
+    }));
+    await page.route(`**/api/account/projects/${firstProject.id}`, (route) => route.fulfill({
+      json: {
+        contract_version: "webdiag.account.project_detail.v1",
+        project: firstProject,
+        saved_audits: [audit],
       },
     }));
     await page.route(`**/api/account/projects/${firstProject.id}/audits/${auditId}/issues/**`, (route) => route.fulfill({
