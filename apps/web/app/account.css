@@ -8804,3 +8804,34 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
     width: 100%;
   }
 }
+
+
+/* Dashboard final density: keep the rail compact and let sparse data size naturally. */
+@media (min-width: 901px) {
+  body:has(.wd-account-workspace-page) .wd-workspace-sidebar {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  body:has(.wd-account-workspace-page) .wd-workspace-navigation,
+  body:has(.wd-account-workspace-page) .wd-workspace-navigation-group {
+    align-content: start;
+  }
+
+  body:has(.wd-account-workspace-page) .wd-workspace-navigation {
+    flex: 0 0 auto;
+  }
+
+  body:has(.wd-account-workspace-page) .wd-workspace-help {
+    flex: 0 0 auto;
+    margin-top: auto;
+  }
+
+  .wd-dashboard-checks-panel,
+  .wd-dashboard-projects-panel,
+  .wd-dashboard-tasks-panel,
+  .wd-dashboard-quick-actions {
+    min-height: 0;
+  }
+}
