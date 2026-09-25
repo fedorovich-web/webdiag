@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Response, status
 from fastapi.exceptions import RequestValidationError
 
 from webdiag_api import __version__
@@ -20,6 +20,7 @@ from webdiag_api.audit.api import router as audit_router
 from webdiag_api.config import settings
 from webdiag_api.crawl.api import account_router as crawl_account_router
 from webdiag_api.crawl.api import router as crawl_internal_router
+from webdiag_api.readiness import persistent_storage_ready
 from webdiag_api.registry import public_tools
 from webdiag_api.security.request_limits import RequestBodyLimitMiddleware
 from webdiag_api.tools.accessibility_static import router as accessibility_static_tool_router
@@ -86,6 +87,21 @@ app.include_router(url_management_tool_router)
 
 @app.get("/health", tags=["system"])
 def health() -> dict[str, str]:
+    return {"status": "ok", "service": "webdiag-api", "version": __version__}
+
+
+@app.get("/ready", tags=["system"], include_in_schema=False)
+def ready(response: Response) -> dict[str, str]:
+    response.headers["cache-control"] = "no-store"
+    if not persistent_storage_ready(
+        (settings.account_database_path, settings.audit_database_path)
+    ):
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+        return {
+            "status": "unavailable",
+            "service": "webdiag-api",
+            "version": __version__,
+        }
     return {"status": "ok", "service": "webdiag-api", "version": __version__}
 
 

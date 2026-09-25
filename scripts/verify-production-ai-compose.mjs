@@ -78,6 +78,10 @@ expect(api.WEBDIAG_AI_RUNTIME_ENABLED === "true", "API AI runtime is disabled");
 expect(api.WEBDIAG_AI_ACTIVE_RUN_LIMIT_PER_USER === "3", "per-user AI run limit differs");
 expect(api.WEBDIAG_AI_ACTIVE_RUN_LIMIT_GLOBAL === "100", "global AI run limit differs");
 expect(api.WEBDIAG_ACCOUNT_COOKIE_SECURE === "true", "secure account cookies are disabled");
+expect(api.WEBDIAG_ACCOUNT_REGISTRATION_REQUEST_LIMIT === "30", "registration request limit differs");
+expect(api.WEBDIAG_ACCOUNT_REGISTRATION_WINDOW_SECONDS === "60", "registration window differs");
+expect(api.WEBDIAG_ACCOUNT_REGISTRATION_CONCURRENCY_LIMIT === "2", "registration concurrency differs");
+expect(api.WEBDIAG_ACCOUNT_REGISTRATION_LEASE_SECONDS === "30", "registration lease differs");
 expect(api.WEBDIAG_PUBLIC_RELEASE === "true" && web.PUBLIC_RELEASE === "true", "public release flag is disabled");
 expect(service("web").build?.args?.PUBLIC_RELEASE === "true", "web build public release flag is disabled");
 expect(

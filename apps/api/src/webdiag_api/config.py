@@ -84,6 +84,10 @@ class Settings(BaseSettings):
     account_login_attempt_limit: int = Field(default=5, ge=3, le=20)
     account_login_attempt_window_seconds: int = Field(default=900, ge=60, le=3600)
     account_login_block_seconds: int = Field(default=900, ge=30, le=3600)
+    account_registration_request_limit: int = Field(default=30, ge=1, le=1_000)
+    account_registration_window_seconds: int = Field(default=60, ge=10, le=3_600)
+    account_registration_concurrency_limit: int = Field(default=2, ge=1, le=16)
+    account_registration_lease_seconds: int = Field(default=30, ge=5, le=120)
     monitoring_internal_token: str = ""
     monitoring_scheduler_interval_seconds: int = Field(default=60, ge=30, le=300)
     ai_runtime_enabled: bool = False
@@ -241,6 +245,10 @@ class Settings(BaseSettings):
                 internal_secrets.extend([self.ai_internal_token, self.ai_safety_identifier_secret])
             if len(set(internal_secrets)) != len(internal_secrets):
                 raise ValueError("production internal tokens must be distinct")
+        if self.account_registration_request_limit < self.account_registration_concurrency_limit:
+            raise ValueError(
+                "registration request limit must not be below the concurrency limit"
+            )
         if self.account_request_body_max_bytes > self.http_request_body_max_bytes:
             raise ValueError("account request body max must not exceed HTTP request body max")
         if self.ai_text_request_body_max_bytes > self.http_request_body_max_bytes:

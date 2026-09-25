@@ -118,6 +118,10 @@ test("production core and opt-in AI overlay have separate fail-closed preflights
     new URL("docker-compose.production.ai.yml", root),
     "utf8",
   );
+  const dokployCompose = await readFile(
+    new URL("docker-compose.dokploy.yml", root),
+    "utf8",
+  );
   const environmentExample = await readFile(
     new URL(".env.production.example", root),
     "utf8",
@@ -134,6 +138,10 @@ test("production core and opt-in AI overlay have separate fail-closed preflights
     new URL("scripts/verify-production-ai-compose.mjs", root),
     "utf8",
   );
+  const dokployVerifier = await readFile(
+    new URL("scripts/verify-production-dokploy-compose.mjs", root),
+    "utf8",
+  );
   const coreSecrets = [
     "WEBDIAG_MONITORING_INTERNAL_TOKEN",
     "WEBDIAG_CRAWLER_INTERNAL_TOKEN",
@@ -147,7 +155,10 @@ test("production core and opt-in AI overlay have separate fail-closed preflights
 
   assert.match(productionCompose, /WEBDIAG_ENVIRONMENT:\s*production/g);
   assert.match(productionCompose, /WEBDIAG_ACCOUNT_COOKIE_SECURE:\s*["']true["']/);
+  assert.match(productionCompose, /WEBDIAG_ACCOUNT_REGISTRATION_REQUEST_LIMIT:/);
+  assert.match(productionCompose, /WEBDIAG_ACCOUNT_REGISTRATION_CONCURRENCY_LIMIT:/);
   assert.match(productionCompose, /WEBDIAG_AI_RUNTIME_ENABLED:\s*["']false["']/);
+  assert.match(productionCompose, /127\.0\.0\.1:8000\/ready/);
   assert.doesNotMatch(
     productionCompose,
     /RABBITMQ|OPENROUTER|AI_GATEWAY|AI_ARTIFACT|AI_INTERNAL_TOKEN/,
@@ -167,6 +178,9 @@ test("production core and opt-in AI overlay have separate fail-closed preflights
     assert.match(aiEnvironmentExample, new RegExp(`^${name}=$`, "m"), name);
     assert.doesNotMatch(environmentExample, new RegExp(`^${name}=`, "m"), name);
   }
+  assert.match(dokployCompose, /api:[\s\S]*?ports:\s*!reset\s*\[\]/);
+  assert.match(dokployCompose, /web:[\s\S]*?ports:\s*!reset\s*\[\]/);
+  assert.doesNotMatch(dokployCompose, /traefik\./i);
   assert.match(aiCompose, /WEBDIAG_AI_RUNTIME_ENABLED:\s*["']true["']/);
   assert.match(aiCompose, /AI_PROVIDER:\s*["']?\$\{AI_PROVIDER:-vercel\}["']?/);
   assert.match(
@@ -183,6 +197,15 @@ test("production core and opt-in AI overlay have separate fail-closed preflights
     aiCompose,
     /command:\s*\["dramatiq",\s*"--processes",\s*"1",\s*"--threads",\s*"1",\s*"webdiag_worker\.actors"\]/,
   );
+  for (const name of [
+    "WEBDIAG_ACCOUNT_REGISTRATION_REQUEST_LIMIT",
+    "WEBDIAG_ACCOUNT_REGISTRATION_WINDOW_SECONDS",
+    "WEBDIAG_ACCOUNT_REGISTRATION_CONCURRENCY_LIMIT",
+    "WEBDIAG_ACCOUNT_REGISTRATION_LEASE_SECONDS",
+  ]) {
+    assert.match(environmentExample, new RegExp(`^${name}=`, "m"), name);
+    assert.match(aiEnvironmentExample, new RegExp(`^${name}=`, "m"), name);
+  }
   assert.doesNotMatch(aiEnvironmentExample, /^WEBDIAG_AI_ARTIFACT_/m);
   assert.doesNotMatch(environmentExample, /change-me|replace-with/);
   assert.doesNotMatch(aiEnvironmentExample, /change-me|replace-with/);
@@ -197,6 +220,10 @@ test("production core and opt-in AI overlay have separate fail-closed preflights
     rootPackage.scripts["verify:production-ai-compose"],
     "node scripts/verify-production-ai-compose.mjs",
   );
+  assert.equal(
+    rootPackage.scripts["verify:production-dokploy-compose"],
+    "node scripts/verify-production-dokploy-compose.mjs",
+  );
   assert.match(verifier, /spawnSync\(["']docker["']/);
   assert.match(verifier, /["']--format["'],\s*["']json["']/);
   assert.match(verifier, /maxBuffer:\s*4 \* 1024 \* 1024/);
@@ -205,12 +232,17 @@ test("production core and opt-in AI overlay have separate fail-closed preflights
   assert.match(verifier, /service .* received .* outside its allowlist/);
   assert.match(verifier, /API volume topology differs/);
   assert.doesNotMatch(verifier, /console\.(?:log|error)\([^\n]*(?:stdout|stderr|environment)/);
+  assert.match(dokployVerifier, /Dokploy production Compose preflight passed/);
+  assert.match(dokployVerifier, /core production preflight failed/);
+  assert.match(dokployVerifier, /publishes a host port/);
   assert.match(aiVerifier, /production AI Compose preflight passed/);
   assert.match(aiVerifier, /allowedEnvironmentPlacements/);
+  assert.match(aiVerifier, /WEBDIAG_ACCOUNT_REGISTRATION_CONCURRENCY_LIMIT/);
   assert.doesNotMatch(aiVerifier, /console\.(?:log|error)\([^\n]*(?:stdout|stderr|environment)/);
 
   const workflow = await readFile(new URL(".github/workflows/ci.yml", root), "utf8");
   assert.match(workflow, /run:\s*npm run verify:production-compose/);
+  assert.match(workflow, /run:\s*npm run verify:production-dokploy-compose/);
   assert.match(workflow, /run:\s*npm run verify:production-ai-compose/);
 });
 

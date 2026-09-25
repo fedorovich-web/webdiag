@@ -195,6 +195,12 @@ jobs:
           WEBDIAG_CRAWLER_INTERNAL_TOKEN: C123456789012345678901234567890123456789
         run: npm run verify:production-compose
 
+      - name: Verify Dokploy production overlay
+        env:
+          WEBDIAG_MONITORING_INTERNAL_TOKEN: M123456789012345678901234567890123456789
+          WEBDIAG_CRAWLER_INTERNAL_TOKEN: C123456789012345678901234567890123456789
+        run: npm run verify:production-dokploy-compose
+
       - name: Verify optional production AI Compose policy
         env:
           RABBITMQ_DEFAULT_PASS: ci-rabbit-password-1234567890
@@ -234,6 +240,9 @@ jobs:
           test -n "$robots"
           grep --fixed-strings 'Allow: /' <<<"$robots"
           grep --fixed-strings 'Sitemap: https://webdiag.ru/sitemap.xml' <<<"$robots"
+          headers="$(curl --connect-timeout 2 --max-time 5 --fail --silent --show-error --head http://127.0.0.1:3010/)"
+          grep -i --fixed-strings 'strict-transport-security: max-age=31536000' <<<"$headers"
+          grep -i --fixed-strings 'x-content-type-options: nosniff' <<<"$headers"
           if grep --fixed-strings 'Disallow: /' <<<"$robots"; then
             exit 1
           fi
