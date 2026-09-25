@@ -66,20 +66,20 @@ export function AccountSavedAudit({ locale, projectId, auditId }: { readonly loc
 
   return (
     <section className="wd-account-dashboard wd-saved-audit-render">
-      <nav className="wd-account-breadcrumb" aria-label={ru ? "Навигация кабинета" : "Account navigation"}>
-        <Link href={projectPath(locale, projectId)}>{detail.project.name}</Link>
-        <span aria-hidden="true">/</span>
-        <span>{ru ? "Отчёт" : "Report"}</span>
-      </nav>
+      <div className="wd-saved-audit-toolbar">
+        <nav className="wd-account-breadcrumb" aria-label={ru ? "Навигация кабинета" : "Account navigation"}>
+          <Link href={projectPath(locale, projectId)}>{detail.project.name}</Link>
+          <span aria-hidden="true">/</span>
+          <span>{ru ? "Отчёт" : "Report"}</span>
+        </nav>
+        <div className="wd-saved-audit-actions wd-saved-audit-render-actions">
+          <Link className="wd-button wd-button-primary" href={savedAuditIssuesPath(locale, projectId, auditId)}>
+            {ru ? "Проблемы и приоритеты" : "Issues and priorities"}
+          </Link>
+        </div>
+      </div>
 
       <AccountReportSnapshotView locale={locale} snapshot={snapshot} />
-
-
-      <div className="wd-saved-audit-actions wd-saved-audit-render-actions">
-        <Link className="wd-button wd-button-primary" href={savedAuditIssuesPath(locale, projectId, auditId)}>
-          {ru ? "Проблемы и приоритеты" : "Issues and priorities"}
-        </Link>
-      </div>
 
       <AccountAIAuditCopilot locale={locale} projectId={projectId} auditId={auditId} />
 

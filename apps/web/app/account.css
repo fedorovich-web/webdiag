@@ -5125,7 +5125,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-account-workspace-page .wd-report-render-head,
 .wd-public-report-page .wd-report-render-head {
-  min-height: 148px;
+  min-height: 126px;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -5137,6 +5137,27 @@ body:has(.wd-account-workspace-page) .site-footer {
     radial-gradient(circle at 88% 20%, rgb(34 211 238 / .10), transparent 24%),
     linear-gradient(120deg, #fff 0%, #f7fbff 58%, #effcff 100%);
   box-shadow: 0 8px 26px rgb(30 75 116 / .045);
+}
+
+.wd-report-render-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  align-items: center;
+  color: #7f8da1;
+  font-size: 8px;
+}
+
+.wd-report-render-status > span {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #e8fbf4;
+  color: #159473;
+  font-weight: 800;
+}
+
+.wd-report-render-status time {
+  font-variant-numeric: tabular-nums;
 }
 
 .wd-report-render-head h1 {
@@ -5184,7 +5205,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: conic-gradient(#22c8a8 0 78%, #e4eff0 78% 100%);
+  background: conic-gradient(#22c8a8 0 var(--wd-report-score), #e4eff0 var(--wd-report-score) 100%);
   box-shadow: inset 0 0 0 9px #fff;
   color: #0b1740;
   font-size: 21px;
@@ -5435,7 +5456,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-report-render-parameter-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr));
   gap: 8px;
 }
 
@@ -6061,13 +6082,26 @@ body:has(.wd-account-workspace-page) .site-footer {
   box-shadow: 0 7px 24px rgb(30 75 116 / .04);
 }
 
+.wd-saved-audit-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.wd-saved-audit-toolbar .wd-account-breadcrumb {
+  margin: 0;
+}
+
 .wd-saved-audit-render-actions {
   display: flex;
   justify-content: flex-end;
-  margin-top: -2px;
+  margin: 0;
 }
 
 .wd-create-report-render {
+  width: 100%;
+  max-width: none;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(260px, .7fr) auto;
   gap: 10px;
@@ -6119,6 +6153,16 @@ body:has(.wd-account-workspace-page) .site-footer {
 }
 
 @media (max-width: 720px) {
+  .wd-saved-audit-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .wd-saved-audit-render-actions,
+  .wd-saved-audit-render-actions .wd-button {
+    width: 100%;
+  }
+
   .wd-account-workspace-page .wd-project-render-head {
     grid-template-columns: 1fr;
     align-items: stretch;

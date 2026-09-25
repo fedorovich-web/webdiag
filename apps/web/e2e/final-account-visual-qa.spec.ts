@@ -16,6 +16,28 @@ const audit = {
   created_at: "2026-09-12T10:00:00Z",
 } as const;
 
+const pageSpeed = {
+  strategy: "mobile",
+  available: true,
+  performance_score: 78,
+  field_data_available: false,
+  field_overall_category: null,
+  lighthouse_version: "12.8.2",
+  analysis_fetch_time: "2026-09-12T10:23:30Z",
+  category_scores: {
+    performance: 78,
+    accessibility: 96,
+    "best-practices": 100,
+    seo: 92,
+  },
+  metrics: [
+    { id: "largest-contentful-paint", title: "Largest Contentful Paint", value: 2800, unit: "millisecond", display_value: "2.8 s", source: "lighthouse", status: "warning" },
+    { id: "cumulative-layout-shift", title: "Cumulative Layout Shift", value: 0.08, unit: "unitless", display_value: "0.08", source: "lighthouse", status: "pass" },
+    { id: "interaction_to_next_paint", title: "Interaction to Next Paint", value: 180, unit: "millisecond", display_value: "180 ms", source: "lighthouse", status: "pass" },
+  ],
+  opportunities: [],
+} as const;
+
 const issues = [
   {
     issue_id: "seo.meta-description.missing",
@@ -191,6 +213,7 @@ test.describe("final account visual QA captures", () => {
             target_origin: firstProject.origin,
             status: "succeeded",
             score: 78,
+            pagespeed: pageSpeed,
             checks: [
               { check_id: "seo.meta-description", name: "Meta description", category: "seo", status: "failed" },
               { check_id: "links.broken", name: "Broken links", category: "links", status: "failed" },
@@ -202,6 +225,7 @@ test.describe("final account visual QA captures", () => {
         },
       }));
       await capture(page, name, `${prefix}/account/projects/${firstProject.id}/audits/${auditId}`, 1440, 1000, true);
+      await expect(page.getByRole("heading", { name: locale === "ru" ? "Производительность страницы" : "Page performance" })).toBeVisible();
       await capture(page, name, `${prefix}/account/projects/${firstProject.id}/audits/${auditId}`, 1024, 768);
       await capture(page, name, `${prefix}/account/projects/${firstProject.id}/audits/${auditId}`, 768, 1024);
       await capture(page, name, `${prefix}/account/projects/${firstProject.id}/audits/${auditId}`, 390, 844);

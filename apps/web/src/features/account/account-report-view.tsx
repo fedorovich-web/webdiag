@@ -53,14 +53,21 @@ export function AccountReportSnapshotView({
     <article className="wd-report-snapshot wd-report-render">
       <header className="wd-report-render-head">
         <div>
-          <span className="eyebrow">{ru ? "Отчёт по проверке сайта" : "Website audit report"}</span>
+          <div className="wd-report-render-status">
+            <span>{ru ? "Проверка завершена" : "Audit completed"}</span>
+            <time dateTime={snapshot.audit_completed_at}>{formatReportDate(locale, snapshot.audit_completed_at)}</time>
+          </div>
           <h1>{snapshot.title}</h1>
           <p>{snapshot.project_name}</p>
           <a href={snapshot.target_origin} target="_blank" rel="noreferrer">{snapshot.target_origin}</a>
         </div>
         <div className="wd-report-render-score">
           <span>{ru ? "Оценка" : "Score"}</span>
-          <strong>{snapshot.score ?? "—"}</strong>
+          <strong
+            style={{
+              "--wd-report-score": `${Math.max(0, Math.min(100, snapshot.score ?? 0))}%`,
+            } as CSSProperties}
+          >{snapshot.score ?? "—"}</strong>
           <small>{snapshot.score === null ? (ru ? "Нет оценки" : "No score") : snapshot.score >= 80 ? (ru ? "Хорошо" : "Good") : snapshot.score >= 60 ? (ru ? "Нужно улучшить" : "Needs work") : (ru ? "Требует внимания" : "Needs attention")}</small>
         </div>
       </header>
