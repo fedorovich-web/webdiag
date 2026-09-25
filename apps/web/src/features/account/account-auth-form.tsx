@@ -86,7 +86,7 @@ export function AccountAuthForm({ locale, mode }: AccountAuthFormProps) {
   }
 
   return (
-    <section className="wd-auth-card" aria-labelledby="account-auth-title">
+    <section className="wd-auth-card" data-mode={mode} aria-labelledby="account-auth-title">
       <header className="wd-auth-card-head">
         <span className="wd-eyebrow">{text.eyebrow}</span>
         <h1 id="account-auth-title">{text.title}</h1>
@@ -150,6 +150,8 @@ export function AccountAuthForm({ locale, mode }: AccountAuthFormProps) {
           <span aria-hidden="true">→</span>
         </button>
       </form>
+
+      <div className="wd-auth-divider" aria-hidden="true"><span>{ru ? "или" : "or"}</span></div>
 
       <p className="wd-auth-alternate">
         {text.alternate}{" "}
