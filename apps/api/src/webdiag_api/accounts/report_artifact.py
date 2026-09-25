@@ -188,6 +188,8 @@ def render_report_html(snapshot: ReportSnapshot) -> bytes:
                 "</section>"
             )
 
+    pagespeed_section = f"{pagespeed_html}\n" if pagespeed_html else ""
+
     pagespeed_css = (
         ".pagespeed-score { display: flex; align-items: center; justify-content: space-between; "
         "gap: 16px; margin: 12px 0; padding: 14px; border: 1px solid #dbe5e2; "
@@ -351,8 +353,7 @@ a {{ color: inherit; }}
     <tbody>{check_rows}</tbody>
   </table>
 </section>
-{pagespeed_html}
-<section><h2>{_escape(labels["issues"])}</h2>{issues_html}</section>
+{pagespeed_section}<section><h2>{_escape(labels["issues"])}</h2>{issues_html}</section>
 </main>
 </body>
 </html>
