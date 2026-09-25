@@ -165,19 +165,35 @@ def render_report_html(snapshot: ReportSnapshot) -> bytes:
         pagespeed = snapshot.pagespeed
         if pagespeed.available:
             category_items = "".join(
-                f"<li><span>{_escape(category)}</span><strong>{_escape(value if value is not None else '—')}</strong></li>"
+                (
+                    f"<li><span>{_escape(category)}</span>"
+                    f"<strong>{_escape(value if value is not None else '—')}</strong></li>"
+                )
                 for category, value in pagespeed.category_scores.items()
             )
             metric_items = "".join(
-                f"<li><span>{_escape(metric.title)}</span><strong>{_escape(metric.display_value or metric.value or '—')}</strong><small>{_escape(metric.status)}</small></li>"
+                (
+                    f"<li><span>{_escape(metric.title)}</span>"
+                    f"<strong>{_escape(metric.display_value or metric.value or '—')}</strong>"
+                    f"<small>{_escape(metric.status)}</small></li>"
+                )
                 for metric in pagespeed.metrics
+            )
+            performance_score = (
+                pagespeed.performance_score
+                if pagespeed.performance_score is not None
+                else "—"
             )
             pagespeed_html = (
                 '<section class="pagespeed">'
                 f"<h2>{_escape(labels['pagespeed'])}</h2>"
-                f'<div class="pagespeed-score"><span>{_escape(labels["performance"])}</span><strong>{_escape(pagespeed.performance_score if pagespeed.performance_score is not None else "—")}</strong></div>'
+                '<div class="pagespeed-score">'
+                f'<span>{_escape(labels["performance"])}</span>'
+                f"<strong>{_escape(performance_score)}</strong>"
+                "</div>"
                 f'<ul class="pagespeed-categories">{category_items}</ul>'
-                f'<h3>{_escape(labels["metrics"])}</h3><ul class="pagespeed-metrics">{metric_items}</ul>'
+                f'<h3>{_escape(labels["metrics"])}</h3>'
+                f'<ul class="pagespeed-metrics">{metric_items}</ul>'
                 "</section>"
             )
         else:
