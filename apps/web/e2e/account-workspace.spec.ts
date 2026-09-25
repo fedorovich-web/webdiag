@@ -402,7 +402,7 @@ test.describe("account workspace", () => {
     await page.goto("/en/login");
     await expect(page.getByRole("heading", { level: 1, name: "Sign in to WebDiag" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Register" })).toHaveAttribute("href", "/en/register");
-    const headerSignIn = page.locator('.wd-site-header a[href="/en/login"]');
+    const headerSignIn = page.locator('.wd-site-header .wd-header-login[href="/en/login"]');
     await expect(headerSignIn).toHaveAttribute("href", "/en/login");
     await expect(headerSignIn).toBeHidden();
   });
