@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from functools import lru_cache
 from typing import Annotated
 
@@ -15,10 +14,6 @@ from webdiag_api.accounts.models import (
     PasswordChangeRequest,
     RegisterRequest,
 )
-from webdiag_api.accounts.registration_admission import (
-    RegistrationAdmissionController,
-    RegistrationAdmissionError,
-)
 from webdiag_api.accounts.security import ScryptParameters
 from webdiag_api.accounts.service import AccountService, AccountServiceError
 from webdiag_api.accounts.storage import SqliteAccountStore
@@ -26,7 +21,6 @@ from webdiag_api.config import settings
 
 router = APIRouter(prefix="/v1/account", tags=["account"])
 SESSION_COOKIE_NAME = "webdiag_session"
-logger = logging.getLogger(__name__)
 
 
 @lru_cache(maxsize=1)
@@ -47,22 +41,7 @@ def get_account_service() -> AccountService:
     )
 
 
-@lru_cache(maxsize=1)
-def get_registration_admission() -> RegistrationAdmissionController:
-    return RegistrationAdmissionController(
-        settings.account_database_path,
-        request_limit=settings.account_registration_request_limit,
-        window_seconds=settings.account_registration_window_seconds,
-        concurrency_limit=settings.account_registration_concurrency_limit,
-        lease_seconds=settings.account_registration_lease_seconds,
-    )
-
-
 AccountServiceDependency = Annotated[AccountService, Depends(get_account_service)]
-RegistrationAdmissionDependency = Annotated[
-    RegistrationAdmissionController,
-    Depends(get_registration_admission),
-]
 SessionCookie = Annotated[str | None, Cookie(alias=SESSION_COOKIE_NAME)]
 
 
@@ -78,14 +57,6 @@ def _http_error(error: AccountServiceError) -> HTTPException:
         status_code=error.status_code,
         detail=_detail(error),
         headers=headers,
-    )
-
-
-def _registration_http_error(error: RegistrationAdmissionError) -> HTTPException:
-    return HTTPException(
-        status_code=error.status_code,
-        detail={"code": error.code, "message": error.message},
-        headers={"Cache-Control": "no-store", "Retry-After": str(error.retry_after)},
     )
 
 
@@ -117,22 +88,11 @@ def register(
     request: RegisterRequest,
     response: Response,
     service: AccountServiceDependency,
-    admission: RegistrationAdmissionDependency,
 ) -> AccountSessionResponse:
     try:
-        lease_id = admission.acquire()
-    except RegistrationAdmissionError as error:
-        raise _registration_http_error(error) from error
-    try:
-        try:
-            session = service.register(request)
-        except AccountServiceError as error:
-            raise _http_error(error) from error
-    finally:
-        try:
-            admission.release(lease_id)
-        except Exception:
-            logger.error("Registration admission lease release failed.")
+        session = service.register(request)
+    except AccountServiceError as error:
+        raise _http_error(error) from error
     _set_session_cookie(response, session.token)
     return session.response
 

@@ -157,19 +157,11 @@ class AccountService:
         except AccountValidationError as error:
             raise AccountServiceError(400, error.code, error.message) from error
 
-        if self._store.get_user_by_email(email) is not None:
-            raise AccountServiceError(
-                409,
-                "account_email_exists",
-                "An account with this email already exists.",
-            )
-
-        password_hash = hash_password(password, self._scrypt_parameters)
         try:
             user = self._store.create_user(
                 email=email,
                 display_name=display_name,
-                password_hash=password_hash,
+                password_hash=hash_password(password, self._scrypt_parameters),
             )
         except ValueError as error:
             if str(error) == "account_email_exists":
