@@ -64,8 +64,8 @@ test.describe("account settings", () => {
     });
 
     await page.goto("/account/settings");
-    await expect(page.getByRole("heading", { level: 1, name: "Аккаунт" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Аккаунт" })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("heading", { level: 1, name: "Настройки аккаунта" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Настройки" })).toHaveAttribute("aria-current", "page");
     await expect(page.getByText(session.user.email, { exact: true }).first()).toBeVisible();
     await expect(page.getByText("активных сессий")).toBeVisible();
     await expect(page.getByText("3", { exact: true })).toBeVisible();

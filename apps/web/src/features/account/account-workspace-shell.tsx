@@ -416,7 +416,7 @@ export function AccountWorkspaceShell({
           <div className="wd-account-topbar-actions">
             <Link className="wd-account-topbar-icon" href={reportsPath(locale)} aria-label={ru ? "Отчёты" : "Reports"}><FileBarChart2 aria-hidden="true" /></Link>
             <details className="wd-account-topbar-user">
-              <summary>
+              <summary aria-label={ru ? "Меню пользователя" : "User menu"}>
                 <span className="wd-account-topbar-avatar" aria-hidden="true">{initials}</span>
                 <span className="wd-account-topbar-user-copy">
                   <strong>{session.user.display_name}</strong>

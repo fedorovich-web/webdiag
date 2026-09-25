@@ -69,7 +69,7 @@ test.describe("account workspace", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/account");
     await expect(page.getByRole("complementary", { name: "Панель кабинета" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Обзор" })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("link", { name: "Панель управления" })).toHaveAttribute("aria-current", "page");
     await expect(page.getByRole("heading", { level: 1, name: "Добавьте первый сайт" })).toBeVisible();
     await expect(page.getByLabel("Текущий проект")).toBeDisabled();
 
@@ -81,6 +81,7 @@ test.describe("account workspace", () => {
     await expect(page.getByLabel("Текущий проект").locator("option")).toHaveCount(2);
     expect(projectListReads).toBe(1);
 
+    await page.getByLabel("Меню пользователя").click();
     await page.getByRole("button", { name: "Выйти" }).click();
     await expect(page).toHaveURL(/\/account$/);
     await expect(page.locator(".wd-account-workspace-page .wd-account-error")).toContainText("Сервис аккаунтов временно недоступен");
@@ -144,7 +145,7 @@ test.describe("account workspace", () => {
 
     await page.goto(`/account/projects/${firstProject.id}`);
     await expect(
-      page.getByRole("complementary", { name: "Панель кабинета" }).getByRole("link", { name: "Проекты" }),
+      page.getByRole("complementary", { name: "Панель кабинета" }).getByRole("link", { name: "Обзор проекта" }),
     ).toHaveAttribute("aria-current", "page");
     await expect(page.getByLabel("Текущий проект")).toHaveValue(firstProject.id);
     await expect(page.getByRole("heading", { level: 1, name: "Основной сайт" })).toBeVisible();
@@ -466,14 +467,14 @@ test.describe("account workspace", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Проблемы проекта" })).toBeVisible();
     await expect(page.locator(".wd-issues-render-row .wd-issues-priority").first()).toHaveText("P0 — исправить первым");
     await expect(page.getByText(issue.title).first()).toBeVisible();
-    await expect(page.getByText("Затронутые URL").first()).toBeVisible();
+    await expect(page.getByText("Затронутые страницы").first()).toBeVisible();
     await expect(page.getByText(issue.recommendation.summary).first()).toBeVisible();
     await expect(page.getByRole("link", { name: "Проблемы", exact: true })).toHaveAttribute("aria-current", "page");
-    await page.locator(".wd-issue-filters label").filter({ hasText: /^Категория/ }).locator("select").selectOption("security");
+    await page.locator(".wd-issue-filters label").filter({ hasText: /^Тип проблемы/ }).locator("select").selectOption("security");
     await expect.poll(() => filteredRequest).toContain("category=security");
     await expect(page.getByRole("button", { name: "Сбросить" })).toBeVisible();
 
-    await page.getByRole("link", { name: "Открыть проблему" }).click();
+    await page.getByRole("link", { name: "Открыть полностью" }).click();
     await expect(page.getByRole("heading", { level: 1, name: issue.title })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Что обнаружено" })).toBeVisible();
     await expect(page.getByText(issue.description)).toBeVisible();
