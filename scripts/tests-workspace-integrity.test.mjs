@@ -148,6 +148,7 @@ test("production core and opt-in AI overlay have separate fail-closed preflights
   assert.match(productionCompose, /WEBDIAG_ENVIRONMENT:\s*production/g);
   assert.match(productionCompose, /WEBDIAG_ACCOUNT_COOKIE_SECURE:\s*["']true["']/);
   assert.match(productionCompose, /WEBDIAG_AI_RUNTIME_ENABLED:\s*["']false["']/);
+  assert.match(productionCompose, /127\.0\.0\.1:8000\/ready/);
   assert.doesNotMatch(
     productionCompose,
     /RABBITMQ|OPENROUTER|AI_GATEWAY|AI_ARTIFACT|AI_INTERNAL_TOKEN/,

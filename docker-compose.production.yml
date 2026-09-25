@@ -41,7 +41,7 @@ services:
         - -c
         - >-
           import json,urllib.request;
-          body=json.load(urllib.request.urlopen('http://127.0.0.1:8000/health',timeout=5));
+          body=json.load(urllib.request.urlopen('http://127.0.0.1:8000/ready',timeout=5));
           assert body.get('status') == 'ok'
       interval: 15s
       timeout: 6s

@@ -23,8 +23,12 @@ npm run verify:production-compose -- --env-file <path-outside-repository>
 
 It renders the base, account, and production Compose files without starting
 containers and checks the three-service web/API/scheduler single-writer policy,
-exact volume topology, and environment allowlists. The core neither requires
-nor receives RabbitMQ, OpenRouter, S3, or AI secrets.
+exact volume topology, environment allowlists, and the API readiness healthcheck.
+The production healthcheck uses `/ready`, which fails closed when either configured
+SQLite path is not read-write reachable; the cheaper `/health` endpoint remains a
+process liveness check. Readiness does not replace a recovery-bundle integrity
+verification or a real backup/restore drill. The core neither requires nor receives
+RabbitMQ, OpenRouter, S3, or AI secrets.
 
 The optional AI topology has a separate fail-closed preflight:
 

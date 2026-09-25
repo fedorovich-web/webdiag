@@ -77,6 +77,12 @@ expect(scheduler.WEBDIAG_ENVIRONMENT === "production", "scheduler environment is
 expect(api.WEBDIAG_ACCOUNT_COOKIE_SECURE === "true", "secure account cookies are disabled");
 expect(api.WEBDIAG_PUBLIC_RELEASE === "true", "API public release flag is disabled");
 expect(api.WEBDIAG_AI_RUNTIME_ENABLED === "false", "AI runtime is not disabled");
+expect(
+  (service("api").healthcheck?.test ?? []).some(
+    (item) => typeof item === "string" && item.includes("127.0.0.1:8000/ready"),
+  ),
+  "API healthcheck does not use persistent-storage readiness",
+);
 expect(api.WEBDIAG_CRAWLER_PAGE_LIMIT === "100", "crawler page budget differs");
 expect(api.WEBDIAG_CRAWLER_DEADLINE_SECONDS === "240", "crawler deadline differs");
 expect(api.WEBDIAG_CRAWLER_LEASE_SECONDS === "300", "crawler lease differs");
