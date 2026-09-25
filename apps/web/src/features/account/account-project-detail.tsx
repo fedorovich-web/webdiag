@@ -66,10 +66,7 @@ export function AccountProjectDetail({ locale, projectId }: { readonly locale: L
 
   useEffect(() => {
     const latestAuditId = detail?.saved_audits[0]?.id;
-    if (!latestAuditId) {
-      setLatestPageSpeed(null);
-      return;
-    }
+    if (!latestAuditId) return;
     let active = true;
     getAccountSavedAudit(projectId, latestAuditId, locale)
       .then((value) => {
