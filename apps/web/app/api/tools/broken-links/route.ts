@@ -4,7 +4,14 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
 const REQUEST_25_000_MS = 25_000;
-function getApiBaseUrl(): string { const raw = process.env.WEBDIAG_API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_WEBDIAG_API_BASE_URL ?? DEFAULT_API_BASE_URL; return raw.replace(/\/+$/, ""); }
+function getApiBaseUrl(): string {
+  const raw = process.env.WEBDIAG_API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_WEBDIAG_API_BASE_URL ?? DEFAULT_API_BASE_URL;
+  const cleaned = raw.replace(/\/+$/, "");
+  if (cleaned === "http://api:8000" && process.env.NODE_ENV === "production") {
+    return "http://webdiag-webdiagcore-mlnqpr-api-1:8000";
+  }
+  return cleaned;
+}
 function toJsonResponse(payload: unknown, status: number) { return NextResponse.json(payload, { status, headers: { "cache-control": "no-store" } }); }
 async function parseJson(response: Response): Promise<unknown> { const text = await response.text(); if (!text) return null; try { return JSON.parse(text) as unknown; } catch { return undefined; } }
 export async function POST(request: NextRequest) {
