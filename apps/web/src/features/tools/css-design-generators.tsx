@@ -1,5 +1,7 @@
 "use client";
 
+import { toolErrorMessage } from "./tool-error-presentation";
+
 import { useMemo, useState, type CSSProperties } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { CopyButton } from "../../components/copy-button";
@@ -119,9 +121,9 @@ export function buildBorderRadiusCss(options: BorderRadiusOptions): string {
   return `${topLeft} ${topRight} ${bottomRight} ${bottomLeft}`;
 }
 
-function toResult(run: () => string): ResultState {
+function toResult(run: () => string, locale: Locale): ResultState {
   try { return { value: run(), error: "" }; }
-  catch (error) { return { value: "", error: error instanceof Error ? error.message : "Invalid CSS input." }; }
+  catch (error) { return { value: "", error: toolErrorMessage(locale, error, "css_parse_failed") }; }
 }
 
 export function GradientGeneratorTool({ locale }: { locale: Locale }) {
@@ -131,7 +133,7 @@ export function GradientGeneratorTool({ locale }: { locale: Locale }) {
   const [endColor, setEndColor] = useState("#14b8a6");
   const [startStop, setStartStop] = useState("0");
   const [endStop, setEndStop] = useState("100");
-  const result = useMemo(() => toResult(() => buildGradientCss({ mode, angle: Number(angle), startColor, endColor, startStop: Number(startStop), endStop: Number(endStop) })), [mode, angle, startColor, endColor, startStop, endStop]);
+  const result = useMemo(() => toResult(() => buildGradientCss({ mode, angle: Number(angle), startColor, endColor, startStop: Number(startStop), endStop: Number(endStop) }), locale), [mode, angle, startColor, endColor, startStop, endStop, locale]);
   const css = result.value ? `.gradient-surface {\n  background: ${result.value};\n}` : "";
   const previewStyle: CSSProperties = result.value ? { background: result.value, minHeight: "144px", borderRadius: "20px" } : { minHeight: "144px" };
 
@@ -154,7 +156,7 @@ export function BoxShadowGeneratorTool({ locale }: { locale: Locale }) {
   const [spread, setSpread] = useState("0");
   const [color, setColor] = useState("#0f172a");
   const [opacity, setOpacity] = useState("0.18");
-  const result = useMemo(() => toResult(() => buildBoxShadowCss({ offsetX: Number(offsetX), offsetY: Number(offsetY), blur: Number(blur), spread: Number(spread), color, opacity: Number(opacity) })), [offsetX, offsetY, blur, spread, color, opacity]);
+  const result = useMemo(() => toResult(() => buildBoxShadowCss({ offsetX: Number(offsetX), offsetY: Number(offsetY), blur: Number(blur), spread: Number(spread), color, opacity: Number(opacity) }), locale), [offsetX, offsetY, blur, spread, color, opacity, locale]);
   const css = result.value ? `.shadow-card {\n  box-shadow: ${result.value};\n}` : "";
   const previewStyle: CSSProperties = result.value ? { boxShadow: result.value, minHeight: "144px", borderRadius: "20px", background: "#ffffff" } : { minHeight: "144px" };
 
@@ -174,7 +176,7 @@ export function BorderRadiusGeneratorTool({ locale }: { locale: Locale }) {
   const [topRight, setTopRight] = useState("24");
   const [bottomRight, setBottomRight] = useState("24");
   const [bottomLeft, setBottomLeft] = useState("24");
-  const result = useMemo(() => toResult(() => buildBorderRadiusCss({ topLeft: Number(topLeft), topRight: Number(topRight), bottomRight: Number(bottomRight), bottomLeft: Number(bottomLeft) })), [topLeft, topRight, bottomRight, bottomLeft]);
+  const result = useMemo(() => toResult(() => buildBorderRadiusCss({ topLeft: Number(topLeft), topRight: Number(topRight), bottomRight: Number(bottomRight), bottomLeft: Number(bottomLeft) }), locale), [topLeft, topRight, bottomRight, bottomLeft, locale]);
   const css = result.value ? `.rounded-panel {\n  border-radius: ${result.value};\n}` : "";
   const previewStyle: CSSProperties = result.value ? { borderRadius: result.value, minHeight: "144px", background: "linear-gradient(135deg, #0f766e, #14b8a6)" } : { minHeight: "144px" };
 

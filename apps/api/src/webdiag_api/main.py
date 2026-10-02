@@ -1,8 +1,28 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Response, status
+from fastapi.exceptions import RequestValidationError
 
 from webdiag_api import __version__
+from webdiag_api.accounts.api import (
+    router as account_router,
+)
+from webdiag_api.accounts.monitoring_api import router as monitoring_router
+from webdiag_api.accounts.overview_api import router as overview_router
+from webdiag_api.accounts.report_api import (
+    account_router as report_account_router,
+)
+from webdiag_api.accounts.report_api import (
+    public_router as report_public_router,
+)
+from webdiag_api.accounts.workspace_api import router as workspace_router
+from webdiag_api.ai.api import internal_router as ai_internal_router
+from webdiag_api.ai.api import router as ai_router
 from webdiag_api.audit.api import router as audit_router
+from webdiag_api.config import settings
+from webdiag_api.crawl.api import account_router as crawl_account_router
+from webdiag_api.crawl.api import router as crawl_internal_router
+from webdiag_api.readiness import persistent_storage_ready
 from webdiag_api.registry import public_tools
+from webdiag_api.security.request_limits import RequestBodyLimitMiddleware
 from webdiag_api.tools.accessibility_static import router as accessibility_static_tool_router
 from webdiag_api.tools.asset_delivery import router as asset_delivery_tool_router
 from webdiag_api.tools.canonical import router as canonical_tool_router
@@ -22,8 +42,27 @@ from webdiag_api.tools.security_headers import router as security_headers_tool_r
 from webdiag_api.tools.sitemap_xml import router as sitemap_xml_tool_router
 from webdiag_api.tools.technical_seo import router as technical_seo_tool_router
 from webdiag_api.tools.url_management import router as url_management_tool_router
+from webdiag_api.validation import api_validation_exception_handler
 
 app = FastAPI(title="WebDiag API", version=__version__)
+app.add_middleware(
+    RequestBodyLimitMiddleware,
+    http_request_body_max_bytes=settings.http_request_body_max_bytes,
+    account_request_body_max_bytes=settings.account_request_body_max_bytes,
+    ai_text_request_body_max_bytes=settings.ai_text_request_body_max_bytes,
+    ai_image_upload_body_max_bytes=settings.ai_image_upload_body_max_bytes,
+)
+app.add_exception_handler(RequestValidationError, api_validation_exception_handler)
+app.include_router(account_router)
+app.include_router(overview_router)
+app.include_router(ai_router)
+app.include_router(ai_internal_router)
+app.include_router(crawl_internal_router)
+app.include_router(crawl_account_router)
+app.include_router(workspace_router)
+app.include_router(monitoring_router)
+app.include_router(report_account_router)
+app.include_router(report_public_router)
 app.include_router(audit_router)
 app.include_router(accessibility_static_tool_router)
 app.include_router(asset_delivery_tool_router)
@@ -45,9 +84,26 @@ app.include_router(sitemap_xml_tool_router)
 app.include_router(technical_seo_tool_router)
 app.include_router(url_management_tool_router)
 
+
 @app.get("/health", tags=["system"])
 def health() -> dict[str, str]:
     return {"status": "ok", "service": "webdiag-api", "version": __version__}
+
+
+@app.get("/ready", tags=["system"], include_in_schema=False)
+def ready(response: Response) -> dict[str, str]:
+    response.headers["cache-control"] = "no-store"
+    if not persistent_storage_ready(
+        (settings.account_database_path, settings.audit_database_path)
+    ):
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+        return {
+            "status": "unavailable",
+            "service": "webdiag-api",
+            "version": __version__,
+        }
+    return {"status": "ok", "service": "webdiag-api", "version": __version__}
+
 
 @app.get("/v1/tools", tags=["tools"])
 def list_tools() -> dict[str, object]:

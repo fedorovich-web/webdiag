@@ -1,5 +1,7 @@
 "use client";
 
+import { toolErrorMessage } from "./tool-error-presentation";
+
 import { useState, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import {
@@ -126,7 +128,7 @@ export function ImagePerformanceCheckerTool({ locale }: { locale: Locale }) {
     if (!parsed) { setError(dictionary[locale].invalidUrl); setResult(null); return; }
     setLoading(true); setError("");
     try { setResult(await runImageTool("/api/tools/image-performance", parsed.toString(), isImagePerformanceResponse)); }
-    catch (caught) { setResult(null); setError(caught instanceof Error ? caught.message : "Tool failed."); }
+    catch (caught) { setResult(null); setError(toolErrorMessage(locale, caught)); }
     finally { setLoading(false); }
   }
 
@@ -148,7 +150,7 @@ export function ImageSeoAuditTool({ locale }: { locale: Locale }) {
     if (!parsed) { setError(dictionary[locale].invalidUrl); setResult(null); return; }
     setLoading(true); setError("");
     try { setResult(await runImageTool("/api/tools/image-seo", parsed.toString(), isImageSeoResponse)); }
-    catch (caught) { setResult(null); setError(caught instanceof Error ? caught.message : "Tool failed."); }
+    catch (caught) { setResult(null); setError(toolErrorMessage(locale, caught)); }
     finally { setLoading(false); }
   }
 
@@ -170,7 +172,7 @@ export function FaviconCheckerTool({ locale }: { locale: Locale }) {
     if (!parsed) { setError(dictionary[locale].invalidUrl); setResult(null); return; }
     setLoading(true); setError("");
     try { setResult(await runImageTool("/api/tools/favicon", parsed.toString(), isFaviconResponse)); }
-    catch (caught) { setResult(null); setError(caught instanceof Error ? caught.message : "Tool failed."); }
+    catch (caught) { setResult(null); setError(toolErrorMessage(locale, caught)); }
     finally { setLoading(false); }
   }
 

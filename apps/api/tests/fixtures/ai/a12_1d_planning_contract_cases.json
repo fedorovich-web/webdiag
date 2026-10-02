@@ -1,0 +1,77 @@
+[
+  {
+    "tool_id": "ai_competitor_gap_report",
+    "public_input": {
+      "locale": "ru",
+      "objective": "Сравнить полноту переданных материалов.",
+      "own_page": {
+        "page_url": "https://example.ru/audit",
+        "title": "Технический аудит",
+        "h1": "Технический аудит",
+        "content": "Материал описывает проверку robots.txt."
+      },
+      "competitor_pages": [
+        {
+          "page_url": "https://comparison.example/audit",
+          "title": "Полный технический аудит",
+          "h1": "Полный технический аудит",
+          "content": "Материал описывает проверку robots.txt и XML-карты сайта."
+        }
+      ]
+    },
+    "output": {
+      "summary": "В переданных снимках найдена одна тема для проверки.",
+      "gaps": [
+        {
+          "topic": "XML-карта сайта",
+          "own_evidence": [],
+          "competitor_evidence": [
+            {
+              "page_index": 0,
+              "excerpt": "XML-карты сайта"
+            }
+          ],
+          "recommendation": "Проверить, нужен ли раздел об XML-карте сайта."
+        }
+      ],
+      "warnings": [
+        "Сравнение основано только на переданных снимках страниц."
+      ]
+    }
+  },
+  {
+    "tool_id": "ai_internal_linking_planner",
+    "public_input": {
+      "locale": "en",
+      "pages": [
+        {
+          "page_url": "https://example.com/robots",
+          "title": "Robots.txt guide",
+          "h1": "Robots.txt guide",
+          "content": "The guide explains crawl access rules."
+        },
+        {
+          "page_url": "https://example.com/audit",
+          "title": "Technical audit",
+          "h1": "Technical audit",
+          "content": "The audit includes checks for crawl access rules."
+        }
+      ],
+      "existing_links": []
+    },
+    "output": {
+      "summary": "One link is proposed for review.",
+      "proposals": [
+        {
+          "source_page_index": 0,
+          "target_page_index": 1,
+          "suggested_anchor": "technical audit",
+          "source_evidence": "crawl access rules",
+          "target_evidence": "checks for crawl access rules",
+          "rationale": "Connects related concepts in the supplied pages."
+        }
+      ],
+      "warnings": []
+    }
+  }
+]

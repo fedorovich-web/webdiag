@@ -17,11 +17,12 @@ function getAuditApiBaseUrl(): string {
   return raw.replace(/\/+$/, "");
 }
 
-function toJsonResponse(payload: unknown, status: number) {
+function toJsonResponse(payload: unknown, status: number, headers?: HeadersInit) {
   return NextResponse.json(payload, {
     status,
     headers: {
       "cache-control": "no-store",
+      ...headers,
     },
   });
 }
@@ -63,7 +64,8 @@ export async function POST(request: NextRequest) {
 
     if (!upstream.ok) {
       if (isAuditErrorPayload(parsed.payload)) {
-        return toJsonResponse(parsed.payload, upstream.status);
+        const retryAfter = upstream.headers.get("retry-after");
+        return toJsonResponse(parsed.payload, upstream.status, retryAfter ? { "retry-after": retryAfter } : undefined);
       }
       return toJsonResponse(
         errorPayload("audit_api_invalid_response", "Audit API returned an invalid error payload."),

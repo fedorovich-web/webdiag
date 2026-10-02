@@ -1,5 +1,7 @@
 "use client";
 
+import { toolErrorMessage } from "./tool-error-presentation";
+
 import { useState, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { CopyButton } from "../../components/copy-button";
@@ -218,7 +220,7 @@ export function RobotsTxtTool({ locale }: { locale: Locale }) {
       setResult(await runRobotsTxtCheck(parsed.toString(), userAgent.trim() || "WebDiagBot"));
     } catch (caught) {
       setResult(null);
-      setError(caught instanceof Error ? caught.message : "robots.txt check failed.");
+      setError(toolErrorMessage(locale, caught));
     } finally {
       setIsLoading(false);
     }

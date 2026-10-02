@@ -347,7 +347,7 @@ function temporalClaim(
   const date = new Date(value * 1_000);
   const iso = Number.isNaN(date.valueOf()) ? null : date.toISOString();
   if (!iso) return { claim, value, iso: null, status: "invalid" };
-  if (claim === "exp") return { claim, value, iso, status: value < nowSeconds - clockSkewSeconds ? "expired" : "active" };
+  if (claim === "exp") return { claim, value, iso, status: value <= nowSeconds - clockSkewSeconds ? "expired" : "active" };
   if (claim === "nbf") return { claim, value, iso, status: value > nowSeconds + clockSkewSeconds ? "not-yet-valid" : "active" };
   return { claim, value, iso, status: value > nowSeconds + clockSkewSeconds ? "future" : "past" };
 }

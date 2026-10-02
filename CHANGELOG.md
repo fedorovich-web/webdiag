@@ -1,5 +1,169 @@
 # Changelog
 
+## A13.3 — Localized evidence and production core split
+
+- Added immutable RU/EN presentation for known saved-audit and report evidence;
+  stored snapshots and integrity digests remain canonical and unchanged.
+- Replaced raw tool exception output across 36 workbench components with a
+  stable allowlisted RU/EN error boundary and a source regression gate.
+- Split the production topology into a three-service non-AI core and an
+  explicit optional AI overlay with independent rendered-model preflights.
+  Core production no longer requires RabbitMQ, OpenRouter, S3, or AI secrets.
+- AI tools remain internal and the overlay remains blocked on the documented
+  external evaluation, cost, storage, manual image, and fixed-credit gates.
+- No provider, S3, payment, domain, TLS, release, or deployment operation was
+  performed by this stage.
+
+## A13.2 — Factual public availability
+
+- Replaced unapproved prices and paid-run claims on the RU/EN home, pricing,
+  audit, and monitoring surfaces with factual current-availability states.
+  Unavailable AI and payment cards expose no action that implies activation.
+- Replaced the nonexistent AI catalog category with registry-backed links and
+  made the public catalog render all 115 ready tools across all six registry
+  categories. Category deep links now select the requested ready subset.
+- Added source and browser regressions for unapproved commercial claims,
+  unavailable-card actions, authoritative category coverage, RU/EN parity,
+  mobile overflow, and the compact availability-card geometry.
+- Updated only manually inspected home and catalog visual baselines. No price,
+  payment integration, AI availability, provider certification, release, or
+  deployment was introduced by this stage.
+
+## A13.1 — Fail-closed production Compose preflight
+
+- Added a single-host production override that builds/runs the web public gate
+  explicitly, enforces production API/worker settings, secure cookies, distinct
+  internal secrets, private S3 artifacts, health checks, restart policies, and
+  loopback-only published ports.
+- Removed unused PostgreSQL and Valkey services from the production model while
+  retaining RabbitMQ for the active worker topology. Development Compose remains
+  unchanged and fail-safe.
+- Added an empty tracked environment template and a privacy-safe rendered-model
+  preflight. Missing credentials fail without printing Compose stderr or
+  environment values; the verifier enforces exact secret placement and volume
+  topology. Docker build contexts exclude every `.env` file.
+- Added CI build/runtime smoke coverage for all three production images. The
+  web smoke proves the public robots and sitemap policy from the running image;
+  a synthetic sentinel proves `.env.production` is not copied into its build.
+- No domain, TLS proxy, credential, provider, S3, release, or deployment was
+  configured or contacted by this stage.
+
+## A12.9 — OpenRouter billed-cost evidence
+
+- Added fail-closed parsing of the documented OpenRouter `usage.cost` value for
+  both chat and image responses, using decimal arithmetic and conservative
+  nano-USD rounding instead of binary floating-point accounting.
+- Added a required internal completion field and additive SQLite attempt column;
+  new successful runs persist provider cost atomically with generation ID and
+  token usage, while historical unmeasured attempts remain explicit `NULL`.
+- Added a bounded operator-only per-tool JSON report with measured/unmeasured
+  counts and min/max/p95/total cost. It exposes no user, run, prompt, output,
+  response-body, or artifact identifiers. It verifies an offline recovery
+  bundle, opens the account snapshot in immutable read-only mode, creates no
+  WAL/SHM sidecars, and never initializes or migrates the inspected database.
+- AI tools remain internal. No provider request, cost claim, credit price,
+  payment, release, or deployment was made by this stage.
+
+## A12.1e — Final grounded text contracts
+
+- Added strict RU/EN contracts for Redirect Migration Mapper, Localization Workbench, and Regex Workbench. All 13 text/vision-analysis catalog entries now have executable contracts on the fixed `openai/gpt-5.6-luna` OpenRouter path and remain internal pending real evaluation and pricing.
+- Redirect mappings cover every supplied old page exactly once and require exact old/new evidence. Localization requires complete glossary usage and verbatim-constraint preservation. Neither tool claims crawling, deployment, certified translation quality, rankings, traffic, or measured impact.
+- Regex Workbench returns only a dialect-specific draft with fixed `validation_status: unverified` and a one-to-one plan for caller-declared cases. The backend deliberately does not compile or execute model-generated regex and makes no passing, safety, engine-compatibility, or ReDoS-resistance claim.
+- Image Studio and Image Edit Studio remain disabled because the selected GPT-5.6 model has text output. No fake image capability or fallback model was added.
+
+## A12.1d — Grounded comparison and linking planners
+
+- Added strict RU/EN contracts for Competitor Gap Report and Internal Linking Planner on the existing `openai/gpt-5.6-luna` OpenRouter path. Both remain internal pending real provider evaluation and measured pricing.
+- Competitor Gap compares only caller-supplied page snapshots and requires every comparison claim to cite an exact excerpt and page index. Internal Linking proposes only reviewable directed pairs from the supplied inventory and rejects self-links, existing links, duplicates, unknown indexes, and ungrounded excerpts.
+- Explicitly excluded crawling, site mutation, live competitor research, backlinks, authority, search volume, difficulty, rankings, traffic, and guaranteed results.
+- Added a dedicated bounded 300,000-byte HTTP limit only for AI run creation so the existing 262,144-byte service input limit is reachable without widening ordinary account endpoints beyond 16,384 bytes.
+
+## A12.1c — Grounded content workbench contracts
+
+- Added strict RU/EN contracts for Content Brief, Content Optimizer, and Search Intent/Page Fit. All three use the existing `openai/gpt-5.6-luna` OpenRouter path and remain internal pending real provider evaluation and measured pricing.
+- Content Brief requires exact source-fact excerpts and valid fact indexes. Content Optimizer records exact before/after excerpts and preserves every caller-supplied factual constraint verbatim. Search Intent/Page Fit requires exact evidence from the supplied query and page content.
+- Explicitly excluded live SERP observation, competitor research, search volume, keyword difficulty, rankings, traffic predictions, and guaranteed results. User content is treated as untrusted data rather than provider instructions.
+- Added bounded strict schemas, public-URL validation, semantic output validation, and stable RU/EN fixtures without making real OpenRouter calls.
+
+## A12.1b — Private Alt Text Studio foundation
+
+- Added authenticated raw image intake with a dedicated 4 MiB route limit, JPEG/PNG/WebP detection, one-frame and 8,000,000-pixel bounds, metadata removal, deterministic re-encoding, and no filename or remote-URL trust.
+- Added ownership-scoped expiring uploads, a ten-upload quota, atomic one-run binding, private object descriptors, and bounded local/S3-compatible storage. Image bytes, filenames, account identity, and object keys are not exposed by the public API or stored in run responses.
+- Added the GPT-5.6 Luna vision path through OpenRouter with a single low-detail image, private object size/SHA-256 verification before provider submission, strict RU/EN output contracts, and unknown-person/protected-trait restrictions.
+- Added terminal deletion-pending transitions and bounded idempotent cleanup. Production configuration cannot use local artifact storage; ordinary tests make no S3 or OpenRouter request.
+- Kept Alt Text Studio internal pending a real opt-in OpenRouter smoke/evaluation, RU/EN semantic review, measured cost, fixed credit price, and production S3 configuration. Image generation and image editing remain disabled because the selected model has text output.
+
+## A12.1a — First four grounded AI tool contracts
+
+- Added strict RU/EN input and output contracts for Audit Action Plan, Meta & SERP Studio, Schema Studio, and FAQ Studio. Outputs are schema-validated and checked against saved audit issue/URL references, supplied facts, or exact source excerpts before credit capture.
+- Added ownership-scoped immutable saved-audit snapshots for Action Plan without hidden audit reruns, client-supplied audit payloads, or provider access to project/audit/account identifiers.
+- Replaced the direct OpenAI adapter with a bounded OpenRouter Chat Completions adapter pinned to `openai/gpt-5.6-luna`, strict JSON Schema, disabled provider fallback, denied data collection, required zero-data-retention routing, zero client retries, explicit timeouts, provider request/usage accounting, conservative unknown-outcome handling, and privacy-preserving safety identifiers.
+- Kept all four tools internal pending real opt-in provider smoke tests, RU/EN semantic evaluation, measured cost, and owner-approved fixed credit prices. Added no Lava.top/payment code and no fabricated AI result.
+- Split Alt Text Studio into A12.1b so image inputs use a private validated upload/artifact path instead of client URLs or base64 persisted in SQLite.
+
+## A12.0 — AI execution and credit foundation
+
+- Added exactly 15 internal AI catalog definitions; none is public or executable until its real-provider, evaluation, cost, security, and fixed-credit gates pass.
+- Added a transactional non-expiring integer credit balance and append-only SQLite ledger with idempotent operator beta grants, conservation checks, and tamper detection.
+- Added account-owned AI run APIs with atomic credit reservation, idempotent creation, no-store responses, ownership-scoped `404`, saved state, and deletion that preserves financial history.
+- Added separate opaque seek cursors for run and ledger history, plus bounded provider request/usage metadata without persisting prompts or raw provider responses.
+- Added bearer-protected internal claim, lease renewal, submission, completion, and failure contracts. Only the current unexpired hashed lease can capture or release a reservation.
+- Added a bounded Dramatiq worker bridge and provider protocol with redirect rejection and no database/session access. No OpenAI adapter, Lava.top payment flow, GPU workload, or fabricated result is included in A12.0.
+- Deferred Lava.top to A13.0, after all 15 tools, RU/EN polish, the complete security/privacy/cost/load review, and production-domain verification.
+
+## A11.5 — Saved reports and expiring share links
+
+- Added immutable ownership-scoped reports generated only from persisted `webdiag.account.saved_audit_payload.v1` data.
+- Added bounded report storage, HTML export, a print-ready view for browser PDF creation, and exact artifact hashing without a new rendering dependency.
+- Added hash-only share tokens with 1–30-day expiry, one-time token disclosure, revoke semantics, no public listing, and noindex/no-store public responses.
+- Added RU/EN report list/detail/share UI and a public report route without exposing user, project, audit, session, or raw-evidence fields.
+- Deliberately excluded server-side PDF generation, email/webhook delivery, analytics, and destructive report deletion.
+
+## A10.40 — Certificate Inspection Workbench
+
+- Activated WD-033 as a browser-local bounded PEM X.509 certificate viewer.
+- Added DER/ASN.1 inspection for subject, issuer, validity, SAN, algorithms, chain order, Basic Constraints, and SHA-256 fingerprints.
+- Explicitly rejects private keys and CSRs and makes no trust-store, OCSP, CRL, hostname, or network-validation claims.
+- Registry now exposes 103 ready tools and 22 internal tools.
+
+
+## A11.4 — Monitoring foundation
+
+- Added one ownership-scoped monitor per project with bounded cadence, IANA timezone, enable/pause state, next/last run timestamps, consecutive failure tracking, and a 100-run persisted history.
+- Added a real scheduled execution path: SQLite due-claim lease, existing audit service execution, stable fingerprint comparison, baseline/unchanged/changed/failed outcomes, and bounded retry delays.
+- Added authenticated internal `run-due`, a standard-library worker bridge, Dramatiq actor, and a dedicated Compose scheduler service without adding a new runtime dependency.
+- Added RU/EN configuration, run-now, and real history UI; deliberately excluded fake uptime, synthetic charts, incident management, and notification delivery claims.
+- Added `webdiag.monitor.notification_event.v1` as an event contract only for changed/failed runs; no provider or destination is configured or exposed.
+
+## A11.3 — Issues and priorities
+
+- Added ownership-scoped issue list and issue-detail projections derived only from persisted `webdiag.account.saved_audit_payload.v1` data, without new storage tables or repeated audits.
+- Added deterministic global fix order from persisted priority and severity, normalized SEO/performance/accessibility/security/content/technical categories, and bounded server-side filtering and sorting.
+- Added RU/EN issue list and detail routes inside the existing account shell with affected URLs and evidence-backed recommendations, while excluding raw evidence, tool mappings, internal run identifiers, and pseudo-AI conclusions.
+- Added strict same-origin client contracts, UUID/dotted-issue proxy confinement, no-store API responses, backend ownership tests, frontend validators, and browser coverage.
+
+## A11.2 — Account workspace UI
+
+- Added a route-aware account shell around the real A11.1 projects and saved-audit contracts without adding backend state or synthetic analytics.
+- Added a sticky desktop sidebar, accessible mobile drawer with focus trap/Escape restoration, RU/EN navigation, and a project switcher populated only from the ownership-scoped project list.
+- Reworked the account overview around real project count, recently updated projects, project creation, and the complete project list; creating a project updates the shell without a second list request.
+- Wrapped project and saved-audit routes in the same responsive shell, kept light/dark design-token parity, and added browser contracts for focus management, responsive overflow, project selection, and honest logout failure.
+
+## A11.1 — Projects and saved audits
+
+- Added ownership-scoped projects with canonical public HTTP(S) origins, duplicate protection, and a bounded 100-project account limit.
+- Added atomic server-side audit execution and persistence: the browser sends only the owned project ID, while WebDiag runs the existing audit service and stores a versioned safe result.
+- Added bounded saved-audit history, exact RU/EN client contracts, project/detail/report routes, accessible create/run/loading/error states, and same-origin proxy confinement.
+- Excluded raw evidence, internal tool mappings, source job/run identifiers, credentials, query strings, fragments, cross-origin affected URLs, delete/archive semantics, monitoring, and synthetic metrics.
+
+## A11.0 — Account foundation closeout
+
+- Reduced the account contract to registration, login, current session, and server-side logout without premature projects, saved-audit, monitoring, or usage-metric presentation.
+- Added bounded configuration for session TTL, active-session eviction, SQLite path confinement, and scrypt parameters, with Secure cookies required in production.
+- Kept only password hashes and session-token hashes in the foundation database and normalized account validation errors into a stable no-store envelope.
+- Hardened the Next.js account proxy to use only the private internal API origin and forward only the HttpOnly WebDiag session cookie.
+- Added localized RU/EN error states, retry behavior, honest logout handling, dark-mode-compatible account styles, and targeted backend/client/proxy/browser tests.
+
 ## A10.36 — HTML entity and bounded text diff tools
 
 - Activated HTML Entities Encoder / Decoder for local encoding of HTML-significant characters and bounded decoding of common named, decimal, and hexadecimal entity references without executing decoded markup.

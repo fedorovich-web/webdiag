@@ -1,11 +1,17 @@
 import { expect, test } from "@playwright/test";
 import { installBrowserGuard } from "./browser-guard";
 
+async function openMobileMenu(page: import("@playwright/test").Page) {
+  await page.locator(".mobile-menu summary").click();
+  await expect(page.locator(".mobile-menu")).toHaveAttribute("open", "");
+}
+
 test.describe("RU and EN segmented navigation", () => {
   let assertBrowserClean: ReturnType<typeof installBrowserGuard>;
 
   test.beforeEach(async ({ page }) => {
     assertBrowserClean = installBrowserGuard(page);
+    await page.setViewportSize({ width: 390, height: 844 });
   });
 
   test.afterEach(async ({}, testInfo) => {
@@ -14,6 +20,7 @@ test.describe("RU and EN segmented navigation", () => {
 
   test("preserves the equivalent tool route, query, and hash in both directions", async ({ page }) => {
     await page.goto("/tools/image-resizer?source=audit&mode=1#privacy");
+    await openMobileMenu(page);
 
     const languageNavigation = page.getByRole("navigation", { name: "Выбор языка" });
     const ru = languageNavigation.getByRole("link", { name: "Русская версия" });
@@ -34,6 +41,7 @@ test.describe("RU and EN segmented navigation", () => {
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/\/en\/tools\/image-resizer\?source=audit&mode=1#privacy$/);
 
+    await openMobileMenu(page);
     const englishNavigation = page.getByRole("navigation", { name: "Language selection" });
     const englishActive = englishNavigation.getByRole("link", { name: "English version" });
     const russianTarget = englishNavigation.getByRole("link", { name: "Русская версия" });
@@ -47,8 +55,44 @@ test.describe("RU and EN segmented navigation", () => {
     await expect(page).toHaveURL(/\/tools\/image-resizer\?source=audit&mode=1#privacy$/);
   });
 
+  test("keeps decorative homepage copy in the active locale", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator(".wd-process-callout")).toContainText("Просто.");
+    await expect(page.locator(".wd-process-callout")).not.toContainText("Simple.");
+
+    await page.goto("/en");
+    await expect(page.locator(".wd-process-callout")).toContainText("Simple.");
+    await expect(page.locator(".wd-process-callout")).not.toContainText("Просто.");
+  });
+
+
+  test("keeps public English UI free of Cyrillic copy and Russian-labelled hero art", async ({ page }) => {
+    const routes = ["/en", "/en/tools", "/en/tools/robots-txt-tester", "/en/contacts", "/en/login"] as const;
+
+    for (const route of routes) {
+      await page.goto(route);
+      const visibleText = await page.locator("body").innerText();
+      expect(visibleText, `Unexpected Cyrillic copy on ${route}`).not.toMatch(/[А-Яа-яЁё]/u);
+    }
+
+    await page.goto("/en");
+    await expect(page.locator(".wd-hero-dashboard")).toHaveAttribute("src", "/design/icons/seo-audit.webp");
+    await expect(page.locator(".wd-platform-list")).toContainText("1C-Bitrix");
+    await expect(page.locator(".wd-platform-list")).not.toContainText("Битрикс");
+
+    await page.goto("/en/tools");
+    await expect(page.locator(".wd-tools-hero-art img")).toHaveAttribute("src", "/design/hero/tools.webp");
+
+    await page.goto("/en/tools/robots-txt-tester");
+    await expect(page.locator(".wd-tool-hero-art img")).toHaveAttribute("src", "/design/hero/tool-robots.webp");
+
+    await page.goto("/en/contacts");
+    await expect(page.locator(".wd-contact-hero-art img")).toHaveAttribute("src", "/design/hero/contacts.webp");
+  });
+
   test("keeps home routes stable without duplicating the English prefix", async ({ page }) => {
     await page.goto("/en?ref=header#how-it-works");
+    await openMobileMenu(page);
     const languageNavigation = page.getByRole("navigation", { name: "Language selection" });
 
     await expect(languageNavigation.getByRole("link", { name: "English version" }))
