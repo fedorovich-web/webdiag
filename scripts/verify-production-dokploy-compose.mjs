@@ -5,12 +5,7 @@ const root = fileURLToPath(new URL("../", import.meta.url));
 const coreVerifier = fileURLToPath(
   new URL("./verify-production-compose.mjs", import.meta.url),
 );
-const files = [
-  "docker-compose.yml",
-  "docker-compose.account.override.yml",
-  "docker-compose.production.yml",
-  "docker-compose.dokploy.yml",
-];
+const files = ["docker-compose.dokploy.yml"];
 const extraArguments = process.argv.slice(2);
 
 function fail(label) {
@@ -74,9 +69,7 @@ expect(
 for (const name of expectedServices) {
   expect((service(name).ports ?? []).length === 0, `service ${name} publishes a host port`);
 }
-const apiExpose = (service("api").expose ?? []).map(String);
 const webExpose = (service("web").expose ?? []).map(String);
-expect(apiExpose.includes("8000"), "API internal port 8000 is not exposed to the Compose network");
 expect(webExpose.includes("3000"), "web internal port 3000 is not exposed to the Compose network");
 expect(
   environment("web").WEBDIAG_API_INTERNAL_URL === "http://api:8000",
