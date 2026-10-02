@@ -534,14 +534,20 @@
   background: #fff;
   box-shadow: 0 8px 24px rgb(30 76 116 / .05);
 }
-.wd-tool-aside-card h2 { font-size: 17px; }
+.wd-tool-aside-card h2 {
+  font-size: 18px !important;
+  font-weight: 750 !important;
+  line-height: 1.25 !important;
+  letter-spacing: -0.015em !important;
+  color: #102047 !important;
+}
 .wd-tool-aside-card ul {
   display: grid;
   gap: 10px;
   margin: 14px 0 0;
   padding: 0 0 0 17px;
   color: #5f6f86;
-  font-size: 10px;
+  font-size: 14px;
   line-height: 1.5;
 }
 .wd-tool-related > div {
