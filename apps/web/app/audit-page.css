@@ -536,20 +536,24 @@
 }
 .wd-audit-final-cta-card {
   padding: 56px 40px;
-  background: linear-gradient(135deg, #0f172a, #1e293b);
+  background:
+    radial-gradient(ellipse at 4% 105%, rgb(34 211 238 / .20), transparent 30%),
+    radial-gradient(ellipse at 95% 106%, rgb(52 211 153 / .18), transparent 30%),
+    linear-gradient(135deg, #f0f7ff 0%, #f6faff 50%, #effffb 100%);
+  border: 1px solid #d4e5f7;
   border-radius: 28px;
   text-align: center;
-  color: #ffffff;
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
+  color: #102047;
+  box-shadow: 0 16px 40px rgba(37, 99, 255, 0.07);
 }
 .wd-audit-final-cta-card h2 {
   font-size: clamp(28px, 3.2vw, 40px);
   font-weight: 800;
-  color: #ffffff;
+  color: #102047;
   margin-bottom: 12px;
 }
 .wd-audit-final-cta-card .wd-audit-sub-h2 {
-  color: #94a3b8;
+  color: #4b5f80;
   max-width: 600px;
   margin: 0 auto 36px;
 }

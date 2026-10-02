@@ -6,7 +6,6 @@ import {
   Gauge,
   Grid3X3,
   Image as ImageIcon,
-  Search,
   SearchCheck,
   ShieldCheck,
   Sparkles,
@@ -97,7 +96,6 @@ function NavigationLinks({ locale }: { locale: Locale }) {
 export function SiteHeader({ locale }: SiteHeaderProps) {
   const createAccount = locale === "ru" ? "Создать аккаунт" : "Create account";
   const login = locale === "ru" ? "Войти" : "Sign in";
-  const search = locale === "ru" ? "Найти инструмент" : "Find a tool";
   const registerHref = locale === "ru" ? "/register" : "/en/register";
 
   return (
@@ -108,15 +106,6 @@ export function SiteHeader({ locale }: SiteHeaderProps) {
 
         <div className="wd-header-actions">
           <div id="account-workspace-menu-slot" className="wd-account-menu-slot" />
-          <Link
-            prefetch={false}
-            aria-label={search}
-            className="wd-header-login wd-header-search"
-            href={toolsPath(locale)}
-            title={search}
-          >
-            <Search aria-hidden="true" size={17} />
-          </Link>
           <LanguageSwitcher locale={locale} className="language-switcher-desktop" />
           <Link className="wd-header-login" href={loginPath(locale)} prefetch={false}>{login}</Link>
           <Link className="wd-header-cta" href={registerHref} prefetch={false}>{createAccount}</Link>

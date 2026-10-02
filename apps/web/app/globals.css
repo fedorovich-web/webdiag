@@ -33,11 +33,31 @@
   --font-size-h1: 64px;
   --font-size-h2: 52px;
   --font-size-h3: 28px;
-  --font-size-body: 16px;
+  --font-size-body: 15px;
   --font-size-lead: 18px;
   --font-size-small: 14px;
   --transition-fast: 140ms cubic-bezier(0.2, 0, 0, 1);
   --transition-base: 220ms cubic-bezier(0.2, 0, 0, 1);
+
+  /* WebDiag Unified Spacing & Padding Variables */
+  --wd-hero-pt: clamp(96px, 9vw, 136px);
+  --wd-hero-pb: clamp(56px, 6vw, 88px);
+  --wd-section-py: clamp(64px, 7vw, 96px);
+  --wd-section-py-sm: clamp(44px, 5vw, 68px);
+  --wd-section-gap: clamp(48px, 6vw, 80px);
+  --wd-container-gap: clamp(24px, 3vw, 40px);
+  --wd-card-p: clamp(24px, 2.5vw, 36px);
+  --wd-card-gap: clamp(20px, 2vw, 30px);
+
+  /* WebDiag Unified Typography Variables */
+  --wd-font-h1: clamp(40px, 4.8vw, 64px);
+  --wd-font-h2: clamp(28px, 3.2vw, 40px);
+  --wd-font-h3: clamp(20px, 2.2vw, 26px);
+  --wd-font-sub-h1: 18px;
+  --wd-font-sub-h2: 16px;
+  --wd-font-body: 15px;
+  --wd-font-min: 14px;
+  --wd-font-breadcrumbs: 12px;
 }
 
 body {

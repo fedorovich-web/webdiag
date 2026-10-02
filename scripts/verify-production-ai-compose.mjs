@@ -151,7 +151,7 @@ expect(
   worker.AI_GATEWAY_BASE_URL === "https://ai-gateway.vercel.sh/v1",
   "worker AI Gateway base URL differs",
 );
-expect(worker.AI_MODEL === "openai/gpt-5.6-sol", "worker AI model differs");
+expect(worker.AI_MODEL === "openai/gpt-6-luna", "worker AI model differs");
 expect(worker.AI_REASONING_EFFORT === "medium", "worker AI reasoning effort differs");
 
 const apiVolumes = service("api").volumes ?? [];

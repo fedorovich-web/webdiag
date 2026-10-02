@@ -231,7 +231,7 @@ def test_explicit_execution_writes_private_evidence_and_redacted_summary(
                 "id": f"gen_private_{provider_input['locale']}",
                 "object": "chat.completion",
                 "created": 1_786_000_000,
-                "model": "openai/gpt-5.6-sol",
+                "model": "openai/gpt-6-luna",
                 "choices": [
                     {
                         "finish_reason": "stop",
@@ -325,7 +325,7 @@ def test_semantic_rejection_writes_incomplete_private_evidence_without_retry(
                 "id": "gen_private_invalid",
                 "object": "chat.completion",
                 "created": 1_786_000_000,
-                "model": "openai/gpt-5.6-sol",
+                "model": "openai/gpt-6-luna",
                 "choices": [
                     {
                         "finish_reason": "stop",

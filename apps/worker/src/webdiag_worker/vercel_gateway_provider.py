@@ -47,7 +47,7 @@ class _ToolPolicy:
     instructions: str
 
 
-_MODEL = "openai/gpt-5.6-sol"
+_MODEL = "openai/gpt-6-luna"
 _PROVIDER = "vercel"
 _GATEWAY_BASE_URL = "https://ai-gateway.vercel.sh/v1"
 _REASONING_EFFORT = "medium"

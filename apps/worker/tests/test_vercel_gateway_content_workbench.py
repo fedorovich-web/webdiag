@@ -10,7 +10,7 @@ from webdiag_worker.vercel_gateway_provider import VercelAIGatewayProvider
 def _response(output: dict[str, object]) -> dict[str, object]:
     return {
         "id": "gen_content_123",
-        "model": "openai/gpt-5.6-sol",
+        "model": "openai/gpt-6-luna",
         "choices": [
             {
                 "finish_reason": "stop",
@@ -130,7 +130,7 @@ def test_content_workbench_uses_strict_grounded_gateway_policy(
         run_id="11111111-1111-4111-8111-111111111111",
         tool_id=tool_id,
         contract_version="v1",
-        model_policy="openai/gpt-5.6-sol",
+        model_policy="openai/gpt-6-luna",
         input=input_value,
         safety_identifier="opaque-safety-identifier-value-1234567890",
     )
@@ -139,7 +139,7 @@ def test_content_workbench_uses_strict_grounded_gateway_policy(
 
     assert result.output == output
     sent = json.loads(requests[0].content)
-    assert sent["model"] == "openai/gpt-5.6-sol"
+    assert sent["model"] == "openai/gpt-6-luna"
     assert sent["reasoning"] == {"effort": "medium"}
     assert sent["providerOptions"] == {"gateway": {"zeroDataRetention": True}}
     schema = sent["response_format"]["json_schema"]["schema"]

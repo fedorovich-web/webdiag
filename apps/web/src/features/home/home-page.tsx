@@ -159,12 +159,12 @@ export function HomePage({ locale }: { locale: Locale }) {
             <h1 id="home-title">
               {locale === "ru" ? (
                 <>
-                  <span style={{ display: "block" }}>Проверка сайта</span>
-                  <span style={{ display: "block" }}>на технические</span>
-                  <span style={{ ...heroAccentStyle, display: "block" }}>и SEO-ошибки</span>
+                  <span style={{ display: "block", fontSize: "inherit" }}>Проверка сайта</span>
+                  <span style={{ display: "block", fontSize: "inherit" }}>на технические</span>
+                  <span style={{ ...heroAccentStyle, display: "block", fontSize: "inherit" }}>и SEO-ошибки</span>
                 </>
               ) : (
-                <>Check Your Website for Technical and <span style={heroAccentStyle}>SEO Issues</span></>
+                <>Check Your Website for Technical and <span style={{ ...heroAccentStyle, fontSize: "inherit" }}>SEO Issues</span></>
               )}
             </h1>
             <p className="wd-hero-lead">{heroDescription}</p>

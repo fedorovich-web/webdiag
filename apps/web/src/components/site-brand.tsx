@@ -46,9 +46,12 @@ function BrandArtwork() {
 
 export function SiteBrand({ locale, className = "brand", variant }: SiteBrandProps) {
   const pathname = normalizePath(usePathname() ?? "/");
-  const home = locale === "ru" ? "/" : "/en";
+  const isAppWorkspace = className.includes("wd-account") || (typeof window !== "undefined" && (window.location.hostname === "app.webdiag.ru" || window.location.hostname.startsWith("app.")));
+  const home = isAppWorkspace
+    ? (locale === "ru" ? "https://webdiag.ru/" : "https://webdiag.ru/en")
+    : (locale === "ru" ? "/" : "/en");
   const normalizedHome = normalizePath(home);
-  const isHome = pathname === normalizedHome;
+  const isHome = !isAppWorkspace && pathname === normalizedHome;
   const label = locale === "ru" ? "WebDiag — главная" : "WebDiag home";
 
   if (isHome) {

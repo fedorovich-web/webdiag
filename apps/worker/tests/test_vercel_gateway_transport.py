@@ -20,7 +20,7 @@ from webdiag_worker.vercel_gateway_provider import (
 import webdiag_worker.vercel_gateway_provider as provider_module
 
 
-MODEL = "openai/gpt-5.6-sol"
+MODEL = "openai/gpt-6-luna"
 GATEWAY_URL = "https://ai-gateway.vercel.sh/v1/chat/completions"
 
 
@@ -416,7 +416,7 @@ def test_gateway_rejects_worker_supplied_model_override_before_http() -> None:
 
 def test_gateway_rejects_response_from_a_different_model() -> None:
     body = _response()
-    body["model"] = "openai/gpt-5.6-luna"
+    body["model"] = "openai/gpt-6-luna-fast"
 
     with pytest.raises(ProviderOutcomeUnknownError, match="response is invalid"):
         _provider(lambda _request: httpx.Response(200, json=body)).execute(_request())

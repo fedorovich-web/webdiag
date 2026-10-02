@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
-const REQUEST_TIMEOUT_MS = 15_000;
+const REQUEST_TIMEOUT_MS = 45_000;
 
 function getAuditApiBaseUrl(): string {
   const raw = process.env.WEBDIAG_API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_WEBDIAG_API_BASE_URL ?? DEFAULT_API_BASE_URL;
@@ -56,6 +56,11 @@ export async function POST(request: NextRequest) {
     const text = await upstream.text();
     const parsed = parseJsonPayload(text);
     if (!parsed.ok) {
+      console.error("[AUDIT UPSTREAM INVALID JSON]", {
+        url: `${getAuditApiBaseUrl()}/v1/audits`,
+        status: upstream.status,
+        text: text.slice(0, 300),
+      });
       return toJsonResponse(
         errorPayload("audit_api_invalid_response", "Audit API returned invalid JSON."),
         502,
