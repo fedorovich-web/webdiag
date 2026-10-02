@@ -28,10 +28,12 @@ describe("HTML entity conversion", () => {
       .toBe("&unknown; © —");
   });
 
-  it("rejects invalid Unicode entities and oversized references", () => {
-    expect(() => decodeHtmlEntities("&#0;")).toThrow(/U\+0000/u);
-    expect(() => decodeHtmlEntities("&#xD800;")).toThrow(/Unicode scalar/u);
-    expect(() => decodeHtmlEntities("&#x110000;")).toThrow(/Unicode scalar/u);
+  it("follows HTML numeric character-reference normalization", () => {
+    expect(decodeHtmlEntities("&#0; &#xD800; &#x110000; &#128; &#x82;"))
+      .toBe("� � � € ‚");
+  });
+
+  it("rejects oversized references and invalid encoder input", () => {
     expect(() => decodeHtmlEntities(`&${"a".repeat(33)};`)).toThrow(/32 characters/u);
     expect(() => encodeHtmlEntities("\uD800", {
       encodeQuotes: true,

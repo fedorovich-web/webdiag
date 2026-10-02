@@ -51,6 +51,17 @@ const backendSnapshot: BackendAuditSnapshotResponse = {
         priority: "p1",
         title: "Title is missing",
         description: "The page has no title tag.",
+        affected_urls: [{
+          url: "https://example.ru/page?token=secret",
+          normalized_url: "https://example.ru/page",
+          status_code: 200,
+          final_url: "https://example.ru/page",
+        }],
+        recommendation: {
+          summary: "Add a concise page title.",
+          steps: ["Add one title element."],
+          expected_impact: "Search results can identify the page.",
+        },
       },
     ],
   },
@@ -70,7 +81,16 @@ describe("audit frontend contract", () => {
       run: {
         id: "11111111-1111-1111-1111-111111111111",
         checks: [{ id: "metadata.title" }],
-        issues: [{ id: "metadata.title.missing", checkId: "metadata.title" }],
+        issues: [{
+          id: "metadata.title.missing",
+          checkId: "metadata.title",
+          affectedUrls: ["https://example.ru/page"],
+          recommendation: {
+            summary: "Add a concise page title.",
+            steps: ["Add one title element."],
+            expectedImpact: "Search results can identify the page.",
+          },
+        }],
       },
     });
     expect(isAuditFrontendResult(frontend)).toBe(true);
@@ -93,6 +113,21 @@ describe("audit frontend contract", () => {
     expect(serialized).not.toContain("check_count");
     expect(serialized).not.toContain("highest_severity");
     expect(serialized).not.toContain("top_priority");
+    expect(serialized).not.toContain("token=secret");
+    expect(serialized).not.toContain("normalized_url");
+  });
+
+  it("rejects incomplete nested issue guidance", () => {
+    const issue = backendSnapshot.run?.issues[0];
+    expect(issue).toBeDefined();
+    const invalid = {
+      ...backendSnapshot,
+      run: {
+        ...backendSnapshot.run,
+        issues: [{ ...issue, recommendation: { summary: "Missing bounded fields" } }],
+      },
+    };
+    expect(isBackendAuditSnapshotResponse(invalid)).toBe(false);
   });
 
   it("keeps pending snapshots nullable instead of inventing frontend summary data", () => {

@@ -1,0 +1,543 @@
+"use client";
+
+import Link from "next/link";
+import { Activity, AlertTriangle, ChevronDown, CircleHelp, ClipboardCheck, FileBarChart2, FileText, FolderKanban, Gauge, History, LayoutDashboard, Menu, Search, Settings, Wrench, X, type LucideIcon } from "lucide-react";
+import { createPortal } from "react-dom";
+import {
+  useEffect,
+  useCallback,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ChangeEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
+} from "react";
+import type { Locale } from "@webdiag/tool-registry";
+import { AccountDashboard } from "./account-dashboard";
+import { AccountSettings } from "./account-settings";
+import { AccountClientError, getAccountSession, logoutAccount } from "./account-client";
+import type { AccountSessionResponse } from "./account-contract";
+import { accountErrorMessage } from "./account-messages";
+import { ACCOUNT_AUTHENTICATION_LOST_EVENT } from "./account-authentication-state";
+import { getAccountOverview } from "./account-overview-client";
+import type { AccountOverviewResponse } from "./account-overview-contract";
+import { listAccountProjects } from "./account-workspace-client";
+import { isAccountProject, type AccountProject } from "./account-workspace-contract";
+import {
+  buildAccountWorkspaceNavigation,
+  projectLandingAfterSwitch,
+  resolveActiveAccountProject,
+  type AccountWorkspaceSection,
+} from "./account-workspace-shell-contract";
+import { accountSettingsPath, loginPath, reportsPath, toolsPath } from "../../lib/routes";
+import { SiteBrand } from "../../components/site-brand";
+
+interface AccountWorkspaceShellProps {
+  readonly locale: Locale;
+  readonly section: AccountWorkspaceSection;
+  readonly currentProjectId?: string;
+  readonly currentAuditId?: string;
+  readonly children?: ReactNode;
+}
+
+interface WorkspaceNavigationProps {
+  readonly locale: Locale;
+  readonly section: AccountWorkspaceSection;
+  readonly projects: readonly AccountProject[];
+  readonly currentProjectId?: string;
+  readonly latestAuditId?: string;
+  readonly onNavigate?: () => void;
+}
+
+const navigationIcons: Readonly<Record<string, LucideIcon>> = {
+  overview: LayoutDashboard,
+  projects: FolderKanban,
+  checks: History,
+  tools: Wrench,
+  reports: FileBarChart2,
+  tasks: ClipboardCheck,
+  monitoring: Activity,
+  account: Settings,
+  project_overview: Gauge,
+  audits: History,
+  issues: AlertTriangle,
+  project_reports: FileText,
+};
+
+const focusableSelector = [
+  "a[href]",
+  "button:not([disabled])",
+  "select:not([disabled])",
+  "input:not([disabled])",
+  "[tabindex]:not([tabindex='-1'])",
+].join(",");
+
+function subscribeToHeaderMenuSlot() {
+  return () => undefined;
+}
+
+function getHeaderMenuSlot() {
+  return document.getElementById("account-workspace-menu-slot");
+}
+
+function getServerHeaderMenuSlot() {
+  return null;
+}
+
+function WorkspaceNavigation({
+  locale,
+  section,
+  projects,
+  currentProjectId,
+  latestAuditId,
+  onNavigate,
+}: WorkspaceNavigationProps) {
+  const ru = locale === "ru";
+  const activeProject = resolveActiveAccountProject(projects, currentProjectId) ?? projects[0] ?? null;
+  const activeProjectId = activeProject?.id;
+  const navigation = buildAccountWorkspaceNavigation(
+    locale,
+    section,
+    activeProjectId,
+    latestAuditId,
+  );
+
+  function selectProject(projectId: string) {
+    if (!projectId) return;
+    onNavigate?.();
+    window.location.assign(projectLandingAfterSwitch(locale, projectId));
+  }
+
+  function items(values: ReturnType<typeof buildAccountWorkspaceNavigation>["portfolio"]) {
+    return values.map((item) => {
+      const Icon = navigationIcons[item.id] ?? LayoutDashboard;
+      return item.href ? (
+        <Link
+          key={item.id}
+          href={item.href}
+          aria-current={item.active ? "page" : undefined}
+          onClick={onNavigate}
+        >
+          <Icon aria-hidden="true" />
+          <span>{item.label}</span>
+        </Link>
+      ) : (
+        <span key={item.id} aria-disabled="true">
+          <Icon aria-hidden="true" />
+          <span>{item.label}</span>
+        </span>
+      );
+    });
+  }
+
+  return (
+    <>
+      <nav className="wd-workspace-navigation" aria-label={ru ? "Навигация кабинета" : "Workspace navigation"}>
+        {!currentProjectId && (
+          <div className="wd-workspace-navigation-group">
+            <span>{ru ? "Рабочая область" : "Workspace"}</span>
+            {items(navigation.portfolio)}
+          </div>
+        )}
+        {navigation.project && currentProjectId && (
+          <div className="wd-workspace-navigation-group wd-workspace-project-navigation">
+            <span>{ru ? "Проект" : "Project"}</span>
+            {items(navigation.project)}
+          </div>
+        )}
+      </nav>
+
+      <div className="wd-workspace-project-switcher">
+        <label htmlFor={`workspace-project-${section}`}>
+          {ru ? "Текущий проект" : "Current project"}
+        </label>
+        <select
+          id={`workspace-project-${section}`}
+          value={activeProject?.id ?? ""}
+          onChange={(event: ChangeEvent<HTMLSelectElement>) => selectProject(event.target.value)}
+          disabled={projects.length === 0}
+        >
+          <option value="">{ru ? "Выберите проект" : "Select project"}</option>
+          {projects.map((project) => (
+            <option key={project.id} value={project.id}>{project.name}</option>
+          ))}
+        </select>
+        {activeProject && <small>{activeProject.origin}</small>}
+      </div>
+    </>
+  );
+}
+
+export function AccountWorkspaceShell({
+  locale,
+  section,
+  currentProjectId,
+  currentAuditId,
+  children,
+}: AccountWorkspaceShellProps) {
+  const ru = locale === "ru";
+  const [session, setSession] = useState<AccountSessionResponse | null>(null);
+  const [projects, setProjects] = useState<readonly AccountProject[]>([]);
+  const [overview, setOverview] = useState<AccountOverviewResponse | null>(null);
+  const [overviewError, setOverviewError] = useState("");
+  const [loadedToken, setLoadedToken] = useState<number | null>(null);
+  const [loadState, setLoadState] = useState<"ready" | "unauthenticated" | "unavailable">("ready");
+  const [reloadToken, setReloadToken] = useState(0);
+  const [logoutPending, setLogoutPending] = useState(false);
+  const [error, setError] = useState("");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const headerMenuSlot = useSyncExternalStore(
+    subscribeToHeaderMenuSlot,
+    getHeaderMenuSlot,
+    getServerHeaderMenuSlot,
+  );
+  const drawerTriggerRef = useRef<HTMLButtonElement>(null);
+  const drawerCloseRef = useRef<HTMLButtonElement>(null);
+  const drawerPanelRef = useRef<HTMLElement>(null);
+  const loading = loadedToken !== reloadToken;
+
+  const handleUnauthenticated = useCallback(() => {
+    setSession(null);
+    setProjects([]);
+    setOverview(null);
+    setOverviewError("");
+    setLoadState("unauthenticated");
+    setDrawerOpen(false);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    Promise.allSettled([getAccountSession(), listAccountProjects(), getAccountOverview()])
+      .then(([sessionResult, projectResult, overviewResult]) => {
+        if (!active) return;
+        function failRequiredLoad(caught: unknown) {
+          setSession(null);
+          setProjects([]);
+          setOverview(null);
+          setOverviewError("");
+          setLoadState(
+            caught instanceof AccountClientError && caught.status === 401
+              ? "unauthenticated"
+              : "unavailable",
+          );
+          setLoadedToken(reloadToken);
+        }
+        if (sessionResult.status === "rejected") {
+          failRequiredLoad(sessionResult.reason);
+          return;
+        }
+        if (projectResult.status === "rejected") {
+          failRequiredLoad(projectResult.reason);
+          return;
+        }
+        setSession(sessionResult.value);
+        setProjects(projectResult.value.projects);
+        setLoadState("ready");
+        setError("");
+        if (overviewResult.status === "fulfilled") {
+          setOverview(overviewResult.value);
+          setOverviewError("");
+        } else {
+          setOverview(null);
+          setOverviewError(accountErrorMessage(locale, overviewResult.reason));
+        }
+        setLoadedToken(reloadToken);
+      });
+    return () => {
+      active = false;
+    };
+  }, [locale, reloadToken]);
+
+  useEffect(() => {
+    function updateProject(event: Event) {
+      if (!(event instanceof CustomEvent) || !isAccountProject(event.detail)) return;
+      const project = event.detail;
+      setProjects((current) => current.map((item) => item.id === project.id ? project : item));
+      setOverview((current) => current ? {
+        ...current,
+        projects: current.projects.map((item) => item.project.id === project.id
+          ? { ...item, project }
+          : item),
+      } : current);
+    }
+    window.addEventListener("webdiag:account-project-updated", updateProject);
+    return () => window.removeEventListener("webdiag:account-project-updated", updateProject);
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener(ACCOUNT_AUTHENTICATION_LOST_EVENT, handleUnauthenticated);
+    return () => window.removeEventListener(ACCOUNT_AUTHENTICATION_LOST_EVENT, handleUnauthenticated);
+  }, [handleUnauthenticated]);
+
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.requestAnimationFrame(() => drawerCloseRef.current?.focus());
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [drawerOpen]);
+
+  function closeDrawer(restoreFocus = true) {
+    setDrawerOpen(false);
+    if (restoreFocus) {
+      window.requestAnimationFrame(() => drawerTriggerRef.current?.focus());
+    }
+  }
+
+  function handleDrawerKeyDown(event: ReactKeyboardEvent<HTMLElement>) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeDrawer();
+      return;
+    }
+    if (event.key !== "Tab") return;
+    const panel = drawerPanelRef.current;
+    if (!panel) return;
+    const focusable = Array.from(panel.querySelectorAll<HTMLElement>(focusableSelector))
+      .filter((element) => !element.hasAttribute("disabled") && element.tabIndex !== -1);
+    if (focusable.length === 0) return;
+    const first = focusable[0]!;
+    const last = focusable[focusable.length - 1]!;
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
+  async function logout() {
+    setLogoutPending(true);
+    setError("");
+    try {
+      await logoutAccount();
+      window.location.assign(loginPath(locale));
+    } catch (caught) {
+      setError(accountErrorMessage(locale, caught));
+      setLogoutPending(false);
+    }
+  }
+
+  function addProject(project: AccountProject) {
+    setProjects((current) => [project, ...current.filter((item) => item.id !== project.id)]);
+    setOverview((current) => current ? {
+      ...current,
+      projects: [
+        {
+          project,
+          latest_audit: null,
+          monitor: null,
+          report_count: 0,
+          shared_report_count: 0,
+          latest_report_created_at: null,
+        },
+        ...current.projects.filter((item) => item.project.id !== project.id),
+      ],
+    } : current);
+  }
+
+  if (loading) {
+    return (
+      <main className="shell wd-account-workspace-page">
+        <section className="wd-account-card" aria-busy="true">
+          <p>{ru ? "Загружаем рабочую область…" : "Loading workspace…"}</p>
+        </section>
+      </main>
+    );
+  }
+
+  if (!session) {
+    const unavailable = loadState === "unavailable";
+    return (
+      <main className="shell wd-account-workspace-page">
+        <section className="wd-account-card wd-account-empty">
+          <h1>{unavailable ? (ru ? "Кабинет временно недоступен" : "Workspace is temporarily unavailable") : (ru ? "Войдите в аккаунт" : "Sign in to your account")}</h1>
+          <p>{unavailable ? (ru ? "Не удалось загрузить данные аккаунта и проектов." : "Account and project data could not be loaded.") : (ru ? "Для доступа к проектам требуется действующая сессия." : "An active session is required to access projects.")}</p>
+          {unavailable ? (
+            <button className="wd-button wd-button-primary" type="button" onClick={() => setReloadToken((value) => value + 1)}>{ru ? "Повторить" : "Retry"}</button>
+          ) : (
+            <Link className="wd-button wd-button-primary" href={loginPath(locale)}>{ru ? "Войти" : "Sign in"}</Link>
+          )}
+        </section>
+      </main>
+    );
+  }
+
+  const navigationProps: WorkspaceNavigationProps = {
+    locale,
+    section,
+    projects,
+    currentProjectId,
+    latestAuditId: currentAuditId ?? overview?.projects.find(
+      (item) => item.project.id === currentProjectId,
+    )?.latest_audit?.id,
+  };
+
+  const menuLabel = ru ? "Меню кабинета" : "Workspace menu";
+  const activeTopProject = resolveActiveAccountProject(projects, currentProjectId) ?? projects[0] ?? null;
+  const initials = session.user.display_name
+    .split(/\s+/u)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("") || "WD";
+
+  function selectTopProject(projectId: string) {
+    if (!projectId) return;
+    window.location.assign(projectLandingAfterSwitch(locale, projectId));
+  }
+
+  return (
+    <>
+      <header className="wd-account-topbar" data-project-context={currentProjectId ? "true" : "false"}>
+        <div className="wd-account-topbar-inner">
+          <SiteBrand locale={locale} className="brand wd-account-topbar-brand" variant="header" />
+          <label className="wd-account-topbar-project">
+            <span className="sr-only">{ru ? "Быстрый выбор проекта" : "Quick project switch"}</span>
+            <FolderKanban aria-hidden="true" />
+            <select
+              value={activeTopProject?.id ?? ""}
+              onChange={(event) => selectTopProject(event.target.value)}
+              disabled={projects.length === 0}
+            >
+              <option value="">{ru ? "Выберите проект" : "Select project"}</option>
+              {projects.map((project) => <option value={project.id} key={project.id}>{project.name}</option>)}
+            </select>
+          </label>
+          <Link className="wd-account-topbar-search" href={toolsPath(locale)}>
+            <Search aria-hidden="true" />
+            <span>{ru ? "Поиск по инструментам и проверкам" : "Search tools and checks"}</span>
+            <kbd>Ctrl + K</kbd>
+          </Link>
+          <div className="wd-account-topbar-actions">
+            <Link className="wd-account-topbar-icon" href={reportsPath(locale)} aria-label={ru ? "Отчёты" : "Reports"}><FileBarChart2 aria-hidden="true" /></Link>
+            <details className="wd-account-topbar-user">
+              <summary aria-label={ru ? "Меню пользователя" : "User menu"}>
+                <span className="wd-account-topbar-avatar" aria-hidden="true">{initials}</span>
+                <span className="wd-account-topbar-user-copy">
+                  <strong>{session.user.display_name}</strong>
+                  <small>{session.user.email}</small>
+                </span>
+                <ChevronDown aria-hidden="true" />
+              </summary>
+              <div className="wd-account-user-menu">
+                <div>
+                  <strong>{session.user.display_name}</strong>
+                  <small>{session.user.email}</small>
+                </div>
+                <Link href={accountSettingsPath(locale)}>{ru ? "Настройки аккаунта" : "Account settings"}</Link>
+                <button type="button" onClick={logout} disabled={logoutPending} aria-busy={logoutPending}>
+                  {logoutPending ? (ru ? "Выходим…" : "Signing out…") : (ru ? "Выйти" : "Sign out")}
+                </button>
+              </div>
+            </details>
+          </div>
+        </div>
+      </header>
+
+      {headerMenuSlot && createPortal(
+        <button
+          ref={drawerTriggerRef}
+          className="wd-account-menu-trigger"
+          type="button"
+          aria-label={menuLabel}
+          aria-expanded={drawerOpen}
+          aria-controls="account-workspace-drawer"
+          onClick={() => setDrawerOpen(true)}
+        >
+          <Menu aria-hidden="true" />
+        </button>,
+        headerMenuSlot,
+      )}
+
+      <main className="shell wd-account-workspace-page">
+
+      <div className="wd-workspace-layout">
+        <aside className="wd-workspace-sidebar" data-project-context={currentProjectId ? "true" : "false"} aria-label={ru ? "Панель кабинета" : "Workspace panel"}>
+          <div className="wd-workspace-identity">
+            <span className="eyebrow">{ru ? "Личный кабинет" : "WebDiag account"}</span>
+            <strong>{session.user.display_name}</strong>
+            <small>{session.user.email}</small>
+          </div>
+          <WorkspaceNavigation {...navigationProps} />
+          <section className="wd-workspace-help" aria-label={ru ? "Помощь" : "Help"}>
+            <span className="wd-workspace-help-icon" aria-hidden="true"><CircleHelp /></span>
+            <strong>{ru ? "Нужна помощь?" : "Need help?"}</strong>
+            <p>{ru ? "Загляните в базу знаний или напишите нам." : "Visit the knowledge base or contact us."}</p>
+            <Link href={locale === "ru" ? "/knowledge" : "/en/knowledge"}>
+              {ru ? "Открыть помощь" : "Open help"} <span aria-hidden="true">→</span>
+            </Link>
+          </section>
+        </aside>
+
+        <section className="wd-workspace-content" aria-label={ru ? "Содержимое кабинета" : "Workspace content"}>
+          {error && <p className="wd-account-error" role="alert">{error}</p>}
+          {overviewError && section === "overview" && (
+            <div className="wd-account-error" role="alert">
+              <span>{overviewError}</span>
+              <button type="button" onClick={() => setReloadToken((value) => value + 1)}>
+                {ru ? "Повторить загрузку обзора" : "Retry overview"}
+              </button>
+            </div>
+          )}
+          {section === "overview" || section === "projects" ? (
+            <AccountDashboard
+              locale={locale}
+              session={session}
+              projects={projects}
+              overview={overview}
+              onProjectCreated={addProject}
+              onProjectRestored={() => setReloadToken((value) => value + 1)}
+            />
+          ) : section === "settings" ? (
+            <AccountSettings
+              locale={locale}
+              session={session}
+              onUnauthenticated={handleUnauthenticated}
+            />
+          ) : children}
+        </section>
+      </div>
+
+      {drawerOpen && (
+        <div className="wd-workspace-drawer is-open">
+          <div className="wd-workspace-drawer-backdrop" aria-hidden="true" onClick={() => closeDrawer()} />
+          <aside
+            ref={drawerPanelRef}
+            id="account-workspace-drawer"
+            className="wd-workspace-drawer-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label={menuLabel}
+            onKeyDown={handleDrawerKeyDown}
+          >
+            <div className="wd-workspace-drawer-head">
+              <div className="wd-workspace-identity">
+                <strong>{session.user.display_name}</strong>
+                <small>{session.user.email}</small>
+              </div>
+              <button
+                ref={drawerCloseRef}
+                className="wd-account-drawer-close"
+                type="button"
+                aria-label={ru ? "Закрыть" : "Close"}
+                onClick={() => closeDrawer()}
+              >
+                <X aria-hidden="true" />
+              </button>
+            </div>
+            <WorkspaceNavigation {...navigationProps} onNavigate={() => closeDrawer(false)} />
+            <button className="wd-button wd-button-secondary" type="button" onClick={logout} disabled={logoutPending} aria-busy={logoutPending}>
+              {logoutPending ? (ru ? "Выходим…" : "Signing out…") : (ru ? "Выйти" : "Sign out")}
+            </button>
+          </aside>
+        </div>
+      )}
+      </main>
+    </>
+  );
+}

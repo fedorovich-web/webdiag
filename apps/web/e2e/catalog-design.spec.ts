@@ -1,38 +1,24 @@
 import { expect, test } from "@playwright/test";
+import { publicTools } from "@webdiag/tool-registry";
 import { installBrowserGuard } from "./browser-guard";
 
-async function readVisibleCount(page: import("@playwright/test").Page) {
-  const text = await page.locator(".catalog-summary strong").textContent();
-  const count = Number.parseInt(text?.trim() ?? "", 10);
+const PAGE_SIZE = 20;
+
+async function readResultCount(page: import("@playwright/test").Page) {
+  const text = await page.locator(".wd-tools-list-head h2 span").textContent();
+  const match = text?.match(/\d+/);
+  const count = Number.parseInt(match?.[0] ?? "", 10);
   expect(Number.isInteger(count)).toBe(true);
   return count;
 }
 
-async function expectCardsMatchVisibleCount(
-  page: import("@playwright/test").Page,
-) {
-  await expect(page.locator(".compact-tool-card")).toHaveCount(
-    await readVisibleCount(page),
-  );
+async function submitSearch(page: import("@playwright/test").Page, value: string) {
+  const search = page.getByRole("searchbox");
+  await search.fill(value);
+  await search.press("Enter");
 }
 
-async function expectGroupCountsMatchCards(
-  page: import("@playwright/test").Page,
-) {
-  const groups = page.locator(".catalog-group");
-  const groupCount = await groups.count();
-  for (let index = 0; index < groupCount; index += 1) {
-    const group = groups.nth(index);
-    const text = await group
-      .locator(".catalog-group-heading > strong")
-      .textContent();
-    const expected = Number.parseInt(text?.trim() ?? "", 10);
-    expect(Number.isInteger(expected)).toBe(true);
-    await expect(group.locator(".compact-tool-card")).toHaveCount(expected);
-  }
-}
-
-test.describe("catalog structure", () => {
+test.describe("catalog behavior", () => {
   let assertBrowserClean: ReturnType<typeof installBrowserGuard>;
 
   test.beforeEach(async ({ page }) => {
@@ -43,46 +29,60 @@ test.describe("catalog structure", () => {
     await assertBrowserClean(testInfo);
   });
 
-  test("groups the ready tools into three categories", async ({ page }) => {
+  test("renders the complete ready-tool count with bounded pagination", async ({ page }) => {
     await page.goto("/tools");
-    await expect(page.locator(".catalog-group")).toHaveCount(3);
-    await expectCardsMatchVisibleCount(page);
-    await expectGroupCountsMatchCards(page);
-    await expect(
-      page.getByRole("heading", { level: 2, name: "Разметка и данные" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { level: 2, name: "UI и accessibility" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { level: 2, name: "Изображения на страницах" }),
-    ).toBeVisible();
+    await expect(page.locator(".wd-tools-list-head h2 span")).toHaveText(`(${publicTools.length})`);
+    await expect(page.locator(".wd-tool-card")).toHaveCount(Math.min(PAGE_SIZE, publicTools.length));
+
+    if (publicTools.length > PAGE_SIZE) {
+      await page.getByRole("button", { name: "Следующая страница" }).click();
+      const remaining = publicTools.length - PAGE_SIZE;
+      await expect(page.locator(".wd-tool-card")).toHaveCount(Math.min(PAGE_SIZE, remaining));
+    }
   });
 
-  test("search and category filtering preserve the compact grouped layout", async ({
-    page,
-  }) => {
+  test("registry category deep links select and count the requested ready tools", async ({ page }) => {
+    const expected = publicTools.filter((tool) => tool.category === "seo-audit").length;
+    await page.goto("/tools?category=seo-audit");
+
+    await expect(page.locator('[aria-pressed="true"]')).toHaveCount(1);
+    await expect(page.locator(".wd-tools-list-head h2 span")).toHaveText(`(${expected})`);
+    await expect(page.locator(".wd-tool-card")).toHaveCount(Math.min(PAGE_SIZE, expected));
+
+    const allowed = new Set(publicTools.filter((tool) => tool.category === "seo-audit").map((tool) => `/tools/${tool.slug}`));
+    const hrefs = await page.locator(".wd-tool-card").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href")));
+    expect(hrefs.every((href) => href !== null && allowed.has(href))).toBe(true);
+  });
+
+  test("catalog stays inside the mobile viewport", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/tools");
+    const dimensions = await page.evaluate(() => ({
+      viewport: document.documentElement.clientWidth,
+      scroll: document.documentElement.scrollWidth,
+    }));
+    expect(dimensions.scroll).toBe(dimensions.viewport);
+  });
+
+  test("search, category filtering and reset keep result counts in sync", async ({ page }) => {
     await page.goto("/en/tools");
-    const allCountText = await page
-      .getByRole("button", { name: /^All/ })
-      .locator("span")
-      .textContent();
-    const allCount = Number.parseInt(allCountText?.trim() ?? "", 10);
-    expect(Number.isInteger(allCount)).toBe(true);
+    expect(await readResultCount(page)).toBe(publicTools.length);
 
-    await page.getByRole("searchbox").fill("image");
-    expect(await readVisibleCount(page)).toBeGreaterThan(0);
-    await expectCardsMatchVisibleCount(page);
-    await expectGroupCountsMatchCards(page);
+    await submitSearch(page, "image");
+    const imageCount = await readResultCount(page);
+    expect(imageCount).toBeGreaterThan(0);
+    await expect(page.locator(".wd-tool-card")).toHaveCount(Math.min(PAGE_SIZE, imageCount));
 
-    await page.getByRole("button", { name: /UI and accessibility/ }).click();
-    await expectCardsMatchVisibleCount(page);
-    await expectGroupCountsMatchCards(page);
+    const categoryButtons = page.locator('button[aria-pressed]');
+    expect(await categoryButtons.count()).toBeGreaterThan(1);
+    await categoryButtons.nth(1).click();
+    const filteredCount = await readResultCount(page);
+    await expect(page.locator(".wd-tool-card")).toHaveCount(Math.min(PAGE_SIZE, filteredCount));
 
-    await page.getByRole("searchbox").fill("__webdiag_no_matching_tool__");
-    await expect(page.getByText("No tools found")).toBeVisible();
-    await page.getByRole("button", { name: "Reset filters" }).click();
-    await expect(page.locator(".compact-tool-card")).toHaveCount(allCount);
-    await expectGroupCountsMatchCards(page);
+    await submitSearch(page, "__webdiag_no_matching_tool__");
+    await expect(page.locator(".wd-tool-card")).toHaveCount(0);
+    await page.getByRole("button", { name: /reset/i }).click();
+    expect(await readResultCount(page)).toBe(publicTools.length);
+    await expect(page.locator(".wd-tool-card")).toHaveCount(Math.min(PAGE_SIZE, publicTools.length));
   });
 });

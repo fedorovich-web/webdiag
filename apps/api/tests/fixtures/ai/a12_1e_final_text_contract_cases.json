@@ -1,0 +1,105 @@
+[
+  {
+    "tool_id": "ai_redirect_migration_mapper",
+    "public_input": {
+      "locale": "en",
+      "old_pages": [
+        {
+          "page_url": "https://old.example/robots",
+          "title": "Robots guide",
+          "h1": "Robots guide",
+          "content": "The old guide explains crawl access rules."
+        }
+      ],
+      "new_pages": [
+        {
+          "page_url": "https://new.example/crawl",
+          "title": "Crawl guide",
+          "h1": "Crawl guide",
+          "content": "The new guide explains crawl access rules."
+        }
+      ]
+    },
+    "output": {
+      "summary": "One redirect is proposed for review.",
+      "mappings": [
+        {
+          "old_page_index": 0,
+          "action": "redirect",
+          "target_page_index": 0,
+          "confidence": "high",
+          "old_evidence": "crawl access rules",
+          "target_evidence": "crawl access rules",
+          "rationale": "The supplied snapshots cover the same topic."
+        }
+      ],
+      "warnings": []
+    }
+  },
+  {
+    "tool_id": "ai_localization_workbench",
+    "public_input": {
+      "locale": "ru",
+      "source_locale": "en",
+      "target_locale": "ru",
+      "source_content": "WebDiag stores a saved audit for later review.",
+      "glossary": [
+        {
+          "source_term": "saved audit",
+          "target_term": "сохранённый аудит"
+        }
+      ],
+      "verbatim_constraints": ["WebDiag"]
+    },
+    "output": {
+      "localized_content": "WebDiag хранит сохранённый аудит для последующей проверки.",
+      "glossary_usages": [
+        {
+          "glossary_index": 0,
+          "source_excerpt": "saved audit",
+          "target_excerpt": "сохранённый аудит"
+        }
+      ],
+      "preserved_constraint_indexes": [0],
+      "warnings": []
+    }
+  },
+  {
+    "tool_id": "ai_regex_workbench",
+    "public_input": {
+      "locale": "en",
+      "dialect": "javascript",
+      "task": "Draft a pattern for lowercase ASCII slugs.",
+      "cases": [
+        {
+          "text": "audit-guide",
+          "expected_match": true
+        },
+        {
+          "text": "Audit Guide",
+          "expected_match": false
+        }
+      ],
+      "constraints": ["Match the whole input."]
+    },
+    "output": {
+      "dialect": "javascript",
+      "pattern": "^[a-z]+(?:-[a-z]+)*$",
+      "validation_status": "unverified",
+      "case_plan": [
+        {
+          "case_index": 0,
+          "expected_match": true
+        },
+        {
+          "case_index": 1,
+          "expected_match": false
+        }
+      ],
+      "explanation": "Drafts a whole-string lowercase slug pattern.",
+      "warnings": [
+        "The pattern has not been executed by WebDiag."
+      ]
+    }
+  }
+]

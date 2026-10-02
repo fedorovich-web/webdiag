@@ -391,7 +391,7 @@ export const developmentDataToolPages = [
       { ru: "Dot и bracket properties, array indices и negative indices.", en: "Dot and bracket properties, array indices, and negative indices." },
       { ru: "Wildcards, recursive descent, unions и array slices.", en: "Wildcards, recursive descent, unions, and array slices." },
       { ru: "Existence и comparison filters с string, number, boolean и null literals.", en: "Existence and comparison filters using string, number, boolean, and null literals." },
-      { ru: "JSON Pointer paths для каждого совпадения и дедупликация по path.", en: "JSON Pointer paths for every match and path-based deduplication." },
+      { ru: "JSON Pointer paths для каждого совпадения с сохранением повторных выборов узла.", en: "JSON Pointer paths for every match while preserving repeated node selections." },
     ],
     limitations: [
       { ru: "Поддерживается документированный subset JSONPath, а не каждый vendor-specific extension.", en: "A documented JSONPath subset is supported rather than every vendor-specific extension." },

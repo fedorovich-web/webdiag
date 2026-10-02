@@ -1,5 +1,7 @@
 "use client";
 
+import { toolErrorMessage } from "./tool-error-presentation";
+
 import { ChangeEvent, FormEvent, useState } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { CopyButton } from "../../components/copy-button";
@@ -227,7 +229,7 @@ export function UrlNormalizationAnalyzerTool({ locale }: { locale: Locale }) {
       setError("");
     } catch (caught) {
       setResult(null);
-      setError(caught instanceof Error ? caught.message : copy[locale].invalidUrl);
+      setError(toolErrorMessage(locale, caught, "invalid_input"));
     }
   }
 
@@ -312,7 +314,7 @@ export function QueryParameterAnalyzerTool({ locale }: { locale: Locale }) {
       setError("");
     } catch (caught) {
       setResult(null);
-      setError(caught instanceof Error ? caught.message : copy[locale].invalidUrl);
+      setError(toolErrorMessage(locale, caught, "invalid_input"));
     }
   }
 
@@ -485,14 +487,14 @@ export function RedirectMapValidatorTool({ locale }: { locale: Locale }) {
     try {
       entries = parseRedirectMapText(value);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : copy[locale].mapParseError);
+      setError(toolErrorMessage(locale, caught, "redirect_map_failed"));
       return;
     }
     setLoading(true);
     try {
       setResult(await runRedirectMap(entries));
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Redirect map request failed.");
+      setError(toolErrorMessage(locale, caught, "redirect_map_failed"));
     } finally {
       setLoading(false);
     }

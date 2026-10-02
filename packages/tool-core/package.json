@@ -1,16 +1,17 @@
 {
   "name": "@webdiag/tool-core",
-  "version": "0.5.11",
+  "version": "1.0.0-beta.0",
   "private": true,
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
   },
   "scripts": {
-    "test": "vitest run --pool=forks --maxWorkers=1"
+    "test": "vitest run --pool=forks --maxWorkers=1",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "typescript": "5.9.3",
-    "vitest": "3.2.6"
+    "vitest": "4.1.11"
   }
 }

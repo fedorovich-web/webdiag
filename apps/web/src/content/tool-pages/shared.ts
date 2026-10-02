@@ -8,12 +8,15 @@ const editorial = {
   reviewDueAt: "2027-01-17",
 };
 
+type EditorialFields = typeof editorial;
+type ToolPageInput = Omit<ToolPageContent, keyof EditorialFields | "translationGroupId"> & Partial<EditorialFields>;
+
 export function toolPage(
-  content: Omit<ToolPageContent, keyof typeof editorial | "translationGroupId">,
+  content: ToolPageInput,
 ): ToolPageContent {
   return {
-    ...content,
     ...editorial,
+    ...content,
     translationGroupId: `tool-${content.slug}`,
   };
 }

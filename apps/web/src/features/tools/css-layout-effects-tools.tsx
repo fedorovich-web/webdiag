@@ -1,6 +1,8 @@
 
 "use client";
 
+import { toolErrorMessage } from "./tool-error-presentation";
+
 import { useMemo, useState, type ReactNode } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { CopyButton } from "../../components/copy-button";
@@ -125,7 +127,7 @@ export function ClipPathGeneratorTool({ locale }: { locale: Locale }) {
     try {
       return { css: buildClipPath(shape, parseList(values)), error: "" };
     } catch (caught) {
-      return { css: "", error: caught instanceof Error ? caught.message : dictionary[locale].error };
+      return { css: "", error: toolErrorMessage(locale, caught, "invalid_input") };
     }
   }, [shape, values, locale]);
   const previewStyle = state.css ? { clipPath: cssValueOnly(state.css) } : undefined;
@@ -155,7 +157,7 @@ export function CssFilterPlaygroundTool({ locale }: { locale: Locale }) {
     try {
       return { css: buildCssFilter(Number(blur), Number(brightness), Number(contrast), Number(grayscale), Number(saturate), Number(hueRotate)), error: "" };
     } catch (caught) {
-      return { css: "", error: caught instanceof Error ? caught.message : dictionary[locale].error };
+      return { css: "", error: toolErrorMessage(locale, caught, "invalid_input") };
     }
   }, [blur, brightness, contrast, grayscale, saturate, hueRotate, locale]);
   const previewStyle = state.css ? { filter: cssValueOnly(state.css) } : undefined;
@@ -183,7 +185,7 @@ export function CssGridGeneratorTool({ locale }: { locale: Locale }) {
     try {
       return { css: buildCssGrid({ columns: Number(columns), rows: Number(rows), gap: Number(gap), minColumnPx: Number(minColumnPx) }), error: "" };
     } catch (caught) {
-      return { css: "", error: caught instanceof Error ? caught.message : dictionary[locale].error };
+      return { css: "", error: toolErrorMessage(locale, caught, "invalid_input") };
     }
   }, [columns, rows, gap, minColumnPx, locale]);
 
@@ -210,7 +212,7 @@ export function FlexboxPlaygroundTool({ locale }: { locale: Locale }) {
     try {
       return { css: buildFlexbox({ direction, justify, align, gap: Number(gap), wrap }), error: "" };
     } catch (caught) {
-      return { css: "", error: caught instanceof Error ? caught.message : dictionary[locale].error };
+      return { css: "", error: toolErrorMessage(locale, caught, "invalid_input") };
     }
   }, [direction, justify, align, gap, wrap, locale]);
 

@@ -1,5 +1,7 @@
 "use client";
 
+import { toolErrorMessage } from "./tool-error-presentation";
+
 import { ChangeEvent, FormEvent, useState } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { CopyButton } from "../../components/copy-button";
@@ -285,7 +287,7 @@ function AccessibilityStaticTool({ locale, kind }: { locale: Locale; kind: ToolK
       setResult(await runTool(kind, url));
     } catch (caught) {
       setResult(null);
-      setError(caught instanceof Error ? caught.message : "Tool request failed.");
+      setError(toolErrorMessage(locale, caught));
     } finally {
       setLoading(false);
     }

@@ -30,6 +30,17 @@ export interface BackendAuditIssuePreview {
   readonly priority: string;
   readonly title: string;
   readonly description: string;
+  readonly affected_urls: readonly {
+    readonly url: string;
+    readonly normalized_url: string;
+    readonly status_code: number | null;
+    readonly final_url: string | null;
+  }[];
+  readonly recommendation: {
+    readonly summary: string;
+    readonly steps: readonly string[];
+    readonly expected_impact: string | null;
+  };
 }
 
 export interface BackendAuditCheckPreview {
@@ -86,6 +97,12 @@ export interface AuditFrontendIssue {
   readonly priority: string;
   readonly title: string;
   readonly description: string;
+  readonly affectedUrls: readonly string[];
+  readonly recommendation: {
+    readonly summary: string;
+    readonly steps: readonly string[];
+    readonly expectedImpact: string | null;
+  };
 }
 
 export interface AuditFrontendCheck {
@@ -154,6 +171,8 @@ function isBackendCheckPreview(payload: unknown): payload is BackendAuditCheckPr
 
 function isBackendIssuePreview(payload: unknown): payload is BackendAuditIssuePreview {
   if (!isRecord(payload)) return false;
+  const affectedUrls = payload.affected_urls;
+  const recommendation = payload.recommendation;
   return (
     typeof payload.issue_id === "string" &&
     (typeof payload.check_id === "string" || payload.check_id === null || payload.check_id === undefined) &&
@@ -161,7 +180,18 @@ function isBackendIssuePreview(payload: unknown): payload is BackendAuditIssuePr
     typeof payload.severity === "string" &&
     typeof payload.priority === "string" &&
     typeof payload.title === "string" &&
-    typeof payload.description === "string"
+    typeof payload.description === "string" &&
+    Array.isArray(affectedUrls) && affectedUrls.every((affected) =>
+      isRecord(affected) &&
+      typeof affected.url === "string" &&
+      typeof affected.normalized_url === "string" &&
+      (typeof affected.status_code === "number" || affected.status_code === null) &&
+      (typeof affected.final_url === "string" || affected.final_url === null)
+    ) &&
+    isRecord(recommendation) &&
+    typeof recommendation.summary === "string" &&
+    Array.isArray(recommendation.steps) && recommendation.steps.every((step) => typeof step === "string") &&
+    (typeof recommendation.expected_impact === "string" || recommendation.expected_impact === null)
   );
 }
 
@@ -221,6 +251,7 @@ function isFrontendCheck(payload: unknown): payload is AuditFrontendCheck {
 
 function isFrontendIssue(payload: unknown): payload is AuditFrontendIssue {
   if (!isRecord(payload)) return false;
+  const recommendation = payload.recommendation;
   return (
     typeof payload.id === "string" &&
     (typeof payload.checkId === "string" || payload.checkId === null) &&
@@ -228,8 +259,27 @@ function isFrontendIssue(payload: unknown): payload is AuditFrontendIssue {
     typeof payload.severity === "string" &&
     typeof payload.priority === "string" &&
     typeof payload.title === "string" &&
-    typeof payload.description === "string"
+    typeof payload.description === "string" &&
+    Array.isArray(payload.affectedUrls) && payload.affectedUrls.every((url) => typeof url === "string") &&
+    isRecord(recommendation) &&
+    typeof recommendation.summary === "string" &&
+    Array.isArray(recommendation.steps) && recommendation.steps.every((step) => typeof step === "string") &&
+    (typeof recommendation.expectedImpact === "string" || recommendation.expectedImpact === null)
   );
+}
+
+function publicAffectedUrl(rawUrl: string): string | null {
+  try {
+    const parsed = new URL(rawUrl);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+    parsed.username = "";
+    parsed.password = "";
+    parsed.search = "";
+    parsed.hash = "";
+    return parsed.href;
+  } catch {
+    return null;
+  }
 }
 
 export function isAuditFrontendResult(payload: unknown): payload is AuditFrontendResult {
@@ -308,6 +358,14 @@ export function toAuditFrontendResult(snapshot: BackendAuditSnapshotResponse): A
             priority: issue.priority,
             title: issue.title,
             description: issue.description,
+            affectedUrls: [...new Set(issue.affected_urls
+              .map((affected) => publicAffectedUrl(affected.final_url ?? affected.normalized_url))
+              .filter((url): url is string => url !== null))],
+            recommendation: {
+              summary: issue.recommendation.summary,
+              steps: issue.recommendation.steps,
+              expectedImpact: issue.recommendation.expected_impact,
+            },
           })),
         }
       : null,

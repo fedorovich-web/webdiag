@@ -1,5 +1,7 @@
 "use client";
 
+import { toolErrorMessage } from "./tool-error-presentation";
+
 import { useEffect, useMemo, useState } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import {
@@ -21,7 +23,10 @@ import {
   formatBytes,
   formatMimeLabel,
   imageAcceptAttribute,
+  isAcceptedRasterFilename,
+  isAcceptedRasterInputType,
 } from "./image-tools";
+import { CopyButton } from "../../components/copy-button";
 
 const MAX_FILE_BYTES = 25 * 1024 * 1024;
 const MAX_PIXELS = 40_000_000;
@@ -51,6 +56,43 @@ interface SvgResult {
   outputBytes: number;
   removedBytes: number;
   savingsPercent: number;
+}
+
+export const FAVICON_ASSETS = [
+  { filename: "favicon-32x32.png", size: 32, purpose: "favicon" },
+  { filename: "favicon-48x48.png", size: 48, purpose: "favicon" },
+  { filename: "apple-touch-icon.png", size: 180, purpose: "apple-touch-icon" },
+  { filename: "web-app-icon-192.png", size: 192, purpose: "web-app-icon" },
+  { filename: "web-app-icon-512.png", size: 512, purpose: "web-app-icon" },
+] as const;
+
+interface GeneratedFavicon {
+  filename: string;
+  size: number;
+  purpose: (typeof FAVICON_ASSETS)[number]["purpose"];
+  url: string;
+  bytes: number;
+}
+
+export function faviconCropRectangle(width: number, height: number): { x: number; y: number; size: number } {
+  validateImageDimensions(width, height);
+  const size = Math.min(width, height);
+  return { x: Math.floor((width - size) / 2), y: Math.floor((height - size) / 2), size };
+}
+
+export function faviconHtmlSnippet(): string {
+  return [
+    '<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">',
+    '<link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png">',
+    '<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">',
+  ].join("\n");
+}
+
+export function faviconManifestSnippet(): string {
+  return JSON.stringify({ icons: [
+    { src: "/web-app-icon-192.png", sizes: "192x192", type: "image/png" },
+    { src: "/web-app-icon-512.png", sizes: "512x512", type: "image/png" },
+  ] }, null, 2);
 }
 
 export function isAcceptedSvgFilename(value: string): boolean {
@@ -86,6 +128,9 @@ function rasterFilename(file: File, suffix: string, format: RasterOutputFormat):
 
 async function loadRasterImage(file: File): Promise<LoadedImage> {
   if (file.size > MAX_FILE_BYTES) throw new RangeError("Image file is too large for browser-local processing.");
+  if (!isAcceptedRasterInputType(file.type) && !isAcceptedRasterFilename(file.name)) {
+    throw new TypeError("Unsupported image format. Use PNG, JPEG, WebP, or AVIF if your browser supports it.");
+  }
   const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
   validateImageDimensions(bitmap.width, bitmap.height);
   if (bitmap.width * bitmap.height > MAX_PIXELS) {
@@ -128,6 +173,87 @@ function useObjectUrlResult<T extends { url: string }>() {
     });
   }
   return [result, replace] as const;
+}
+
+export function FaviconGeneratorTool({ locale }: { locale: Locale }) {
+  const [image, setImage] = useState<LoadedImage | null>(null);
+  const [results, setResults] = useState<GeneratedFavicon[]>([]);
+  const [error, setError] = useState("");
+  const html = faviconHtmlSnippet();
+  const manifest = faviconManifestSnippet();
+
+  useEffect(() => () => image?.bitmap.close(), [image]);
+  useEffect(() => () => results.forEach((result) => URL.revokeObjectURL(result.url)), [results]);
+
+  async function load(file: File | undefined) {
+    setError("");
+    setResults([]);
+    if (!file) {
+      setImage(null);
+      return;
+    }
+    try {
+      setImage(await loadRasterImage(file));
+    } catch (caught) {
+      setImage(null);
+      setError(toolErrorMessage(locale, caught, "image_open_failed"));
+    }
+  }
+
+  async function generate() {
+    if (!image) {
+      setError(t(locale, "Выберите изображение.", "Choose an image."));
+      return;
+    }
+    const next: GeneratedFavicon[] = [];
+    try {
+      const crop = faviconCropRectangle(image.bitmap.width, image.bitmap.height);
+      for (const asset of FAVICON_ASSETS) {
+        const { canvas, context } = makeCanvas(asset.size, asset.size);
+        context.drawImage(image.bitmap, crop.x, crop.y, crop.size, crop.size, 0, 0, asset.size, asset.size);
+        const blob = await canvasToBlob(canvas, "image/png", 1);
+        next.push({ ...asset, url: URL.createObjectURL(blob), bytes: blob.size });
+      }
+      setResults(next);
+      setError("");
+    } catch (caught) {
+      next.forEach((result) => URL.revokeObjectURL(result.url));
+      setError(toolErrorMessage(locale, caught, "image_generate_failed"));
+    }
+  }
+
+  return <div className="tool-grid favicon-generator-tool">
+    <section className="tool-panel">
+      <h2>{t(locale, "Исходное изображение", "Source image")}</h2>
+      <label className="field"><span>{t(locale, "JPEG, PNG, WebP или AVIF", "JPEG, PNG, WebP, or AVIF")}</span><input type="file" accept={imageAcceptAttribute()} onChange={(event) => void load(event.target.files?.[0])} /></label>
+      {image && <dl className="result-meta"><div><dt>{t(locale, "Исходный размер", "Source dimensions")}</dt><dd>{image.bitmap.width} × {image.bitmap.height}</dd></div><div><dt>{t(locale, "Размер файла", "File size")}</dt><dd>{formatBytes(image.file.size, locale)}</dd></div></dl>}
+      <p className="muted-text">{t(locale, "Генератор берёт центральную квадратную область. Для другой композиции сначала обрежьте исходник.", "The generator uses a centered square crop. Crop the source first when you need a different composition.")}</p>
+      <button className="button" type="button" onClick={() => void generate()} disabled={!image}>{t(locale, "Создать 5 PNG-иконок", "Generate 5 PNG icons")}</button>
+      {error && <p className="form-error" role="alert">{error}</p>}
+      <small>{t(locale, "Файлы обрабатываются локально. .ico, ZIP, SVG и автоматическая установка не создаются.", "Files are processed locally. This tool does not create .ico, ZIP, SVG, or automatic installation.")}</small>
+    </section>
+    <section className="tool-panel" aria-live="polite">
+      <h2>{t(locale, "Готовые файлы", "Generated files")}</h2>
+      {results.length ? <>
+        <div className="favicon-asset-grid">
+          {results.map((result) => <article className="favicon-asset" key={result.filename}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={result.url} alt="" width={result.size} height={result.size} />
+            <div><strong>{result.filename}</strong><small>{result.size} × {result.size} · {formatBytes(result.bytes, locale)}</small></div>
+            <a className="button button-secondary" href={result.url} download={result.filename}>{t(locale, "Скачать", "Download")}</a>
+          </article>)}
+        </div>
+        <div className="favicon-snippet">
+          <div className="favicon-snippet-heading"><h3>HTML</h3><CopyButton value={html} locale={locale} /></div>
+          <pre className="output">{html}</pre>
+        </div>
+        <div className="favicon-snippet">
+          <div className="favicon-snippet-heading"><h3>manifest.json</h3><CopyButton value={manifest} locale={locale} /></div>
+          <pre className="output">{manifest}</pre>
+        </div>
+      </> : <p className="muted-text">{t(locale, "Пять PNG-файлов и фрагменты подключения появятся после обработки.", "Five PNG files and integration snippets will appear after processing.")}</p>}
+    </section>
+  </div>;
 }
 
 function RasterResultPanel({ locale, result }: { locale: Locale; result: RasterResult | null }) {
@@ -180,7 +306,7 @@ export function SvgOptimizerTool({ locale }: { locale: Locale }) {
       setResult(next);
       setError("");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : t(locale, "Не удалось оптимизировать SVG.", "Could not optimize the SVG."));
+      setError(toolErrorMessage(locale, caught, "image_process_failed"));
     }
   }
 
@@ -223,7 +349,7 @@ export function AddWatermarkImageTool({ locale }: { locale: Locale }) {
     setError("");
     if (!file) return;
     try { setImage(await loadRasterImage(file)); }
-    catch (caught) { setError(caught instanceof Error ? caught.message : t(locale, "Не удалось открыть изображение.", "Could not open the image.")); }
+    catch (caught) { setError(toolErrorMessage(locale, caught, "image_open_failed")); }
   }
 
   async function run() {
@@ -250,7 +376,7 @@ export function AddWatermarkImageTool({ locale }: { locale: Locale }) {
       setResult({ url: URL.createObjectURL(blob), filename: rasterFilename(image.file, "watermarked", format), size: blob.size, sourceSize: image.file.size, width: canvas.width, height: canvas.height, format });
       setError("");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : t(locale, "Не удалось добавить водяной знак.", "Could not add the watermark."));
+      setError(toolErrorMessage(locale, caught, "image_process_failed"));
     }
   }
 
@@ -291,7 +417,7 @@ export function ImageMetadataViewerTool({ locale }: { locale: Locale }) {
       setSignals(detectImageMetadataSignals(buffer));
       setImage(await loadRasterImage(file));
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : t(locale, "Не удалось прочитать изображение.", "Could not read the image."));
+      setError(toolErrorMessage(locale, caught, "image_read_failed"));
     }
   }
 
@@ -304,7 +430,7 @@ export function ImageMetadataViewerTool({ locale }: { locale: Locale }) {
       setResult({ url: URL.createObjectURL(blob), filename: rasterFilename(image.file, "metadata-stripped", format), size: blob.size, sourceSize: image.file.size, width: canvas.width, height: canvas.height, format });
       setError("");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : t(locale, "Не удалось удалить метаданные.", "Could not remove metadata."));
+      setError(toolErrorMessage(locale, caught, "image_metadata_failed"));
     }
   }
 

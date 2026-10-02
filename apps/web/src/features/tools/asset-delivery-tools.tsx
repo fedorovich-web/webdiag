@@ -1,5 +1,7 @@
 "use client";
 
+import { toolErrorMessage } from "./tool-error-presentation";
+
 import { ChangeEvent, FormEvent, useState } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { CopyButton } from "../../components/copy-button";
@@ -363,7 +365,7 @@ function AssetDeliveryTool({ locale, kind }: { locale: Locale; kind: ToolKind })
     try {
       setResult(await runAssetDeliveryTool(kind, url));
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Tool request failed.");
+      setError(toolErrorMessage(locale, caught));
     } finally {
       setLoading(false);
     }
