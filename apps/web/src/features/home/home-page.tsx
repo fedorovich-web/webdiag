@@ -234,10 +234,6 @@ export function HomePage({ locale }: { locale: Locale }) {
             ))}
           </div>
           <img className="wd-process-accent" src="/home/process-accent.webp" alt="" width="320" height="240" loading="lazy" decoding="async" />
-          <p className="wd-process-callout" aria-hidden="true">
-            <span>↗</span>
-            {locale === "ru" ? <>Просто.<br />Быстро.<br />Полезно.</> : <>Simple.<br />Fast.<br />Useful.</>}
-          </p>
         </div>
       </section>
 

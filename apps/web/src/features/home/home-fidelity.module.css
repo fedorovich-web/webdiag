@@ -44,7 +44,7 @@
 .fidelity :global(.wd-platform-strip .shell) { row-gap: 13px; }
 .fidelity :global(.wd-platform-strip p) {
   color: #7b89a0;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 600;
 }
 .fidelity :global(.wd-platform-strip .shell > div span) {
@@ -139,7 +139,7 @@
   padding: 22px 0;
 }
 .fidelity :global(.wd-final-copy h2) { font-size: 29px; }
-.fidelity :global(.wd-final-copy p) { max-width: 480px; font-size: 11px; }
+.fidelity :global(.wd-final-copy p) { max-width: 520px; font-size: 16px; color: #50617f; }
 .fidelity :global(.wd-url-check-final > div:first-of-type) {
   border-color: #d9e7f0;
   box-shadow: 0 12px 32px rgb(39 83 128 / .12);
@@ -150,7 +150,7 @@
 @media (max-width: 1180px) {
   .fidelity :global(.wd-process-steps) { padding-right: 165px; }
   .fidelity :global(.wd-process-accent) { right: 34px; width: 138px; }
-  .fidelity :global(.wd-process-callout) { right: 9px; font-size: 12px; }
+  .fidelity :global(.wd-process-callout) { right: 9px; font-size: 14px; }
   .fidelity :global(.wd-final-panel) { grid-template-columns: .82fr 1.18fr; gap: 34px; }
 }
 @media (max-width: 960px) {
@@ -165,7 +165,7 @@
   .fidelity :global(.wd-process-panel) { padding: 22px 18px 112px; }
   .fidelity :global(.wd-process-steps) { grid-template-columns: 1fr; }
   .fidelity :global(.wd-platform-strip .shell > div) { gap: 24px; }
-  .fidelity :global(.wd-platform-strip .shell > div span) { font-size: 12px; }
+  .fidelity :global(.wd-platform-strip .shell > div span) { font-size: 14px; }
   .fidelity :global(.wd-final-copy h2) { font-size: 25px; }
 }
 

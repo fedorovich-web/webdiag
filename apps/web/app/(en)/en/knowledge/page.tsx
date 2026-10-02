@@ -1,39 +1,16 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { KnowledgeHubPage } from "../../../../src/features/knowledge/knowledge-hub-page";
 import { pageMetadata } from "../../../../src/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
   locale: "en",
-  title: "WebDiag knowledge base for technical audits",
-  description: "WebDiag knowledge base: technical SEO audit methodology, terms, guides, and issue explanations.",
+  title: "WebDiag Knowledge Base — Technical SEO Guides, Core Web Vitals & Web Standards",
+  description: "Expert guides and documentation on technical SEO: robots.txt directives, canonical configuration, Core Web Vitals (LCP, INP, CLS), Schema.org, and pre-launch checklists.",
   canonical: "/en/knowledge",
   ruPath: "/knowledge",
   enPath: "/en/knowledge",
 });
 
 export default function Page() {
-  return (
-    <main className="shell page-main wd-internal-page">
-      <header className="page-heading wd-internal-hero wd-internal-hero-split" data-hero="knowledge">
-        <div className="wd-internal-hero-copy">
-        <span className="eyebrow">WebDiag</span>
-        <h1>Knowledge base for technical site audits</h1>
-        <p>This section will explain the check methodology, the limits of automated auditing, and practical issue-fixing steps.</p>
-              </div>
-        <div className="wd-internal-hero-visual" aria-hidden="true">
-          <img src="/design/hero/knowledge.webp" alt="" width="1600" height="1000" loading="lazy" decoding="async" />
-        </div>
-      </header>
-      <section className="wd-internal-grid" aria-label="Knowledge base sections">
-        <article><h2>Methodology</h2><p>How WebDiag prioritizes issues and why an issue is considered critical.</p></article>
-        <article><h2>Glossary</h2><p>Clear definitions of SEO and web terms without unnecessary theory.</p></article>
-        <article><h2>Guides</h2><p>Step-by-step materials for sitemap, redirects, indexing, and technical fixes.</p></article>
-      </section>
-      <section className="wd-internal-note">
-        <strong>The knowledge base is connected to the report</strong>
-        <p>Every future report issue should lead to an explanation: what is broken, why it matters, and how to fix it.</p>
-        <Link className="wd-button wd-button-primary" href="/en/audit">View audit</Link>
-      </section>
-    </main>
-  );
+  return <KnowledgeHubPage locale="en" />;
 }

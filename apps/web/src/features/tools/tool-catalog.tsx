@@ -18,6 +18,7 @@ import {
   SearchCheck,
   Send,
   ShieldCheck,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import type { Locale } from "@webdiag/tool-registry";
@@ -38,6 +39,7 @@ const categoryIcons: Record<string, LucideIcon> = {
   "css-design": MonitorCheck,
   "media-utilities": ImageIcon,
   "development-data": FileText,
+  "ai-tools": Sparkles,
 };
 
 const toolIcons: Record<string, LucideIcon> = {
@@ -88,6 +90,7 @@ function categoryLabel(id: string, locale: Locale): string {
     "css-design": "Доступность",
     "media-utilities": "Изображения",
     "development-data": "Разработка",
+    "ai-tools": "AI-инструменты",
   };
   const en: Record<string, string> = {
     all: "All tools",
@@ -97,6 +100,7 @@ function categoryLabel(id: string, locale: Locale): string {
     "css-design": "Accessibility",
     "media-utilities": "Images",
     "development-data": "Development",
+    "ai-tools": "AI Tools",
   };
   return (locale === "ru" ? ru : en)[id] ?? id;
 }
@@ -279,13 +283,22 @@ export function ToolCatalog({
 
           {pageTools.length ? (
             <div className="wd-tools-grid">
-              {pageTools.map((tool) => (
-                <Link className="wd-tool-card" prefetch={false} href={`${prefix}/tools/${tool.slug}`} key={tool.slug}>
-                  <span className={`wd-tool-card-icon is-${tool.category}`}><ToolGlyph tool={tool} /></span>
-                  <span className="wd-tool-card-copy"><strong>{tool.title}</strong><small>{tool.description}</small></span>
-                  <ChevronRight className="wd-tool-card-arrow" aria-hidden="true" />
-                </Link>
-              ))}
+              {pageTools.map((tool) => {
+                const cardHref = tool.href ?? `${prefix}/tools/${tool.slug}`;
+                return (
+                  <Link className="wd-tool-card" prefetch={false} href={cardHref} key={tool.slug}>
+                    <span className={`wd-tool-card-icon is-${tool.category}`}><ToolGlyph tool={tool} /></span>
+                    <span className="wd-tool-card-copy">
+                      <span className="wd-tool-card-head">
+                        <strong>{tool.title}</strong>
+                        {tool.badge && <span className="wd-tool-card-badge">{tool.badge}</span>}
+                      </span>
+                      <small>{tool.description}</small>
+                    </span>
+                    <ChevronRight className="wd-tool-card-arrow" aria-hidden="true" />
+                  </Link>
+                );
+              })}
             </div>
           ) : (
             <div className="wd-tools-empty">

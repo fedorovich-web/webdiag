@@ -11,17 +11,16 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
-import { publicTools, type Locale } from "@webdiag/tool-registry";
+import type { Locale } from "@webdiag/tool-registry";
 import { LanguageSwitcher } from "./language-switcher";
 import { SiteBrand } from "./site-brand";
 import { ToolsMenuShell } from "./tools-menu-shell";
+import { MobileDrawer } from "./mobile-drawer";
 import { loginPath, toolsPath } from "../lib/routes";
 
 interface SiteHeaderProps {
   locale: Locale;
 }
-
-const readyCategories = new Set(publicTools.map((tool) => tool.category));
 
 const toolCategories = [
   { icon: SearchCheck, ru: "SEO и аудит сайта", en: "SEO and site audit", descriptionRu: "Индексация, robots.txt, sitemap, canonical", descriptionEn: "Indexing, robots.txt, sitemap, canonical", category: "seo-audit" },
@@ -31,23 +30,23 @@ const toolCategories = [
   { icon: Braces, ru: "Разметка и сниппеты", en: "Markup and snippets", descriptionRu: "Schema.org, JSON-LD, FAQ, OG", descriptionEn: "Schema.org, JSON-LD, and Open Graph", category: "development-data" },
   { icon: ImageIcon, ru: "Изображения и медиа", en: "Images and media", descriptionRu: "Размеры, вес, форматы, alt", descriptionEn: "Optimization, dimensions, and formats", category: "media-utilities" },
   { icon: Code2, ru: "Разработка и данные", en: "Development and data", descriptionRu: "JSON, Base64, hash, UUID, URL", descriptionEn: "JSON, Base64, hash, UUID, and URL", category: "development-data" },
-  { icon: Sparkles, ru: "Контент и Schema.org", en: "Content and Schema.org", descriptionRu: "Мета-теги, FAQ, читаемость и разметка", descriptionEn: "Metadata, FAQ, readability, and markup", category: "seo-audit" },
+  { icon: Sparkles, ru: "Контент и AI-помощники", en: "Content & AI Tools", descriptionRu: "План исправлений, мета-теги, брифы", descriptionEn: "Fix action plan, metadata, briefs", category: "ai-tools" },
 ] as const;
 
-function NavigationLinks({ locale, compact = false }: { locale: Locale; compact?: boolean }) {
+function NavigationLinks({ locale }: { locale: Locale }) {
   const tools = toolsPath(locale);
   const pages = locale === "ru"
-    ? { audit: "/audit", pricing: "/pricing", materials: "/knowledge", account: "/login" }
-    : { audit: "/en/audit", pricing: "/en/pricing", materials: "/en/knowledge", account: "/en/login" };
+    ? { audit: "/audit", pricing: "/pricing", materials: "/knowledge", about: "/about" }
+    : { audit: "/en/audit", pricing: "/en/pricing", materials: "/en/knowledge", about: "/en/about" };
   const text = locale === "ru"
     ? {
         audit: "SEO-аудит",
         tools: "Инструменты",
         pricing: "Тарифы",
         materials: "Материалы",
-        account: "Личный кабинет",
+        about: "О проекте",
         categories: "Категории инструментов",
-        all: "Все инструменты",
+        all: "Все 125+ инструментов",
         unavailable: "недоступно",
       }
     : {
@@ -55,23 +54,11 @@ function NavigationLinks({ locale, compact = false }: { locale: Locale; compact?
         tools: "Tools",
         pricing: "Pricing",
         materials: "Resources",
-        account: "Account",
+        about: "About",
         categories: "Tool categories",
-        all: "All tools",
+        all: "All 125+ tools",
         unavailable: "unavailable",
       };
-
-  if (compact) {
-    return (
-      <nav className="mobile-nav wd-mobile-nav" aria-label={locale === "ru" ? "Основная навигация" : "Main navigation"}>
-        <Link href={tools} prefetch={false}>{text.tools}</Link>
-        <Link href={pages.audit} prefetch={false}>{text.audit}</Link>
-        <Link href={pages.pricing} prefetch={false}>{text.pricing}</Link>
-        <Link href={pages.materials} prefetch={false}>{text.materials}</Link>
-        <Link href={pages.account} prefetch={false}>{text.account}</Link>
-      </nav>
-    );
-  }
 
   return (
     <nav className="wd-main-nav" aria-label={locale === "ru" ? "Основная навигация" : "Main navigation"}>
@@ -83,24 +70,26 @@ function NavigationLinks({ locale, compact = false }: { locale: Locale; compact?
             {toolCategories.map(({ icon: Icon, ru, en, descriptionRu, descriptionEn, category }) => {
               const title = locale === "ru" ? ru : en;
               const description = locale === "ru" ? descriptionRu : descriptionEn;
-              const available = readyCategories.has(category);
+              const isAi = category === "ai-tools";
+              const targetHref = isAi ? (locale === "ru" ? "/tools?category=ai-tools" : "/en/tools?category=ai-tools") : `${tools}?category=${category}`;
               const content = (
                 <>
                   <span><Icon aria-hidden="true" /></span>
-                  <span><b>{title}</b><small>{description}</small>{!available && <em>{text.unavailable}</em>}</span>
+                  <span><b>{title}</b><small>{description}</small></span>
                 </>
               );
-              return available
-                ? <Link href={`${tools}?category=${category}`} prefetch={false} key={`${category}-${ru}`}>{content}</Link>
-                : <span className="wd-tools-category is-disabled" aria-disabled="true" key={`${category}-${ru}`}>{content}</span>;
+              return <Link href={targetHref} prefetch={false} key={`${category}-${ru}`}>{content}</Link>;
             })}
           </div>
-          <footer><Link href={tools} prefetch={false}>{text.all}<span aria-hidden="true">→</span></Link></footer>
+          <footer>
+            <Link href={tools} prefetch={false}>{text.all}<span aria-hidden="true">→</span></Link>
+          </footer>
         </div>
       </ToolsMenuShell>
       <Link href={pages.audit} prefetch={false}>{text.audit}</Link>
       <Link href={pages.pricing} prefetch={false}>{text.pricing}</Link>
       <Link href={pages.materials} prefetch={false}>{text.materials}</Link>
+      <Link href={pages.about} prefetch={false}>{text.about}</Link>
     </nav>
   );
 }
@@ -108,7 +97,6 @@ function NavigationLinks({ locale, compact = false }: { locale: Locale; compact?
 export function SiteHeader({ locale }: SiteHeaderProps) {
   const createAccount = locale === "ru" ? "Создать аккаунт" : "Create account";
   const login = locale === "ru" ? "Войти" : "Sign in";
-  const menu = locale === "ru" ? "Открыть меню" : "Open menu";
   const search = locale === "ru" ? "Найти инструмент" : "Find a tool";
   const registerHref = locale === "ru" ? "/register" : "/en/register";
 
@@ -127,22 +115,15 @@ export function SiteHeader({ locale }: SiteHeaderProps) {
             href={toolsPath(locale)}
             title={search}
           >
-            <Search aria-hidden="true" size={16} />
+            <Search aria-hidden="true" size={17} />
           </Link>
+          <LanguageSwitcher locale={locale} className="language-switcher-desktop" />
           <Link className="wd-header-login" href={loginPath(locale)} prefetch={false}>{login}</Link>
           <Link className="wd-header-cta" href={registerHref} prefetch={false}>{createAccount}</Link>
-          <details className="mobile-menu">
-            <summary aria-label={menu}>
-              <span aria-hidden="true" />
-              <span aria-hidden="true" />
-              <span aria-hidden="true" />
-            </summary>
-            <div className="mobile-menu-panel">
-              <LanguageSwitcher locale={locale} className="language-switcher-mobile" />
-              <NavigationLinks locale={locale} compact />
-              <Link className="wd-header-cta" href={registerHref} prefetch={false}>{createAccount}</Link>
-            </div>
-          </details>
+          <div className="mobile-menu">
+            {/* language-switcher-mobile in modern drawer */}
+            <MobileDrawer locale={locale} />
+          </div>
         </div>
       </div>
     </header>

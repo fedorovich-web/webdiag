@@ -1,0 +1,390 @@
+/* WebDiag Knowledge Hub Styles */
+.wd-knowledge-page {
+  overflow: clip;
+  background: #ffffff;
+  color: var(--wd-t, #091121);
+}
+
+.wd-knowledge-breadcrumbs {
+  padding: 16px 0 0;
+  font-size: 12px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.wd-knowledge-breadcrumbs a {
+  color: #64748b;
+  text-decoration: none;
+  transition: color 150ms ease;
+}
+.wd-knowledge-breadcrumbs a:hover {
+  color: #2563ff;
+}
+.wd-knowledge-breadcrumbs span[aria-current="page"] {
+  color: #091121;
+  font-weight: 600;
+}
+
+.wd-knowledge-hero {
+  position: relative;
+  padding: 56px 0 64px;
+  background:
+    radial-gradient(circle at 80% 20%, rgba(37, 99, 255, 0.08), transparent 28rem),
+    radial-gradient(circle at 10% 80%, rgba(99, 102, 241, 0.06), transparent 24rem),
+    #ffffff;
+}
+
+.wd-knowledge-hero-inner {
+  text-align: center;
+  max-width: 960px;
+  margin-inline: auto;
+}
+
+.wd-knowledge-h1 {
+  margin: 18px auto 16px;
+  font-size: clamp(38px, 4.4vw, 56px);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  color: #091121;
+}
+
+/* Subtitle under H1: strictly 18px */
+.wd-knowledge-hero-lead {
+  max-width: 760px;
+  margin: 0 auto 36px;
+  font-size: 18px;
+  line-height: 1.6;
+  color: #4b5b75;
+}
+
+.wd-knowledge-search-wrap {
+  max-width: 680px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 18px;
+  background: #ffffff;
+  border: 1px solid #dce5f2;
+  border-radius: 16px;
+  box-shadow: 0 14px 36px rgba(34, 48, 82, 0.08);
+}
+.wd-knowledge-search-wrap svg {
+  color: #2563ff;
+  flex-shrink: 0;
+}
+.wd-knowledge-search-wrap input {
+  width: 100%;
+  height: 48px;
+  border: 0;
+  outline: 0;
+  font-size: 15px;
+  color: #091121;
+  background: transparent;
+}
+.wd-knowledge-search-wrap input::placeholder {
+  color: #94a3b8;
+}
+
+/* Section Shared */
+.wd-knowledge-section {
+  padding: clamp(64px, 7vw, 96px) 0;
+}
+
+.wd-knowledge-section-header {
+  text-align: center;
+  max-width: 760px;
+  margin: 0 auto 52px;
+}
+.wd-knowledge-section-header h2 {
+  font-size: clamp(30px, 3.2vw, 40px);
+  font-weight: 800;
+  line-height: 1.15;
+  color: #091121;
+  margin: 14px 0 12px;
+}
+
+/* Subtitle under H2: strictly 16px */
+.wd-knowledge-sub-h2 {
+  font-size: 16px;
+  line-height: 1.55;
+  color: #4b5b75;
+  margin: 0;
+}
+
+/* Category Tabs */
+.wd-knowledge-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 40px;
+}
+.wd-knowledge-tab-btn {
+  padding: 10px 20px;
+  border: 1px solid #dce5f2;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #4b5b75;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+.wd-knowledge-tab-btn:hover {
+  background: #f8faff;
+  border-color: #bcd4e7;
+}
+.wd-knowledge-tab-btn.is-active {
+  border-color: transparent;
+  background: var(--wd-button-bg, linear-gradient(135deg, #2563ff, #5a49ff));
+  color: #ffffff;
+  box-shadow: 0 8px 22px rgba(37, 99, 255, 0.25);
+}
+
+/* Articles Grid */
+.wd-knowledge-articles-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+}
+.wd-article-card {
+  padding: 32px 28px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 18px rgba(34, 48, 82, 0.04);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+.wd-article-card:hover {
+  transform: translateY(-3px);
+  border-color: #cbd5e1;
+  box-shadow: 0 16px 36px rgba(34, 48, 82, 0.08);
+}
+.wd-article-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.wd-article-badge {
+  font-size: 12px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #2563ff;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.wd-article-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 600;
+}
+.wd-article-card h3 {
+  font-size: 18px;
+  font-weight: 780;
+  line-height: 1.35;
+  color: #091121;
+  margin-bottom: 12px;
+}
+.wd-article-card p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #4b5b75;
+  margin: 0 0 24px;
+  flex: 1 1 auto;
+}
+.wd-article-card-footer {
+  border-top: 1px solid #f1f5f9;
+  padding-top: 18px;
+}
+.wd-article-tool-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #2563ff;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: color 150ms ease;
+}
+.wd-article-tool-link:hover {
+  color: #1d4ed8;
+}
+
+/* Glossary */
+.wd-glossary-section {
+  background: #f8faff;
+  border-top: 1px solid #edf2f7;
+  border-bottom: 1px solid #edf2f7;
+}
+.wd-glossary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+.wd-glossary-card {
+  padding: 28px 24px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+}
+.wd-glossary-card h3 {
+  font-size: 17px;
+  font-weight: 780;
+  color: #091121;
+  margin-bottom: 10px;
+}
+.wd-glossary-card p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #4b5b75;
+  margin: 0;
+}
+
+/* Checklist */
+.wd-checklist-card {
+  padding: 48px 44px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 24px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.wd-checklist-header {
+  margin-bottom: 32px;
+}
+.wd-checklist-header h2 {
+  font-size: 28px;
+  font-weight: 800;
+  color: #166534;
+  margin: 8px 0;
+}
+.wd-checklist-header .wd-knowledge-sub-h2 {
+  color: #15803d;
+}
+.wd-checklist-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px 28px;
+}
+.wd-checklist-items li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #166534;
+  font-weight: 600;
+}
+.wd-checklist-items li svg {
+  color: #16a34a;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* CTA */
+.wd-knowledge-cta-section {
+  padding-bottom: 84px;
+}
+.wd-knowledge-cta-card {
+  padding: 56px 40px;
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  border-radius: 28px;
+  text-align: center;
+  color: #ffffff;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
+}
+.wd-knowledge-cta-card h2 {
+  font-size: clamp(28px, 3.2vw, 40px);
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 12px;
+}
+.wd-knowledge-cta-card .wd-knowledge-sub-h2 {
+  color: #94a3b8;
+  max-width: 580px;
+  margin: 0 auto 36px;
+}
+.wd-knowledge-cta-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.wd-knowledge-cta-buttons .wd-button-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #2563ff, #4f46e5);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: 14px;
+  text-decoration: none;
+  box-shadow: 0 10px 24px rgba(37, 99, 255, 0.35);
+  transition: transform 160ms ease;
+}
+.wd-knowledge-cta-buttons .wd-button-primary:hover {
+  transform: translateY(-1px);
+}
+.wd-knowledge-cta-buttons .wd-button-secondary {
+  display: inline-flex;
+  align-items: center;
+  padding: 14px 22px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  text-decoration: none;
+  transition: background 160ms ease;
+}
+.wd-knowledge-cta-buttons .wd-button-secondary:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .wd-knowledge-articles-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .wd-glossary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .wd-checklist-items {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .wd-knowledge-articles-grid {
+    grid-template-columns: 1fr;
+  }
+  .wd-glossary-grid {
+    grid-template-columns: 1fr;
+  }
+  .wd-knowledge-hero {
+    padding: 36px 0 48px;
+  }
+  .wd-checklist-card {
+    padding: 32px 20px;
+  }
+  .wd-knowledge-cta-card {
+    padding: 36px 20px;
+  }
+}
