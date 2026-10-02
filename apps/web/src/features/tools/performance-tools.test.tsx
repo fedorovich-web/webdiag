@@ -5,12 +5,12 @@ import type { CachePolicyResponse, PageSpeedResponse, PageWeightResponse } from 
 const generated_at = "2026-07-21T00:00:00Z";
 
 const coreWebVitals: PageSpeedResponse = {
-  contract_version: "webdiag.tool.core_web_vitals.v1",
+  contract_version: "webdiag.tool.core_web_vitals.v2",
   generated_at,
   requested_url: "https://example.com/",
   normalized_url: "https://example.com/",
   strategy: "mobile",
-  results: [{ strategy: "mobile", available: true, performance_score: 91, field_data_available: true, field_overall_category: "FAST", lighthouse_version: "13", analysis_fetch_time: generated_at, metrics: [{ id: "largest-contentful-paint", title: "Largest Contentful Paint", value: 2200, unit: "ms", display_value: "2.2 s", source: "lab", status: "pass" }], opportunities: [], fetch_error: null }],
+  results: [{ strategy: "mobile", available: true, performance_score: 91, field_data_available: true, field_overall_category: "FAST", lighthouse_version: "13", analysis_fetch_time: generated_at, category_scores: { performance: 91, accessibility: 87, "best-practices": 100, seo: 92 }, audit_findings: [{ id: "color-contrast", category: "accessibility", title: "Color contrast", score: 0, score_display_mode: "binary", display_value: null, weight: 7 }], metrics: [{ id: "largest-contentful-paint", title: "Largest Contentful Paint", value: 2200, unit: "ms", display_value: "2.2 s", source: "lab", status: "pass" }], opportunities: [], fetch_error: null }],
   recommendation: "Good",
 };
 
@@ -55,6 +55,8 @@ const pageWeight: PageWeightResponse = {
 describe("performance tool helpers", () => {
   it("creates copyable text for PageSpeed results", () => {
     expect(pageSpeedResultText(coreWebVitals)).toContain("Performance score: 91");
+    expect(pageSpeedResultText(coreWebVitals)).toContain("Lighthouse accessibility: 87");
+    expect(pageSpeedResultText(coreWebVitals)).toContain("Lighthouse finding: accessibility / Color contrast — 0");
     expect(pageSpeedResultText(coreWebVitals)).toContain("Largest Contentful Paint: 2.2 s — pass");
   });
 

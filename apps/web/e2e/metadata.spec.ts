@@ -3,8 +3,20 @@ import { installBrowserGuard } from "./browser-guard";
 
 const cases = [
   { route: "/", lang: "ru", canonical: "https://webdiag.ru", type: "WebSite" },
+  { route: "/en", lang: "en", canonical: "https://webdiag.ru/en", type: "WebSite" },
   { route: "/en/tools", lang: "en", canonical: "https://webdiag.ru/en/tools", type: "ItemList" },
   { route: "/tools/json-formatter-validator", lang: "ru", canonical: "https://webdiag.ru/tools/json-formatter-validator", type: "BreadcrumbList" },
+] as const;
+
+const localizedPublicPairs = [
+  ["/", "/en"],
+  ["/tools", "/en/tools"],
+  ["/audit", "/en/audit"],
+  ["/contacts", "/en/contacts"],
+  ["/knowledge", "/en/knowledge"],
+  ["/monitoring", "/en/monitoring"],
+  ["/pricing", "/en/pricing"],
+  ["/privacy", "/en/privacy"],
 ] as const;
 
 test.describe("rendered SEO metadata", () => {
@@ -16,6 +28,29 @@ test.describe("rendered SEO metadata", () => {
 
   test.afterEach(async ({}, testInfo) => {
     await assertBrowserClean(testInfo);
+  });
+
+  test("all indexable public pages expose a complete RU/EN metadata pair", async ({ page }) => {
+    for (const [ruRoute, enRoute] of localizedPublicPairs) {
+      const expected = {
+        ru: `https://webdiag.ru${ruRoute === "/" ? "" : ruRoute}`,
+        en: `https://webdiag.ru${enRoute}`,
+      };
+
+      await page.goto(ruRoute);
+      await expect(page.locator("html")).toHaveAttribute("lang", "ru");
+      await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", expected.ru);
+      await expect(page.locator('link[rel="alternate"][hreflang="ru"]')).toHaveAttribute("href", expected.ru);
+      await expect(page.locator('link[rel="alternate"][hreflang="en"]')).toHaveAttribute("href", expected.en);
+      await expect(page.locator('link[rel="alternate"][hreflang="x-default"]')).toHaveAttribute("href", expected.ru);
+
+      await page.goto(enRoute);
+      await expect(page.locator("html")).toHaveAttribute("lang", "en");
+      await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", expected.en);
+      await expect(page.locator('link[rel="alternate"][hreflang="ru"]')).toHaveAttribute("href", expected.ru);
+      await expect(page.locator('link[rel="alternate"][hreflang="en"]')).toHaveAttribute("href", expected.en);
+      await expect(page.locator('link[rel="alternate"][hreflang="x-default"]')).toHaveAttribute("href", expected.ru);
+    }
   });
 
   for (const item of cases) {
@@ -32,6 +67,15 @@ test.describe("rendered SEO metadata", () => {
       await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary_large_image");
       const structured = await page.locator('script[type="application/ld+json"]').first().textContent();
       expect(structured).toContain(`\"@type\":\"${item.type}\"`);
+    });
+  }
+
+  for (const route of ["/", "/en"] as const) {
+    test(`${route} exposes non-empty title and description without enforcing editorial wording`, async ({ page }) => {
+      await page.goto(route);
+      expect((await page.title()).trim().length).toBeGreaterThan(0);
+      const description = await page.locator('meta[name="description"]').getAttribute("content");
+      expect(description?.trim().length ?? 0).toBeGreaterThan(0);
     });
   }
 });

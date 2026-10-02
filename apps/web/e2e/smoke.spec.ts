@@ -17,11 +17,39 @@ test.describe("production browser smoke", () => {
     await page.goto("/");
 
     await expect(page.locator("html")).toHaveAttribute("data-scroll-behavior", "smooth");
-    await expect(page.locator("body")).toHaveAttribute("data-theme-ready", "true");
+    expect(await page.evaluate(() => getComputedStyle(document.body).colorScheme)).toBe("light");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 
-    const iconResponse = await page.request.get("/icon.svg");
-    expect(iconResponse.status()).toBe(200);
+    const documentResponse = await page.request.get("/");
+    expect(documentResponse.headers()).toMatchObject({
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "DENY",
+      "referrer-policy": "strict-origin-when-cross-origin",
+      "permissions-policy": "camera=(), microphone=(), geolocation=()",
+    });
+    expect(documentResponse.headers()["content-security-policy"]).toContain(
+      "frame-ancestors 'none'",
+    );
+
+    const brandAssets = [
+      { path: "/logo.avif", contentType: "image/avif" },
+      { path: "/logo.webp", contentType: "image/webp" },
+      { path: "/favicon.svg", contentType: "image/svg+xml" },
+      { path: "/favicon.ico", contentType: "image/" },
+      { path: "/site.webmanifest", contentType: "json" },
+    ] as const;
+
+    for (const asset of brandAssets) {
+      const response = await page.request.get(asset.path);
+      expect(response.status()).toBe(200);
+      expect(response.headers()["content-type"]).toContain(asset.contentType);
+      expect((await response.body()).byteLength).toBeGreaterThan(100);
+    }
+
+    await expect(page.locator('.wd-brand source[type="image/avif"]')).toHaveAttribute("srcset", "/logo.avif");
+    await expect(page.locator(".wd-brand .brand-logo")).toHaveAttribute("src", "/logo.webp");
+    await expect(page.locator(".wd-brand .brand-logo")).toHaveAttribute("width", "230");
+    await expect(page.locator(".wd-brand .brand-logo")).toHaveAttribute("height", "40");
   });
 
   test("self-hosted Manrope is loaded from the optimized local WOFF2", async ({ page }) => {
@@ -51,12 +79,12 @@ test.describe("production browser smoke", () => {
     }));
     expect(dimensions.scroll).toBe(dimensions.viewport);
 
-    const themeBox = await page.getByRole("switch", { name: "Тёмная тема" }).boundingBox();
     const menu = page.locator(".mobile-menu summary");
     const menuBox = await menu.boundingBox();
-    expect(themeBox?.height).toBeGreaterThanOrEqual(44);
     expect(menuBox?.height).toBeGreaterThanOrEqual(44);
     await menu.click();
+
+    await expect(page.getByRole("switch")).toHaveCount(0);
     const localeBox = await page.getByRole("navigation", { name: "Выбор языка" }).boundingBox();
     expect(localeBox?.height).toBeGreaterThanOrEqual(44);
   });
@@ -70,8 +98,11 @@ test.describe("production browser smoke", () => {
       scroll: document.documentElement.scrollWidth,
     }));
     expect(dimensions.scroll).toBe(dimensions.viewport);
-    await expect(page.getByRole("switch", { name: "Dark theme" })).toBeVisible();
+    await expect(page.locator('.wd-brand[data-brand-variant="header"] .brand-picture')).toBeHidden();
+    await expect(page.locator('.wd-brand[data-brand-variant="header"] .brand-mark')).toBeVisible();
+
     await page.locator(".mobile-menu summary").click();
+    await expect(page.getByRole("switch")).toHaveCount(0);
     await expect(page.getByRole("navigation", { name: "Language selection" })).toBeVisible();
   });
 });

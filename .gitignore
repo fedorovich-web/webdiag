@@ -7,6 +7,7 @@ coverage/
 .env
 .env.*
 !.env.example
+!.env.production.example
 
 __pycache__/
 *.py[cod]
@@ -27,3 +28,5 @@ SHA256SUMS.txt
 *.log
 .DS_Store
 Thumbs.db
+
+.webdiag/

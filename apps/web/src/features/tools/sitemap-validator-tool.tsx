@@ -1,5 +1,7 @@
 "use client";
 
+import { toolErrorMessage } from "./tool-error-presentation";
+
 import { useState, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { CopyButton } from "../../components/copy-button";
@@ -225,7 +227,7 @@ export function SitemapValidatorTool({ locale }: { locale: Locale }) {
       setResult(await runSitemapCheck(parsed.toString(), parsedTarget ? parsedTarget.toString() : ""));
     } catch (caught) {
       setResult(null);
-      setError(caught instanceof Error ? caught.message : "Sitemap check failed.");
+      setError(toolErrorMessage(locale, caught));
     } finally {
       setIsLoading(false);
     }

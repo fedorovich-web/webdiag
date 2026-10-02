@@ -1,0 +1,97 @@
+[
+  {
+    "tool_id": "ai_content_brief",
+    "public_input": {
+      "locale": "ru",
+      "audience": "Владельцы сайтов",
+      "objective": "Подготовить проверяемый план статьи о техническом аудите.",
+      "working_title": "Как провести технический аудит сайта",
+      "facts": [
+        "Проверка robots.txt показывает доступность разделов для обхода.",
+        "XML-карта сайта содержит канонические URL проекта."
+      ]
+    },
+    "output": {
+      "suggested_title": "План технического аудита сайта",
+      "sections": [
+        {
+          "heading": "Доступность для обхода",
+          "purpose": "Объяснить проверку правил обхода.",
+          "coverage": [
+            {
+              "source_fact_index": 0,
+              "excerpt": "Проверка robots.txt показывает доступность разделов"
+            }
+          ]
+        },
+        {
+          "heading": "Состав карты сайта",
+          "purpose": "Зафиксировать проверяемое содержимое XML-карты.",
+          "coverage": [
+            {
+              "source_fact_index": 1,
+              "excerpt": "XML-карта сайта содержит канонические URL проекта."
+            }
+          ]
+        }
+      ],
+      "warnings": []
+    }
+  },
+  {
+    "tool_id": "ai_content_optimizer",
+    "public_input": {
+      "locale": "en",
+      "page_url": "https://example.com/guides/audit",
+      "content": "WebDiag checks crawl directives. Reports keep the audit evidence.",
+      "target_query": "technical website audit",
+      "objective": "Make the explanation clearer.",
+      "factual_constraints": [
+        "Reports keep the audit evidence."
+      ]
+    },
+    "output": {
+      "revised_content": "WebDiag checks crawl directives and explains the result. Reports keep the audit evidence.",
+      "changes": [
+        {
+          "kind": "clarity",
+          "before_excerpt": "WebDiag checks crawl directives.",
+          "after_excerpt": "WebDiag checks crawl directives and explains the result.",
+          "rationale": "Clarifies what the check returns."
+        }
+      ],
+      "preserved_fact_indexes": [0],
+      "warnings": []
+    }
+  },
+  {
+    "tool_id": "ai_search_intent_page_fit",
+    "public_input": {
+      "locale": "ru",
+      "page_url": "https://example.ru/audit-guide",
+      "primary_query": "как проверить техническое SEO",
+      "intended_page_type": "informational",
+      "page_title": "Как провести технический SEO-аудит",
+      "h1": "Порядок технического SEO-аудита",
+      "content": "Инструкция объясняет проверку robots.txt и XML-карты сайта."
+    },
+    "output": {
+      "inferred_intent": "informational",
+      "confidence": "high",
+      "fit": "aligned",
+      "evidence": [
+        "Как провести технический SEO-аудит",
+        "Инструкция объясняет проверку robots.txt"
+      ],
+      "gaps": [
+        "В переданном тексте не описана проверка кодов HTTP-ответа."
+      ],
+      "recommendations": [
+        "Добавить проверяемый шаг для кодов HTTP-ответа."
+      ],
+      "warnings": [
+        "Вывод основан только на переданном тексте, без live SERP."
+      ]
+    }
+  }
+]

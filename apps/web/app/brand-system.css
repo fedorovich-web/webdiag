@@ -1,0 +1,379 @@
+/* Shared WebDiag visual language: Fresh Mint brand across public UI and account workspace. */
+body[data-theme="light"] {
+  --brand: #0e9fba;
+  --brand-hover: #087f98;
+  --brand-contrast: #ffffff;
+  --brand-soft: #e8faf7;
+  --accent: #3b82f6;
+  --accent-soft: #eef6ff;
+  --focus: #22d3ee;
+  --surface-muted: #f4f9fa;
+  --line: #dbe6e8;
+  --line-strong: #c9dadd;
+  --wd-accent: #08758b;
+  --wd-accent-strong: #076b80;
+  --wd-ms: #5b6974;
+}
+
+/* Never fall back to the legacy violet accent on shared public surfaces. */
+.eyebrow-on-dark {
+  color: #67e8f9;
+}
+
+::selection {
+  background: #22d3ee;
+  color: #06191b;
+}
+
+/* Primary actions share the same Fresh Mint product signature as the homepage. */
+.button:not(.button-secondary),
+.wd-account-page .wd-button:not(.wd-button-secondary),
+.wd-account-workspace-page .wd-button:not(.wd-button-secondary) {
+  border: 1px solid transparent;
+  background: linear-gradient(120deg, #34d399 0%, #22d3ee 52%, #60a5fa 100%);
+  color: #06191b;
+  box-shadow: 0 14px 30px rgb(34 211 238 / 0.16);
+}
+
+.button:not(.button-secondary):hover,
+.wd-account-page .wd-button:not(.wd-button-secondary):hover,
+.wd-account-workspace-page .wd-button:not(.wd-button-secondary):hover {
+  background: linear-gradient(120deg, #10b981 0%, #06b6d4 52%, #3b82f6 100%);
+  color: #06191b;
+}
+
+.button:not(.button-secondary):focus-visible,
+.wd-account-page .wd-button:not(.wd-button-secondary):focus-visible,
+.wd-account-workspace-page .wd-button:not(.wd-button-secondary):focus-visible {
+  outline-color: var(--focus);
+}
+
+/* Account controls share one minimum interactive target across desktop and mobile. */
+.wd-account-page .wd-button,
+.wd-account-workspace-page .wd-button {
+  min-height: 44px;
+}
+
+/* clientHeight excludes the 1px button borders; keep 44px of usable crawler target area. */
+.wd-account-workspace-page .wd-crawl-console-head > .wd-button {
+  min-height: 46px;
+}
+
+/* Keep the compact homepage report action readable at WCAG AA contrast. */
+body[data-theme="light"] .wd-home .wd-report-recommendation > span {
+  color: #0774dc;
+}
+
+/* Full production footer. */
+.site-footer .wd-footer-grid {
+  grid-template-columns: minmax(240px, 1.35fr) repeat(5, minmax(120px, .72fr));
+  gap: 36px;
+  padding-block: 72px 50px;
+}
+
+.site-footer .wd-footer-brand {
+  max-width: 360px;
+}
+
+.site-footer .wd-footer-brand p {
+  max-width: 340px;
+  line-height: 1.7;
+}
+
+.site-footer .footer-column {
+  min-width: 0;
+}
+
+.site-footer .footer-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+/* Account workspace: same surfaces, border language and accents as the public product. */
+.wd-account-page,
+.wd-account-workspace-page {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--brand-soft) 44%, transparent), transparent 22rem),
+    var(--bg);
+}
+
+.wd-account-card,
+.wd-account-dashboard,
+.wd-workspace-sidebar,
+.wd-workspace-drawer-panel,
+.wd-account-overview > .wd-account-dashboard-head,
+.wd-project-card,
+.wd-check-grid article,
+.wd-audit-row,
+.wd-issue-list article,
+.wd-priority-issue-list article,
+.wd-issue-facts div,
+.wd-monitoring-config {
+  border-color: var(--line);
+  box-shadow: 0 16px 44px rgb(20 63 73 / 0.07);
+}
+
+.wd-workspace-sidebar,
+.wd-account-overview > .wd-account-dashboard-head,
+.wd-account-dashboard,
+.wd-account-card {
+  background: var(--surface);
+}
+
+.wd-workspace-navigation a {
+  transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.wd-workspace-navigation a:hover {
+  background: color-mix(in srgb, var(--brand-soft) 62%, var(--surface));
+  color: var(--text);
+}
+
+.wd-workspace-navigation a[aria-current="page"] {
+  background: linear-gradient(
+    110deg,
+    color-mix(in srgb, #34d399 15%, var(--surface)) 0%,
+    color-mix(in srgb, #22d3ee 13%, var(--surface)) 56%,
+    color-mix(in srgb, #60a5fa 11%, var(--surface)) 100%
+  );
+  box-shadow:
+    inset 3px 0 0 #0e9fba,
+    inset 0 0 0 1px color-mix(in srgb, var(--brand) 18%, var(--line));
+  color: var(--text);
+}
+
+.wd-workspace-real-metric,
+.wd-workspace-recent,
+.wd-project-create,
+.wd-project-list,
+.wd-audit-history,
+.wd-saved-checks,
+.wd-saved-issues,
+.wd-account-foundation {
+  background: color-mix(in srgb, var(--brand-soft) 32%, var(--surface-muted));
+}
+
+.wd-workspace-real-metric strong,
+.wd-account-session-count strong {
+  color: var(--brand-hover);
+}
+
+.wd-project-list-head > strong,
+.wd-saved-audit-head > strong {
+  color: var(--brand-hover);
+  background: color-mix(in srgb, var(--brand-soft) 44%, var(--surface));
+}
+
+.wd-priority-order {
+  background: linear-gradient(135deg, #34d399 0%, #22d3ee 55%, #60a5fa 100%);
+  color: #06191b;
+}
+
+.wd-account-form input:focus-visible,
+.wd-project-create-form input:focus-visible,
+.wd-workspace-project-switcher select:focus-visible,
+.wd-workspace-navigation a:focus-visible,
+.wd-workspace-menu-trigger:focus-visible,
+.wd-workspace-drawer-panel button:focus-visible,
+.wd-issue-filters select:focus-visible {
+  outline-color: var(--focus);
+}
+
+@media (max-width: 1180px) {
+  .wd-site-header .mobile-menu-panel .wd-header-cta {
+    display: inline-flex;
+  }
+
+  .site-footer .wd-footer-grid {
+    grid-template-columns: 1.25fr repeat(3, minmax(140px, .75fr));
+  }
+}
+
+@media (max-width: 820px) {
+  .site-footer .wd-footer-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .site-footer .wd-footer-brand {
+    max-width: none;
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 520px) {
+  .site-footer .wd-footer-grid {
+    grid-template-columns: 1fr;
+    gap: 30px;
+    padding-block: 54px 36px;
+  }
+
+  .site-footer .wd-footer-brand {
+    grid-column: auto;
+  }
+
+  .site-footer .footer-bottom {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wd-workspace-navigation a {
+    transition: none;
+  }
+}
+
+
+/* Unified account workspace — same light product language as the public WebDiag UI. */
+.wd-account-workspace-page {
+  --wd-account-canvas: #f5f9fd;
+  --wd-account-surface: #ffffff;
+  --wd-account-border: #dfe8f1;
+  --wd-account-accent: #1687f8;
+  --wd-account-radius: 14px;
+  --wd-account-rail-width: 244px;
+  width: min(1360px, calc(100% - 32px));
+  border-color: #e1eaf2;
+  background:
+    radial-gradient(circle at 100% 0%, rgb(34 211 238 / .055), transparent 26rem),
+    linear-gradient(180deg, #f7fbff 0%, #f4f8fc 100%);
+}
+
+.wd-account-workspace-page .wd-workspace-sidebar {
+  padding: 13px;
+  border-color: #dfe8f1;
+  background: #fff;
+  box-shadow: 0 10px 30px rgb(31 72 108 / .045);
+}
+
+.wd-account-workspace-page .wd-workspace-identity {
+  background: linear-gradient(135deg, #eefbf8 0%, #f1f8ff 100%);
+}
+
+.wd-account-workspace-page .wd-workspace-navigation a,
+.wd-account-workspace-page .wd-workspace-navigation [aria-disabled="true"] {
+  gap: 10px;
+  color: #5a6a82;
+}
+
+.wd-account-workspace-page .wd-workspace-navigation a > svg,
+.wd-account-workspace-page .wd-workspace-navigation [aria-disabled="true"] > svg {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+  color: #7f91a7;
+  stroke-width: 1.9;
+}
+
+.wd-account-workspace-page .wd-workspace-navigation a:hover > svg {
+  color: #1687f8;
+}
+
+.wd-account-workspace-page .wd-workspace-navigation a[aria-current="page"] {
+  border-color: #cae7ea;
+  background: linear-gradient(110deg, #eafbf6 0%, #eefaff 58%, #eef5ff 100%);
+  color: #0b788d;
+  box-shadow: inset 3px 0 0 #21c8b1;
+}
+
+.wd-account-workspace-page .wd-workspace-navigation a[aria-current="page"] > svg {
+  color: #0e9fba;
+}
+
+.wd-account-workspace-page .wd-workspace-project-switcher select {
+  border: 1px solid #dce6ef;
+  background: #f8fbfd;
+}
+
+.wd-account-workspace-page .wd-account-overview > .wd-account-dashboard-head,
+.wd-account-workspace-page .wd-account-dashboard > .wd-account-dashboard-head {
+  border-color: #dfe8f1;
+  background:
+    radial-gradient(circle at 88% 24%, rgb(34 211 238 / .09), transparent 17rem),
+    linear-gradient(135deg, #ffffff 0%, #fbfdff 58%, #eefbf8 100%);
+}
+
+.wd-account-workspace-page .wd-account-dashboard-head h1 {
+  color: #091642;
+}
+
+.wd-account-workspace-page .wd-account-dashboard-head p {
+  color: #718198;
+}
+
+.wd-account-workspace-page .wd-operation-metrics {
+  border-color: #dfe8f1;
+  background: #dfe8f1;
+}
+
+.wd-account-workspace-page .wd-operation-metrics article {
+  background: #fff;
+}
+
+.wd-account-workspace-page .wd-operation-metrics strong {
+  color: #12234a;
+}
+
+.wd-account-workspace-page .wd-operation-metrics article:nth-child(2) strong {
+  color: #148bc8;
+}
+
+.wd-account-workspace-page .wd-operation-metrics article:nth-child(3) strong {
+  color: #e15b70;
+}
+
+.wd-account-workspace-page .wd-operation-metrics article:nth-child(4) strong {
+  color: #17a889;
+}
+
+.wd-account-workspace-page .wd-operation-actions {
+  border: 1px solid #dcebee;
+  background: linear-gradient(110deg, #eef9ff 0%, #f8fbff 48%, #edfff9 100%);
+}
+
+.wd-account-workspace-page .wd-operation-action-list a,
+.wd-account-workspace-page .wd-operation-project-card,
+.wd-account-workspace-page .wd-project-archive-items article,
+.wd-account-workspace-page .wd-account-card,
+.wd-account-workspace-page .wd-report-list > article {
+  border-color: #dfe8f1;
+  background: #fff;
+}
+
+.wd-account-workspace-page .wd-operation-project-card:hover {
+  border-color: #bfd9e9;
+}
+
+.wd-account-workspace-page .wd-operation-status,
+.wd-account-workspace-page .wd-report-share-state,
+.wd-account-workspace-page .wd-monitor-state,
+.wd-account-workspace-page .wd-enabled-state {
+  border-radius: 999px;
+}
+
+.wd-account-workspace-page :is(input, select, textarea) {
+  border-color: #dce6ef;
+}
+
+.wd-account-workspace-page .wd-button.wd-button-secondary {
+  border-color: #dce6ef;
+  background: #fff;
+  color: #243755;
+}
+
+.wd-account-workspace-page .wd-button.wd-button-secondary:hover {
+  border-color: #bcd6e7;
+  background: #f8fbfd;
+  color: #087f98;
+}
+
+@media (max-width: 900px) {
+  .wd-account-workspace-page {
+    width: 100%;
+    border: 0;
+    border-radius: 0;
+    margin-top: 0;
+  }
+}

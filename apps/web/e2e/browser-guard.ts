@@ -1,6 +1,9 @@
 import { expect, type Page, type TestInfo } from "@playwright/test";
 
-export function installBrowserGuard(page: Page) {
+export function installBrowserGuard(
+  page: Page,
+  shouldIgnore?: (error: string) => boolean,
+) {
   const errors: string[] = [];
 
   page.on("console", (message) => {
@@ -19,12 +22,16 @@ export function installBrowserGuard(page: Page) {
   });
 
   return async (testInfo: TestInfo) => {
-    if (errors.length > 0) {
+    const unexpectedErrors = shouldIgnore
+      ? errors.filter((error) => !shouldIgnore(error))
+      : errors;
+
+    if (unexpectedErrors.length > 0) {
       await testInfo.attach("browser-errors", {
-        body: Buffer.from(errors.join("\n")),
+        body: Buffer.from(unexpectedErrors.join("\n")),
         contentType: "text/plain",
       });
     }
-    expect(errors, "Browser console, runtime, request, and HTTP errors").toEqual([]);
+    expect(unexpectedErrors, "Browser console, runtime, request, and HTTP errors").toEqual([]);
   };
 }

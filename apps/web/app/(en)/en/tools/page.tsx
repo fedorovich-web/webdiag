@@ -6,13 +6,18 @@ import { toolItemListJsonLd } from "../../../../src/lib/structured-data";
 
 export const metadata: Metadata = pageMetadata({
   locale: "en",
-  title: "Supporting Tools for WebDiag Audit Fixes",
-  description: "Supporting WebDiag tools for fixing detected issues: JSON, encoding, hashes, contrast, on-site images, and technical values.",
+  title: "All WebDiag Tools",
+  description: "More than 140 WebDiag tools for SEO audits, diagnostics, performance, security, accessibility, images, and development.",
   canonical: "/en/tools",
   ruPath: "/tools",
   enPath: "/en/tools",
 });
 
 export default function Page() {
-  return <main className="shell page-main catalog-page"><JsonLd data={toolItemListJsonLd("en")} /><header className="page-heading catalog-heading"><span className="eyebrow">WebDiag</span><h1>Supporting tools for audit fixes</h1><p>This section does not replace the website audit. It helps fix detected issues faster: prepare data, check contrast, optimize on-page images, work with encoding, hashes, and technical values.</p></header><ToolList locale="en" /></main>;
+  return (
+    <main className="wd-tools-page">
+      <JsonLd data={toolItemListJsonLd("en")} />
+      <ToolList locale="en" />
+    </main>
+  );
 }
