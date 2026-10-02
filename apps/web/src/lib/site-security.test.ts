@@ -14,11 +14,12 @@ describe("site security headers", () => {
   it("keeps a script-compatible baseline on every build", () => {
     expect(headerMap(siteSecurityHeaders(false))).toEqual({
       "content-security-policy":
-        "base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'",
+        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https:; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'",
       "x-content-type-options": "nosniff",
       "x-frame-options": "DENY",
       "referrer-policy": "strict-origin-when-cross-origin",
       "permissions-policy": "camera=(), microphone=(), geolocation=()",
+      "cross-origin-opener-policy": "same-origin",
     });
   });
 
@@ -27,7 +28,7 @@ describe("site security headers", () => {
       "strict-transport-security",
     );
     expect(headerMap(siteSecurityHeaders(true))).toMatchObject({
-      "strict-transport-security": "max-age=31536000",
+      "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
     });
   });
 

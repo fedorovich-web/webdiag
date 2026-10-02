@@ -117,7 +117,15 @@ function ResultPanel({ locale, value, title }: { readonly locale: Locale; readon
 }
 
 function Errors({ errors, locale }: { readonly errors: readonly string[]; readonly locale: Locale }) {
-  return errors.length ? <ul className="form-error" role="alert">{errors.map((error) => <li key={error}>{errorLabel(error, locale)}</li>)}</ul> : null;
+  return errors.length ? (
+    <div className="form-error" role="alert">
+      <ul>
+        {errors.map((error) => (
+          <li key={error}>{errorLabel(error, locale)}</li>
+        ))}
+      </ul>
+    </div>
+  ) : null;
 }
 
 export function OrganizationSchemaGeneratorTool({ locale }: { readonly locale: Locale }) {

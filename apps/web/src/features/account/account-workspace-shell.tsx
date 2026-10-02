@@ -194,7 +194,7 @@ export function AccountWorkspaceShell({
   );
   const drawerTriggerRef = useRef<HTMLButtonElement>(null);
   const drawerCloseRef = useRef<HTMLButtonElement>(null);
-  const drawerPanelRef = useRef<HTMLElement>(null);
+  const drawerPanelRef = useRef<HTMLDivElement>(null);
   const loading = loadedToken !== reloadToken;
 
   const handleUnauthenticated = useCallback(() => {
@@ -517,7 +517,7 @@ export function AccountWorkspaceShell({
       {drawerOpen && (
         <div className="wd-workspace-drawer is-open">
           <div className="wd-workspace-drawer-backdrop" aria-hidden="true" onClick={() => closeDrawer()} />
-          <aside
+          <div
             ref={drawerPanelRef}
             id="account-workspace-drawer"
             className="wd-workspace-drawer-panel"
@@ -545,7 +545,7 @@ export function AccountWorkspaceShell({
             <button className="wd-button wd-button-secondary" type="button" onClick={logout} disabled={logoutPending} aria-busy={logoutPending}>
               {logoutPending ? (ru ? "Выходим…" : "Signing out…") : (ru ? "Выйти" : "Sign out")}
             </button>
-          </aside>
+          </div>
         </div>
       )}
       </main>

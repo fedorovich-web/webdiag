@@ -5,7 +5,11 @@ import {
   siteSecurityHeaders,
 } from "./src/lib/site-security";
 
-const globalSecurityHeaders = siteSecurityHeaders(process.env.PUBLIC_RELEASE === "true");
+const isProduction =
+  process.env.NODE_ENV === "production" ||
+  process.env.PUBLIC_RELEASE === "true" ||
+  process.env.WEBDIAG_ENVIRONMENT === "production";
+const globalSecurityHeaders = siteSecurityHeaders(isProduction);
 const sharedReportHeaders = overrideSecurityHeaders(
   globalSecurityHeaders,
   publicReportSecurityHeaders,
