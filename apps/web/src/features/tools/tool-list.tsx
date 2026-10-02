@@ -30,20 +30,13 @@ export function ToolList({ locale }: { locale: Locale }) {
 
   const allTools = [...publicCatalogTools, ...aiTools];
 
-  const categories = [
-    ...Object.keys(registryCategories)
-      .filter((id) => categoryCounts.has(id))
-      .map((id) => ({
-        id,
-        count: categoryCounts.get(id) ?? 0,
-        title: getCategoryTitle(id, locale),
-      })),
-    {
-      id: "ai-tools",
-      count: aiTools.length,
-      title: isRu ? "AI-инструменты" : "AI Tools",
-    },
-  ];
+  const categories = Object.keys(registryCategories)
+    .filter((id) => (categoryCounts.get(id) ?? 0) > 0)
+    .map((id) => ({
+      id,
+      count: categoryCounts.get(id) ?? 0,
+      title: id === "ai-tools" ? (isRu ? "AI-инструменты" : "AI Tools") : getCategoryTitle(id, locale),
+    }));
 
   return <ToolCatalog locale={locale} tools={allTools} categories={categories} />;
 }

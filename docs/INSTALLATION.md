@@ -251,11 +251,11 @@ http://localhost:15672
 
 ### Закрытая AI-бета
 
-Backend содержит строгие контракты 15 AI-инструментов и OpenRouter adapter, но
+Backend содержит строгие контракты 15 AI-инструментов и Vercel AI Gateway adapter, но
 все инструменты остаются `internal`, не имеют цены в кредитах и недоступны
 пользователю. Тринадцать text/vision-analysis contracts закреплены за
-`openai/gpt-5.6-luna`; генерация и редактирование изображений используют
-отдельные `openai/gpt-image-2` и OpenRouter Image API. Реальная provider
+`openai/gpt-6-luna`; генерация и редактирование изображений используют
+отдельные `openai/gpt-image-2` и Image API path. Реальная provider
 evaluation, проверка списанной стоимости и утверждение фиксированной цены не
 выполнялись. Пока в каталоге нет ни одного `ready` tool, worker-команду
 `run_pending_ai` планировать нельзя.

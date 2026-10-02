@@ -187,7 +187,7 @@ test("production core and opt-in AI overlay have separate fail-closed preflights
     aiCompose,
     /AI_GATEWAY_BASE_URL:\s*["']?\$\{AI_GATEWAY_BASE_URL:-https:\/\/ai-gateway\.vercel\.sh\/v1\}["']?/,
   );
-  assert.match(aiCompose, /AI_MODEL:\s*["']?\$\{AI_MODEL:-openai\/gpt-5\.6-sol\}["']?/);
+  assert.match(aiCompose, /AI_MODEL:\s*["']?\$\{AI_MODEL:-openai\/gpt-6-luna\}["']?/);
   assert.match(
     aiCompose,
     /AI_REASONING_EFFORT:\s*["']?\$\{AI_REASONING_EFFORT:-medium\}["']?/,

@@ -42,10 +42,12 @@ body::before { display: none; }
 .wd-home h3,
 .wd-home p { margin-top: 0; }
 
-.wd-home h1 {
+.wd-home h1,
+.wd-home h1 *,
+.wd-home h1 span {
   margin-bottom: 0;
   color: var(--wd-t);
-  font-size: clamp(48px, 4.4vw, 68px);
+  font-size: clamp(48px, 4.4vw, 68px) !important;
   font-weight: 770;
   line-height: .98;
   letter-spacing: -.052em;

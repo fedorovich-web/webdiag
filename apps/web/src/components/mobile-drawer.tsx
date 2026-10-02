@@ -31,10 +31,11 @@ export function MobileDrawer({ locale }: MobileDrawerProps) {
   const pathname = usePathname();
   const ru = locale === "ru";
 
-  // Close drawer on route change
-  useEffect(() => {
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
     setIsOpen(false);
-  }, [pathname]);
+  }
 
   // Handle escape key & body scroll lock
   useEffect(() => {

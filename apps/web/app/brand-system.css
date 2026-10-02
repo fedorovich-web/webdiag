@@ -378,38 +378,92 @@ body[data-theme="light"] .wd-home .wd-report-recommendation > span {
   }
 }
 
+:root {
+  /* Centralized Spacing and Padding Variables */
+  --wd-hero-pt: clamp(96px, 9vw, 136px);
+  --wd-hero-pb: clamp(56px, 6vw, 88px);
+  --wd-section-py: clamp(64px, 7vw, 96px);
+  --wd-section-py-sm: clamp(44px, 5vw, 68px);
+  --wd-section-gap: clamp(48px, 6vw, 80px);
+  --wd-container-gap: clamp(24px, 3vw, 40px);
+  --wd-card-p: clamp(24px, 2.5vw, 36px);
+  --wd-card-gap: clamp(20px, 2vw, 30px);
+
+  /* Centralized Typography Scale */
+  --wd-font-h1: clamp(40px, 4.8vw, 64px);
+  --wd-font-h2: clamp(28px, 3.2vw, 40px);
+  --wd-font-h3: clamp(20px, 2.2vw, 26px);
+  --wd-font-sub-h1: 18px;
+  --wd-font-sub-h2: 16px;
+  --wd-font-body: 15px;
+  --wd-font-min: 14px;
+  --wd-font-breadcrumbs: 12px;
+}
+
 /* Global Typography & Spacing Standards:
    - Minimum font size: 14px across all text, inputs, cards, and UI elements
    - Breadcrumbs are the only allowed exception at 12px
    - Subtitle under H1: strictly 18px
    - Subtitles under H2 / H3: strictly 16px
+   - Headings retain their prominent scale; inner spans inherit font size
 */
 body {
-  font-size: 15px;
+  font-size: var(--wd-font-body, 15px);
 }
 
-p, span, small, label, input, select, textarea, button, td, th, li, a {
-  font-size: max(14px, var(--font-size-body, 14px));
+p, small, label, input, select, textarea, button, td, th, li {
+  font-size: max(var(--wd-font-min, 14px), 14px);
 }
 
+/* Ensure inline elements inside headings inherit the heading's font size */
+h1, h1 *, h1 span, h1 strong, h1 b, h1 a {
+  font-size: inherit;
+}
+h2, h2 *, h2 span, h2 strong, h2 b, h2 a {
+  font-size: inherit;
+}
+h3, h3 *, h3 span, h3 strong, h3 b, h3 a {
+  font-size: inherit;
+}
+
+/* Prominent Heading Scale */
+h1 {
+  font-size: var(--wd-font-h1, clamp(40px, 4.8vw, 64px)) !important;
+  line-height: 1.05 !important;
+  letter-spacing: -0.04em !important;
+}
+
+h2 {
+  font-size: var(--wd-font-h2, clamp(28px, 3.2vw, 40px)) !important;
+  line-height: 1.15 !important;
+  letter-spacing: -0.03em !important;
+}
+
+h3 {
+  font-size: var(--wd-font-h3, clamp(20px, 2.2vw, 26px)) !important;
+  line-height: 1.25 !important;
+  letter-spacing: -0.02em !important;
+}
+
+/* Breadcrumbs: the ONLY element allowed at 12px */
 .breadcrumbs,
 .breadcrumbs a,
 .breadcrumbs span {
-  font-size: 12px !important;
+  font-size: var(--wd-font-breadcrumbs, 12px) !important;
 }
 
-/* Subtitles directly under H1 */
+/* Subtitles directly under H1: strictly 18px */
 h1 + p,
 .page-heading p,
 .wd-hero-lead,
 .wd-hero-subtitle,
 .wd-internal-hero p,
 .hero-subtitle {
-  font-size: 18px !important;
+  font-size: var(--wd-font-sub-h1, 18px) !important;
   line-height: 1.55 !important;
 }
 
-/* Subtitles directly under H2 or H3 */
+/* Subtitles directly under H2 or H3: strictly 16px */
 h2 + p,
 h3 + p,
 .section-subtitle,
@@ -417,7 +471,7 @@ h3 + p,
 .wd-process-heading p,
 .wd-contact-form-copy p,
 .wd-final-copy p {
-  font-size: 16px !important;
+  font-size: var(--wd-font-sub-h2, 16px) !important;
   line-height: 1.5 !important;
 }
 

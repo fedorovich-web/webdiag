@@ -290,24 +290,28 @@
 }
 .wd-about-cta-card {
   padding: 56px 48px;
-  background: linear-gradient(135deg, #0f172a, #1e293b);
-  color: #ffffff;
+  background:
+    radial-gradient(ellipse at 4% 105%, rgb(34 211 238 / .20), transparent 30%),
+    radial-gradient(ellipse at 95% 106%, rgb(52 211 153 / .18), transparent 30%),
+    linear-gradient(135deg, #f0f7ff 0%, #f6faff 50%, #effffb 100%);
+  color: #102047;
+  border: 1px solid #d4e5f7;
   border-radius: 28px;
   display: grid;
   grid-template-columns: 1.2fr 0.8fr;
   gap: 48px;
   align-items: center;
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
+  box-shadow: 0 16px 40px rgba(37, 99, 255, 0.07);
 }
 .wd-about-cta-copy h2 {
   font-size: clamp(28px, 3vw, 38px);
   font-weight: 800;
   line-height: 1.15;
-  color: #ffffff;
+  color: #102047;
   margin-bottom: 14px;
 }
 .wd-about-cta-copy .wd-about-sub-h2 {
-  color: #94a3b8;
+  color: #4b5f80;
   margin-bottom: 32px;
   max-width: 520px;
 }
@@ -320,83 +324,86 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 14px 24px;
-  background: linear-gradient(135deg, #2563ff, #4f46e5);
+  padding: 14px 26px;
+  background: var(--wd-button-bg, linear-gradient(135deg, #00d287 0%, #00b4d8 50%, #2563eb 100%));
   color: #ffffff;
   font-size: 15px;
   font-weight: 700;
-  border-radius: 14px;
+  border-radius: var(--radius-pill, 9999px);
   text-decoration: none;
-  box-shadow: 0 10px 24px rgba(37, 99, 255, 0.35);
+  box-shadow: 0 10px 24px rgba(37, 99, 255, 0.28);
   transition: transform 160ms ease, box-shadow 160ms ease;
 }
 .wd-about-cta-buttons .wd-button-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 14px 28px rgba(37, 99, 255, 0.45);
+  box-shadow: 0 14px 28px rgba(37, 99, 255, 0.38);
 }
 .wd-about-cta-buttons .wd-button-secondary {
   display: inline-flex;
   align-items: center;
-  padding: 14px 22px;
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  padding: 14px 24px;
+  background: #ffffff;
+  color: #102047;
   font-size: 15px;
   font-weight: 700;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius-pill, 9999px);
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   text-decoration: none;
-  transition: background 160ms ease;
+  transition: background 160ms ease, border-color 160ms ease;
 }
 .wd-about-cta-buttons .wd-button-secondary:hover {
-  background: rgba(255, 255, 255, 0.18);
+  background: #f8fafc;
+  border-color: #94a3b8;
 }
 
 .wd-about-support-box {
   padding: 32px 28px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 20px;
+  box-shadow: 0 4px 16px rgba(16, 32, 71, 0.05);
 }
 .wd-about-support-box svg {
-  color: #38bdf8;
+  color: #1687f8;
   margin-bottom: 12px;
 }
 .wd-about-support-box h3 {
   font-size: 18px;
   font-weight: 750;
-  color: #ffffff;
+  color: #102047;
   margin-bottom: 8px;
 }
 .wd-about-support-box p {
   font-size: 14px;
   line-height: 1.5;
-  color: #94a3b8;
+  color: #4b5f80;
   margin-bottom: 16px;
 }
 .wd-about-support-email-pill {
   padding: 10px 16px;
-  background: rgba(255, 255, 255, 0.1);
+  background: #f1f6fc;
+  border: 1px solid #dbeafe;
   border-radius: 10px;
   display: inline-block;
   margin-bottom: 16px;
 }
 .wd-about-support-email-pill strong {
   font-size: 15px;
-  color: #38bdf8;
+  color: #1687f8;
   letter-spacing: 0.02em;
 }
 .wd-about-contact-link {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: #e2e8f0;
+  color: #1687f8;
   font-size: 14px;
   font-weight: 700;
   text-decoration: none;
-  transition: color 150ms ease;
 }
 .wd-about-contact-link:hover {
-  color: #38bdf8;
+  text-decoration: underline;
 }
 
 /* Responsive */
