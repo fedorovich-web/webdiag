@@ -30,9 +30,9 @@
   --radius-lg: 20px;
   --radius-xl: 28px;
   --shell: 1200px;
-  --font-size-h1: 64px;
-  --font-size-h2: 52px;
-  --font-size-h3: 28px;
+  --font-size-h1: clamp(28px, 3.2vw, 38px);
+  --font-size-h2: clamp(22px, 2.4vw, 28px);
+  --font-size-h3: clamp(17px, 1.8vw, 20px);
   --font-size-body: 15px;
   --font-size-lead: 18px;
   --font-size-small: 14px;
@@ -50,9 +50,9 @@
   --wd-card-gap: clamp(20px, 2vw, 30px);
 
   /* WebDiag Unified Typography Variables */
-  --wd-font-h1: clamp(40px, 4.8vw, 64px);
-  --wd-font-h2: clamp(28px, 3.2vw, 40px);
-  --wd-font-h3: clamp(20px, 2.2vw, 26px);
+  --wd-font-h1: clamp(28px, 3.2vw, 38px);
+  --wd-font-h2: clamp(22px, 2.4vw, 28px);
+  --wd-font-h3: clamp(17px, 1.8vw, 20px);
   --wd-font-sub-h1: 18px;
   --wd-font-sub-h2: 16px;
   --wd-font-body: 15px;
@@ -167,7 +167,7 @@ p { text-wrap: pretty; }
 /* Catalog */
 .page-main { padding: 72px 0 100px; }
 .page-heading { max-width: 980px; margin-bottom: 54px; }
-.page-heading h1 { max-width: 900px; margin: 18px 0 17px; font-size: clamp(46px, 5.2vw, 70px); line-height: 1.03; letter-spacing: -0.055em; }
+.page-heading h1 { max-width: 900px; margin: 14px 0 12px; font-size: clamp(28px, 3.2vw, 38px); line-height: 1.15; letter-spacing: -0.03em; }
 .page-heading p { max-width: 760px; color: var(--muted); font-size: 18px; }
 .catalog-controls { position: sticky; top: 88px; z-index: 12; display: grid; grid-template-columns: minmax(280px, 0.82fr) minmax(0, 1.18fr); gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 20px; background: color-mix(in srgb, var(--bg) 88%, transparent); box-shadow: 0 18px 46px rgb(12 18 28 / 0.07); backdrop-filter: blur(18px); }
 .catalog-search { position: relative; display: flex; align-items: center; }
@@ -455,7 +455,7 @@ textarea { resize: vertical; }
   --wd-catalog-card-shadow-hover:var(--wd-card-hover-shadow,0 24px 70px rgb(90 73 255/.12));
   --wd-catalog-text-size:var(--wd-text,15px);
   --wd-catalog-text-small:var(--wd-text-sm,14px);
-  --wd-catalog-title-size:var(--wd-h1,clamp(48px,4.5vw,64px));
+  --wd-catalog-title-size:var(--wd-h1,clamp(28px,3.2vw,38px));
   --wd-catalog-section-title:var(--wd-h3,28px);
   --wd-catalog-card-title:var(--wd-card-title-sm,22px);
   --wd-catalog-line:var(--wd-l,#dce5f2);
@@ -513,8 +513,8 @@ main.catalog-page.page-main{
   color:var(--wd-catalog-text);
   font-size:var(--wd-catalog-title-size) !important;
   font-weight:700;
-  line-height:1.02 !important;
-  letter-spacing:-.055em !important;
+  line-height:1.15 !important;
+  letter-spacing:-.03em !important;
   text-wrap:balance;
 }
 .catalog-heading p,
@@ -1484,9 +1484,9 @@ body:has(.tool-heading) main.shell::before{
 
 /* WebDiag v29: scoped internal-page design system. Homepage selectors are not targeted. */
 .wd-internal-page{
-  --wd-internal-h1:var(--wd-h1,clamp(48px,4.5vw,64px));
-  --wd-internal-h2:var(--wd-h2,clamp(36px,3.25vw,48px));
-  --wd-internal-h3:var(--wd-h3,28px);
+  --wd-internal-h1:var(--wd-h1,clamp(28px,3.2vw,38px));
+  --wd-internal-h2:var(--wd-h2,clamp(22px,2.4vw,28px));
+  --wd-internal-h3:var(--wd-h3,20px);
   --wd-internal-text:var(--wd-text,15px);
   --wd-internal-text-sm:var(--wd-text-sm,14px);
   --wd-internal-radius:var(--wd-card-radius,var(--wd-rl,28px));
@@ -1538,8 +1538,8 @@ body:has(.tool-heading) main.shell::before{
   color:var(--wd-internal-text-color);
   font-size:var(--wd-internal-h1) !important;
   font-weight:700 !important;
-  line-height:1.02 !important;
-  letter-spacing:-.055em !important;
+  line-height:1.15 !important;
+  letter-spacing:-.03em !important;
   text-wrap:balance;
 }
 
@@ -1684,10 +1684,10 @@ body:has(.tool-heading) main.shell::before{
 .tool-heading h1{
   max-width:980px;
   color:var(--wd-t,var(--text));
-  font-size:var(--wd-h1,clamp(48px,4.5vw,64px)) !important;
+  font-size:var(--wd-h1,clamp(28px,3.2vw,38px)) !important;
   font-weight:700 !important;
-  line-height:1.02 !important;
-  letter-spacing:-.055em !important;
+  line-height:1.15 !important;
+  letter-spacing:-.03em !important;
   text-wrap:balance;
 }
 

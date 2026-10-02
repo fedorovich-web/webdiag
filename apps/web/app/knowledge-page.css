@@ -43,10 +43,10 @@
 
 .wd-knowledge-h1 {
   margin: 18px auto 16px;
-  font-size: clamp(38px, 4.4vw, 56px);
+  font-size: clamp(28px, 3.2vw, 38px);
   font-weight: 800;
-  line-height: 1.08;
-  letter-spacing: -0.035em;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
   color: #091121;
 }
 

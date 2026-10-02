@@ -390,9 +390,9 @@ body[data-theme="light"] .wd-home .wd-report-recommendation > span {
   --wd-card-gap: clamp(20px, 2vw, 30px);
 
   /* Centralized Typography Scale */
-  --wd-font-h1: clamp(40px, 4.8vw, 64px);
-  --wd-font-h2: clamp(28px, 3.2vw, 40px);
-  --wd-font-h3: clamp(20px, 2.2vw, 26px);
+  --wd-font-h1: clamp(28px, 3.2vw, 38px);
+  --wd-font-h2: clamp(22px, 2.4vw, 28px);
+  --wd-font-h3: clamp(17px, 1.8vw, 20px);
   --wd-font-sub-h1: 18px;
   --wd-font-sub-h2: 16px;
   --wd-font-body: 15px;
