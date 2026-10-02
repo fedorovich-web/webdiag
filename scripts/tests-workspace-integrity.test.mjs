@@ -62,7 +62,7 @@ test("Python packages expose the same project version", async () => {
   const workerProject = await readFile(new URL("apps/worker/pyproject.toml", root), "utf8");
   const apiInit = await readFile(new URL("apps/api/src/webdiag_api/__init__.py", root), "utf8");
   const workerInit = await readFile(new URL("apps/worker/src/webdiag_worker/__init__.py", root), "utf8");
-  const expected = rootPackage.version.replaceAll(".", "\\.");
+  const expected = rootPackage.version.replace(/-beta\.(\d+)$/u, "b$1").replaceAll(".", "\\.");
   assert.match(apiProject, new RegExp(`^version = "${expected}"$`, "m"));
   assert.match(workerProject, new RegExp(`^version = "${expected}"$`, "m"));
   assert.match(apiInit, new RegExp(`^__version__ = "${expected}"$`, "m"));
@@ -178,8 +178,8 @@ test("production core and opt-in AI overlay have separate fail-closed preflights
     assert.match(aiEnvironmentExample, new RegExp(`^${name}=$`, "m"), name);
     assert.doesNotMatch(environmentExample, new RegExp(`^${name}=`, "m"), name);
   }
-  assert.match(dokployCompose, /api:[\s\S]*?ports:\s*!reset\s*\[\]/);
-  assert.match(dokployCompose, /web:[\s\S]*?ports:\s*!reset\s*\[\]/);
+  assert.doesNotMatch(dokployCompose, /\bports:/);
+  assert.match(dokployCompose, /expose:\s*\n\s+- ["']3000["']/);
   assert.doesNotMatch(dokployCompose, /traefik\./i);
   assert.match(aiCompose, /WEBDIAG_AI_RUNTIME_ENABLED:\s*["']true["']/);
   assert.match(aiCompose, /AI_PROVIDER:\s*["']?\$\{AI_PROVIDER:-vercel\}["']?/);

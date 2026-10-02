@@ -2,12 +2,14 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
-const files = [
+const coreFiles = [
   "docker-compose.yml",
   "docker-compose.account.override.yml",
   "docker-compose.production.yml",
 ];
-const extraArguments = process.argv.slice(2);
+const dokploy = process.argv[2] === "--dokploy";
+const files = dokploy ? ["docker-compose.dokploy.yml"] : coreFiles;
+const extraArguments = process.argv.slice(dokploy ? 3 : 2);
 
 function fail(label) {
   console.error(`production Compose preflight failed: ${label}`);
@@ -17,7 +19,7 @@ function fail(label) {
 if (
   extraArguments.length !== 0 &&
   !(extraArguments.length === 2 && extraArguments[0] === "--env-file" && extraArguments[1].trim())
-) fail("usage is [--env-file PATH]");
+) fail("usage is [--dokploy] [--env-file PATH]");
 
 const composeArguments = ["compose"];
 if (extraArguments.length === 2) composeArguments.push(...extraArguments);
@@ -64,8 +66,16 @@ expect(
 
 for (const name of expectedServices) {
   expect(service(name).restart === "unless-stopped", `service ${name} restart policy differs`);
-  for (const port of service(name).ports ?? []) {
-    expect(port.host_ip === "127.0.0.1", `service ${name} exposes a non-loopback port`);
+  if (dokploy) {
+    expect((service(name).ports ?? []).length === 0, `service ${name} publishes a host port`);
+    expect(
+      JSON.stringify(service(name).expose ?? []) === JSON.stringify(name === "web" ? ["3000"] : []),
+      `service ${name} internal ports differ`,
+    );
+  } else {
+    for (const port of service(name).ports ?? []) {
+      expect(port.host_ip === "127.0.0.1", `service ${name} exposes a non-loopback port`);
+    }
   }
 }
 
@@ -97,6 +107,7 @@ expect(
   "crawler worker timeout differs",
 );
 expect(web.PUBLIC_RELEASE === "true", "web runtime public release flag is disabled");
+expect(web.HOSTNAME === "0.0.0.0", "web is not bound to the container network");
 expect(service("web").build?.args?.PUBLIC_RELEASE === "true", "web build public release flag is disabled");
 expect(web.WEBDIAG_API_INTERNAL_URL === "http://api:8000", "web API origin differs");
 expect(

@@ -22,7 +22,7 @@ def test_health() -> None:
     assert response.json() == {
         "status": "ok",
         "service": "webdiag-api",
-        "version": "0.5.11",
+        "version": "1.0.0b0",
     }
 
 

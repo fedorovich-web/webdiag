@@ -317,11 +317,12 @@ def test_safe_fetcher_rejects_decompression_bomb_at_decoded_limit() -> None:
 
 def test_safe_fetcher_rejects_unsupported_encoding_before_body_read() -> None:
     stream = CountingStream([b"not-read"])
+    untrusted_encoding = "br; source=private-canary"
 
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(
             200,
-            headers={"content-encoding": "br"},
+            headers={"content-encoding": untrusted_encoding},
             stream=stream,
             request=request,
         )
@@ -332,9 +333,10 @@ def test_safe_fetcher_rejects_unsupported_encoding_before_body_read() -> None:
         transport=httpx.MockTransport(handler),
     )
 
-    with pytest.raises(SafeFetchError, match="Unsupported HTTP content encoding"):
+    with pytest.raises(SafeFetchError, match="Unsupported HTTP content encoding") as error:
         fetcher.fetch("https://example.com")
 
+    assert "private-canary" not in str(error.value)
     assert stream.yield_count == 0
 
 

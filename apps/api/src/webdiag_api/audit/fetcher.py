@@ -306,9 +306,7 @@ class SafeHttpFetcher:
 
             content_encoding = normalized_headers.get("content-encoding", "").strip().lower()
             if content_encoding not in SUPPORTED_CONTENT_ENCODINGS:
-                raise SafeFetchError(
-                    f"Unsupported HTTP content encoding: {content_encoding or 'unknown'}."
-                )
+                raise SafeFetchError("Unsupported HTTP content encoding.")
 
             raw_body = _read_raw_body(response, max_body_bytes=self.config.max_body_bytes)
             body = _decode_content_body(
@@ -452,7 +450,7 @@ def _decode_content_body(
                 raise SafeFetchError(
                     "Compressed HTTP response body could not be decoded."
                 ) from exc
-    raise SafeFetchError(f"Unsupported HTTP content encoding: {content_encoding}.")
+    raise SafeFetchError("Unsupported HTTP content encoding.")
 
 
 def _decompress_limited(raw_body: bytes, *, wbits: int, max_body_bytes: int) -> bytes:

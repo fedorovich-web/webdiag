@@ -65,7 +65,7 @@ def test_ready_endpoint_is_fail_closed_without_exposing_paths(
     assert unavailable.json() == {
         "status": "unavailable",
         "service": "webdiag-api",
-        "version": "0.5.11",
+        "version": "1.0.0b0",
     }
     assert "sqlite" not in unavailable.text.lower()
     assert "/data" not in unavailable.text
@@ -78,5 +78,5 @@ def test_ready_endpoint_is_fail_closed_without_exposing_paths(
     assert ready.json() == {
         "status": "ok",
         "service": "webdiag-api",
-        "version": "0.5.11",
+        "version": "1.0.0b0",
     }

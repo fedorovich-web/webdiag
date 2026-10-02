@@ -74,6 +74,7 @@ services:
         PUBLIC_RELEASE: "true"
     environment: !override
       NODE_ENV: production
+      HOSTNAME: 0.0.0.0
       PUBLIC_RELEASE: "true"
       WEBDIAG_API_INTERNAL_URL: http://api:8000
     healthcheck:

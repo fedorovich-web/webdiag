@@ -580,7 +580,60 @@ Invoke-WebRequest http://127.0.0.1:3000/robots.txt
 robots/sitemap, registration/login/logout, ownership, один безопасный audit,
 monitoring lease, report/share и backup/restore. Static
 preflight не подтверждает доступность домена, корректность reverse proxy,
-валидность реальных credentials, provider billing или disaster recovery.
+#### Dokploy: production core на одном сервере
+
+Для Dokploy используется отдельный самодостаточный
+`docker-compose.dokploy.yml`. Он содержит те же три production core сервиса,
+что и обычная Compose-модель, но не публикует порты на хосте: входящий трафик
+должен идти через Dokploy Domains только к `web` на внутренний порт `3000`.
+API и scheduler доступны лишь внутри Compose-сети. AI overlay этим файлом не
+включается. Файл предназначен для Docker Compose, не для Docker Stack.
+
+Перед переносом на сервер проверьте отсутствие конфигурационного дрейфа:
+
+```bash
+npm run test:dokploy-compose
+```
+
+Тест сравнивает отрендеренную Dokploy-модель с текущей production core моделью
+без подстановки секретов. Это структурная проверка, не production preflight.
+Для preflight нужен настоящий, предоставленный оператором environment:
+
+```bash
+npm run verify:dokploy-compose -- --env-file /secure/path/webdiag.production.env
+```
+
+Файл должен содержать разные `WEBDIAG_MONITORING_INTERNAL_TOKEN` и
+`WEBDIAG_CRAWLER_INTERNAL_TOKEN` длиной 32–256 печатных ASCII-символов.
+Проверка не печатает их значения. Не используйте тестовые значения как
+подтверждение готовности production.
+
+В Dokploy создайте один сервис типа **Docker Compose** с исходниками из
+утверждённой Git-ветки и Compose Path `./docker-compose.dokploy.yml`.
+Включите **Isolated Deployments**: Dokploy подключит все три сервиса и
+Traefik к выделенной сети. Через секретный провайдер или Environment сервиса
+передайте только необходимые переменные; настройка Environment создаёт `.env`
+для Compose interpolation, но не помещает переменные в контейнеры сама по
+себе. В этой модели нужные переменные явно перечислены в `environment` только
+у API и scheduler. Перед первым deployment посмотрите **Preview Compose**:
+должно быть ровно три сервиса, один именованный volume `account_data`, без
+host-published ports и с Traefik-маршрутом только к `web:3000`.
+
+В **Domains** добавьте домен для сервиса `web`, порт `3000`, HTTPS с
+сертификатом. DNS A/AAAA должны указывать на сервер Dokploy. Для Compose
+проверьте отдельно перенаправление HTTP→HTTPS и HSTS: наличие сертификата
+не доказывает, что они включены. API не должен получать отдельный публичный
+домен. Не меняйте Compose project/service identity после появления данных:
+имя Docker volume зависит от project name.
+
+Перед публичным запуском настройте внешнее резервное копирование
+`account_data`, остановите запись в обе SQLite-базы для согласованного
+снимка и выполните тест восстановления по процедуре ниже. Автоматический
+volume backup без остановки записей не является доказательством
+согласованности двух баз. После запуска проверьте container health,
+публичные TLS/redirect, регистрацию/вход/выход, один безопасный audit,
+ownership, мониторинг, report/share и реальное восстановление из backup.
+До этих проверок статус — только *configuration-ready*, не *deployed*.
 
 #### Опциональный AI overlay
 
