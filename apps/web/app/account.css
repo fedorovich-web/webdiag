@@ -6526,6 +6526,26 @@ body:has(.wd-account-workspace-page) {
   justify-content: flex-end;
   gap: 10px;
 }
+.wd-account-topbar-site-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #dbe6ef;
+  background: #f8fafc;
+  color: #3b506c;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.wd-account-topbar-site-link:hover {
+  background: #0284c7;
+  color: #fff;
+  border-color: #0284c7;
+}
 .wd-account-topbar-icon {
   width: 38px;
   height: 38px;

@@ -414,6 +414,14 @@ export function AccountWorkspaceShell({
             <kbd>Ctrl + K</kbd>
           </Link>
           <div className="wd-account-topbar-actions">
+            <a
+              className="wd-account-topbar-site-link"
+              href={ru ? "https://webdiag.ru" : "https://webdiag.ru/en"}
+              title={ru ? "Перейти на основной сайт WebDiag" : "Go to main WebDiag website"}
+            >
+              {ru ? "На сайт" : "To website"}
+              <span aria-hidden="true" style={{ fontSize: "12px", marginLeft: "2px" }}>↗</span>
+            </a>
             <Link className="wd-account-topbar-icon" href={reportsPath(locale)} aria-label={ru ? "Отчёты" : "Reports"}><FileBarChart2 aria-hidden="true" /></Link>
             <details className="wd-account-topbar-user">
               <summary aria-label={ru ? "Меню пользователя" : "User menu"}>
@@ -430,6 +438,9 @@ export function AccountWorkspaceShell({
                   <small>{session.user.email}</small>
                 </div>
                 <Link href={accountSettingsPath(locale)}>{ru ? "Настройки аккаунта" : "Account settings"}</Link>
+                <a href={ru ? "https://webdiag.ru" : "https://webdiag.ru/en"}>
+                  {ru ? "Основной сайт ↗" : "Main website ↗"}
+                </a>
                 <button type="button" onClick={logout} disabled={logoutPending} aria-busy={logoutPending}>
                   {logoutPending ? (ru ? "Выходим…" : "Signing out…") : (ru ? "Выйти" : "Sign out")}
                 </button>
