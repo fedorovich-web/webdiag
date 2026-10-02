@@ -1,6 +1,7 @@
 import asyncio
 import sqlite3
 from collections.abc import Callable
+from contextlib import contextmanager
 
 import httpx
 import pytest
@@ -114,15 +115,29 @@ class StubAdmission:
         error: AuditAdmissionError | None = None,
         *,
         release_error: Exception | None = None,
+        hold_error: AuditAdmissionError | None = None,
     ) -> None:
         self.error = error
         self.release_error = release_error
+        self.hold_error = hold_error
         self.released: list[str] = []
+        self.held: list[str] = []
+        self.renewed: list[str] = []
 
     def acquire(self) -> str:
         if self.error:
             raise self.error
         return "lease-fixture"
+
+    def renew(self, lease_id: str) -> None:
+        self.renewed.append(lease_id)
+
+    @contextmanager
+    def hold(self, lease_id: str):
+        self.held.append(lease_id)
+        if self.hold_error:
+            raise self.hold_error
+        yield
 
     def release(self, lease_id: str) -> None:
         self.released.append(lease_id)
@@ -622,3 +637,51 @@ def test_audit_query_is_fetched_but_not_persisted_or_returned(tmp_path) -> None:
         ).fetchall()
     assert payloads
     assert all("token=secret" not in payload for (payload,) in payloads)
+
+
+def test_public_audit_holds_admission_lease_during_execution() -> None:
+    admission = StubAdmission()
+    with_service(build_service(lambda request: healthy_resource_response(request)))
+    app.dependency_overrides[get_audit_admission] = lambda: admission
+
+    try:
+        response = asyncio.run(
+            request("POST", "/v1/audits", json={"url": "https://example.com/"})
+        )
+    finally:
+        clear_overrides()
+
+    assert response.status_code == 201
+    assert admission.held == ["lease-fixture"]
+    assert admission.released == ["lease-fixture"]
+
+
+def test_public_audit_handles_admission_hold_error() -> None:
+    admission = StubAdmission(
+        hold_error=AuditAdmissionError(
+            503,
+            "audit_capacity_unavailable",
+            "Public audit capacity is temporarily unavailable.",
+            3,
+        )
+    )
+    with_service(build_service(lambda request: healthy_resource_response(request)))
+    app.dependency_overrides[get_audit_admission] = lambda: admission
+
+    try:
+        response = asyncio.run(
+            request("POST", "/v1/audits", json={"url": "https://example.com/"})
+        )
+    finally:
+        clear_overrides()
+
+    assert response.status_code == 503
+    assert response.headers["retry-after"] == "3"
+    assert response.json() == {
+        "detail": {
+            "code": "audit_capacity_unavailable",
+            "message": "Public audit capacity is temporarily unavailable.",
+        }
+    }
+    assert admission.held == ["lease-fixture"]
+    assert admission.released == ["lease-fixture"]

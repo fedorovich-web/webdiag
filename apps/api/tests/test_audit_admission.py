@@ -93,3 +93,92 @@ def test_storage_failure_is_normalized_without_internal_details(tmp_path, monkey
     assert caught.value.message == "Public audit capacity is temporarily unavailable."
     assert caught.value.retry_after == 5
     assert "private database detail" not in str(caught.value)
+
+
+def test_audit_lease_can_be_renewed_during_long_execution(tmp_path) -> None:
+    database = str(tmp_path / "audits.sqlite3")
+    first = controller(database, now=1_000)
+    lease = first.acquire()
+
+    # Advance time past half of lease; renew lease to extend expiration
+    controller(database, now=1_030).renew(lease)
+
+    # At t=1_050, the original 45s lease would have expired at 1_045,
+    # but the renewed lease remains valid until 1_075
+    second = controller(database, now=1_050)
+    with pytest.raises(AuditAdmissionError) as caught:
+        second.acquire()
+    assert caught.value.status_code == 503
+    assert caught.value.code == "audit_capacity_unavailable"
+    assert caught.value.retry_after == 25  # 1_075 - 1_050
+
+    # Once the first audit completes and releases its lease, capacity is restored
+    controller(database, now=1_060).release(lease)
+    replacement = second.acquire()
+    second.release(replacement)
+
+
+def test_hold_heartbeat_renews_active_lease_periodically(tmp_path) -> None:
+    import time
+
+    database = str(tmp_path / "audits.sqlite3")
+    clock_time = 1_000
+
+    def tick_clock() -> int:
+        nonlocal clock_time
+        clock_time += 10
+        return clock_time
+
+    adm = AuditAdmissionController(
+        database,
+        request_limit=10,
+        window_seconds=60,
+        concurrency_limit=1,
+        lease_seconds=10,
+        clock=tick_clock,
+    )
+    lease = adm.acquire()
+
+    with adm._connect() as conn:
+        row = conn.execute(
+            "SELECT expires_at FROM audit_public_leases WHERE lease_id = ?", (lease,)
+        ).fetchone()
+        initial_expires_at = int(row["expires_at"])
+
+    with adm.hold(lease, interval_seconds=0.02):
+        time.sleep(0.06)
+
+    with adm._connect() as conn:
+        row = conn.execute(
+            "SELECT expires_at FROM audit_public_leases WHERE lease_id = ?", (lease,)
+        ).fetchone()
+        updated_expires_at = int(row["expires_at"])
+
+    assert updated_expires_at > initial_expires_at
+    adm.release(lease)
+
+
+def test_renew_lost_or_expired_lease_raises_admission_error(tmp_path) -> None:
+    database = str(tmp_path / "audits.sqlite3")
+    adm = controller(database, now=1_000)
+
+    with pytest.raises(AuditAdmissionError) as caught:
+        adm.renew("nonexistent-lease-id")
+    assert caught.value.status_code == 503
+    assert caught.value.code == "audit_capacity_unavailable"
+
+
+def test_renew_storage_failure_is_normalized(tmp_path, monkeypatch) -> None:
+    adm = controller(str(tmp_path / "audits.sqlite3"), now=5_000)
+
+    def unavailable_connection():
+        raise sqlite3.OperationalError("private database detail")
+
+    monkeypatch.setattr(adm, "_connect", unavailable_connection)
+
+    with pytest.raises(AuditAdmissionError) as caught:
+        adm.renew("any-lease")
+
+    assert caught.value.status_code == 503
+    assert caught.value.code == "audit_capacity_unavailable"
+    assert "private database detail" not in str(caught.value)

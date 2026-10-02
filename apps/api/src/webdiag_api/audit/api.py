@@ -90,7 +90,14 @@ def start_single_url_audit(
             headers={"Cache-Control": "no-store", "Retry-After": str(exc.retry_after)},
         ) from exc
     try:
-        return _to_response(service.start_single_url_audit(payload.url))
+        with admission.hold(lease_id):
+            return _to_response(service.start_single_url_audit(payload.url))
+    except AuditAdmissionError as exc:
+        raise HTTPException(
+            status_code=exc.status_code,
+            detail={"code": exc.code, "message": exc.message},
+            headers={"Cache-Control": "no-store", "Retry-After": str(exc.retry_after)},
+        ) from exc
     except AuditRequestError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

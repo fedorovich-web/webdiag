@@ -4,8 +4,10 @@ import sqlite3
 import threading
 import time
 import uuid
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from pathlib import Path
+from types import TracebackType
 
 
 class AuditAdmissionError(RuntimeError):
@@ -21,6 +23,47 @@ class AuditAdmissionError(RuntimeError):
         self.code = code
         self.message = message
         self.retry_after = max(1, retry_after)
+
+
+class _AuditLeaseHeartbeat:
+    def __init__(
+        self,
+        renew_fn: Callable[[], None],
+        *,
+        interval_seconds: float,
+    ) -> None:
+        self._renew_fn = renew_fn
+        self._interval_seconds = interval_seconds
+        self._stop = threading.Event()
+        self._error: BaseException | None = None
+        self._thread = threading.Thread(
+            target=self._run,
+            name="webdiag-audit-lease-heartbeat",
+            daemon=True,
+        )
+
+    def __enter__(self) -> None:
+        self._thread.start()
+
+    def __exit__(
+        self,
+        error_type: type[BaseException] | None,
+        _error: BaseException | None,
+        _traceback: TracebackType | None,
+    ) -> None:
+        self._stop.set()
+        self._thread.join()
+        if error_type is None and self._error is not None:
+            raise self._error
+
+    def _run(self) -> None:
+        while not self._stop.wait(self._interval_seconds):
+            try:
+                self._renew_fn()
+            except BaseException as error:
+                self._error = error
+                self._stop.set()
+                return
 
 
 class AuditAdmissionController:
@@ -150,6 +193,60 @@ class AuditAdmissionController:
                 connection.execute("ROLLBACK")
                 raise
         return lease_id
+
+    def renew(self, lease_id: str) -> None:
+        try:
+            self._renew(lease_id)
+        except AuditAdmissionError:
+            raise
+        except sqlite3.Error as error:
+            raise AuditAdmissionError(
+                503,
+                "audit_capacity_unavailable",
+                "Public audit capacity is temporarily unavailable.",
+                5,
+            ) from error
+
+    def _renew(self, lease_id: str) -> None:
+        self.ensure_schema()
+        now = int(self._clock())
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            try:
+                cursor = connection.execute(
+                    "UPDATE audit_public_leases SET expires_at = ? WHERE lease_id = ?",
+                    (now + self._lease_seconds, lease_id),
+                )
+                if cursor.rowcount == 0:
+                    raise AuditAdmissionError(
+                        503,
+                        "audit_capacity_unavailable",
+                        "Public audit capacity is temporarily unavailable.",
+                        1,
+                    )
+                connection.execute("COMMIT")
+            except Exception:
+                connection.execute("ROLLBACK")
+                raise
+
+    @contextmanager
+    def hold(
+        self,
+        lease_id: str,
+        *,
+        interval_seconds: float | None = None,
+    ) -> Iterator[None]:
+        renew_interval = (
+            interval_seconds
+            if interval_seconds is not None
+            else max(1.0, self._lease_seconds / 3.0)
+        )
+        heartbeat = _AuditLeaseHeartbeat(
+            lambda: self.renew(lease_id),
+            interval_seconds=renew_interval,
+        )
+        with heartbeat:
+            yield
 
     def release(self, lease_id: str) -> None:
         self.ensure_schema()
