@@ -31,10 +31,10 @@
 .wd-tools-hero-copy h1 {
   margin: 18px 0 16px;
   color: var(--wd-t);
-  font-size: clamp(48px, 4.2vw, 64px);
+  font-size: clamp(28px, 3.2vw, 38px);
   font-weight: 800;
-  line-height: 1.04;
-  letter-spacing: -.04em;
+  line-height: 1.15;
+  letter-spacing: -.03em;
 }
 
 /* Subtitle under H1: strictly 18px */

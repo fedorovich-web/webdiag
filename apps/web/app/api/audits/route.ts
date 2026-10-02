@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import {
   isAuditErrorPayload,
   isBackendAuditSnapshotResponse,
@@ -9,27 +9,21 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
-const DOKPLOY_API_CONTAINER_URL = "http://webdiag-webdiagcore-mlnqpr-api-1:8000";
+import {
+  DOKPLOY_API_CONTAINER_URL,
+  getBackendApiBaseUrl,
+  toJsonResponse,
+} from "../../../src/lib/backend-api";
+
 const REQUEST_TIMEOUT_MS = 45_000;
 
 function getAuditApiBaseUrls(): string[] {
-  const primary = (process.env.WEBDIAG_API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_WEBDIAG_API_BASE_URL ?? DEFAULT_API_BASE_URL).replace(/\/+$/, "");
+  const primary = getBackendApiBaseUrl();
   const urls = [primary];
-  if (primary.includes("api:8000")) {
+  if (primary !== DOKPLOY_API_CONTAINER_URL && primary.includes("api:8000")) {
     urls.push(DOKPLOY_API_CONTAINER_URL);
   }
   return urls;
-}
-
-function toJsonResponse(payload: unknown, status: number, headers?: HeadersInit) {
-  return NextResponse.json(payload, {
-    status,
-    headers: {
-      "cache-control": "no-store",
-      ...headers,
-    },
-  });
 }
 
 function errorPayload(code: string, message: string) {

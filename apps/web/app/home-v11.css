@@ -47,19 +47,19 @@ body::before { display: none; }
 .wd-home h1 span {
   margin-bottom: 0;
   color: var(--wd-t);
-  font-size: clamp(48px, 4.4vw, 68px) !important;
+  font-size: clamp(32px, 3.6vw, 46px) !important;
   font-weight: 770;
-  line-height: .98;
-  letter-spacing: -.052em;
+  line-height: 1.12;
+  letter-spacing: -.03em;
 }
 
 .wd-home h2 {
   margin-bottom: 0;
   color: var(--wd-t);
-  font-size: clamp(24px, 2.2vw, 32px);
+  font-size: clamp(22px, 2.2vw, 28px);
   font-weight: 770;
-  line-height: 1.15;
-  letter-spacing: -.03em;
+  line-height: 1.2;
+  letter-spacing: -.025em;
 }
 
 .wd-home h3,
@@ -475,7 +475,7 @@ body::before { display: none; }
 .wd-product-section { padding-top: var(--wd-section-y); padding-bottom: var(--wd-section-y); }
 .wd-product-split { display: grid; grid-template-columns: 1.42fr .78fr; gap: 36px; align-items: start; }
 .wd-product-column .wd-section-intro { margin-bottom: 18px; }
-.wd-product-column .wd-section-intro h2 { font-size: 30px; }
+.wd-product-column .wd-section-intro h2 { font-size: 22px; }
 .wd-product-column .wd-section-intro p { margin-top: 6px; font-size: 16px; }
 .wd-report-example-card,
 .wd-monitoring-dashboard { border: 1px solid #dfe7f0; border-radius: 16px; background: #fff; box-shadow: 0 4px 20px rgb(48 85 122 / .045); }
@@ -592,7 +592,7 @@ body::before { display: none; }
 }
 .wd-faq-column { min-width: 0; }
 .wd-faq-column .wd-section-intro { margin-bottom: 16px; }
-.wd-faq-column .wd-section-intro h2 { font-size: 30px; }
+.wd-faq-column .wd-section-intro h2 { font-size: 22px; }
 .wd-faq-column .wd-section-intro p { margin-top: 8px; font-size: 16px; }
 .wd-faq-column .wd-faq-list { border-top: 1px solid #e1e8f0; }
 .wd-faq-column .wd-faq-item { border-bottom: 1px solid #e1e8f0; }

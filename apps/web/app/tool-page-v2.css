@@ -87,10 +87,10 @@
   max-width: 720px;
   margin: 0;
   color: #091642;
-  font-size: clamp(50px, 4.2vw, 66px);
+  font-size: clamp(26px, 3vw, 36px);
   font-weight: 770;
-  line-height: .98;
-  letter-spacing: -.055em;
+  line-height: 1.15;
+  letter-spacing: -.03em;
 }
 .wd-tool-hero-copy > p {
   max-width: 700px;

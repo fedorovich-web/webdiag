@@ -37,10 +37,10 @@
 .wd-not-found h1 {
   margin: 9px 0 13px;
   color: #091642;
-  font-size: clamp(50px, 4.2vw, 68px);
+  font-size: clamp(28px, 3.2vw, 38px);
   font-weight: 770;
-  line-height: .99;
-  letter-spacing: -.052em;
+  line-height: 1.15;
+  letter-spacing: -.03em;
 }
 .wd-not-found-copy > p {
   max-width: 610px;

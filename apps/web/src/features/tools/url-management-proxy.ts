@@ -1,40 +1,18 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { isToolErrorPayload, parsePageUrlInput } from "./client-delivery-tool-contract";
 import {
   isRedirectMapResponse,
   type RedirectMapInputEntry,
 } from "./url-management-tool-contract";
+import {
+  getBackendApiBaseUrl,
+  parseJsonResponse as parseJson,
+  toJsonResponse,
+} from "../../lib/backend-api";
 
-const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
 const REQUEST_TIMEOUT_MS = 45_000;
 const MAX_ENTRIES = 25;
 const ALLOWED_STATUSES = new Set([301, 302, 303, 307, 308]);
-
-function getApiBaseUrl(): string {
-  const raw = process.env.WEBDIAG_API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_WEBDIAG_API_BASE_URL ?? DEFAULT_API_BASE_URL;
-  const cleaned = raw.replace(/\/+$/, "");
-  if (cleaned === "http://api:8000" && process.env.NODE_ENV === "production") {
-    return "http://webdiag-webdiagcore-mlnqpr-api-1:8000";
-  }
-  return cleaned;
-}
-
-function toJsonResponse(payload: unknown, status: number) {
-  return NextResponse.json(payload, {
-    status,
-    headers: { "cache-control": "no-store" },
-  });
-}
-
-async function parseJson(response: Response): Promise<unknown> {
-  const text = await response.text();
-  if (!text) return null;
-  try {
-    return JSON.parse(text) as unknown;
-  } catch {
-    return undefined;
-  }
-}
 
 function normalizeEntry(value: unknown): RedirectMapInputEntry | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
@@ -104,7 +82,7 @@ export async function POST(request: NextRequest) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
-    const upstreamResponse = await fetch(`${getApiBaseUrl()}/v1/tools/redirect-map`, {
+    const upstreamResponse = await fetch(`${getBackendApiBaseUrl()}/v1/tools/redirect-map`, {
       method: "POST",
       headers: { accept: "application/json", "content-type": "application/json" },
       body: JSON.stringify({ entries }),

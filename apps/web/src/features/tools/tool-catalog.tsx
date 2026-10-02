@@ -124,7 +124,15 @@ export function ToolCatalog({
   tools: readonly CatalogTool[];
   categories: readonly CategoryOption[];
 }) {
-  const categoryIds = categories.map((item) => item.id);
+  const uniqueCategories = useMemo(() => {
+    const seen = new Set<string>();
+    return categories.filter((item) => {
+      if (seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    });
+  }, [categories]);
+  const categoryIds = uniqueCategories.map((item) => item.id);
   const urlCategory = useSyncExternalStore(subscribeToLocation, getUrlCategory, getServerUrlCategory);
   const urlQuery = useSyncExternalStore(subscribeToLocation, getUrlQuery, getServerUrlQuery);
   const [draftQueryOverride, setDraftQueryOverride] = useState<string | null>(null);
@@ -263,7 +271,7 @@ export function ToolCatalog({
             <button type="button" className={category === "all" ? "is-active" : ""} aria-pressed={category === "all"} onClick={() => chooseCategory("all")}>
               <CategoryIcon id="all" />{categoryLabel("all", locale)}
             </button>
-            {categories.map((item) => (
+            {uniqueCategories.map((item) => (
               <button type="button" className={category === item.id ? "is-active" : ""} aria-pressed={category === item.id} onClick={() => chooseCategory(item.id)} key={item.id}>
                 <CategoryIcon id={item.id} />{categoryLabel(item.id, locale)}
               </button>

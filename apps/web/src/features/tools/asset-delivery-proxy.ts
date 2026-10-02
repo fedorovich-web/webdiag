@@ -1,8 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { isToolErrorPayload, parsePageUrlInput } from "./client-delivery-tool-contract";
 import type { AssetDeliveryToolResponse } from "./asset-delivery-tool-contract";
+import {
+  getBackendApiBaseUrl,
+  parseJsonResponse,
+  toJsonResponse,
+} from "../../lib/backend-api";
 
-const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
 const REQUEST_TIMEOUT_MS = 30_000;
 
 type ResponseValidator = (payload: unknown) => payload is AssetDeliveryToolResponse;
@@ -14,32 +18,6 @@ interface AssetDeliveryProxyOptions {
     | "/v1/tools/font-loading";
   readonly validator: ResponseValidator;
   readonly invalidResponseMessage: string;
-}
-
-function getApiBaseUrl(): string {
-  const raw = process.env.WEBDIAG_API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_WEBDIAG_API_BASE_URL ?? DEFAULT_API_BASE_URL;
-  const cleaned = raw.replace(/\/+$/, "");
-  if (cleaned === "http://api:8000" && process.env.NODE_ENV === "production") {
-    return "http://webdiag-webdiagcore-mlnqpr-api-1:8000";
-  }
-  return cleaned;
-}
-
-function toJsonResponse(payload: unknown, status: number) {
-  return NextResponse.json(payload, {
-    status,
-    headers: { "cache-control": "no-store" },
-  });
-}
-
-async function parseJson(response: Response): Promise<unknown> {
-  const text = await response.text();
-  if (!text) return null;
-  try {
-    return JSON.parse(text) as unknown;
-  } catch {
-    return undefined;
-  }
 }
 
 export function createAssetDeliveryProxy(options: AssetDeliveryProxyOptions) {
@@ -74,14 +52,14 @@ export function createAssetDeliveryProxy(options: AssetDeliveryProxyOptions) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     try {
-      const upstreamResponse = await fetch(`${getApiBaseUrl()}${options.upstreamPath}`, {
+      const upstreamResponse = await fetch(`${getBackendApiBaseUrl()}${options.upstreamPath}`, {
         method: "POST",
         headers: { accept: "application/json", "content-type": "application/json" },
         body: JSON.stringify({ url }),
         cache: "no-store",
         signal: controller.signal,
       });
-      const data = await parseJson(upstreamResponse);
+      const data = await parseJsonResponse(upstreamResponse);
       if (data === undefined) {
         return toJsonResponse(
           {

@@ -29,10 +29,10 @@
 .wd-contact-hero-copy h1 {
   margin: 16px 0 18px;
   color: #091642;
-  font-size: clamp(48px, 4.4vw, 68px);
+  font-size: clamp(28px, 3.2vw, 38px);
   font-weight: 770;
-  line-height: .98;
-  letter-spacing: -.052em;
+  line-height: 1.15;
+  letter-spacing: -.03em;
 }
 
 .wd-contact-hero-copy h1 span {

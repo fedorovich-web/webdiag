@@ -1,8 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { isToolErrorPayload, parsePageUrlInput } from "./client-delivery-tool-contract";
 import type { AccessibilityStaticResponse } from "./accessibility-static-tool-contract";
+import {
+  getBackendApiBaseUrl,
+  parseJsonResponse as parseJson,
+  toJsonResponse as json,
+} from "../../lib/backend-api";
 
-const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
 const REQUEST_TIMEOUT_MS = 20_000;
 
 type ResponseValidator = (payload: unknown) => payload is AccessibilityStaticResponse;
@@ -14,32 +18,6 @@ interface ProxyOptions {
     | "/v1/tools/interactive-accessible-names";
   readonly validator: ResponseValidator;
   readonly invalidResponseMessage: string;
-}
-
-function getApiBaseUrl(): string {
-  const raw = process.env.WEBDIAG_API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_WEBDIAG_API_BASE_URL ?? DEFAULT_API_BASE_URL;
-  const cleaned = raw.replace(/\/+$/, "");
-  if (cleaned === "http://api:8000" && process.env.NODE_ENV === "production") {
-    return "http://webdiag-webdiagcore-mlnqpr-api-1:8000";
-  }
-  return cleaned;
-}
-
-function json(payload: unknown, status: number) {
-  return NextResponse.json(payload, {
-    status,
-    headers: { "cache-control": "no-store" },
-  });
-}
-
-async function parseJson(response: Response): Promise<unknown> {
-  const text = await response.text();
-  if (!text) return null;
-  try {
-    return JSON.parse(text) as unknown;
-  } catch {
-    return undefined;
-  }
 }
 
 export function createAccessibilityStaticProxy(options: ProxyOptions) {
@@ -62,7 +40,7 @@ export function createAccessibilityStaticProxy(options: ProxyOptions) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     try {
-      const response = await fetch(`${getApiBaseUrl()}${options.upstreamPath}`, {
+      const response = await fetch(`${getBackendApiBaseUrl()}${options.upstreamPath}`, {
         method: "POST",
         headers: { accept: "application/json", "content-type": "application/json" },
         body: JSON.stringify({ url }),
