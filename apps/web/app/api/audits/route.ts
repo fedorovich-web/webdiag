@@ -10,11 +10,16 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
+const DOKPLOY_API_CONTAINER_URL = "http://webdiag-webdiagcore-mlnqpr-api-1:8000";
 const REQUEST_TIMEOUT_MS = 45_000;
 
-function getAuditApiBaseUrl(): string {
-  const raw = process.env.WEBDIAG_API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_WEBDIAG_API_BASE_URL ?? DEFAULT_API_BASE_URL;
-  return raw.replace(/\/+$/, "");
+function getAuditApiBaseUrls(): string[] {
+  const primary = (process.env.WEBDIAG_API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_WEBDIAG_API_BASE_URL ?? DEFAULT_API_BASE_URL).replace(/\/+$/, "");
+  const urls = [primary];
+  if (primary.includes("api:8000")) {
+    urls.push(DOKPLOY_API_CONTAINER_URL);
+  }
+  return urls;
 }
 
 function toJsonResponse(payload: unknown, status: number, headers?: HeadersInit) {
@@ -42,22 +47,53 @@ export async function POST(request: NextRequest) {
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
-    const upstream = await fetch(`${getAuditApiBaseUrl()}/v1/audits`, {
-      method: "POST",
-      headers: {
-        accept: "application/json",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({ url: (payload as { url: string }).url }),
-      cache: "no-store",
-      signal: controller.signal,
-    });
+    const urls = getAuditApiBaseUrls();
+    let upstream: Response | null = null;
+    let text = "";
+    let activeUrl = urls[0];
 
-    const text = await upstream.text();
+    for (const url of urls) {
+      activeUrl = url;
+      try {
+        const res = await fetch(`${url}/v1/audits`, {
+          method: "POST",
+          headers: {
+            accept: "application/json",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({ url: (payload as { url: string }).url }),
+          cache: "no-store",
+          signal: controller.signal,
+        });
+
+        const bodyText = await res.text();
+        if (res.status === 400 && bodyText.includes("Invalid host header") && urls.length > 1 && url !== urls[urls.length - 1]) {
+          console.warn(`[AUDIT PROXY] ${url} returned 'Invalid host header' (collision on shared network), attempting fallback...`);
+          continue;
+        }
+
+        upstream = res;
+        text = bodyText;
+        break;
+      } catch (err) {
+        if (url === urls[urls.length - 1]) {
+          throw err;
+        }
+        console.warn(`[AUDIT PROXY] Connection error to ${url}, attempting fallback:`, err);
+      }
+    }
+
+    if (!upstream) {
+      return toJsonResponse(
+        errorPayload("audit_api_unavailable", "Audit API is not available."),
+        502,
+      );
+    }
+
     const parsed = parseJsonPayload(text);
     if (!parsed.ok) {
       console.error("[AUDIT UPSTREAM INVALID JSON]", {
-        url: `${getAuditApiBaseUrl()}/v1/audits`,
+        url: `${activeUrl}/v1/audits`,
         status: upstream.status,
         text: text.slice(0, 300),
       });
