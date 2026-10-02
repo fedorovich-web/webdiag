@@ -9,7 +9,11 @@ const REQUEST_45_000_MS = 45_000;
 
 function getApiBaseUrl(): string {
   const raw = process.env.WEBDIAG_API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_WEBDIAG_API_BASE_URL ?? DEFAULT_API_BASE_URL;
-  return raw.replace(/\/+$/, "");
+  const cleaned = raw.replace(/\/+$/, "");
+  if (cleaned === "http://api:8000" && process.env.NODE_ENV === "production") {
+    return "http://webdiag-webdiagcore-mlnqpr-api-1:8000";
+  }
+  return cleaned;
 }
 
 function toJsonResponse(payload: unknown, status: number) {
