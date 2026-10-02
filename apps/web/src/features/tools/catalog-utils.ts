@@ -5,6 +5,8 @@ export interface CatalogTool {
   readonly category: string;
   readonly categoryTitle: string;
   readonly local: boolean;
+  readonly href?: string;
+  readonly badge?: string;
 }
 
 export function normalizeSearch(value: string): string {

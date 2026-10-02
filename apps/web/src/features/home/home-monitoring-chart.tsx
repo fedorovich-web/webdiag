@@ -82,10 +82,23 @@ export function HomeMonitoringChart({ locale }: HomeMonitoringChartProps) {
         ))}
       </div>
       {active && (
-        <div className="wd-chart-tooltip" style={{ left: `${(active.x / viewBox.width) * 100}%`, top: `${(active.y / viewBox.height) * 100}%` }}>
-          <span>{active.label}</span>
-          <strong>{active.title}</strong>
-          <small>{active.text}</small>
+        <div
+          className="wd-chart-tooltip"
+          role="tooltip"
+          style={{
+            left: `${(active.x / viewBox.width) * 100}%`,
+            top: `${(active.y / viewBox.height) * 100}%`,
+            transform:
+              active.x > 400
+                ? "translate(-85%, calc(-100% - 14px))"
+                : active.x < 120
+                ? "translate(-15%, calc(-100% - 14px))"
+                : "translate(-50%, calc(-100% - 14px))",
+          }}
+        >
+          <span className="wd-chart-tooltip-badge">{active.label}</span>
+          <strong className="wd-chart-tooltip-title">{active.title}</strong>
+          <span className="wd-chart-tooltip-desc">{active.text}</span>
         </div>
       )}
     </div>

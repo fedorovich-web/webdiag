@@ -22,5 +22,9 @@
   "media-utilities": {
     "ru": "Изображения",
     "en": "Images"
+  },
+  "ai-tools": {
+    "ru": "AI-инструменты",
+    "en": "AI tools"
   }
 }

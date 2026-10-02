@@ -377,3 +377,47 @@ body[data-theme="light"] .wd-home .wd-report-recommendation > span {
     margin-top: 0;
   }
 }
+
+/* Global Typography & Spacing Standards:
+   - Minimum font size: 14px across all text, inputs, cards, and UI elements
+   - Breadcrumbs are the only allowed exception at 12px
+   - Subtitle under H1: strictly 18px
+   - Subtitles under H2 / H3: strictly 16px
+*/
+body {
+  font-size: 15px;
+}
+
+p, span, small, label, input, select, textarea, button, td, th, li, a {
+  font-size: max(14px, var(--font-size-body, 14px));
+}
+
+.breadcrumbs,
+.breadcrumbs a,
+.breadcrumbs span {
+  font-size: 12px !important;
+}
+
+/* Subtitles directly under H1 */
+h1 + p,
+.page-heading p,
+.wd-hero-lead,
+.wd-hero-subtitle,
+.wd-internal-hero p,
+.hero-subtitle {
+  font-size: 18px !important;
+  line-height: 1.55 !important;
+}
+
+/* Subtitles directly under H2 or H3 */
+h2 + p,
+h3 + p,
+.section-subtitle,
+.wd-section-intro > p,
+.wd-process-heading p,
+.wd-contact-form-copy p,
+.wd-final-copy p {
+  font-size: 16px !important;
+  line-height: 1.5 !important;
+}
+

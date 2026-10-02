@@ -30,3 +30,4 @@ SHA256SUMS.txt
 Thumbs.db
 
 .webdiag/
+scripts/*.png

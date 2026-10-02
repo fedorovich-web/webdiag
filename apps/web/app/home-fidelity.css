@@ -19,11 +19,11 @@
 
 .footer-column strong {
   margin-bottom: 2px;
-  font-size: 10px;
+  font-size: 15px;
 }
 
 .footer-column a {
-  font-size: 9px;
+  font-size: 14px;
   line-height: 1.4;
 }
 
@@ -196,7 +196,7 @@
   top: 18px;
   left: 50%;
   color: #8794aa;
-  font-size: 7px;
+  font-size: 14px;
   font-weight: 650;
   white-space: nowrap;
   transform: translateX(-50%);
@@ -207,6 +207,46 @@
   width: 10px;
   height: 10px;
   box-shadow: 0 0 0 4px rgb(34 203 187 / .13);
+}
+
+.wd-chart-tooltip {
+  position: absolute;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 180px;
+  max-width: 280px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  background: #0f172a;
+  box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.35), 0 4px 10px -2px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  white-space: normal;
+  text-align: left;
+}
+
+.wd-chart-tooltip-badge {
+  display: inline-block;
+  color: #38bdf8;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.wd-chart-tooltip-title {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.wd-chart-tooltip-desc {
+  color: #cbd5e1;
+  font-size: 14px;
+  line-height: 1.35;
 }
 
 .wd-monitoring-score-row {
@@ -271,8 +311,8 @@
 }
 
 .wd-final-copy p {
-  max-width: 500px;
-  font-size: 11px;
+  max-width: 520px;
+  font-size: 16px;
 }
 
 .wd-url-check-final {
@@ -505,17 +545,17 @@
 
 .wd-home .wd-report-tabs span {
   padding-bottom: 9px;
-  font-size: 9px;
+  font-size: 14px;
 }
 
 .wd-home .wd-report-bottom-row {
-  grid-template-columns: minmax(0, 1fr) 214px;
+  grid-template-columns: minmax(0, 1fr) 240px;
   grid-template-areas:
     "table detail"
     "link detail";
-  gap: 10px 12px;
+  gap: 12px 16px;
   align-items: stretch;
-  margin-top: 9px;
+  margin-top: 12px;
 }
 
 .wd-home .wd-report-bottom-row > div:first-child {
@@ -529,45 +569,47 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding-top: 1px;
-  font-size: 9px;
+  padding-top: 2px;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .wd-home .wd-report-table-head {
-  grid-template-columns: minmax(0, 1fr) 62px 82px;
-  padding: 8px 10px 6px 26px;
+  grid-template-columns: minmax(0, 1fr) 72px 96px;
+  padding: 8px 12px 6px 26px;
   color: #666d79;
-  font-size: 8px;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .wd-home .wd-report-issue-list {
   border-color: #e8eef5;
-  border-radius: 7px;
+  border-radius: 8px;
 }
 
 .wd-home .wd-report-issue-list > div {
-  grid-template-columns: 9px minmax(0, 1fr) 52px 82px;
-  min-height: 32px;
-  gap: 7px;
-  padding: 5px 9px;
+  grid-template-columns: 10px minmax(0, 1fr) 60px 96px;
+  min-height: 40px;
+  gap: 10px;
+  padding: 6px 12px;
   border-bottom-color: #edf2f7;
 }
 
 .wd-home .wd-report-issue-list strong {
   overflow: hidden;
-  font-size: 9px;
+  font-size: 14px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .wd-home .wd-report-issue-list b {
   justify-self: center;
-  font-size: 8px;
+  font-size: 14px;
 }
 
 .wd-home .wd-priority-mark {
-  padding: 4px 7px;
-  font-size: 7px;
+  padding: 4px 8px;
+  font-size: 13px;
 }
 
 .wd-home .wd-report-recommendation {
@@ -575,17 +617,17 @@
   align-self: stretch;
   display: flex;
   flex-direction: column;
-  padding: 11px;
+  padding: 16px;
   border: 1px solid #e5edf6;
-  border-radius: 8px;
+  border-radius: 10px;
   background: #fbfdff;
 }
 
 .wd-home .wd-report-recommendation > strong {
   position: relative;
-  padding-left: 13px;
+  padding-left: 14px;
   color: #17264b;
-  font-size: 9px;
+  font-size: 14px;
   line-height: 1.35;
 }
 
@@ -594,8 +636,8 @@
   position: absolute;
   top: .35em;
   left: 0;
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: #ff5367;
   box-shadow: 0 0 0 3px rgb(255 83 103 / .09);
@@ -603,38 +645,38 @@
 
 .wd-home .wd-report-recommendation > small {
   display: block;
-  margin: 5px 0 9px 13px;
+  margin: 6px 0 10px 14px;
   color: #636c7a;
-  font-size: 7px;
+  font-size: 14px;
 }
 
 .wd-home .wd-report-recommendation > p {
   flex: 1;
-  margin: 0 0 8px;
-  padding: 9px;
-  border-radius: 7px;
+  margin: 0 0 10px;
+  padding: 12px;
+  border-radius: 8px;
   background: #eff6ff;
   color: #5e6d85;
-  font-size: 8px;
-  line-height: 1.45;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .wd-home .wd-report-recommendation > p b {
   color: #435575;
-  font-size: 8px;
+  font-size: 14px;
 }
 
 .wd-home .wd-report-recommendation > span {
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 28px;
-  padding: 0 9px;
+  min-height: 34px;
+  padding: 0 12px;
   border: 1px solid #bcdcff;
-  border-radius: 6px;
+  border-radius: 8px;
   background: #fff;
   color: #076ccb;
-  font-size: 8px;
+  font-size: 14px;
   font-weight: 800;
 }
 
@@ -648,12 +690,13 @@
 }
 
 .wd-home .wd-monitoring-chart header {
-  margin-bottom: 7px;
+  margin-bottom: 12px;
 }
 
 .wd-home .wd-monitoring-chart header > strong {
   color: #19294d;
-  font-size: 10px;
+  font-size: 16px;
+  font-weight: 700;
 }
 
 .wd-home .wd-monitoring-chart-visual {
@@ -729,9 +772,9 @@
 .wd-home .wd-chart-axis-labels {
   position: absolute;
   right: 0;
-  bottom: 1px;
+  bottom: 0px;
   left: 0;
-  height: 12px;
+  height: 18px;
   pointer-events: none;
 }
 
@@ -739,31 +782,32 @@
   position: absolute;
   top: 0;
   color: #8a96a9;
-  font-size: 7px;
+  font-size: 14px;
   font-weight: 650;
   line-height: 1;
   transform: translateX(-50%);
 }
 
 .wd-home .wd-monitoring-score-row {
-  gap: 7px;
-  margin-top: 4px;
+  gap: 12px;
+  margin-top: 14px;
 }
 
 .wd-home .wd-monitoring-score-row > div {
-  min-height: 55px;
-  padding: 9px 10px;
+  min-height: 64px;
+  padding: 12px 14px;
   border-color: #e8eef5;
   background: #fff;
 }
 
 .wd-home .wd-monitoring-score-row strong {
-  font-size: 14px;
+  font-size: 18px;
+  font-weight: 800;
 }
 
 .wd-home .wd-monitoring-score-row span {
-  margin-top: 3px;
-  font-size: 7px;
+  margin-top: 4px;
+  font-size: 14px;
 }
 
 @media (max-width: 960px) {
@@ -790,44 +834,44 @@
 
   .wd-home .wd-platform-item {
     min-width: 0;
-    gap: 6px;
-    font-size: 11px;
+    gap: 8px;
+    font-size: 14px;
   }
 
   .wd-home .wd-platform-logo {
-    width: 22px;
-    height: 22px;
-    flex-basis: 22px;
+    width: 24px;
+    height: 24px;
+    flex-basis: 24px;
   }
 }
 
 @media (min-width: 961px) {
   .wd-home {
-    --wd-section-y: 30px;
+    --wd-section-y: clamp(72px, 8vw, 104px);
   }
 
   .wd-hero {
-    padding: 42px 0 26px;
+    padding: clamp(64px, 8vw, 96px) 0 clamp(48px, 6vw, 72px);
   }
 
   .wd-hero-copy {
-    padding: 10px 0 4px;
+    padding: 16px 0 8px;
   }
 
   .wd-hero-lead {
-    margin-top: 14px;
+    margin-top: 20px;
   }
 
   .wd-url-check {
-    margin-top: 18px;
+    margin-top: 24px;
   }
 
   .wd-hero-note {
-    margin-top: 6px;
+    margin-top: 10px;
   }
 
   .wd-hero-visual {
-    min-height: 380px;
+    min-height: 420px;
   }
 
   .wd-hero-dashboard {
@@ -882,35 +926,35 @@
 
   .site-footer .footer-brand p {
     margin: 7px 0 0 !important;
-    font-size: 9px !important;
-    line-height: 1.45 !important;
+    font-size: 14px !important;
+    line-height: 1.5 !important;
   }
 
   .site-footer .footer-column {
-    gap: 4px !important;
+    gap: 6px !important;
   }
 
   .site-footer .footer-column strong {
-    margin-bottom: 2px !important;
-    font-size: 10px !important;
+    margin-bottom: 4px !important;
+    font-size: 15px !important;
   }
 
   .site-footer .footer-column a {
-    font-size: 9px !important;
-    line-height: 1.4 !important;
+    font-size: 14px !important;
+    line-height: 1.5 !important;
   }
 
   .site-footer .footer-bottom {
-    min-height: 34px !important;
+    min-height: 40px !important;
     margin-top: 0 !important;
-    padding: 7px 0 !important;
-    font-size: 9px !important;
+    padding: 12px 0 !important;
+    font-size: 14px !important;
   }
 
   .site-footer .footer-bottom span,
   .site-footer .footer-bottom a,
   .site-footer .footer-privacy-link {
-    font-size: 9px !important;
-    line-height: 1.35 !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
   }
 }

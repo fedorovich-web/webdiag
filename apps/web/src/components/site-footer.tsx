@@ -64,7 +64,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
 
         <div className="footer-column">
           <strong>{text.company}</strong>
-          <Link prefetch={false} href={prefix || "/"}>{text.home}</Link>
+          <Link prefetch={false} href={`${prefix}/about`}>{text.home}</Link>
           <Link prefetch={false} href={`${prefix}/contacts`}>{text.contacts}</Link>
         </div>
 
