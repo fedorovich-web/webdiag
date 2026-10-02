@@ -411,38 +411,16 @@ body {
   font-size: var(--wd-font-body, 15px);
 }
 
-p, small, label, input, select, textarea, button, td, th, li {
+p, small, label, input, select, textarea, td, th, li {
   font-size: max(var(--wd-font-min, 14px), 14px);
 }
 
-/* Ensure inline elements inside headings inherit the heading's font size */
-h1, h1 *, h1 span, h1 strong, h1 b, h1 a {
+/* Ensure inline elements inside headings inherit parent font size */
+h1 *, h1 span, h1 strong, h1 b, h1 a,
+h2 *, h2 span, h2 strong, h2 b, h2 a,
+h3 *, h3 span, h3 strong, h3 b, h3 a,
+h4 *, h4 span, h4 strong, h4 b, h4 a {
   font-size: inherit;
-}
-h2, h2 *, h2 span, h2 strong, h2 b, h2 a {
-  font-size: inherit;
-}
-h3, h3 *, h3 span, h3 strong, h3 b, h3 a {
-  font-size: inherit;
-}
-
-/* Prominent Heading Scale */
-h1 {
-  font-size: var(--wd-font-h1, clamp(40px, 4.8vw, 64px)) !important;
-  line-height: 1.05 !important;
-  letter-spacing: -0.04em !important;
-}
-
-h2 {
-  font-size: var(--wd-font-h2, clamp(28px, 3.2vw, 40px)) !important;
-  line-height: 1.15 !important;
-  letter-spacing: -0.03em !important;
-}
-
-h3 {
-  font-size: var(--wd-font-h3, clamp(20px, 2.2vw, 26px)) !important;
-  line-height: 1.25 !important;
-  letter-spacing: -0.02em !important;
 }
 
 /* Breadcrumbs: the ONLY element allowed at 12px */

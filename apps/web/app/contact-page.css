@@ -428,8 +428,13 @@
 /* Support CTA */
 .wd-contact-support-cta {
   padding: clamp(48px, 6vw, 72px) 0;
-  background: linear-gradient(135deg, #091a42 0%, #0d2968 100%);
-  color: #fff;
+  background:
+    radial-gradient(ellipse at 4% 105%, rgb(34 211 238 / .20), transparent 30%),
+    radial-gradient(ellipse at 95% 106%, rgb(52 211 153 / .18), transparent 30%),
+    linear-gradient(135deg, #f0f7ff 0%, #f6faff 50%, #effffb 100%);
+  color: #102047;
+  border-top: 1px solid #d4e5f7;
+  border-bottom: 1px solid #d4e5f7;
 }
 
 .wd-contact-support-cta .shell {
@@ -441,14 +446,14 @@
 
 .wd-contact-support-cta h2 {
   margin: 0;
-  color: #fff;
+  color: #102047;
   font-size: clamp(24px, 2.5vw, 34px);
   font-weight: 770;
 }
 
 .wd-contact-support-cta p {
   margin: 8px 0 0;
-  color: #94a3b8;
+  color: #4b5f80;
   font-size: 16px;
   line-height: 1.5;
 }
@@ -459,18 +464,19 @@
   gap: 10px;
   padding: 14px 28px;
   border-radius: 999px;
-  background: var(--wd-button-bg);
-  color: #06191b;
+  background: var(--wd-button-bg, linear-gradient(135deg, #00d287 0%, #00b4d8 50%, #2563eb 100%));
+  color: #ffffff;
   font-size: 15px;
   font-weight: 800;
   text-decoration: none;
   white-space: nowrap;
-  box-shadow: 0 10px 28px rgb(34 211 238 / .3);
-  transition: transform var(--wd-transition);
+  box-shadow: 0 10px 24px rgba(37, 99, 255, 0.28);
+  transition: transform var(--wd-transition), box-shadow var(--wd-transition);
 }
 
 .wd-contact-support-cta a:hover {
   transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(37, 99, 255, 0.38);
 }
 
 @media (max-width: 960px) {

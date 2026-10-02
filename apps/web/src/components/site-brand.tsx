@@ -46,13 +46,20 @@ function BrandArtwork() {
 
 export function SiteBrand({ locale, className = "brand", variant }: SiteBrandProps) {
   const pathname = normalizePath(usePathname() ?? "/");
-  const isAppWorkspace = className.includes("wd-account") || (typeof window !== "undefined" && (window.location.hostname === "app.webdiag.ru" || window.location.hostname.startsWith("app.")));
-  const home = isAppWorkspace
+  const isAccountClass = className.includes("wd-account");
+  const home = isAccountClass
     ? (locale === "ru" ? "https://webdiag.ru/" : "https://webdiag.ru/en")
     : (locale === "ru" ? "/" : "/en");
   const normalizedHome = normalizePath(home);
-  const isHome = !isAppWorkspace && pathname === normalizedHome;
+  const isHome = !isAccountClass && pathname === normalizedHome;
   const label = locale === "ru" ? "WebDiag — главная" : "WebDiag home";
+
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (typeof window !== "undefined" && (window.location.hostname === "app.webdiag.ru" || window.location.hostname.startsWith("app.") || className.includes("wd-account"))) {
+      e.preventDefault();
+      window.location.href = locale === "ru" ? "https://webdiag.ru/" : "https://webdiag.ru/en";
+    }
+  };
 
   if (isHome) {
     return (
@@ -74,6 +81,7 @@ export function SiteBrand({ locale, className = "brand", variant }: SiteBrandPro
       href={home}
       prefetch={false}
       aria-label={label}
+      onClick={handleClick}
     >
       <BrandArtwork />
     </Link>
