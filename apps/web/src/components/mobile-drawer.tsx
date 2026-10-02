@@ -119,11 +119,12 @@ export function MobileDrawer({ locale }: MobileDrawerProps) {
       />
 
       {/* Slide-in drawer panel */}
-      <aside
+      <div
         className={`wd-drawer-panel ${isOpen ? "is-open" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-label={ru ? "Мобильная навигация" : "Mobile navigation"}
+        aria-hidden={!isOpen}
       >
         <div className="wd-drawer-header">
           <SiteBrand locale={locale} className="brand wd-brand" variant="header" />
@@ -186,7 +187,7 @@ export function MobileDrawer({ locale }: MobileDrawerProps) {
             <ArrowRight size={16} aria-hidden="true" />
           </Link>
         </div>
-      </aside>
+      </div>
     </>
   );
 }
