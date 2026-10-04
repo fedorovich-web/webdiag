@@ -100,6 +100,28 @@ export function AccountAuthForm({ locale, mode }: AccountAuthFormProps) {
         )}
       </header>
 
+      <div className="wd-auth-oauth-section">
+        <Link
+          href="/api/account/yandex/login"
+          prefetch={false}
+          className="wd-yandex-auth-btn"
+          aria-label={ru ? "Войти с Яндекс ID" : "Sign in with Yandex ID"}
+        >
+          <svg className="wd-yandex-icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+            <circle cx="12" cy="12" r="12" fill="#fc3f1d" />
+            <path
+              d="M13.6 7.2h-1.4c-1.3 0-2 .7-2 1.8 0 1.2.6 1.8 1.6 2.6l1 1-2.8 4.2H8.3l2.6-3.8c-1.2-1-1.8-1.9-1.8-3.3 0-2.1 1.4-3.3 3.6-3.3h2.3v10.6h-1.4V7.2z"
+              fill="#ffffff"
+            />
+          </svg>
+          <span>{ru ? "Войти с Яндекс ID" : "Sign in with Yandex ID"}</span>
+        </Link>
+      </div>
+
+      <div className="wd-auth-divider" aria-hidden="true">
+        <span>{ru ? "или через эл. почту" : "or with email"}</span>
+      </div>
+
       <form
         className="wd-auth-form"
         method="post"
@@ -157,8 +179,6 @@ export function AccountAuthForm({ locale, mode }: AccountAuthFormProps) {
           <span aria-hidden="true">→</span>
         </button>
       </form>
-
-      {!register && <div className="wd-auth-divider" aria-hidden="true"><span>{ru ? "или" : "or"}</span></div>}
 
       <p className="wd-auth-alternate">
         {text.alternate}{" "}

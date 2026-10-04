@@ -21,6 +21,14 @@ class LoginRequest(BaseModel):
     password: SecretStr
 
 
+class OAuthLoginRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    provider: Literal["yandex"] = "yandex"
+    email: str = Field(min_length=3, max_length=254)
+    display_name: str = Field(default="", max_length=80)
+
+
 class PasswordChangeRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

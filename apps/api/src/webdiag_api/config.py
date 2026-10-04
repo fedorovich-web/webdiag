@@ -116,6 +116,13 @@ class Settings(BaseSettings):
         ge=_MIN_AI_PAYLOAD_MAX_BYTES,
         le=_MAX_AI_PAYLOAD_MAX_BYTES,
     )
+    lava_api_key: str = ""
+    lava_webhook_secret: str = ""
+    lava_shop_id: str = ""
+    lava_offer_id: str = ""
+    lava_base_url: str = "https://gate.lava.top"
+    yandex_client_id: str = ""
+    yandex_client_secret: str = ""
 
     @field_validator("account_database_path", "audit_database_path")
     @classmethod

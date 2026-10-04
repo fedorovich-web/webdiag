@@ -14,6 +14,7 @@ type AccountMethod = "GET" | "POST";
 type AccountPath =
   | "/v1/account/register"
   | "/v1/account/login"
+  | "/v1/account/oauth"
   | "/v1/account/logout"
   | "/v1/account/me"
   | "/v1/account/password"
