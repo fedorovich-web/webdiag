@@ -29,6 +29,18 @@ class OAuthLoginRequest(BaseModel):
     display_name: str = Field(default="", max_length=80)
 
 
+class OAuthConfigResponse(BaseModel):
+    yandex_client_id: str = ""
+    configured: bool = False
+
+
+class OAuthYandexExchangeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    code: str = Field(min_length=1)
+    redirect_uri: str = "https://app.webdiag.ru/api/account/yandex/callback"
+
+
 class PasswordChangeRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
