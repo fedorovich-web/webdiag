@@ -29,8 +29,8 @@ export function AccountAuthForm({ locale, mode }: AccountAuthFormProps) {
         password: "Пароль",
         namePlaceholder: "Как к вам обращаться",
         emailPlaceholder: "you@example.ru",
-        passwordPlaceholder: register ? "Не менее 12 символов" : "Введите пароль",
-        passwordHint: "От 12 до 128 символов. Не используйте часть адреса электронной почты.",
+        passwordPlaceholder: register ? "От 6 символов" : "Введите пароль",
+        passwordHint: "От 6 символов. Не используйте часть адреса электронной почты.",
         submit: register ? "Создать аккаунт" : "Войти",
         pending: register ? "Создаём аккаунт…" : "Входим…",
         alternate: register ? "Уже есть аккаунт?" : "Нет аккаунта?",
@@ -49,8 +49,8 @@ export function AccountAuthForm({ locale, mode }: AccountAuthFormProps) {
         password: "Password",
         namePlaceholder: "How should we address you?",
         emailPlaceholder: "you@example.com",
-        passwordPlaceholder: register ? "At least 12 characters" : "Enter password",
-        passwordHint: "12 to 128 characters. Do not include the email local part.",
+        passwordPlaceholder: register ? "At least 6 characters" : "Enter password",
+        passwordHint: "At least 6 characters. Do not include the email local part.",
         submit: register ? "Create account" : "Sign in",
         pending: register ? "Creating account…" : "Signing in…",
         alternate: register ? "Already have an account?" : "Need an account?",
@@ -133,7 +133,7 @@ export function AccountAuthForm({ locale, mode }: AccountAuthFormProps) {
             name="password"
             type="password"
             autoComplete={register ? "new-password" : "current-password"}
-            minLength={register ? 12 : 1}
+            minLength={register ? 6 : 1}
             maxLength={128}
             placeholder={text.passwordPlaceholder}
             aria-describedby={register ? "account-password-hint" : undefined}

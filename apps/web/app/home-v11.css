@@ -156,7 +156,7 @@ body::before { display: none; }
 .wd-site-header {
   position: sticky;
   top: 0;
-  z-index: 60;
+  z-index: 1000;
   border-bottom: 1px solid #e5edf5;
   background: color-mix(in srgb, var(--wd-s) 92%, transparent);
   backdrop-filter: blur(18px);

@@ -90,10 +90,20 @@ async function loadImage(file: File): Promise<LoadedImage> {
   return { file, bitmap };
 }
 
-function canvasToBlob(canvas: HTMLCanvasElement, format: RasterOutputFormat, quality: number): Promise<Blob> {
+function canvasToBlob(canvas: HTMLCanvasElement, format: RasterOutputFormat, quality: number, locale: Locale = "ru"): Promise<Blob> {
   return new Promise((resolve, reject) => {
     canvas.toBlob(
-      (blob) => blob ? resolve(blob) : reject(new Error(`The browser could not encode ${formatMimeLabel(format)}. Try WebP, JPEG, or PNG in this browser.`)),
+      (blob) => {
+        if (!blob) {
+          reject(new Error(t(locale, `Браузер не смог закодировать ${formatMimeLabel(format)}. Попробуйте WebP, JPEG или PNG.`, `The browser could not encode ${formatMimeLabel(format)}. Try WebP, JPEG, or PNG in this browser.`)));
+          return;
+        }
+        if (format === "image/avif" && blob.type !== "image/avif") {
+          reject(new Error(t(locale, "Ваш браузер не поддерживает прямое кодирование в AVIF через Canvas API (он тихо возвращает неоптимизированный PNG большего размера). Выберите формат WebP для гарантированного и эффективного сжатия.", "Your browser does not support encoding AVIF via Canvas API (it silently falls back to uncompressed PNG). Select WebP for guaranteed and efficient compression.")));
+          return;
+        }
+        resolve(blob);
+      },
       format,
       format === "image/png" ? undefined : normalizeImageQuality(quality),
     );
@@ -172,11 +182,62 @@ function ResultPanel({ locale, result }: { locale: Locale; result: ResultFile | 
         <div><dt>{t(locale, "Размеры", "Dimensions")}</dt><dd>{result.width} × {result.height}</dd></div>
         <div><dt>{t(locale, "Формат", "Format")}</dt><dd>{formatMimeLabel(result.format)}</dd></div>
         <div><dt>{t(locale, "Размер файла", "File size")}</dt><dd>{formatBytes(result.size, locale)}</dd></div>
-        <div><dt>{t(locale, "Изменение", "Change")}</dt><dd>{(() => { const delta = compressionDelta(result.sourceSize, result.size); const sign = delta.bytes >= 0 ? "−" : "+"; return `${sign}${formatBytes(Math.abs(delta.bytes), locale)} (${Math.round(Math.abs(delta.percent) * 100)}%)`; })()}</dd></div>
+        <div>
+          <dt>{t(locale, "Изменение", "Change")}</dt>
+          <dd>
+            {(() => {
+              const delta = compressionDelta(result.sourceSize, result.size);
+              const sign = delta.bytes >= 0 ? "−" : "+";
+              return `${sign}${formatBytes(Math.abs(delta.bytes), locale)} (${Math.round(Math.abs(delta.percent) * 100)}%)`;
+            })()}
+            {result.size > result.sourceSize && (
+              <span style={{ color: "#ef4058", display: "block", fontSize: "12px", marginTop: "4px" }}>
+                ⚠️ {t(locale, "Размер увеличился. Уменьшите качество или выберите WebP.", "File size increased. Lower the quality slider or choose WebP.")}
+              </span>
+            )}
+          </dd>
+        </div>
       </dl>
       <a className="button" href={result.url} download={result.filename}>{t(locale, "Скачать изображение", "Download image")}</a>
     </> : <p className="muted-text">{t(locale, "Результат появится после обработки файла.", "The result will appear after processing the file.")}</p>}
   </section>;
+}
+
+async function convertImageWithFallback(
+  image: LoadedImage,
+  format: RasterOutputFormat,
+  quality: number,
+  locale: Locale,
+): Promise<{ blob: Blob; width: number; height: number }> {
+  // Use high-performance server-side libavif conversion for AVIF to guarantee genuine compression
+  if (format === "image/avif") {
+    try {
+      const formData = new FormData();
+      formData.append("file", image.file);
+      formData.append("format", format);
+      formData.append("quality", String(quality));
+
+      const response = await fetch("/api/tools/image-convert", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const width = Number(response.headers.get("X-Width")) || image.bitmap.width;
+        const height = Number(response.headers.get("X-Height")) || image.bitmap.height;
+        return { blob, width, height };
+      }
+    } catch {
+      // Fall through to canvas
+    }
+  }
+
+  // Client-side canvas conversion
+  const { canvas, context } = makeCanvas(image.bitmap.width, image.bitmap.height);
+  context.drawImage(image.bitmap, 0, 0);
+  const blob = await canvasToBlob(canvas, format, quality, locale);
+  return { blob, width: canvas.width, height: canvas.height };
 }
 
 function FormatField({ locale, value, onChange }: { locale: Locale; value: RasterOutputFormat; onChange: (value: RasterOutputFormat) => void }) {
@@ -184,46 +245,58 @@ function FormatField({ locale, value, onChange }: { locale: Locale; value: Raste
     <select value={value} onChange={(event) => onChange(event.target.value as RasterOutputFormat)}>
       {RASTER_OUTPUT_FORMAT_OPTIONS.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}
     </select>
-    <small>{t(locale, "AVIF вывод зависит от поддержки Canvas encoder в текущем браузере.", "AVIF output depends on Canvas encoder support in the current browser.")}</small>
+    <small>{t(locale, "AVIF и WebP обеспечивают максимальную компрессию для веб-страниц.", "AVIF and WebP provide maximum compression for web pages.")}</small>
   </label>;
 }
 
 export function ImageOptimizerTool({ locale }: { locale: Locale }) {
   const [image, setImage] = useState<LoadedImage | null>(null);
   const [format, setFormat] = useState<RasterOutputFormat>("image/webp");
-  const [quality, setQuality] = useState(0.8);
+  const [quality, setQuality] = useState(0.75);
   const [error, setError] = useState("");
   const [result, setResult] = useImageResult();
+
+  function onFormatChange(nextFormat: RasterOutputFormat) {
+    setFormat(nextFormat);
+    if (nextFormat === "image/avif" && quality > 0.7) {
+      setQuality(0.65);
+    }
+  }
+
   async function run() {
     if (!image) return setError(t(locale, "Выберите изображение.", "Choose an image."));
     try {
-      const { canvas, context } = makeCanvas(image.bitmap.width, image.bitmap.height);
-      context.drawImage(image.bitmap, 0, 0);
-      const blob = await canvasToBlob(canvas, format, quality);
-      setResult({ url: URL.createObjectURL(blob), filename: filenameFor(image.file, "compressed", format), size: blob.size, sourceSize: image.file.size, width: canvas.width, height: canvas.height, format });
+      const { blob, width, height } = await convertImageWithFallback(image, format, quality, locale);
+      setResult({ url: URL.createObjectURL(blob), filename: filenameFor(image.file, "compressed", format), size: blob.size, sourceSize: image.file.size, width, height, format });
       setError("");
     } catch (caught) { setError(toolErrorMessage(locale, caught, "image_process_failed")); }
   }
-  return <div className="tool-grid"><section className="tool-panel"><h2>{t(locale, "Параметры", "Settings")}</h2><FileField locale={locale} onLoaded={setImage} /><FormatField locale={locale} value={format} onChange={setFormat} /><label className="field"><span>{t(locale, "Качество JPEG/WebP/AVIF", "JPEG/WebP/AVIF quality")}: {Math.round(quality * 100)}%</span><input type="range" min="0.1" max="1" step="0.05" value={quality} onChange={(event) => setQuality(Number(event.target.value))} /></label><button className="button" type="button" onClick={() => void run()}>{t(locale, "Оптимизировать", "Optimize")}</button>{error && <p className="form-error" role="alert">{error}</p>}</section><ResultPanel locale={locale} result={result} /></div>;
+  return <div className="tool-grid"><section className="tool-panel"><h2>{t(locale, "Параметры", "Settings")}</h2><FileField locale={locale} onLoaded={setImage} /><FormatField locale={locale} value={format} onChange={onFormatChange} /><label className="field"><span>{t(locale, "Качество JPEG/WebP/AVIF", "JPEG/WebP/AVIF quality")}: {Math.round(quality * 100)}%</span><input type="range" min="0.1" max="1" step="0.05" value={quality} onChange={(event) => setQuality(Number(event.target.value))} /></label><button className="button" type="button" onClick={() => void run()}>{t(locale, "Оптимизировать", "Optimize")}</button>{error && <p className="form-error" role="alert">{error}</p>}</section><ResultPanel locale={locale} result={result} /></div>;
 }
 
 export function ImageFormatConverterTool({ locale }: { locale: Locale }) {
   const [image, setImage] = useState<LoadedImage | null>(null);
   const [format, setFormat] = useState<RasterOutputFormat>("image/webp");
-  const [quality, setQuality] = useState(0.82);
+  const [quality, setQuality] = useState(0.75);
   const [error, setError] = useState("");
   const [result, setResult] = useImageResult();
+
+  function onFormatChange(nextFormat: RasterOutputFormat) {
+    setFormat(nextFormat);
+    if (nextFormat === "image/avif" && quality > 0.7) {
+      setQuality(0.65);
+    }
+  }
+
   async function run() {
     if (!image) return setError(t(locale, "Выберите изображение.", "Choose an image."));
     try {
-      const { canvas, context } = makeCanvas(image.bitmap.width, image.bitmap.height);
-      context.drawImage(image.bitmap, 0, 0);
-      const blob = await canvasToBlob(canvas, format, quality);
-      setResult({ url: URL.createObjectURL(blob), filename: filenameFor(image.file, "converted", format), size: blob.size, sourceSize: image.file.size, width: canvas.width, height: canvas.height, format });
+      const { blob, width, height } = await convertImageWithFallback(image, format, quality, locale);
+      setResult({ url: URL.createObjectURL(blob), filename: filenameFor(image.file, "converted", format), size: blob.size, sourceSize: image.file.size, width, height, format });
       setError("");
     } catch (caught) { setError(toolErrorMessage(locale, caught, "image_process_failed")); }
   }
-  return <div className="tool-grid"><section className="tool-panel"><h2>{t(locale, "Параметры", "Settings")}</h2><FileField locale={locale} onLoaded={setImage} /><FormatField locale={locale} value={format} onChange={setFormat} />{format !== "image/png" && <label className="field"><span>{t(locale, "Качество JPEG/WebP/AVIF", "JPEG/WebP/AVIF quality")}: {Math.round(quality * 100)}%</span><input type="range" min="0.1" max="1" step="0.05" value={quality} onChange={(event) => setQuality(Number(event.target.value))} /></label>}<button className="button" type="button" onClick={() => void run()}>{t(locale, "Конвертировать", "Convert")}</button>{error && <p className="form-error" role="alert">{error}</p>}</section><ResultPanel locale={locale} result={result} /></div>;
+  return <div className="tool-grid"><section className="tool-panel"><h2>{t(locale, "Параметры", "Settings")}</h2><FileField locale={locale} onLoaded={setImage} /><FormatField locale={locale} value={format} onChange={onFormatChange} />{format !== "image/png" && <label className="field"><span>{t(locale, "Качество JPEG/WebP/AVIF", "JPEG/WebP/AVIF quality")}: {Math.round(quality * 100)}%</span><input type="range" min="0.1" max="1" step="0.05" value={quality} onChange={(event) => setQuality(Number(event.target.value))} /></label>}<button className="button" type="button" onClick={() => void run()}>{t(locale, "Конвертировать", "Convert")}</button>{error && <p className="form-error" role="alert">{error}</p>}</section><ResultPanel locale={locale} result={result} /></div>;
 }
 
 export function ImageResizerTool({ locale }: { locale: Locale }) {
@@ -243,7 +316,7 @@ export function ImageResizerTool({ locale }: { locale: Locale }) {
       const dimensions = validateImageDimensions(Number(width), Number(height));
       const { canvas, context } = makeCanvas(dimensions.width, dimensions.height);
       context.drawImage(image.bitmap, 0, 0, dimensions.width, dimensions.height);
-      const blob = await canvasToBlob(canvas, format, 0.92);
+      const blob = await canvasToBlob(canvas, format, 0.92, locale);
       setResult({ url: URL.createObjectURL(blob), filename: filenameFor(image.file, "resized", format), size: blob.size, sourceSize: image.file.size, ...dimensions, format });
       setError("");
     } catch (caught) { setError(toolErrorMessage(locale, caught, "invalid_input")); }
@@ -265,7 +338,7 @@ export function ImageCropperTool({ locale }: { locale: Locale }) {
       const crop = normalizeCropRectangle(image.bitmap.width, image.bitmap.height, { x: Number(rectangle.x), y: Number(rectangle.y), width: Number(rectangle.width), height: Number(rectangle.height) });
       const { canvas, context } = makeCanvas(crop.width, crop.height);
       context.drawImage(image.bitmap, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
-      const blob = await canvasToBlob(canvas, format, 0.92);
+      const blob = await canvasToBlob(canvas, format, 0.92, locale);
       setResult({ url: URL.createObjectURL(blob), filename: filenameFor(image.file, "cropped", format), size: blob.size, sourceSize: image.file.size, width: crop.width, height: crop.height, format });
       setError("");
     } catch (caught) { setError(toolErrorMessage(locale, caught, "invalid_input")); }

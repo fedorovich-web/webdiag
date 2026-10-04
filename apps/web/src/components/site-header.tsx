@@ -45,7 +45,7 @@ function NavigationLinks({ locale }: { locale: Locale }) {
         materials: "Материалы",
         about: "О проекте",
         categories: "Категории инструментов",
-        all: "Все 125+ инструментов",
+        all: "Все 140+ инструментов",
         unavailable: "недоступно",
       }
     : {
@@ -55,7 +55,7 @@ function NavigationLinks({ locale }: { locale: Locale }) {
         materials: "Resources",
         about: "About",
         categories: "Tool categories",
-        all: "All 125+ tools",
+        all: "All 140+ tools",
         unavailable: "unavailable",
       };
 

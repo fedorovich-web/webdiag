@@ -9,7 +9,7 @@ export const seoAuditToolPages = [
     seoTitle: { ru: "Ограниченный аудит сайта по проекту", en: "Bounded Project Site Audit" },
     metaDescription: { ru: "Запустите из проекта ограниченный обход одного origin: до 25 публичных HTML-страниц, статусы, метаданные, ссылки, robots.txt и sitemap без обещания полного покрытия.", en: "Run a project-bound crawl of one origin: up to 25 public HTML pages with status, metadata, links, robots.txt, and sitemap evidence without claiming complete coverage." },
     h1: { ru: "Ограниченный аудит сайта", en: "Bounded Site Audit" },
-    lead: { ru: "Авторизованный обход проекта получает до 25 публичных HTML-страниц одного origin и сохраняет результат в истории. Он показывает фактически собранную выборку, а не притворяется полным аудитом каждого URL.", en: "The authenticated project crawl fetches up to 25 public HTML pages on one origin and stores the result in project history. It reports the sample actually collected instead of presenting it as a complete audit of every URL." },
+    lead: { ru: "Авторизованный обход проекта последовательно сканирует до 25 публичных HTML-страниц одного origin и сохраняет результат в истории для выявления битых ссылок, дублей и ошибок индексации.", en: "The authenticated project crawl fetches up to 25 public HTML pages on one origin and stores the result in project history to identify broken links, duplicates, and indexing issues." },
     quickFacts: [
       { ru: "До 25 HTML-страниц", en: "Up to 25 HTML pages" },
       { ru: "Один origin", en: "One origin" },

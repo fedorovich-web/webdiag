@@ -5,7 +5,7 @@ import { pageMetadata } from "../../../src/lib/seo";
 export const metadata: Metadata = pageMetadata({
   locale: "ru",
   title: "О проекте WebDiag — Платформа для SEO и технической диагностики сайтов",
-  description: "Узнайте больше о WebDiag: миссия, технологии, принципы точности, более 125 инструментов веб-анализа и AI-сценарии.",
+  description: "Узнайте больше о WebDiag: миссия, технологии, принципы точности, более 140 инструментов веб-анализа и AI-сценарии.",
   canonical: "/about",
   ruPath: "/about",
   enPath: "/en/about",
