@@ -57,6 +57,7 @@ class Settings(BaseSettings):
     )
     account_active_session_limit: int = Field(default=10, ge=1, le=20)
     account_cookie_secure: bool = False
+    account_welcome_credits: int = Field(default=10, ge=0, le=1_000)
     http_request_body_max_bytes: int = Field(
         default=2_000_000,
         ge=_MIN_HTTP_REQUEST_BODY_MAX_BYTES,

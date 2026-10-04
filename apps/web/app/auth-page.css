@@ -85,6 +85,21 @@
   line-height: 1.6;
 }
 
+.wd-auth-bonus-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 6px 14px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
 .wd-auth-form {
   display: grid;
   gap: 16px;

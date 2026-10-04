@@ -22,6 +22,7 @@ from webdiag_api.accounts.registration_admission import (
 from webdiag_api.accounts.security import ScryptParameters
 from webdiag_api.accounts.service import AccountService, AccountServiceError
 from webdiag_api.accounts.storage import SqliteAccountStore
+from webdiag_api.ai.storage import SqliteAIStore
 from webdiag_api.config import settings
 
 router = APIRouter(prefix="/v1/account", tags=["account"])
@@ -134,6 +135,18 @@ def register(
         except Exception:
             logger.error("Registration admission lease release failed.")
     _set_session_cookie(response, session.token)
+    if settings.account_welcome_credits > 0:
+        try:
+            database_path = str(getattr(service._store, "_path", settings.account_database_path))
+            ai_store = SqliteAIStore(database_path)
+            ai_store.grant_credits(
+                user_id=session.response.user.id,
+                quantity=settings.account_welcome_credits,
+                reason="Welcome registration bonus",
+                correlation_id=f"welcome-{session.response.user.id}",
+            )
+        except Exception:
+            logger.exception("Failed to grant welcome credits on registration.")
     return session.response
 
 

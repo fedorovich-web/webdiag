@@ -37,6 +37,7 @@ export function AccountAuthForm({ locale, mode }: AccountAuthFormProps) {
         alternateAction: register ? "Войти" : "Зарегистрироваться",
         privacy: "Создавая аккаунт, вы соглашаетесь с обработкой данных согласно политике конфиденциальности.",
         privacyLink: "Политика конфиденциальности",
+        bonusPill: "🎁 10 бесплатных AI-кредитов в подарок при регистрации",
       }
     : {
         eyebrow: "Account",
@@ -57,6 +58,7 @@ export function AccountAuthForm({ locale, mode }: AccountAuthFormProps) {
         alternateAction: register ? "Sign in" : "Register",
         privacy: "By creating an account, you agree to data processing under the privacy policy.",
         privacyLink: "Privacy policy",
+        bonusPill: "🎁 10 free AI starter credits included upon signup",
       };
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -91,6 +93,11 @@ export function AccountAuthForm({ locale, mode }: AccountAuthFormProps) {
         <span className="wd-eyebrow">{text.eyebrow}</span>
         <h1 id="account-auth-title">{text.title}</h1>
         <p>{text.lead}</p>
+        {register && (
+          <div className="wd-auth-bonus-pill" role="status">
+            <span>{text.bonusPill}</span>
+          </div>
+        )}
       </header>
 
       <form

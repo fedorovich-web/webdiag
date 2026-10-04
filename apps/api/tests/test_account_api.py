@@ -19,6 +19,7 @@ from webdiag_api.accounts.security import (
 )
 from webdiag_api.accounts.service import AccountService, AccountServiceError
 from webdiag_api.accounts.storage import SqliteAccountStore
+from webdiag_api.ai.storage import SqliteAIStore
 from webdiag_api.config import Settings
 from webdiag_api.main import app
 
@@ -959,6 +960,11 @@ def test_account_api_register_me_logout_and_validation_envelope(tmp_path: Path) 
         assert "HttpOnly" in set_cookie
         assert "SameSite=lax" in set_cookie
         assert registered.headers["cache-control"] == "no-store"
+        registered_user_id = registered.json()["user"]["id"]
+        ai_store = SqliteAIStore(str(tmp_path / "accounts.sqlite3"))
+        credits = ai_store.get_credit_account(user_id=registered_user_id)
+        assert credits.available == 10
+        assert credits.reserved == 0
 
         session, cookies = asyncio.run(request("GET", "/v1/account/me", cookies=cookies))
         assert session.status_code == 200

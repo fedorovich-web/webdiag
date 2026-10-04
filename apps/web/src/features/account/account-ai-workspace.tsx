@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import type { Locale } from "@webdiag/tool-registry";
 import { accountErrorMessage } from "./account-messages";
 import {
@@ -114,10 +115,18 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
           <strong>{loadState === "loading" ? "—" : `${availableTools}/6`}</strong>
           <small>{ru ? "доступно для запуска" : "available to run"}</small>
         </article>
-        <article>
-          <span>{ru ? "Кредиты" : "Credits"}</span>
-          <strong>{balance === null ? "—" : balance}</strong>
-          <small>{ru ? "доступно аккаунту" : "available to this account"}</small>
+        <article className="wd-ai-credits-summary-article">
+          <div className="wd-ai-credits-summary-info">
+            <span>{ru ? "Кредиты" : "Credits"}</span>
+            <strong>{balance === null ? "—" : balance}</strong>
+            <small>{ru ? "доступно аккаунту" : "available to this account"}</small>
+          </div>
+          <Link
+            href={ru ? "/pricing#credit-packs" : "/en/pricing#credit-packs"}
+            className="wd-button wd-button-primary wd-ai-topup-btn"
+          >
+            {ru ? "+ Пополнить" : "+ Top up"}
+          </Link>
         </article>
         <article>
           <span>{ru ? "История" : "History"}</span>
@@ -137,6 +146,24 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
         </div>
       ) : (
         <>
+          {balance === 0 && (
+            <div className="wd-ai-credits-exhausted-banner" role="status">
+              <div className="wd-ai-credits-exhausted-info">
+                <strong>{ru ? "AI-кредиты израсходованы" : "AI credits exhausted"}</strong>
+                <p>
+                  {ru
+                    ? "Для продолжения работы выберите разовый пакет кредитов от 390 ₽ (без подписки, кредиты не сгорают) или оформите тариф Pro."
+                    : "To continue using AI tools, choose an on-demand credit pack from $5 (no recurring fees, credits never expire) or upgrade to Pro."}
+                </p>
+              </div>
+              <Link
+                href={ru ? "/pricing#credit-packs" : "/en/pricing#credit-packs"}
+                className="wd-button wd-button-primary"
+              >
+                {ru ? "Купить кредиты" : "Buy credits"}
+              </Link>
+            </div>
+          )}
           <AccountAIToolList locale={locale} catalog={catalog} loading={false} onSelect={(toolId) => setSelectedTool(toolId === "ai_audit_action_plan" ? null : toolId)} />
           {selectedTool && <AccountAITextToolRunner locale={locale} toolId={selectedTool} onClose={() => setSelectedTool(null)} />}
           <AccountAIRunHistory

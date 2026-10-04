@@ -2891,6 +2891,57 @@ body:has(.wd-public-report-page) .site-footer {
   line-height: 1;
 }
 
+.wd-ai-credits-summary-article {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.wd-ai-credits-summary-info {
+  display: grid;
+  gap: 5px;
+}
+
+.wd-ai-topup-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 8px;
+  white-space: nowrap;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+}
+
+.wd-ai-credits-exhausted-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: var(--wd-account-radius);
+  color: #92400e;
+}
+
+.wd-ai-credits-exhausted-info strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #78350f;
+  margin-bottom: 2px;
+}
+
+.wd-ai-credits-exhausted-info p {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #92400e;
+  margin: 0;
+}
+
 .wd-ai-tool-section,
 .wd-ai-history-section {
   display: grid;
