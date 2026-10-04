@@ -3008,6 +3008,17 @@ body:has(.wd-public-report-page) .site-footer {
   font: 700 11px var(--font-mono);
 }
 
+.wd-ai-tool-cost {
+  font-size: 10px;
+  font-weight: 750;
+  padding: 3px 6px;
+  border-radius: 6px;
+  background: #f3e8ff;
+  color: #6b21a8;
+  border: 1px solid #e9d5ff;
+  white-space: nowrap;
+}
+
 .wd-ai-tool-status,
 .wd-ai-run-state {
   width: fit-content;

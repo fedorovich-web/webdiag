@@ -289,6 +289,27 @@ export function ToolCatalog({
             </label>
           </div>
 
+          {category === "ai-tools" && (
+            <div className="wd-ai-catalog-banner" role="region" aria-label={locale === "ru" ? "Информация об AI-инструментах" : "AI tools information"}>
+              <div className="wd-ai-catalog-banner-icon" aria-hidden="true">🤖</div>
+              <div className="wd-ai-catalog-banner-copy">
+                <strong>
+                  {locale === "ru"
+                    ? "AI-инструменты работают на базе GPT-6 Luna и используют AI-кредиты"
+                    : "AI Tools are powered by GPT-6 Luna and use AI credits"}
+                </strong>
+                <p>
+                  {locale === "ru"
+                    ? "125 стандартных инструментов аудита полностью бесплатны. AI-инструменты расходуют кредиты (10 бесплатных кредитов начисляются при регистрации, далее доступны разовые пакеты от 390 ₽ без подписки)."
+                    : "All 125 core diagnostic tools are 100% free with no limits. AI workflows require credits (10 free credits upon signup, then on-demand packs from $5 with no subscription)."}
+                </p>
+              </div>
+              <Link href={locale === "ru" ? "/pricing#credit-packs" : "/en/pricing#credit-packs"} className="wd-ai-catalog-banner-btn">
+                {locale === "ru" ? "Купить кредиты →" : "Buy credits →"}
+              </Link>
+            </div>
+          )}
+
           {pageTools.length ? (
             <div className="wd-tools-grid">
               {pageTools.map((tool) => {

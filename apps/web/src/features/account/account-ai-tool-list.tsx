@@ -57,6 +57,7 @@ export function AccountAIToolList({ locale, catalog, loading, onSelect }: Accoun
             <article className="wd-ai-tool-card" key={descriptor.id} data-enabled={enabled}>
               <div className="wd-ai-tool-card-head">
                 <span className="wd-ai-tool-order">{String(descriptor.workflowOrder).padStart(2, "0")}</span>
+                <span className="wd-ai-tool-cost">{ru ? "1 AI-кредит" : "1 AI credit"}</span>
                 <span className={`wd-ai-tool-status${enabled ? " is-ready" : ""}`}>
                   {loading
                     ? (ru ? "Проверяем" : "Checking")
