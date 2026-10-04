@@ -453,9 +453,149 @@
   margin: 0;
 }
 
+/* Credit Packs (Pay-as-you-go) */
+.wd-credit-packs-section {
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  border-top: 1px solid #edf2f7;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.wd-credit-packs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+  align-items: stretch;
+}
+
+.wd-credit-pack-card {
+  position: relative;
+  padding: 36px 28px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 18px rgba(34, 48, 82, 0.04);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.wd-credit-pack-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 36px rgba(34, 48, 82, 0.08);
+}
+
+.wd-credit-pack-card.is-popular {
+  border-color: #8b5cf6;
+  box-shadow: 0 16px 44px rgba(139, 92, 246, 0.12);
+  background: linear-gradient(180deg, #ffffff 0%, #faf5ff 100%);
+}
+
+.wd-credit-pack-badge {
+  position: absolute;
+  top: -12px;
+  right: 24px;
+  padding: 3px 12px;
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  border-radius: 999px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.wd-credit-pack-credits-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.wd-credit-pack-icon {
+  color: #8b5cf6;
+}
+
+.wd-credit-pack-amount {
+  font-size: 28px;
+  font-weight: 850;
+  color: #091121;
+}
+
+.wd-credit-pack-unit {
+  font-size: 14px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.wd-credit-pack-head h3 {
+  font-size: 20px;
+  font-weight: 800;
+  color: #091121;
+  margin: 4px 0 6px;
+}
+
+.wd-credit-pack-desc {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #64748b;
+  min-height: 40px;
+  margin: 0;
+}
+
+.wd-credit-pack-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 18px 0 22px;
+}
+
+.wd-credit-pack-price {
+  font-size: 32px;
+  font-weight: 850;
+  color: #091121;
+}
+
+.wd-credit-pack-rate {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.wd-credit-pack-features {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #f1f5f9;
+  flex: 1;
+}
+
+.wd-credit-pack-features ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wd-credit-pack-features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #334155;
+}
+
+.wd-credit-pack-features li svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #10b981;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
-  .wd-pricing-cards-grid {
+  .wd-pricing-cards-grid,
+  .wd-credit-packs-grid {
     grid-template-columns: 1fr;
     max-width: 540px;
     margin: 0 auto;
@@ -470,7 +610,8 @@
   .wd-pricing-hero {
     padding: 36px 0 48px;
   }
-  .wd-pricing-card {
+  .wd-pricing-card,
+  .wd-credit-pack-card {
     padding: 32px 20px;
   }
   .wd-comparison-row-values {

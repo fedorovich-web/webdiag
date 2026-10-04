@@ -8,6 +8,7 @@ import {
   ShieldCheck,
   ArrowRight,
   ChevronDown,
+  Sparkles,
 } from "lucide-react";
 import type { Locale } from "@webdiag/tool-registry";
 
@@ -44,7 +45,8 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
             priceAnnual: "0 ₽",
             period: "навсегда",
             features: [
-              "140+ диагностических и AI-инструментов",
+              "125 бесплатных диагностических инструментов",
+              "10 приветственных AI-кредитов при регистрации",
               "Экспресс-аудиты отдельных страниц",
               "Проверка Core Web Vitals и скорости",
               "Базовый SSL и HTTP-анализ",
@@ -53,7 +55,7 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
             ],
             missing: [
               "Глубокий краулинг всего сайта",
-              "AI-планы исправлений и брифы",
+              "Неограниченные AI-планы исправлений (требуются кредиты)",
               "Экспорт отчетов в PDF и CSV",
               "Авто-мониторинг по расписанию",
             ],
@@ -175,6 +177,71 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
             a: "Вы можете сразу зарегистрироваться на бесплатном тарифе и протестировать работу платформы. Все базовые инструменты и экспресс-аудиты доступны без привязки банковской карты.",
           },
         ],
+        creditPacks: {
+          eyebrow: "Без абонентской платы",
+          title: "Разовые пакеты AI-кредитов (Pay-As-You-Go)",
+          lead: "Нужны только AI-инструменты для решения разовых задач без регулярной подписки? Покупайте кредиты по мере необходимости — они никогда не сгорают и действуют бессрочно.",
+          badgeNonExpiring: "Кредиты никогда не сгорают",
+          packs: [
+            {
+              id: "pack-50",
+              name: "Старт",
+              credits: "50",
+              creditsUnit: "AI-кредитов",
+              price: "390 ₽",
+              perCredit: "~7.8 ₽ за кредит",
+              desc: "Для быстрой оптимизации и исправления 1 сайта.",
+              badge: null,
+              features: [
+                "5–10 запусков любых AI-инструментов",
+                "Бессрочный баланс (кредиты не сгорают)",
+                "AI-план устранения ошибок аудита",
+                "Генерация микроразметки Schema.org и мета-тегов",
+              ],
+              btnText: "Выбрать 50 кредитов",
+              btnHref: `${registerHref}?pack=50`,
+              isPopular: false,
+            },
+            {
+              id: "pack-150",
+              name: "Оптимум",
+              credits: "150",
+              creditsUnit: "AI-кредитов",
+              price: "890 ₽",
+              perCredit: "~5.9 ₽ за кредит",
+              desc: "Оптимальный выбор для аудита и доработки 3–5 сайтов.",
+              badge: "Хит продаж · Выгода 25%",
+              features: [
+                "До 30 запусков любых AI-инструментов",
+                "Бессрочный баланс без ограничений по времени",
+                "Анализ конкурентных пробелов и ТЗ копирайтерам",
+                "Оптимизатор контента и внутренняя перелинковка",
+              ],
+              btnText: "Выбрать 150 кредитов",
+              btnHref: `${registerHref}?pack=150`,
+              isPopular: true,
+            },
+            {
+              id: "pack-500",
+              name: "Бизнес",
+              credits: "500",
+              creditsUnit: "AI-кредитов",
+              price: "1 990 ₽",
+              perCredit: "~3.9 ₽ за кредит",
+              desc: "Для постоянной работы вебмастеров, SEO-специалистов и агентств.",
+              badge: "Максимальная выгода 50%",
+              features: [
+                "До 100 запусков любых AI-инструментов",
+                "Бессрочный баланс без сгорания",
+                "Приоритетная очередь генерации в LLM",
+                "Доступ ко всем 15 AI-инструментам платформы",
+              ],
+              btnText: "Выбрать 500 кредитов",
+              btnHref: `${registerHref}?pack=500`,
+              isPopular: false,
+            },
+          ],
+        },
         guarantee: {
           title: "14 дней гарантии возврата средств",
           text: "Если платформа WebDiag не подойдет под ваши задачи, мы вернем оплату в течение 14 дней с момента оформления первого платного заказа без лишних вопросов.",
@@ -200,7 +267,8 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
             priceAnnual: "$0",
             period: "forever free",
             features: [
-              "140+ diagnostic and AI tools",
+              "125 free diagnostic web tools",
+              "10 welcome AI credits upon signup",
               "Express single page audits",
               "Core Web Vitals & speed checks",
               "Basic SSL & HTTP header analysis",
@@ -209,7 +277,7 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
             ],
             missing: [
               "Deep multi-page website crawling",
-              "AI fix action plans and briefs",
+              "Unlimited AI fix action plans (requires credits)",
               "PDF and CSV report exports",
               "Scheduled automated monitoring",
             ],
@@ -327,6 +395,71 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
             a: "We accept all major credit and debit cards (Visa, Mastercard, MIR), Apple Pay, Google Pay, and bank wire transfers for businesses.",
           },
         ],
+        creditPacks: {
+          eyebrow: "No Recurring Subscription",
+          title: "On-Demand AI Credit Packages (Pay-As-You-Go)",
+          lead: "Need AI tools without monthly commitments? Purchase credits on demand — they never expire and can be used anytime for any website.",
+          badgeNonExpiring: "Credits never expire",
+          packs: [
+            {
+              id: "pack-50",
+              name: "Starter",
+              credits: "50",
+              creditsUnit: "AI credits",
+              price: "$5",
+              perCredit: "~$0.10 per credit",
+              desc: "For quick optimization and fixing a single website.",
+              badge: null,
+              features: [
+                "5–10 runs of any AI workflow",
+                "Non-expiring permanent balance",
+                "AI Site Fix Action Plan",
+                "Schema.org JSON-LD and meta tag generator",
+              ],
+              btnText: "Get 50 Credits",
+              btnHref: `${registerHref}?pack=50`,
+              isPopular: false,
+            },
+            {
+              id: "pack-150",
+              name: "Pro Pack",
+              credits: "150",
+              creditsUnit: "AI credits",
+              price: "$11",
+              perCredit: "~$0.07 per credit",
+              desc: "Best value for auditing and optimizing 3–5 websites.",
+              badge: "Popular · Save 25%",
+              features: [
+                "Up to 30 runs of any AI workflow",
+                "Non-expiring permanent balance",
+                "Competitor gap analysis & content briefs",
+                "Copy optimizer & internal linking planner",
+              ],
+              btnText: "Get 150 Credits",
+              btnHref: `${registerHref}?pack=150`,
+              isPopular: true,
+            },
+            {
+              id: "pack-500",
+              name: "Business",
+              credits: "500",
+              creditsUnit: "AI credits",
+              price: "$25",
+              perCredit: "~$0.05 per credit",
+              desc: "For SEO consultants, freelancers, and ongoing client audits.",
+              badge: "Best Value · Save 50%",
+              features: [
+                "Up to 100 runs of any AI workflow",
+                "Non-expiring permanent balance",
+                "Priority LLM queue processing",
+                "Full access to all 15 AI tools",
+              ],
+              btnText: "Get 500 Credits",
+              btnHref: `${registerHref}?pack=500`,
+              isPopular: false,
+            },
+          ],
+        },
         guarantee: {
           title: "14-Day Money-Back Guarantee",
           text: "If WebDiag doesn't fully satisfy your diagnostic requirements, contact us within 14 days of your initial purchase for a full refund.",
@@ -421,6 +554,61 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
               </div>
             );
           })}
+        </div>
+      </section>
+
+      {/* On-Demand Credit Packs (Pay-as-you-go) */}
+      <section className="wd-pricing-section wd-credit-packs-section" id="credit-packs">
+        <div className="shell">
+          <div className="wd-pricing-section-header">
+            <span className="wd-eyebrow">{t.creditPacks.eyebrow}</span>
+            <h2>{t.creditPacks.title}</h2>
+            <p className="wd-pricing-sub-h2">{t.creditPacks.lead}</p>
+          </div>
+
+          <div className="wd-credit-packs-grid">
+            {t.creditPacks.packs.map((pack) => (
+              <div
+                className={`wd-credit-pack-card ${pack.isPopular ? "is-popular" : ""}`}
+                key={pack.id}
+              >
+                {pack.badge && <span className="wd-credit-pack-badge">{pack.badge}</span>}
+                <div className="wd-credit-pack-head">
+                  <div className="wd-credit-pack-credits-wrap">
+                    <Sparkles size={20} className="wd-credit-pack-icon" aria-hidden="true" />
+                    <span className="wd-credit-pack-amount">{pack.credits}</span>
+                    <span className="wd-credit-pack-unit">{pack.creditsUnit}</span>
+                  </div>
+                  <h3>{pack.name}</h3>
+                  <p className="wd-credit-pack-desc">{pack.desc}</p>
+                </div>
+
+                <div className="wd-credit-pack-price-row">
+                  <span className="wd-credit-pack-price">{pack.price}</span>
+                  <span className="wd-credit-pack-rate">{pack.perCredit}</span>
+                </div>
+
+                <Link
+                  href={pack.btnHref}
+                  className={`wd-pricing-card-btn ${pack.isPopular ? "is-primary" : ""}`}
+                >
+                  <span>{pack.btnText}</span>
+                  <ArrowRight size={16} aria-hidden="true" />
+                </Link>
+
+                <div className="wd-credit-pack-features">
+                  <ul>
+                    {pack.features.map((feat, idx) => (
+                      <li key={idx}>
+                        <Check size={16} aria-hidden="true" />
+                        <span>{feat}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
