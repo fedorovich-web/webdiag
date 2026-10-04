@@ -14,7 +14,6 @@ import type { Locale } from "@webdiag/tool-registry";
 import { LanguageSwitcher } from "./language-switcher";
 import { SiteBrand } from "./site-brand";
 import { ToolsMenuShell } from "./tools-menu-shell";
-import { MobileDrawer } from "./mobile-drawer";
 import { loginPath, toolsPath } from "../lib/routes";
 
 interface SiteHeaderProps {
@@ -32,7 +31,7 @@ const toolCategories = [
   { icon: Sparkles, ru: "Контент и AI-помощники", en: "Content & AI Tools", descriptionRu: "План исправлений, мета-теги, брифы", descriptionEn: "Fix action plan, metadata, briefs", category: "ai-tools" },
 ] as const;
 
-function NavigationLinks({ locale }: { locale: Locale }) {
+function NavigationLinks({ locale, compact = false }: { locale: Locale; compact?: boolean }) {
   const tools = toolsPath(locale);
   const pages = locale === "ru"
     ? { audit: "/audit", pricing: "/pricing", materials: "/knowledge", about: "/about" }
@@ -58,6 +57,18 @@ function NavigationLinks({ locale }: { locale: Locale }) {
         all: "All 140+ tools",
         unavailable: "unavailable",
       };
+
+  if (compact) {
+    return (
+      <nav className="mobile-nav wd-mobile-nav" aria-label={locale === "ru" ? "Основная навигация" : "Main navigation"}>
+        <Link href={pages.audit} prefetch={false}>{text.audit}</Link>
+        <Link href={tools} prefetch={false}>{text.tools}</Link>
+        <Link href={pages.pricing} prefetch={false}>{text.pricing}</Link>
+        <Link href={pages.materials} prefetch={false}>{text.materials}</Link>
+        <Link href={pages.about} prefetch={false}>{text.about}</Link>
+      </nav>
+    );
+  }
 
   return (
     <nav className="wd-main-nav" aria-label={locale === "ru" ? "Основная навигация" : "Main navigation"}>
@@ -97,6 +108,7 @@ export function SiteHeader({ locale }: SiteHeaderProps) {
   const createAccount = locale === "ru" ? "Создать аккаунт" : "Create account";
   const login = locale === "ru" ? "Войти" : "Sign in";
   const registerHref = locale === "ru" ? "/register" : "/en/register";
+  const menuLabel = locale === "ru" ? "Открыть меню" : "Open menu";
 
   return (
     <header className="wd-site-header">
@@ -104,15 +116,23 @@ export function SiteHeader({ locale }: SiteHeaderProps) {
         <SiteBrand locale={locale} className="brand wd-brand" variant="header" />
         <NavigationLinks locale={locale} />
 
-        <div className="wd-header-actions">
+        <div className="wd-header-actions header-actions">
           <div id="account-workspace-menu-slot" className="wd-account-menu-slot" />
           <LanguageSwitcher locale={locale} className="language-switcher-desktop" />
           <Link className="wd-header-login" href={loginPath(locale)} prefetch={false}>{login}</Link>
           <Link className="wd-header-cta" href={registerHref} prefetch={false}>{createAccount}</Link>
-          <div className="mobile-menu">
-            {/* language-switcher-mobile in modern drawer */}
-            <MobileDrawer locale={locale} />
-          </div>
+          <details className="mobile-menu">
+            <summary aria-label={menuLabel}>
+              <span aria-hidden="true" />
+              <span aria-hidden="true" />
+              <span aria-hidden="true" />
+            </summary>
+            <div className="mobile-menu-panel">
+              <LanguageSwitcher locale={locale} className="language-switcher-mobile" />
+              <NavigationLinks locale={locale} compact />
+              <Link className="wd-header-cta" href={registerHref} prefetch={false}>{createAccount}</Link>
+            </div>
+          </details>
         </div>
       </div>
     </header>

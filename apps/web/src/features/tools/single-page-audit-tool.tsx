@@ -3,11 +3,28 @@
 import { toolErrorMessage } from "./tool-error-presentation";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import Link from "next/link";
 import type { Locale } from "@webdiag/tool-registry";
 import { AuditClientError, parseAuditUrlInput, startAuditSnapshot } from "../home/audit-client";
 import type { AuditFrontendIssue, AuditFrontendResult } from "../home/audit-contract";
 import { localizeAuditCheck, localizeAuditIssue } from "./audit-taxonomy-i18n";
-import { ExternalLink, Printer, Share2, Search, Gauge } from "lucide-react";
+import {
+  ExternalLink,
+  Printer,
+  Share2,
+  Search,
+  Gauge,
+  CheckCircle2,
+  Loader2,
+  Clock,
+  ArrowRight,
+  Activity,
+  ChevronRight,
+} from "lucide-react";
+
+function toolsPath(locale: Locale): string {
+  return locale === "ru" ? "/tools" : "/en/tools";
+}
 
 const priorityRank: Readonly<Record<string, number>> = { p0: 0, p1: 1, p2: 2, p3: 3 };
 const severityRank: Readonly<Record<string, number>> = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
@@ -27,6 +44,23 @@ const copy = {
     placeholder: "https://example.ru/page",
     run: "Проверить страницу",
     loading: "Выполняем полный аудит страницы…",
+    liveTitle: "Выполняется глубокий аудит страницы",
+    liveSubtitle: "Анализ 30+ технических параметров: DNS, SSL, HTML-метатеги, robots.txt, sitemap и PageSpeed",
+    stageDns: "DNS и доступность хоста",
+    stageDnsDesc: "Проверка резолва домена, A/AAAA записей, время отклика сервера",
+    stageSsl: "SSL/TLS и безопасность протокола",
+    stageSslDesc: "HTTPS-сертификат, валидность цепочки, HSTS, CSP и заголовки",
+    stageHtml: "HTML-разметка, Title и Open Graph",
+    stageHtmlDesc: "Title, Description, заголовки H1-H6, микроразметка Schema.org",
+    stageRobots: "Индексация, robots.txt и sitemap.xml",
+    stageRobotsDesc: "Директивы поисковых роботов, правила Disallow, карта сайта",
+    stagePageSpeed: "Google PageSpeed & Core Web Vitals",
+    stagePageSpeedDesc: "Оценка ключевых метрик LCP, CLS, INP, FCP и скорости страницы",
+    stageSynthesis: "Сводный скоринг и генерация отчёта",
+    stageSynthesisDesc: "Расчет итоговой оценки 0-100, приоритизация рекомендаций",
+    statusDone: "Завершено",
+    statusRunning: "Анализируем…",
+    statusPending: "В очереди",
     invalid: "Введите публичный HTTP(S) URL с доменом.",
     unknownError: "Проверку не удалось завершить.",
     rateLimited: "Достигнут лимит публичных проверок. Повторите попытку позже.",
@@ -48,6 +82,8 @@ const copy = {
     emptyChecks: "Backend не вернул выполненных проверок.",
     pageSpeedTitle: "Оценка Core Web Vitals и Google PageSpeed",
     pageSpeedDesc: "Ключевые сигналы пользовательского опыта загрузки и стабильности интерфейса:",
+    runPageSpeedAudit: "Запустить полный анализ в Google PageSpeed Checker",
+    categorySummary: "Сводка по категориям аудита",
     filterAll: "Все",
     filterErrors: "Ошибки",
     filterWarnings: "Предупреждения",
@@ -60,12 +96,32 @@ const copy = {
     scoreGood: "Хорошее состояние",
     scoreNeedsWork: "Требует оптимизации",
     scorePoor: "Критическое состояние",
+    crawlerCtaTitle: "Нужен аудит всего сайта целиком?",
+    crawlerCtaDesc: "Для многостраничного краулинга перейдите в раздел краулера в личном кабинете.",
+    crawlerCtaBtn: "Запустить краулер сайта",
   },
   en: {
     url: "Page URL",
     placeholder: "https://example.com/page",
     run: "Audit page",
     loading: "Running comprehensive page audit…",
+    liveTitle: "Running live single-page technical audit",
+    liveSubtitle: "Analyzing 30+ technical checkpoints: DNS, SSL, HTML meta tags, robots.txt, sitemap and PageSpeed",
+    stageDns: "DNS & Host Reachability",
+    stageDnsDesc: "Domain resolution, A/AAAA records, and server TTFB latency",
+    stageSsl: "SSL/TLS & Protocol Security",
+    stageSslDesc: "HTTPS certificate, chain validity, HSTS, CSP and security headers",
+    stageHtml: "HTML Structure, Title & Open Graph",
+    stageHtmlDesc: "Meta Title, Description, H1-H6 hierarchy, Schema.org and Open Graph",
+    stageRobots: "Indexing, robots.txt & sitemap.xml",
+    stageRobotsDesc: "Search crawler directives, Disallow rules, XML sitemap validation",
+    stagePageSpeed: "Google PageSpeed & Core Web Vitals",
+    stagePageSpeedDesc: "Real-world Core Web Vitals, render-blocking items and speed scoring",
+    stageSynthesis: "Synthesis & Final Report Scoring",
+    stageSynthesisDesc: "Calculating 0-100 health score and ranking fix recommendations",
+    statusDone: "Completed",
+    statusRunning: "Analyzing…",
+    statusPending: "Pending",
     invalid: "Enter a public HTTP(S) URL with a domain.",
     unknownError: "The audit could not be completed.",
     rateLimited: "The public audit limit has been reached. Try again later.",
@@ -87,6 +143,8 @@ const copy = {
     emptyChecks: "The backend returned no completed checks.",
     pageSpeedTitle: "Core Web Vitals & PageSpeed Assessment",
     pageSpeedDesc: "Key real-world user experience and performance signals:",
+    runPageSpeedAudit: "Run in-depth Google PageSpeed Checker",
+    categorySummary: "Category Breakdown",
     filterAll: "All",
     filterErrors: "Errors",
     filterWarnings: "Warnings",
@@ -99,6 +157,9 @@ const copy = {
     scoreGood: "Good condition",
     scoreNeedsWork: "Needs work",
     scorePoor: "Critical issues",
+    crawlerCtaTitle: "Need to audit your entire website?",
+    crawlerCtaDesc: "For multi-page site crawling, head over to the account crawler section.",
+    crawlerCtaBtn: "Run site crawler",
   },
 } as const;
 
@@ -162,6 +223,277 @@ function scoreGrade(score: number | null, locale: Locale): { text: string; color
   return { text: copy[locale].scorePoor, color: "#ef4444" };
 }
 
+function AuditLiveProgressBar({
+  locale,
+  url,
+}: {
+  locale: Locale;
+  url: string;
+}) {
+  const t = copy[locale];
+  const [progress, setProgress] = useState(14);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 94) return prev;
+        const diff = 95 - prev;
+        const increment = Math.max(1, Math.round(diff * 0.16));
+        return Math.min(94, prev + increment);
+      });
+    }, 280);
+    return () => clearInterval(timer);
+  }, []);
+
+  const stages = [
+    {
+      id: "dns",
+      title: t.stageDns,
+      desc: t.stageDnsDesc,
+      threshold: 20,
+    },
+    {
+      id: "ssl",
+      title: t.stageSsl,
+      desc: t.stageSslDesc,
+      threshold: 40,
+    },
+    {
+      id: "html",
+      title: t.stageHtml,
+      desc: t.stageHtmlDesc,
+      threshold: 60,
+    },
+    {
+      id: "robots",
+      title: t.stageRobots,
+      desc: t.stageRobotsDesc,
+      threshold: 78,
+    },
+    {
+      id: "pagespeed",
+      title: t.stagePageSpeed,
+      desc: t.stagePageSpeedDesc,
+      threshold: 90,
+    },
+    {
+      id: "synthesis",
+      title: t.stageSynthesis,
+      desc: t.stageSynthesisDesc,
+      threshold: 100,
+    },
+  ];
+
+  return (
+    <section
+      className="tool-panel"
+      aria-live="polite"
+      style={{
+        marginTop: "20px",
+        padding: "24px",
+        borderRadius: "14px",
+        background: "var(--wd-s, #ffffff)",
+        border: "1px solid var(--wd-l, #cbd5e1)",
+        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.04)",
+      }}
+    >
+      {/* Hidden legacy element for backwards compatibility with existing stylesheets */}
+      <div className="single-audit-loading" style={{ display: "none" }}>
+        <span />
+        <span />
+        <span />
+        <p>{t.loading}</p>
+      </div>
+
+      <header
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          flexWrap: "wrap",
+          gap: "16px",
+          marginBottom: "20px",
+        }}
+      >
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <span
+            className="eyebrow"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "3px 10px",
+              borderRadius: "20px",
+              background: "rgba(14, 165, 233, 0.1)",
+              color: "var(--wd-p, #0ea5e9)",
+              fontWeight: 600,
+              fontSize: "12px",
+            }}
+          >
+            <Activity size={13} />
+            {url || "https://..."}
+          </span>
+          <h2 style={{ margin: "8px 0 4px", fontSize: "20px", fontWeight: 700 }}>
+            {t.liveTitle}
+          </h2>
+          <p style={{ margin: 0, fontSize: "13px", color: "var(--wd-ms, #64748b)" }}>
+            {t.liveSubtitle}
+          </p>
+        </div>
+
+        <div style={{ textAlign: "right", minWidth: "90px" }}>
+          <div
+            style={{
+              fontSize: "36px",
+              fontWeight: 800,
+              fontFamily: "var(--font-mono, monospace)",
+              letterSpacing: "-0.03em",
+              color: "var(--wd-p, #0ea5e9)",
+              lineHeight: 1,
+            }}
+          >
+            {progress}%
+          </div>
+          <small
+            style={{
+              fontSize: "11px",
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+              color: "var(--wd-ms, #64748b)",
+              display: "block",
+              marginTop: "4px",
+            }}
+          >
+            {t.statusRunning}
+          </small>
+        </div>
+      </header>
+
+      {/* Animated Gradient Progress Bar */}
+      <div
+        role="progressbar"
+        aria-valuenow={progress}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        style={{
+          width: "100%",
+          height: "10px",
+          borderRadius: "999px",
+          background: "var(--wd-l, #e2e8f0)",
+          overflow: "hidden",
+          position: "relative",
+          marginBottom: "24px",
+        }}
+      >
+        <div
+          style={{
+            height: "100%",
+            width: `${progress}%`,
+            borderRadius: "999px",
+            background: "linear-gradient(90deg, #0284c7 0%, #0ea5e9 40%, #22d3ee 70%, #10b981 100%)",
+            transition: "width 280ms cubic-bezier(0.4, 0, 0.2, 1)",
+            boxShadow: "0 0 12px rgba(14, 165, 233, 0.5)",
+          }}
+        />
+      </div>
+
+      {/* Staged Checklist */}
+      <div
+        style={{
+          display: "grid",
+          gap: "10px",
+        }}
+      >
+        {stages.map((stage, idx) => {
+          const isDone = progress >= stage.threshold;
+          const prevThreshold = idx > 0 ? (stages[idx - 1]?.threshold ?? 0) : 0;
+          const isCurrent = !isDone && (idx === 0 || progress >= prevThreshold);
+
+          return (
+            <div
+              key={stage.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "12px",
+                padding: "10px 14px",
+                borderRadius: "10px",
+                border: isCurrent
+                  ? "1px solid var(--wd-p, #0ea5e9)"
+                  : isDone
+                  ? "1px solid rgba(16, 185, 129, 0.25)"
+                  : "1px solid var(--wd-l, #f1f5f9)",
+                background: isCurrent
+                  ? "rgba(14, 165, 233, 0.04)"
+                  : isDone
+                  ? "rgba(16, 185, 129, 0.02)"
+                  : "transparent",
+                transition: "all 0.2s ease",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
+                <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {isDone ? (
+                    <CheckCircle2 size={18} color="#10b981" />
+                  ) : isCurrent ? (
+                    <Loader2 size={18} color="#0ea5e9" className="animate-spin" />
+                  ) : (
+                    <Clock size={18} color="#94a3b8" />
+                  )}
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <strong
+                    style={{
+                      display: "block",
+                      fontSize: "13px",
+                      color: isDone ? "var(--wd-t, #0f172a)" : isCurrent ? "var(--wd-p, #0ea5e9)" : "var(--wd-ms, #64748b)",
+                      fontWeight: isCurrent ? 700 : 600,
+                    }}
+                  >
+                    {stage.title}
+                  </strong>
+                  <span
+                    style={{
+                      display: "block",
+                      fontSize: "11px",
+                      color: "var(--wd-ms, #64748b)",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {stage.desc}
+                  </span>
+                </div>
+              </div>
+
+              <span
+                style={{
+                  flexShrink: 0,
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  padding: "3px 8px",
+                  borderRadius: "999px",
+                  background: isDone
+                    ? "rgba(16, 185, 129, 0.1)"
+                    : isCurrent
+                    ? "rgba(14, 165, 233, 0.1)"
+                    : "var(--wd-l, #f1f5f9)",
+                  color: isDone ? "#10b981" : isCurrent ? "#0ea5e9" : "#94a3b8",
+                }}
+              >
+                {isDone ? t.statusDone : isCurrent ? t.statusRunning : t.statusPending}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function AuditResult({ locale, result }: { locale: Locale; result: AuditFrontendResult }) {
   const t = copy[locale];
   const ru = locale === "ru";
@@ -181,6 +513,22 @@ function AuditResult({ locale, result }: { locale: Locale; result: AuditFrontend
     const set = new Set<string>();
     checks.forEach((c) => set.add(c.category));
     return Array.from(set);
+  }, [checks]);
+
+  const categoryStats = useMemo(() => {
+    const map = new Map<string, { total: number; passed: number; failed: number; warning: number }>();
+    checks.forEach((c) => {
+      const current = map.get(c.category) ?? { total: 0, passed: 0, failed: 0, warning: 0 };
+      current.total += 1;
+      if (c.status === "passed") current.passed += 1;
+      else if (c.status === "failed" || c.status === "error") current.failed += 1;
+      else if (c.status === "warning") current.warning += 1;
+      map.set(c.category, current);
+    });
+    return Array.from(map.entries()).map(([cat, stats]) => ({
+      category: cat,
+      ...stats,
+    }));
   }, [checks]);
 
   const filteredChecks = useMemo(() => {
@@ -279,6 +627,47 @@ function AuditResult({ locale, result }: { locale: Locale; result: AuditFrontend
         </article>
       </div>
 
+      {/* Category Breakdown Chips */}
+      {categoryStats.length > 0 && (
+        <section style={{ marginTop: "20px" }}>
+          <h4 style={{ margin: "0 0 10px", fontSize: "14px", fontWeight: 700, color: "var(--wd-ms, #64748b)" }}>
+            {t.categorySummary}
+          </h4>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: "10px" }}>
+            {categoryStats.map((item) => {
+              const isSelected = activeCategory === item.category;
+              return (
+                <button
+                  key={item.category}
+                  type="button"
+                  onClick={() => setActiveCategory(isSelected ? "all" : item.category)}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "flex-start",
+                    gap: "4px",
+                    padding: "10px 14px",
+                    borderRadius: "10px",
+                    border: isSelected ? "2px solid var(--wd-p, #0ea5e9)" : "1px solid var(--wd-l, #e2e8f0)",
+                    background: isSelected ? "rgba(14, 165, 233, 0.05)" : "var(--wd-s, #ffffff)",
+                    cursor: "pointer",
+                    textAlign: "left",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  <strong style={{ fontSize: "13px", color: "var(--wd-t, #0f172a)", textTransform: "capitalize" }}>
+                    {item.category}
+                  </strong>
+                  <span style={{ fontSize: "11px", color: "var(--wd-ms, #64748b)" }}>
+                    {item.passed} / {item.total} успешно {item.failed > 0 && `· ${item.failed} ошибок`}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {/* Core Web Vitals & PageSpeed Insights Summary */}
       <section
         className="tool-panel-wide"
@@ -323,6 +712,18 @@ function AuditResult({ locale, result }: { locale: Locale; result: AuditFrontend
             <strong style={{ fontSize: "18px", color: "#10b981" }}>&lt; 1.8 с</strong>
             <small style={{ display: "block", fontSize: "11px", color: "#64748b" }}>Мгновенно</small>
           </div>
+        </div>
+
+        <div style={{ marginTop: "16px", display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
+          <Link
+            href={`${toolsPath(locale)}/core-web-vitals-checker?url=${encodeURIComponent(result.job.target.normalizedUrl || result.job.target.originalUrl)}`}
+            className="button button-secondary"
+            style={{ fontSize: "13px", padding: "8px 14px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+          >
+            <Gauge size={15} />
+            {t.runPageSpeedAudit}
+            <ArrowRight size={14} />
+          </Link>
         </div>
       </section>
 
@@ -486,6 +887,36 @@ function AuditResult({ locale, result }: { locale: Locale; result: AuditFrontend
           <p>{t.emptyChecks}</p>
         )}
       </section>
+
+      {/* Whole-Site Crawler Recommendation Card */}
+      <section
+        className="tool-panel-wide"
+        style={{
+          marginTop: "32px",
+          padding: "20px",
+          borderRadius: "14px",
+          background: "var(--wd-s, #ffffff)",
+          border: "1px dashed var(--wd-l, #cbd5e1)",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "16px",
+        }}
+      >
+        <div>
+          <h4 style={{ margin: "0 0 4px", fontSize: "15px", fontWeight: 700 }}>{t.crawlerCtaTitle}</h4>
+          <p style={{ margin: 0, fontSize: "13px", color: "var(--wd-ms, #64748b)" }}>{t.crawlerCtaDesc}</p>
+        </div>
+        <Link
+          href={ru ? "/account/crawler" : "/en/account/crawler"}
+          className="button"
+          style={{ fontSize: "13px", padding: "8px 16px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+        >
+          <span>{t.crawlerCtaBtn}</span>
+          <ChevronRight size={14} />
+        </Link>
+      </section>
     </section>
   );
 }
@@ -592,14 +1023,7 @@ export function SinglePageAuditTool({ locale }: { locale: Locale }) {
         </p>
       </section>
 
-      {loading && (
-        <section className="tool-panel single-audit-loading" aria-live="polite">
-          <span />
-          <span />
-          <span />
-          <p>{t.loading}</p>
-        </section>
-      )}
+      {loading && <AuditLiveProgressBar locale={locale} url={url} />}
 
       {result && <AuditResult locale={locale} result={result} />}
     </form>
