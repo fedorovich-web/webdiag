@@ -4,6 +4,7 @@ import logging
 from functools import lru_cache
 from typing import Annotated
 
+import httpx
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Response
 
 from webdiag_api.accounts.models import (
@@ -12,7 +13,9 @@ from webdiag_api.accounts.models import (
     AccountSessionsRevokedResponse,
     AccountSessionSummaryResponse,
     LoginRequest,
+    OAuthConfigResponse,
     OAuthLoginRequest,
+    OAuthYandexExchangeRequest,
     PasswordChangeRequest,
     RegisterRequest,
 )
@@ -178,6 +181,102 @@ def oauth_login(
         )
     except AccountServiceError as error:
         raise _http_error(error) from error
+    _set_session_cookie(response, session.token)
+    if is_new and settings.account_welcome_credits > 0:
+        try:
+            database_path = str(getattr(service._store, "_path", settings.account_database_path))
+            ai_store = SqliteAIStore(database_path)
+            ai_store.grant_credits(
+                user_id=session.response.user.id,
+                quantity=settings.account_welcome_credits,
+                reason="Welcome registration bonus",
+                correlation_id=f"welcome-{session.response.user.id}",
+            )
+        except Exception:
+            logger.exception("Failed to grant welcome credits on OAuth registration.")
+    return session.response
+
+
+@router.get("/oauth/config", response_model=OAuthConfigResponse)
+def oauth_config() -> OAuthConfigResponse:
+    return OAuthConfigResponse(
+        yandex_client_id=settings.yandex_client_id,
+        configured=bool(settings.yandex_client_id and settings.yandex_client_secret),
+    )
+
+
+@router.post("/oauth/yandex/exchange", response_model=AccountSessionResponse)
+def oauth_yandex_exchange(
+    request: OAuthYandexExchangeRequest,
+    response: Response,
+    service: AccountServiceDependency,
+) -> AccountSessionResponse:
+    if not settings.yandex_client_id or not settings.yandex_client_secret:
+        raise HTTPException(
+            status_code=503,
+            detail="Yandex OAuth is not configured on the server",
+        )
+
+    # 1. Exchange authorization code with Yandex OAuth
+    token_url = "https://oauth.yandex.ru/token"
+    try:
+        token_res = httpx.post(
+            token_url,
+            data={
+                "grant_type": "authorization_code",
+                "code": request.code,
+                "client_id": settings.yandex_client_id,
+                "client_secret": settings.yandex_client_secret,
+                "redirect_uri": request.redirect_uri,
+            },
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            timeout=15.0,
+        )
+        if not token_res.is_success:
+            logger.error("Yandex token exchange failed: %s %s", token_res.status_code, token_res.text)
+            raise HTTPException(status_code=400, detail="Failed to exchange authorization code with Yandex")
+
+        token_data = token_res.json()
+        access_token = token_data.get("access_token")
+        if not access_token:
+            raise HTTPException(status_code=400, detail="No access token received from Yandex")
+
+        # 2. Fetch user profile from Yandex
+        profile_res = httpx.get(
+            "https://login.yandex.ru/info?format=json",
+            headers={"Authorization": f"OAuth {access_token}"},
+            timeout=10.0,
+        )
+        if not profile_res.is_success:
+            logger.error("Yandex profile fetch failed: %s %s", profile_res.status_code, profile_res.text)
+            raise HTTPException(status_code=400, detail="Failed to retrieve user profile from Yandex")
+
+        profile = profile_res.json()
+        email = profile.get("default_email") or (profile.get("emails") and profile["emails"][0]) or ""
+        if not email:
+            raise HTTPException(status_code=400, detail="User email not provided by Yandex")
+
+        display_name = (
+            profile.get("real_name")
+            or profile.get("display_name")
+            or profile.get("login")
+            or "Пользователь Яндекс"
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Error during Yandex OAuth exchange")
+        raise HTTPException(status_code=502, detail=f"OAuth exchange error: {exc}") from exc
+
+    # 3. Authenticate or create user in WebDiag
+    try:
+        session, is_new = service.authenticate_oauth_user(
+            email=email,
+            display_name=display_name,
+        )
+    except AccountServiceError as error:
+        raise _http_error(error) from error
+
     _set_session_cookie(response, session.token)
     if is_new and settings.account_welcome_credits > 0:
         try:

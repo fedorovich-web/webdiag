@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { loginAccount, registerAccount } from "./account-client";
 import { accountErrorMessage } from "./account-messages";
@@ -17,6 +17,21 @@ export function AccountAuthForm({ locale, mode }: AccountAuthFormProps) {
   const [error, setError] = useState("");
   const ru = locale === "ru";
   const register = mode === "register";
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const urlError = params.get("error");
+    if (urlError) {
+      if (urlError === "yandex_not_configured") {
+        setError(ru ? "Авторизация через Яндекс ID ещё не настроена (укажите Client ID и Client Secret)." : "Yandex ID authentication is not yet configured (missing Client ID / Secret).");
+      } else if (urlError === "yandex_access_denied") {
+        setError(ru ? "Вы отменили вход через Яндекс ID." : "Yandex ID login was cancelled.");
+      } else {
+        setError(ru ? `Ошибка входа через Яндекс ID (${urlError})` : `Yandex ID login error (${urlError})`);
+      }
+    }
+  }, [ru]);
   const text = ru
     ? {
         eyebrow: "Личный кабинет",
@@ -107,12 +122,9 @@ export function AccountAuthForm({ locale, mode }: AccountAuthFormProps) {
           className="wd-yandex-auth-btn"
           aria-label={ru ? "Войти с Яндекс ID" : "Sign in with Yandex ID"}
         >
-          <svg className="wd-yandex-icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-            <circle cx="12" cy="12" r="12" fill="#fc3f1d" />
-            <path
-              d="M13.6 7.2h-1.4c-1.3 0-2 .7-2 1.8 0 1.2.6 1.8 1.6 2.6l1 1-2.8 4.2H8.3l2.6-3.8c-1.2-1-1.8-1.9-1.8-3.3 0-2.1 1.4-3.3 3.6-3.3h2.3v10.6h-1.4V7.2z"
-              fill="#ffffff"
-            />
+          <svg className="wd-yandex-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M2.04 12c0-5.523 4.476-10 10-10 5.522 0 10 4.477 10 10s-4.478 10-10 10c-5.524 0-10-4.477-10-10z" fill="#FC3F1D" />
+            <path d="M13.32 7.666h-.924c-1.694 0-2.585.858-2.585 2.123 0 1.43.616 2.1 1.881 2.959l1.045.704-3.003 4.487H7.49l2.695-4.014c-1.55-1.111-2.42-2.19-2.42-4.015 0-2.288 1.595-3.85 4.62-3.85h3.003v11.868H13.32V7.666z" fill="#fff" />
           </svg>
           <span>{ru ? "Войти с Яндекс ID" : "Sign in with Yandex ID"}</span>
         </Link>
