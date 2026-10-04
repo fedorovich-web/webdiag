@@ -15,6 +15,7 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 
+test-results/
 apps/web/test-results/
 apps/web/playwright-report/
 apps/web/blob-report/

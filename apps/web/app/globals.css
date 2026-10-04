@@ -155,11 +155,11 @@ p { text-wrap: pretty; }
 .language-segment[aria-current="page"] { color: var(--text); }
 .language-switcher-mobile { display: none; }
 .header-cta { padding-inline: 17px; border-radius: 12px; box-shadow: none; }
-.mobile-menu { position: relative; display: none; }
+.mobile-menu { position: relative; display: none; z-index: 1000; }
 .mobile-menu summary { width: 44px; height: 44px; display: grid; place-content: center; gap: 4px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); cursor: pointer; list-style: none; }
 .mobile-menu summary::-webkit-details-marker { display: none; }
 .mobile-menu summary span { width: 17px; height: 1.5px; border-radius: 2px; background: var(--text); }
-.mobile-menu-panel { position: absolute; top: calc(100% + 12px); right: 0; width: min(330px, calc(100vw - 24px)); display: grid; gap: 14px; padding: 16px; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); box-shadow: var(--shadow-md); }
+.mobile-menu-panel { position: absolute; top: calc(100% + 12px); right: 0; width: min(330px, calc(100vw - 24px)); display: grid; gap: 14px; padding: 16px; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); box-shadow: var(--shadow-md); z-index: 9999; }
 .mobile-nav { display: grid; gap: 4px; }
 .mobile-nav a { min-height: 46px; display: flex; align-items: center; padding: 10px 12px; border-radius: 11px; color: var(--text-soft); text-decoration: none; font-weight: 600; }
 .mobile-nav a:hover { background: var(--surface-muted); color: var(--text); }

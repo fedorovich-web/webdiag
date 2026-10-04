@@ -247,7 +247,7 @@ export function FaviconGeneratorTool({ locale }: { locale: Locale }) {
       <label className="field"><span>{t(locale, "JPEG, PNG, WebP или AVIF", "JPEG, PNG, WebP, or AVIF")}</span><input type="file" accept={imageAcceptAttribute()} onChange={(event) => void load(event.target.files?.[0])} /></label>
       {image && <dl className="result-meta"><div><dt>{t(locale, "Исходный размер", "Source dimensions")}</dt><dd>{image.bitmap.width} × {image.bitmap.height}</dd></div><div><dt>{t(locale, "Размер файла", "File size")}</dt><dd>{formatBytes(image.file.size, locale)}</dd></div></dl>}
       <p className="muted-text">{t(locale, "Генератор берёт центральную квадратную область. Для другой композиции сначала обрежьте исходник.", "The generator uses a centered square crop. Crop the source first when you need a different composition.")}</p>
-      <button className="button" type="button" onClick={() => void generate()} disabled={!image}>{t(locale, "Создать пакет иконок", "Generate favicon package")}</button>
+      <button className="button" type="button" onClick={() => void generate()} disabled={!image}>{t(locale, "Создать 5 PNG-иконок", "Generate 5 PNG icons")}</button>
       {error && <p className="form-error" role="alert">{error}</p>}
       <small>{t(locale, "Иконки генерируются локально в браузере. Вы можете скачать файлы по отдельности или всё целиком в едином ZIP-архиве с готовой разметкой.", "Icons are generated locally in your browser. You can download individual files or the complete ZIP package with markup.")}</small>
     </section>
