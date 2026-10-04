@@ -163,7 +163,7 @@ export function AccountAITextToolRunner({ locale, toolId, onClose }: AccountAITe
         ) : (
           <label key={key}>{fieldLabel(locale, key)}{key.includes("content") || key === "facts" || key === "pages" ? <textarea value={fieldValue(values, key)} onChange={(event) => setValues((current) => ({ ...current, [key]: event.target.value }))} minLength={20} required={required.has(key)} rows={key === "pages" ? 5 : 6} /> : <input value={fieldValue(values, key)} onChange={(event) => setValues((current) => ({ ...current, [key]: event.target.value }))} required={required.has(key)} />}</label>
         ))}
-        <button className="wd-button wd-button-primary" type="submit" disabled={pending || Boolean(run && !isAIRunTerminal(run.state))} aria-busy={pending}>{pending ? (ru ? "Ставим в очередь…" : "Queuing…") : (ru ? "Запустить инструмент" : "Run tool")}</button>
+        <button className="wd-button wd-button-primary" type="submit" disabled={pending || Boolean(run && !isAIRunTerminal(run.state))} aria-busy={pending}>{pending ? (ru ? "Ставим в очередь…" : "Queuing…") : (ru ? "Запустить инструмент (1 AI-кредит)" : "Run tool (1 AI credit)")}</button>
       </form>
       {run && <p className="wd-ai-copilot-status" role="status">{aiRunStateLabel(locale, run.state)}{!isAIRunTerminal(run.state) && !shouldPollAIRun(run.state, attempt) ? (ru ? " — обновите позже" : " — check again later") : ""}</p>}
       {error && <p className="wd-account-error" role="alert">{error}</p>}

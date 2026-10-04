@@ -152,14 +152,21 @@ export const AI_CATALOG_TOOLS: readonly AIToolEntry[] = [
 export function getAICatalogTools(locale: Locale): readonly CatalogTool[] {
   const isRu = locale === "ru";
   const aiHref = isRu ? "/account/ai" : "/en/account/ai";
-  return AI_CATALOG_TOOLS.map((tool) => ({
-    slug: tool.slug,
-    title: isRu ? tool.titleRu : tool.titleEn,
-    description: isRu ? tool.descriptionRu : tool.descriptionEn,
-    category: "ai-tools",
-    categoryTitle: isRu ? "AI-инструменты" : "AI Tools",
-    local: false,
-    href: `${aiHref}?tool=${encodeURIComponent(tool.slug)}`,
-    badge: tool.badge,
-  }));
+  return AI_CATALOG_TOOLS.map((tool) => {
+    const isImage = tool.slug.includes("image");
+    const cost = isImage ? 2 : 1;
+    const creditText = isRu
+      ? `${cost} ${cost === 1 ? "кредит" : "кредита"}`
+      : `${cost} ${cost === 1 ? "credit" : "credits"}`;
+    return {
+      slug: tool.slug,
+      title: isRu ? tool.titleRu : tool.titleEn,
+      description: isRu ? tool.descriptionRu : tool.descriptionEn,
+      category: "ai-tools",
+      categoryTitle: isRu ? "AI-инструменты" : "AI Tools",
+      local: false,
+      href: `${aiHref}?tool=${encodeURIComponent(tool.slug)}`,
+      badge: `AI · ${creditText}`,
+    };
+  });
 }

@@ -68,11 +68,11 @@ export function AccountAIAuditCopilot({ locale, projectId, auditId }: AccountAIA
       <div>
         <span className="eyebrow">{ru ? "AI COPILOT" : "AI COPILOT"}</span>
         <h2 id="ai-copilot-title">{ru ? "Собрать план исправлений" : "Build a fix plan"}</h2>
-        <p>{ru ? "AI расставит подтверждённые проблемы по порядку работ. Запуск использует только этот сохранённый аудит." : "AI orders confirmed issues into a practical work sequence. The run uses this saved audit only."}</p>
+        <p>{ru ? "AI расставит подтверждённые проблемы по порядку работ (списывает 1 AI-кредит). Запуск использует только этот сохранённый аудит." : "AI orders confirmed issues into a practical work sequence (costs 1 AI credit). The run uses this saved audit only."}</p>
       </div>
       <div className="wd-ai-copilot-actions">
         <button className="wd-button wd-button-primary" type="button" onClick={startRun} disabled={pending || (state === "pending" || state === "running")} aria-busy={pending}>
-          {pending ? (ru ? "Ставим в очередь…" : "Queuing…") : (ru ? "Запустить AI-план" : "Run AI plan")}
+          {pending ? (ru ? "Ставим в очередь…" : "Queuing…") : (ru ? "Запустить AI-план (1 AI-кредит)" : "Run AI plan (1 AI credit)")}
         </button>
         {run && <span className="wd-ai-run-state" data-state={run.state}>{aiRunStateLabel(locale, run.state)}</span>}
       </div>
