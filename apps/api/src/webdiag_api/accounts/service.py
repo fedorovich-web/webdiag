@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import secrets
 import time
 from dataclasses import dataclass
 from typing import Protocol
@@ -180,6 +181,31 @@ class AccountService:
                 ) from error
             raise
         return self._create_session(user)
+
+    def authenticate_oauth_user(
+        self,
+        *,
+        email: str,
+        display_name: str,
+    ) -> tuple[AuthenticatedSession, bool]:
+        try:
+            normalized_email = normalize_email(email)
+            normalized_display = normalize_display_name(display_name or "Yandex User")
+        except AccountValidationError as error:
+            raise AccountServiceError(400, error.code, error.message) from error
+
+        user = self._store.get_user_by_email(normalized_email)
+        is_new = False
+        if user is None:
+            is_new = True
+            random_secret = secrets.token_urlsafe(32)
+            password_hash = hash_password(random_secret, self._scrypt_parameters)
+            user = self._store.create_user(
+                email=normalized_email,
+                display_name=normalized_display,
+                password_hash=password_hash,
+            )
+        return self._create_session(user), is_new
 
     def login(self, request: LoginRequest) -> AuthenticatedSession:
         try:

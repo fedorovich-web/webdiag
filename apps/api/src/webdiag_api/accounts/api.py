@@ -12,6 +12,7 @@ from webdiag_api.accounts.models import (
     AccountSessionsRevokedResponse,
     AccountSessionSummaryResponse,
     LoginRequest,
+    OAuthLoginRequest,
     PasswordChangeRequest,
     RegisterRequest,
 )
@@ -161,6 +162,35 @@ def login(
     except AccountServiceError as error:
         raise _http_error(error) from error
     _set_session_cookie(response, session.token)
+    return session.response
+
+
+@router.post("/oauth", response_model=AccountSessionResponse)
+def oauth_login(
+    request: OAuthLoginRequest,
+    response: Response,
+    service: AccountServiceDependency,
+) -> AccountSessionResponse:
+    try:
+        session, is_new = service.authenticate_oauth_user(
+            email=request.email,
+            display_name=request.display_name,
+        )
+    except AccountServiceError as error:
+        raise _http_error(error) from error
+    _set_session_cookie(response, session.token)
+    if is_new and settings.account_welcome_credits > 0:
+        try:
+            database_path = str(getattr(service._store, "_path", settings.account_database_path))
+            ai_store = SqliteAIStore(database_path)
+            ai_store.grant_credits(
+                user_id=session.response.user.id,
+                quantity=settings.account_welcome_credits,
+                reason="Welcome registration bonus",
+                correlation_id=f"welcome-{session.response.user.id}",
+            )
+        except Exception:
+            logger.exception("Failed to grant welcome credits on OAuth registration.")
     return session.response
 
 

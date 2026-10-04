@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Check,
   Minus,
@@ -18,8 +19,39 @@ interface PricingHubPageProps {
 
 export function PricingHubPage({ locale }: PricingHubPageProps) {
   const ru = locale === "ru";
+  const router = useRouter();
   const [annual, setAnnual] = useState(true);
   const [activeFaq, setActiveFaq] = useState<number | null>(0);
+  const [loadingPack, setLoadingPack] = useState<string | null>(null);
+  const [billingError, setBillingError] = useState<string | null>(null);
+
+  async function handleBuyPack(packId: string) {
+    setLoadingPack(packId);
+    setBillingError(null);
+    try {
+      const resp = await fetch("/api/billing/lava/invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pack_id: packId }),
+      });
+      if (resp.status === 401) {
+        router.push(`/login?return_to=${encodeURIComponent("/pricing#credit-packs")}`);
+        return;
+      }
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        throw new Error(data?.detail?.message || "Ошибка создания счета на оплату");
+      }
+      const data = await resp.json();
+      if (data.payment_url) {
+        window.location.assign(data.payment_url);
+      }
+    } catch (err: unknown) {
+      setBillingError(err instanceof Error ? err.message : "Не удалось перейти к оплате");
+    } finally {
+      setLoadingPack(null);
+    }
+  }
 
   const homeHref = ru ? "/" : "/en";
   const registerHref = ru ? "/register" : "/en/register";
@@ -566,6 +598,12 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
             <p className="wd-pricing-sub-h2">{t.creditPacks.lead}</p>
           </div>
 
+          {billingError && (
+            <div className="wd-credit-pack-error" role="alert" style={{ marginBottom: "20px", padding: "12px 18px", borderRadius: "12px", background: "#fef2f2", border: "1px solid #fecaca", color: "#dc2626", fontSize: "14px", textAlign: "center" }}>
+              {billingError}
+            </div>
+          )}
+
           <div className="wd-credit-packs-grid">
             {t.creditPacks.packs.map((pack) => (
               <div
@@ -588,13 +626,16 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
                   <span className="wd-credit-pack-rate">{pack.perCredit}</span>
                 </div>
 
-                <Link
-                  href={pack.btnHref}
+                <button
+                  type="button"
+                  onClick={() => handleBuyPack(pack.id)}
+                  disabled={loadingPack === pack.id}
                   className={`wd-pricing-card-btn ${pack.isPopular ? "is-primary" : ""}`}
+                  style={{ width: "100%", cursor: loadingPack === pack.id ? "wait" : "pointer" }}
                 >
-                  <span>{pack.btnText}</span>
+                  <span>{loadingPack === pack.id ? (ru ? "Создание счета..." : "Creating invoice...") : pack.btnText}</span>
                   <ArrowRight size={16} aria-hidden="true" />
-                </Link>
+                </button>
 
                 <div className="wd-credit-pack-features">
                   <ul>
