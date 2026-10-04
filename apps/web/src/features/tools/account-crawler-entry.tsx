@@ -70,17 +70,34 @@ export function getAccountCrawlerEntryCopy(slug: AccountCrawlerSlug, locale: Loc
 
 export function AccountCrawlerEntry({ slug, locale }: { slug: AccountCrawlerSlug; locale: Locale }) {
   const copy = getAccountCrawlerEntryCopy(slug, locale);
+  const ru = locale === "ru";
+  const singleAuditHref = ru ? "/tools/single-page-audit" : "/en/tools/single-page-audit";
+
   return (
-    <section className="account-crawler-entry" aria-labelledby="account-crawler-entry-title">
-      <div className="account-crawler-entry-copy">
-        <span className="eyebrow">{copy.eyebrow}</span>
-        <h2 id="account-crawler-entry-title">{copy.title}</h2>
-        <p>{copy.description}</p>
-      </div>
-      <div className="account-crawler-entry-action">
-        <p>{copy.limit}</p>
-        <Link className="button button-link" href={copy.href}>{copy.action}<span aria-hidden="true">→</span></Link>
-      </div>
-    </section>
+    <div>
+      <section className="account-crawler-entry" aria-labelledby="account-crawler-entry-title">
+        <div className="account-crawler-entry-copy">
+          <span className="eyebrow">{copy.eyebrow}</span>
+          <h2 id="account-crawler-entry-title">{copy.title}</h2>
+          <p>{copy.description}</p>
+        </div>
+        <div className="account-crawler-entry-action">
+          <p>{copy.limit}</p>
+          <Link className="button button-link" href={copy.href}>{copy.action}<span aria-hidden="true">→</span></Link>
+        </div>
+      </section>
+
+      {slug === "whole-site-audit" && (
+        <aside className="tool-note" style={{ marginTop: "20px", padding: "18px", borderRadius: "12px", background: "var(--wd-s, #f8fafc)", border: "1px solid var(--wd-l, #e2e8f0)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+          <div>
+            <strong style={{ fontSize: "15px", display: "block" }}>{ru ? "Нужен мгновенный экспресс-аудит без регистрации?" : "Need an instant single-page audit without sign-in?"}</strong>
+            <span style={{ fontSize: "13px", color: "var(--wd-ms, #64748b)" }}>{ru ? "Проверьте любую страницу онлайн: SEO, Core Web Vitals, Google PageSpeed, SSL и безопасность." : "Analyze any page online: SEO, Core Web Vitals, Google PageSpeed, SSL, and security."}</span>
+          </div>
+          <Link className="button" href={singleAuditHref}>
+            {ru ? "Онлайн экспресс-аудит" : "Launch Express Audit"} <span aria-hidden="true">→</span>
+          </Link>
+        </aside>
+      )}
+    </div>
   );
 }

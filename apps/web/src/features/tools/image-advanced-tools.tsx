@@ -27,6 +27,7 @@ import {
   isAcceptedRasterInputType,
 } from "./image-tools";
 import { CopyButton } from "../../components/copy-button";
+import { createZipArchive } from "./zip-archive";
 
 const MAX_FILE_BYTES = 25 * 1024 * 1024;
 const MAX_PIXELS = 40_000_000;
@@ -178,16 +179,22 @@ function useObjectUrlResult<T extends { url: string }>() {
 export function FaviconGeneratorTool({ locale }: { locale: Locale }) {
   const [image, setImage] = useState<LoadedImage | null>(null);
   const [results, setResults] = useState<GeneratedFavicon[]>([]);
+  const [zipUrl, setZipUrl] = useState<string | null>(null);
   const [error, setError] = useState("");
   const html = faviconHtmlSnippet();
   const manifest = faviconManifestSnippet();
 
   useEffect(() => () => image?.bitmap.close(), [image]);
   useEffect(() => () => results.forEach((result) => URL.revokeObjectURL(result.url)), [results]);
+  useEffect(() => () => { if (zipUrl) URL.revokeObjectURL(zipUrl); }, [zipUrl]);
 
   async function load(file: File | undefined) {
     setError("");
     setResults([]);
+    if (zipUrl) {
+      URL.revokeObjectURL(zipUrl);
+      setZipUrl(null);
+    }
     if (!file) {
       setImage(null);
       return;
@@ -208,12 +215,24 @@ export function FaviconGeneratorTool({ locale }: { locale: Locale }) {
     const next: GeneratedFavicon[] = [];
     try {
       const crop = faviconCropRectangle(image.bitmap.width, image.bitmap.height);
+      const zipEntries: { name: string; data: Uint8Array }[] = [];
+
       for (const asset of FAVICON_ASSETS) {
         const { canvas, context } = makeCanvas(asset.size, asset.size);
         context.drawImage(image.bitmap, crop.x, crop.y, crop.size, crop.size, 0, 0, asset.size, asset.size);
         const blob = await canvasToBlob(canvas, "image/png", 1);
-        next.push({ ...asset, url: URL.createObjectURL(blob), bytes: blob.size });
+        const url = URL.createObjectURL(blob);
+        next.push({ ...asset, url, bytes: blob.size });
+        zipEntries.push({ name: asset.filename, data: new Uint8Array(await blob.arrayBuffer()) });
       }
+
+      const enc = new TextEncoder();
+      zipEntries.push({ name: "favicon-tags.html", data: enc.encode(html) });
+      zipEntries.push({ name: "manifest.json", data: enc.encode(manifest) });
+
+      const zipBlob = createZipArchive(zipEntries);
+      if (zipUrl) URL.revokeObjectURL(zipUrl);
+      setZipUrl(URL.createObjectURL(zipBlob));
       setResults(next);
       setError("");
     } catch (caught) {
@@ -228,12 +247,19 @@ export function FaviconGeneratorTool({ locale }: { locale: Locale }) {
       <label className="field"><span>{t(locale, "JPEG, PNG, WebP или AVIF", "JPEG, PNG, WebP, or AVIF")}</span><input type="file" accept={imageAcceptAttribute()} onChange={(event) => void load(event.target.files?.[0])} /></label>
       {image && <dl className="result-meta"><div><dt>{t(locale, "Исходный размер", "Source dimensions")}</dt><dd>{image.bitmap.width} × {image.bitmap.height}</dd></div><div><dt>{t(locale, "Размер файла", "File size")}</dt><dd>{formatBytes(image.file.size, locale)}</dd></div></dl>}
       <p className="muted-text">{t(locale, "Генератор берёт центральную квадратную область. Для другой композиции сначала обрежьте исходник.", "The generator uses a centered square crop. Crop the source first when you need a different composition.")}</p>
-      <button className="button" type="button" onClick={() => void generate()} disabled={!image}>{t(locale, "Создать 5 PNG-иконок", "Generate 5 PNG icons")}</button>
+      <button className="button" type="button" onClick={() => void generate()} disabled={!image}>{t(locale, "Создать пакет иконок", "Generate favicon package")}</button>
       {error && <p className="form-error" role="alert">{error}</p>}
-      <small>{t(locale, "Файлы обрабатываются локально. .ico, ZIP, SVG и автоматическая установка не создаются.", "Files are processed locally. This tool does not create .ico, ZIP, SVG, or automatic installation.")}</small>
+      <small>{t(locale, "Иконки генерируются локально в браузере. Вы можете скачать файлы по отдельности или всё целиком в едином ZIP-архиве с готовой разметкой.", "Icons are generated locally in your browser. You can download individual files or the complete ZIP package with markup.")}</small>
     </section>
     <section className="tool-panel" aria-live="polite">
-      <h2>{t(locale, "Готовые файлы", "Generated files")}</h2>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
+        <h2>{t(locale, "Готовые файлы", "Generated files")}</h2>
+        {zipUrl && (
+          <a className="button" href={zipUrl} download="webdiag-favicons.zip" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+            📥 {t(locale, "Скачать всё ZIP-архивом", "Download all as ZIP")}
+          </a>
+        )}
+      </div>
       {results.length ? <>
         <div className="favicon-asset-grid">
           {results.map((result) => <article className="favicon-asset" key={result.filename}>
@@ -251,7 +277,7 @@ export function FaviconGeneratorTool({ locale }: { locale: Locale }) {
           <div className="favicon-snippet-heading"><h3>manifest.json</h3><CopyButton value={manifest} locale={locale} /></div>
           <pre className="output">{manifest}</pre>
         </div>
-      </> : <p className="muted-text">{t(locale, "Пять PNG-файлов и фрагменты подключения появятся после обработки.", "Five PNG files and integration snippets will appear after processing.")}</p>}
+      </> : <p className="muted-text">{t(locale, "Пять PNG-файлов, ZIP-архив и фрагменты подключения появятся после обработки.", "Five PNG files, ZIP archive, and integration snippets will appear after processing.")}</p>}
     </section>
   </div>;
 }

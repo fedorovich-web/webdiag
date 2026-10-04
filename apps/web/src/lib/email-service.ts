@@ -171,7 +171,7 @@ export async function sendWelcomeEmail(email: string, locale: "ru" | "en" = "ru"
         <ul style="margin: 0; padding-left: 20px; color: #334155; font-size: 14px; line-height: 1.8;">
           <li>${isRu ? "Запустить экспресс-проверку страницы любого сайта" : "Run a quick single-page audit for any website"}</li>
           <li>${isRu ? "Создать первый проект в личном кабинете для отслеживания динамики" : "Create your first project in the workspace to track health trends"}</li>
-          <li>${isRu ? "Воспользоваться более чем 115 специализированными техническими инструментами" : "Explore over 115 specialized technical tools"}</li>
+          <li>${isRu ? "Воспользоваться более чем 140 специализированными техническими инструментами" : "Explore over 140 specialized technical tools"}</li>
           <li>${isRu ? "Попробовать AI-помощника для составления плана исправлений" : "Use AI assistants to prioritize and plan fixes"}</li>
         </ul>
       </div>

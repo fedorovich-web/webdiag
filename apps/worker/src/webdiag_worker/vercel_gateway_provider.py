@@ -248,7 +248,13 @@ class VercelAIGatewayProvider:
         for name, expected in expected_configuration.items():
             if os.getenv(name, expected).strip() != expected:
                 raise RuntimeError(f"{name} must be {expected}")
-        api_key = os.getenv("AI_GATEWAY_API_KEY", "")
+        api_key = (
+            os.getenv("AI_GATEWAY_API_KEY")
+            or os.getenv("OPENAI_API_KEY")
+            or os.getenv("LLM_API_KEY")
+            or os.getenv("AI_API_KEY")
+            or ""
+        )
         if (
             not 16 <= len(api_key) <= 512
             or any(character.isspace() or not character.isascii() for character in api_key)

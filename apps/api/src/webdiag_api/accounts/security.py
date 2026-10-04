@@ -72,10 +72,10 @@ def normalize_display_name(value: str) -> str:
 
 
 def validate_password(value: str, *, email: str | None = None) -> str:
-    if not 12 <= len(value) <= 128:
+    if not 6 <= len(value) <= 128:
         raise AccountValidationError(
             "account_weak_password",
-            "Password must contain between 12 and 128 characters.",
+            "Password must contain between 6 and 128 characters.",
         )
     if value.isspace():
         raise AccountValidationError(

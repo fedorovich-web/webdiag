@@ -1,12 +1,12 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { Locale } from "@webdiag/tool-registry";
 import {
-  AuditClientError,
   AuditSnapshotResponse,
   parseAuditUrlInput,
-  startAuditSnapshot,
 } from "./audit-client";
 
 const copy = {
@@ -75,18 +75,6 @@ const priorityLabels = {
 type SubmitState = "idle" | "loading" | "success" | "error";
 type FormInstance = "hero" | "final";
 
-function getClientErrorMessage(error: unknown, locale: Locale): string {
-  if (error instanceof AuditClientError) {
-    if (error.code === "audit_api_unavailable" || error.code === "audit_api_timeout") return copy[locale].apiUnavailable;
-    return error.message;
-  }
-  return locale === "ru" ? "произошла неизвестная ошибка." : "an unknown error occurred.";
-}
-
-function scrollToReportPreview() {
-  window.setTimeout(() => document.getElementById("report")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
-}
-
 function AuditResultPreview({ locale, snapshot }: { locale: Locale; snapshot: AuditSnapshotResponse }) {
   const t = copy[locale];
   const runSummary = snapshot.summary;
@@ -131,13 +119,24 @@ function AuditResultPreview({ locale, snapshot }: { locale: Locale; snapshot: Au
           <p>{t.noIssues}</p>
         )}
       </div>
-      <a className="wd-live-audit-link" href="#report">{t.reportLink}<span aria-hidden="true">→</span></a>
+      <Link
+        className="wd-live-audit-link"
+        href={
+          locale === "ru"
+            ? `/tools/single-page-audit?url=${encodeURIComponent(snapshot.job.target.normalizedUrl || snapshot.job.target.originalUrl)}`
+            : `/en/tools/single-page-audit?url=${encodeURIComponent(snapshot.job.target.normalizedUrl || snapshot.job.target.originalUrl)}`
+        }
+      >
+        {locale === "ru" ? "Посмотреть полный технический отчёт" : "View full technical audit report"}
+        <span aria-hidden="true">→</span>
+      </Link>
     </section>
   );
 }
 
 export function HomeUrlCheckForm({ locale, instance = "hero" }: { locale: Locale; instance?: FormInstance }) {
   const t = copy[locale];
+  const router = useRouter();
   const [value, setValue] = useState("");
   const [message, setMessage] = useState("");
   const [state, setState] = useState<SubmitState>("idle");
@@ -161,21 +160,12 @@ export function HomeUrlCheckForm({ locale, instance = "hero" }: { locale: Locale
       return;
     }
 
-    setValue(parsed.href);
-    setState("loading");
-    setMessage("");
-    setSnapshot(null);
-
-    try {
-      const result = await startAuditSnapshot(parsed.href);
-      setSnapshot(result);
-      setState("success");
-      setMessage(`${t.successPrefix} ${result.job.target.hostname}.`);
-    } catch (error) {
-      setState("error");
-      setMessage(`${t.errorPrefix} ${getClientErrorMessage(error, locale)}`);
-      scrollToReportPreview();
-    }
+    const targetUrl = parsed.href;
+    const fullAuditHref =
+      locale === "ru"
+        ? `/tools/single-page-audit?url=${encodeURIComponent(targetUrl)}`
+        : `/en/tools/single-page-audit?url=${encodeURIComponent(targetUrl)}`;
+    router.push(fullAuditHref);
   }
 
   return (

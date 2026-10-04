@@ -144,7 +144,7 @@ export function KnowledgeHubPage({ locale }: KnowledgeHubPageProps) {
         ctaTitle: "Проверьте ваш сайт на практике",
         ctaLead: "Примените полученные знания и запустите полный технический аудит сайта за пару секунд.",
         ctaBtn: "Запустить SEO-аудит",
-        catalogBtn: "Все 125+ инструментов",
+        catalogBtn: "Все 140+ инструментов",
       }
     : {
         breadcrumbs: { home: "Home", knowledge: "Knowledge Base" },
@@ -264,7 +264,7 @@ export function KnowledgeHubPage({ locale }: KnowledgeHubPageProps) {
         ctaTitle: "Put These Principles into Practice",
         ctaLead: "Run a comprehensive technical SEO inspection of your website in just a few seconds.",
         ctaBtn: "Run SEO Audit",
-        catalogBtn: "Browse 125+ Tools",
+        catalogBtn: "Browse 140+ Tools",
       };
 
   const filteredArticles = t.articles.filter((art) => {

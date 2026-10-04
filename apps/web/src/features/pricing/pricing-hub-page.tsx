@@ -44,7 +44,7 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
             priceAnnual: "0 ₽",
             period: "навсегда",
             features: [
-              "115+ диагностических инструментов",
+              "140+ диагностических и AI-инструментов",
               "Экспресс-аудиты отдельных страниц",
               "Проверка Core Web Vitals и скорости",
               "Базовый SSL и HTTP-анализ",
@@ -200,7 +200,7 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
             priceAnnual: "$0",
             period: "forever free",
             features: [
-              "115+ diagnostic web tools",
+              "140+ diagnostic and AI tools",
               "Express single page audits",
               "Core Web Vitals & speed checks",
               "Basic SSL & HTTP header analysis",
