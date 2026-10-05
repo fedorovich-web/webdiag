@@ -177,13 +177,13 @@ export function RobotsTxtTool({ locale }: { locale: Locale }) {
         targetPath: "Путь URL",
         robotsUrl: "Файл robots.txt",
         matchedRule: "Сработавшее правило",
-        sitemaps: "Sitemap directives",
-        rules: "Disallow rules",
+        sitemaps: "Директивы Sitemap",
+        rules: "Запрещённые пути (Disallow)",
         recommendation: "Рекомендация",
-        empty: "После проверки здесь появятся доступность robots.txt, правило для URL и Sitemap directives.",
+        empty: "После проверки здесь появятся доступность robots.txt, правило для URL и директивы Sitemap.",
         noRule: "Подходящее правило не найдено — URL считается разрешённым.",
-        noSitemaps: "Sitemap directives не найдены.",
-        noRules: "Disallow rules не найдены.",
+        noSitemaps: "Директивы Sitemap не найдены в файле robots.txt.",
+        noRules: "Запрещённые пути (Disallow) не найдены.",
       }
     : {
         inputTitle: "URL and user-agent",

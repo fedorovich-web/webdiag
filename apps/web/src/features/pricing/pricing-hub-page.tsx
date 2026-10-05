@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -10,8 +10,11 @@ import {
   ArrowRight,
   ChevronDown,
   Sparkles,
+  UserCheck,
 } from "lucide-react";
 import type { Locale } from "@webdiag/tool-registry";
+import { getAccountSession } from "../account/account-client";
+import type { AccountSessionResponse } from "../account/account-contract";
 
 interface PricingHubPageProps {
   readonly locale: Locale;
@@ -24,6 +27,21 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
   const [activeFaq, setActiveFaq] = useState<number | null>(0);
   const [loadingPack, setLoadingPack] = useState<string | null>(null);
   const [billingError, setBillingError] = useState<string | null>(null);
+  const [session, setSession] = useState<AccountSessionResponse | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    getAccountSession()
+      .then((sess) => {
+        if (active) setSession(sess);
+      })
+      .catch(() => {
+        if (active) setSession(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   async function handleBuyPack(packId: string) {
     setLoadingPack(packId);
@@ -32,22 +50,45 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
       const resp = await fetch("/api/billing/lava/invoice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ pack_id: packId }),
       });
       if (resp.status === 401) {
-        router.push(`/login?return_to=${encodeURIComponent("/pricing#credit-packs")}`);
+        setBillingError(
+          ru
+            ? "Для совершения оплаты необходимо войти в аккаунт."
+            : "You must be signed in to make a payment."
+        );
+        router.push(
+          `${ru ? "/login" : "/en/login"}?return_to=${encodeURIComponent(
+            "/pricing#credit-packs"
+          )}`
+        );
         return;
       }
       if (!resp.ok) {
         const data = await resp.json().catch(() => ({}));
-        throw new Error(data?.detail?.message || "Ошибка создания счета на оплату");
+        throw new Error(
+          data?.detail?.message ||
+            (ru ? "Ошибка создания счета на оплату" : "Failed to create payment invoice")
+        );
       }
       const data = await resp.json();
       if (data.payment_url) {
         window.location.assign(data.payment_url);
+      } else {
+        throw new Error(
+          ru ? "Платежная ссылка не получена" : "Payment URL was not returned"
+        );
       }
     } catch (err: unknown) {
-      setBillingError(err instanceof Error ? err.message : "Не удалось перейти к оплате");
+      setBillingError(
+        err instanceof Error
+          ? err.message
+          : ru
+          ? "Не удалось перейти к оплате"
+          : "Unable to initiate payment"
+      );
     } finally {
       setLoadingPack(null);
     }
@@ -537,32 +578,104 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
 
       {/* Pricing Cards Grid */}
       <section className="wd-pricing-section wd-pricing-cards-section">
-        <div className="shell wd-pricing-cards-grid">
-          {t.plans.map((plan) => {
-            const price = annual ? plan.priceAnnual : plan.priceMonthly;
-            return (
-              <div
-                className={`wd-pricing-card ${plan.isPopular ? "is-popular" : ""}`}
-                key={plan.id}
+        <div className="shell">
+          {session && (
+            <div
+              className="wd-pricing-session-banner"
+              style={{
+                marginBottom: "32px",
+                padding: "16px 24px",
+                background: "linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(124, 58, 237, 0.08))",
+                border: "1px solid rgba(99, 102, 241, 0.25)",
+                borderRadius: "14px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: "16px",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <UserCheck size={22} color="#2563eb" aria-hidden="true" />
+                <span style={{ fontSize: "14px", color: "var(--wd-f, #1e293b)", lineHeight: 1.5 }}>
+                  {ru ? (
+                    <>
+                      Вы авторизованы как <strong>{session.user.email}</strong>. При выборе тарифа или покупке кредитов заказ сразу привязывается к вашему аккаунту.
+                    </>
+                  ) : (
+                    <>
+                      Signed in as <strong>{session.user.email}</strong>. Plan upgrades and credit packages will be applied directly to your account.
+                    </>
+                  )}
+                </span>
+              </div>
+              <Link
+                href={ru ? "/account" : "/en/account"}
+                style={{
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  color: "#2563eb",
+                  textDecoration: "none",
+                  whiteSpace: "nowrap",
+                }}
               >
-                {plan.badge && <span className="wd-pricing-badge">{plan.badge}</span>}
-                <div className="wd-pricing-card-head">
-                  <h3>{plan.name}</h3>
-                  <p className="wd-pricing-card-desc">{plan.desc}</p>
-                </div>
+                {ru ? "Перейти в кабинет →" : "Open workspace →"}
+              </Link>
+            </div>
+          )}
 
-                <div className="wd-pricing-card-price-row">
-                  <span className="wd-pricing-card-amount">{price}</span>
-                  <span className="wd-pricing-card-period">/ {plan.period}</span>
-                </div>
-
-                <Link
-                  href={plan.btnHref}
-                  className={`wd-pricing-card-btn ${plan.isPopular ? "is-primary" : ""}`}
+          <div className="wd-pricing-cards-grid">
+            {t.plans.map((plan) => {
+              const price = annual ? plan.priceAnnual : plan.priceMonthly;
+              const isPlanLoading = loadingPack === `plan-${plan.id}`;
+              return (
+                <div
+                  className={`wd-pricing-card ${plan.isPopular ? "is-popular" : ""}`}
+                  key={plan.id}
                 >
-                  <span>{plan.btnText}</span>
-                  <ArrowRight size={16} aria-hidden="true" />
-                </Link>
+                  {plan.badge && <span className="wd-pricing-badge">{plan.badge}</span>}
+                  <div className="wd-pricing-card-head">
+                    <h3>{plan.name}</h3>
+                    <p className="wd-pricing-card-desc">{plan.desc}</p>
+                  </div>
+
+                  <div className="wd-pricing-card-price-row">
+                    <span className="wd-pricing-card-amount">{price}</span>
+                    <span className="wd-pricing-card-period">/ {plan.period}</span>
+                  </div>
+
+                  {session && plan.id !== "free" ? (
+                    <button
+                      type="button"
+                      onClick={() => handleBuyPack(`plan-${plan.id}`)}
+                      disabled={isPlanLoading}
+                      className={`wd-pricing-card-btn ${plan.isPopular ? "is-primary" : ""}`}
+                      style={{ width: "100%", cursor: isPlanLoading ? "wait" : "pointer" }}
+                    >
+                      <span>
+                        {isPlanLoading
+                          ? (ru ? "Создание счета..." : "Creating invoice...")
+                          : (ru ? `Перейти на ${plan.name}` : `Upgrade to ${plan.name}`)}
+                      </span>
+                      <ArrowRight size={16} aria-hidden="true" />
+                    </button>
+                  ) : session && plan.id === "free" ? (
+                    <Link
+                      href={ru ? "/account" : "/en/account"}
+                      className="wd-pricing-card-btn"
+                    >
+                      <span>{ru ? "Текущий тариф (Кабинет)" : "Current Plan (Dashboard)"}</span>
+                      <ArrowRight size={16} aria-hidden="true" />
+                    </Link>
+                  ) : (
+                    <Link
+                      href={plan.btnHref}
+                      className={`wd-pricing-card-btn ${plan.isPopular ? "is-primary" : ""}`}
+                    >
+                      <span>{plan.btnText}</span>
+                      <ArrowRight size={16} aria-hidden="true" />
+                    </Link>
+                  )}
 
                 <div className="wd-pricing-features-wrap">
                   <strong className="wd-pricing-features-title">
@@ -586,6 +699,7 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
               </div>
             );
           })}
+          </div>
         </div>
       </section>
 

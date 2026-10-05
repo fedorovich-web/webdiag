@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import type { AccountSessionResponse } from "./account-contract";
@@ -155,6 +156,40 @@ export function AccountSettings({
             <div><dt>{ru ? "Электронная почта" : "Email"}</dt><dd>{session.user.email}</dd></div>
             <div><dt>{ru ? "Аккаунт создан" : "Account created"}</dt><dd>{createdAt}</dd></div>
           </dl>
+        </section>
+
+        <section className="wd-account-card wd-account-billing-card" aria-labelledby="account-billing-title">
+          <span className="eyebrow">{ru ? "Тариф и баланс" : "Plan & Balance"}</span>
+          <h2 id="account-billing-title">{ru ? "Подписка и AI-кредиты" : "Subscription & Credits"}</h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "12px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", background: "var(--wd-s, #f8fafc)", borderRadius: "10px", border: "1px solid var(--wd-l, #e2e8f0)" }}>
+              <div>
+                <strong style={{ display: "block", fontSize: "14px" }}>{ru ? "Тариф: Стартовый" : "Plan: Starter"}</strong>
+                <small style={{ color: "var(--wd-ms, #64748b)" }}>{ru ? "Базовая диагностика и экспресс-аудиты" : "Base diagnostics & express audits"}</small>
+              </div>
+              <span className="tool-badge tool-badge-success">{ru ? "Активен" : "Active"}</span>
+            </div>
+            <p style={{ fontSize: "13px", color: "var(--wd-ms, #64748b)", margin: "4px 0 8px 0" }}>
+              {ru
+                ? "AI-кредиты расходуются на умные рекомендации, генерацию планов исправлений, анализ конкурентных пробелов и ТЗ для копирайтеров."
+                : "AI credits are used for smart recommendations, fix plan generation, competitor gap analysis, and content briefs."}
+            </p>
+            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+              <Link
+                href={ru ? "/pricing#credit-packs" : "/en/pricing#credit-packs"}
+                className="wd-button wd-button-primary"
+                style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+              >
+                <span>💎 {ru ? "Купить кредиты" : "Buy Credits"}</span>
+              </Link>
+              <Link
+                href={ru ? "/pricing" : "/en/pricing"}
+                className="wd-button wd-button-secondary"
+              >
+                {ru ? "Сменить тариф (Pro / Team)" : "Change plan (Pro / Team)"}
+              </Link>
+            </div>
+          </div>
         </section>
 
         <section className="wd-account-card" aria-labelledby="account-sessions-title">

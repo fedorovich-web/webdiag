@@ -22,15 +22,30 @@ logger = logging.getLogger(__name__)
 
 
 CREDIT_PACKS: dict[str, dict[str, Any]] = {
+    "pack-50": {
+        "credits": 50,
+        "price_rub": 390.0,
+        "title": "50 AI-кредитов WebDiag",
+    },
     "credit-pack-50": {
         "credits": 50,
         "price_rub": 390.0,
         "title": "50 AI-кредитов WebDiag",
     },
+    "pack-150": {
+        "credits": 150,
+        "price_rub": 890.0,
+        "title": "150 AI-кредитов WebDiag",
+    },
     "credit-pack-150": {
         "credits": 150,
         "price_rub": 890.0,
         "title": "150 AI-кредитов WebDiag",
+    },
+    "pack-500": {
+        "credits": 500,
+        "price_rub": 1990.0,
+        "title": "500 AI-кредитов WebDiag",
     },
     "credit-pack-500": {
         "credits": 500,
