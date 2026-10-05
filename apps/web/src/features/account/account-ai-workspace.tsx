@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { Locale } from "@webdiag/tool-registry";
+import { accountSettingsPath } from "../../lib/routes";
 import { accountErrorMessage } from "./account-messages";
 import {
   deleteAIRun,
@@ -33,9 +34,9 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
   const [activeTab, setActiveTab] = useState<"diagnostic" | "ai">(() => {
     if (typeof window !== "undefined") {
       const param = new URLSearchParams(window.location.search).get("tab");
-      if (param === "ai") return "ai";
+      if (param === "diagnostic") return "diagnostic";
     }
-    return "diagnostic";
+    return "ai";
   });
   const [catalog, setCatalog] = useState<AICatalogResponse | null>(null);
   const [credits, setCredits] = useState<AICreditBalanceResponse | null>(null);
@@ -172,7 +173,7 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
             <small>{ru ? "доступно аккаунту" : "available to this account"}</small>
           </div>
           <Link
-            href={ru ? "/pricing#credit-packs" : "/en/pricing#credit-packs"}
+            href={`${accountSettingsPath(locale)}#billing`}
             className="wd-button wd-button-primary wd-ai-topup-btn"
           >
             {ru ? "+ Пополнить" : "+ Top up"}
@@ -207,7 +208,7 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
                 </p>
               </div>
               <Link
-                href={ru ? "/pricing#credit-packs" : "/en/pricing#credit-packs"}
+                href={`${accountSettingsPath(locale)}#billing`}
                 className="wd-button wd-button-primary"
               >
                 {ru ? "Купить кредиты" : "Buy credits"}

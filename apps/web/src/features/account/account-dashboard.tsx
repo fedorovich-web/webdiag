@@ -23,7 +23,7 @@ import {
   restoreAccountProject,
 } from "./account-workspace-client";
 import type { AccountProject, ArchivedAccountProject } from "./account-workspace-contract";
-import { projectMonitoringPath, projectPath, reportsPath, savedAuditIssuesPath, toolsPath } from "../../lib/routes";
+import { accountSettingsPath, projectMonitoringPath, projectPath, reportsPath, savedAuditIssuesPath, toolsPath } from "../../lib/routes";
 import { HomeUrlCheckForm } from "../home/home-url-check-form";
 
 interface AccountDashboardProps {
@@ -361,7 +361,7 @@ export function AccountDashboard({
         </div>
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
           <Link
-            href={ru ? "/pricing#credit-packs" : "/en/pricing#credit-packs"}
+            href={`${accountSettingsPath(locale)}#billing`}
             className="wd-button wd-button-primary"
             style={{ fontSize: "13px", padding: "8px 16px" }}
           >

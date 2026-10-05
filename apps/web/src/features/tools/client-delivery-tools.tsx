@@ -5,6 +5,7 @@ import { toolErrorMessage } from "./tool-error-presentation";
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { CopyButton } from "../../components/copy-button";
+import { localizeRecommendation } from "./tool-localization";
 import {
   isCspAnalyzerResponse,
   isResourceHintsAnalyzerResponse,
@@ -98,7 +99,7 @@ function StatusBadge({ value }: { value: ToolStatus }) {
 }
 
 function Recommendation({ locale, value }: { locale: Locale; value: string }) {
-  return <p className="tool-note"><strong>{copy[locale].recommendation}:</strong> {value}</p>;
+  return <p className="tool-note"><strong>{copy[locale].recommendation}:</strong> {localizeRecommendation(value, locale)}</p>;
 }
 
 function ResultActions({ locale, value }: { locale: Locale; value: string }) {

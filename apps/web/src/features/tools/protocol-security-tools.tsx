@@ -4,6 +4,7 @@ import { toolErrorMessage } from "./tool-error-presentation";
 
 import { useState, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
+import { localizeRecommendation } from "./tool-localization";
 import {
   isCookiePolicyResponse,
   isCorsResponse,
@@ -107,7 +108,7 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
 }
 
 function Recommendation({ locale, value }: { locale: Locale; value: string }) {
-  return <p className="tool-note"><strong>{dictionary[locale].recommendation}:</strong> {value}</p>;
+  return <p className="tool-note"><strong>{dictionary[locale].recommendation}:</strong> {localizeRecommendation(value, locale)}</p>;
 }
 
 function StatusBadge({ value }: { value: "pass" | "warning" | "fail" }) {
