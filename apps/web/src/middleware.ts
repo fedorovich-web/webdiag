@@ -17,6 +17,18 @@ export function isMainDomainHost(hostname: string): boolean {
 }
 
 export function middleware(request: NextRequest) {
+  // 0. Intercept any Server Action requests (e.g. CVE-2026-64643 probes sending Next-Action: x)
+  // WebDiag does not expose any Server Actions (all mutations use /api/* route handlers).
+  if (request.headers.has("next-action")) {
+    return new NextResponse("Server action not found.", {
+      status: 404,
+      headers: {
+        "x-action-not-found": "1",
+        "content-type": "text/plain",
+      },
+    });
+  }
+
   const host =
     request.headers.get("x-forwarded-host") ||
     request.headers.get("host") ||
