@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, FileBarChart2, FolderKanban, Search, Settings, Sparkles, Wrench, X } from "lucide-react";
-import { getCategoryTitle, localize, publicTools, type Locale } from "@webdiag/tool-registry";
+import type { Locale } from "@webdiag/tool-registry";
 import { accountAIPath, accountSettingsPath, reportsPath } from "../../lib/routes";
+import { getPublicCatalogTools } from "../tools/public-catalog-data";
 
 interface AccountQuickSearchModalProps {
   readonly locale: Locale;
@@ -71,18 +72,20 @@ export function AccountQuickSearchModal({ locale, isOpen, onClose }: AccountQuic
     },
   ], [locale, ru]);
 
+  const allTools = useMemo(() => getPublicCatalogTools(locale), [locale]);
+
   const filteredTools = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return [];
-    return publicTools
+    return allTools
       .filter((tool) => {
-        const title = localize(tool.title, locale).toLowerCase();
-        const desc = tool.description ? localize(tool.description, locale).toLowerCase() : "";
-        const cat = getCategoryTitle(tool.category, locale).toLowerCase();
+        const title = tool.title.toLowerCase();
+        const desc = tool.description.toLowerCase();
+        const cat = tool.categoryTitle.toLowerCase();
         return title.includes(q) || desc.includes(q) || cat.includes(q) || tool.slug.includes(q);
       })
       .slice(0, 15);
-  }, [locale, query]);
+  }, [allTools, query]);
 
   if (!isOpen) return null;
 
@@ -98,35 +101,45 @@ export function AccountQuickSearchModal({ locale, isOpen, onClose }: AccountQuic
         className="wd-quick-search-panel"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="wd-quick-search-head">
+        <div className="wd-quick-search-header">
           <Search className="wd-quick-search-icon" aria-hidden="true" />
           <input
             ref={inputRef}
-            type="search"
+            type="text"
+            className="wd-quick-search-input"
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder={ru ? "Поиск среди 140+ инструментов, проверок и разделов…" : "Search across 140+ tools, checks, and sections…"}
-            aria-label={ru ? "Поле поиска" : "Search field"}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={ru ? "Поиск по всем 140+ инструментам и разделам…" : "Search all 140+ tools and sections…"}
+            aria-label={ru ? "Поиск" : "Search"}
           />
-          {query ? (
+          {query && (
             <button
               type="button"
               className="wd-quick-search-clear"
-              onClick={() => setQuery("")}
-              aria-label={ru ? "Очистить поиск" : "Clear search"}
+              onClick={() => {
+                setQuery("");
+                inputRef.current?.focus();
+              }}
+              aria-label={ru ? "Очистить" : "Clear"}
             >
               <X aria-hidden="true" />
             </button>
-          ) : (
-            <kbd className="wd-quick-search-kbd">ESC</kbd>
           )}
+          <button
+            type="button"
+            className="wd-quick-search-close"
+            onClick={onClose}
+            aria-label={ru ? "Закрыть" : "Close"}
+          >
+            <span className="wd-quick-search-key">ESC</span>
+          </button>
         </div>
 
         <div className="wd-quick-search-body">
-          {query.trim() === "" ? (
+          {query.trim().length === 0 ? (
             <div className="wd-quick-search-section">
               <span className="wd-quick-search-section-title">
-                {ru ? "Быстрый переход" : "Quick navigation"}
+                {ru ? "Быстрые разделы" : "Quick navigation"}
               </span>
               <div className="wd-quick-search-list">
                 {quickLinks.map((item) => {
@@ -159,12 +172,10 @@ export function AccountQuickSearchModal({ locale, isOpen, onClose }: AccountQuic
               <div className="wd-quick-search-list">
                 {filteredTools.map((tool) => {
                   const toolHref = ru ? `/tools/${tool.slug}` : `/en/tools/${tool.slug}`;
-                  const title = localize(tool.title, locale);
-                  const cat = getCategoryTitle(tool.category, locale);
                   return (
                     <Link
-                      key={tool.id}
-                      href={toolHref}
+                      key={tool.slug}
+                      href={tool.href || toolHref}
                       className="wd-quick-search-item"
                       onClick={onClose}
                     >
@@ -172,8 +183,8 @@ export function AccountQuickSearchModal({ locale, isOpen, onClose }: AccountQuic
                         <Wrench aria-hidden="true" />
                       </span>
                       <div className="wd-quick-search-item-copy">
-                        <strong>{title}</strong>
-                        <small>{cat}</small>
+                        <strong>{tool.title}</strong>
+                        <small>{tool.categoryTitle}</small>
                       </div>
                       <ArrowRight className="wd-quick-search-item-arrow" aria-hidden="true" />
                     </Link>
@@ -183,18 +194,10 @@ export function AccountQuickSearchModal({ locale, isOpen, onClose }: AccountQuic
             </div>
           ) : (
             <div className="wd-quick-search-empty">
-              <p>{ru ? "Ничего не найдено по вашему запросу." : "No tools found matching your search."}</p>
-              <small>{ru ? "Попробуйте ввести другое ключевое слово или перейдите в полный каталог." : "Try a different keyword or browse the full catalog."}</small>
+              <p>{ru ? "Ничего не найдено по запросу" : "No tools found matching your query"}</p>
             </div>
           )}
         </div>
-
-        <footer className="wd-quick-search-footer">
-          <span>{ru ? "Более 140 специализированных инструментов диагностики и AI" : "Over 140 specialized diagnostic and AI tools"}</span>
-          <Link href={ru ? "/tools" : "/en/tools"} onClick={onClose} className="wd-quick-search-footer-link">
-            {ru ? "Полный каталог инструментов →" : "Full tool catalog →"}
-          </Link>
-        </footer>
       </div>
     </div>
   );

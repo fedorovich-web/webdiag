@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { Locale } from "@webdiag/tool-registry";
 import { accountErrorMessage } from "./account-messages";
@@ -20,7 +20,8 @@ import { aiWorkspaceEmptyCopy } from "./account-ai-presentation";
 import { AccountAIToolList } from "./account-ai-tool-list";
 import { AccountAIRunHistory } from "./account-ai-run-history";
 import { AccountAITextToolRunner } from "./account-ai-text-tool-runner";
-import { ToolList } from "../tools/tool-list";
+import { ToolCatalog } from "../tools/tool-catalog";
+import { getPublicCatalogCategories, getPublicCatalogTools } from "../tools/public-catalog-data";
 import { Sparkles, Wrench } from "lucide-react";
 
 interface AccountAIWorkspaceProps {
@@ -43,6 +44,12 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
   const [error, setError] = useState("");
   const [deletingRunId, setDeletingRunId] = useState<string | null>(null);
   const [selectedTool, setSelectedTool] = useState<Exclude<AIToolId, "ai_audit_action_plan"> | null>(null);
+
+  const diagnosticTools = useMemo(() => getPublicCatalogTools(locale), [locale]);
+  const diagnosticCategories = useMemo(
+    () => getPublicCatalogCategories(locale, diagnosticTools),
+    [locale, diagnosticTools],
+  );
 
   const loadWorkspace = useCallback(() => {
     setLoadState("loading");
@@ -127,7 +134,7 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
             <h1>{ru ? "Все 140+ инструментов WebDiag" : "All 140+ WebDiag Diagnostic Tools"}</h1>
             <p>{ru ? "Проверки SEO, производительности, безопасности, DNS, разметки и доступности для вашего сайта." : "SEO, performance, security, DNS, schema, and accessibility audits for your website."}</p>
           </div>
-          <ToolList locale={locale} />
+          <ToolCatalog locale={locale} tools={diagnosticTools} categories={diagnosticCategories} />
         </div>
       ) : (
         <>
