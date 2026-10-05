@@ -36,6 +36,44 @@ export function AccountSettings({
   const [sessionsPending, setSessionsPending] = useState(false);
   const [sessionsError, setSessionsError] = useState("");
   const [sessionsStatus, setSessionsStatus] = useState("");
+  const [loadingPack, setLoadingPack] = useState<string | null>(null);
+  const [packError, setPackError] = useState("");
+
+  async function handleDirectBuyPack(packId: string) {
+    setLoadingPack(packId);
+    setPackError("");
+    try {
+      const resp = await fetch("/api/billing/lava/invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ pack_id: packId }),
+      });
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        throw new Error(
+          data?.detail?.message ||
+            (ru ? "Не удалось выставить счёт на оплату." : "Failed to create payment invoice.")
+        );
+      }
+      const data = await resp.json();
+      if (data.payment_url) {
+        window.location.assign(data.payment_url);
+      } else {
+        throw new Error(ru ? "Ссылка на оплату не получена." : "Payment URL not returned.");
+      }
+    } catch (err: unknown) {
+      setPackError(
+        err instanceof Error
+          ? err.message
+          : ru
+          ? "Ошибка связи с платежным сервисом."
+          : "Payment service connection error."
+      );
+    } finally {
+      setLoadingPack(null);
+    }
+  }
 
   useEffect(() => {
     let active = true;
@@ -174,19 +212,80 @@ export function AccountSettings({
                 ? "AI-кредиты расходуются на умные рекомендации, генерацию планов исправлений, анализ конкурентных пробелов и ТЗ для копирайтеров."
                 : "AI credits are used for smart recommendations, fix plan generation, competitor gap analysis, and content briefs."}
             </p>
-            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-              <Link
-                href={ru ? "/pricing#credit-packs" : "/en/pricing#credit-packs"}
-                className="wd-button wd-button-primary"
-                style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
-              >
-                <span>💎 {ru ? "Купить кредиты" : "Buy Credits"}</span>
-              </Link>
+            {packError && (
+              <p className="wd-account-error" role="alert" style={{ margin: "4px 0" }}>
+                {packError}
+              </p>
+            )}
+
+            <div style={{ marginTop: "8px" }}>
+              <strong style={{ fontSize: "13px", display: "block", marginBottom: "8px", color: "var(--wd-f, #0f172a)" }}>
+                {ru ? "Быстрое пополнение баланса AI-кредитов:" : "Quick credit top-up:"}
+              </strong>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "10px" }}>
+                <div style={{ padding: "12px", borderRadius: "10px", border: "1px solid var(--wd-l, #e2e8f0)", background: "var(--wd-s, #fff)" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "4px" }}>
+                    <strong style={{ fontSize: "14px" }}>50 {ru ? "кредитов" : "credits"}</strong>
+                    <span style={{ fontSize: "15px", fontWeight: 700, color: "#2563eb" }}>490 ₽</span>
+                  </div>
+                  <small style={{ color: "var(--wd-ms, #64748b)", display: "block", marginBottom: "10px" }}>9.8 ₽ / {ru ? "кредит" : "credit"}</small>
+                  <button
+                    type="button"
+                    disabled={loadingPack !== null}
+                    onClick={() => handleDirectBuyPack("pack-50")}
+                    className="wd-button wd-button-primary"
+                    style={{ width: "100%", fontSize: "12px", padding: "6px 12px" }}
+                  >
+                    {loadingPack === "pack-50" ? (ru ? "Создание счёта..." : "Creating...") : (ru ? "Купить за 490 ₽" : "Buy 490 ₽")}
+                  </button>
+                </div>
+
+                <div style={{ padding: "12px", borderRadius: "10px", border: "2px solid #6366f1", background: "rgba(99, 102, 241, 0.04)", position: "relative" }}>
+                  <span style={{ position: "absolute", top: "-10px", right: "12px", background: "linear-gradient(135deg, #6366f1, #8b5cf6)", color: "#fff", fontSize: "10px", fontWeight: 700, padding: "2px 8px", borderRadius: "6px" }}>
+                    {ru ? "ХИТ" : "POPULAR"}
+                  </span>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "4px" }}>
+                    <strong style={{ fontSize: "14px" }}>150 {ru ? "кредитов" : "credits"}</strong>
+                    <span style={{ fontSize: "15px", fontWeight: 700, color: "#6366f1" }}>1 190 ₽</span>
+                  </div>
+                  <small style={{ color: "var(--wd-ms, #64748b)", display: "block", marginBottom: "10px" }}>7.9 ₽ / {ru ? "кредит" : "credit"}</small>
+                  <button
+                    type="button"
+                    disabled={loadingPack !== null}
+                    onClick={() => handleDirectBuyPack("pack-150")}
+                    className="wd-button wd-button-primary"
+                    style={{ width: "100%", fontSize: "12px", padding: "6px 12px", background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}
+                  >
+                    {loadingPack === "pack-150" ? (ru ? "Создание счёта..." : "Creating...") : (ru ? "Купить за 1 190 ₽" : "Buy 1 190 ₽")}
+                  </button>
+                </div>
+
+                <div style={{ padding: "12px", borderRadius: "10px", border: "1px solid var(--wd-l, #e2e8f0)", background: "var(--wd-s, #fff)" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "4px" }}>
+                    <strong style={{ fontSize: "14px" }}>500 {ru ? "кредитов" : "credits"}</strong>
+                    <span style={{ fontSize: "15px", fontWeight: 700, color: "#2563eb" }}>2 990 ₽</span>
+                  </div>
+                  <small style={{ color: "var(--wd-ms, #64748b)", display: "block", marginBottom: "10px" }}>5.9 ₽ / {ru ? "кредит" : "credit"}</small>
+                  <button
+                    type="button"
+                    disabled={loadingPack !== null}
+                    onClick={() => handleDirectBuyPack("pack-500")}
+                    className="wd-button wd-button-primary"
+                    style={{ width: "100%", fontSize: "12px", padding: "6px 12px" }}
+                  >
+                    {loadingPack === "pack-500" ? (ru ? "Создание счёта..." : "Creating...") : (ru ? "Купить за 2 990 ₽" : "Buy 2 990 ₽")}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginTop: "12px" }}>
               <Link
                 href={ru ? "/pricing" : "/en/pricing"}
                 className="wd-button wd-button-secondary"
+                style={{ fontSize: "13px" }}
               >
-                {ru ? "Сменить тариф (Pro / Team)" : "Change plan (Pro / Team)"}
+                {ru ? "Тарифы подписки (Pro / Team)" : "Subscription plans (Pro / Team)"}
               </Link>
             </div>
           </div>
