@@ -85,15 +85,9 @@ class BillingService:
                 "offerId": offer_id,
                 "currency": "RUB",
                 "amount": amount,
-                "periodicity": "ONE_TIME",
-                "successful_return_url": f"https://app.webdiag.ru/account?billing=success&pack={request.pack_id}",
+                "successful_return_url": f"https://app.webdiag.ru/account?billing=success&pack={request.pack_id}&user={user_id}",
                 "failure_return_url": "https://app.webdiag.ru/pricing?billing=failed",
                 "cancel_return_url": "https://app.webdiag.ru/pricing",
-                "clientUtm": {
-                    "utm_source": "webdiag",
-                    "utm_medium": user_id,
-                    "utm_campaign": request.pack_id,
-                },
             }
             headers = {
                 "X-Api-Key": settings.lava_api_key.strip(),
@@ -211,8 +205,16 @@ class BillingService:
             except Exception:
                 user = None
 
-        buyer = data.get("buyer") or {}
-        buyer_email = buyer.get("email") if isinstance(buyer, dict) else data.get("email")
+        buyer = data.get("buyer") or body.get("buyer")
+        buyer_email: str | None = None
+        if isinstance(buyer, dict):
+            buyer_email = buyer.get("email")
+        elif isinstance(buyer, str) and "@" in buyer:
+            buyer_email = buyer
+        if not buyer_email:
+            raw_email = data.get("email") or body.get("email") or data.get("buyer_email") or body.get("buyer_email")
+            if isinstance(raw_email, str) and "@" in raw_email:
+                buyer_email = raw_email
 
         if user is None and buyer_email:
             try:

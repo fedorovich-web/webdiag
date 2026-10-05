@@ -5,7 +5,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const rawBody = await request.text();
+  const rawBuffer = Buffer.from(await request.arrayBuffer());
   const headers: Record<string, string> = {
     "content-type": "application/json",
     accept: "application/json",
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const upstream = await fetch(`${apiBaseUrl}/v1/billing/webhook`, {
       method: "POST",
       headers,
-      body: rawBody,
+      body: rawBuffer,
       cache: "no-store",
     });
 
