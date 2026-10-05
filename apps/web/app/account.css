@@ -965,7 +965,7 @@
 
 .wd-account-workspace-page .wd-issue-result-count small {
   color: var(--muted);
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -1027,7 +1027,7 @@
 .wd-account-workspace-page .wd-issue-filters label {
   gap: 6px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 13px;
   text-transform: uppercase;
 }
 
@@ -1081,7 +1081,7 @@
   border: 1px solid var(--line);
   background: var(--surface-muted);
   color: var(--muted);
-  font-size: 9px;
+  font-size: 13px;
   letter-spacing: .03em;
 }
 
@@ -1123,7 +1123,7 @@
 
 .wd-issue-next-action span {
   color: var(--muted);
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 800;
   letter-spacing: .05em;
   text-transform: uppercase;
@@ -1305,7 +1305,7 @@
   border-radius: 999px;
   background: var(--surface-muted);
   color: var(--text-soft);
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 800;
 }
 
@@ -1347,7 +1347,7 @@
 
 .wd-monitoring-facts span {
   color: var(--muted);
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -1401,7 +1401,7 @@
   display: grid;
   gap: 6px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -1460,7 +1460,7 @@
 .wd-monitor-run-head strong,
 .wd-monitor-run-list article > p {
   color: var(--muted);
-  font-size: 10px;
+  font-size: 13px;
 }
 
 .wd-monitor-run-head b {
@@ -1486,7 +1486,7 @@
   border-radius: 999px;
   background: var(--surface-muted);
   color: var(--text-soft);
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -1497,7 +1497,7 @@
 
 .wd-monitor-error summary {
   color: var(--muted);
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 800;
   cursor: pointer;
 }
@@ -1594,7 +1594,7 @@
   border: 1px solid var(--line);
   border-radius: 7px;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 800;
 }
 
@@ -1637,7 +1637,7 @@
 
 .wd-report-list-main dt {
   color: var(--muted);
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -1660,7 +1660,7 @@
 
 .wd-report-list-side small {
   color: var(--muted);
-  font-size: 9px;
+  font-size: 13px;
 }
 
 .wd-account-workspace-page .wd-report-snapshot-head,
@@ -1770,7 +1770,7 @@
 
 .wd-report-priority-grid span {
   color: var(--muted);
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 800;
 }
 
@@ -1878,7 +1878,7 @@
   border-radius: 999px;
   background: var(--surface-muted);
   color: var(--muted);
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 800;
 }
 
@@ -1903,7 +1903,7 @@
 
 .wd-report-recommendation span {
   color: var(--muted);
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -1956,7 +1956,7 @@
 .wd-report-check-group li strong,
 .wd-report-passed-checks li strong {
   color: var(--muted);
-  font-size: 9px;
+  font-size: 13px;
   text-transform: uppercase;
 }
 
@@ -2025,7 +2025,7 @@
 .wd-public-report-context p {
   margin: 0;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 13px;
 }
 
 .wd-public-report-context strong {
@@ -2139,7 +2139,7 @@ body:has(.wd-public-report-page) .site-footer {
 
 .wd-account-workspace-page .wd-workspace-identity .eyebrow {
   margin-bottom: 5px;
-  font-size: 10px;
+  font-size: 13px;
 }
 
 .wd-account-workspace-page .wd-workspace-identity strong {
@@ -2162,7 +2162,7 @@ body:has(.wd-public-report-page) .site-footer {
 .wd-workspace-navigation-group > span:first-child {
   padding: 0 10px 5px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 800;
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -2417,7 +2417,7 @@ body:has(.wd-public-report-page) .site-footer {
   border-radius: 8px;
   background: var(--surface);
   color: var(--muted);
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 800;
 }
 
@@ -2454,7 +2454,7 @@ body:has(.wd-public-report-page) .site-footer {
 
 .wd-operation-project-card dt {
   color: var(--muted);
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -2476,7 +2476,7 @@ body:has(.wd-public-report-page) .site-footer {
 
 .wd-operation-project-footer > span {
   color: var(--muted);
-  font-size: 10px;
+  font-size: 13px;
 }
 
 .wd-operation-project-footer .wd-button {
@@ -2620,7 +2620,7 @@ body:has(.wd-public-report-page) .site-footer {
   display: block;
   margin-top: 6px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 13px;
 }
 
 .wd-account-workspace-page .wd-project-create.is-primary {
@@ -3009,7 +3009,7 @@ body:has(.wd-public-report-page) .site-footer {
 }
 
 .wd-ai-tool-cost {
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 750;
   padding: 3px 6px;
   border-radius: 6px;
@@ -3026,7 +3026,7 @@ body:has(.wd-public-report-page) .site-footer {
   border: 1px solid var(--line);
   border-radius: 7px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 800;
 }
 
@@ -3224,7 +3224,7 @@ body:has(.wd-public-report-page) .site-footer {
 .wd-ai-action-count {
   flex: none;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 13px;
 }
 
 .wd-ai-action-list > li > p {
@@ -4168,7 +4168,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 .wd-account-workspace-page .wd-workspace-navigation-group > span {
   margin: 10px 8px 4px;
   color: #8b98ab;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -4204,7 +4204,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 }
 
 .wd-account-workspace-page .wd-workspace-project-switcher label {
-  font-size: 8px;
+  font-size: 12px;
   letter-spacing: .06em;
 }
 
@@ -4214,14 +4214,14 @@ body:has(.wd-account-workspace-page) .site-footer {
   border-color: #dfe8f1;
   border-radius: 9px;
   background: #f7faff;
-  font-size: 10px;
+  font-size: 13px;
 }
 
 .wd-account-workspace-page .wd-workspace-sidebar > .wd-button {
   min-height: 38px;
   margin: 0 8px;
   border-radius: 9px;
-  font-size: 10px;
+  font-size: 13px;
 }
 
 /* Dashboard */
@@ -4292,7 +4292,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   max-width: 290px;
   margin: 0;
   color: #6f8098;
-  font-size: 10px;
+  font-size: 13px;
   line-height: 1.45;
 }
 
@@ -4339,7 +4339,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   padding: 0 10px;
   background: transparent;
   color: #13234b;
-  font-size: 10px;
+  font-size: 13px;
   outline: 0;
 }
 
@@ -4350,7 +4350,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   padding: 0 15px;
   background: linear-gradient(110deg, #2ed1af, #27d2da 54%, #438dff);
   color: #fff;
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 800;
   cursor: pointer;
 }
@@ -4359,7 +4359,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   min-height: 0;
   margin: 5px 4px 0;
   color: #77869c;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .wd-dashboard-quick-check .wd-live-audit-card {
@@ -4414,7 +4414,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-dashboard-kpis span {
   color: #8190a5;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -4428,7 +4428,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-dashboard-kpis small {
   color: #6c7c95;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .wd-dashboard-main-grid {
@@ -4459,7 +4459,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   margin-bottom: 4px;
   padding: 0;
   background: none;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .wd-dashboard-panel > header .eyebrow::before {
@@ -4476,7 +4476,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-dashboard-panel > header > small {
   color: #8a97aa;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .wd-dashboard-chart {
@@ -4523,7 +4523,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-dashboard-chart-summary span {
   color: #7a889e;
-  font-size: 9px;
+  font-size: 13px;
 }
 
 .wd-dashboard-priority-list,
@@ -4586,7 +4586,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 .wd-dashboard-project-list h3,
 .wd-dashboard-task-list strong {
   color: #18264a;
-  font-size: 10px;
+  font-size: 13px;
 }
 
 .wd-dashboard-project-list h3 {
@@ -4601,7 +4601,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   margin-top: 2px;
   overflow: hidden;
   color: #8592a6;
-  font-size: 8px;
+  font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -4633,7 +4633,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   border-radius: 8px;
   background: linear-gradient(145deg, #e9f8ff, #eff2ff);
   color: #1687f8;
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 900;
 }
 
@@ -4653,7 +4653,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   background: transparent;
   color: #1687f8;
   font: inherit;
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 800;
   cursor: pointer;
 }
@@ -4676,7 +4676,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   max-width: 120px;
   overflow: hidden;
   color: #7a889e;
-  font-size: 8px;
+  font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -4695,7 +4695,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   border-radius: 7px;
   background: #e8fbf6;
   color: #14a991;
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 900;
 }
 
@@ -4722,7 +4722,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   text-align: left;
   text-decoration: none;
   font: inherit;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 800;
   cursor: pointer;
 }
@@ -4750,7 +4750,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   align-items: center;
   padding: 0 16px;
   color: #31415f;
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 800;
   cursor: pointer;
 }
@@ -4818,7 +4818,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-issues-summary-grid span {
   color: #8794a7;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -4831,7 +4831,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-issues-summary-grid small {
   color: #74839a;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .wd-issues-summary-grid .is-critical strong { color: #ef4b63; }
@@ -4853,7 +4853,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 }
 
 .wd-issues-render-filters .wd-issue-filter-heading p {
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .wd-account-workspace-page .wd-issues-render-filters .wd-issue-filters {
@@ -4862,14 +4862,14 @@ body:has(.wd-account-workspace-page) .site-footer {
 }
 
 .wd-account-workspace-page .wd-issues-render-filters .wd-issue-filters label {
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .wd-account-workspace-page .wd-issues-render-filters .wd-issue-filters select {
   min-height: 38px;
   padding: 7px 9px;
   border-radius: 8px;
-  font-size: 9px;
+  font-size: 13px;
 }
 
 .wd-issues-render-layout {
@@ -4904,7 +4904,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   padding: 0 12px;
   background: #f7faff;
   color: #8b97a8;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -4961,13 +4961,13 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-issues-render-title strong {
   color: #18264a;
-  font-size: 9px;
+  font-size: 13px;
 }
 
 .wd-issues-render-title small {
   margin-top: 2px;
   color: #8a97a9;
-  font-size: 7px;
+  font-size: 12px;
 }
 
 .wd-issues-priority {
@@ -4976,7 +4976,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   border-radius: 999px;
   background: #fff5df;
   color: #b77916;
-  font-size: 7px;
+  font-size: 12px;
   font-weight: 800;
 }
 
@@ -4988,7 +4988,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 .wd-issues-pages {
   justify-self: center;
   color: #5f708a;
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 800;
 }
 
@@ -5012,7 +5012,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 .wd-issues-render-detail-head p {
   margin: 0;
   color: #65758d;
-  font-size: 9px;
+  font-size: 13px;
   line-height: 1.55;
 }
 
@@ -5030,7 +5030,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   align-items: center;
   gap: 4px;
   color: #8390a3;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 800;
 }
 
@@ -5046,7 +5046,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   place-items: center;
   border-radius: 99px;
   background: #edf4fb;
-  font-size: 7px;
+  font-size: 12px;
 }
 
 .wd-issues-render-recommendation {
@@ -5060,21 +5060,21 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-issues-render-recommendation > span {
   color: #12a18f;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
 }
 
 .wd-issues-render-recommendation strong {
   color: #18304b;
-  font-size: 9px;
+  font-size: 13px;
   line-height: 1.45;
 }
 
 .wd-issues-render-recommendation p {
   margin: 0;
   color: #6d7c90;
-  font-size: 8px;
+  font-size: 12px;
   line-height: 1.45;
 }
 
@@ -5086,7 +5086,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-issues-render-urls > strong {
   color: #4b5d76;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .wd-issues-render-urls code {
@@ -5096,7 +5096,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   border-radius: 6px;
   background: #f8fbfe;
   color: #5f708a;
-  font-size: 7px;
+  font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -5106,7 +5106,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   min-height: 38px;
   margin: 0 12px 12px;
   border-radius: 8px;
-  font-size: 9px;
+  font-size: 13px;
 }
 
 @media (max-width: 1060px) {
@@ -5207,7 +5207,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   gap: 7px;
   align-items: center;
   color: #7f8da1;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .wd-report-render-status > span {
@@ -5239,7 +5239,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-report-render-head a {
   color: #3485d9;
-  font-size: 9px;
+  font-size: 13px;
   text-decoration: none;
 }
 
@@ -5256,7 +5256,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-report-render-score > span {
   color: #8492a6;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -5275,7 +5275,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-report-render-score > small {
   color: #13a88f;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 800;
 }
 
@@ -5298,7 +5298,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-report-render-kpis span {
   color: #8593a8;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -5311,7 +5311,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-report-render-kpis small {
   color: #78879d;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .wd-report-render-kpis .is-danger strong {
@@ -5347,7 +5347,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   margin: 0 0 3px;
   padding: 0;
   background: none;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .wd-report-render-panel .eyebrow::before,
@@ -5366,7 +5366,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-report-render-panel > header > small {
   color: #8a97aa;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .wd-report-health-bars {
@@ -5384,7 +5384,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-report-health-bars span {
   color: #566780;
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -5412,7 +5412,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-report-health-bars strong {
   color: #17264a;
-  font-size: 10px;
+  font-size: 13px;
   text-align: right;
 }
 
@@ -5432,7 +5432,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-report-health-note span {
   color: #7a889d;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .wd-report-priority-donut-wrap {
@@ -5473,7 +5473,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-report-priority-donut small {
   color: #8a97aa;
-  font-size: 7px;
+  font-size: 12px;
 }
 
 .wd-report-priority-donut-wrap ul {
@@ -5490,7 +5490,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   gap: 6px;
   align-items: center;
   color: #5e6f88;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .wd-report-priority-donut-wrap li i {
@@ -5506,7 +5506,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-report-priority-donut-wrap li strong {
   color: #17264a;
-  font-size: 9px;
+  font-size: 13px;
 }
 
 .wd-report-render-parameters {
@@ -5535,7 +5535,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 .wd-report-render-parameter-grid span {
   overflow: hidden;
   color: #5f6f87;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 800;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -5548,7 +5548,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-report-render-parameter-grid small {
   color: #8a97aa;
-  font-size: 7px;
+  font-size: 12px;
 }
 
 .wd-report-render-problem-grid {
@@ -5565,7 +5565,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   border-radius: 8px;
   background: #f0f6fb;
   color: #586982;
-  font-size: 9px;
+  font-size: 13px;
 }
 
 .wd-report-render-issue-table {
@@ -5594,7 +5594,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   border-radius: 7px;
   background: #fff6df;
   color: #a97819;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 900;
 }
 
@@ -5612,13 +5612,13 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-report-render-issue-table div > strong {
   color: #17264a;
-  font-size: 9px;
+  font-size: 13px;
 }
 
 .wd-report-render-issue-table div > small {
   margin-top: 2px;
   color: #8996a9;
-  font-size: 7px;
+  font-size: 12px;
 }
 
 .wd-report-category-list {
@@ -5636,7 +5636,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 .wd-report-category-list span {
   overflow: hidden;
   color: #5e6f88;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -5644,7 +5644,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-report-category-list strong {
   color: #17264a;
-  font-size: 9px;
+  font-size: 13px;
   text-align: right;
 }
 
@@ -5662,7 +5662,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   margin: 0 0 3px;
   padding: 0;
   background: none;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .wd-report-render-recommendation .eyebrow::before {
@@ -5672,7 +5672,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 .wd-report-render-recommendation p {
   margin: 6px 0 0;
   color: #6c7b91;
-  font-size: 8px;
+  font-size: 12px;
   line-height: 1.5;
 }
 
@@ -5682,7 +5682,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   margin: 0;
   padding-left: 20px;
   color: #41536e;
-  font-size: 8px;
+  font-size: 12px;
   line-height: 1.45;
 }
 
@@ -5715,14 +5715,14 @@ body:has(.wd-account-workspace-page) .site-footer {
 .wd-report-check-compact span {
   overflow: hidden;
   color: #465873;
-  font-size: 8px;
+  font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .wd-report-check-compact strong {
   color: #168f7c;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .wd-report-render .wd-report-methodology h2 {
@@ -5734,7 +5734,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 .wd-report-render .wd-report-methodology p {
   margin: 0;
   color: #6e7c91;
-  font-size: 8px;
+  font-size: 12px;
   line-height: 1.55;
 }
 
@@ -5828,7 +5828,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 .wd-ai-workspace-hero p {
   margin: 0 !important;
   color: #6c7b91 !important;
-  font-size: 10px !important;
+  font-size: 13px !important;
   line-height: 1.55 !important;
 }
 
@@ -5847,7 +5847,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   min-height: 38px;
   border-radius: 9px;
   padding-inline: 12px;
-  font-size: 9px;
+  font-size: 13px;
 }
 
 .wd-project-render-kpis {
@@ -5869,7 +5869,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-project-render-kpis span {
   color: #8592a6;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -5882,7 +5882,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-project-render-kpis small {
   color: #77869c;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .wd-project-render-kpis .is-danger strong {
@@ -5928,7 +5928,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 .wd-account-workspace-page .wd-project-management p,
 .wd-account-settings-page .wd-account-card > p {
   color: #718097;
-  font-size: 9px;
+  font-size: 13px;
   line-height: 1.55;
 }
 
@@ -5965,7 +5965,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-account-workspace-page .wd-audit-row p {
   color: #78879c;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 /* Monitoring */
@@ -5977,7 +5977,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 .wd-monitoring-hero-actions .wd-button {
   min-height: 38px;
   border-radius: 9px;
-  font-size: 9px;
+  font-size: 13px;
 }
 
 .wd-account-workspace-page .wd-monitoring-facts {
@@ -5997,7 +5997,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 }
 
 .wd-account-workspace-page .wd-monitoring-facts span {
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .wd-account-workspace-page .wd-monitoring-facts strong {
@@ -6018,7 +6018,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 }
 
 .wd-account-workspace-page .wd-monitoring-fields label {
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .wd-account-workspace-page .wd-monitoring-fields :is(input, select) {
@@ -6026,7 +6026,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   padding: 7px 9px;
   border-radius: 8px;
   background: #f8fbfd;
-  font-size: 9px;
+  font-size: 13px;
 }
 
 .wd-account-workspace-page .wd-monitor-run-list article {
@@ -6055,7 +6055,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 .wd-account-settings-page .wd-account-settings-identity > div {
   gap: 12px;
   padding: 9px 0;
-  font-size: 9px;
+  font-size: 13px;
 }
 
 .wd-account-settings-page .wd-account-session-count {
@@ -6073,7 +6073,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-account-settings-page .wd-account-form label {
   gap: 5px;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -6083,7 +6083,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   border: 1px solid #dfe8f1;
   border-radius: 8px;
   background: #f9fbfd;
-  font-size: 10px;
+  font-size: 13px;
   text-transform: none;
 }
 
@@ -6104,11 +6104,11 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-ai-workspace-hero-note strong {
   color: #0d9586;
-  font-size: 10px;
+  font-size: 13px;
 }
 
 .wd-ai-workspace-hero-note span {
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .wd-ai-workspace-summary {
@@ -6123,7 +6123,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-ai-workspace-summary article span {
   color: #8492a7;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .wd-ai-workspace-summary article strong {
@@ -6133,7 +6133,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-ai-workspace-summary article small {
   color: #78879c;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .wd-ai-empty-state,
@@ -6180,13 +6180,13 @@ body:has(.wd-account-workspace-page) .site-footer {
 .wd-create-report-render > div p {
   margin: 0;
   color: #78879c;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .wd-create-report-render label {
   gap: 5px;
   color: #7f8da1;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -6196,7 +6196,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   border: 1px solid #dfe8f1;
   border-radius: 8px;
   background: #f9fbfd;
-  font-size: 9px;
+  font-size: 13px;
   text-transform: none;
 }
 
@@ -6282,7 +6282,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 }
 
 .wd-account-workspace-page .wd-issue-detail-render-head p {
-  font-size: 10px;
+  font-size: 13px;
 }
 
 .wd-issue-detail-summary {
@@ -6304,7 +6304,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-issue-detail-summary span {
   color: #8794a7;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -6328,7 +6328,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   margin: 0 0 4px;
   padding: 0;
   background: none;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .wd-account-workspace-page .wd-issue-detail-render > .wd-account-card .eyebrow::before {
@@ -6343,7 +6343,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-account-workspace-page .wd-issue-detail-render > .wd-account-card :is(p, li) {
   color: #697990;
-  font-size: 9px;
+  font-size: 13px;
   line-height: 1.6;
 }
 
@@ -6360,7 +6360,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   border-color: #e5edf4;
   border-radius: 8px;
   background: #f9fbfd;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 /* Saved reports list */
@@ -6391,7 +6391,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   max-width: 680px;
   margin: 0;
   color: #6d7c92;
-  font-size: 10px;
+  font-size: 13px;
   line-height: 1.55;
 }
 
@@ -6428,7 +6428,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 .wd-reports-render-meta span {
   margin-top: 3px;
   color: #74839a;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -6451,7 +6451,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 }
 
 .wd-reports-render .wd-report-list-main > p {
-  font-size: 9px;
+  font-size: 13px;
 }
 
 .wd-reports-render .wd-report-list-main dl > div {
@@ -6461,7 +6461,7 @@ body:has(.wd-account-workspace-page) .site-footer {
 
 .wd-reports-render .wd-report-list-main dt,
 .wd-reports-render .wd-report-list-main dd {
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .wd-reports-render .wd-report-list-side {
@@ -6472,7 +6472,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   min-height: 36px;
   border-radius: 8px;
   padding-inline: 11px;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 @media (max-width: 820px) {
@@ -6555,7 +6555,7 @@ body:has(.wd-account-workspace-page) {
   padding: 0 30px 0 11px;
   background: #fff;
   color: #15254c;
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 750;
 }
 .wd-account-topbar-search {
@@ -6569,7 +6569,7 @@ body:has(.wd-account-workspace-page) {
   border-radius: 9px;
   background: #fff;
   color: #8090a6;
-  font-size: 10px;
+  font-size: 13px;
   text-decoration: none;
 }
 .wd-account-topbar-search svg { width: 15px; height: 15px; color: #6f81a0; }
@@ -6580,7 +6580,7 @@ body:has(.wd-account-workspace-page) {
   background: #f7f9fc;
   color: #8b98ab;
   font: inherit;
-  font-size: 8px;
+  font-size: 12px;
 }
 .wd-account-topbar-actions {
   display: flex;
@@ -6634,7 +6634,7 @@ body:has(.wd-account-workspace-page) {
   border-radius: 50%;
   background: linear-gradient(145deg, #dff7ff, #e6efff);
   color: #1679d8;
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 850;
 }
 .wd-account-topbar-user strong,
@@ -6645,8 +6645,8 @@ body:has(.wd-account-workspace-page) {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.wd-account-topbar-user strong { color: #17254b; font-size: 10px; }
-.wd-account-topbar-user small { margin-top: 2px; color: #8b98aa; font-size: 8px; }
+.wd-account-topbar-user strong { color: #17254b; font-size: 13px; }
+.wd-account-topbar-user small { margin-top: 2px; color: #8b98aa; font-size: 12px; }
 
 body:has(.wd-account-workspace-page) .wd-account-workspace-page.shell {
   width: min(100%, 1440px);
@@ -6684,7 +6684,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-navigation-group > span {
   display: block;
   margin: 9px 8px 6px;
   color: #9aa6b7;
-  font-size: 7.5px;
+  font-size: 12px;
   font-weight: 850;
   letter-spacing: .06em;
   text-transform: uppercase;
@@ -6696,7 +6696,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-navigation > span {
   border-radius: 9px;
   padding: 0 10px;
   color: #5f718d;
-  font-size: 10px;
+  font-size: 13px;
 }
 body:has(.wd-account-workspace-page) .wd-workspace-navigation a svg,
 body:has(.wd-account-workspace-page) .wd-workspace-navigation > span svg {
@@ -6715,20 +6715,20 @@ body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
   border-top: 1px solid #e7eef4;
 }
 body:has(.wd-account-workspace-page) .wd-workspace-project-switcher label {
-  font-size: 8px;
+  font-size: 12px;
   text-transform: uppercase;
 }
 body:has(.wd-account-workspace-page) .wd-workspace-project-switcher select {
   min-height: 40px;
   border-radius: 8px;
   background: #f8fbfd;
-  font-size: 9px;
+  font-size: 13px;
 }
 body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   min-height: 38px;
   margin-top: 10px;
   border-radius: 8px;
-  font-size: 9px;
+  font-size: 13px;
 }
 
 @media (max-width: 980px) {
@@ -6771,7 +6771,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-navigation > span,
 body:has(.wd-account-workspace-page) .wd-workspace-navigation-group > span[aria-disabled="true"] {
   min-height: 44px;
   padding-inline: 12px;
-  font-size: 10px;
+  font-size: 13px;
 }
 body:has(.wd-account-workspace-page) .wd-workspace-navigation a[aria-current="page"] {
   border-left-width: 2px;
@@ -6789,7 +6789,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
 /* Dashboard data blocks — match the approved table/card hierarchy using live account data. */
 .wd-dashboard-panel-link {
   color: #1988f4;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 800;
   text-decoration: none;
   white-space: nowrap;
@@ -6808,7 +6808,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
   padding: 0 10px;
   background: #f6f9fc;
   color: #8b98aa;
-  font-size: 7px;
+  font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -6828,7 +6828,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
 .wd-dashboard-check-type,
 .wd-dashboard-check-date {
   color: #687991;
-  font-size: 8px;
+  font-size: 12px;
 }
 .wd-dashboard-check-status {
   width: max-content;
@@ -6836,7 +6836,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
   border-radius: 999px;
   background: #e7fbf5;
   color: #15997e;
-  font-size: 7px;
+  font-size: 12px;
   font-weight: 800;
 }
 .wd-dashboard-score-pill {
@@ -6848,7 +6848,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
   border-radius: 50%;
   background: #e8fbf3;
   color: #15966f;
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 900;
 }
 .wd-dashboard-score-pill[data-tone="warn"] {
@@ -6882,7 +6882,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
   border-radius: 9px;
   background: linear-gradient(145deg, #eaf9ff, #edf3ff);
   color: #147ee5;
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 900;
 }
 .wd-dashboard-project-copy {
@@ -6898,7 +6898,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
 .wd-dashboard-project-meta b,
 .wd-dashboard-project-meta em {
   color: #8996a8;
-  font-size: 7px;
+  font-size: 12px;
   font-style: normal;
   font-weight: 700;
 }
@@ -6916,7 +6916,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
   border-radius: 999px;
   background: #eef5ff;
   color: #4183d9;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 850;
 }
 .wd-dashboard-task-tabs {
@@ -6932,7 +6932,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
   align-items: center;
   gap: 5px;
   color: #8794a7;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 800;
 }
 .wd-dashboard-task-tabs .is-active {
@@ -6955,7 +6955,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
   place-items: center;
   border-radius: 999px;
   background: #eef5ff;
-  font-size: 7px;
+  font-size: 12px;
 }
 .wd-dashboard-task-list a {
   grid-template-columns: 16px 7px minmax(0, 1fr) auto;
@@ -6977,7 +6977,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
 }
 .wd-dashboard-task-arrow {
   color: #91a0b4;
-  font-size: 10px;
+  font-size: 13px;
 }
 @media (max-width: 1180px) {
   .wd-dashboard-check-table-head {
@@ -7052,7 +7052,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
 }
 .wd-dashboard-kpi-label {
   color: #14244c !important;
-  font-size: 9px !important;
+  font-size: 13px !important;
   font-weight: 850 !important;
   text-transform: none !important;
 }
@@ -7066,7 +7066,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
   border-radius: 999px;
   background: #e8fbf4;
   color: #15986f;
-  font-size: 8px !important;
+  font-size: 12px !important;
   line-height: 1.1 !important;
   letter-spacing: 0 !important;
 }
@@ -7077,7 +7077,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
 .wd-dashboard-kpi-copy small {
   max-width: 100%;
   color: #8592a6;
-  font-size: 7px;
+  font-size: 12px;
   line-height: 1.35;
 }
 .wd-dashboard-chart-scope {
@@ -7086,7 +7086,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
   border-radius: 7px;
   background: #f8fbff;
   color: #68809d;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 750;
 }
 .wd-dashboard-chart {
@@ -7103,7 +7103,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
   flex-direction: column;
   justify-content: space-between;
   color: #8d9aae;
-  font-size: 7px;
+  font-size: 12px;
 }
 .wd-dashboard-chart-x {
   position: absolute;
@@ -7113,7 +7113,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
   display: flex;
   justify-content: space-between;
   color: #8d9aae;
-  font-size: 7px;
+  font-size: 12px;
 }
 .wd-dashboard-chart-empty {
   position: absolute;
@@ -7122,7 +7122,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
   place-items: center;
   margin: 0;
   color: #8b98aa;
-  font-size: 9px;
+  font-size: 13px;
 }
 .wd-dashboard-chart-summary {
   display: grid;
@@ -7146,7 +7146,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
 }
 .wd-dashboard-chart-summary > div > span {
   color: #8090a5;
-  font-size: 7px;
+  font-size: 12px;
 }
 .wd-dashboard-chart-summary .wd-dashboard-chart-insight {
   grid-template-columns: 26px minmax(0, 1fr);
@@ -7171,7 +7171,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
 .wd-dashboard-chart-insight > span strong {
   margin-right: 3px;
   color: #119e82;
-  font-size: 9px;
+  font-size: 13px;
 }
 .wd-dashboard-priorities .wd-dashboard-priority-list {
   gap: 0;
@@ -7209,7 +7209,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
   padding: 5px 7px;
   border-radius: 999px;
   text-align: center;
-  font-size: 9px;
+  font-size: 13px;
 }
 .wd-dashboard-priority-list b[data-tone="high"] {
   background: #fff0f2;
@@ -7256,12 +7256,12 @@ body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
 }
 .wd-dashboard-priority-cta strong {
   color: #187de0;
-  font-size: 9px;
+  font-size: 13px;
 }
 .wd-dashboard-priority-cta small {
   margin-top: 2px;
   color: #75869d;
-  font-size: 7px;
+  font-size: 12px;
 }
 .wd-dashboard-priority-cta > b {
   color: #2784e8;
@@ -7327,7 +7327,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
   min-height: 40px;
   padding-left: 32px;
   border-radius: 8px;
-  font-size: 9px;
+  font-size: 13px;
 }
 
 .wd-account-topbar-search {
@@ -7377,7 +7377,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
   border-radius: 50%;
   background: linear-gradient(145deg, #dff7ff, #e6efff);
   color: #1679d8;
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 850;
 }
 
@@ -7396,13 +7396,13 @@ body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
 
 .wd-account-topbar-user-copy strong {
   color: #17254b;
-  font-size: 9px;
+  font-size: 13px;
 }
 
 .wd-account-topbar-user-copy small {
   margin-top: 2px;
   color: #8b98aa;
-  font-size: 7px;
+  font-size: 12px;
 }
 
 .wd-account-user-menu {
@@ -7436,13 +7436,13 @@ body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
 
 .wd-account-user-menu strong {
   color: #17254b;
-  font-size: 9px;
+  font-size: 13px;
 }
 
 .wd-account-user-menu small {
   margin-top: 2px;
   color: #8a98aa;
-  font-size: 7px;
+  font-size: 12px;
 }
 
 .wd-account-user-menu > a,
@@ -7458,7 +7458,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
   text-align: left;
   text-decoration: none;
   font: inherit;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 750;
   cursor: pointer;
 }
@@ -7481,7 +7481,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-navigation-group > span[aria-
   border-radius: 8px;
   padding-inline: 12px;
   color: #536884;
-  font-size: 9px;
+  font-size: 13px;
 }
 
 body:has(.wd-account-workspace-page) .wd-workspace-navigation a svg,
@@ -7540,13 +7540,13 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 .wd-workspace-help strong {
   display: block;
   color: #14244b;
-  font-size: 10px;
+  font-size: 13px;
 }
 
 .wd-workspace-help p {
   margin: 5px 0 10px;
   color: #7b8ba1;
-  font-size: 7.5px;
+  font-size: 12px;
   line-height: 1.45;
 }
 
@@ -7560,7 +7560,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   border-radius: 7px;
   background: #fff;
   color: #1682ea;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 800;
   text-decoration: none;
 }
@@ -7677,7 +7677,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
     border-radius: 8px;
     background: #fff;
     color: #17264b;
-    font-size: 9px;
+    font-size: 13px;
     font-weight: 800;
   }
 
@@ -7685,7 +7685,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
     margin: 5px 2px 0;
     overflow: hidden;
     color: #8b98aa;
-    font-size: 7px;
+    font-size: 12px;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -7707,7 +7707,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   margin: 0 0 -2px;
   padding-inline: 2px;
   color: #8492a6;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .wd-issues-breadcrumb a {
@@ -7740,7 +7740,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   max-width: 690px;
   margin: 0;
   color: #72829a;
-  font-size: 10px;
+  font-size: 13px;
   line-height: 1.5;
 }
 
@@ -7775,13 +7775,13 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 
 .wd-issues-last-check small {
   color: #8a98aa;
-  font-size: 7px;
+  font-size: 12px;
 }
 
 .wd-issues-last-check strong {
   margin-top: 2px;
   color: #334766;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .wd-issues-head-actions .wd-button {
@@ -7791,7 +7791,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   align-items: center;
   border-radius: 8px;
   padding-inline: 14px;
-  font-size: 9px;
+  font-size: 13px;
 }
 
 .wd-issues-head-actions .wd-button > svg {
@@ -7863,7 +7863,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 .wd-issues-score-ring small {
   margin-top: 3px;
   color: #8b98aa;
-  font-size: 7px;
+  font-size: 12px;
 }
 
 .wd-issues-score-copy h2 {
@@ -7880,7 +7880,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   border-radius: 999px;
   background: #e8fbf3;
   color: #15966f;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 850;
 }
 
@@ -7893,13 +7893,13 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   max-width: 270px;
   margin: 7px 0;
   color: #7a899e;
-  font-size: 8px;
+  font-size: 12px;
   line-height: 1.45;
 }
 
 .wd-issues-score-copy a {
   color: #1685ec;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 800;
   text-decoration: none;
 }
@@ -7947,7 +7947,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   align-self: start;
   margin-top: 3px;
   color: #8190a5;
-  font-size: 7px;
+  font-size: 12px;
 }
 
 .wd-issues-health-metrics .is-critical > span { background: #fff0f2; color: #f04e65; }
@@ -7980,7 +7980,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 
 .wd-issues-audit-context-main span {
   color: #8190a5;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .wd-issues-audit-context dl {
@@ -7999,13 +7999,13 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 
 .wd-issues-audit-context dt {
   color: #8a97a9;
-  font-size: 7px;
+  font-size: 12px;
 }
 
 .wd-issues-audit-context dd {
   margin: 0;
   color: #344864;
-  font-size: 7px;
+  font-size: 12px;
   font-weight: 800;
   text-align: right;
 }
@@ -8043,7 +8043,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   background: #fff;
   color: #1a294d;
   font: inherit;
-  font-size: 9px;
+  font-size: 13px;
   outline: 0;
 }
 
@@ -8063,7 +8063,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 
 .wd-account-workspace-page .wd-issues-render-filters .wd-issue-filters label > span {
   color: #8a97a9;
-  font-size: 7px;
+  font-size: 12px;
   font-weight: 800;
   text-transform: none;
 }
@@ -8083,7 +8083,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   padding: 0 12px;
   background: #fff;
   color: #3f7ec6;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 800;
 }
 
@@ -8113,7 +8113,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 
 .wd-issues-results-heading span {
   color: #8a97a9;
-  font-size: 7px;
+  font-size: 12px;
 }
 
 .wd-issues-render-layout {
@@ -8146,7 +8146,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   border-radius: 3px;
   background: #fff;
   color: #fff;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .wd-issues-render-row.is-active .wd-issues-row-check {
@@ -8179,17 +8179,17 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 .wd-issues-render-title > i[data-priority="p3"] { background: #3189ef; }
 
 .wd-issues-render-title strong {
-  font-size: 9px;
+  font-size: 13px;
 }
 
 .wd-issues-render-title small {
-  font-size: 7px;
+  font-size: 12px;
 }
 
 .wd-issues-pages {
   justify-self: center;
   color: #314968;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .wd-issues-row-arrow {
@@ -8265,13 +8265,13 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 
 .wd-issues-detail-metrics span {
   color: #8896a8;
-  font-size: 7px;
+  font-size: 12px;
 }
 
 .wd-issues-detail-metrics strong {
   overflow: hidden;
   color: #1a2c50;
-  font-size: 9px;
+  font-size: 13px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -8300,7 +8300,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 
 .wd-issues-detail-section-head a {
   color: #1684eb;
-  font-size: 7px;
+  font-size: 12px;
   font-weight: 800;
   text-decoration: none;
 }
@@ -8326,7 +8326,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 .wd-issues-affected-list code {
   overflow: hidden;
   color: #247bd2;
-  font-size: 7px;
+  font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -8350,7 +8350,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   gap: 7px;
   align-items: start;
   color: #52657f;
-  font-size: 8px;
+  font-size: 12px;
   line-height: 1.45;
 }
 
@@ -8362,7 +8362,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   border-radius: 50%;
   background: #dff3ff;
   color: #217ed5;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 @media (max-width: 1120px) {
@@ -8497,7 +8497,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   align-items: center;
   gap: 5px;
   color: #2584e8;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 850;
   text-transform: uppercase;
   letter-spacing: .035em;
@@ -8519,7 +8519,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   max-width: 680px;
   margin: 0;
   color: #718097;
-  font-size: 8px;
+  font-size: 12px;
   line-height: 1.55;
 }
 
@@ -8592,7 +8592,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 
 .wd-saved-pagespeed-score-card > div > span {
   color: #8492a6;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -8602,7 +8602,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   border-radius: 999px;
   background: #e8fbf4;
   color: #149371;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .wd-saved-pagespeed-score-card > div > strong[data-tone="warning"] {
@@ -8622,7 +8622,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 
 .wd-saved-pagespeed-score-card small {
   color: #8290a4;
-  font-size: 7px;
+  font-size: 12px;
   line-height: 1.4;
 }
 
@@ -8647,7 +8647,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 
 .wd-saved-pagespeed-categories span {
   color: #77879c;
-  font-size: 7px;
+  font-size: 12px;
   font-weight: 800;
 }
 
@@ -8699,13 +8699,13 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 
 .wd-saved-pagespeed-metrics article > div strong {
   color: #17264b;
-  font-size: 9px;
+  font-size: 13px;
 }
 
 .wd-saved-pagespeed-metrics article > div small {
   margin-top: 3px;
   color: #94a0b1;
-  font-size: 7px;
+  font-size: 12px;
 }
 
 .wd-saved-pagespeed-metrics article > b {
@@ -8723,7 +8723,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   border-radius: 999px;
   background: #e8fbf4;
   color: #159371;
-  font-size: 7px;
+  font-size: 12px;
   font-weight: 800;
 }
 
@@ -8753,7 +8753,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 
 .wd-saved-pagespeed-opportunities > strong {
   color: #17264b;
-  font-size: 9px;
+  font-size: 13px;
 }
 
 .wd-saved-pagespeed-opportunities ul {
@@ -8763,7 +8763,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   margin: 0;
   padding-left: 17px;
   color: #65758c;
-  font-size: 8px;
+  font-size: 12px;
   line-height: 1.45;
 }
 
@@ -8792,7 +8792,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 .wd-saved-pagespeed-unavailable p {
   margin: 0;
   color: #718097;
-  font-size: 8px;
+  font-size: 12px;
   line-height: 1.5;
 }
 
@@ -8853,7 +8853,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 .wd-project-pagespeed-copy p {
   margin: 0;
   color: #718097;
-  font-size: 8px;
+  font-size: 12px;
   line-height: 1.5;
 }
 
@@ -8876,7 +8876,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 
 .wd-project-pagespeed-values span {
   color: #8290a4;
-  font-size: 7px;
+  font-size: 12px;
   font-weight: 850;
   text-transform: uppercase;
 }
@@ -8889,7 +8889,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 
 .wd-project-pagespeed-values small {
   color: #178f73;
-  font-size: 7px;
+  font-size: 12px;
 }
 
 .wd-project-pagespeed-values article[data-status="warning"] small {
@@ -8907,7 +8907,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 .wd-project-pagespeed > .wd-button {
   min-height: 38px;
   white-space: nowrap;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 @media (max-width: 980px) {
@@ -8992,7 +8992,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   display: block;
   margin-top: 3px;
   color: #8a97a9;
-  font-size: 7px;
+  font-size: 12px;
 }
 
 .wd-issues-trend-change {
@@ -9000,7 +9000,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   border-radius: 999px;
   background: #e7fbf4;
   color: #159473;
-  font-size: 9px;
+  font-size: 13px;
   line-height: 1;
 }
 
@@ -9048,7 +9048,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   flex-direction: column;
   justify-content: space-between;
   color: #93a0b1;
-  font-size: 6.5px;
+  font-size: 12px;
 }
 
 .wd-issues-trend-footer {
@@ -9063,7 +9063,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 
 .wd-issues-trend-footer > span {
   color: #8a97a9;
-  font-size: 6.5px;
+  font-size: 12px;
 }
 
 .wd-issues-trend-footer > span:last-child {
@@ -9078,7 +9078,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 
 .wd-issues-trend-footer > strong small {
   color: #8290a5;
-  font-size: 7px;
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -9099,7 +9099,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 }
 
 .wd-issues-trend-empty span {
-  font-size: 8px;
+  font-size: 12px;
 }
 
 @media (max-width: 860px) {
@@ -9154,7 +9154,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   border-bottom: 1px solid #e7edf3;
   background: #f8fbfe;
   color: #8391a5;
-  font-size: 7px;
+  font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -9213,7 +9213,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   width: max-content;
   margin-top: 2px;
   color: #3482da;
-  font-size: 6.5px;
+  font-size: 12px;
   font-style: normal;
   font-weight: 800;
 }
@@ -9224,7 +9224,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   justify-self: start;
   padding: 5px 7px;
   border-radius: 999px;
-  font-size: 7px;
+  font-size: 12px;
   line-height: 1.2;
   white-space: nowrap;
 }
@@ -9242,7 +9242,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 
 .wd-issues-render-detail-head > p {
   color: #65768e;
-  font-size: 8px;
+  font-size: 12px;
   line-height: 1.55;
 }
 
@@ -9262,7 +9262,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   min-height: 39px;
   align-items: center;
   color: #77889f;
-  font-size: 7px;
+  font-size: 12px;
   font-weight: 800;
 }
 
@@ -9285,7 +9285,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   min-height: 28px !important;
   background: #f8fbfe;
   color: #8a97aa;
-  font-size: 6.5px;
+  font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -9302,7 +9302,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 
 .wd-issues-render-recommendation > span {
   color: #2480d8;
-  font-size: 7px;
+  font-size: 12px;
   font-weight: 850;
   text-transform: uppercase;
 }
@@ -9311,7 +9311,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   display: block;
   margin-top: 5px;
   color: #17264b;
-  font-size: 9px;
+  font-size: 13px;
 }
 
 .wd-issues-impact-note {
@@ -9324,7 +9324,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 
 .wd-issues-impact-note > span {
   color: #8391a5;
-  font-size: 7px;
+  font-size: 12px;
   font-weight: 850;
   text-transform: uppercase;
 }
@@ -9332,7 +9332,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 .wd-issues-impact-note > p {
   margin: 5px 0 0;
   color: #596c86;
-  font-size: 8px;
+  font-size: 12px;
   line-height: 1.5;
 }
 
@@ -9357,4 +9357,399 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   .wd-issues-priority {
     white-space: normal;
   }
+}
+
+
+/* ==========================================================================
+   ENHANCED ACCOUNT WORKSPACE BUTTONS & TYPOGRAPHY FOUNDATION
+   ========================================================================== */
+
+.wd-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.wd-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.wd-button-secondary {
+  background: #ffffff !important;
+  color: #1e293b !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.wd-button-secondary:hover:not(:disabled) {
+  background: #f8fafc !important;
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.wd-button-secondary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.wd-button-primary {
+  background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid transparent !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
+}
+
+.wd-button-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0284c7 0%, #1d4ed8 100%) !important;
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+  transform: translateY(-1px);
+}
+
+.wd-button-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.wd-button-danger {
+  background: #fee2e2 !important;
+  color: #dc2626 !important;
+  border: 1px solid #fca5a5 !important;
+}
+
+.wd-button-danger:hover:not(:disabled) {
+  background: #fecaca !important;
+  border-color: #f87171 !important;
+  color: #b91c1c !important;
+}
+
+.wd-account-settings-identity dt {
+  color: #64748b !important;
+  font-size: 14px !important;
+  font-weight: 500;
+}
+
+.wd-account-settings-identity dd {
+  font-size: 14px !important;
+  font-weight: 600;
+  color: #0f172a !important;
+}
+
+.wd-account-form label span {
+  font-size: 13px !important;
+  font-weight: 600;
+  color: #334155;
+  letter-spacing: 0.02em;
+}
+
+.wd-account-form input {
+  min-height: 46px;
+  font-size: 14px !important;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.wd-account-form input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  outline: none;
+}
+
+/* Tool Workspace Tabs */
+.wd-tools-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 14px;
+  width: fit-content;
+}
+
+.wd-tools-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.wd-tools-tab-btn:hover {
+  color: #0f172a;
+}
+
+.wd-tools-tab-btn.is-active {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.wd-account-tools-catalog {
+  margin-top: 8px;
+}
+
+.wd-account-tools-head {
+  margin-bottom: 20px;
+}
+
+.wd-account-tools-head h1 {
+  font-size: 26px;
+  font-weight: 750;
+  color: #0f172a;
+  margin: 6px 0;
+}
+
+.wd-account-tools-head p {
+  color: #64748b;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Quick Search Command Palette Modal */
+.wd-quick-search-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(6px);
+  z-index: 9999;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 80px 16px 32px;
+  animation: wd-fade-in 0.15s ease-out;
+}
+
+@keyframes wd-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.wd-quick-search-panel {
+  background: #ffffff;
+  width: 100%;
+  max-width: 640px;
+  border-radius: 20px;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 120px);
+  animation: wd-slide-down 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes wd-slide-down {
+  from { transform: translateY(-16px) scale(0.98); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.wd-quick-search-head {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  gap: 12px;
+  background: #ffffff;
+}
+
+.wd-quick-search-icon {
+  width: 20px;
+  height: 20px;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.wd-quick-search-head input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  color: #0f172a;
+  background: transparent;
+  font-family: inherit;
+}
+
+.wd-quick-search-head input::placeholder {
+  color: #94a3b8;
+}
+
+.wd-quick-search-clear {
+  border: none;
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 4px;
+  cursor: pointer;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wd-quick-search-clear svg {
+  width: 16px;
+  height: 16px;
+}
+
+.wd-quick-search-kbd {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 3px 7px;
+}
+
+.wd-quick-search-body {
+  overflow-y: auto;
+  padding: 16px;
+  flex: 1;
+}
+
+.wd-quick-search-section-title {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  padding: 0 8px 10px;
+}
+
+.wd-quick-search-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wd-quick-search-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.12s ease;
+}
+
+.wd-quick-search-item:hover {
+  background: #f8fafc;
+  transform: translateX(2px);
+}
+
+.wd-quick-search-item-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.wd-quick-search-item-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.wd-quick-search-item-copy {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wd-quick-search-item-copy strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.wd-quick-search-item-copy small {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.wd-quick-search-item-arrow {
+  width: 16px;
+  height: 16px;
+  color: #cbd5e1;
+  opacity: 0;
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+
+.wd-quick-search-item:hover .wd-quick-search-item-arrow {
+  opacity: 1;
+  transform: translateX(3px);
+  color: #2563eb;
+}
+
+.wd-quick-search-empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: #64748b;
+}
+
+.wd-quick-search-empty p {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 6px;
+}
+
+.wd-quick-search-empty small {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.wd-quick-search-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-top: 1px solid #f1f5f9;
+  background: #f8fafc;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.wd-quick-search-footer-link {
+  color: #2563eb;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.wd-quick-search-footer-link:hover {
+  text-decoration: underline;
+}
+
+button.wd-account-topbar-search {
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
 }

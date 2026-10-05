@@ -20,6 +20,8 @@ import { aiWorkspaceEmptyCopy } from "./account-ai-presentation";
 import { AccountAIToolList } from "./account-ai-tool-list";
 import { AccountAIRunHistory } from "./account-ai-run-history";
 import { AccountAITextToolRunner } from "./account-ai-text-tool-runner";
+import { ToolList } from "../tools/tool-list";
+import { Sparkles, Wrench } from "lucide-react";
 
 interface AccountAIWorkspaceProps {
   readonly locale: Locale;
@@ -27,6 +29,13 @@ interface AccountAIWorkspaceProps {
 
 export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
   const ru = locale === "ru";
+  const [activeTab, setActiveTab] = useState<"diagnostic" | "ai">(() => {
+    if (typeof window !== "undefined") {
+      const param = new URLSearchParams(window.location.search).get("tab");
+      if (param === "ai") return "ai";
+    }
+    return "diagnostic";
+  });
   const [catalog, setCatalog] = useState<AICatalogResponse | null>(null);
   const [credits, setCredits] = useState<AICreditBalanceResponse | null>(null);
   const [runs, setRuns] = useState<readonly AIRun[]>([]);
@@ -83,12 +92,46 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
     }
   }
 
-  const availableTools = catalog?.tools.length ?? 0;
+  const availableTools = catalog?.tools.length ? catalog.tools.length : 6;
   const balance = credits?.account.available ?? null;
 
   return (
     <div className="wd-ai-workspace">
-      <header className="wd-ai-workspace-hero">
+      <div className="wd-tools-tabs" role="tablist" aria-label={ru ? "Вкладки инструментов" : "Tool tabs"}>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "diagnostic"}
+          className={`wd-tools-tab-btn${activeTab === "diagnostic" ? " is-active" : ""}`}
+          onClick={() => setActiveTab("diagnostic")}
+        >
+          <Wrench aria-hidden="true" style={{ width: 16, height: 16 }} />
+          <span>{ru ? "Все 140+ инструментов диагностики" : "All 140+ Diagnostic Tools"}</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "ai"}
+          className={`wd-tools-tab-btn${activeTab === "ai" ? " is-active" : ""}`}
+          onClick={() => setActiveTab("ai")}
+        >
+          <Sparkles aria-hidden="true" style={{ width: 16, height: 16 }} />
+          <span>{ru ? "AI-помощники и генераторы" : "AI Assistants & Generators"}</span>
+        </button>
+      </div>
+
+      {activeTab === "diagnostic" ? (
+        <div className="wd-account-tools-catalog">
+          <div className="wd-account-tools-head">
+            <span className="eyebrow">{ru ? "КАТАЛОГ ИНСТРУМЕНТОВ" : "TOOL CATALOG"}</span>
+            <h1>{ru ? "Все 140+ инструментов WebDiag" : "All 140+ WebDiag Diagnostic Tools"}</h1>
+            <p>{ru ? "Проверки SEO, производительности, безопасности, DNS, разметки и доступности для вашего сайта." : "SEO, performance, security, DNS, schema, and accessibility audits for your website."}</p>
+          </div>
+          <ToolList locale={locale} />
+        </div>
+      ) : (
+        <>
+          <header className="wd-ai-workspace-hero">
         <div>
           <span className="eyebrow">{ru ? "AI-помощники" : "AI assistants"}</span>
           <h1>{ru ? "AI-инструменты WebDiag" : "WebDiag AI tools"}</h1>
@@ -174,6 +217,8 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
           />
         </>
       )}
-    </div>
+    </>
+  )}
+</div>
   );
 }

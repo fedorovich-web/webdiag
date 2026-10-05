@@ -30,8 +30,9 @@ import {
   resolveActiveAccountProject,
   type AccountWorkspaceSection,
 } from "./account-workspace-shell-contract";
-import { accountSettingsPath, loginPath, reportsPath, toolsPath } from "../../lib/routes";
+import { accountSettingsPath, loginPath, reportsPath } from "../../lib/routes";
 import { SiteBrand } from "../../components/site-brand";
+import { AccountQuickSearchModal } from "./account-quick-search-modal";
 
 interface AccountWorkspaceShellProps {
   readonly locale: Locale;
@@ -187,6 +188,7 @@ export function AccountWorkspaceShell({
   const [logoutPending, setLogoutPending] = useState(false);
   const [error, setError] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
   const headerMenuSlot = useSyncExternalStore(
     subscribeToHeaderMenuSlot,
     getHeaderMenuSlot,
@@ -196,6 +198,17 @@ export function AccountWorkspaceShell({
   const drawerCloseRef = useRef<HTMLButtonElement>(null);
   const drawerPanelRef = useRef<HTMLDivElement>(null);
   const loading = loadedToken !== reloadToken;
+
+  useEffect(() => {
+    function handleGlobalKeyDown(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setSearchModalOpen((prev) => !prev);
+      }
+    }
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, []);
 
   const handleUnauthenticated = useCallback(() => {
     setSession(null);
@@ -408,11 +421,16 @@ export function AccountWorkspaceShell({
               {projects.map((project) => <option value={project.id} key={project.id}>{project.name}</option>)}
             </select>
           </label>
-          <Link className="wd-account-topbar-search" href={toolsPath(locale)}>
+          <button
+            type="button"
+            className="wd-account-topbar-search"
+            onClick={() => setSearchModalOpen(true)}
+            aria-label={ru ? "Быстрый поиск по инструментам и проверкам" : "Quick search tools and checks"}
+          >
             <Search aria-hidden="true" />
             <span>{ru ? "Поиск по инструментам и проверкам" : "Search tools and checks"}</span>
             <kbd>Ctrl + K</kbd>
-          </Link>
+          </button>
           <div className="wd-account-topbar-actions">
             <a
               className="wd-account-topbar-site-link"
@@ -549,6 +567,11 @@ export function AccountWorkspaceShell({
         </div>
       )}
       </main>
+      <AccountQuickSearchModal
+        locale={locale}
+        isOpen={searchModalOpen}
+        onClose={() => setSearchModalOpen(false)}
+      />
     </>
   );
 }

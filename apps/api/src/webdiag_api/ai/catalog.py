@@ -86,3 +86,30 @@ DEFAULT_AI_CATALOG = AIToolCatalog(
         _internal("ai_image_edit_studio", "openai/gpt-image-2"),
     )
 )
+
+
+def build_production_ai_catalog() -> AIToolCatalog:
+    ready_ids = {
+        "ai_audit_action_plan",
+        "ai_competitor_gap_report",
+        "ai_content_brief",
+        "ai_content_optimizer",
+        "ai_search_intent_page_fit",
+        "ai_internal_linking_planner",
+    }
+    definitions: list[AIToolDefinition] = []
+    for tool in DEFAULT_AI_CATALOG.all():
+        if tool.id in ready_ids:
+            definitions.append(
+                AIToolDefinition(
+                    id=tool.id,
+                    contract_version=tool.contract_version,
+                    state=AIToolState.READY,
+                    credit_price=1,
+                    model_policy=tool.model_policy,
+                )
+            )
+        else:
+            definitions.append(tool)
+    return AIToolCatalog(tuple(definitions))
+
