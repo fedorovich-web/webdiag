@@ -77,6 +77,10 @@ export function middleware(request: NextRequest) {
       pathname.startsWith("/register/") ||
       pathname === "/en/register" ||
       pathname.startsWith("/en/register/") ||
+      pathname === "/tools" ||
+      pathname.startsWith("/tools/") ||
+      pathname === "/en/tools" ||
+      pathname.startsWith("/en/tools/") ||
       pathname.startsWith("/reports/share");
 
     if (isAppPath) {

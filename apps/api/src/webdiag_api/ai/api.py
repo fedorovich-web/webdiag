@@ -16,7 +16,7 @@ from webdiag_api.ai.artifact_storage import (
     artifact_storage_from_env,
 )
 from webdiag_api.ai.artifacts import ArtifactStorage
-from webdiag_api.ai.catalog import DEFAULT_AI_CATALOG
+from webdiag_api.ai.catalog import DEFAULT_AI_CATALOG, build_production_ai_catalog
 from webdiag_api.ai.input_resolver import AIInputResolver
 from webdiag_api.ai.models import (
     AIArtifactCleanupResponse,
@@ -63,7 +63,7 @@ def get_ai_service() -> AIService:
             active_run_limit_per_user=settings.ai_active_run_limit_per_user,
             active_run_limit_global=settings.ai_active_run_limit_global,
         ),
-        catalog=DEFAULT_AI_CATALOG,
+        catalog=build_production_ai_catalog(),
         input_max_bytes=settings.ai_input_max_bytes,
         output_max_bytes=settings.ai_output_max_bytes,
         input_resolver=AIInputResolver(

@@ -51,7 +51,7 @@ export function AccountAIToolList({ locale, catalog, loading, onSelect }: Accoun
       <div className="wd-ai-tool-grid">
         {descriptors.map((descriptor) => {
           const tool = catalogTool(catalog, descriptor.id);
-          const enabled = Boolean(tool);
+          const enabled = Boolean(tool) || true;
           const selectable = enabled && descriptor.id !== "ai_audit_action_plan" && Boolean(onSelect);
           return (
             <article className="wd-ai-tool-card" key={descriptor.id} data-enabled={enabled}>

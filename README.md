@@ -20,10 +20,10 @@
 
 ## 📌 Executive Overview
 
-**WebDiag** is a full-stack, enterprise-grade diagnostic engine and SaaS platform designed for technical SEOs, web security engineers, and digital agencies. Unlike typical toy projects or wrapper apps, WebDiag features a **real asynchronous crawler and execution runtime** that executes deep socket-level, HTTP-level, and DOM-level diagnostics across 125+ tools, coupled with an automated AI remediation engine that synthesizes action plans and patch diffs.
+**WebDiag** is a full-stack, enterprise-grade diagnostic engine and SaaS platform designed for technical SEOs, web security engineers, and digital agencies. Unlike typical toy projects or wrapper apps, WebDiag features a **real asynchronous crawler and execution runtime** that executes deep socket-level, HTTP-level, and DOM-level diagnostics across 140+ tools and workbenches, coupled with an automated AI remediation engine that synthesizes action plans and patch diffs.
 
 ### Key Highlights
-- **125+ Native Diagnostic Tools**: Real network probes, SSL/TLS handshake analyses, DNSSEC inspection, Core Web Vitals simulation, schema validation, and accessibility checkers.
+- **140+ Specialized Tools & Workbenches**: Real network probes, SSL/TLS handshake analyses, DNSSEC inspection, Core Web Vitals simulation, schema validation, and accessibility checkers.
 - **Fail-Closed Security**: Integrated SSRF protection against RFC 1918 / loopback addresses, strict Pydantic v2 input schemas, and Scrypt password derivation.
 - **Production Monorepo**: Decoupled Next.js 15 App Router frontend (`apps/web`), high-throughput Python 3.14 FastAPI core (`apps/api`), and shared TypeScript packages (`packages/tool-core`, `packages/tool-registry`).
 - **Resilient Billing & OAuth**: Zero-friction Yandex ID OAuth login alongside email authentication, integrated Lava.top payment gateway with HMAC-SHA256 signature verification and idempotent webhook delivery.

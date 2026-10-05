@@ -68,12 +68,20 @@ describe("Domain Routing Middleware", () => {
     });
 
     it("redirects public marketing pages to webdiag.ru", () => {
-      const pages = ["/about", "/pricing", "/audit", "/knowledge", "/contacts", "/tools", "/en/pricing"];
+      const pages = ["/about", "/pricing", "/audit", "/knowledge", "/contacts", "/en/pricing"];
       for (const path of pages) {
         const req = createReq(`https://app.webdiag.ru${path}`, host);
         const res = middleware(req);
         expect(res.status).toBe(308);
         expect(res.headers.get("location")).toBe(`https://webdiag.ru${path}`);
+      }
+    });
+
+    it("allows '/tools' and subpaths on app.webdiag.ru", () => {
+      for (const path of ["/tools", "/tools/ssl-certificate-checker", "/en/tools"]) {
+        const req = createReq(`https://app.webdiag.ru${path}`, host);
+        const res = middleware(req);
+        expect(res.status).toBe(200);
       }
     });
   });
