@@ -54,15 +54,23 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
         body: JSON.stringify({ pack_id: packId }),
       });
       if (resp.status === 401) {
+        if (!session) {
+          setBillingError(
+            ru
+              ? "Для совершения оплаты необходимо войти в аккаунт."
+              : "You must be signed in to make a payment."
+          );
+          router.push(
+            `${ru ? "/login" : "/en/login"}?return_to=${encodeURIComponent(
+              "/pricing#credit-packs"
+            )}`
+          );
+          return;
+        }
         setBillingError(
           ru
-            ? "Для совершения оплаты необходимо войти в аккаунт."
-            : "You must be signed in to make a payment."
-        );
-        router.push(
-          `${ru ? "/login" : "/en/login"}?return_to=${encodeURIComponent(
-            "/pricing#credit-packs"
-          )}`
+            ? "Сессия не подтверждена платежным сервером. Пожалуйста, обновите страницу."
+            : "Session not confirmed by billing server. Please refresh the page."
         );
         return;
       }
