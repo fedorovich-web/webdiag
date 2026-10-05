@@ -197,7 +197,7 @@ function UrlNormalizationResultView({
       <Metric label={copy[locale].syntaxChanges} value={result.change_count} />
       <Metric label={copy[locale].reviewSignals} value={result.review_signal_count} />
       <Metric label={locale === "ru" ? "Схема" : "Scheme"} value={result.scheme} />
-      <Metric label={locale === "ru" ? "Hostname" : "Hostname"} value={result.hostname} />
+      <Metric label={locale === "ru" ? "Хост" : "Hostname"} value={result.hostname} />
     </div>
     <div className="result-list result-list-rich">
       <p><strong>{copy[locale].normalized}</strong><br />{result.normalized_url}</p>
@@ -205,10 +205,10 @@ function UrlNormalizationResultView({
     </div>
     <h3>{copy[locale].components}</h3>
     <ul className="result-list">
-      <li><strong>path</strong><span>{result.pathname}</span></li>
-      <li><strong>query</strong><span>{result.query || "—"}</span></li>
-      <li><strong>fragment</strong><span>{result.fragment || "—"}</span></li>
-      <li><strong>port</strong><span>{result.port ?? "—"}</span></li>
+      <li><strong>{locale === "ru" ? "Путь (path)" : "path"}</strong><span>{result.pathname}</span></li>
+      <li><strong>{locale === "ru" ? "Параметры (query)" : "query"}</strong><span>{result.query || "—"}</span></li>
+      <li><strong>{locale === "ru" ? "Якорь (fragment)" : "fragment"}</strong><span>{result.fragment || "—"}</span></li>
+      <li><strong>{locale === "ru" ? "Порт" : "port"}</strong><span>{result.port ?? "—"}</span></li>
     </ul>
     {result.changes.length ? <ul className="result-list result-list-rich">
       {result.changes.map((item) => <li key={item.id}>

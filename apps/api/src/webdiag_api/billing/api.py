@@ -10,6 +10,9 @@ from webdiag_api.accounts.api import SESSION_COOKIE_NAME, AccountServiceDependen
 from webdiag_api.accounts.service import AccountServiceError
 from webdiag_api.ai.storage import SqliteAIStore
 from webdiag_api.billing.models import (
+    BillingStatusResponse,
+    ConfirmPaymentRequest,
+    ConfirmPaymentResponse,
     CreateInvoiceRequest,
     CreateInvoiceResponse,
     WebhookResponse,
@@ -35,9 +38,17 @@ def get_billing_service(
 BillingServiceDependency = Annotated[BillingService, Depends(get_billing_service)]
 
 
+@router.get("/status", response_model=BillingStatusResponse)
+def get_billing_status(
+    service: BillingServiceDependency,
+) -> BillingStatusResponse:
+    return service.get_status()
+
+
 @router.post("/invoice", response_model=CreateInvoiceResponse)
 def create_invoice(
     request: CreateInvoiceRequest,
+    raw_request: Request,
     service: BillingServiceDependency,
     account_service: AccountServiceDependency,
     webdiag_session: SessionCookie = None,
@@ -50,11 +61,42 @@ def create_invoice(
             detail={"code": error.code, "message": error.message},
         ) from error
 
+    origin = raw_request.headers.get("origin") or raw_request.headers.get("referer")
     try:
         return service.create_invoice(
             user_id=session.user.id,
             email=session.user.email,
             request=request,
+            origin=origin,
+        )
+    except BillingServiceError as error:
+        raise HTTPException(
+            status_code=error.status_code,
+            detail={"code": error.code, "message": error.message},
+        ) from error
+
+
+@router.post("/confirm", response_model=ConfirmPaymentResponse)
+def confirm_invoice(
+    request: ConfirmPaymentRequest,
+    service: BillingServiceDependency,
+    account_service: AccountServiceDependency,
+    webdiag_session: SessionCookie = None,
+) -> ConfirmPaymentResponse:
+    try:
+        session = account_service.get_session(webdiag_session)
+    except AccountServiceError as error:
+        raise HTTPException(
+            status_code=error.status_code,
+            detail={"code": error.code, "message": error.message},
+        ) from error
+
+    try:
+        return service.confirm_invoice(
+            user_id=session.user.id,
+            pack_id=request.pack_id,
+            invoice_id=request.invoice_id,
+            payment_method=request.payment_method,
         )
     except BillingServiceError as error:
         raise HTTPException(

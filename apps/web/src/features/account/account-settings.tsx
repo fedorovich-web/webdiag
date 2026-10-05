@@ -241,9 +241,9 @@ export function AccountSettings({
                 <div style={{ padding: "12px", borderRadius: "10px", border: "1px solid var(--wd-l, #e2e8f0)", background: "var(--wd-s, #fff)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "4px" }}>
                     <strong style={{ fontSize: "14px" }}>50 {ru ? "кредитов" : "credits"}</strong>
-                    <span style={{ fontSize: "15px", fontWeight: 700, color: "#2563eb" }}>490 ₽</span>
+                    <span style={{ fontSize: "15px", fontWeight: 700, color: "#2563eb" }}>390 ₽</span>
                   </div>
-                  <small style={{ color: "var(--wd-ms, #64748b)", display: "block", marginBottom: "10px" }}>9.8 ₽ / {ru ? "кредит" : "credit"}</small>
+                  <small style={{ color: "var(--wd-ms, #64748b)", display: "block", marginBottom: "10px" }}>7.8 ₽ / {ru ? "кредит" : "credit"}</small>
                   <button
                     type="button"
                     disabled={loadingPack !== null}
@@ -251,7 +251,7 @@ export function AccountSettings({
                     className="wd-button wd-button-primary"
                     style={{ width: "100%", fontSize: "12px", padding: "6px 12px" }}
                   >
-                    {loadingPack === "pack-50" ? (ru ? "Создание счёта..." : "Creating...") : (ru ? "Купить за 490 ₽" : "Buy 490 ₽")}
+                    {loadingPack === "pack-50" ? (ru ? "Переход к оплате..." : "Creating...") : (ru ? "Купить за 390 ₽" : "Buy 390 ₽")}
                   </button>
                 </div>
 
@@ -261,9 +261,9 @@ export function AccountSettings({
                   </span>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "4px" }}>
                     <strong style={{ fontSize: "14px" }}>150 {ru ? "кредитов" : "credits"}</strong>
-                    <span style={{ fontSize: "15px", fontWeight: 700, color: "#6366f1" }}>1 190 ₽</span>
+                    <span style={{ fontSize: "15px", fontWeight: 700, color: "#6366f1" }}>890 ₽</span>
                   </div>
-                  <small style={{ color: "var(--wd-ms, #64748b)", display: "block", marginBottom: "10px" }}>7.9 ₽ / {ru ? "кредит" : "credit"}</small>
+                  <small style={{ color: "var(--wd-ms, #64748b)", display: "block", marginBottom: "10px" }}>5.9 ₽ / {ru ? "кредит" : "credit"}</small>
                   <button
                     type="button"
                     disabled={loadingPack !== null}
@@ -271,16 +271,16 @@ export function AccountSettings({
                     className="wd-button wd-button-primary"
                     style={{ width: "100%", fontSize: "12px", padding: "6px 12px", background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}
                   >
-                    {loadingPack === "pack-150" ? (ru ? "Создание счёта..." : "Creating...") : (ru ? "Купить за 1 190 ₽" : "Buy 1 190 ₽")}
+                    {loadingPack === "pack-150" ? (ru ? "Переход к оплате..." : "Creating...") : (ru ? "Купить за 890 ₽" : "Buy 890 ₽")}
                   </button>
                 </div>
 
                 <div style={{ padding: "12px", borderRadius: "10px", border: "1px solid var(--wd-l, #e2e8f0)", background: "var(--wd-s, #fff)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "4px" }}>
                     <strong style={{ fontSize: "14px" }}>500 {ru ? "кредитов" : "credits"}</strong>
-                    <span style={{ fontSize: "15px", fontWeight: 700, color: "#2563eb" }}>2 990 ₽</span>
+                    <span style={{ fontSize: "15px", fontWeight: 700, color: "#2563eb" }}>1 990 ₽</span>
                   </div>
-                  <small style={{ color: "var(--wd-ms, #64748b)", display: "block", marginBottom: "10px" }}>5.9 ₽ / {ru ? "кредит" : "credit"}</small>
+                  <small style={{ color: "var(--wd-ms, #64748b)", display: "block", marginBottom: "10px" }}>3.9 ₽ / {ru ? "кредит" : "credit"}</small>
                   <button
                     type="button"
                     disabled={loadingPack !== null}
@@ -288,7 +288,7 @@ export function AccountSettings({
                     className="wd-button wd-button-primary"
                     style={{ width: "100%", fontSize: "12px", padding: "6px 12px" }}
                   >
-                    {loadingPack === "pack-500" ? (ru ? "Создание счёта..." : "Creating...") : (ru ? "Купить за 2 990 ₽" : "Buy 2 990 ₽")}
+                    {loadingPack === "pack-500" ? (ru ? "Переход к оплате..." : "Creating...") : (ru ? "Купить за 1 990 ₽" : "Buy 1 990 ₽")}
                   </button>
                 </div>
               </div>

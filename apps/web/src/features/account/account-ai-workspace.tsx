@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { Locale } from "@webdiag/tool-registry";
-import { accountSettingsPath } from "../../lib/routes";
 import { accountErrorMessage } from "./account-messages";
 import {
   deleteAIRun,
@@ -173,7 +172,7 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
             <small>{ru ? "доступно аккаунту" : "available to this account"}</small>
           </div>
           <Link
-            href={`${accountSettingsPath(locale)}#billing`}
+            href={ru ? "/account/checkout?pack=pack-50" : "/en/account/checkout?pack=pack-50"}
             className="wd-button wd-button-primary wd-ai-topup-btn"
           >
             {ru ? "+ Пополнить" : "+ Top up"}
@@ -208,7 +207,7 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
                 </p>
               </div>
               <Link
-                href={`${accountSettingsPath(locale)}#billing`}
+                href={ru ? "/account/checkout?pack=pack-50" : "/en/account/checkout?pack=pack-50"}
                 className="wd-button wd-button-primary"
               >
                 {ru ? "Купить кредиты" : "Buy credits"}
