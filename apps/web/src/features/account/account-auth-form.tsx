@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { loginAccount, registerAccount } from "./account-client";
 import { accountErrorMessage } from "./account-messages";
@@ -14,24 +14,23 @@ interface AccountAuthFormProps {
 
 export function AccountAuthForm({ locale, mode }: AccountAuthFormProps) {
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState("");
   const ru = locale === "ru";
   const register = mode === "register";
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+  const [error, setError] = useState(() => {
+    if (typeof window === "undefined") return "";
     const params = new URLSearchParams(window.location.search);
     const urlError = params.get("error");
-    if (urlError) {
-      if (urlError === "yandex_not_configured") {
-        setError(ru ? "Авторизация через Яндекс ID ещё не настроена (укажите Client ID и Client Secret)." : "Yandex ID authentication is not yet configured (missing Client ID / Secret).");
-      } else if (urlError === "yandex_access_denied") {
-        setError(ru ? "Вы отменили вход через Яндекс ID." : "Yandex ID login was cancelled.");
-      } else {
-        setError(ru ? `Ошибка входа через Яндекс ID (${urlError})` : `Yandex ID login error (${urlError})`);
-      }
+    if (!urlError) return "";
+    if (urlError === "yandex_not_configured") {
+      return ru
+        ? "Авторизация через Яндекс ID ещё не настроена (укажите Client ID и Client Secret)."
+        : "Yandex ID authentication is not yet configured (missing Client ID / Secret).";
     }
-  }, [ru]);
+    if (urlError === "yandex_access_denied") {
+      return ru ? "Вы отменили вход через Яндекс ID." : "Yandex ID login was cancelled.";
+    }
+    return ru ? `Ошибка входа через Яндекс ID (${urlError})` : `Yandex ID login error (${urlError})`;
+  });
   const text = ru
     ? {
         eyebrow: "Личный кабинет",

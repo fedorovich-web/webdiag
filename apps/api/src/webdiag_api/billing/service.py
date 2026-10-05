@@ -212,7 +212,12 @@ class BillingService:
         elif isinstance(buyer, str) and "@" in buyer:
             buyer_email = buyer
         if not buyer_email:
-            raw_email = data.get("email") or body.get("email") or data.get("buyer_email") or body.get("buyer_email")
+            raw_email = (
+                data.get("email")
+                or body.get("email")
+                or data.get("buyer_email")
+                or body.get("buyer_email")
+            )
             if isinstance(raw_email, str) and "@" in raw_email:
                 buyer_email = raw_email
 
@@ -246,7 +251,7 @@ class BillingService:
             pack_title = pack_info["title"]
         else:
             # Match by amount
-            for pid, pinfo in CREDIT_PACKS.items():
+            for _pid, pinfo in CREDIT_PACKS.items():
                 if abs(pinfo["price_rub"] - amount) < 1.0:
                     credits_to_grant = pinfo["credits"]
                     pack_title = pinfo["title"]

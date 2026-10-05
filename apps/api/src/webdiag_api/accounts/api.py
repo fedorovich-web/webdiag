@@ -233,8 +233,15 @@ def oauth_yandex_exchange(
             timeout=15.0,
         )
         if not token_res.is_success:
-            logger.error("Yandex token exchange failed: %s %s", token_res.status_code, token_res.text)
-            raise HTTPException(status_code=400, detail="Failed to exchange authorization code with Yandex")
+            logger.error(
+                "Yandex token exchange failed: %s %s",
+                token_res.status_code,
+                token_res.text,
+            )
+            raise HTTPException(
+                status_code=400,
+                detail="Failed to exchange authorization code with Yandex",
+            )
 
         token_data = token_res.json()
         access_token = token_data.get("access_token")
@@ -248,11 +255,19 @@ def oauth_yandex_exchange(
             timeout=10.0,
         )
         if not profile_res.is_success:
-            logger.error("Yandex profile fetch failed: %s %s", profile_res.status_code, profile_res.text)
-            raise HTTPException(status_code=400, detail="Failed to retrieve user profile from Yandex")
+            logger.error(
+                "Yandex profile fetch failed: %s %s",
+                profile_res.status_code,
+                profile_res.text,
+            )
+            raise HTTPException(
+                status_code=400,
+                detail="Failed to retrieve user profile from Yandex",
+            )
 
         profile = profile_res.json()
-        email = profile.get("default_email") or (profile.get("emails") and profile["emails"][0]) or ""
+        raw_emails = profile.get("emails")
+        email = profile.get("default_email") or (raw_emails and raw_emails[0]) or ""
         if not email:
             raise HTTPException(status_code=400, detail="User email not provided by Yandex")
 

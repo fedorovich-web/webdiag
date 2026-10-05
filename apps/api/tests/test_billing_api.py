@@ -4,12 +4,10 @@ import hashlib
 import hmac
 import json
 from pathlib import Path
-from tempfile import TemporaryDirectory
 
 import pytest
 from fastapi.testclient import TestClient
 
-from webdiag_api.accounts.registration_admission import RegistrationAdmissionController
 from webdiag_api.accounts.api import get_account_service, get_registration_admission
 from webdiag_api.accounts.security import ScryptParameters
 from webdiag_api.accounts.service import AccountService
@@ -117,7 +115,11 @@ def test_billing_invoice_creation(test_env, monkeypatch):
     client = TestClient(app)
     reg_resp = client.post(
         "/v1/account/register",
-        json={"email": "buyer@example.com", "password": "StrongPassword123!", "display_name": "Buyer"},
+        json={
+            "email": "buyer@example.com",
+            "password": "StrongPassword123!",
+            "display_name": "Buyer",
+        },
     )
     assert reg_resp.status_code == 201
 
@@ -150,7 +152,11 @@ def test_lava_webhook_handling_and_idempotency(test_env, monkeypatch):
     # Register buyer
     reg_resp = client.post(
         "/v1/account/register",
-        json={"email": "payer@example.com", "password": "StrongPassword123!", "display_name": "Payer"},
+        json={
+            "email": "payer@example.com",
+            "password": "StrongPassword123!",
+            "display_name": "Payer",
+        },
     )
     assert reg_resp.status_code == 201
     user_id = reg_resp.json()["user"]["id"]
