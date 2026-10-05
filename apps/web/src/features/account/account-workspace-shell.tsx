@@ -432,6 +432,28 @@ export function AccountWorkspaceShell({
             <kbd>Ctrl + K</kbd>
           </button>
           <div className="wd-account-topbar-actions">
+            <Link
+              className="wd-account-topbar-billing-link"
+              href={ru ? "/pricing#credit-packs" : "/en/pricing#credit-packs"}
+              title={ru ? "Пополнить баланс кредитов или изменить тариф" : "Top up credit balance or upgrade plan"}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "6px 12px",
+                borderRadius: "8px",
+                background: "linear-gradient(135deg, #2563eb, #7c3aed)",
+                color: "#ffffff",
+                fontSize: "13px",
+                fontWeight: 600,
+                textDecoration: "none",
+                whiteSpace: "nowrap",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
+              }}
+            >
+              <span aria-hidden="true">💎</span>
+              <span>{ru ? "Купить кредиты" : "Buy Credits"}</span>
+            </Link>
             <a
               className="wd-account-topbar-site-link"
               href={ru ? "https://webdiag.ru" : "https://webdiag.ru/en"}
@@ -456,6 +478,9 @@ export function AccountWorkspaceShell({
                   <small>{session.user.email}</small>
                 </div>
                 <Link href={accountSettingsPath(locale)}>{ru ? "Настройки аккаунта" : "Account settings"}</Link>
+                <Link href={ru ? "/pricing#credit-packs" : "/en/pricing#credit-packs"}>
+                  {ru ? "💎 Тарифы и баланс" : "💎 Plans & Credits"}
+                </Link>
                 <a href={ru ? "https://webdiag.ru" : "https://webdiag.ru/en"}>
                   {ru ? "Основной сайт ↗" : "Main website ↗"}
                 </a>

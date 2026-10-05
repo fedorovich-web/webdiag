@@ -237,7 +237,46 @@ export function LighthouseNetworkTool({ locale, view }: { locale: Locale; view: 
   </form>;
 }
 
+const metricTitlesRu: Record<string, string> = {
+  "largest-contentful-paint": "LCP — Отрисовка крупнейшего элемента",
+  "first-contentful-paint": "FCP — Первая отрисовка контента",
+  "total-blocking-time": "TBT — Суммарное время блокировки",
+  "cumulative-layout-shift": "CLS — Совокупное смещение элементов",
+  "interaction-to-next-paint": "INP — Время до следующей отрисовки",
+  "speed-index": "SI — Индекс скорости",
+  "time-to-first-byte": "TTFB — Время до первого байта",
+};
+
+const metricGuideRu: Record<string, { good: string; bad: string; tip: string }> = {
+  "largest-contentful-paint": { good: "≤ 2.5 с — Хорошо", bad: "> 4 с — Плохо", tip: "Оптимизируйте изображения (AVIF/WebP), добавьте <link rel=\"preload\"> для LCP-элемента, улучшите TTFB." },
+  "first-contentful-paint": { good: "≤ 1.8 с — Хорошо", bad: "> 3 с — Медленно", tip: "Уберите блокирующие CSS/JS (defer/async), используйте CDN, включите серверное кэширование." },
+  "total-blocking-time": { good: "≤ 200 мс — Хорошо", bad: "> 600 мс — Критично", tip: "Разбейте длинные JS-задачи (>50 мс) на чанки, используйте Web Workers, удалите неиспользуемые скрипты." },
+  "cumulative-layout-shift": { good: "≤ 0.1 — Хорошо", bad: "> 0.25 — Плохо", tip: "Задайте явные width/height или aspect-ratio для изображений и видео. Не вставляйте динамический контент над уже загруженным." },
+  "interaction-to-next-paint": { good: "≤ 200 мс — Хорошо", bad: "> 500 мс — Плохо", tip: "Оптимизируйте обработчики событий, перенесите тяжёлые вычисления в Web Workers, используйте debounce." },
+  "speed-index": { good: "≤ 3.4 с — Хорошо", bad: "> 5.8 с — Медленно", tip: "Сократите критический CSS, используйте font-display: swap для шрифтов, оптимизируйте порядок загрузки ресурсов." },
+  "time-to-first-byte": { good: "≤ 800 мс — Хорошо", bad: "> 1800 мс — Медленно", tip: "Настройте серверный кэш (Redis/Varnish), используйте CDN, оптимизируйте запросы к базе данных." },
+};
+
+const opportunityTitlesRu: Record<string, string> = {
+  "render-blocking-resources": "Устранить блокирующие рендер ресурсы",
+  "unused-javascript": "Удалить неиспользуемый JavaScript",
+  "unused-css-rules": "Удалить неиспользуемый CSS",
+  "efficient-animated-content": "Конвертировать анимации в видео (WebM/MP4)",
+  "uses-optimized-images": "Оптимизировать изображения (сжатие)",
+  "uses-webp-images": "Использовать формат WebP/AVIF вместо JPEG/PNG",
+  "uses-responsive-images": "Адаптировать размер изображений под устройство",
+  "offscreen-images": "Отложить загрузку изображений вне экрана (lazy load)",
+  "uses-text-compression": "Включить gzip/brotli сжатие текстовых ресурсов",
+  "uses-long-cache-ttl": "Настроить долгосрочное кэширование статики",
+  "total-byte-weight": "Сократить общий вес страницы",
+  "dom-size": "Уменьшить размер DOM-дерева",
+  "preload-lcp-image": "Добавить <link rel=\"preload\"> для LCP-изображения",
+  "font-display": "Использовать font-display: swap для веб-шрифтов",
+  "lcp-lazy-loaded": "Убрать lazy load с LCP элемента",
+};
+
 export function CoreWebVitalsTool({ locale }: { locale: Locale }) {
+  const ru = locale === "ru";
   const [url, setUrl] = useState("https://example.com/");
   const [strategy, setStrategy] = useState<"mobile" | "desktop" | "both">("mobile");
   const [result, setResult] = useState<PageSpeedResponse | null>(null);
@@ -256,15 +295,165 @@ export function CoreWebVitalsTool({ locale }: { locale: Locale }) {
     } finally { setLoading(false); }
   }
 
-  return <form className="tool-grid pagespeed-tool" onSubmit={onSubmit}>
-    <section className="tool-panel">
-      <UrlField url={url} setUrl={setUrl} locale={locale} />
-      <label className="field"><span>{locale === "ru" ? "Стратегия" : "Strategy"}</span><select value={strategy} onChange={(event) => setStrategy(event.target.value as "mobile" | "desktop" | "both")}><option value="mobile">Mobile</option><option value="desktop">Desktop</option><option value="both">Mobile + Desktop</option></select></label>
-      <button className="button" type="submit" disabled={loading}>{loading ? dictionary[locale].loading : dictionary[locale].run}</button>
-      <ErrorMessage value={error} />
-    </section>
-    {result && <section className="tool-panel tool-panel-wide"><h2>{dictionary[locale].result}</h2><div className="result-grid">{result.results.map((item) => <article className="result-card" key={item.strategy}><h3>{item.strategy.toUpperCase()}</h3><p>{item.available ? (item.field_data_available ? (locale === "ru" ? "Есть field data" : "Field data available") : (locale === "ru" ? "Только lab data" : "Lab data only")) : item.fetch_error}</p><h4>{dictionary[locale].categories}</h4><div className="single-audit-metrics">{Object.entries(item.category_scores).map(([category, score]) => <article key={category}><span>{lighthouseCategoryLabels[locale][category as keyof typeof lighthouseCategoryLabels.ru]}</span><strong>{score ?? "—"}</strong><small>/100</small></article>)}</div>{item.audit_findings.length > 0 && <><h4>{dictionary[locale].findings}</h4><ol className="result-list">{item.audit_findings.map((finding) => <li key={finding.id}><span className={badgeClass(finding.score === 0 ? "fail" : "warning")}>{lighthouseCategoryLabels[locale][finding.category]}</span> <strong>{finding.title}</strong>{finding.display_value ? ` · ${finding.display_value}` : ""}</li>)}</ol></>}{item.metrics.length > 0 && <ul className="result-list">{item.metrics.map((metric) => <li key={metric.id}><span className={badgeClass(metric.status)}>{statusLabel(metric.status, locale)}</span> {metric.title}: <strong>{metric.display_value ?? metric.value ?? "—"}</strong></li>)}</ul>}{item.opportunities.length > 0 && <><h4>{locale === "ru" ? "Возможности" : "Opportunities"}</h4><ul className="result-list">{item.opportunities.map((opportunity) => <li key={opportunity.id}>{opportunity.title}: {opportunity.display_value ?? `${Math.round(opportunity.savings_ms ?? 0)} ms`}</li>)}</ul></>}</article>)}</div><Recommendation value={result.recommendation} locale={locale} /></section>}
-  </form>;
+  return (
+    <form className="tool-grid pagespeed-tool" onSubmit={onSubmit}>
+      <section className="tool-panel">
+        <UrlField url={url} setUrl={setUrl} locale={locale} />
+        <label className="field">
+          <span>{ru ? "Стратегия проверки" : "Strategy"}</span>
+          <select value={strategy} onChange={(event) => setStrategy(event.target.value as "mobile" | "desktop" | "both")}>
+            <option value="mobile">{ru ? "Мобильный" : "Mobile"}</option>
+            <option value="desktop">{ru ? "Десктоп" : "Desktop"}</option>
+            <option value="both">{ru ? "Мобильный + Десктоп" : "Mobile + Desktop"}</option>
+          </select>
+        </label>
+        <button className="button" type="submit" disabled={loading}>
+          {loading ? dictionary[locale].loading : dictionary[locale].run}
+        </button>
+        <p className="tool-input-note">
+          {ru
+            ? "Источник данных: Google PageSpeed Insights (Lighthouse). Первый запрос может занять 20–40 с."
+            : "Data source: Google PageSpeed Insights (Lighthouse). First request may take 20–40 s."}
+        </p>
+        <ErrorMessage value={error} />
+      </section>
+      {result && (
+        <section className="tool-panel tool-panel-wide">
+          <h2>{dictionary[locale].result}</h2>
+          <div className="result-grid">
+            {result.results.map((item) => (
+              <article className="result-card" key={item.strategy}>
+                <h3 style={{ marginBottom: "4px" }}>
+                  {item.strategy === "mobile" ? (ru ? "📱 Мобильные устройства" : "📱 Mobile") : (ru ? "🖥️ Десктоп" : "🖥️ Desktop")}
+                </h3>
+                <p style={{ fontSize: "13px", color: "var(--wd-ms, #64748b)", marginBottom: "16px" }}>
+                  {item.available
+                    ? (item.field_data_available
+                        ? (ru ? "✓ Данные из реального трафика + лабораторные измерения" : "✓ Real user field data + lab measurements")
+                        : (ru ? "Только лабораторные данные (нет данных реального трафика)" : "Lab data only — no field data"))
+                    : (item.fetch_error ?? (ru ? "Провайдер PageSpeed недоступен" : "PageSpeed provider unavailable"))}
+                </p>
+
+                {/* Category scores */}
+                <h4 style={{ fontSize: "13px", marginBottom: "10px" }}>{dictionary[locale].categories}</h4>
+                <div className="single-audit-metrics" style={{ marginBottom: "20px" }}>
+                  {Object.entries(item.category_scores).map(([category, score]) => {
+                    const scoreVal = score ?? 0;
+                    const scoreColor = scoreVal >= 90 ? "#10b981" : scoreVal >= 50 ? "#f59e0b" : "#ef4444";
+                    return (
+                      <article key={category} style={{ borderLeft: `3px solid ${scoreColor}`, paddingLeft: "10px" }}>
+                        <span>{lighthouseCategoryLabels[locale][category as keyof typeof lighthouseCategoryLabels.ru] ?? category}</span>
+                        <strong style={{ color: scoreColor, fontSize: "18px" }}>{score ?? "—"}</strong>
+                        <small>/100</small>
+                      </article>
+                    );
+                  })}
+                </div>
+
+                {/* Core Web Vitals metrics */}
+                {item.metrics.length > 0 && (
+                  <>
+                    <h4 style={{ fontSize: "13px", marginBottom: "10px" }}>
+                      {ru ? "Core Web Vitals и скоростные метрики" : "Core Web Vitals & Speed Metrics"}
+                    </h4>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "20px" }}>
+                      {item.metrics.map((metric) => {
+                        const guide = ru ? metricGuideRu[metric.id] : null;
+                        const titleDisplay = ru && metricTitlesRu[metric.id] ? metricTitlesRu[metric.id] : metric.title;
+                        const isGood = metric.status === "pass";
+                        const isWarn = metric.status === "warning";
+                        const borderColor = isGood ? "#10b981" : isWarn ? "#f59e0b" : "#ef4444";
+                        return (
+                          <div
+                            key={metric.id}
+                            style={{
+                              padding: "12px 14px",
+                              borderRadius: "10px",
+                              border: `1px solid ${borderColor}30`,
+                              background: isGood ? "rgba(16,185,129,0.04)" : isWarn ? "rgba(245,158,11,0.04)" : "rgba(239,68,68,0.04)",
+                            }}
+                          >
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
+                              <div style={{ flex: 1 }}>
+                                <strong style={{ fontSize: "13px", display: "block", color: "var(--wd-f, #0f172a)" }}>{titleDisplay}</strong>
+                                {guide && (
+                                  <small style={{ color: isGood ? "#059669" : "#dc2626", fontSize: "11px" }}>
+                                    {isGood ? guide.good : guide.bad}
+                                  </small>
+                                )}
+                              </div>
+                              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+                                <strong style={{ fontSize: "15px", color: borderColor }}>{metric.display_value ?? metric.value ?? "—"}</strong>
+                                <span className={badgeClass(metric.status)} style={{ fontSize: "10px" }}>
+                                  {statusLabel(metric.status, locale)}
+                                </span>
+                              </div>
+                            </div>
+                            {guide && !isGood && (
+                              <div style={{ fontSize: "12px", color: "var(--wd-ms, #475569)", background: "rgba(0,0,0,0.03)", padding: "8px 10px", borderRadius: "6px", marginTop: "8px" }}>
+                                <strong style={{ display: "block", marginBottom: "2px", color: "#374151" }}>💡 {ru ? "Что исправить:" : "How to fix:"}</strong>
+                                {guide.tip}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+
+                {/* Opportunities */}
+                {item.opportunities.length > 0 && (
+                  <>
+                    <h4 style={{ fontSize: "13px", marginBottom: "10px" }}>
+                      {ru ? "⚡ Возможности ускорения" : "⚡ Optimization Opportunities"}
+                    </h4>
+                    <ul style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px", listStyle: "none", padding: 0 }}>
+                      {item.opportunities.map((opportunity) => {
+                        const titleDisplay = ru && opportunityTitlesRu[opportunity.id] ? opportunityTitlesRu[opportunity.id] : opportunity.title;
+                        const savings = opportunity.display_value ?? (opportunity.savings_ms ? `${Math.round(opportunity.savings_ms)} ${ru ? "мс" : "ms"}` : null);
+                        return (
+                          <li key={opportunity.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "10px 12px", background: "rgba(245,158,11,0.06)", borderRadius: "8px", border: "1px solid rgba(245,158,11,0.2)", gap: "12px" }}>
+                            <span style={{ fontSize: "13px", flex: 1 }}>{titleDisplay}</span>
+                            {savings && (
+                              <strong style={{ fontSize: "12px", color: "#d97706", whiteSpace: "nowrap" }}>
+                                {ru ? `≈ ${savings} экономии` : `≈ ${savings}`}
+                              </strong>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </>
+                )}
+
+                {/* Audit findings (what to fix) */}
+                {item.audit_findings.length > 0 && (
+                  <>
+                    <h4 style={{ fontSize: "13px", marginBottom: "10px" }}>{dictionary[locale].findings}</h4>
+                    <ol style={{ display: "flex", flexDirection: "column", gap: "6px", paddingLeft: 0, listStyle: "none" }}>
+                      {item.audit_findings.map((finding) => (
+                        <li key={finding.id} style={{ display: "flex", alignItems: "flex-start", gap: "10px", padding: "8px 12px", borderRadius: "8px", background: "rgba(239,68,68,0.04)", border: "1px solid rgba(239,68,68,0.15)" }}>
+                          <span className={badgeClass(finding.score === 0 ? "fail" : "warning")} style={{ fontSize: "10px", flexShrink: 0 }}>
+                            {lighthouseCategoryLabels[locale][finding.category] ?? finding.category}
+                          </span>
+                          <span style={{ flex: 1, fontSize: "13px" }}>
+                            <strong>{finding.title}</strong>
+                            {finding.display_value && <em style={{ color: "var(--wd-ms, #64748b)", marginLeft: "6px" }}>{finding.display_value}</em>}
+                          </span>
+                        </li>
+                      ))}
+                    </ol>
+                  </>
+                )}
+              </article>
+            ))}
+          </div>
+          <Recommendation value={result.recommendation} locale={locale} />
+        </section>
+      )}
+    </form>
+  );
 }
 
 export function CachePolicyTool({ locale }: { locale: Locale }) {

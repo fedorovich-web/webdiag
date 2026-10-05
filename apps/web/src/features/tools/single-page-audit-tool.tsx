@@ -6,8 +6,17 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
 import type { Locale } from "@webdiag/tool-registry";
 import { AuditClientError, parseAuditUrlInput, startAuditSnapshot } from "../home/audit-client";
-import type { AuditFrontendIssue, AuditFrontendResult } from "../home/audit-contract";
-import { localizeAuditCheck, localizeAuditIssue } from "./audit-taxonomy-i18n";
+import type {
+  AuditFrontendCheck,
+  AuditFrontendIssue,
+  AuditFrontendResult,
+} from "../home/audit-contract";
+import {
+  DISPLAY_CHECK_NAMES,
+  getAuditCheckGuide,
+  localizeAuditCheck,
+  localizeAuditIssue,
+} from "./audit-taxonomy-i18n";
 import {
   ExternalLink,
   Printer,
@@ -20,6 +29,11 @@ import {
   ArrowRight,
   Activity,
   ChevronRight,
+  ChevronDown,
+  Copy,
+  Check,
+  AlertCircle,
+  AlertTriangle,
 } from "lucide-react";
 
 function toolsPath(locale: Locale): string {
@@ -494,6 +508,310 @@ function AuditLiveProgressBar({
   );
 }
 
+function AuditCheckCard({
+  check,
+  issues,
+  targetUrl,
+  locale,
+}: {
+  readonly check: AuditFrontendCheck;
+  readonly issues: readonly AuditFrontendIssue[];
+  readonly targetUrl: string;
+  readonly locale: Locale;
+}) {
+  const ru = locale === "ru";
+  const guide = getAuditCheckGuide(check.id, locale);
+  const checkIssues = issues.filter(
+    (issue) => issue.checkId === check.id || issue.id.startsWith(check.id)
+  );
+  const [isOpen, setIsOpen] = useState(check.status !== "passed");
+  const [copiedCode, setCopiedCode] = useState(false);
+
+  function copySnippet(code: string) {
+    if (typeof window !== "undefined") {
+      navigator.clipboard.writeText(code);
+      setCopiedCode(true);
+      setTimeout(() => setCopiedCode(false), 2000);
+    }
+  }
+
+  const displayName = DISPLAY_CHECK_NAMES[locale]?.[check.id] ?? guide?.title ?? check.name;
+  const isPassed = check.status === "passed";
+  const isWarning = check.status === "warning";
+
+  const statusTone = isPassed
+    ? "tool-badge-success"
+    : isWarning
+    ? "tool-badge-warning"
+    : "tool-badge-danger";
+
+  const statusIcon = isPassed ? (
+    <CheckCircle2 size={16} color="#10b981" aria-hidden="true" />
+  ) : isWarning ? (
+    <AlertTriangle size={16} color="#f59e0b" aria-hidden="true" />
+  ) : (
+    <AlertCircle size={16} color="#ef4444" aria-hidden="true" />
+  );
+
+  return (
+    <div
+      className="audit-check-card"
+      style={{
+        border: `1px solid ${isPassed ? "var(--wd-l, #e2e8f0)" : isWarning ? "#fde68a" : "#fecaca"}`,
+        borderRadius: "12px",
+        background: isPassed ? "var(--wd-s, #ffffff)" : isWarning ? "rgba(254, 243, 199, 0.2)" : "rgba(254, 226, 226, 0.2)",
+        overflow: "hidden",
+        marginBottom: "12px",
+        transition: "box-shadow 0.2s ease",
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+          padding: "14px 18px",
+          background: "transparent",
+          border: "none",
+          cursor: "pointer",
+          textAlign: "left",
+        }}
+        aria-expanded={isOpen}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          {statusIcon}
+          <span className={`tool-badge ${statusTone}`} style={{ fontSize: "11px", textTransform: "uppercase" }}>
+            {localizedLabel(locale, check.status)}
+          </span>
+        </div>
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <strong style={{ display: "block", fontSize: "14px", color: "var(--wd-f, #0f172a)" }}>
+            {displayName}
+          </strong>
+          <small style={{ color: "var(--wd-ms, #64748b)", fontSize: "12px" }}>
+            {guide?.category ?? check.category}
+          </small>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          {checkIssues.length > 0 ? (
+            <span
+              style={{
+                fontSize: "11px",
+                fontWeight: 600,
+                color: isWarning ? "#d97706" : "#dc2626",
+                background: isWarning ? "#fef3c7" : "#fee2e2",
+                padding: "2px 8px",
+                borderRadius: "12px",
+              }}
+            >
+              {ru
+                ? `${checkIssues.length} ${checkIssues.length === 1 ? "замечание" : "замечаний"}`
+                : `${checkIssues.length} issue(s)`}
+            </span>
+          ) : isPassed ? (
+            <span
+              style={{
+                fontSize: "11px",
+                color: "#059669",
+                background: "#d1fae5",
+                padding: "2px 8px",
+                borderRadius: "12px",
+              }}
+            >
+              {ru ? "В норме" : "Passed"}
+            </span>
+          ) : null}
+          <ChevronDown
+            size={18}
+            style={{
+              transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+              transition: "transform 0.2s ease",
+              color: "var(--wd-ms, #94a3b8)",
+            }}
+          />
+        </div>
+      </button>
+
+      {isOpen && (
+        <div
+          className="audit-check-details"
+          style={{
+            padding: "0 18px 18px 18px",
+            borderTop: "1px solid var(--wd-l, #f1f5f9)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "14px",
+            fontSize: "13px",
+          }}
+        >
+          {/* What is checked & SEO impact */}
+          {guide && (
+            <div style={{ background: "var(--wd-s, #f8fafc)", padding: "12px 14px", borderRadius: "10px", marginTop: "12px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "8px", marginBottom: "6px" }}>
+                <strong style={{ fontSize: "13px", color: "var(--wd-f, #1e293b)" }}>
+                  {ru ? "Что проверялось и значение для SEO:" : "What is checked & SEO value:"}
+                </strong>
+                <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "6px", background: "#e0e7ff", color: "#3730a3", fontWeight: 600 }}>
+                  {guide.impact}
+                </span>
+              </div>
+              <p style={{ margin: 0, color: "var(--wd-ms, #475569)", lineHeight: 1.5 }}>
+                {guide.whatIsChecked}
+              </p>
+            </div>
+          )}
+
+          {/* Specific detected issues if any */}
+          {checkIssues.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <strong style={{ color: "#dc2626", fontSize: "13px" }}>
+                {ru ? "Обнаруженные ошибки и несоответствия:" : "Detected issues & discrepancies:"}
+              </strong>
+              {checkIssues.map((issue) => (
+                <div
+                  key={issue.id}
+                  style={{
+                    padding: "10px 12px",
+                    borderRadius: "8px",
+                    background: "#ffffff",
+                    border: "1px solid #fecaca",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                    <span className="tool-badge tool-badge-danger" style={{ fontSize: "10px" }}>
+                      {issue.severity.toUpperCase()}
+                    </span>
+                    <strong style={{ fontSize: "13px" }}>{issue.title}</strong>
+                  </div>
+                  <p style={{ margin: "4px 0", color: "#4b5563", fontSize: "12px" }}>
+                    {issue.description}
+                  </p>
+                  {issue.recommendation.steps.length > 0 && (
+                    <ul style={{ margin: "6px 0 0 0", paddingLeft: "18px", color: "#1f2937", fontSize: "12px" }}>
+                      {issue.recommendation.steps.map((st, sIdx) => (
+                        <li key={sIdx}>{st}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* What to fix (if guide provides and status is not passed) */}
+          {!isPassed && guide?.whatToFix && guide.whatToFix.length > 0 && checkIssues.length === 0 && (
+            <div>
+              <strong style={{ color: "#d97706", display: "block", marginBottom: "4px" }}>
+                {ru ? "Что требует исправления:" : "What needs fixing:"}
+              </strong>
+              <ul style={{ margin: 0, paddingLeft: "18px", color: "var(--wd-f, #334155)", lineHeight: 1.5 }}>
+                {guide.whatToFix.map((item, idx) => (
+                  <li key={idx}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* If passed, show confirmation */}
+          {isPassed && checkIssues.length === 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#059669", background: "#ecfdf5", padding: "10px 14px", borderRadius: "8px" }}>
+              <CheckCircle2 size={16} />
+              <span>
+                {ru
+                  ? "Параметр полностью настроен и соответствует актуальным требованиям поисковых систем (Яндекс и Google)."
+                  : "This check passed all technical criteria and matches search engine requirements."}
+              </span>
+            </div>
+          )}
+
+          {/* How to fix instructions */}
+          {guide?.howToFix && guide.howToFix.length > 0 && (
+            <div>
+              <strong style={{ color: "var(--wd-f, #0f172a)", display: "block", marginBottom: "4px" }}>
+                {ru ? "Как исправить (Рекомендации специалистов WebDiag):" : "How to fix (WebDiag Expert Guidelines):"}
+              </strong>
+              <ul style={{ margin: 0, paddingLeft: "18px", color: "var(--wd-f, #334155)", lineHeight: 1.5 }}>
+                {guide.howToFix.map((step, idx) => (
+                  <li key={idx}>{step}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Copyable code snippet */}
+          {guide?.codeExample && (
+            <div style={{ borderRadius: "8px", overflow: "hidden", border: "1px solid var(--wd-l, #cbd5e1)" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "6px 12px",
+                  background: "#1e293b",
+                  color: "#e2e8f0",
+                  fontSize: "12px",
+                }}
+              >
+                <span>{guide.codeExample.title}</span>
+                <button
+                  type="button"
+                  onClick={() => copySnippet(guide.codeExample!.code)}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    background: "transparent",
+                    border: "none",
+                    color: "#94a3b8",
+                    cursor: "pointer",
+                    fontSize: "11px",
+                  }}
+                >
+                  {copiedCode ? <Check size={12} color="#10b981" /> : <Copy size={12} />}
+                  <span>{copiedCode ? (ru ? "Скопировано!" : "Copied!") : (ru ? "Копировать код" : "Copy code")}</span>
+                </button>
+              </div>
+              <pre
+                style={{
+                  margin: 0,
+                  padding: "12px",
+                  background: "#0f172a",
+                  color: "#38bdf8",
+                  fontSize: "12px",
+                  fontFamily: "monospace",
+                  overflowX: "auto",
+                  whiteSpace: "pre-wrap",
+                }}
+              >
+                <code>{guide.codeExample.code}</code>
+              </pre>
+            </div>
+          )}
+
+          {/* Dedicated tool deep link */}
+          {guide?.toolSlug && (
+            <div style={{ marginTop: "4px", display: "flex", justifyContent: "flex-end" }}>
+              <Link
+                href={`${ru ? "" : "/en"}/tools/${guide.toolSlug}?url=${encodeURIComponent(targetUrl)}`}
+                className="button button-secondary"
+                style={{ fontSize: "12px", padding: "6px 12px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+              >
+                <span>{ru ? `Открыть инструмент «${guide.toolTitle}»` : `Open tool "${guide.toolTitle}"`}</span>
+                <ExternalLink size={13} />
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AuditResult({ locale, result }: { locale: Locale; result: AuditFrontendResult }) {
   const t = copy[locale];
   const ru = locale === "ru";
@@ -874,15 +1192,17 @@ function AuditResult({ locale, result }: { locale: Locale; result: AuditFrontend
         </div>
 
         {filteredChecks.length ? (
-          <ul>
+          <div className="single-audit-checks-list" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             {filteredChecks.map((check) => (
-              <li key={check.id} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", borderRadius: "8px" }}>
-                <span className={`tool-badge ${tone(check.status)}`}>{localizedLabel(locale, check.status)}</span>
-                <strong style={{ flex: 1 }}>{check.name}</strong>
-                <small style={{ color: "var(--wd-ms, #64748b)" }}>{check.category}</small>
-              </li>
+              <AuditCheckCard
+                key={check.id}
+                check={check}
+                issues={issues}
+                targetUrl={result.job.target.normalizedUrl || result.job.target.originalUrl}
+                locale={locale}
+              />
             ))}
-          </ul>
+          </div>
         ) : (
           <p>{t.emptyChecks}</p>
         )}

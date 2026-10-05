@@ -318,6 +318,65 @@ export function AccountDashboard({
         </article>
       </section>
 
+      <div
+        className="wd-dashboard-billing-banner"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: "16px",
+          padding: "16px 20px",
+          background: "linear-gradient(135deg, rgba(37, 99, 235, 0.06), rgba(124, 58, 237, 0.06))",
+          border: "1px solid rgba(99, 102, 241, 0.2)",
+          borderRadius: "14px",
+          marginBottom: "24px",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div
+            style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "10px",
+              background: "linear-gradient(135deg, #2563eb, #7c3aed)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "20px",
+            }}
+          >
+            💎
+          </div>
+          <div>
+            <strong style={{ display: "block", fontSize: "14px", color: "var(--wd-f, #0f172a)" }}>
+              {ru ? "AI-кредиты и тарифный план" : "AI Credits & Subscription"}
+            </strong>
+            <span style={{ fontSize: "13px", color: "var(--wd-ms, #64748b)" }}>
+              {ru
+                ? "Тариф: Стартовый. Пополняйте баланс кредитов по мере необходимости без абонентской платы."
+                : "Plan: Starter. Top up on-demand credits as needed without monthly lock-in."}
+            </span>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <Link
+            href={ru ? "/pricing#credit-packs" : "/en/pricing#credit-packs"}
+            className="wd-button wd-button-primary"
+            style={{ fontSize: "13px", padding: "8px 16px" }}
+          >
+            <span>💎 {ru ? "Купить кредиты" : "Buy Credits"}</span>
+          </Link>
+          <Link
+            href={ru ? "/pricing" : "/en/pricing"}
+            className="wd-button wd-button-secondary"
+            style={{ fontSize: "13px", padding: "8px 14px" }}
+          >
+            <span>{ru ? "Все тарифы" : "All Plans"}</span>
+          </Link>
+        </div>
+      </div>
+
       <section className="wd-dashboard-main-grid">
         <article className="wd-dashboard-panel wd-dashboard-health-chart">
           <header>
