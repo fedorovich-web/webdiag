@@ -4,10 +4,10 @@ import json
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Cookie, Depends, Header, HTTPException, Request, Response, status
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, status
 
 from webdiag_api.accounts.api import SESSION_COOKIE_NAME, AccountServiceDependency
-from webdiag_api.accounts.service import AccountService, AccountServiceError
+from webdiag_api.accounts.service import AccountServiceError
 from webdiag_api.ai.storage import SqliteAIStore
 from webdiag_api.billing.models import (
     CreateInvoiceRequest,
