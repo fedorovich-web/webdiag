@@ -254,3 +254,49 @@ def test_lava_webhook_handling_and_idempotency(test_env, monkeypatch):
     )
     assert resp_other.status_code == 200
     assert resp_other.json()["status"] == "ignored"
+
+
+def test_billing_status_and_confirm(test_env, monkeypatch):
+    monkeypatch.setattr("webdiag_api.billing.api.settings", test_env["settings"])
+    monkeypatch.setattr("webdiag_api.billing.service.settings", test_env["settings"])
+
+    client = TestClient(app)
+
+    # 1. Status endpoint
+    status_resp = client.get("/v1/billing/status")
+    assert status_resp.status_code == 200
+    assert status_resp.json()["provider"] == "lava"
+    assert status_resp.json()["currency"] == "RUB"
+    assert status_resp.json()["is_live"] is True
+
+    # 2. Register buyer
+    reg_resp = client.post(
+        "/v1/account/register",
+        json={
+            "email": "checkout_buyer@example.com",
+            "password": "StrongPassword123!",
+            "display_name": "Checkout Buyer",
+        },
+    )
+    assert reg_resp.status_code == 201
+    user_id = reg_resp.json()["user"]["id"]
+
+    # 3. Confirm checkout payment
+    confirm_resp = client.post(
+        "/v1/billing/confirm",
+        json={
+            "pack_id": "credit-pack-50",
+            "invoice_id": "test-inv-001",
+            "payment_method": "card",
+        },
+    )
+    assert confirm_resp.status_code == 200
+    data = confirm_resp.json()
+    assert data["status"] == "paid"
+    assert data["credits"] == 50
+    assert data["amount"] == 390.0
+
+    # User balance should be welcome credits (10) + 50 = 60
+    ai_store = test_env["ai_store"]
+    assert ai_store.get_credit_account(user_id=user_id).available == 60
+

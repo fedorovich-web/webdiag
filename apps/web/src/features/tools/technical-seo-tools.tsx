@@ -188,11 +188,11 @@ export function IndexabilityCheckerTool({ locale }: { locale: Locale }) {
           <div className="result-grid">
             <article className="result-card">
               <h3>{locale === "ru" ? "Индексируемость" : "Indexability"}</h3>
-              <p className="calculated-value">{result.indexable_candidate ? "OK" : "Blocked"}</p>
+              <p className="calculated-value">{locale === "ru" ? (result.indexable_candidate ? "Доступен" : "Заблокирован") : (result.indexable_candidate ? "OK" : "Blocked")}</p>
               <ul className="result-list">
                 <li>HTTP: <strong>{result.status_code}</strong></li>
-                <li>robots.txt: <strong>{String(result.robots_txt_allowed)}</strong></li>
-                <li>Noindex: <strong>{result.meta_robots_noindex ? "yes" : "no"}</strong></li>
+                <li>robots.txt: <strong>{locale === "ru" ? (result.robots_txt_allowed ? "разрешён" : "запрещён") : String(result.robots_txt_allowed)}</strong></li>
+                <li>Noindex: <strong>{locale === "ru" ? (result.meta_robots_noindex ? "да" : "нет") : (result.meta_robots_noindex ? "yes" : "no")}</strong></li>
               </ul>
             </article>
           </div>
@@ -216,9 +216,9 @@ export function HreflangCheckerTool({ locale }: { locale: Locale }) {
               <h3>Hreflang</h3>
               <p className="calculated-value">{result.total_alternates}</p>
               <ul className="result-list">
-                <li>Invalid: <strong>{result.invalid_alternate_count}</strong></li>
-                <li>Duplicates: <strong>{result.duplicate_hreflang_count}</strong></li>
-                <li>x-default: <strong>{result.has_x_default ? "yes" : "no"}</strong></li>
+                <li>{locale === "ru" ? "С ошибками" : "Invalid"}: <strong>{result.invalid_alternate_count}</strong></li>
+                <li>{locale === "ru" ? "Дубликаты" : "Duplicates"}: <strong>{result.duplicate_hreflang_count}</strong></li>
+                <li>x-default: <strong>{locale === "ru" ? (result.has_x_default ? "да" : "нет") : (result.has_x_default ? "yes" : "no")}</strong></li>
               </ul>
             </article>
           </div>
@@ -242,9 +242,9 @@ export function TechnologyDetectorTool({ locale }: { locale: Locale }) {
               <h3>{locale === "ru" ? "Технологии" : "Technologies"}</h3>
               <p className="calculated-value">{result.detected_count}</p>
               <ul className="result-list">
-                <li>Server: <strong>{result.server_header ?? "—"}</strong></li>
-                <li>Powered by: <strong>{result.powered_by_header ?? "—"}</strong></li>
-                <li>Generator: <strong>{result.generator_meta ?? "—"}</strong></li>
+                <li>{locale === "ru" ? "Сервер" : "Server"}: <strong>{result.server_header ?? "—"}</strong></li>
+                <li>{locale === "ru" ? "Платформа" : "Powered by"}: <strong>{result.powered_by_header ?? "—"}</strong></li>
+                <li>{locale === "ru" ? "Генератор" : "Generator"}: <strong>{result.generator_meta ?? "—"}</strong></li>
               </ul>
             </article>
           </div>

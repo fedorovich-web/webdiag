@@ -12,6 +12,9 @@ import httpx
 from webdiag_api.accounts.service import AccountService
 from webdiag_api.ai.storage import SqliteAIStore
 from webdiag_api.billing.models import (
+    BillingStatusResponse,
+    ConfirmPaymentRequest,
+    ConfirmPaymentResponse,
     CreateInvoiceRequest,
     CreateInvoiceResponse,
     WebhookResponse,
@@ -78,12 +81,21 @@ class BillingService:
         self._account_service = account_service
         self._ai_store = ai_store
 
+    def get_status(self) -> BillingStatusResponse:
+        is_live = bool(settings.lava_api_key.strip())
+        return BillingStatusResponse(
+            provider="lava",
+            is_live=is_live,
+            currency="RUB",
+        )
+
     def create_invoice(
         self,
         *,
         user_id: str,
         email: str,
         request: CreateInvoiceRequest,
+        origin: str | None = None,
     ) -> CreateInvoiceResponse:
         pack = CREDIT_PACKS.get(request.pack_id)
         if not pack:
@@ -95,14 +107,15 @@ class BillingService:
         if settings.lava_api_key.strip():
             api_url = f"{settings.lava_base_url.rstrip('/')}/api/v3/invoice"
             offer_id = settings.lava_offer_id.strip() or "webdiag-credits"
+            return_base = (request.return_url or origin or "https://app.webdiag.ru").rstrip("/")
             payload = {
                 "email": email,
                 "offerId": offer_id,
                 "currency": "RUB",
                 "amount": amount,
-                "successful_return_url": f"https://app.webdiag.ru/account?billing=success&pack={request.pack_id}&user={user_id}",
-                "failure_return_url": "https://app.webdiag.ru/pricing?billing=failed",
-                "cancel_return_url": "https://app.webdiag.ru/pricing",
+                "successful_return_url": f"{return_base}/account/checkout?billing=success&pack={request.pack_id}&user={user_id}",
+                "failure_return_url": f"{return_base}/account/checkout?billing=failed&pack={request.pack_id}",
+                "cancel_return_url": f"{return_base}/account/settings#billing",
             }
             headers = {
                 "X-Api-Key": settings.lava_api_key.strip(),
@@ -124,6 +137,7 @@ class BillingService:
                                 currency="RUB",
                                 pack_id=request.pack_id,
                                 credits=credits,
+                                is_live=True,
                             )
                     logger.error(
                         "Lava invoice creation API returned status %s: %s",
@@ -133,15 +147,9 @@ class BillingService:
             except Exception as error:
                 logger.exception("Failed to connect to Lava.top API: %s", error)
 
-        # Fallback / Development simulation
-        sim_id = f"sim-{uuid.uuid4().hex[:12]}"
-        self._ai_store.grant_credits(
-            user_id=user_id,
-            quantity=credits,
-            reason=f"Simulation credit top-up ({pack['title']})",
-            correlation_id=f"sim-{sim_id}",
-        )
-        sim_url = f"/account/settings?billing=success&pack={request.pack_id}&invoice={sim_id}"
+        # Sandbox / Checkout page URL - user proceeds through checkout before credit grant
+        sim_id = f"inv-{uuid.uuid4().hex[:12]}"
+        sim_url = f"/account/checkout?pack={request.pack_id}&invoice={sim_id}"
         return CreateInvoiceResponse(
             invoice_id=sim_id,
             payment_url=sim_url,
@@ -149,6 +157,35 @@ class BillingService:
             currency="RUB",
             pack_id=request.pack_id,
             credits=credits,
+            is_live=False,
+        )
+
+    def confirm_invoice(
+        self,
+        *,
+        user_id: str,
+        pack_id: str,
+        invoice_id: str,
+        payment_method: str = "card",
+    ) -> ConfirmPaymentResponse:
+        pack = CREDIT_PACKS.get(pack_id)
+        if not pack:
+            raise BillingServiceError(400, "invalid_pack_id", f"Unknown package: {pack_id}")
+        amount = float(pack["price_rub"])
+        credits = int(pack["credits"])
+        self._ai_store.grant_credits(
+            user_id=user_id,
+            quantity=credits,
+            reason=f"Payment for {pack['title']} via {payment_method} ({invoice_id})",
+            correlation_id=f"pay-{invoice_id}",
+        )
+        return ConfirmPaymentResponse(
+            status="paid",
+            invoice_id=invoice_id,
+            pack_id=pack_id,
+            amount=amount,
+            credits=credits,
+            payment_method=payment_method,
         )
 
     def verify_webhook_authentication(

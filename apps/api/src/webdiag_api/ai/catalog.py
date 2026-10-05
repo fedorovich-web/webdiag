@@ -91,18 +91,11 @@ DEFAULT_AI_CATALOG = AIToolCatalog(
 def build_production_ai_catalog() -> AIToolCatalog:
     ready_ids = {
         "ai_audit_action_plan",
-        "ai_meta_serp_studio",
-        "ai_schema_studio",
-        "ai_faq_studio",
-        "ai_alt_text_studio",
+        "ai_competitor_gap_report",
         "ai_content_brief",
         "ai_content_optimizer",
         "ai_search_intent_page_fit",
-        "ai_competitor_gap_report",
         "ai_internal_linking_planner",
-        "ai_redirect_migration_mapper",
-        "ai_localization_workbench",
-        "ai_regex_workbench",
     }
     definitions: list[AIToolDefinition] = []
     for tool in DEFAULT_AI_CATALOG.all():

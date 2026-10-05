@@ -365,7 +365,7 @@ function TlsConfigurationResult({ locale, result }: { locale: Locale; result: Tl
     <ul className="result-list">
       <li><strong>Cipher</strong><span>{result.cipher_suite ?? "—"}</span></li>
       <li><strong>Key bits</strong><span>{result.key_exchange_bits ?? "—"}</span></li>
-      <li><strong>Certificate host</strong><span>{result.certificate_hostname_matches ? "match" : "mismatch"}</span></li>
+      <li><strong>Certificate host</strong><span>{locale === "ru" ? (result.certificate_hostname_matches ? "совпадает" : "не совпадает") : (result.certificate_hostname_matches ? "match" : "mismatch")}</span></li>
     </ul>
     <Recommendation locale={locale} value={result.recommendation} />
   </Panel>;
@@ -381,8 +381,8 @@ function CompressionResult({ locale, result }: { locale: Locale; result: HttpCom
     <ul className="result-list">
       <li><strong>Content-Type</strong><span>{result.content_type ?? "—"}</span></li>
       <li><strong>Vary</strong><span>{result.vary ?? "—"}</span></li>
-      <li><strong>Compressible</strong><span>{result.compressible_candidate ? "yes" : "no"}</span></li>
-      <li><strong>Compressed</strong><span>{result.compressed ? "yes" : "no"}</span></li>
+      <li><strong>Compressible</strong><span>{locale === "ru" ? (result.compressible_candidate ? "да" : "нет") : (result.compressible_candidate ? "yes" : "no")}</span></li>
+      <li><strong>Compressed</strong><span>{locale === "ru" ? (result.compressed ? "да" : "нет") : (result.compressed ? "yes" : "no")}</span></li>
     </ul>
     <Recommendation locale={locale} value={result.recommendation} />
   </Panel>;
@@ -398,8 +398,8 @@ function HeadersResult({ locale, result }: { locale: Locale; result: HttpHeaders
     <ul className="result-list">
       <li><strong>Content-Type</strong><span>{result.content_type ?? "—"}</span></li>
       <li><strong>Cache-Control</strong><span>{result.cache_control ?? "—"}</span></li>
-      <li><strong>Server</strong><span>{result.server_header_present ? "present" : "—"}</span></li>
-      <li><strong>X-Powered-By</strong><span>{result.powered_by_header_present ? "present" : "—"}</span></li>
+      <li><strong>Server</strong><span>{locale === "ru" ? (result.server_header_present ? "присутствует" : "—") : (result.server_header_present ? "present" : "—")}</span></li>
+      <li><strong>X-Powered-By</strong><span>{locale === "ru" ? (result.powered_by_header_present ? "присутствует" : "—") : (result.powered_by_header_present ? "present" : "—")}</span></li>
     </ul>
     <Recommendation locale={locale} value={result.recommendation} />
   </Panel>;
@@ -408,7 +408,7 @@ function HeadersResult({ locale, result }: { locale: Locale; result: HttpHeaders
 function HttpProtocolResult({ locale, result }: { locale: Locale; result: HttpProtocolResponse }) {
   return <Panel title={dictionary[locale].result}>
     <div className="metric-grid">
-      <div><span>HTTP/2</span><strong>{result.http2_supported ? "yes" : "no"}</strong></div>
+      <div><span>HTTP/2</span><strong>{locale === "ru" ? (result.http2_supported ? "да" : "нет") : (result.http2_supported ? "yes" : "no")}</strong></div>
       <div><span>HTTP/3</span><strong>{result.http3_advertised ? "Alt-Svc" : "—"}</strong></div>
       <div><span>{dictionary[locale].status}</span><strong><StatusBadge value={result.status} /></strong></div>
     </div>
@@ -426,14 +426,14 @@ function CorsResult({ locale, result }: { locale: Locale; result: CorsResponse }
   return <Panel title={dictionary[locale].result}>
     <div className="metric-grid">
       <div><span>Status</span><strong>{result.status_code}</strong></div>
-      <div><span>Origin</span><strong>{result.allows_tested_origin ? "allowed" : "not allowed"}</strong></div>
+      <div><span>Origin</span><strong>{locale === "ru" ? (result.allows_tested_origin ? "разрешён" : "запрещён") : (result.allows_tested_origin ? "allowed" : "not allowed")}</strong></div>
       <div><span>{dictionary[locale].status}</span><strong><StatusBadge value={result.status} /></strong></div>
     </div>
     <ul className="result-list">
       <li><strong>ACAO</strong><span>{result.allow_origin ?? "—"}</span></li>
-      <li><strong>Credentials</strong><span>{result.allow_credentials ? "true" : "false"}</span></li>
-      <li><strong>Vary: Origin</strong><span>{result.vary_origin ? "yes" : "no"}</span></li>
-      <li><strong>Wildcard + credentials</strong><span>{result.wildcard_with_credentials ? "yes" : "no"}</span></li>
+      <li><strong>Credentials</strong><span>{locale === "ru" ? (result.allow_credentials ? "да" : "нет") : (result.allow_credentials ? "true" : "false")}</span></li>
+      <li><strong>Vary: Origin</strong><span>{locale === "ru" ? (result.vary_origin ? "да" : "нет") : (result.vary_origin ? "yes" : "no")}</span></li>
+      <li><strong>Wildcard + credentials</strong><span>{locale === "ru" ? (result.wildcard_with_credentials ? "да" : "нет") : (result.wildcard_with_credentials ? "yes" : "no")}</span></li>
     </ul>
     <Recommendation locale={locale} value={result.recommendation} />
   </Panel>;
