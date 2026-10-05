@@ -38,6 +38,16 @@ export function AccountSettings({
   const [sessionsStatus, setSessionsStatus] = useState("");
   const [loadingPack, setLoadingPack] = useState<string | null>(null);
   const [packError, setPackError] = useState("");
+  const [billingSuccess, setBillingSuccess] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("billing") === "success") {
+        setBillingSuccess(true);
+      }
+    }
+  }, []);
 
   async function handleDirectBuyPack(packId: string) {
     setLoadingPack(packId);
@@ -196,10 +206,15 @@ export function AccountSettings({
           </dl>
         </section>
 
-        <section className="wd-account-card wd-account-billing-card" aria-labelledby="account-billing-title">
+        <section className="wd-account-card wd-account-billing-card" id="billing" aria-labelledby="account-billing-title">
           <span className="eyebrow">{ru ? "Тариф и баланс" : "Plan & Balance"}</span>
           <h2 id="account-billing-title">{ru ? "Подписка и AI-кредиты" : "Subscription & Credits"}</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "12px" }}>
+            {billingSuccess && (
+              <div style={{ padding: "12px 16px", borderRadius: "10px", background: "rgba(16, 185, 129, 0.1)", border: "1px solid rgba(16, 185, 129, 0.3)", color: "#065f46", fontSize: "14px", fontWeight: 600 }}>
+                {ru ? "✅ Оплата прошла успешно! AI-кредиты зачислены на ваш баланс." : "✅ Payment successful! AI credits have been added to your balance."}
+              </div>
+            )}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", background: "var(--wd-s, #f8fafc)", borderRadius: "10px", border: "1px solid var(--wd-l, #e2e8f0)" }}>
               <div>
                 <strong style={{ display: "block", fontSize: "14px" }}>{ru ? "Тариф: Стартовый" : "Plan: Starter"}</strong>

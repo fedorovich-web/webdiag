@@ -434,7 +434,7 @@ export function AccountWorkspaceShell({
           <div className="wd-account-topbar-actions">
             <Link
               className="wd-account-topbar-billing-link"
-              href={ru ? "/pricing#credit-packs" : "/en/pricing#credit-packs"}
+              href={`${accountSettingsPath(locale)}#billing`}
               title={ru ? "Пополнить баланс кредитов или изменить тариф" : "Top up credit balance or upgrade plan"}
               style={{
                 display: "inline-flex",
@@ -478,7 +478,7 @@ export function AccountWorkspaceShell({
                   <small>{session.user.email}</small>
                 </div>
                 <Link href={accountSettingsPath(locale)}>{ru ? "Настройки аккаунта" : "Account settings"}</Link>
-                <Link href={ru ? "/pricing#credit-packs" : "/en/pricing#credit-packs"}>
+                <Link href={`${accountSettingsPath(locale)}#billing`}>
                   {ru ? "💎 Тарифы и баланс" : "💎 Plans & Credits"}
                 </Link>
                 <a href={ru ? "https://webdiag.ru" : "https://webdiag.ru/en"}>

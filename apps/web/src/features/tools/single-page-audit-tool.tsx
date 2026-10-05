@@ -672,7 +672,9 @@ function AuditCheckCard({
               <strong style={{ color: "#dc2626", fontSize: "13px" }}>
                 {ru ? "Обнаруженные ошибки и несоответствия:" : "Detected issues & discrepancies:"}
               </strong>
-              {checkIssues.map((issue) => (
+              {checkIssues.map((rawIssue) => {
+                const issue = localizeAuditIssue(rawIssue, locale);
+                return (
                 <div
                   key={issue.id}
                   style={{
@@ -699,7 +701,8 @@ function AuditCheckCard({
                     </ul>
                   )}
                 </div>
-              ))}
+              );
+            })}
             </div>
           )}
 

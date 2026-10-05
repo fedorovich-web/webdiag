@@ -275,6 +275,68 @@ export const RU_AUDIT_ISSUES: Readonly<Record<string, Translation>> = {
   },
 };
 
+export const EXTRA_AUDIT_ISSUES: Readonly<Record<string, Translation>> = {
+  "http.response.server_error": {
+    title: "Сервер вернул ошибку (5xx)",
+    description: "Проверяемый URL вернул код ответа сервера 5xx.",
+    summary: "Исправьте серверную ошибку до оптимизации второстепенных SEO-сигналов.",
+    steps: [
+      "Проверьте логи приложения и веб-сервера для этого URL.",
+      "Проверьте состояние баз данных, upstream-сервисов и кэша.",
+    ],
+    expectedImpact: "Восстанавливает доступ к странице для пользователей и поисковых систем.",
+  },
+  "http.response.client_error": {
+    title: "Ошибка клиента (4xx)",
+    description: "Проверяемый URL вернул статус ошибки 4xx (например, 404 Not Found или 403 Forbidden).",
+    summary: "Восстановите страницу или настройте редирект на актуальный адрес.",
+    steps: [
+      "Проверьте, существует ли страница и корректен ли запрашиваемый URL.",
+      "Верните 200 OK для рабочей страницы или настройте 301-редирект на замену.",
+    ],
+    expectedImpact: "Устраняет битые ссылки и снижает неэффективный расход краулингового бюджета.",
+  },
+  "http.redirects.too_many": {
+    title: "Слишком длинная цепочка редиректов",
+    description: "До достижения финального ответа URL проходит более двух перенаправлений.",
+    summary: "Замените цепочку редиректов одним прямым переходом на канонический URL.",
+    steps: [
+      "Обновите внутренние ссылки и правила веб-сервера, направляя сразу на финальный адрес.",
+    ],
+    expectedImpact: "Ускоряет загрузку страницы и исключает потерю ссылочного веса.",
+  },
+  "content.body.not_html": {
+    title: "Ответ не является HTML-документом",
+    description: "Сервер вернул ответ с Content-Type, отличным от text/html.",
+    summary: "Убедитесь, что посадочная страница отдаёт корректный HTML-контент.",
+    steps: [
+      "Проверьте заголовки ответа Content-Type и конфигурацию веб-сервера.",
+    ],
+    expectedImpact: "Позволяет поисковым роботам просканировать и проиндексировать содержимое страницы.",
+  },
+  "performance.pagespeed_mobile.poor": {
+    title: "Низкая скорость на мобильных устройствах",
+    description: "Оценка Google PageSpeed для мобильных устройств ниже 50 баллов.",
+    summary: "Оптимизируйте ключевые метрики Core Web Vitals (LCP, INP, CLS) для мобильных пользователей.",
+    steps: [
+      "Сжимайте изображения в форматы WebP или AVIF и настраивайте адаптивные размеры.",
+      "Устраните блокирующие рендеринг скрипты (defer/async) и неиспользуемый CSS.",
+      "Сократите время ответа сервера (TTFB) и настройте кэширование.",
+    ],
+    expectedImpact: "Повышает позиции в мобильном поиске Google/Яндекс и увеличивает конверсию.",
+  },
+  "performance.pagespeed_mobile.needs_improvement": {
+    title: "Скорость мобильной версии требует оптимизации",
+    description: "Оценка Google PageSpeed для мобильных устройств находится в диапазоне 50–89 баллов.",
+    summary: "Устраните оставшиеся задержки загрузки для перехода в оптимальную зелёную зону (90+).",
+    steps: [
+      "Настройте отложенную загрузку (lazy-loading) для медиафайлов ниже первого экрана.",
+      "Минифицируйте JavaScript и оптимизируйте загрузку веб-шрифтов.",
+    ],
+    expectedImpact: "Обеспечивает комфортный опыт пользователей и стабильное прохождение Core Web Vitals.",
+  },
+};
+
 export interface AuditCheckGuide {
   readonly title: string;
   readonly category: string;
@@ -993,7 +1055,7 @@ export function localizeAuditCheck(check: AuditFrontendCheck, locale: Locale): A
 
 export function localizeAuditIssue(issue: AuditFrontendIssue, locale: Locale): AuditFrontendIssue {
   if (locale === "en") return issue;
-  const translated = RU_AUDIT_ISSUES[issue.id];
+  const translated = RU_AUDIT_ISSUES[issue.id] ?? EXTRA_AUDIT_ISSUES[issue.id];
   return translated
     ? {
         ...issue,

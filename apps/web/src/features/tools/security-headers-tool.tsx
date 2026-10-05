@@ -1,6 +1,7 @@
 "use client";
 
 import { toolErrorMessage } from "./tool-error-presentation";
+import { localizeRecommendation } from "./tool-localization";
 
 import { useState, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
@@ -258,11 +259,11 @@ export function SecurityHeadersTool({ locale }: { locale: Locale }) {
                 <span>{check.header}</span>
               </div>
               <b>{securityHeaderStatusLabel(check.status, locale)}</b>
-              <p>{check.value ?? check.recommendation}</p>
+              <p>{check.value ?? localizeRecommendation(check.recommendation, locale)}</p>
             </li>)}
           </ul>
         </div>
-        <p className="security-headers-recommendation"><strong>{copy.recommendation}:</strong> {result.recommendation}</p>
+        <p className="security-headers-recommendation"><strong>{copy.recommendation}:</strong> {localizeRecommendation(result.recommendation, locale)}</p>
         <CopyButton value={securityHeadersResultText(result)} locale={locale} />
       </> : <p className="muted">{copy.empty}</p>}
     </section>

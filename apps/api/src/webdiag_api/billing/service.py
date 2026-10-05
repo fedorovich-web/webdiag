@@ -135,7 +135,13 @@ class BillingService:
 
         # Fallback / Development simulation
         sim_id = f"sim-{uuid.uuid4().hex[:12]}"
-        sim_url = f"https://app.webdiag.ru/account?billing=simulation&pack={request.pack_id}&invoice={sim_id}"
+        self._ai_store.grant_credits(
+            user_id=user_id,
+            quantity=credits,
+            reason=f"Simulation credit top-up ({pack['title']})",
+            correlation_id=f"sim-{sim_id}",
+        )
+        sim_url = f"/account/settings?billing=success&pack={request.pack_id}&invoice={sim_id}"
         return CreateInvoiceResponse(
             invoice_id=sim_id,
             payment_url=sim_url,

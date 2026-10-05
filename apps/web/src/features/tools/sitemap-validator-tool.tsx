@@ -5,6 +5,7 @@ import { toolErrorMessage } from "./tool-error-presentation";
 import { useState, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { CopyButton } from "../../components/copy-button";
+import { localizeRecommendation } from "./tool-localization";
 
 export interface SitemapLocResult {
   readonly url: string;
@@ -264,7 +265,7 @@ export function SitemapValidatorTool({ locale }: { locale: Locale }) {
           <h3>{copy.samples}</h3>
           {samples.length ? <ul className="result-list">{samples.map((item) => <li key={item.url}>{item.url}</li>)}</ul> : <p className="muted-text">{copy.noSamples}</p>}
         </div>
-        <p className="sitemap-validator-recommendation"><strong>{copy.recommendation}:</strong> {result.recommendation}</p>
+        <p className="sitemap-validator-recommendation"><strong>{copy.recommendation}:</strong> {localizeRecommendation(result.recommendation, locale)}</p>
         <CopyButton value={sitemapResultText(result)} locale={locale} />
       </> : <p className="muted-text">{copy.empty}</p>}
     </section>

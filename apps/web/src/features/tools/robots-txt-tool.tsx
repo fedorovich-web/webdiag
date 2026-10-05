@@ -1,6 +1,7 @@
 "use client";
 
 import { toolErrorMessage } from "./tool-error-presentation";
+import { localizeRecommendation } from "./tool-localization";
 
 import { useState, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
@@ -254,7 +255,7 @@ export function RobotsTxtTool({ locale }: { locale: Locale }) {
           <div><h3>{copy.sitemaps}</h3>{result.sitemap_urls.length ? <ul className="result-list">{result.sitemap_urls.map((item) => <li key={item.url}>{item.url}</li>)}</ul> : <p className="muted-text">{copy.noSitemaps}</p>}</div>
           <div><h3>{copy.rules}</h3>{result.disallow_rules.length ? <ul className="result-list">{result.disallow_rules.slice(0, 6).map((rule) => <li key={`${rule.user_agent}-${rule.value}`}>{rule.user_agent}: {rule.directive} {rule.value || "—"}</li>)}</ul> : <p className="muted-text">{copy.noRules}</p>}</div>
         </div>
-        <p className="robots-txt-recommendation"><strong>{copy.recommendation}:</strong> {result.recommendation}</p>
+        <p className="robots-txt-recommendation"><strong>{copy.recommendation}:</strong> {localizeRecommendation(result.recommendation, locale)}</p>
         <CopyButton value={robotsResultText(result)} locale={locale} />
       </> : <p className="muted-text">{copy.empty}</p>}
     </section>

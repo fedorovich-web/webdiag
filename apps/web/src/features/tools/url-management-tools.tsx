@@ -5,6 +5,7 @@ import { toolErrorMessage } from "./tool-error-presentation";
 import { ChangeEvent, FormEvent, useState } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { CopyButton } from "../../components/copy-button";
+import { localizeRecommendation } from "./tool-localization";
 import {
   isToolErrorPayload,
   parsePageUrlInput,
@@ -125,7 +126,7 @@ function ResultActions({ locale, value }: { locale: Locale; value: string }) {
 }
 
 function Recommendation({ locale, value }: { locale: Locale; value: string }) {
-  return <p className="tool-note"><strong>{copy[locale].recommendation}:</strong> {value}</p>;
+  return <p className="tool-note"><strong>{copy[locale].recommendation}:</strong> {localizeRecommendation(value, locale)}</p>;
 }
 
 function UrlInputForm({

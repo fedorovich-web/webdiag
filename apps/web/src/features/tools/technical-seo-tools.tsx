@@ -1,6 +1,7 @@
 "use client";
 
 import { toolErrorMessage } from "./tool-error-presentation";
+import { localizeRecommendation } from "./tool-localization";
 
 import { useState, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
@@ -111,7 +112,7 @@ function ErrorMessage({ value }: { value: string }) {
 }
 
 function Recommendation({ value, locale }: { value: string; locale: Locale }) {
-  return <div className="tool-note"><strong>{dictionary[locale].recommendation}:</strong> {value}</div>;
+  return <div className="tool-note"><strong>{dictionary[locale].recommendation}:</strong> {localizeRecommendation(value, locale)}</div>;
 }
 
 function BaseTool<T extends TechnicalSeoToolResponse>({

@@ -1,6 +1,7 @@
 "use client";
 
 import { toolErrorMessage } from "./tool-error-presentation";
+import { localizeRecommendation } from "./tool-localization";
 
 import { useState, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
@@ -215,7 +216,7 @@ export function RedirectChainTool({ locale }: { locale: Locale }) {
           </ol> : <p className="muted-text">{copy.noRedirects}</p>}
         </div>
         <div className="redirect-chain-headers"><h3>{copy.headers}</h3><ul className="result-list"><li>Content-Length: {result.headers.content_length ?? "—"}</li><li>Cache-Control: {result.headers.cache_control ?? "—"}</li><li>Server: {result.headers.server ?? "—"}</li></ul></div>
-        <p className="redirect-chain-recommendation"><strong>{copy.recommendation}:</strong> {result.recommendation}</p>
+        <p className="redirect-chain-recommendation"><strong>{copy.recommendation}:</strong> {localizeRecommendation(result.recommendation, locale)}</p>
         <CopyButton value={resultText(result)} locale={locale} />
       </> : <p className="muted-text">{locale === "ru" ? "После проверки здесь появятся HTTP-статус, финальный URL и цепочка переходов." : "After the check, the HTTP status, final URL, and redirect chain will appear here."}</p>}
     </section>
