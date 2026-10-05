@@ -11,6 +11,9 @@ function resolvePublicOrigin(request: NextRequest): string {
   const forwardedHost = request.headers.get("x-forwarded-host");
   const host = forwardedHost || request.headers.get("host");
   if (host && !host.startsWith("0.0.0.0")) {
+    if (host.includes("webdiag.ru")) {
+      return `https://${host}`;
+    }
     const proto =
       request.headers.get("x-forwarded-proto") ||
       (host.includes("localhost") || host.includes("127.0.0.1") ? "http" : "https");
@@ -53,7 +56,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const response = NextResponse.redirect(authUrl.toString());
   response.cookies.set(STATE_COOKIE_NAME, state, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: process.env.NODE_ENV === "production" || publicOrigin.startsWith("https"),
     sameSite: "lax",
     path: "/",
     maxAge: 600, // 10 minutes

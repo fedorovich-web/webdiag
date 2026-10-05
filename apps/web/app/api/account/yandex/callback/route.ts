@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { resolveAccountApiBaseUrl, selectAccountSetCookie } from "../../../../../src/features/account/account-proxy-contract";
+import { resolveAccountApiBaseUrl } from "../../../../../src/features/account/account-proxy-contract";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,12 +10,21 @@ function resolvePublicOrigin(request: NextRequest): string {
   const forwardedHost = request.headers.get("x-forwarded-host");
   const host = forwardedHost || request.headers.get("host");
   if (host && !host.startsWith("0.0.0.0")) {
+    if (host.includes("webdiag.ru")) {
+      return `https://${host}`;
+    }
     const proto =
       request.headers.get("x-forwarded-proto") ||
       (host.includes("localhost") || host.includes("127.0.0.1") ? "http" : "https");
     return `${proto}://${host}`;
   }
   return "https://app.webdiag.ru";
+}
+
+function extractSessionToken(cookieHeader: string | null | undefined): string | null {
+  if (!cookieHeader) return null;
+  const match = cookieHeader.match(/(?:^|[;,]\s*)webdiag_session=([^;,\s]+)/);
+  return match?.[1] ? match[1].trim() : null;
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
@@ -28,7 +37,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const loginRedirect = (errorCode: string) => {
     const target = new URL("/login", publicOrigin);
     target.searchParams.set("error", errorCode);
-    return NextResponse.redirect(target);
+    const res = NextResponse.redirect(target);
+    res.cookies.delete(STATE_COOKIE_NAME);
+    return res;
   };
 
   if (error) {
@@ -51,7 +62,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const clientSecret = (process.env.WEBDIAG_YANDEX_CLIENT_SECRET || process.env.YANDEX_CLIENT_SECRET || "").trim();
 
   try {
-    let sessionCookie: string | null = null;
+    let sessionToken: string | null = null;
 
     if (clientId && clientSecret) {
       // Direct exchange from Next.js if credentials are in web container
@@ -121,7 +132,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         return loginRedirect("yandex_backend_auth_failed");
       }
 
-      sessionCookie = selectAccountSetCookie(backendResponse.headers.get("set-cookie"));
+      const rawSetCookie =
+        (typeof backendResponse.headers.getSetCookie === "function"
+          ? backendResponse.headers.getSetCookie().join("; ")
+          : null) || backendResponse.headers.get("set-cookie");
+      sessionToken = extractSessionToken(rawSetCookie);
     } else {
       // Fallback to backend exchange (when credentials are in the api container)
       const backendExchangeResponse = await fetch(`${apiBaseUrl}/v1/account/oauth/yandex/exchange`, {
@@ -144,17 +159,32 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         return loginRedirect("yandex_exchange_failed");
       }
 
-      sessionCookie = selectAccountSetCookie(backendExchangeResponse.headers.get("set-cookie"));
+      const rawSetCookie =
+        (typeof backendExchangeResponse.headers.getSetCookie === "function"
+          ? backendExchangeResponse.headers.getSetCookie().join("; ")
+          : null) || backendExchangeResponse.headers.get("set-cookie");
+      sessionToken = extractSessionToken(rawSetCookie);
+    }
+
+    if (!sessionToken) {
+      return loginRedirect("yandex_session_missing");
     }
 
     const targetUrl = new URL("/account?auth=yandex", publicOrigin);
     const response = NextResponse.redirect(targetUrl);
 
-    if (sessionCookie) {
-      response.headers.set("set-cookie", sessionCookie);
-    }
-
+    // 1. Delete temporary state cookie
     response.cookies.delete(STATE_COOKIE_NAME);
+
+    // 2. Set authenticated session cookie on the response
+    response.cookies.set("webdiag_session", sessionToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production" || publicOrigin.startsWith("https"),
+      sameSite: "lax",
+      path: "/",
+      maxAge: 30 * 24 * 60 * 60, // 30 days
+    });
+
     return response;
   } catch (err) {
     return loginRedirect("yandex_internal_error");
