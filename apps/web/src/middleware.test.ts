@@ -122,4 +122,18 @@ describe("Domain Routing Middleware", () => {
       expect(middleware(reqLogin).status).toBe(200);
     });
   });
+
+  describe("Server Action probe blocking", () => {
+    it("intercepts requests with next-action header and returns 404", () => {
+      const req = new NextRequest(new URL("https://app.webdiag.ru/"), {
+        headers: {
+          host: "app.webdiag.ru",
+          "next-action": "x",
+        },
+      });
+      const res = middleware(req);
+      expect(res.status).toBe(404);
+      expect(res.headers.get("x-action-not-found")).toBe("1");
+    });
+  });
 });

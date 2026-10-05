@@ -136,8 +136,6 @@ export function AccountAuthForm({ locale, mode }: AccountAuthFormProps) {
 
       <form
         className="wd-auth-form"
-        method="post"
-        action={register ? registerPath(locale) : loginPath(locale)}
         onSubmit={onSubmit}
         aria-busy={pending}
       >
