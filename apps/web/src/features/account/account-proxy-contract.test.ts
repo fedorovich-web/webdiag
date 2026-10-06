@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   AccountProxyConfigurationError,
+  formatAccountSetCookie,
   resolveAccountApiBaseUrl,
+  resolveRequestSessionCookie,
   selectAccountRetryAfter,
   selectAccountSessionCookie,
   selectAccountSetCookie,
@@ -43,5 +45,32 @@ describe("account proxy contract", () => {
     expect(selectAccountRetryAfter(401, "60")).toBeNull();
     expect(selectAccountRetryAfter(429, "Wed, 21 Oct 2015 07:28:00 GMT")).toBeNull();
     expect(selectAccountRetryAfter(429, "9".repeat(11))).toBeNull();
+  });
+
+  it("resolves session cookie from either NextRequest cookie store or raw header", () => {
+    const fromCookies = resolveRequestSessionCookie({
+      cookies: { get: (name: string) => (name === "webdiag_session" ? { value: "token-from-store" } : undefined) },
+      headers: { get: () => null },
+    });
+    expect(fromCookies).toBe("webdiag_session=token-from-store");
+
+    const fromHeader = resolveRequestSessionCookie({
+      cookies: { get: () => undefined },
+      headers: { get: () => "webdiag_session=token-from-header" },
+    });
+    expect(fromHeader).toBe("webdiag_session=token-from-header");
+  });
+
+  it("formats Set-Cookie with or without Secure flag depending on HTTPS connection", () => {
+    const raw = "webdiag_session=token; Path=/; Max-Age=2592000; Secure; HttpOnly; SameSite=lax";
+    // Over HTTP, Secure flag is stripped so browsers do not reject it
+    expect(formatAccountSetCookie(raw, false)).toBe(
+      "webdiag_session=token; Path=/; Max-Age=2592000; HttpOnly; SameSite=lax",
+    );
+    // Over HTTPS, Secure flag is preserved
+    expect(formatAccountSetCookie(raw, true)).toContain("Secure");
+    // Over HTTPS without Secure in raw, Secure is added
+    const rawNoSec = "webdiag_session=token; Path=/; HttpOnly";
+    expect(formatAccountSetCookie(rawNoSec, true)).toBe("webdiag_session=token; Path=/; HttpOnly; Secure");
   });
 });

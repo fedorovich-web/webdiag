@@ -15,6 +15,7 @@ interface AccountAITextToolRunnerProps {
   readonly locale: Locale;
   readonly toolId: TextToolId;
   readonly onClose: () => void;
+  readonly onSuccess?: () => void;
 }
 
 const EMPTY_VALUES: FormValues = {
@@ -98,7 +99,7 @@ function requiredFields(toolId: TextToolId): readonly string[] {
   return ["pages"];
 }
 
-export function AccountAITextToolRunner({ locale, toolId, onClose }: AccountAITextToolRunnerProps) {
+export function AccountAITextToolRunner({ locale, toolId, onClose, onSuccess }: AccountAITextToolRunnerProps) {
   const ru = locale === "ru";
   const [values, setValues] = useState<FormValues>(() => ({ ...EMPTY_VALUES }));
   const [run, setRun] = useState<AIRun | null>(null);
@@ -114,6 +115,9 @@ export function AccountAITextToolRunner({ locale, toolId, onClose }: AccountAITe
         if (!active) return;
         setRun(detail.run);
         setAttempt((current) => current + 1);
+        if (detail.run.state === "succeeded") {
+          onSuccess?.();
+        }
       }).catch((caught) => {
         if (!active) return;
         setError(accountErrorMessage(locale, caught));
@@ -121,7 +125,7 @@ export function AccountAITextToolRunner({ locale, toolId, onClose }: AccountAITe
       });
     }, aiPollDelayMs(attempt));
     return () => { active = false; window.clearTimeout(timer); };
-  }, [attempt, locale, run]);
+  }, [attempt, locale, run, onSuccess]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -132,6 +136,9 @@ export function AccountAITextToolRunner({ locale, toolId, onClose }: AccountAITe
     try {
       const detail = await createAIRun(toolId, buildInput(locale, toolId, values), newAIIdempotencyKey());
       setRun(detail.run);
+      if (detail.run.state === "succeeded") {
+        onSuccess?.();
+      }
     } catch (caught) {
       setError(accountErrorMessage(locale, caught));
     } finally {

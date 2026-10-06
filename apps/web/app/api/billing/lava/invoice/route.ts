@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { selectAccountSessionCookie } from "../../../../../src/features/account/account-proxy-contract";
+import { resolveRequestSessionCookie } from "../../../../../src/features/account/account-proxy-contract";
 import {
   DOKPLOY_API_CONTAINER_URL,
   getBackendApiBaseUrl,
@@ -18,9 +18,7 @@ function getBillingApiBaseUrls(): string[] {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const nextCookieVal = request.cookies.get("webdiag_session")?.value;
-  const cookieFromHelper = selectAccountSessionCookie(request.headers.get("cookie"));
-  const sessionCookie = nextCookieVal ? `webdiag_session=${nextCookieVal}` : cookieFromHelper;
+  const sessionCookie = resolveRequestSessionCookie(request);
 
   if (!sessionCookie) {
     return NextResponse.json(

@@ -176,10 +176,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     // 1. Delete temporary state cookie
     response.cookies.delete(STATE_COOKIE_NAME);
 
+    const isHttps =
+      publicOrigin.startsWith("https") ||
+      request.headers.get("x-forwarded-proto") === "https" ||
+      request.nextUrl.protocol === "https:";
+
     // 2. Set authenticated session cookie on the response
     response.cookies.set("webdiag_session", sessionToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production" || publicOrigin.startsWith("https"),
+      secure: isHttps,
       sameSite: "lax",
       path: "/",
       maxAge: 30 * 24 * 60 * 60, // 30 days

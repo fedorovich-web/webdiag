@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   AccountProxyConfigurationError,
   resolveAccountApiBaseUrl,
-  selectAccountSessionCookie,
+  resolveRequestSessionCookie,
 } from "./account-proxy-contract";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
@@ -76,7 +76,7 @@ export async function proxyAccountWorkspace(
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), options.path.endsWith("/audits") ? 60_000 : 12_000);
   try {
-    const cookie = selectAccountSessionCookie(request.headers.get("cookie"));
+    const cookie = resolveRequestSessionCookie(request);
     const upstream = await fetch(`${apiBase}${options.path}`, {
       method: options.method,
       headers: {
