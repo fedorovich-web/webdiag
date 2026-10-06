@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   AccountProxyConfigurationError,
   resolveAccountApiBaseUrl,
+  resolveRequestSessionCookie,
   selectAccountRetryAfter,
-  selectAccountSessionCookie,
 } from "./account-proxy-contract";
 import { validAccountResourceId } from "./account-workspace-proxy";
 
@@ -89,7 +89,7 @@ export async function proxyAccountAI(
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
-    const sessionCookie = selectAccountSessionCookie(request.headers.get("cookie"));
+    const sessionCookie = resolveRequestSessionCookie(request);
     const upstream = await fetch(`${apiBaseUrl}${options.path}`, {
       method: options.method,
       headers: {

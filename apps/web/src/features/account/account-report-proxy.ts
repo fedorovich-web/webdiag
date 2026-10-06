@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   AccountProxyConfigurationError,
   resolveAccountApiBaseUrl,
-  selectAccountSessionCookie,
+  resolveRequestSessionCookie,
 } from "./account-proxy-contract";
 import { validAccountResourceId } from "./account-workspace-proxy";
 
@@ -65,7 +65,7 @@ export async function proxyAccountReportJson(
   try {
     const cookie = options.authenticated === false
       ? null
-      : selectAccountSessionCookie(request.headers.get("cookie"));
+      : resolveRequestSessionCookie(request);
     const upstream = await fetch(`${apiBase}${options.path}`, {
       method: options.method,
       headers: {
@@ -112,7 +112,7 @@ export async function proxyReportHtml(
   try {
     const cookie = options.authenticated === false
       ? null
-      : selectAccountSessionCookie(request.headers.get("cookie"));
+      : resolveRequestSessionCookie(request);
     const upstream = await fetch(`${apiBase}${options.path}`, {
       method: "GET",
       headers: { accept: "text/html", ...(cookie ? { cookie } : {}) },

@@ -20,6 +20,7 @@ import { aiWorkspaceEmptyCopy } from "./account-ai-presentation";
 import { AccountAIToolList } from "./account-ai-tool-list";
 import { AccountAIRunHistory } from "./account-ai-run-history";
 import { AccountAITextToolRunner } from "./account-ai-text-tool-runner";
+import { AccountAIAuditPlanRunner } from "./account-ai-audit-plan-runner";
 import { ToolCatalog } from "../tools/tool-catalog";
 import { getPublicCatalogCategories, getPublicCatalogTools } from "../tools/public-catalog-data";
 import { Sparkles, Wrench } from "lucide-react";
@@ -43,7 +44,7 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
   const [loadState, setLoadState] = useState<"loading" | "ready" | "unavailable">("loading");
   const [error, setError] = useState("");
   const [deletingRunId, setDeletingRunId] = useState<string | null>(null);
-  const [selectedTool, setSelectedTool] = useState<Exclude<AIToolId, "ai_audit_action_plan"> | null>(null);
+  const [selectedTool, setSelectedTool] = useState<AIToolId | null>(null);
 
   const diagnosticTools = useMemo(() => getPublicCatalogTools(locale), [locale]);
   const diagnosticCategories = useMemo(
@@ -85,6 +86,22 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
     const timer = window.setTimeout(loadWorkspace, 0);
     return () => window.clearTimeout(timer);
   }, [loadWorkspace]);
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setSelectedTool(null);
+      }
+    }
+    if (selectedTool) {
+      window.addEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "hidden";
+    }
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
+    };
+  }, [selectedTool]);
 
   async function handleDelete(runId: string) {
     setDeletingRunId(runId);
@@ -214,8 +231,39 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
               </Link>
             </div>
           )}
-          <AccountAIToolList locale={locale} catalog={catalog} loading={false} onSelect={(toolId) => setSelectedTool(toolId === "ai_audit_action_plan" ? null : toolId)} />
-          {selectedTool && <AccountAITextToolRunner locale={locale} toolId={selectedTool} onClose={() => setSelectedTool(null)} />}
+          <AccountAIToolList
+            locale={locale}
+            catalog={catalog}
+            loading={false}
+            onSelect={(toolId) => setSelectedTool(toolId)}
+          />
+          {selectedTool && (
+            <div
+              className="wd-ai-modal-overlay"
+              role="dialog"
+              aria-modal="true"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) setSelectedTool(null);
+              }}
+            >
+              <div className="wd-ai-modal-dialog">
+                {selectedTool === "ai_audit_action_plan" ? (
+                  <AccountAIAuditPlanRunner
+                    locale={locale}
+                    onClose={() => setSelectedTool(null)}
+                    onSuccess={() => loadWorkspace()}
+                  />
+                ) : (
+                  <AccountAITextToolRunner
+                    locale={locale}
+                    toolId={selectedTool}
+                    onClose={() => setSelectedTool(null)}
+                    onSuccess={() => loadWorkspace()}
+                  />
+                )}
+              </div>
+            </div>
+          )}
           <AccountAIRunHistory
             locale={locale}
             runs={runs}

@@ -36,8 +36,6 @@ export function AccountSettings({
   const [sessionsPending, setSessionsPending] = useState(false);
   const [sessionsError, setSessionsError] = useState("");
   const [sessionsStatus, setSessionsStatus] = useState("");
-  const [loadingPack, setLoadingPack] = useState<string | null>(null);
-  const [packError, setPackError] = useState("");
   const [billingSuccess, setBillingSuccess] = useState(false);
 
   useEffect(() => {
@@ -48,42 +46,6 @@ export function AccountSettings({
       }
     }
   }, []);
-
-  async function handleDirectBuyPack(packId: string) {
-    setLoadingPack(packId);
-    setPackError("");
-    try {
-      const resp = await fetch("/api/billing/lava/invoice", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ pack_id: packId }),
-      });
-      if (!resp.ok) {
-        const data = await resp.json().catch(() => ({}));
-        throw new Error(
-          data?.detail?.message ||
-            (ru ? "Не удалось выставить счёт на оплату." : "Failed to create payment invoice.")
-        );
-      }
-      const data = await resp.json();
-      if (data.payment_url) {
-        window.location.assign(data.payment_url);
-      } else {
-        throw new Error(ru ? "Ссылка на оплату не получена." : "Payment URL not returned.");
-      }
-    } catch (err: unknown) {
-      setPackError(
-        err instanceof Error
-          ? err.message
-          : ru
-          ? "Ошибка связи с платежным сервисом."
-          : "Payment service connection error."
-      );
-    } finally {
-      setLoadingPack(null);
-    }
-  }
 
   useEffect(() => {
     let active = true;
@@ -227,11 +189,6 @@ export function AccountSettings({
                 ? "AI-кредиты расходуются на умные рекомендации, генерацию планов исправлений, анализ конкурентных пробелов и ТЗ для копирайтеров."
                 : "AI credits are used for smart recommendations, fix plan generation, competitor gap analysis, and content briefs."}
             </p>
-            {packError && (
-              <p className="wd-account-error" role="alert" style={{ margin: "4px 0" }}>
-                {packError}
-              </p>
-            )}
 
             <div style={{ marginTop: "8px" }}>
               <strong style={{ fontSize: "13px", display: "block", marginBottom: "8px", color: "var(--wd-f, #0f172a)" }}>
@@ -244,15 +201,13 @@ export function AccountSettings({
                     <span style={{ fontSize: "15px", fontWeight: 700, color: "#2563eb" }}>390 ₽</span>
                   </div>
                   <small style={{ color: "var(--wd-ms, #64748b)", display: "block", marginBottom: "10px" }}>7.8 ₽ / {ru ? "кредит" : "credit"}</small>
-                  <button
-                    type="button"
-                    disabled={loadingPack !== null}
-                    onClick={() => handleDirectBuyPack("pack-50")}
+                  <Link
+                    href={ru ? "/account/checkout?pack=pack-50" : "/en/account/checkout?pack=pack-50"}
                     className="wd-button wd-button-primary"
-                    style={{ width: "100%", fontSize: "12px", padding: "6px 12px" }}
+                    style={{ width: "100%", fontSize: "12px", padding: "6px 12px", textAlign: "center", textDecoration: "none" }}
                   >
-                    {loadingPack === "pack-50" ? (ru ? "Переход к оплате..." : "Creating...") : (ru ? "Купить за 390 ₽" : "Buy 390 ₽")}
-                  </button>
+                    {ru ? "Купить за 390 ₽" : "Buy 390 ₽"}
+                  </Link>
                 </div>
 
                 <div style={{ padding: "12px", borderRadius: "10px", border: "2px solid #6366f1", background: "rgba(99, 102, 241, 0.04)", position: "relative" }}>
@@ -264,15 +219,13 @@ export function AccountSettings({
                     <span style={{ fontSize: "15px", fontWeight: 700, color: "#6366f1" }}>890 ₽</span>
                   </div>
                   <small style={{ color: "var(--wd-ms, #64748b)", display: "block", marginBottom: "10px" }}>5.9 ₽ / {ru ? "кредит" : "credit"}</small>
-                  <button
-                    type="button"
-                    disabled={loadingPack !== null}
-                    onClick={() => handleDirectBuyPack("pack-150")}
+                  <Link
+                    href={ru ? "/account/checkout?pack=pack-150" : "/en/account/checkout?pack=pack-150"}
                     className="wd-button wd-button-primary"
-                    style={{ width: "100%", fontSize: "12px", padding: "6px 12px", background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}
+                    style={{ width: "100%", fontSize: "12px", padding: "6px 12px", background: "linear-gradient(135deg, #6366f1, #8b5cf6)", textAlign: "center", textDecoration: "none" }}
                   >
-                    {loadingPack === "pack-150" ? (ru ? "Переход к оплате..." : "Creating...") : (ru ? "Купить за 890 ₽" : "Buy 890 ₽")}
-                  </button>
+                    {ru ? "Купить за 890 ₽" : "Buy 890 ₽"}
+                  </Link>
                 </div>
 
                 <div style={{ padding: "12px", borderRadius: "10px", border: "1px solid var(--wd-l, #e2e8f0)", background: "var(--wd-s, #fff)" }}>
@@ -281,26 +234,31 @@ export function AccountSettings({
                     <span style={{ fontSize: "15px", fontWeight: 700, color: "#2563eb" }}>1 990 ₽</span>
                   </div>
                   <small style={{ color: "var(--wd-ms, #64748b)", display: "block", marginBottom: "10px" }}>3.9 ₽ / {ru ? "кредит" : "credit"}</small>
-                  <button
-                    type="button"
-                    disabled={loadingPack !== null}
-                    onClick={() => handleDirectBuyPack("pack-500")}
+                  <Link
+                    href={ru ? "/account/checkout?pack=pack-500" : "/en/account/checkout?pack=pack-500"}
                     className="wd-button wd-button-primary"
-                    style={{ width: "100%", fontSize: "12px", padding: "6px 12px" }}
+                    style={{ width: "100%", fontSize: "12px", padding: "6px 12px", textAlign: "center", textDecoration: "none" }}
                   >
-                    {loadingPack === "pack-500" ? (ru ? "Переход к оплате..." : "Creating...") : (ru ? "Купить за 1 990 ₽" : "Buy 1 990 ₽")}
-                  </button>
+                    {ru ? "Купить за 1 990 ₽" : "Buy 1 990 ₽"}
+                  </Link>
                 </div>
               </div>
             </div>
 
             <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginTop: "12px" }}>
               <Link
-                href={ru ? "/pricing" : "/en/pricing"}
+                href={ru ? "/account/checkout?pack=plan-pro" : "/en/account/checkout?pack=plan-pro"}
                 className="wd-button wd-button-secondary"
                 style={{ fontSize: "13px" }}
               >
-                {ru ? "Тарифы подписки (Pro / Team)" : "Subscription plans (Pro / Team)"}
+                {ru ? "Тариф Pro (150 кредитов + расширенный аудит)" : "Pro Plan (150 credits + extended audit)"}
+              </Link>
+              <Link
+                href={ru ? "/pricing" : "/en/pricing"}
+                className="wd-button wd-button-ghost"
+                style={{ fontSize: "13px" }}
+              >
+                {ru ? "Все тарифы" : "All Plans"}
               </Link>
             </div>
           </div>

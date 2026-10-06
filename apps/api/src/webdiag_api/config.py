@@ -1,3 +1,4 @@
+import os
 import re
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Self
@@ -40,6 +41,27 @@ _CRAWLER_TOKEN_PLACEHOLDERS = frozenset(
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="WEBDIAG_", case_sensitive=False)
+
+    @model_validator(mode="before")
+    @classmethod
+    def populate_unprefixed_env(cls, data: object) -> object:
+        if isinstance(data, dict):
+            fallback_map = {
+                "lava_api_key": ("LAVA_API_KEY", "WEBDIAG_LAVA_API_KEY"),
+                "lava_webhook_secret": ("LAVA_WEBHOOK_SECRET", "WEBDIAG_LAVA_WEBHOOK_SECRET"),
+                "lava_shop_id": ("LAVA_SHOP_ID", "WEBDIAG_LAVA_SHOP_ID"),
+                "lava_offer_id": ("LAVA_OFFER_ID", "WEBDIAG_LAVA_OFFER_ID"),
+                "yandex_client_id": ("YANDEX_CLIENT_ID", "WEBDIAG_YANDEX_CLIENT_ID"),
+                "yandex_client_secret": ("YANDEX_CLIENT_SECRET", "WEBDIAG_YANDEX_CLIENT_SECRET"),
+            }
+            for field, env_keys in fallback_map.items():
+                if not data.get(field):
+                    for k in env_keys:
+                        val = os.getenv(k)
+                        if val:
+                            data[field] = val
+                            break
+        return data
 
     environment: str = "development"
     public_release: bool = False

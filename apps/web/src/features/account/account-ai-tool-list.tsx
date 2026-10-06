@@ -27,12 +27,12 @@ function toolActionLabel(
   options: { readonly enabled: boolean; readonly loading: boolean },
 ): string {
   const ru = locale === "ru";
-  if (options.loading) return ru ? "Проверяем" : "Checking";
+  if (options.loading) return ru ? "Проверяем…" : "Checking…";
   if (!options.enabled) return ru ? "Недоступен" : "Not available";
   if (toolId === "ai_audit_action_plan") {
-    return ru ? "Запуск из сохранённого аудита" : "Run from a saved audit";
+    return ru ? "Запустить план исправлений" : "Run action plan";
   }
-  return ru ? "Открыть форму" : "Open form";
+  return ru ? "Запустить инструмент" : "Run tool";
 }
 
 export function AccountAIToolList({ locale, catalog, loading, onSelect }: AccountAIToolListProps) {
@@ -52,9 +52,24 @@ export function AccountAIToolList({ locale, catalog, loading, onSelect }: Accoun
         {descriptors.map((descriptor) => {
           const tool = catalogTool(catalog, descriptor.id);
           const enabled = Boolean(tool) || true;
-          const selectable = enabled && descriptor.id !== "ai_audit_action_plan" && Boolean(onSelect);
+          const selectable = enabled && Boolean(onSelect);
           return (
-            <article className="wd-ai-tool-card" key={descriptor.id} data-enabled={enabled}>
+            <article
+              className="wd-ai-tool-card wd-ai-tool-card-interactive"
+              key={descriptor.id}
+              data-enabled={enabled}
+              role="button"
+              tabIndex={0}
+              onClick={() => {
+                if (selectable) onSelect?.(descriptor.id);
+              }}
+              onKeyDown={(e) => {
+                if ((e.key === "Enter" || e.key === " ") && selectable) {
+                  e.preventDefault();
+                  onSelect?.(descriptor.id);
+                }
+              }}
+            >
               <div className="wd-ai-tool-card-head">
                 <span className="wd-ai-tool-order">{String(descriptor.workflowOrder).padStart(2, "0")}</span>
                 <span className="wd-ai-tool-cost">{ru ? "1 AI-кредит" : "1 AI credit"}</span>
@@ -69,7 +84,15 @@ export function AccountAIToolList({ locale, catalog, loading, onSelect }: Accoun
               <h3>{descriptor.title}</h3>
               <p>{descriptor.summary}</p>
               <small>{descriptor.limits}</small>
-              <button className="wd-button wd-button-secondary" type="button" disabled={!selectable} onClick={() => onSelect?.(descriptor.id)}>
+              <button
+                className="wd-button wd-button-primary"
+                type="button"
+                disabled={!selectable}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelect?.(descriptor.id);
+                }}
+              >
                 {toolActionLabel(locale, descriptor.id, { enabled, loading })}
               </button>
             </article>

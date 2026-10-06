@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   AccountProxyConfigurationError,
+  formatAccountSetCookie,
   resolveAccountApiBaseUrl,
+  resolveRequestSessionCookie,
   selectAccountRetryAfter,
-  selectAccountSessionCookie,
-  selectAccountSetCookie,
 } from "./account-proxy-contract";
 
 const REQUEST_TIMEOUT_MS = 12_000;
@@ -32,12 +32,13 @@ function toResponse(
   status: number,
   setCookie?: string | null,
   retryAfter?: string | null,
+  isHttps: boolean = false,
 ) {
   const response = NextResponse.json(payload, {
     status,
     headers: { "cache-control": "no-store" },
   });
-  const sessionCookie = selectAccountSetCookie(setCookie ?? null);
+  const sessionCookie = formatAccountSetCookie(setCookie ?? null, isHttps);
   if (sessionCookie) response.headers.set("set-cookie", sessionCookie);
   const selectedRetryAfter = selectAccountRetryAfter(status, retryAfter ?? null);
   if (selectedRetryAfter) response.headers.set("retry-after", selectedRetryAfter);
@@ -50,16 +51,21 @@ function errorPayload(code: string, message: string) {
 
 export function createAccountProxy(options: ProxyOptions) {
   return async function handler(request: NextRequest) {
+    const isHttps =
+      request.headers.get("x-forwarded-proto") === "https" ||
+      request.nextUrl.protocol === "https:" ||
+      request.headers.get("x-forwarded-ssl") === "on";
+
     const declaredLength = Number(request.headers.get("content-length") ?? "0");
     if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) {
-      return toResponse(errorPayload("account_request_too_large", "Request body is too large."), 413);
+      return toResponse(errorPayload("account_request_too_large", "Request body is too large."), 413, null, null, isHttps);
     }
 
     let body: string | undefined;
     if (options.body) {
       body = await request.text();
       if (new TextEncoder().encode(body).byteLength > MAX_BODY_BYTES) {
-        return toResponse(errorPayload("account_request_too_large", "Request body is too large."), 413);
+        return toResponse(errorPayload("account_request_too_large", "Request body is too large."), 413, null, null, isHttps);
       }
     }
 
@@ -71,13 +77,16 @@ export function createAccountProxy(options: ProxyOptions) {
       return toResponse(
         errorPayload("account_api_misconfigured", "Account API is not configured."),
         500,
+        null,
+        null,
+        isHttps,
       );
     }
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     try {
-      const sessionCookie = selectAccountSessionCookie(request.headers.get("cookie"));
+      const sessionCookie = resolveRequestSessionCookie(request);
       const upstream = await fetch(`${apiBaseUrl}${options.path}`, {
         method: options.method,
         headers: {
@@ -97,6 +106,9 @@ export function createAccountProxy(options: ProxyOptions) {
         return toResponse(
           errorPayload("account_api_invalid_response", "Account API returned invalid JSON."),
           502,
+          null,
+          null,
+          isHttps,
         );
       }
       return toResponse(
@@ -104,6 +116,7 @@ export function createAccountProxy(options: ProxyOptions) {
         upstream.status,
         upstream.headers.get("set-cookie"),
         upstream.headers.get("retry-after"),
+        isHttps,
       );
     } catch (error) {
       const timedOut = error instanceof Error && error.name === "AbortError";
@@ -113,6 +126,9 @@ export function createAccountProxy(options: ProxyOptions) {
           timedOut ? "Account API request timed out." : "Account API is unavailable.",
         ),
         502,
+        null,
+        null,
+        isHttps,
       );
     } finally {
       clearTimeout(timeout);

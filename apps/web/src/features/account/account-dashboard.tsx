@@ -361,18 +361,18 @@ export function AccountDashboard({
         </div>
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
           <Link
-            href={`${accountSettingsPath(locale)}#billing`}
+            href={ru ? "/account/checkout" : "/en/account/checkout"}
             className="wd-button wd-button-primary"
             style={{ fontSize: "13px", padding: "8px 16px" }}
           >
             <span>💎 {ru ? "Купить кредиты" : "Buy Credits"}</span>
           </Link>
           <Link
-            href={ru ? "/pricing" : "/en/pricing"}
+            href={`${accountSettingsPath(locale)}#billing`}
             className="wd-button wd-button-secondary"
             style={{ fontSize: "13px", padding: "8px 14px" }}
           >
-            <span>{ru ? "Все тарифы" : "All Plans"}</span>
+            <span>{ru ? "Тарифы и баланс" : "Plans & Balance"}</span>
           </Link>
         </div>
       </div>

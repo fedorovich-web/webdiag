@@ -43,63 +43,15 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
     };
   }, []);
 
-  async function handleBuyPack(packId: string) {
+  function handleBuyPack(packId: string) {
     setLoadingPack(packId);
     setBillingError(null);
-    try {
-      const resp = await fetch("/api/billing/lava/invoice", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ pack_id: packId }),
-      });
-      if (resp.status === 401) {
-        if (!session) {
-          setBillingError(
-            ru
-              ? "Для совершения оплаты необходимо войти в аккаунт."
-              : "You must be signed in to make a payment."
-          );
-          router.push(
-            `${ru ? "/login" : "/en/login"}?return_to=${encodeURIComponent(
-              "/pricing#credit-packs"
-            )}`
-          );
-          return;
-        }
-        setBillingError(
-          ru
-            ? "Сессия не подтверждена платежным сервером. Пожалуйста, обновите страницу."
-            : "Session not confirmed by billing server. Please refresh the page."
-        );
-        return;
-      }
-      if (!resp.ok) {
-        const data = await resp.json().catch(() => ({}));
-        throw new Error(
-          data?.detail?.message ||
-            (ru ? "Ошибка создания счета на оплату" : "Failed to create payment invoice")
-        );
-      }
-      const data = await resp.json();
-      if (data.payment_url) {
-        window.location.assign(data.payment_url);
-      } else {
-        throw new Error(
-          ru ? "Платежная ссылка не получена" : "Payment URL was not returned"
-        );
-      }
-    } catch (err: unknown) {
-      setBillingError(
-        err instanceof Error
-          ? err.message
-          : ru
-          ? "Не удалось перейти к оплате"
-          : "Unable to initiate payment"
-      );
-    } finally {
-      setLoadingPack(null);
+    const targetUrl = `${ru ? "/account/checkout" : "/en/account/checkout"}?pack=${encodeURIComponent(packId)}`;
+    if (!session) {
+      router.push(`${ru ? "/login" : "/en/login"}?return_to=${encodeURIComponent(targetUrl)}`);
+      return;
     }
+    router.push(targetUrl);
   }
 
   const homeHref = ru ? "/" : "/en";
