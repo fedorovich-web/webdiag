@@ -4,8 +4,8 @@ export const mediaUtilityToolPages = [
   toolPage({
     slug: "image-optimizer",
     seoTitle: { ru: "Сжатие PNG, JPEG, WebP и AVIF онлайн", en: "PNG, JPEG, WebP & AVIF Image Compressor" },
-    metaDescription: { ru: "Сжимайте изображения в AVIF, WebP, JPEG или PNG с выбранным качеством. Файл обрабатывается локально в браузере; AVIF зависит от поддержки браузера.", en: "Compress images as AVIF, WebP, JPEG, or PNG with selected quality. The file is processed locally in your browser; AVIF depends on browser support." },
-    h1: { ru: "Сжатие PNG, JPEG, WebP и AVIF в браузере", en: "PNG, JPEG, WebP & AVIF Image Compressor" },
+    metaDescription: { ru: "Сжимайте изображения в AVIF, WebP, JPEG или PNG с выбранным качеством. WebP, JPEG и PNG обрабатываются в браузере. Для AVIF файл отправляется в конвертер WebDiag без сохранения.", en: "Compress images as AVIF, WebP, JPEG, or PNG with selected quality. WebP, JPEG and PNG are processed in the browser. AVIF uses the WebDiag converter without storage." },
+    h1: { ru: "Сжатие PNG, JPEG, WebP и AVIF", en: "PNG, JPEG, WebP & AVIF Image Compressor" },
     lead: { ru: "Повторно закодируйте одно изображение с выбранным форматом и качеством, сравните итоговый размер и скачайте результат.", en: "Re-encode one image with a selected format and quality, compare the resulting size, and download the output." },
     quickFacts: [
       { ru: "Один файл", en: "One file" },
@@ -37,7 +37,7 @@ export const mediaUtilityToolPages = [
     ],
     faq: [
       { question: { ru: "Почему PNG может не стать меньше?", en: "Why might a PNG not become smaller?" }, answer: { ru: "Canvas-кодирование и исходная оптимизация файла различаются. Уже оптимизированный PNG может остаться такого же размера или увеличиться.", en: "Canvas encoding differs from the source optimization. An already optimized PNG can remain similar in size or become larger." } },
-      { question: { ru: "Файл отправляется на сервер?", en: "Is the file uploaded?" }, answer: { ru: "Нет. Выбор, декодирование и повторное кодирование происходят в браузере.", en: "No. Selection, decoding, and re-encoding occur in the browser." } },
+      { question: { ru: "Файл отправляется на сервер?", en: "Is the file uploaded?" }, answer: { ru: "Для AVIF — да: файл обрабатывается в памяти сервера и не сохраняется. WebP, JPEG и PNG кодируются в браузере.", en: "For AVIF, yes: the file is processed in server memory without storage. WebP, JPEG and PNG are encoded in the browser." } },
     ],
     relatedToolSlugs: ["image-format-converter", "image-resizer", "image-cropper"],
     sourceUrls: ["https://developer.mozilla.org/docs/Web/API/HTMLCanvasElement/toBlob"],
@@ -45,13 +45,13 @@ export const mediaUtilityToolPages = [
   toolPage({
     slug: "image-format-converter",
     seoTitle: { ru: "Конвертер PNG, JPEG, WebP и AVIF онлайн", en: "PNG, JPEG, WebP & AVIF Image Converter" },
-    metaDescription: { ru: "Конвертируйте одно изображение в AVIF, WebP, JPEG или PNG без загрузки файла на сервер.", en: "Convert one image to AVIF, WebP, JPEG, or PNG without uploading the file to a server." },
+    metaDescription: { ru: "Конвертируйте одно изображение в AVIF, WebP, JPEG или PNG с обработкой AVIF на сервере без сохранения файла.", en: "Convert one image to AVIF, WebP, JPEG, or PNG with AVIF processed on the server without storing your file." },
     h1: { ru: "Конвертер PNG, JPEG, WebP и AVIF", en: "PNG, JPEG, WebP & AVIF Image Converter" },
-    lead: { ru: "Выберите изображение, задайте один из современных выходных форматов и скачайте новый файл, созданный браузером.", en: "Choose an image, select one modern output format, and download a new file created by the browser." },
+    lead: { ru: "Выберите изображение, задайте один из современных выходных форматов и скачайте новый файл. AVIF кодируется сервером WebDiag, остальные форматы — браузером.", en: "Choose an image, select one modern output format, and download the result. AVIF is encoded by the WebDiag server; other formats use the browser." },
     quickFacts: [
       { ru: "AVIF / WebP / JPEG / PNG", en: "AVIF / WebP / JPEG / PNG" },
       { ru: "Один файл", en: "One file" },
-      { ru: "Без загрузки", en: "No upload" },
+      { ru: "AVIF: обработка без сохранения", en: "AVIF: processed without storage" },
     ],
     howToSteps: [
       { ru: "Выберите исходное изображение.", en: "Choose the source image." },

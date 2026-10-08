@@ -538,7 +538,7 @@ export function AccountWorkspaceShell({
               </button>
             </div>
           )}
-          {section === "overview" || section === "projects" ? (
+          {children ?? (section === "overview" || section === "projects" ? (
             <AccountDashboard
               locale={locale}
               session={session}
@@ -553,7 +553,7 @@ export function AccountWorkspaceShell({
               session={session}
               onUnauthenticated={handleUnauthenticated}
             />
-          ) : children}
+          ) : null)}
         </section>
       </div>
 

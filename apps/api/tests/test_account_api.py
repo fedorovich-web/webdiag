@@ -506,7 +506,14 @@ def test_storage_is_foundation_only_hashes_tokens_and_caps_sessions(tmp_path: Pa
             for row in connection.execute("SELECT token_hash FROM account_sessions").fetchall()
         }
 
-    assert tables == {"account_users", "account_sessions", "account_login_attempts"}
+    assert tables == {
+        "account_users",
+        "account_sessions",
+        "account_login_attempts",
+        "account_oauth_identities",
+        "account_oauth_links",
+        "account_oauth_mail_limits",
+    }
     assert password_hash != raw_password
     assert raw_password not in database_path.read_bytes().decode("latin-1", errors="ignore")
     assert len(session_hashes) == 3

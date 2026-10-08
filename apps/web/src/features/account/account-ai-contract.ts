@@ -119,7 +119,7 @@ export interface AIRun {
   readonly contract_version: string;
   readonly credit_price: number;
   readonly state: AIRunState;
-  readonly output: AuditActionPlanOutput | null;
+  readonly output: AIOutput | null;
   readonly error_code: string | null;
   readonly created_at: string;
   readonly updated_at: string;

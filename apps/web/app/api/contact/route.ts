@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { sendContactEmailViaNevtan } from "../../../src/lib/email-service";
+import { readBoundedBody, RequestBodyError } from "../../../src/lib/request-body";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const body = JSON.parse(new TextDecoder().decode(await readBoundedBody(request, 16384)));
     const { name, email, topic, message } = body ?? {};
 
     if (!name || typeof name !== "string" || name.trim().length === 0) {
@@ -28,14 +29,15 @@ export async function POST(request: Request) {
       message: message.trim().slice(0, 4000),
     });
 
-    if (!result.success && result.error) {
-      // Return 500 only if there was an explicit unexpected failure
+    if (!result.success) {
       return NextResponse.json({ ok: false, error: "Не удалось отправить сообщение. Пожалуйста, напишите нам напрямую на support@webdiag.ru" }, { status: 500 });
     }
 
     return NextResponse.json({ ok: true, message: "Сообщение успешно отправлено" });
   } catch (err: unknown) {
-    console.error("[/api/contact error]", err);
+    if (err instanceof RequestBodyError) return NextResponse.json({ ok: false, error: err.message }, { status: err.status });
+    if (err instanceof SyntaxError) return NextResponse.json({ ok: false, error: "Некорректный запрос" }, { status: 400 });
+    console.error("[/api/contact error]", err instanceof Error ? err.name : "RequestError");
     return NextResponse.json({ ok: false, error: "Произошла ошибка при обработке запроса" }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
-import { publicTools } from "@webdiag/tool-registry";
+import { getPublicCatalogTools } from "../src/features/tools/public-catalog-data";
+const publicTools = getPublicCatalogTools("en");
 import { installBrowserGuard } from "./browser-guard";
 
 const PAGE_SIZE = 20;

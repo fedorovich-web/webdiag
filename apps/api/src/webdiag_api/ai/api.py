@@ -63,7 +63,9 @@ def get_ai_service() -> AIService:
             active_run_limit_per_user=settings.ai_active_run_limit_per_user,
             active_run_limit_global=settings.ai_active_run_limit_global,
         ),
-        catalog=build_production_ai_catalog(),
+        catalog=(
+            build_production_ai_catalog() if settings.ai_runtime_enabled else DEFAULT_AI_CATALOG
+        ),
         input_max_bytes=settings.ai_input_max_bytes,
         output_max_bytes=settings.ai_output_max_bytes,
         input_resolver=AIInputResolver(

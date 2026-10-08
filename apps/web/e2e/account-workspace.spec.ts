@@ -24,15 +24,15 @@ test.describe("account workspace", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Войти в WebDiag" })).toBeVisible();
     await expect(page.getByLabel("Электронная почта")).toHaveAttribute("autocomplete", "email");
     await expect(page.getByLabel("Пароль")).toHaveAttribute("autocomplete", "current-password");
-    await expect(page.getByRole("link", { name: "Зарегистрироваться" })).toHaveAttribute("href", "/register");
+    await expect(page.getByRole("link", { name: "Зарегистрироваться" })).toHaveAttribute("href", "/register?return_to=%2Faccount");
 
     await page.goto("/register");
     await expect(page.getByRole("heading", { level: 1, name: "Создать аккаунт" })).toBeVisible();
     await expect(page.getByLabel("Имя")).toHaveAttribute("autocomplete", "name");
     await expect(page.getByLabel("Пароль")).toHaveAttribute("autocomplete", "new-password");
     await expect(
-      page.locator(".wd-auth-card").getByRole("link", { name: "Войти" }),
-    ).toHaveAttribute("href", "/login");
+      page.locator(".wd-auth-card").getByRole("link", { name: "Войти", exact: true }),
+    ).toHaveAttribute("href", "/login?return_to=%2Faccount");
   });
 
   test("native auth fallback never places credentials in the URL", async ({ browser }) => {
@@ -401,7 +401,7 @@ test.describe("account workspace", () => {
   test("English login page and header sign-in use live routes", async ({ page }) => {
     await page.goto("/en/login");
     await expect(page.getByRole("heading", { level: 1, name: "Sign in to WebDiag" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Register" })).toHaveAttribute("href", "/en/register");
+    await expect(page.getByRole("link", { name: "Register" })).toHaveAttribute("href", "/en/register?return_to=%2Fen%2Faccount");
     const headerSignIn = page.locator('.wd-site-header .wd-header-login[href="/en/login"]');
     await expect(headerSignIn).toHaveAttribute("href", "/en/login");
     await expect(headerSignIn).toBeHidden();

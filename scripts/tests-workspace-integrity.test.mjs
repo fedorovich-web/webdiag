@@ -157,11 +157,11 @@ test("production core and opt-in AI overlay have separate fail-closed preflights
   assert.match(productionCompose, /WEBDIAG_ACCOUNT_COOKIE_SECURE:\s*["']true["']/);
   assert.match(productionCompose, /WEBDIAG_ACCOUNT_REGISTRATION_REQUEST_LIMIT:/);
   assert.match(productionCompose, /WEBDIAG_ACCOUNT_REGISTRATION_CONCURRENCY_LIMIT:/);
-  assert.match(productionCompose, /WEBDIAG_AI_RUNTIME_ENABLED:\s*["']false["']/);
+  assert.match(productionCompose, /WEBDIAG_AI_RUNTIME_ENABLED:\s*["']\$\{WEBDIAG_AI_RUNTIME_ENABLED:-false\}["']/);
   assert.match(productionCompose, /127\.0\.0\.1:8000\/ready/);
   assert.doesNotMatch(
     productionCompose,
-    /RABBITMQ|OPENROUTER|AI_GATEWAY|AI_ARTIFACT|AI_INTERNAL_TOKEN/,
+    /RABBITMQ|OPENROUTER|AI_ARTIFACT/,
   );
   assert.match(productionCompose, /rabbitmq:\s*!reset\s+null/);
   assert.match(productionCompose, /worker:\s*!reset\s+null/);
@@ -176,7 +176,11 @@ test("production core and opt-in AI overlay have separate fail-closed preflights
   for (const name of aiSecrets) {
     assert.match(aiCompose, new RegExp(`\\$\\{${name}:\\?[^}]+\\}`), name);
     assert.match(aiEnvironmentExample, new RegExp(`^${name}=$`, "m"), name);
-    assert.doesNotMatch(environmentExample, new RegExp(`^${name}=`, "m"), name);
+    if (name === "RABBITMQ_DEFAULT_PASS") {
+      assert.doesNotMatch(environmentExample, new RegExp(`^${name}=`, "m"), name);
+    } else {
+      assert.match(environmentExample, new RegExp(`^${name}=$`, "m"), name);
+    }
   }
   assert.doesNotMatch(dokployCompose, /\bports:/);
   assert.match(dokployCompose, /expose:\s*\n\s+- ["']3000["']/);

@@ -4,7 +4,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { accountErrorMessage } from "./account-messages";
 import { createAIRun, getAIRun } from "./account-ai-client";
-import type { AIOutput, AIToolId, AIRun } from "./account-ai-contract";
+import type { AIToolId, AIRun } from "./account-ai-contract";
+import { AccountAIResult } from "./account-ai-result";
 import { aiRunStateLabel, aiToolDescriptor } from "./account-ai-presentation";
 import { aiPollDelayMs, isAIRunTerminal, newAIIdempotencyKey, shouldPollAIRun } from "./account-ai-query";
 
@@ -22,12 +23,12 @@ const EMPTY_VALUES: FormValues = {
   audience: "",
   objective: "",
   facts: "",
-  page_url: "https://example.com/page",
+  page_url: "",
   target_query: "",
   primary_query: "",
   intended_page_type: "informational",
-  own_page_url: "https://example.com/page",
-  competitor_page_url: "https://competitor.example/page",
+  own_page_url: "",
+  competitor_page_url: "",
   pages: "",
 };
 
@@ -44,13 +45,6 @@ function lines(value: string): string[] {
 
 function fieldValue(values: FormValues, key: string): string {
   return values[key] ?? "";
-}
-
-function outputPreview(output: AIOutput, locale: Locale): string {
-  if ("summary" in output) return output.summary;
-  if ("revised_content" in output) return output.revised_content;
-  if ("evidence" in output) return output.evidence.join(" ");
-  return output.warnings.join(" ") || (locale === "ru" ? "Результат без дополнительного текста." : "The result contains no additional text.");
 }
 
 function buildInput(locale: Locale, toolId: TextToolId, values: FormValues): Record<string, unknown> {
@@ -174,7 +168,7 @@ export function AccountAITextToolRunner({ locale, toolId, onClose, onSuccess }: 
       </form>
       {run && <p className="wd-ai-copilot-status" role="status">{aiRunStateLabel(locale, run.state)}{!isAIRunTerminal(run.state) && !shouldPollAIRun(run.state, attempt) ? (ru ? " — обновите позже" : " — check again later") : ""}</p>}
       {error && <p className="wd-account-error" role="alert">{error}</p>}
-      {output && <div className="wd-ai-text-output"><strong>{ru ? "Результат подтверждён контрактом" : "Result validated by contract"}</strong><p>{outputPreview(output, locale)}</p></div>}
+      {output && <AccountAIResult locale={locale} output={output} />}
     </section>
   );
 }

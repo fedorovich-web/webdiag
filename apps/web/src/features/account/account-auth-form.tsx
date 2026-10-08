@@ -1,35 +1,34 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { loginAccount, registerAccount } from "./account-client";
 import { accountErrorMessage } from "./account-messages";
-import { accountPath, loginPath, registerPath } from "../../lib/routes";
+import { loginPath, registerPath } from "../../lib/routes";
+import { accountReturnPath } from "./account-navigation";
 
 interface AccountAuthFormProps {
   readonly locale: Locale;
   readonly mode: "login" | "register";
+  readonly returnTo?: string;
+  readonly oauthError?: string;
 }
 
-export function AccountAuthForm({ locale, mode }: AccountAuthFormProps) {
+export function AccountAuthForm({ locale, mode, returnTo, oauthError }: AccountAuthFormProps) {
   const [pending, setPending] = useState(false);
   const ru = locale === "ru";
   const register = mode === "register";
+  const needsYandexProof = oauthError === "yandex_account_link_required";
+  const destination = accountReturnPath(returnTo, locale);
+  const [recoverySent, setRecoverySent] = useState(false);
+  const [recoveryCode, setRecoveryCode] = useState("");
   const [error, setError] = useState(() => {
-    if (typeof window === "undefined") return "";
-    const params = new URLSearchParams(window.location.search);
-    const urlError = params.get("error");
-    if (!urlError) return "";
-    if (urlError === "yandex_not_configured") {
-      return ru
-        ? "Авторизация через Яндекс ID ещё не настроена (укажите Client ID и Client Secret)."
-        : "Yandex ID authentication is not yet configured (missing Client ID / Secret).";
-    }
-    if (urlError === "yandex_access_denied") {
-      return ru ? "Вы отменили вход через Яндекс ID." : "Yandex ID login was cancelled.";
-    }
-    return ru ? `Ошибка входа через Яндекс ID (${urlError})` : `Yandex ID login error (${urlError})`;
+    if (!oauthError) return "";
+    if (needsYandexProof) return ru ? "Подтвердите владение email аккаунта кодом из письма." : "Confirm ownership of the account email with an email code.";
+    if (oauthError === "yandex_access_denied") return ru ? "Вы отменили вход через Яндекс ID." : "Yandex ID sign-in was cancelled.";
+    return ru ? "Не удалось войти через Яндекс ID. Начните вход ещё раз или используйте email и пароль." : "Could not sign in with Yandex ID. Try again or use your email and password.";
   });
   const text = ru
     ? {
@@ -93,12 +92,28 @@ export function AccountAuthForm({ locale, mode }: AccountAuthFormProps) {
           password: String(data.get("password") ?? ""),
         });
       }
-      window.location.assign(accountPath(locale));
+      window.location.assign(accountReturnPath(new URLSearchParams(window.location.search).get("return_to"), locale));
     } catch (caught) {
       setError(accountErrorMessage(locale, caught));
     } finally {
       setPending(false);
     }
+  }
+
+  async function confirmByEmail() {
+    setPending(true);
+    setError("");
+    try {
+      const response = await fetch("/api/account/yandex/recovery", {
+        method: "POST", headers: { "content-type": "application/json" }, credentials: "include",
+        body: JSON.stringify({ locale, ...(recoverySent ? { code: recoveryCode } : {}) }),
+      });
+      if (!response.ok) throw new Error(ru ? "Не удалось подтвердить вход. Проверьте код или начните вход через Яндекс ещё раз." : "Could not confirm sign-in. Check the code or restart Yandex sign-in.");
+      if (recoverySent) window.location.assign(accountReturnPath(new URLSearchParams(window.location.search).get("return_to"), locale));
+      else setRecoverySent(true);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : (ru ? "Ошибка подтверждения." : "Confirmation failed."));
+    } finally { setPending(false); }
   }
 
   return (
@@ -115,25 +130,33 @@ export function AccountAuthForm({ locale, mode }: AccountAuthFormProps) {
       </header>
 
       <div className="wd-auth-oauth-section">
-        <Link
-          href="/api/account/yandex/login"
-          prefetch={false}
+        <a
+          href={`/api/account/yandex/login?locale=${locale}&return_to=${encodeURIComponent(destination)}`}
           className="wd-yandex-auth-btn"
           aria-label={ru ? "Войти с Яндекс ID" : "Sign in with Yandex ID"}
         >
-          <svg className="wd-yandex-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <path d="M2.04 12c0-5.523 4.476-10 10-10 5.522 0 10 4.477 10 10s-4.478 10-10 10c-5.524 0-10-4.477-10-10z" fill="#FC3F1D" />
-            <path d="M13.32 7.666h-.924c-1.694 0-2.585.858-2.585 2.123 0 1.43.616 2.1 1.881 2.959l1.045.704-3.003 4.487H7.49l2.695-4.014c-1.55-1.111-2.42-2.19-2.42-4.015 0-2.288 1.595-3.85 4.62-3.85h3.003v11.868H13.32V7.666z" fill="#fff" />
-          </svg>
+          <Image className="wd-yandex-icon" src="/icons/yandex-id.svg" width={24} height={24} alt="" aria-hidden="true" unoptimized />
           <span>{ru ? "Войти с Яндекс ID" : "Sign in with Yandex ID"}</span>
-        </Link>
+        </a>
       </div>
 
       <div className="wd-auth-divider" aria-hidden="true">
         <span>{ru ? "или через эл. почту" : "or with email"}</span>
       </div>
 
+      {needsYandexProof && <div className="wd-auth-form">
+        <p>{ru ? "Первое подключение Яндекс ID к существующему аккаунту требует кода из письма. Восстановление отключит прежний пароль и завершит другие сессии; дальше можно входить через Яндекс ID." : "Linking Yandex ID to an existing account requires an email code. Recovery disables the previous password and ends other sessions; continue signing in with Yandex ID."}</p>
+        {recoverySent && <label><span>{ru ? "Код отправлен на email аккаунта" : "Code sent to your account email"}</span>
+          <input value={recoveryCode} onChange={(event) => setRecoveryCode(event.target.value)} autoComplete="one-time-code" inputMode="numeric" maxLength={6} pattern="[0-9]{6}" disabled={pending} />
+        </label>}
+        <button className="wd-button wd-button-secondary" type="button" onClick={confirmByEmail} disabled={pending || (recoverySent && !/^\d{6}$/u.test(recoveryCode))}>
+          {recoverySent ? (ru ? "Подтвердить код" : "Confirm code") : (ru ? "Получить код на email" : "Email me a code")}
+        </button>
+      </div>}
+
       <form
+        method="post"
+        action={`/api/account/${register ? "register" : "login"}`}
         className="wd-auth-form"
         onSubmit={onSubmit}
         aria-busy={pending}
@@ -191,7 +214,7 @@ export function AccountAuthForm({ locale, mode }: AccountAuthFormProps) {
 
       <p className="wd-auth-alternate">
         {text.alternate}{" "}
-        <Link href={register ? loginPath(locale) : registerPath(locale)}>{text.alternateAction}</Link>
+        <Link href={`${register ? loginPath(locale) : registerPath(locale)}?return_to=${encodeURIComponent(destination)}`}>{text.alternateAction}</Link>
       </p>
 
       {register && (

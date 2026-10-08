@@ -22,12 +22,18 @@ class CreateInvoiceResponse(BaseModel):
     is_live: bool = False
 
 
+class PlanStatusResponse(BaseModel):
+    plan_id: str
+    expires_at: int | None = None
+
+
 class BillingStatusResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     provider: str = "lava"
     is_live: bool = False
     currency: str = "RUB"
+    plan: PlanStatusResponse | None = None
 
 
 class ConfirmPaymentRequest(BaseModel):
@@ -45,8 +51,11 @@ class ConfirmPaymentResponse(BaseModel):
     invoice_id: str
     pack_id: str
     amount: float
+    currency: str
     credits: int
     payment_method: str
+    plan_starts_at: int | None = None
+    plan_expires_at: int | None = None
 
 
 class WebhookResponse(BaseModel):
@@ -56,4 +65,3 @@ class WebhookResponse(BaseModel):
     detail: str | None = None
     credited: int | None = None
     contract_id: str | None = None
-

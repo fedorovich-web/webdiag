@@ -3,6 +3,8 @@ name: WebDiag CI
 on:
   push:
     branches:
+      - main
+      - "codex/**"
       - "recovery/**"
       - "feature/**"
   pull_request:

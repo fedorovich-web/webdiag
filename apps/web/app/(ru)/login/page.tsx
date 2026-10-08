@@ -14,10 +14,11 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function Page() {
+export default async function Page({ searchParams }: { searchParams: Promise<{ return_to?: string; error?: string }> }) {
+  const params = await searchParams;
   return (
     <main className="wd-auth-page">
-      <AccountAuthForm locale="ru" mode="login" />
+      <AccountAuthForm locale="ru" mode="login" returnTo={params.return_to} oauthError={params.error} key={`${params.return_to}:${params.error}`} />
     </main>
   );
 }

@@ -62,7 +62,7 @@ export function AccountAIAuditCopilot({ locale, projectId, auditId }: AccountAIA
   }
 
   const state = run?.state;
-  const showResult = run?.state === "succeeded" && run.output;
+  const showResult = run?.state === "succeeded" && run.output && "actions" in run.output ? run.output : null;
   return (
     <section className="wd-ai-copilot-card" aria-labelledby="ai-copilot-title">
       <div>
@@ -84,7 +84,7 @@ export function AccountAIAuditCopilot({ locale, projectId, auditId }: AccountAIA
       )}
       {state === "provider_unknown" && <p className="wd-ai-copilot-status" role="status">{ru ? "Провайдер не подтвердил результат. Не используйте его без ручной проверки." : "The provider did not confirm the outcome. Do not use it without manual review."}</p>}
       {error && <p className="wd-account-error" role="alert">{error}</p>}
-      {showResult && <AccountAIActionPlanResult locale={locale} output={run.output} />}
+      {showResult && <AccountAIActionPlanResult locale={locale} output={showResult} />}
     </section>
   );
 }

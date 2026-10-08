@@ -1,6 +1,6 @@
 import type { AIRunState } from "./account-ai-contract";
 
-const MAX_POLL_ATTEMPTS = 12;
+const MAX_POLL_ATTEMPTS = 60;
 const MAX_POLL_DELAY_MS = 5_000;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
