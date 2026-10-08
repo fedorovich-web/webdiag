@@ -26,8 +26,9 @@
 | Public production build | passed; 236 public routes, 234 HTML routes with localized metadata and JSON-LD |
 | Browser, headless Brave | 116 passed / 117; один тест контраста Lighthouse не пройден |
 | OAuth/account/checkout/tariff browser scenarios | 22 passed |
-| Dokploy Compose equivalence / missing-credential rejection | 2 passed |
+| Dokploy Compose equivalence / missing-credential rejection / broker overlay credential isolation | 3 passed |
 | Effective core Compose preflight, AI disabled/enabled | passed с отдельными тестовыми секретами; контейнеры локально не запускались |
+| Optional broker AI Compose preflight | passed, 5 services; core polling отключён, provider key доступен отдельному worker |
 
 Независимая проверка кода ограничивалась OAuth/recovery, оплатой/периодами и доступностью AI. Обнаруженные P1 pre-account hijack и P2 потеря оплаченного периода исправлены и повторно проверены. Это не утверждение независимого аудита всего проекта.
 

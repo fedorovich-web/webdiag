@@ -54,3 +54,16 @@ test("Dokploy preflight fails closed without production credentials", () => {
   assert.match(result.stderr, /preflight failed: Compose configuration is invalid/u);
   assert.doesNotMatch(result.stderr, /\$\{WEBDIAG_/u);
 });
+
+test("the broker overlay keeps provider credentials on its dedicated worker", () => {
+  const model = render([
+    "docker-compose.yml", "docker-compose.account.override.yml",
+    "docker-compose.production.yml", "docker-compose.production.ai.yml",
+  ]);
+  assert.equal(model.services.api.environment.WEBDIAG_AI_RUNTIME_ENABLED, "true");
+  assert.equal(model.services.monitoring_scheduler.environment.WEBDIAG_AI_RUNTIME_ENABLED, "false");
+  for (const key of ["AI_PROVIDER", "AI_GATEWAY_API_KEY", "AI_GATEWAY_BASE_URL", "AI_MODEL", "AI_REASONING_EFFORT"]) {
+    assert.equal(Object.hasOwn(model.services.monitoring_scheduler.environment, key), false, key);
+    assert.equal(Object.hasOwn(model.services.worker.environment, key), true, key);
+  }
+});
