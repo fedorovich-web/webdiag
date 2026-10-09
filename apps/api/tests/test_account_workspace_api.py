@@ -452,6 +452,9 @@ def test_saved_audit_is_versioned_bounded_and_excludes_internal_fields(tmp_path:
         "account_users",
         "account_sessions",
         "account_login_attempts",
+        "account_oauth_identities",
+        "account_oauth_links",
+        "account_oauth_mail_limits",
         "account_workspace_projects",
         "account_workspace_saved_audits",
     }

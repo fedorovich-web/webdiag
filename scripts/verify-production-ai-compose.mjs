@@ -75,6 +75,7 @@ expect(api.WEBDIAG_ENVIRONMENT === "production", "API environment is not product
 expect(worker.WEBDIAG_ENVIRONMENT === "production", "worker environment is not production");
 expect(scheduler.WEBDIAG_ENVIRONMENT === "production", "scheduler environment is not production");
 expect(api.WEBDIAG_AI_RUNTIME_ENABLED === "true", "API AI runtime is disabled");
+expect(scheduler.WEBDIAG_AI_RUNTIME_ENABLED === "false", "broker overlay enabled a competing polling worker");
 expect(api.WEBDIAG_AI_ACTIVE_RUN_LIMIT_PER_USER === "3", "per-user AI run limit differs");
 expect(api.WEBDIAG_AI_ACTIVE_RUN_LIMIT_GLOBAL === "100", "global AI run limit differs");
 expect(api.WEBDIAG_ACCOUNT_COOKIE_SECURE === "true", "secure account cookies are disabled");

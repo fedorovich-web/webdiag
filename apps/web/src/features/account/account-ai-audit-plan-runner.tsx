@@ -24,14 +24,15 @@ export function AccountAIAuditPlanRunner({ locale, onClose, onSuccess }: Account
 
   const [projects, setProjects] = useState<readonly AccountProject[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
-  const [audits, setAudits] = useState<readonly SavedAuditSummary[]>([]);
+  const [auditData, setAuditData] = useState<{ projectId: string; audits: readonly SavedAuditSummary[] }>({ projectId: "", audits: [] });
+  const audits = auditData.projectId === selectedProjectId ? auditData.audits : [];
   const [selectedAuditId, setSelectedAuditId] = useState<string>("");
   const [manualProjectId, setManualProjectId] = useState<string>("");
   const [manualAuditId, setManualAuditId] = useState<string>("");
   const [useManualInput, setUseManualInput] = useState<boolean>(false);
 
   const [loadingData, setLoadingData] = useState<boolean>(true);
-  const [loadingAudits, setLoadingAudits] = useState<boolean>(false);
+  const loadingAudits = Boolean(selectedProjectId && auditData.projectId !== selectedProjectId);
   const [run, setRun] = useState<AIRun | null>(null);
   const [attempt, setAttempt] = useState<number>(0);
   const [pending, setPending] = useState<boolean>(false);
@@ -65,18 +66,13 @@ export function AccountAIAuditPlanRunner({ locale, onClose, onSuccess }: Account
 
   // 2. Fetch audits when project changes
   useEffect(() => {
-    if (!selectedProjectId) {
-      setAudits([]);
-      setSelectedAuditId("");
-      return;
-    }
+    if (!selectedProjectId) return;
     let active = true;
-    setLoadingAudits(true);
     getAccountProject(selectedProjectId)
       .then((detail) => {
         if (!active) return;
         const projectAudits = detail.saved_audits ?? [];
-        setAudits(projectAudits);
+        setAuditData({ projectId: selectedProjectId, audits: projectAudits });
         if (projectAudits.length > 0 && projectAudits[0]) {
           setSelectedAuditId(projectAudits[0].id);
         } else {
@@ -85,11 +81,8 @@ export function AccountAIAuditPlanRunner({ locale, onClose, onSuccess }: Account
       })
       .catch(() => {
         if (!active) return;
-        setAudits([]);
+        setAuditData({ projectId: selectedProjectId, audits: [] });
         setSelectedAuditId("");
-      })
-      .finally(() => {
-        if (active) setLoadingAudits(false);
       });
     return () => {
       active = false;
@@ -200,7 +193,7 @@ export function AccountAIAuditPlanRunner({ locale, onClose, onSuccess }: Account
               <span>{ru ? "Проект:" : "Project:"}</span>
               <select
                 value={selectedProjectId}
-                onChange={(e) => setSelectedProjectId(e.target.value)}
+                onChange={(e) => { setSelectedProjectId(e.target.value); setSelectedAuditId(""); }}
                 disabled={loadingData || pending || Boolean(run && !isAIRunTerminal(run.state))}
                 style={{ height: "42px", borderRadius: "10px", border: "1px solid var(--line, #cbd5e1)", padding: "0 10px", background: "var(--surface, #fff)", font: "inherit" }}
               >

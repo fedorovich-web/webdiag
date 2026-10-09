@@ -12,6 +12,7 @@ test.describe("account settings", () => {
       page,
       (error) => expectedBrowserErrors.some((pattern) => pattern.test(error)),
     );
+    await page.route("**/api/billing/lava/status", (route) => route.fulfill({ json: { is_live: false, plan: { plan_id: "starter", expires_at: null } } }));
     await page.route("**/api/account/me", (route) => route.fulfill({ json: session }));
     await page.route("**/api/account/projects", (route) => route.fulfill({
       json: { contract_version: "webdiag.account.project_list.v1", projects: [firstProject] },
@@ -66,7 +67,7 @@ test.describe("account settings", () => {
     await page.goto("/account/settings");
     await expect(page.getByRole("heading", { level: 1, name: "Настройки аккаунта" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Настройки" })).toHaveAttribute("aria-current", "page");
-    await expect(page.getByText(session.user.email, { exact: true }).first()).toBeVisible();
+    await expect(page.locator(".wd-account-settings-identity").getByText(session.user.email, { exact: true })).toBeVisible();
     await expect(page.getByText("активных сессий")).toBeVisible();
     await expect(page.getByText("3", { exact: true })).toBeVisible();
 
@@ -114,7 +115,8 @@ test.describe("account settings", () => {
     await expect.poll(() => revokeRequests).toBe(1);
     await expect(page.getByText("Завершено сессий: 2.", { exact: true })).toBeVisible();
 
-    await expect(page.getByText(/Lava|оплат|удалить аккаунт/i)).toHaveCount(0);
+    await expect(page.getByText(/CVC|Тестовый платёж|удалить аккаунт/i)).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Купить за 390 ₽" })).toHaveAttribute("href", "/account/checkout?pack=pack-50");
     await page.setViewportSize({ width: 390, height: 844 });
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 

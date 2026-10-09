@@ -145,6 +145,37 @@ class Settings(BaseSettings):
     lava_base_url: str = "https://gate.lava.top"
     yandex_client_id: str = ""
     yandex_client_secret: str = ""
+    account_public_origin: str = "https://app.webdiag.ru"
+    account_internal_token: str = ""
+
+    @field_validator("account_internal_token")
+    @classmethod
+    def validate_account_internal_token(cls, value: str) -> str:
+        if value and (
+            not 32 <= len(value) <= 256 or any(not 0x21 <= ord(c) <= 0x7E for c in value)
+        ):
+            raise ValueError(
+                "account internal token must contain 32 to 256 visible ASCII characters"
+            )
+        return value
+
+    @field_validator("account_public_origin")
+    @classmethod
+    def validate_account_public_origin(cls, value: str) -> str:
+        from urllib.parse import urlsplit
+
+        parsed = urlsplit(value)
+        if (
+            parsed.scheme != "https"
+            or not parsed.hostname
+            or parsed.username
+            or parsed.password
+            or parsed.path not in {"", "/"}
+            or parsed.query
+            or parsed.fragment
+        ):
+            raise ValueError("account public origin must be a clean HTTPS origin")
+        return value.rstrip("/")
 
     @field_validator("account_database_path", "audit_database_path")
     @classmethod
@@ -267,6 +298,8 @@ class Settings(BaseSettings):
                 self.monitoring_internal_token,
                 self.crawler_internal_token,
             ]
+            if self.account_internal_token:
+                internal_secrets.append(self.account_internal_token)
             if self.ai_runtime_enabled:
                 if not self.ai_internal_token:
                     raise ValueError("production AI internal token is required")
@@ -276,9 +309,7 @@ class Settings(BaseSettings):
             if len(set(internal_secrets)) != len(internal_secrets):
                 raise ValueError("production internal tokens must be distinct")
         if self.account_registration_request_limit < self.account_registration_concurrency_limit:
-            raise ValueError(
-                "registration request limit must not be below the concurrency limit"
-            )
+            raise ValueError("registration request limit must not be below the concurrency limit")
         if self.account_request_body_max_bytes > self.http_request_body_max_bytes:
             raise ValueError("account request body max must not exceed HTTP request body max")
         if self.ai_text_request_body_max_bytes > self.http_request_body_max_bytes:
@@ -292,9 +323,7 @@ class Settings(BaseSettings):
         if self.crawler_lease_seconds < self.crawler_deadline_seconds + 30:
             raise ValueError("crawler lease must exceed the crawl deadline by at least 30 seconds")
         if self.crawler_active_job_limit_global < self.crawler_active_job_limit_per_user:
-            raise ValueError(
-                "crawler global active job limit must not be below the per-user limit"
-            )
+            raise ValueError("crawler global active job limit must not be below the per-user limit")
         return self
 
 

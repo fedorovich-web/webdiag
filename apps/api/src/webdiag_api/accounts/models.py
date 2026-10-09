@@ -21,14 +21,6 @@ class LoginRequest(BaseModel):
     password: SecretStr
 
 
-class OAuthLoginRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    provider: Literal["yandex"] = "yandex"
-    email: str = Field(min_length=3, max_length=254)
-    display_name: str = Field(default="", max_length=80)
-
-
 class OAuthConfigResponse(BaseModel):
     yandex_client_id: str = ""
     configured: bool = False
@@ -37,8 +29,19 @@ class OAuthConfigResponse(BaseModel):
 class OAuthYandexExchangeRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    code: str = Field(min_length=1)
+    code: str = Field(min_length=1, max_length=1024)
+    code_verifier: str = Field(min_length=43, max_length=128, pattern=r"^[A-Za-z0-9._~-]+$")
     redirect_uri: str = "https://app.webdiag.ru/api/account/yandex/callback"
+
+
+class OAuthLinkRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    token: SecretStr = Field(min_length=43, max_length=128)
+
+
+class OAuthRecoveryRequest(OAuthLinkRequest):
+    code: str = Field(pattern=r"^\d{6}$")
 
 
 class PasswordChangeRequest(BaseModel):
@@ -61,15 +64,17 @@ class AccountSessionResponse(BaseModel):
     user: AccountUser
 
 
+class OAuthYandexExchangeResponse(AccountSessionResponse):
+    created: bool
+
+
 class AccountLogoutResponse(BaseModel):
     contract_version: Literal["webdiag.account.logout.v1"] = "webdiag.account.logout.v1"
     authenticated: Literal[False] = False
 
 
 class AccountSessionSummaryResponse(BaseModel):
-    contract_version: Literal["webdiag.account.sessions.v1"] = (
-        "webdiag.account.sessions.v1"
-    )
+    contract_version: Literal["webdiag.account.sessions.v1"] = "webdiag.account.sessions.v1"
     active_session_count: int = Field(ge=1, le=20)
 
 

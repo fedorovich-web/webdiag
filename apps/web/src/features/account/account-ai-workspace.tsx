@@ -116,7 +116,7 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
     }
   }
 
-  const availableTools = catalog?.tools.length ? catalog.tools.length : 6;
+  const availableTools = catalog?.tools.length ?? 0;
   const balance = credits?.account.available ?? null;
 
   return (

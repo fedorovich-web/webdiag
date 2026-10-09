@@ -57,12 +57,12 @@ test.describe("RU and EN segmented navigation", () => {
 
   test("keeps decorative homepage copy in the active locale", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator(".wd-process-callout")).toContainText("Просто.");
-    await expect(page.locator(".wd-process-callout")).not.toContainText("Simple.");
+    await expect(page.locator(".wd-process-heading")).toContainText("3 простых шага");
+    await expect(page.locator(".wd-process-heading")).not.toContainText("3 simple steps");
 
     await page.goto("/en");
-    await expect(page.locator(".wd-process-callout")).toContainText("Simple.");
-    await expect(page.locator(".wd-process-callout")).not.toContainText("Просто.");
+    await expect(page.locator(".wd-process-heading")).toContainText("3 simple steps");
+    await expect(page.locator(".wd-process-heading")).not.toContainText("3 простых шага");
   });
 
 

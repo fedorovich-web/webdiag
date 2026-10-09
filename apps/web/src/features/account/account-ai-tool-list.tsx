@@ -51,15 +51,14 @@ export function AccountAIToolList({ locale, catalog, loading, onSelect }: Accoun
       <div className="wd-ai-tool-grid">
         {descriptors.map((descriptor) => {
           const tool = catalogTool(catalog, descriptor.id);
-          const enabled = Boolean(tool) || true;
+          const enabled = Boolean(tool) && !loading;
           const selectable = enabled && Boolean(onSelect);
           return (
             <article
               className="wd-ai-tool-card wd-ai-tool-card-interactive"
               key={descriptor.id}
               data-enabled={enabled}
-              role="button"
-              tabIndex={0}
+              tabIndex={selectable ? 0 : -1}
               onClick={() => {
                 if (selectable) onSelect?.(descriptor.id);
               }}
@@ -72,7 +71,7 @@ export function AccountAIToolList({ locale, catalog, loading, onSelect }: Accoun
             >
               <div className="wd-ai-tool-card-head">
                 <span className="wd-ai-tool-order">{String(descriptor.workflowOrder).padStart(2, "0")}</span>
-                <span className="wd-ai-tool-cost">{ru ? "1 AI-кредит" : "1 AI credit"}</span>
+                <span className="wd-ai-tool-cost">{tool ? `${tool.credit_price} ${ru ? "AI-кредит" : "AI credit"}` : "—"}</span>
                 <span className={`wd-ai-tool-status${enabled ? " is-ready" : ""}`}>
                   {loading
                     ? (ru ? "Проверяем" : "Checking")

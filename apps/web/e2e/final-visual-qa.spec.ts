@@ -1,6 +1,7 @@
 import { mkdir } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 import { installBrowserGuard } from "./browser-guard";
+import { session } from "./account-fixtures";
 
 const publicRoutes = [
   ["home-ru", "/"],
@@ -69,6 +70,7 @@ test.describe("final public visual QA captures", () => {
 
   for (const [name, route] of publicRoutes) {
     test(`${name} desktop and mobile browser renders`, async ({ page }, testInfo) => {
+      await page.route("**/api/account/me", (route) => route.fulfill({ json: session }));
       const assertBrowserClean = installBrowserGuard(
         page,
         name.startsWith("404-") ? isExpectedNotFoundNoise : undefined,

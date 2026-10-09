@@ -24,13 +24,10 @@ export async function sendContactEmailViaNevtan(data: ContactSubmission): Promis
   const secure = process.env.NEVTAN_SMTP_SECURE ? process.env.NEVTAN_SMTP_SECURE === "true" : port === 465;
   const user = process.env.NEVTAN_SMTP_USER || process.env.SMTP_USER || "support@webdiag.ru";
   const pass = process.env.NEVTAN_SMTP_PASS || process.env.SMTP_PASS;
-  const recipient = process.env.SUPPORT_EMAIL || "support@webdiag.ru";
+  const recipient = process.env.CONTACT_RECIPIENT_EMAIL || process.env.SUPPORT_EMAIL || "support@webdiag.ru";
 
   if (!pass) {
-    console.warn("[Nevtan SMTP] Password (NEVTAN_SMTP_PASS) is not configured. Feedback recorded in server logs.");
-    console.info("[Feedback Log]", { from: data.email, name: data.name, topic: data.topic, message: data.message });
-    // Return success in test / unconfigured mode so user feedback is not dropped
-    return { success: true };
+    return { success: false, error: "Contact email service is not configured." };
   }
 
   try {
@@ -38,16 +35,17 @@ export async function sendContactEmailViaNevtan(data: ContactSubmission): Promis
       host,
       port,
       secure,
+      requireTLS: !secure,
       auth: { user, pass },
-      tls: {
-        rejectUnauthorized: false,
-      },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
     });
 
     const mailOptions = {
       from: `"WebDiag Contact" <${user}>`,
       to: recipient,
-      replyTo: `"${data.name}" <${data.email}>`,
+      replyTo: { name: data.name, address: data.email },
       subject: `[Обратная связь WebDiag] ${data.topic || "Новое сообщение"} от ${data.name}`,
       text: [
         `Имя: ${data.name}`,
@@ -85,12 +83,12 @@ export async function sendContactEmailViaNevtan(data: ContactSubmission): Promis
       `,
     };
 
-    await transporter.sendMail(mailOptions);
+    const result = await transporter.sendMail(mailOptions);
+    if (!result.accepted?.includes(recipient)) return { success: false, error: "Contact email was not accepted." };
     return { success: true };
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : String(err);
-    console.error("[Nevtan SMTP error]", errorMsg);
-    return { success: false, error: errorMsg };
+    console.error("[Nevtan SMTP error]", err instanceof Error ? err.name : "TransportError");
+    return { success: false, error: "Contact email service is unavailable." };
   }
 }
 
@@ -99,23 +97,24 @@ export async function sendContactEmailViaNevtan(data: ContactSubmission): Promis
  */
 export async function sendTransactionalEmailViaResend(options: TransactionalEmailOptions): Promise<{ success: boolean; error?: string }> {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = options.from || "WebDiag <no-replay@webdiag.ru>";
+  const from = options.from || process.env.EMAIL_FROM || "WebDiag <no-replay@webdiag.ru>";
 
   if (!apiKey) {
-    console.warn("[Resend] RESEND_API_KEY is not configured. Email logged to console instead.");
-    console.info("[Resend Simulated Email]", { to: options.to, from, subject: options.subject });
-    return { success: true };
+    return { success: false, error: "Email service is not configured." };
   }
 
   try {
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
+      redirect: "error",
+      signal: AbortSignal.timeout(10000),
       headers: {
         "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         from,
+        reply_to: process.env.CONTACT_RECIPIENT_EMAIL || "support@webdiag.ru",
         to: [options.to],
         subject: options.subject,
         html: options.html,
@@ -124,16 +123,18 @@ export async function sendTransactionalEmailViaResend(options: TransactionalEmai
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("[Resend API Error]", response.status, errorText);
-      return { success: false, error: `Resend error: ${response.status} ${errorText}` };
+      console.error("[Resend API Error]", response.status);
+      return { success: false, error: "Email delivery failed." };
     }
 
+    const data: unknown = await response.json();
+    if (!data || typeof data !== "object" || !("id" in data) || typeof data.id !== "string" || !data.id) {
+      return { success: false, error: "Email delivery was not acknowledged." };
+    }
     return { success: true };
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : String(err);
-    console.error("[Resend dispatch error]", errorMsg);
-    return { success: false, error: errorMsg };
+    console.error("[Resend dispatch error]", err instanceof Error ? err.name : "TransportError");
+    return { success: false, error: "Email service is unavailable." };
   }
 }
 
@@ -171,7 +172,7 @@ export async function sendWelcomeEmail(email: string, locale: "ru" | "en" = "ru"
         <ul style="margin: 0; padding-left: 20px; color: #334155; font-size: 14px; line-height: 1.8;">
           <li>${isRu ? "Запустить экспресс-проверку страницы любого сайта" : "Run a quick single-page audit for any website"}</li>
           <li>${isRu ? "Создать первый проект в личном кабинете для отслеживания динамики" : "Create your first project in the workspace to track health trends"}</li>
-          <li>${isRu ? "Воспользоваться более чем 140 специализированными техническими инструментами" : "Explore over 140 specialized technical tools"}</li>
+          <li>${isRu ? "Воспользоваться диагностическими инструментами WebDiag" : "Explore WebDiag diagnostic tools"}</li>
           <li>${isRu ? "Попробовать AI-помощника для составления плана исправлений" : "Use AI assistants to prioritize and plan fixes"}</li>
         </ul>
       </div>
@@ -193,11 +194,12 @@ export async function sendWelcomeEmail(email: string, locale: "ru" | "en" = "ru"
     </div>
   `;
 
-  await sendTransactionalEmailViaResend({
+  const delivery = await sendTransactionalEmailViaResend({
     to: email,
     subject,
     html,
   });
+  if (!delivery.success) console.warn("[Welcome Email] Resend did not acknowledge the message.");
 }
 
 function escapeHtml(str: string): string {

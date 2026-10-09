@@ -1,66 +1,45 @@
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "node:crypto";
+import { randomBytes, createHash } from "node:crypto";
 import { resolveAccountApiBaseUrl } from "../../../../../src/features/account/account-proxy-contract";
+import { accountPublicOrigin, accountReturnPath, oauthCookie, readOAuthJson, OAUTH_STATE, OAUTH_VERIFIER, OAUTH_RETURN } from "../../../../../src/features/account/yandex-flow";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const STATE_COOKIE_NAME = "yandex_oauth_state";
-
-function resolvePublicOrigin(request: NextRequest): string {
-  const forwardedHost = request.headers.get("x-forwarded-host");
-  const host = forwardedHost || request.headers.get("host");
-  if (host && !host.startsWith("0.0.0.0")) {
-    if (host.includes("webdiag.ru")) {
-      return `https://${host}`;
-    }
-    const proto =
-      request.headers.get("x-forwarded-proto") ||
-      (host.includes("localhost") || host.includes("127.0.0.1") ? "http" : "https");
-    return `${proto}://${host}`;
-  }
-  return "https://app.webdiag.ru";
-}
-
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  const publicOrigin = resolvePublicOrigin(request);
+  const origin = accountPublicOrigin();
+  const destination = accountReturnPath(request.nextUrl.searchParams.get("return_to"), request.nextUrl.searchParams.get("locale") === "en" ? "en" : "ru");
+  const loginPath = destination.startsWith("/en/") ? "/en/login" : "/login";
   let clientId = (process.env.WEBDIAG_YANDEX_CLIENT_ID || process.env.YANDEX_CLIENT_ID || "").trim();
-
   if (!clientId) {
     try {
-      const apiBaseUrl = resolveAccountApiBaseUrl();
-      const res = await fetch(`${apiBaseUrl}/v1/account/oauth/config`, { cache: "no-store" });
-      if (res.ok) {
-        const data = (await res.json()) as { yandex_client_id?: string };
-        clientId = (data.yandex_client_id || "").trim();
+      const response = await fetch(`${resolveAccountApiBaseUrl()}/v1/account/oauth/config`, {
+        cache: "no-store", redirect: "error", signal: AbortSignal.timeout(10000),
+      });
+      if (response.ok) {
+        const data = await readOAuthJson(response);
+        if (data.configured === true && typeof data.yandex_client_id === "string") clientId = data.yandex_client_id;
       }
-    } catch {
-      // Backend unavailable or error
-    }
+    } catch { /* The controlled error redirect below handles an unavailable API. */ }
   }
-
   if (!clientId) {
-    const errorUrl = new URL("/login?error=yandex_not_configured", publicOrigin);
-    return NextResponse.redirect(errorUrl);
+    const response = NextResponse.redirect(new URL(`${loginPath}?error=yandex_not_configured`, origin));
+    response.headers.set("cache-control", "no-store");
+    return response;
   }
-
-  const state = crypto.randomUUID();
-  const redirectUri = `${publicOrigin}/api/account/yandex/callback`;
-
-  const authUrl = new URL("https://oauth.yandex.ru/authorize");
-  authUrl.searchParams.set("response_type", "code");
-  authUrl.searchParams.set("client_id", clientId);
-  authUrl.searchParams.set("redirect_uri", redirectUri);
-  authUrl.searchParams.set("state", state);
-
-  const response = NextResponse.redirect(authUrl.toString());
-  response.cookies.set(STATE_COOKIE_NAME, state, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production" || publicOrigin.startsWith("https"),
-    sameSite: "lax",
-    path: "/",
-    maxAge: 600, // 10 minutes
-  });
-
+  const state = randomBytes(32).toString("base64url");
+  const verifier = randomBytes(32).toString("base64url");
+  const url = new URL("https://oauth.yandex.ru/authorize");
+  url.search = new URLSearchParams({ response_type: "code", client_id: clientId,
+    redirect_uri: `${origin}/api/account/yandex/callback`, state,
+    scope: "login:email login:info", code_challenge_method: "S256",
+    code_challenge: createHash("sha256").update(verifier).digest("base64url"),
+  }).toString();
+  const response = NextResponse.redirect(url);
+  oauthCookie(response, OAUTH_STATE, state);
+  oauthCookie(response, OAUTH_VERIFIER, verifier);
+  oauthCookie(response, OAUTH_RETURN, destination);
+  response.headers.set("cache-control", "no-store");
+  response.headers.set("referrer-policy", "no-referrer");
   return response;
 }

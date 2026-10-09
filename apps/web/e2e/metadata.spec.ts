@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { installBrowserGuard } from "./browser-guard";
+import { session } from "./account-fixtures";
 
 const cases = [
   { route: "/", lang: "ru", canonical: "https://webdiag.ru", type: "WebSite" },
@@ -23,6 +24,7 @@ test.describe("rendered SEO metadata", () => {
   let assertBrowserClean: ReturnType<typeof installBrowserGuard>;
 
   test.beforeEach(async ({ page }) => {
+    await page.route("**/api/account/me", (route) => route.fulfill({ json: session }));
     assertBrowserClean = installBrowserGuard(page);
   });
 

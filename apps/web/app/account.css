@@ -535,7 +535,7 @@
   .wd-workspace-drawer {
     position: fixed;
     inset: 0;
-    z-index: 120;
+    z-index: 1001;
   }
 
   .wd-workspace-drawer.is-open {
