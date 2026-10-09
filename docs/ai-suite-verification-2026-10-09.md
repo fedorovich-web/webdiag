@@ -15,8 +15,9 @@ This change restores the fifteen original AI contracts to the account interface 
 
 | Check | Result |
 |---|---|
-| Complete API tests | 674 passed, 3 skipped; one Starlette deprecation warning |
-| Complete worker tests | 150 passed |
+| Complete API + worker tests | 827 passed, 3 skipped; one Starlette deprecation warning |
+| Workspace checks | 80 passed |
+| Optional production AI Compose preflight | Passed with fixture credentials; no containers started |
 | Complete web unit tests | 736 passed |
 | TypeScript | Passed |
 | Python Ruff | Passed |
@@ -27,6 +28,8 @@ This change restores the fifteen original AI contracts to the account interface 
 | AI browser tests | 3 passed, covering all fifteen RU/EN deep links, Schema submission/result retention and private image editing flow |
 
 The full web test initially retained a six-card expectation; updating it to fifteen preserved the assertion that an empty backend catalog disables every paid tool. The first new browser run rejected an incomplete mocked history response; adding its required `next_cursor` field fixed the fixture without weakening runtime validation.
+
+The first PR CI run also found legacy checks forbidding artifact storage and expecting retries after ambiguous provider timeouts. Updated checks verify private volume placement and exactly one paid attempt. The operator evaluation summary preserves unknown provider cost instead of reporting zero. The account catalog displays its actual tool count rather than a fixed marketing number.
 
 Read-only reviews of provider transport, storage architecture, result rendering, upload deadlines and checkout selector found no outstanding concrete P1/P2 after fixes. These are source reviews, not live provider evidence.
 

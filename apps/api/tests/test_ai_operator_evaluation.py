@@ -4,9 +4,18 @@ from pathlib import Path
 
 import httpx
 import pytest
-from scripts.ai_provider_evaluation import run_cli
+from scripts.ai_provider_evaluation import _evidence_cost, run_cli
 from webdiag_worker.ai import ProviderArtifact, ProviderResult
 from webdiag_worker.vercel_gateway_provider import VercelAIGatewayProvider
+
+
+@pytest.mark.parametrize(("evidence", "expected"), [
+    ({"cases": [{"provider_cost_nano_usd": 12}, {"provider_cost_nano_usd": 5}]}, 17),
+    ({"cases": [{"provider_cost_nano_usd": 12}, {"provider_cost_nano_usd": None}]}, None),
+    ({"cases": [], "failure": {"class": "provider_unknown"}}, None),
+])
+def test_cost_evidence_does_not_report_unknown_paid_outcomes_as_zero(evidence, expected):
+    assert _evidence_cost(evidence) == expected
 
 
 def _schema_manifest() -> dict[str, object]:
@@ -402,7 +411,7 @@ def test_semantic_rejection_writes_incomplete_private_evidence_without_retry(
         ("unknown", "provider_unknown"),
     ),
 )
-def test_provider_failures_are_classified_with_bounded_transient_retry(
+def test_provider_failures_are_classified_without_retrying_unknown_outcomes(
     tmp_path: Path,
     capsys,
     failure_mode: str,
@@ -440,7 +449,7 @@ def test_provider_failures_are_classified_with_bounded_transient_retry(
         provider_factory=provider_factory,
     ) == 2
 
-    assert len(requests) == (1 if failure_mode == "known_safe" else 3)
+    assert len(requests) == 1
     evidence = json.loads(output_path.read_text(encoding="utf-8"))
     assert evidence["status"] == "incomplete"
     assert evidence["failure"] == {

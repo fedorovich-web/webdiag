@@ -144,7 +144,7 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
           onClick={() => setActiveTab("diagnostic")}
         >
           <Wrench aria-hidden="true" style={{ width: 16, height: 16 }} />
-          <span>{ru ? "Все 140+ инструментов диагностики" : "All 140+ Diagnostic Tools"}</span>
+          <span>{ru ? `Все ${diagnosticTools.length} инструментов` : `All ${diagnosticTools.length} tools`}</span>
         </button>
         <button
           type="button"
@@ -162,7 +162,7 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
         <div className="wd-account-tools-catalog">
           <div className="wd-account-tools-head">
             <span className="eyebrow">{ru ? "КАТАЛОГ ИНСТРУМЕНТОВ" : "TOOL CATALOG"}</span>
-            <h1>{ru ? "Все 140+ инструментов WebDiag" : "All 140+ WebDiag Diagnostic Tools"}</h1>
+            <h1>{ru ? `Все ${diagnosticTools.length} инструментов WebDiag` : `All ${diagnosticTools.length} WebDiag tools`}</h1>
             <p>{ru ? "Проверки SEO, производительности, безопасности, DNS, разметки и доступности для вашего сайта." : "SEO, performance, security, DNS, schema, and accessibility audits for your website."}</p>
           </div>
           <ToolCatalog locale={locale} tools={diagnosticTools} categories={diagnosticCategories} />

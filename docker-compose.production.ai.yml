@@ -49,6 +49,7 @@ services:
         condition: service_healthy
 
   monitoring_scheduler:
+    volumes: !reset []
     environment:
       WEBDIAG_AI_RUNTIME_ENABLED: "false"
       AI_PROVIDER: !reset null
@@ -56,5 +57,7 @@ services:
       AI_GATEWAY_BASE_URL: !reset null
       AI_MODEL: !reset null
       AI_REASONING_EFFORT: !reset null
+      WEBDIAG_AI_ARTIFACT_STORAGE: !reset null
+      WEBDIAG_AI_ARTIFACT_LOCAL_ROOT: !reset null
       WEBDIAG_AI_API_INTERNAL_URL: http://api:8000
       WEBDIAG_AI_INTERNAL_TOKEN: "${WEBDIAG_AI_INTERNAL_TOKEN:?set a distinct AI internal token}"
