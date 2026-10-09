@@ -176,7 +176,9 @@ test("production core and opt-in AI overlay have separate fail-closed preflights
     assert.match(aiEnvironmentExample, new RegExp(`^${name}=$`, "m"), name);
   }
   for (const name of aiSecrets) {
-    assert.match(aiCompose, new RegExp(`\\$\\{${name}:\\?[^}]+\\}`), name);
+    assert.match(aiCompose, name === "AI_GATEWAY_API_KEY"
+      ? /\$\{AI_GATEWAY_API_KEY:-\}/
+      : new RegExp(`\\$\\{${name}:\\?[^}]+\\}`), name);
     assert.match(aiEnvironmentExample, new RegExp(`^${name}=$`, "m"), name);
     if (name === "RABBITMQ_DEFAULT_PASS") {
       assert.doesNotMatch(environmentExample, new RegExp(`^${name}=`, "m"), name);

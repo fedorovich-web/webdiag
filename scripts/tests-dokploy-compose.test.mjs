@@ -5,6 +5,36 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 
+for (const [label, script, args] of [
+  ["Dokploy", "verify-production-compose.mjs", ["--dokploy"]],
+  ["production core", "verify-production-compose.mjs", []],
+  ["broker overlay", "verify-production-ai-compose.mjs", []],
+]) {
+  test(`${label} requires only the selected AI provider credentials`, () => {
+    const env = {
+      ...process.env,
+      WEBDIAG_AI_RUNTIME_ENABLED: "true",
+      WEBDIAG_MONITORING_INTERNAL_TOKEN: "M".repeat(40),
+      WEBDIAG_CRAWLER_INTERNAL_TOKEN: "C".repeat(40),
+      WEBDIAG_ACCOUNT_INTERNAL_TOKEN: "B".repeat(40),
+      WEBDIAG_AI_INTERNAL_TOKEN: "A".repeat(40),
+      WEBDIAG_AI_SAFETY_IDENTIFIER_SECRET: "S".repeat(40),
+      RABBITMQ_DEFAULT_PASS: "R".repeat(40),
+      WEBDIAG_AI_TEXT_PROVIDER: "cloudflare",
+      WEBDIAG_AI_IMAGE_PROVIDER: "cloudflare",
+      CLOUDFLARE_ACCOUNT_ID: "a".repeat(32),
+      CLOUDFLARE_API_TOKEN: "T".repeat(40),
+      AI_GATEWAY_API_KEY: "",
+    };
+    const run = (changes) => spawnSync(process.execPath, ["scripts/" + script, ...args], {
+      cwd: root, env: { ...env, ...changes }, encoding: "utf8", windowsHide: true,
+    });
+    assert.equal(run({}).status, 0, "Cloudflare-only policy must not require a Vercel key");
+    assert.notEqual(run({ CLOUDFLARE_API_TOKEN: "" }).status, 0, "Cloudflare credential is required");
+    assert.notEqual(run({ WEBDIAG_AI_TEXT_PROVIDER: "vercel" }).status, 0, "Mixed policy still requires Vercel credential");
+  });
+}
+
 function render(files, env) {
   const args = ["compose", ...files.flatMap((file) => ["-f", file]), "config"];
   if (!env) args.push("--no-interpolate");

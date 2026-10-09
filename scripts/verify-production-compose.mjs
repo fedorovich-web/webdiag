@@ -132,6 +132,7 @@ const aiPlacements = new Map([
   ["AI_REASONING_EFFORT", ["monitoring_scheduler"]],
   ["WEBDIAG_AI_REQUIRE_ZDR", ["monitoring_scheduler"]],
   ["WEBDIAG_AI_IMAGE_PROVIDER", ["api", "monitoring_scheduler"]],
+  ["WEBDIAG_AI_TEXT_PROVIDER", ["api", "monitoring_scheduler"]],
   ["CLOUDFLARE_ACCOUNT_ID", ["monitoring_scheduler"]],
   ["CLOUDFLARE_API_TOKEN", ["monitoring_scheduler"]],
   ["WEBDIAG_AI_ARTIFACT_STORAGE", ["api", "monitoring_scheduler"]],
@@ -140,7 +141,7 @@ const aiPlacements = new Map([
 for (const name of expectedServices) {
   for (const key of Object.keys(environment(name))) {
     expect(!forbiddenCoreNames.test(key), `service ${name} received forbidden setting ${key}`);
-    if (key.startsWith("AI_") || key.startsWith("WEBDIAG_AI_")) {
+    if (key.startsWith("AI_") || key.startsWith("WEBDIAG_AI_") || key.startsWith("CLOUDFLARE_")) {
       expect(aiPlacements.get(key)?.includes(name), `service ${name} received AI setting outside its allowlist`);
     }
   }
@@ -151,8 +152,10 @@ expect(scheduler.AI_MODEL === "openai/gpt-6-luna", "AI model policy differs");
 expect(scheduler.AI_REASONING_EFFORT === "medium", "AI reasoning policy differs");
 expect(["true", "false"].includes(scheduler.WEBDIAG_AI_REQUIRE_ZDR), "AI retention policy must be explicit");
 expect(["vercel", "cloudflare"].includes(api.WEBDIAG_AI_IMAGE_PROVIDER), "AI image provider policy is invalid");
+expect(["vercel", "cloudflare"].includes(api.WEBDIAG_AI_TEXT_PROVIDER), "AI text provider policy is invalid");
 expect(scheduler.WEBDIAG_AI_IMAGE_PROVIDER === api.WEBDIAG_AI_IMAGE_PROVIDER, "API and executor image policies differ");
-if (api.WEBDIAG_AI_IMAGE_PROVIDER === "cloudflare" && api.WEBDIAG_AI_RUNTIME_ENABLED === "true") {
+expect(scheduler.WEBDIAG_AI_TEXT_PROVIDER === api.WEBDIAG_AI_TEXT_PROVIDER, "API and executor text policies differ");
+if ((api.WEBDIAG_AI_IMAGE_PROVIDER === "cloudflare" || api.WEBDIAG_AI_TEXT_PROVIDER === "cloudflare") && api.WEBDIAG_AI_RUNTIME_ENABLED === "true") {
   expect(/^[a-f0-9]{32}$/iu.test(scheduler.CLOUDFLARE_ACCOUNT_ID), "Cloudflare account ID is invalid");
   expect(/^[\x21-\x7e]{16,512}$/u.test(scheduler.CLOUDFLARE_API_TOKEN), "Cloudflare API token is invalid");
 }
@@ -198,7 +201,9 @@ if (aiEnabled) {
     distinctSecrets.push(value);
   }
   expect(api.WEBDIAG_AI_INTERNAL_TOKEN === scheduler.WEBDIAG_AI_INTERNAL_TOKEN, "AI token propagation differs");
+  if ([api.WEBDIAG_AI_TEXT_PROVIDER, api.WEBDIAG_AI_IMAGE_PROVIDER].includes("vercel")) {
   expect(typeof scheduler.AI_GATEWAY_API_KEY === "string" && /^[\x21-\x7E]{16,512}$/u.test(scheduler.AI_GATEWAY_API_KEY), "AI gateway credential is missing");
+  }
 }
 expect(new Set(distinctSecrets).size === distinctSecrets.length, "internal secrets are not distinct");
 

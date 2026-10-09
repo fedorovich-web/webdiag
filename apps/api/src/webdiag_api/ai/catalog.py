@@ -86,10 +86,15 @@ DEFAULT_AI_CATALOG = AIToolCatalog(
 )
 
 
-def build_production_ai_catalog(*, image_provider: str = "vercel") -> AIToolCatalog:
+def build_production_ai_catalog(
+    *, image_provider: str = "vercel", text_provider: str = "vercel"
+) -> AIToolCatalog:
     models = {"vercel": "openai/gpt-image-2", "cloudflare": "@cf/black-forest-labs/flux-2-klein-4b"}
     if image_provider not in models:
         raise ValueError("unsupported AI image provider")
+    text_models = {"vercel": "openai/gpt-6-luna", "cloudflare": "@cf/qwen/qwen3.8-27b"}
+    if text_provider not in text_models:
+        raise ValueError("unsupported AI text provider")
     return AIToolCatalog(
         tuple(
             AIToolDefinition(
@@ -100,7 +105,7 @@ def build_production_ai_catalog(*, image_provider: str = "vercel") -> AIToolCata
                 model_policy=(
                     models[image_provider]
                     if tool.id in {"ai_image_studio", "ai_image_edit_studio"}
-                    else tool.model_policy
+                    else text_models[text_provider]
                 ),
             )
             for tool in DEFAULT_AI_CATALOG.all()
