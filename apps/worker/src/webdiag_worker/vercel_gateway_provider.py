@@ -243,11 +243,13 @@ class VercelAIGatewayProvider:
         client: httpx.Client,
         *,
         artifact_storage: ArtifactStorage | None = None,
+        require_zdr: bool = True,
         sleep: Callable[[float], None] = time.sleep,
         now: Callable[[], float] = time.time,
     ) -> None:
         self._client = client
         self._artifact_storage = artifact_storage
+        self._require_zdr = require_zdr
         self._sleep = sleep
         self._now = now
 
@@ -266,6 +268,9 @@ class VercelAIGatewayProvider:
         for name, expected in expected_configuration.items():
             if os.getenv(name, expected).strip() != expected:
                 raise RuntimeError(f"{name} must be {expected}")
+        raw_require_zdr = os.getenv("WEBDIAG_AI_REQUIRE_ZDR", "true").strip().lower()
+        if raw_require_zdr not in {"true", "false"}:
+            raise RuntimeError("WEBDIAG_AI_REQUIRE_ZDR must be true or false")
         api_key = (
             os.getenv("AI_GATEWAY_API_KEY")
             or os.getenv("OPENAI_API_KEY")
@@ -295,6 +300,7 @@ class VercelAIGatewayProvider:
                 trust_env=False,
             ),
             artifact_storage=artifact_storage,
+            require_zdr=raw_require_zdr == "true",
         )
 
     def __enter__(self) -> VercelAIGatewayProvider:
@@ -332,9 +338,11 @@ class VercelAIGatewayProvider:
                     "reasoning": {"effort": _REASONING_EFFORT},
                     "stream": False,
                     "user": request.safety_identifier,
-                    "providerOptions": {
-                        "gateway": {"zeroDataRetention": True},
-                    },
+                    **(
+                        {"providerOptions": {"gateway": {"zeroDataRetention": True}}}
+                        if self._require_zdr
+                        else {}
+                    ),
                 },
                 max_response_bytes=_CHAT_RESPONSE_MAX_BYTES,
             )

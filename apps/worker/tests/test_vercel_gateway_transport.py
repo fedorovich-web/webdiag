@@ -223,6 +223,49 @@ def test_gateway_sends_one_strict_request_for_the_complete_audit() -> None:
     assert "test-gateway-key" not in requests[0].content.decode()
 
 
+@pytest.mark.parametrize("setting", (None, "true", "false"))
+def test_gateway_retention_policy_is_explicit_and_defaults_to_zdr(
+    monkeypatch: pytest.MonkeyPatch, setting: str | None
+) -> None:
+    _gateway_environment(monkeypatch)
+    if setting is None:
+        monkeypatch.delenv("WEBDIAG_AI_REQUIRE_ZDR", raising=False)
+    else:
+        monkeypatch.setenv("WEBDIAG_AI_REQUIRE_ZDR", setting)
+    requests: list[httpx.Request] = []
+    client_type = httpx.Client
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(200, json=_response())
+
+    monkeypatch.setattr(
+        provider_module.httpx,
+        "Client",
+        lambda **kwargs: client_type(transport=httpx.MockTransport(handler), **kwargs),
+    )
+    with ProviderUnderTest.from_env() as provider:
+        result = provider.execute(_request())
+    assert result.output == _output()
+    assert len(requests) == 1
+    payload = json.loads(requests[0].content)
+    assert payload["model"] == MODEL
+    if setting == "false":
+        assert "providerOptions" not in payload
+    else:
+        assert payload["providerOptions"] == {"gateway": {"zeroDataRetention": True}}
+
+
+@pytest.mark.parametrize("setting", ("", "off", "0", "auto"))
+def test_gateway_rejects_invalid_retention_setting_before_http(
+    monkeypatch: pytest.MonkeyPatch, setting: str
+) -> None:
+    _gateway_environment(monkeypatch)
+    monkeypatch.setenv("WEBDIAG_AI_REQUIRE_ZDR", setting)
+    with pytest.raises(RuntimeError, match="WEBDIAG_AI_REQUIRE_ZDR"):
+        ProviderUnderTest.from_env()
+
+
 def test_gateway_requires_reported_bounded_cost() -> None:
     body = _response()
     del body["usage"]["cost"]

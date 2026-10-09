@@ -130,6 +130,7 @@ const aiPlacements = new Map([
   ["AI_MODEL", ["monitoring_scheduler"]],
   ["AI_PROVIDER", ["monitoring_scheduler"]],
   ["AI_REASONING_EFFORT", ["monitoring_scheduler"]],
+  ["WEBDIAG_AI_REQUIRE_ZDR", ["monitoring_scheduler"]],
   ["WEBDIAG_AI_ARTIFACT_STORAGE", ["api", "monitoring_scheduler"]],
   ["WEBDIAG_AI_ARTIFACT_LOCAL_ROOT", ["api", "monitoring_scheduler"]],
 ]);
@@ -145,6 +146,7 @@ expect(scheduler.AI_PROVIDER === "vercel", "AI provider policy differs");
 expect(scheduler.AI_GATEWAY_BASE_URL === "https://ai-gateway.vercel.sh/v1", "AI gateway policy differs");
 expect(scheduler.AI_MODEL === "openai/gpt-6-luna", "AI model policy differs");
 expect(scheduler.AI_REASONING_EFFORT === "medium", "AI reasoning policy differs");
+expect(["true", "false"].includes(scheduler.WEBDIAG_AI_REQUIRE_ZDR), "AI retention policy must be explicit");
 expect(scheduler.WEBDIAG_AI_API_INTERNAL_URL === internalApiOrigin, "AI internal origin differs");
 if (dokploy) {
   expect(model.networks?.backend?.driver === "bridge", "private backend network is missing");
