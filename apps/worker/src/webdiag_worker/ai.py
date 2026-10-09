@@ -93,7 +93,7 @@ class ProviderResult:
     provider_request_id: str | None = None
     input_units: int = 0
     output_units: int = 0
-    provider_cost_nano_usd: int = 0
+    provider_cost_nano_usd: int | None = 0
     artifact: ProviderArtifact | None = None
 
     def __post_init__(self) -> None:
@@ -104,7 +104,7 @@ class ProviderResult:
                 or not 0 <= value <= 1_000_000_000
             ):
                 raise ValueError("provider usage must use bounded non-negative integers")
-        if (
+        if self.provider_cost_nano_usd is not None and (
             isinstance(self.provider_cost_nano_usd, bool)
             or not isinstance(self.provider_cost_nano_usd, int)
             or not 0 <= self.provider_cost_nano_usd <= 1_000_000_000_000

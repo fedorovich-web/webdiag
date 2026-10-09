@@ -414,7 +414,7 @@ class AIService:
         provider_request_id: str | None,
         input_units: int,
         output_units: int,
-        provider_cost_nano_usd: int,
+        provider_cost_nano_usd: int | None,
         artifact: AIWorkerArtifact | None = None,
         artifact_storage: ArtifactStorage | None = None,
     ) -> StoredAIRun:

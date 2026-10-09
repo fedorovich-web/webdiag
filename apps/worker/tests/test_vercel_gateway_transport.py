@@ -215,7 +215,10 @@ def test_gateway_sends_one_strict_request_for_the_complete_audit() -> None:
     assert sent["user"] == "opaque-safety-identifier-value-1234567890"
     assert sent["response_format"]["type"] == "json_schema"
     assert sent["response_format"]["json_schema"]["strict"] is True
-    assert sent["response_format"]["json_schema"]["schema"]["additionalProperties"] is False
+    assert (
+        sent["response_format"]["json_schema"]["schema"]["additionalProperties"]
+        is False
+    )
     assert json.loads(sent["messages"][1]["content"]) == _input()
     assert "test-gateway-key" not in requests[0].content.decode()
 
@@ -307,8 +310,10 @@ def test_gateway_honors_retry_after_http_date() -> None:
         attempts += 1
         if attempts == 1:
             return httpx.Response(
-                503,
-                headers={"Retry-After": format_datetime(now.replace(second=7), usegmt=True)},
+                429,
+                headers={
+                    "Retry-After": format_datetime(now.replace(second=7), usegmt=True)
+                },
             )
         return httpx.Response(200, json=_response())
 
@@ -339,7 +344,9 @@ def test_gateway_caps_retry_after_to_keep_total_wait_bounded() -> None:
 
 
 @pytest.mark.parametrize("status_code", (400, 401, 402, 403, 404, 413, 422))
-def test_gateway_does_not_retry_client_or_authentication_errors(status_code: int) -> None:
+def test_gateway_does_not_retry_client_or_authentication_errors(
+    status_code: int,
+) -> None:
     attempts = 0
 
     def handler(_request: httpx.Request) -> httpx.Response:
@@ -373,37 +380,60 @@ def test_gateway_does_not_retry_non_transient_ambiguous_errors(
     assert "provider secret detail" not in str(caught.value)
 
 
-def test_gateway_retries_transient_server_errors_only_within_the_fixed_bound() -> None:
+@pytest.mark.parametrize("status_code", (500, 503))
+def test_gateway_does_not_repeat_ambiguous_server_submissions(status_code: int) -> None:
     attempts = 0
     delays: list[float] = []
 
     def handler(_request: httpx.Request) -> httpx.Response:
         nonlocal attempts
         attempts += 1
-        return httpx.Response(503)
+        return httpx.Response(status_code)
 
     with pytest.raises(ProviderOutcomeUnknownError, match="outcome is unknown"):
         _provider(handler, sleep=delays.append).execute(_request())
-    assert attempts == 3
-    assert delays == [0.25, 0.5]
+    assert attempts == 1
+    assert delays == []
 
 
-def test_gateway_retries_transient_network_errors() -> None:
+@pytest.mark.parametrize(
+    "transport_error",
+    (
+        httpx.ConnectError,
+        httpx.ReadError,
+        httpx.ReadTimeout,
+        httpx.WriteTimeout,
+    ),
+)
+def test_gateway_does_not_repeat_ambiguous_transport_submissions(
+    transport_error,
+) -> None:
     attempts = 0
     delays: list[float] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
         nonlocal attempts
         attempts += 1
-        if attempts < 3:
-            raise httpx.ConnectError("synthetic transient", request=request)
-        return httpx.Response(200, json=_response())
+        raise transport_error("synthetic ambiguous submission", request=request)
 
-    result = _provider(handler, sleep=delays.append).execute(_request())
+    with pytest.raises(ProviderOutcomeUnknownError, match="outcome is unknown"):
+        _provider(handler, sleep=delays.append).execute(_request())
 
-    assert result.output == _output()
-    assert attempts == 3
-    assert delays == [0.25, 0.5]
+    assert attempts == 1
+    assert delays == []
+
+
+def test_gateway_blocks_redirects_even_with_a_redirect_following_client() -> None:
+    sent = []
+
+    def handler(request):
+        sent.append(request)
+        return httpx.Response(307, headers={"Location": "https://attacker.invalid"})
+
+    client = httpx.Client(transport=httpx.MockTransport(handler), follow_redirects=True)
+    with pytest.raises(ProviderOutcomeUnknownError):
+        ProviderUnderTest(client).execute(_request())
+    assert len(sent) == 1
 
 
 def test_gateway_rejects_worker_supplied_model_override_before_http() -> None:
@@ -430,7 +460,9 @@ def test_gateway_rejects_truncated_structured_output() -> None:
         _provider(lambda _request: httpx.Response(200, json=body)).execute(_request())
 
 
-def test_gateway_rejects_unknown_tool_and_missing_safety_identifier_before_http() -> None:
+def test_gateway_rejects_unknown_tool_and_missing_safety_identifier_before_http() -> (
+    None
+):
     attempts = 0
 
     def handler(_request: httpx.Request) -> httpx.Response:
@@ -464,7 +496,9 @@ def test_gateway_rejects_unknown_tool_and_missing_safety_identifier_before_http(
     assert attempts == 0
 
 
-def test_gateway_prepares_owned_image_for_alt_text_without_exposing_storage_key() -> None:
+def test_gateway_prepares_owned_image_for_alt_text_without_exposing_storage_key() -> (
+    None
+):
     image = b"synthetic-image-bytes"
     reads: list[tuple[str, int]] = []
     requests: list[httpx.Request] = []

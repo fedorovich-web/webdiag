@@ -14,7 +14,7 @@ The repository is a beta release (`1.0.0-beta.0`). A deployed version can differ
 - Yandex authorization code flow with PKCE and provider subject identities. Linking an existing email account requires proof of account ownership.
 - Persistent crawl/monitoring jobs with ownership checks, budgets, deadlines and worker leases.
 - Lava credit packs and monthly/annual plans. A verified payment settles credits and plan activation once in the account database.
-- Six AI workflows: audit action plans, competitor gaps, content briefs, content optimization, search intent/page fit and internal linking. They require an enabled, configured runtime.
+- Fifteen AI workflows for saved audits, page content, structured data, migrations, localization, regular expressions and images. They require an enabled, configured runtime.
 - Contact mail through Nevtan SMTP; registration and ownership confirmation mail through Resend.
 
 ## Architecture
@@ -33,7 +33,7 @@ flowchart LR
     Web --> SMTP[Nevtan support SMTP]
 ```
 
-The Dokploy core consists of `web`, `api` and `monitoring_scheduler`. Only `web:3000` is exposed to Dokploy's reverse proxy. All three services share a project-scoped `backend` network; web and scheduler address the API as `webdiag-api`, avoiding `api` aliases of other applications on the proxy network. API and worker endpoints stay private. The API owns persistent state in the `account_data` volume. SQLite is the active storage layer; the core does not use PostgreSQL or RabbitMQ. Other Compose overlays describe optional development or AI topologies.
+The Dokploy core consists of `web`, `api` and `monitoring_scheduler`. Only `web:3000` is exposed to Dokploy's reverse proxy. All three services share a project-scoped `backend` network; web and scheduler address the API as `webdiag-api`, avoiding `api` aliases of other applications on the proxy network. API and worker endpoints stay private. The API owns persistent state in the `account_data` volume. Image uploads and results persist in the separate `ai_artifacts` volume shared only by API and worker. SQLite is the active storage layer; the core does not use PostgreSQL or RabbitMQ. Other Compose overlays describe optional development or AI topologies.
 
 AI polling runs separately from the monitoring/crawl cycle. Workers use internal API endpoints instead of mounting the account database. AI jobs reserve credits before execution; validated outputs, lease ownership and terminal state determine settlement. Ambiguous provider outcomes remain subject to reconciliation.
 
@@ -114,6 +114,8 @@ Annual products are paid upfront for 365 days, without automatic renewal. Billin
 
 Paid plan periods are retained individually. Same-tier renewal extends the paid term. Changing an active tier requires support rather than silently discarding prepaid days. Already-issued invoices that settle concurrently retain consecutive periods; confirmation reports the purchased period's start and expiry.
 
+Checkout preserves the pending invoice in a session-bound HttpOnly cookie for up to one day. A Lava return restores the matching invoice and asks the server to verify it; redirect parameters cannot mark a payment successful. The cookie is cleared after a verified paid confirmation.
+
 ### Email
 
 `support@webdiag.ru` is the Nevtan support mailbox. Nevtan handles incoming domain mail. Resend sends automated mail from `no-replay@webdiag.ru`; its sending-domain verification does not create a receiving mailbox. Keep root MX pointed at Nevtan for incoming support mail.
@@ -126,7 +128,13 @@ Successful registration schedules welcome mail with Next.js `after`, using the p
 
 The core scheduler uses `AI_PROVIDER=vercel`, `AI_GATEWAY_BASE_URL=https://ai-gateway.vercel.sh/v1`, `AI_MODEL=openai/gpt-6-luna`, `AI_REASONING_EFFORT=medium`. The adapter validates these settings. Activation requires internal secrets and a gateway credential. Disabling the runtime hides runnable AI tools and rejects paid job creation.
 
-The six public contracts use server-owned evidence and validated structured output. There is no heuristic provider or hidden model fallback. Prove a real run through job state, output, provider outcome and the credit ledger before claiming production provider success.
+The original 15 contracts cover audit action plans, meta tags, Schema.org, FAQ, alt text, content briefs, page revisions, search intent, competitor gaps, internal linking, redirect migration, localization, regular expressions, image generation and image editing. The thirteen text/vision tools cost one credit per successful run; image generation and editing retain their two-credit price. Each runner displays the server catalog price before submission. There is no heuristic provider or hidden model fallback. Prove a real run through job state, output, provider outcome and the credit ledger before claiming production provider success.
+
+Image generation and editing use `openai/gpt-image-2` through the Gateway Images API. Text tools retain the Gateway zero-data-retention restriction; image models do not claim ZDR. The server decodes and normalizes image bytes, removes metadata and validates the result against the leased artifact reservation. An ambiguous image request is never automatically resubmitted.
+
+Gateway-reported usage is retained. If an image response omits its optional cost, the attempt stores an unknown cost (`NULL`), preserves the verified result and excludes that attempt from measured cost statistics. An unavailable cost is never recorded as a free generation.
+
+Production stores images on the deployment server: `WEBDIAG_AI_ARTIFACT_STORAGE=local` and `WEBDIAG_AI_ARTIFACT_LOCAL_ROOT=/var/lib/webdiag-ai-artifacts`. The Compose files mount the persistent `ai_artifacts` volume at that path in API and worker. Web has no filesystem access to it. Downloads pass through authenticated ownership checks; neither public filesystem paths nor provider image URLs are exposed. Individual files are limited to 4 MiB and written atomically with private permissions. This topology does not require an S3 account.
 
 ## Verification
 
@@ -162,13 +170,15 @@ In Dokploy Advanced → Networks, detach `api` and `monitoring_scheduler` from `
 
 Back up SQLite with its backup API or a stopped-writer procedure. Preserve matching account/audit databases and recovery instructions; copying only the main database while WAL writes continue is unsafe. Readiness does not prove restore capability.
 
+Include the `ai_artifacts` volume in the same recovery procedure as the account database: database metadata alone cannot restore images. Do not remove named volumes during redeployment. Monitor disk capacity; successful image results remain until their owner deletes them. A server-local volume survives container replacement but does not itself provide an off-server backup.
+
 After deployment, confirm commit identity, container readiness and changed flows. Keep sanitized provider receipts separate from local test results. **On Push autodeploy** means publishing to the tracked branch starts a production rollout; local tests or GitHub review alone do not approve that operation.
 
 ## MVP limits
 
 - SQLite and current workers target a single deployment. Horizontal writes and multi-region operation need a different coordination design.
 - Existing pricing descriptions are retained. Billing persists plan/payment/credits, but project/history quotas, seats, white-label reports and priority queues are not all enforced from plan state. Plan activation does not certify those entitlements.
-- The core crawler budget is 100 pages, independently of advertised plan limits. The runtime exposes six AI contracts; other internal definitions are not production features.
+- The core crawler budget is 100 pages, independently of advertised plan limits. AI activation still requires a configured worker, private artifact storage and deployed provider acceptance checks.
 - Monitoring persists results and notification events. Contact SMTP does not certify a complete monitoring email alert pipeline.
 - Welcome mail has no durable retry queue. Acceptance does not guarantee inbox placement.
 - Fixtures and local checks do not establish live payment, email or AI delivery; those require separate deployed acceptance checks.

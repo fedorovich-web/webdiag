@@ -120,6 +120,7 @@ class BillingService:
             raise BillingServiceError(
                 400, "billing_invalid_return_url", "Invalid payment return URL."
             )
+        payment_return = f"{return_base}{return_path}?pack={request.pack_id}&payment_return=1"
         data = self._provider_request(
             "POST",
             "/api/v3/invoice",
@@ -128,9 +129,9 @@ class BillingService:
                 "offerId": settings.lava_offer_id.strip(),
                 "currency": pack.currency,
                 "amount": pack.amount_minor / 100,
-                "successful_return_url": f"{return_base}{return_path}?pack={request.pack_id}",
-                "failure_return_url": f"{return_base}{return_path}?pack={request.pack_id}",
-                "cancel_return_url": f"{return_base}{return_path}?pack={request.pack_id}",
+                "successful_return_url": payment_return,
+                "failure_return_url": payment_return,
+                "cancel_return_url": payment_return,
             },
         )
         try:

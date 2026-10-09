@@ -9,6 +9,7 @@ services:
     restart: unless-stopped
     volumes: !override
       - account_data:/data
+      - ai_artifacts:/var/lib/webdiag-ai-artifacts
     environment: !override
       WEBDIAG_ENVIRONMENT: production
       WEBDIAG_PUBLIC_RELEASE: "true"
@@ -38,6 +39,8 @@ services:
       WEBDIAG_CRAWLER_ACTIVE_JOB_LIMIT_PER_USER: "${WEBDIAG_CRAWLER_ACTIVE_JOB_LIMIT_PER_USER:-2}"
       WEBDIAG_CRAWLER_ACTIVE_JOB_LIMIT_GLOBAL: "${WEBDIAG_CRAWLER_ACTIVE_JOB_LIMIT_GLOBAL:-25}"
       WEBDIAG_AI_RUNTIME_ENABLED: "${WEBDIAG_AI_RUNTIME_ENABLED:-false}"
+      WEBDIAG_AI_ARTIFACT_STORAGE: local
+      WEBDIAG_AI_ARTIFACT_LOCAL_ROOT: /var/lib/webdiag-ai-artifacts
       WEBDIAG_AI_INTERNAL_TOKEN: "${WEBDIAG_AI_INTERNAL_TOKEN:-}"
       WEBDIAG_AI_SAFETY_IDENTIFIER_SECRET: "${WEBDIAG_AI_SAFETY_IDENTIFIER_SECRET:-}"
       WEBDIAG_ACCOUNT_PUBLIC_ORIGIN: "${WEBDIAG_ACCOUNT_PUBLIC_ORIGIN:-https://app.webdiag.ru}"
@@ -81,6 +84,10 @@ services:
       AI_MODEL: "${AI_MODEL:-openai/gpt-6-luna}"
       AI_REASONING_EFFORT: "${AI_REASONING_EFFORT:-medium}"
       AI_GATEWAY_API_KEY: "${AI_GATEWAY_API_KEY:-}"
+      WEBDIAG_AI_ARTIFACT_STORAGE: local
+      WEBDIAG_AI_ARTIFACT_LOCAL_ROOT: /var/lib/webdiag-ai-artifacts
+    volumes: !override
+      - ai_artifacts:/var/lib/webdiag-ai-artifacts
     depends_on:
       api:
         condition: service_healthy
@@ -125,6 +132,6 @@ services:
         condition: service_healthy
 
 volumes:
-  ai_artifacts: !reset null
+  ai_artifacts: {}
   postgres_data: !reset null
   valkey_data: !reset null

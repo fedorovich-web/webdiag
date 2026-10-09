@@ -156,12 +156,21 @@ expect(worker.AI_MODEL === "openai/gpt-6-luna", "worker AI model differs");
 expect(worker.AI_REASONING_EFFORT === "medium", "worker AI reasoning effort differs");
 
 const apiVolumes = service("api").volumes ?? [];
-expect(apiVolumes.length === 1 && apiVolumes[0].source === "account_data" && apiVolumes[0].target === "/data", "API volume topology differs");
-expect((service("worker").volumes ?? []).length === 0, "worker retains a volume mount");
-expect(JSON.stringify(Object.keys(model?.volumes ?? {}).sort()) === JSON.stringify(["account_data"]), "named volume inventory differs");
+expect(apiVolumes.length === 2 && apiVolumes.some((mount) => mount.source === "account_data" && mount.target === "/data") && apiVolumes.some((mount) => mount.source === "ai_artifacts" && mount.target === "/var/lib/webdiag-ai-artifacts"), "API volume topology differs");
+const workerVolumes = service("worker").volumes ?? [];
+expect(workerVolumes.length === 1 && workerVolumes[0].source === "ai_artifacts" && workerVolumes[0].target === "/var/lib/webdiag-ai-artifacts", "worker artifact volume topology differs");
+expect((service("monitoring_scheduler").volumes ?? []).length === 0, "inactive AI scheduler retains an artifact volume");
+expect((service("web").volumes ?? []).length === 0, "web retains a private volume");
+expect(JSON.stringify(Object.keys(model?.volumes ?? {}).sort()) === JSON.stringify(["account_data", "ai_artifacts"]), "named volume inventory differs");
 for (const name of expectedServices) {
+  const storageAllowed = name === "api" || name === "worker";
+  expect(Object.hasOwn(environment(name), "WEBDIAG_AI_ARTIFACT_STORAGE") === storageAllowed, `service ${name} artifact storage placement differs`);
+  if (storageAllowed) {
+    expect(environment(name).WEBDIAG_AI_ARTIFACT_STORAGE === "local", `service ${name} artifact backend differs`);
+    expect(environment(name).WEBDIAG_AI_ARTIFACT_LOCAL_ROOT === "/var/lib/webdiag-ai-artifacts", `service ${name} artifact root differs`);
+  }
   for (const key of Object.keys(environment(name))) {
-    expect(!key.startsWith("WEBDIAG_AI_ARTIFACT_"), `service ${name} received binary AI storage setting ${key}`);
+    expect(!key.startsWith("WEBDIAG_AI_ARTIFACT_") || (storageAllowed && ["WEBDIAG_AI_ARTIFACT_STORAGE", "WEBDIAG_AI_ARTIFACT_LOCAL_ROOT"].includes(key)), `service ${name} received unapproved binary AI storage setting ${key}`);
   }
 }
 

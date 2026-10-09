@@ -49,7 +49,7 @@ export function AccountAIRunHistory({
               <div>
                 <strong>{aiToolDescriptor(locale, run.tool_id).title}</strong>
                 <time dateTime={run.created_at}>{formatRunTime(locale, run.created_at)}</time>
-                {run.state === "succeeded" && run.output && <details><summary>{ru ? "Результат" : "Result"}</summary><AccountAIResult locale={locale} output={run.output} /></details>}
+                {run.state === "succeeded" && run.output && <details><summary>{ru ? "Результат" : "Result"}</summary><AccountAIResult locale={locale} output={run.output} runId={run.id} /></details>}
               </div>
               <span className="wd-ai-run-state" data-state={run.state}>{aiRunStateLabel(locale, run.state)}</span>
               <button

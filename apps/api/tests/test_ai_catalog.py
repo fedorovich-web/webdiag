@@ -2,7 +2,12 @@ from dataclasses import replace
 
 import pytest
 
-from webdiag_api.ai.catalog import DEFAULT_AI_CATALOG, AIToolCatalog, AIToolState
+from webdiag_api.ai.catalog import (
+    DEFAULT_AI_CATALOG,
+    AIToolCatalog,
+    AIToolState,
+    build_production_ai_catalog,
+)
 from webdiag_api.ai.tool_contracts import has_tool_contract
 
 EXPECTED_TOOL_IDS = {
@@ -66,3 +71,12 @@ def test_catalog_rejects_duplicate_tool_ids() -> None:
 
     with pytest.raises(ValueError, match="duplicate AI tool ID"):
         AIToolCatalog((definition, definition))
+
+
+def test_production_catalog_restores_all_fifteen_original_tools_and_prices() -> None:
+    tools = build_production_ai_catalog().available()
+    assert {tool.id for tool in tools} == EXPECTED_TOOL_IDS
+    assert all(has_tool_contract(tool.id) for tool in tools)
+    for tool in tools:
+        expected_price = 2 if tool.id in {"ai_image_studio", "ai_image_edit_studio"} else 1
+        assert tool.credit_price == expected_price
