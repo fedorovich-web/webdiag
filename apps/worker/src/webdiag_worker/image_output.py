@@ -26,7 +26,17 @@ class GeneratedImage:
     sha256: str
 
 
-def normalize_generated_image(data: bytes, *, declared_media_type: str) -> GeneratedImage:
+def normalize_generated_image(
+    data: bytes, *, declared_media_type: str, output_media_type: str | None = None
+) -> GeneratedImage:
+    target_format = None
+    if output_media_type is not None:
+        target_format = next(
+            (name for name, media in _FORMATS.items() if media == output_media_type),
+            None,
+        )
+        if target_format is None:
+            raise GeneratedImageError("generated image output media type is invalid")
     if not data or len(data) > MAX_IMAGE_BYTES:
         raise GeneratedImageError("generated image size is invalid")
     try:
@@ -34,7 +44,10 @@ def normalize_generated_image(data: bytes, *, declared_media_type: str) -> Gener
             warnings.simplefilter("error", Image.DecompressionBombWarning)
             with Image.open(io.BytesIO(data), formats=list(_FORMATS)) as source:
                 image_format = source.format
-                if image_format not in _FORMATS or _FORMATS[image_format] != declared_media_type:
+                if (
+                    image_format not in _FORMATS
+                    or _FORMATS[image_format] != declared_media_type
+                ):
                     raise GeneratedImageError("generated image media type is invalid")
                 _validate_shape(source)
                 source.verify()
@@ -47,7 +60,7 @@ def normalize_generated_image(data: bytes, *, declared_media_type: str) -> Gener
                 try:
                     oriented.load()
                     _validate_shape(oriented)
-                    normalized = _encode(oriented, image_format)
+                    normalized = _encode(oriented, target_format or image_format)
                 finally:
                     if oriented is not source:
                         oriented.close()
@@ -61,7 +74,7 @@ def normalize_generated_image(data: bytes, *, declared_media_type: str) -> Gener
         raise GeneratedImageError("normalized generated image is too large")
     return GeneratedImage(
         data=normalized,
-        media_type=declared_media_type,
+        media_type=output_media_type or declared_media_type,
         byte_size=len(normalized),
         sha256=hashlib.sha256(normalized).hexdigest(),
     )
@@ -88,7 +101,9 @@ def _encode(image: Image.Image, image_format: str) -> bytes:
     output = io.BytesIO()
     try:
         if image_format == "JPEG":
-            clean.save(output, format="JPEG", quality=90, optimize=True, progressive=False)
+            clean.save(
+                output, format="JPEG", quality=90, optimize=True, progressive=False
+            )
         elif image_format == "PNG":
             clean.save(output, format="PNG", optimize=True, compress_level=9)
         else:
