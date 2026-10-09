@@ -35,6 +35,7 @@ export async function sendContactEmailViaNevtan(data: ContactSubmission): Promis
       host,
       port,
       secure,
+      requireTLS: !secure,
       auth: { user, pass },
       connectionTimeout: 10000,
       greetingTimeout: 10000,

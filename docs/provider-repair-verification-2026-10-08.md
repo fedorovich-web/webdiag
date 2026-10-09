@@ -19,7 +19,7 @@
 | --- | --- |
 | Workspace | 80 passed |
 | Registry / tool-core | 10 / 20 passed |
-| Web Vitest | 693 passed, 151 files |
+| Web Vitest | 694 passed, 151 files |
 | API + worker Pytest | 757 passed, 3 skipped (платформа), 1 warning Starlette/httpx |
 | TypeScript / Ruff | passed / passed |
 | ESLint | 0 errors, 27 warnings; предупреждения не скрыты |
@@ -29,6 +29,7 @@
 | Dokploy Compose equivalence / missing-credential rejection / broker overlay credential isolation | 3 passed |
 | Effective core Compose preflight, AI disabled/enabled | passed с отдельными тестовыми секретами; контейнеры локально не запускались |
 | Optional broker AI Compose preflight | passed, 5 services; core polling отключён, provider key доступен отдельному worker |
+| SMTP downgrade regression | passed; локальный SMTP без STARTTLS отклонён до AUTH, 4 mail tests passed |
 
 Независимая проверка кода ограничивалась OAuth/recovery, оплатой/периодами и доступностью AI. Обнаруженные P1 pre-account hijack и P2 потеря оплаченного периода исправлены и повторно проверены. Это не утверждение независимого аудита всего проекта.
 
