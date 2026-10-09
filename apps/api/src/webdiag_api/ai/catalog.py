@@ -48,9 +48,7 @@ class AIToolCatalog:
 
     def available(self) -> tuple[AIToolDefinition, ...]:
         return tuple(
-            definition
-            for definition in self._definitions
-            if definition.state is AIToolState.READY
+            definition for definition in self._definitions if definition.state is AIToolState.READY
         )
 
     def get(self, tool_id: str) -> AIToolDefinition | None:
@@ -88,17 +86,22 @@ DEFAULT_AI_CATALOG = AIToolCatalog(
 )
 
 
-def build_production_ai_catalog() -> AIToolCatalog:
+def build_production_ai_catalog(*, image_provider: str = "vercel") -> AIToolCatalog:
+    models = {"vercel": "openai/gpt-image-2", "cloudflare": "@cf/black-forest-labs/flux-2-klein-4b"}
+    if image_provider not in models:
+        raise ValueError("unsupported AI image provider")
     return AIToolCatalog(
         tuple(
             AIToolDefinition(
                 id=tool.id,
                 contract_version=tool.contract_version,
                 state=AIToolState.READY,
-                credit_price=(
-                    2 if tool.id in {"ai_image_studio", "ai_image_edit_studio"} else 1
+                credit_price=(2 if tool.id in {"ai_image_studio", "ai_image_edit_studio"} else 1),
+                model_policy=(
+                    models[image_provider]
+                    if tool.id in {"ai_image_studio", "ai_image_edit_studio"}
+                    else tool.model_policy
                 ),
-                model_policy=tool.model_policy,
             )
             for tool in DEFAULT_AI_CATALOG.all()
         )
