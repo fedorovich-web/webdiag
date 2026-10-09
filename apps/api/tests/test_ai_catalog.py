@@ -80,3 +80,16 @@ def test_production_catalog_restores_all_fifteen_original_tools_and_prices() -> 
     for tool in tools:
         expected_price = 2 if tool.id in {"ai_image_studio", "ai_image_edit_studio"} else 1
         assert tool.credit_price == expected_price
+
+
+def test_cloudflare_catalog_keeps_prices_and_text_models():
+    from webdiag_api.ai.catalog import build_production_ai_catalog
+
+    catalog = build_production_ai_catalog(image_provider="cloudflare")
+    assert len(catalog.available()) == 15
+    for tool in catalog.available():
+        image = tool.id in {"ai_image_studio", "ai_image_edit_studio"}
+        assert tool.model_policy == (
+            "@cf/black-forest-labs/flux-2-klein-4b" if image else "openai/gpt-6-luna"
+        )
+        assert tool.credit_price == (2 if image else 1)

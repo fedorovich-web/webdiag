@@ -5,14 +5,14 @@ import threading
 import time
 
 from webdiag_worker.ai import cleanup_ai_artifacts, run_one_ai_job
-from webdiag_worker.vercel_gateway_provider import VercelAIGatewayProvider
+from webdiag_worker.configured_ai_provider import ConfiguredAIProvider
 from webdiag_worker.crawler import run_one_crawl
 from webdiag_worker.monitoring import run_due_monitors
 
 
 def _drain_ai_jobs(limit: int = 10) -> int:
     try:
-        with VercelAIGatewayProvider.from_env() as provider:
+        with ConfiguredAIProvider.from_env() as provider:
             processed = 0
             while processed < limit and run_one_ai_job(provider):
                 processed += 1
@@ -51,9 +51,11 @@ def main() -> None:
     if os.getenv("WEBDIAG_AI_RUNTIME_ENABLED", "false").lower() == "true":
         if not os.getenv("WEBDIAG_AI_INTERNAL_TOKEN"):
             raise RuntimeError("AI worker requires its internal token")
-        with VercelAIGatewayProvider.from_env():
+        with ConfiguredAIProvider.from_env():
             pass
-        threading.Thread(target=_run_ai_loop, name="webdiag-ai-worker", daemon=True).start()
+        threading.Thread(
+            target=_run_ai_loop, name="webdiag-ai-worker", daemon=True
+        ).start()
     while True:
         run_cycle()
         time.sleep(interval)

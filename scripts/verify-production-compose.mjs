@@ -131,6 +131,9 @@ const aiPlacements = new Map([
   ["AI_PROVIDER", ["monitoring_scheduler"]],
   ["AI_REASONING_EFFORT", ["monitoring_scheduler"]],
   ["WEBDIAG_AI_REQUIRE_ZDR", ["monitoring_scheduler"]],
+  ["WEBDIAG_AI_IMAGE_PROVIDER", ["api", "monitoring_scheduler"]],
+  ["CLOUDFLARE_ACCOUNT_ID", ["monitoring_scheduler"]],
+  ["CLOUDFLARE_API_TOKEN", ["monitoring_scheduler"]],
   ["WEBDIAG_AI_ARTIFACT_STORAGE", ["api", "monitoring_scheduler"]],
   ["WEBDIAG_AI_ARTIFACT_LOCAL_ROOT", ["api", "monitoring_scheduler"]],
 ]);
@@ -147,6 +150,13 @@ expect(scheduler.AI_GATEWAY_BASE_URL === "https://ai-gateway.vercel.sh/v1", "AI 
 expect(scheduler.AI_MODEL === "openai/gpt-6-luna", "AI model policy differs");
 expect(scheduler.AI_REASONING_EFFORT === "medium", "AI reasoning policy differs");
 expect(["true", "false"].includes(scheduler.WEBDIAG_AI_REQUIRE_ZDR), "AI retention policy must be explicit");
+expect(["vercel", "cloudflare"].includes(api.WEBDIAG_AI_IMAGE_PROVIDER), "AI image provider policy is invalid");
+expect(scheduler.WEBDIAG_AI_IMAGE_PROVIDER === api.WEBDIAG_AI_IMAGE_PROVIDER, "API and executor image policies differ");
+if (api.WEBDIAG_AI_IMAGE_PROVIDER === "cloudflare" && api.WEBDIAG_AI_RUNTIME_ENABLED === "true") {
+  expect(/^[a-f0-9]{32}$/iu.test(scheduler.CLOUDFLARE_ACCOUNT_ID), "Cloudflare account ID is invalid");
+  expect(/^[\x21-\x7e]{16,512}$/u.test(scheduler.CLOUDFLARE_API_TOKEN), "Cloudflare API token is invalid");
+}
+
 expect(scheduler.WEBDIAG_AI_API_INTERNAL_URL === internalApiOrigin, "AI internal origin differs");
 if (dokploy) {
   expect(model.networks?.backend?.driver === "bridge", "private backend network is missing");

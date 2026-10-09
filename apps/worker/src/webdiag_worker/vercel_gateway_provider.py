@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import base64
 import binascii
-import hashlib
-import hmac
 import json
 import math
 import os
@@ -18,14 +16,19 @@ from pydantic import BaseModel
 
 from webdiag_worker.ai import (
     KnownSafeProviderError,
-    ProviderArtifact,
-    ProviderArtifactReservation,
     ProviderOutcomeUnknownError,
     ProviderRequest,
     ProviderResult,
 )
 from webdiag_worker.artifact_storage import ArtifactStorage, artifact_storage_from_env
 from webdiag_worker.image_output import MAX_IMAGE_BYTES, normalize_generated_image
+from webdiag_worker.image_requests import (
+    IMAGE_SIZES as _IMAGE_SIZES,
+    image_artifact_output,
+    persist_generated_image,
+    prepare_image_input,
+    validate_image_request,
+)
 from webdiag_worker.tool_contracts import (
     AltTextOutput,
     AuditActionPlanOutput,
@@ -224,17 +227,6 @@ _IMAGE_MODEL = "openai/gpt-image-2"
 _IMAGE_TOOLS = frozenset({"ai_image_studio", "ai_image_edit_studio"})
 _IMAGE_RESPONSE_MAX_BYTES = 8 * 1024 * 1024
 # GPT Image 2 permits multiples of 16, ratios up to 3:1 and >=655,360 pixels.
-_IMAGE_SIZES = {
-    "auto": "auto",
-    "1:1": "1024x1024",
-    "3:2": "1536x1024",
-    "2:3": "1024x1536",
-    "4:3": "1536x1152",
-    "3:4": "1152x1536",
-    "16:9": "1536x864",
-    "9:16": "864x1536",
-    "21:9": "1792x768",
-}
 
 
 class VercelAIGatewayProvider:
@@ -442,33 +434,9 @@ class VercelAIGatewayProvider:
             )
             input_units, output_units, cost = _image_provider_usage(body)
             provider_request_id = _provider_request_id(body) if "id" in body else None
-            stored = storage.put_reserved(
-                artifact_id=reservation.artifact_id,
-                object_key=reservation.object_key,
-                data=generated.data,
-                media_type=generated.media_type,
-            )
-            if (
-                stored.object_key != reservation.object_key
-                or stored.byte_size != generated.byte_size
-                or stored.media_type != generated.media_type
-                or not hmac.compare_digest(stored.sha256, generated.sha256)
-            ):
-                raise ValueError("stored image integrity check failed")
-            artifact = ProviderArtifact(
-                artifact_id=reservation.artifact_id,
-                object_key=stored.object_key,
-                media_type=stored.media_type,
-                byte_size=stored.byte_size,
-                sha256=stored.sha256,
-            )
+            artifact = persist_generated_image(reservation, storage, generated)
             return ProviderResult(
-                output={
-                    "artifact_id": artifact.artifact_id,
-                    "media_type": artifact.media_type,
-                    "byte_size": artifact.byte_size,
-                    "sha256": artifact.sha256,
-                },
+                output=image_artifact_output(artifact),
                 provider_request_id=provider_request_id,
                 input_units=input_units,
                 output_units=output_units,
@@ -534,104 +502,15 @@ class VercelAIGatewayProvider:
 
     def prepare(self, request: ProviderRequest) -> ProviderRequest:
         if request.tool_id in _IMAGE_TOOLS:
-            _validate_image_request(request)
+            validate_image_request(request, expected_model=_IMAGE_MODEL)
             self._image_storage()
         if request.tool_id not in {"ai_alt_text_studio", "ai_image_edit_studio"}:
             return request
-        descriptor = request.input.get("image")
-        if not isinstance(descriptor, dict) or set(descriptor) != {
-            "object_key",
-            "media_type",
-            "byte_size",
-            "width",
-            "height",
-            "sha256",
-        }:
-            raise KnownSafeProviderError("AI image descriptor is invalid")
-        object_key = descriptor.get("object_key")
-        media_type = descriptor.get("media_type")
-        byte_size = descriptor.get("byte_size")
-        width = descriptor.get("width")
-        height = descriptor.get("height")
-        digest = descriptor.get("sha256")
-        if (
-            not isinstance(object_key, str)
-            or not isinstance(media_type, str)
-            or media_type not in {"image/jpeg", "image/png", "image/webp"}
-            or isinstance(byte_size, bool)
-            or not isinstance(byte_size, int)
-            or not 1 <= byte_size <= 4 * 1024 * 1024
-            or any(
-                isinstance(value, bool)
-                or not isinstance(value, int)
-                or not 1 <= value <= 8192
-                for value in (width, height)
-            )
-            or width * height > 8_000_000
-            or not isinstance(digest, str)
-            or len(digest) != 64
-            or any(character not in "0123456789abcdef" for character in digest)
-        ):
-            raise KnownSafeProviderError("AI image descriptor is invalid")
-        try:
-            storage = self._artifact_storage or artifact_storage_from_env()
-            data = storage.read(object_key=object_key, max_bytes=byte_size)
-        except Exception as error:
-            raise KnownSafeProviderError("AI image object is unavailable") from error
-        if len(data) != byte_size or not hmac.compare_digest(
-            hashlib.sha256(data).hexdigest(), digest
-        ):
-            raise KnownSafeProviderError("AI image object integrity check failed")
-        prepared_input = {
-            key: value for key, value in request.input.items() if key != "image"
-        }
-        encoded = base64.b64encode(data).decode("ascii")
-        prepared_input["_image_data_url"] = f"data:{media_type};base64,{encoded}"
-        return ProviderRequest(
-            run_id=request.run_id,
-            tool_id=request.tool_id,
-            contract_version=request.contract_version,
-            model_policy=request.model_policy,
-            input=prepared_input,
-            safety_identifier=request.safety_identifier,
-            artifact_reservation=request.artifact_reservation,
-        )
-
-
-def _validate_image_request(request: ProviderRequest) -> None:
-    value = request.input
-    allowed_keys = {"locale", "prompt", "aspect_ratio", "quality", "background"}
-    if request.tool_id == "ai_image_edit_studio":
-        allowed_keys |= {"image", "_image_data_url"}
-    if (
-        request.contract_version != "v1"
-        or request.model_policy != _IMAGE_MODEL
-        or not isinstance(request.safety_identifier, str)
-        or not 1 <= len(request.safety_identifier) <= 200
-        or not isinstance(request.artifact_reservation, ProviderArtifactReservation)
-        or not set(value) <= allowed_keys
-        or any(
-            not isinstance(value.get(name, default), str)
-            for name, default in (
-                ("locale", ""),
-                ("aspect_ratio", "auto"),
-                ("quality", "medium"),
-                ("background", "auto"),
-            )
-        )
-        or value.get("locale") not in {"en", "ru"}
-        or not isinstance(value.get("prompt"), str)
-        or not 10 <= len(value["prompt"]) <= 4_000
-        or "\x00" in value["prompt"]
-        or value.get("aspect_ratio", "auto") not in _IMAGE_SIZES
-        or value.get("quality", "medium") not in {"auto", "low", "medium", "high"}
-        or value.get("background", "auto") not in {"auto", "opaque"}
-    ):
-        raise KnownSafeProviderError("AI image provider request was rejected locally")
+        return prepare_image_input(request, self._artifact_storage)
 
 
 def _image_payload(request: ProviderRequest) -> dict[str, object]:
-    _validate_image_request(request)
+    validate_image_request(request, expected_model=_IMAGE_MODEL)
     value = request.input
     payload: dict[str, object] = {
         "model": _IMAGE_MODEL,
