@@ -111,10 +111,11 @@ expect(
 expect(web.PUBLIC_RELEASE === "true", "web runtime public release flag is disabled");
 expect(web.HOSTNAME === "0.0.0.0", "web is not bound to the container network");
 expect(service("web").build?.args?.PUBLIC_RELEASE === "true", "web build public release flag is disabled");
-expect(web.WEBDIAG_API_INTERNAL_URL === "http://api:8000", "web API origin differs");
+const internalApiOrigin = dokploy ? "http://webdiag-api:8000" : "http://api:8000";
+expect(web.WEBDIAG_API_INTERNAL_URL === internalApiOrigin, "web API origin differs");
 expect(
-  scheduler.WEBDIAG_MONITORING_API_INTERNAL_URL === "http://api:8000" &&
-    scheduler.WEBDIAG_CRAWLER_API_INTERNAL_URL === "http://api:8000",
+  scheduler.WEBDIAG_MONITORING_API_INTERNAL_URL === internalApiOrigin &&
+    scheduler.WEBDIAG_CRAWLER_API_INTERNAL_URL === internalApiOrigin,
   "scheduler internal API origins differ",
 );
 
@@ -142,7 +143,14 @@ expect(scheduler.AI_PROVIDER === "vercel", "AI provider policy differs");
 expect(scheduler.AI_GATEWAY_BASE_URL === "https://ai-gateway.vercel.sh/v1", "AI gateway policy differs");
 expect(scheduler.AI_MODEL === "openai/gpt-6-luna", "AI model policy differs");
 expect(scheduler.AI_REASONING_EFFORT === "medium", "AI reasoning policy differs");
-expect(scheduler.WEBDIAG_AI_API_INTERNAL_URL === "http://api:8000", "AI internal origin differs");
+expect(scheduler.WEBDIAG_AI_API_INTERNAL_URL === internalApiOrigin, "AI internal origin differs");
+if (dokploy) {
+  expect(model.networks?.backend?.driver === "bridge", "private backend network is missing");
+  for (const name of expectedServices) {
+    expect(JSON.stringify(Object.keys(service(name).networks ?? {})) === JSON.stringify(["backend"]), `service ${name} is outside the backend network`);
+  }
+  expect(JSON.stringify(service("api").networks.backend.aliases) === JSON.stringify(["webdiag-api"]), "private API alias differs");
+}
 expect(!Object.hasOwn(web, "WEBDIAG_YANDEX_CLIENT_SECRET"), "web received the Yandex client secret");
 expect(api.WEBDIAG_ACCOUNT_PUBLIC_ORIGIN === web.WEBDIAG_ACCOUNT_PUBLIC_ORIGIN, "account public origin propagation differs");
 expect(api.WEBDIAG_ACCOUNT_INTERNAL_TOKEN === web.WEBDIAG_ACCOUNT_INTERNAL_TOKEN, "account bridge token propagation differs");

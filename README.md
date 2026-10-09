@@ -33,7 +33,7 @@ flowchart LR
     Web --> SMTP[Nevtan support SMTP]
 ```
 
-The Dokploy core consists of `web`, `api` and `monitoring_scheduler`. Only `web:3000` is exposed to Dokploy's reverse proxy. API and worker endpoints stay on the private Compose network. The API owns persistent state in the `account_data` volume. SQLite is the active storage layer; the core does not use PostgreSQL or RabbitMQ. Other Compose overlays describe optional development or AI topologies.
+The Dokploy core consists of `web`, `api` and `monitoring_scheduler`. Only `web:3000` is exposed to Dokploy's reverse proxy. All three services share a project-scoped `backend` network; web and scheduler address the API as `webdiag-api`, avoiding `api` aliases of other applications on the proxy network. API and worker endpoints stay private. The API owns persistent state in the `account_data` volume. SQLite is the active storage layer; the core does not use PostgreSQL or RabbitMQ. Other Compose overlays describe optional development or AI topologies.
 
 AI polling runs separately from the monitoring/crawl cycle. Workers use internal API endpoints instead of mounting the account database. AI jobs reserve credits before execution; validated outputs, lease ownership and terminal state determine settlement. Ambiguous provider outcomes remain subject to reconciliation.
 
@@ -157,6 +157,8 @@ npm run verify:dokploy-compose -- --env-file .env.production
 ```
 
 Keep `.env.production` untracked. Inspect Patches/Preview Compose as well as repository YAML: a full-file patch can override configuration. Check running-container settings without logging credentials.
+
+In Dokploy Advanced → Networks, detach `api` and `monitoring_scheduler` from `dokploy-network`, keeping `web` connected for Traefik. Preserve the repository `backend` network on all services. Validate `http://webdiag-api:8000/ready` from web after deployment: an API healthcheck alone cannot detect a web request reaching another application's `api` alias. The legacy Isolated Deployment switch is not required for this topology.
 
 Back up SQLite with its backup API or a stopped-writer procedure. Preserve matching account/audit databases and recovery instructions; copying only the main database while WAL writes continue is unsafe. Readiness does not prove restore capability.
 
