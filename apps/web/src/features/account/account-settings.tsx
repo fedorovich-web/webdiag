@@ -36,15 +36,15 @@ export function AccountSettings({
   const [sessionsPending, setSessionsPending] = useState(false);
   const [sessionsError, setSessionsError] = useState("");
   const [sessionsStatus, setSessionsStatus] = useState("");
-  const [billingSuccess, setBillingSuccess] = useState(false);
+  const [billingPlan, setBillingPlan] = useState<{ plan_id: string; expires_at: number | null } | null>(null);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("billing") === "success") {
-        setBillingSuccess(true);
-      }
-    }
+    let active = true;
+    fetch("/api/billing/lava/status", { cache: "no-store", credentials: "include" })
+      .then(async (response) => { if (!response.ok) throw new Error("Billing status unavailable"); return response.json(); })
+      .then((data) => { if (active && data.plan && ["starter", "pro", "team"].includes(data.plan.plan_id)) setBillingPlan(data.plan); })
+      .catch(() => { if (active) setBillingPlan(null); });
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
@@ -172,17 +172,12 @@ export function AccountSettings({
           <span className="eyebrow">{ru ? "Тариф и баланс" : "Plan & Balance"}</span>
           <h2 id="account-billing-title">{ru ? "Подписка и AI-кредиты" : "Subscription & Credits"}</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "12px" }}>
-            {billingSuccess && (
-              <div style={{ padding: "12px 16px", borderRadius: "10px", background: "rgba(16, 185, 129, 0.1)", border: "1px solid rgba(16, 185, 129, 0.3)", color: "#065f46", fontSize: "14px", fontWeight: 600 }}>
-                {ru ? "✅ Оплата прошла успешно! AI-кредиты зачислены на ваш баланс." : "✅ Payment successful! AI credits have been added to your balance."}
-              </div>
-            )}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", background: "var(--wd-s, #f8fafc)", borderRadius: "10px", border: "1px solid var(--wd-l, #e2e8f0)" }}>
               <div>
-                <strong style={{ display: "block", fontSize: "14px" }}>{ru ? "Тариф: Стартовый" : "Plan: Starter"}</strong>
-                <small style={{ color: "var(--wd-ms, #64748b)" }}>{ru ? "Базовая диагностика и экспресс-аудиты" : "Base diagnostics & express audits"}</small>
+                <strong style={{ display: "block", fontSize: "14px" }}>{billingPlan ? `${ru ? "Тариф" : "Plan"}: ${billingPlan.plan_id === "starter" ? (ru ? "Стартовый" : "Starter") : billingPlan.plan_id === "pro" ? "Pro" : "Team"}` : (ru ? "Загружаем тариф…" : "Loading plan…")}</strong>
+                <small style={{ color: "var(--wd-ms, #64748b)" }}>{billingPlan?.expires_at ? `${ru ? "До" : "Until"} ${new Date(billingPlan.expires_at * 1000).toLocaleDateString(ru ? "ru-RU" : "en-US")}` : (ru ? "Базовая диагностика и экспресс-аудиты" : "Base diagnostics & express audits")}</small>
               </div>
-              <span className="tool-badge tool-badge-success">{ru ? "Активен" : "Active"}</span>
+              <span className="tool-badge tool-badge-success">{billingPlan ? (ru ? "Активен" : "Active") : (ru ? "Проверяем" : "Checking")}</span>
             </div>
             <p style={{ fontSize: "13px", color: "var(--wd-ms, #64748b)", margin: "4px 0 8px 0" }}>
               {ru
@@ -198,15 +193,15 @@ export function AccountSettings({
                 <div style={{ padding: "12px", borderRadius: "10px", border: "1px solid var(--wd-l, #e2e8f0)", background: "var(--wd-s, #fff)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "4px" }}>
                     <strong style={{ fontSize: "14px" }}>50 {ru ? "кредитов" : "credits"}</strong>
-                    <span style={{ fontSize: "15px", fontWeight: 700, color: "#2563eb" }}>390 ₽</span>
+                    <span style={{ fontSize: "15px", fontWeight: 700, color: "#2563eb" }}>{ru ? "390 ₽" : "$5"}</span>
                   </div>
-                  <small style={{ color: "var(--wd-ms, #64748b)", display: "block", marginBottom: "10px" }}>7.8 ₽ / {ru ? "кредит" : "credit"}</small>
+                  <small style={{ color: "var(--wd-ms, #64748b)", display: "block", marginBottom: "10px" }}>{ru ? "7.8 ₽ / кредит" : "$0.10 / credit"}</small>
                   <Link
-                    href={ru ? "/account/checkout?pack=pack-50" : "/en/account/checkout?pack=pack-50"}
+                    href={ru ? "/account/checkout?pack=pack-50" : "/en/account/checkout?pack=pack-50-usd"}
                     className="wd-button wd-button-primary"
                     style={{ width: "100%", fontSize: "12px", padding: "6px 12px", textAlign: "center", textDecoration: "none" }}
                   >
-                    {ru ? "Купить за 390 ₽" : "Buy 390 ₽"}
+                    {ru ? "Купить за 390 ₽" : "Buy for $5"}
                   </Link>
                 </div>
 
@@ -216,30 +211,30 @@ export function AccountSettings({
                   </span>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "4px" }}>
                     <strong style={{ fontSize: "14px" }}>150 {ru ? "кредитов" : "credits"}</strong>
-                    <span style={{ fontSize: "15px", fontWeight: 700, color: "#6366f1" }}>890 ₽</span>
+                    <span style={{ fontSize: "15px", fontWeight: 700, color: "#6366f1" }}>{ru ? "890 ₽" : "$12"}</span>
                   </div>
-                  <small style={{ color: "var(--wd-ms, #64748b)", display: "block", marginBottom: "10px" }}>5.9 ₽ / {ru ? "кредит" : "credit"}</small>
+                  <small style={{ color: "var(--wd-ms, #64748b)", display: "block", marginBottom: "10px" }}>{ru ? "5.9 ₽ / кредит" : "$0.08 / credit"}</small>
                   <Link
-                    href={ru ? "/account/checkout?pack=pack-150" : "/en/account/checkout?pack=pack-150"}
+                    href={ru ? "/account/checkout?pack=pack-150" : "/en/account/checkout?pack=pack-150-usd"}
                     className="wd-button wd-button-primary"
                     style={{ width: "100%", fontSize: "12px", padding: "6px 12px", background: "linear-gradient(135deg, #6366f1, #8b5cf6)", textAlign: "center", textDecoration: "none" }}
                   >
-                    {ru ? "Купить за 890 ₽" : "Buy 890 ₽"}
+                    {ru ? "Купить за 890 ₽" : "Buy for $12"}
                   </Link>
                 </div>
 
                 <div style={{ padding: "12px", borderRadius: "10px", border: "1px solid var(--wd-l, #e2e8f0)", background: "var(--wd-s, #fff)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "4px" }}>
                     <strong style={{ fontSize: "14px" }}>500 {ru ? "кредитов" : "credits"}</strong>
-                    <span style={{ fontSize: "15px", fontWeight: 700, color: "#2563eb" }}>1 990 ₽</span>
+                    <span style={{ fontSize: "15px", fontWeight: 700, color: "#2563eb" }}>{ru ? "1 990 ₽" : "$28"}</span>
                   </div>
-                  <small style={{ color: "var(--wd-ms, #64748b)", display: "block", marginBottom: "10px" }}>3.9 ₽ / {ru ? "кредит" : "credit"}</small>
+                  <small style={{ color: "var(--wd-ms, #64748b)", display: "block", marginBottom: "10px" }}>{ru ? "3.9 ₽ / кредит" : "$0.056 / credit"}</small>
                   <Link
-                    href={ru ? "/account/checkout?pack=pack-500" : "/en/account/checkout?pack=pack-500"}
+                    href={ru ? "/account/checkout?pack=pack-500" : "/en/account/checkout?pack=pack-500-usd"}
                     className="wd-button wd-button-primary"
                     style={{ width: "100%", fontSize: "12px", padding: "6px 12px", textAlign: "center", textDecoration: "none" }}
                   >
-                    {ru ? "Купить за 1 990 ₽" : "Buy 1 990 ₽"}
+                    {ru ? "Купить за 1 990 ₽" : "Buy for $28"}
                   </Link>
                 </div>
               </div>

@@ -1,173 +1,72 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { GET } from "../../../app/api/account/yandex/callback/route";
+import { POST as login } from "../../../app/api/account/login/route";
 
-describe("Yandex OAuth callback route", () => {
-  const originalEnv = process.env;
+const verifier = "v".repeat(43);
+const sessionCookie = "webdiag_session=session-token; Max-Age=3600; Path=/; HttpOnly; Secure; SameSite=Lax";
+function request(query = "code=good-code&state=state", cookie = `yandex_oauth_state=state; yandex_oauth_verifier=${verifier}`) {
+  return new NextRequest(`https://app.webdiag.ru/api/account/yandex/callback?${query}`, { headers: { cookie } });
+}
+function errorCode(response: Response) { return new URL(response.headers.get("location")!).searchParams.get("error"); }
 
-  beforeEach(() => {
-    process.env = { ...originalEnv };
-    process.env.WEBDIAG_API_INTERNAL_URL = "http://127.0.0.1:8000";
-    process.env.WEBDIAG_YANDEX_CLIENT_ID = "test-client-id";
-    process.env.WEBDIAG_YANDEX_CLIENT_SECRET = "test-client-secret";
+beforeEach(() => { vi.stubEnv("WEBDIAG_API_INTERNAL_URL", "http://api:8000"); });
+afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
+
+describe("Yandex OAuth callback", () => {
+  it("handles provider cancellation without exchanging a code", async () => {
+    const fetcher = vi.fn(); vi.stubGlobal("fetch", fetcher);
+    expect(errorCode(await GET(request("error=access_denied")))).toBe("yandex_access_denied");
+    expect(fetcher).not.toHaveBeenCalled();
   });
-
-  afterEach(() => {
-    process.env = originalEnv;
-    vi.unstubAllGlobals();
-    vi.restoreAllMocks();
+  it("rejects missing codes", async () => {
+    expect(errorCode(await GET(request("state=state")))).toBe("yandex_missing_code");
   });
-
-  it("redirects to login with error when error parameter is present", async () => {
-    const request = new NextRequest("https://app.webdiag.ru/api/account/yandex/callback?error=access_denied");
-    const response = await GET(request);
-
-    expect(response.status).toBe(307);
-    const location = response.headers.get("location");
-    expect(location).toBe("https://app.webdiag.ru/login?error=yandex_access_denied");
+  it("rejects a mismatched state or missing PKCE cookie", async () => {
+    const fetcher = vi.fn(); vi.stubGlobal("fetch", fetcher);
+    expect(errorCode(await GET(request("code=good&state=wrong")))).toBe("yandex_state_mismatch");
+    expect(errorCode(await GET(request("code=good&state=state", "yandex_oauth_state=state")))).toBe("yandex_state_mismatch");
+    expect(fetcher).not.toHaveBeenCalled();
   });
-
-  it("redirects to login when code or state is missing", async () => {
-    const request = new NextRequest("https://app.webdiag.ru/api/account/yandex/callback?code=some-code");
-    const response = await GET(request);
-
-    expect(response.status).toBe(307);
-    const location = response.headers.get("location");
-    expect(location).toBe("https://app.webdiag.ru/login?error=yandex_missing_code");
+  it("sets the backend session after clearing all temporary cookies", async () => {
+    const fetcher = vi.fn<(url: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(async () => new Response("{}", { headers: { "set-cookie": sessionCookie } }));
+    vi.stubGlobal("fetch", fetcher);
+    vi.stubEnv("WEBDIAG_YANDEX_CLIENT_SECRET", "unused-web-secret");
+    const response = await GET(request());
+    expect(response.headers.get("location")).toBe("https://app.webdiag.ru/account");
+    expect(response.headers.get("set-cookie")).toContain(sessionCookie);
+    expect(response.cookies.get("yandex_oauth_state")?.value).toBe("");
+    expect(response.cookies.get("yandex_oauth_verifier")?.value).toBe("");
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    const [url, init] = fetcher.mock.calls[0]!;
+    expect(url).toBe("http://api:8000/v1/account/oauth/yandex/exchange");
+    expect(JSON.parse(String(init?.body))).toEqual({ code: "good-code", code_verifier: verifier, redirect_uri: "https://app.webdiag.ru/api/account/yandex/callback" });
+    expect(String(init?.body)).not.toContain("unused-web-secret");
   });
-
-  it("redirects to login when state does not match stored cookie", async () => {
-    const request = new NextRequest("https://app.webdiag.ru/api/account/yandex/callback?code=123&state=state-a", {
-      headers: {
-        cookie: "yandex_oauth_state=state-b",
-      },
-    });
-    const response = await GET(request);
-
-    expect(response.status).toBe(307);
-    const location = response.headers.get("location");
-    expect(location).toBe("https://app.webdiag.ru/login?error=yandex_state_mismatch");
+  it("asks an existing user for ownership proof with an HttpOnly challenge", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ detail: { code: "account_link_required" }, link_token: "t".repeat(43) }), { status: 409 })));
+    const response = await GET(request());
+    expect(errorCode(response)).toBe("yandex_account_link_required");
+    expect(response.cookies.get("yandex_oauth_link")?.httpOnly).toBe(true);
+    expect(response.cookies.get("yandex_oauth_link")?.secure).toBe(true);
+    expect(response.headers.get("set-cookie")).not.toContain("webdiag_session=");
   });
-
-  it("successfully exchanges token, sets webdiag_session cookie and clears state cookie", async () => {
-    const state = "valid-state-123";
-    const request = new NextRequest(`https://app.webdiag.ru/api/account/yandex/callback?code=good-code&state=${state}`, {
-      headers: {
-        cookie: `yandex_oauth_state=${state}`,
-        "x-forwarded-host": "app.webdiag.ru",
-        "x-forwarded-proto": "https",
-      },
-    });
-
-    const mockFetch = vi.fn(async (input: RequestInfo | URL) => {
-      const url = String(input);
-      if (url === "https://oauth.yandex.ru/token") {
-        return new Response(JSON.stringify({ access_token: "mock-yandex-token" }), {
-          status: 200,
-          headers: { "content-type": "application/json" },
-        });
-      }
-      if (url === "https://login.yandex.ru/info?format=json") {
-        return new Response(
-          JSON.stringify({
-            default_email: "testuser@yandex.ru",
-            display_name: "Test User",
-          }),
-          {
-            status: 200,
-            headers: { "content-type": "application/json" },
-          },
-        );
-      }
-      if (url.includes("/v1/account/oauth")) {
-        const headers = new Headers();
-        headers.set("content-type", "application/json");
-        headers.set(
-          "set-cookie",
-          "webdiag_session=mock-session-token-abc; Max-Age=2592000; Path=/; SameSite=lax; HttpOnly",
-        );
-        return new Response(
-          JSON.stringify({
-            authenticated: true,
-            user: { id: "u-123", email: "testuser@yandex.ru", display_name: "Test User" },
-          }),
-          {
-            status: 200,
-            headers,
-          },
-        );
-      }
-      return new Response("Not found", { status: 404 });
-    });
-    vi.stubGlobal("fetch", mockFetch);
-
-    const response = await GET(request);
-
-    expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe("https://app.webdiag.ru/account?auth=yandex");
-
-    // Verify session cookie was set
-    const sessionCookie = response.cookies.get("webdiag_session");
-    expect(sessionCookie).toBeDefined();
-    expect(sessionCookie?.value).toBe("mock-session-token-abc");
-
-    // Verify state cookie was deleted
-    const stateCookie = response.cookies.get("yandex_oauth_state");
-    expect(stateCookie?.value).toBe("");
+  it("does not accept a successful response without a session", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("{}")));
+    expect(errorCode(await GET(request()))).toBe("yandex_session_missing");
   });
-
-  it("successfully falls back to backend exchange when web credentials are empty", async () => {
-    delete process.env.WEBDIAG_YANDEX_CLIENT_ID;
-    delete process.env.WEBDIAG_YANDEX_CLIENT_SECRET;
-    delete process.env.YANDEX_CLIENT_ID;
-    delete process.env.YANDEX_CLIENT_SECRET;
-
-    const state = "valid-state-fallback";
-    const request = new NextRequest(`https://app.webdiag.ru/api/account/yandex/callback?code=good-code&state=${state}`, {
-      headers: {
-        cookie: `yandex_oauth_state=${state}`,
-        "x-forwarded-host": "app.webdiag.ru",
-        "x-forwarded-proto": "https",
-      },
-    });
-
-    const mockFetch = vi.fn(async (input: RequestInfo | URL) => {
-      const url = String(input);
-      if (url.includes("/v1/account/oauth/yandex/exchange")) {
-        const headers = new Headers();
-        headers.set("content-type", "application/json");
-        headers.set(
-          "set-cookie",
-          "webdiag_session=mock-backend-session-xyz; Max-Age=2592000; Path=/; SameSite=lax; HttpOnly",
-        );
-        return new Response(
-          JSON.stringify({
-            authenticated: true,
-            user: { id: "u-456", email: "backend@yandex.ru", display_name: "Backend User" },
-          }),
-          {
-            status: 200,
-            headers,
-          },
-        );
-      }
-      return new Response("Not found", { status: 404 });
-    });
-    vi.stubGlobal("fetch", mockFetch);
-
-    const response = await GET(request);
-
-    expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe("https://app.webdiag.ru/account?auth=yandex");
-
-    // Verify session cookie was set from backend exchange
-    const sessionCookie = response.cookies.get("webdiag_session");
-    expect(sessionCookie).toBeDefined();
-    expect(sessionCookie?.value).toBe("mock-backend-session-xyz");
-
-    // Verify state cookie was deleted
-    const stateCookie = response.cookies.get("yandex_oauth_state");
-    expect(stateCookie?.value).toBe("");
+  it("does not link an unverified email account through its local password", async () => {
+    const fetcher = vi.fn(async (url: RequestInfo | URL) => String(url).endsWith("/link")
+      ? new Response("{}") : new Response("{}", { headers: { "set-cookie": sessionCookie } }));
+    vi.stubGlobal("fetch", fetcher);
+    const response = await login(new NextRequest("https://app.webdiag.ru/api/account/login", {
+      method: "POST", headers: { "content-type": "application/json", cookie: `yandex_oauth_link=${"t".repeat(43)}` },
+      body: JSON.stringify({ email: "buyer@example.com", password: "correct password" }),
+    }));
+    expect(response.status).toBe(200);
+    expect(response.headers.get("set-cookie")).toContain(sessionCookie);
+    expect(response.headers.get("set-cookie")).not.toContain("yandex_oauth_link=");
+    expect(fetcher).toHaveBeenCalledTimes(1);
   });
 });
-

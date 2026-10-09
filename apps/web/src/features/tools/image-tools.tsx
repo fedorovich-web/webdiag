@@ -98,7 +98,7 @@ function canvasToBlob(canvas: HTMLCanvasElement, format: RasterOutputFormat, qua
           reject(new Error(t(locale, `Браузер не смог закодировать ${formatMimeLabel(format)}. Попробуйте WebP, JPEG или PNG.`, `The browser could not encode ${formatMimeLabel(format)}. Try WebP, JPEG, or PNG in this browser.`)));
           return;
         }
-        if (format === "image/avif" && blob.type !== "image/avif") {
+        if (blob.type !== format) {
           reject(new Error(t(locale, "Ваш браузер не поддерживает прямое кодирование в AVIF через Canvas API (он тихо возвращает неоптимизированный PNG большего размера). Выберите формат WebP для гарантированного и эффективного сжатия.", "Your browser does not support encoding AVIF via Canvas API (it silently falls back to uncompressed PNG). Select WebP for guaranteed and efficient compression.")));
           return;
         }
@@ -203,34 +203,23 @@ function ResultPanel({ locale, result }: { locale: Locale; result: ResultFile | 
   </section>;
 }
 
-async function convertImageWithFallback(
+async function convertRasterImage(
   image: LoadedImage,
   format: RasterOutputFormat,
   quality: number,
   locale: Locale,
 ): Promise<{ blob: Blob; width: number; height: number }> {
-  // Use high-performance server-side libavif conversion for AVIF to guarantee genuine compression
   if (format === "image/avif") {
-    try {
-      const formData = new FormData();
-      formData.append("file", image.file);
-      formData.append("format", format);
-      formData.append("quality", String(quality));
-
-      const response = await fetch("/api/tools/image-convert", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (response.ok) {
-        const blob = await response.blob();
-        const width = Number(response.headers.get("X-Width")) || image.bitmap.width;
-        const height = Number(response.headers.get("X-Height")) || image.bitmap.height;
-        return { blob, width, height };
-      }
-    } catch {
-      // Fall through to canvas
-    }
+    const form = new FormData();
+    form.append("file", image.file); form.append("format", format); form.append("quality", String(quality));
+    const response = await fetch("/api/tools/image-convert", { method: "POST", body: form, signal: AbortSignal.timeout(25000) });
+    if (!response.ok) throw new Error(t(locale, "Не удалось преобразовать изображение в AVIF. Попробуйте позже или выберите WebP.", "AVIF conversion failed. Try again later or choose WebP."));
+    const blob = await response.blob();
+    const width = Number(response.headers.get("x-width"));
+    const height = Number(response.headers.get("x-height"));
+    if (blob.type !== format || !Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1) throw new Error(t(locale, "Сервис вернул некорректное изображение.", "The image converter returned an invalid image."));
+    validateImageDimensions(width, height);
+    return { blob, width, height };
   }
 
   // Client-side canvas conversion
@@ -265,13 +254,14 @@ export function ImageOptimizerTool({ locale }: { locale: Locale }) {
 
   async function run() {
     if (!image) return setError(t(locale, "Выберите изображение.", "Choose an image."));
+    setResult(null);
     try {
-      const { blob, width, height } = await convertImageWithFallback(image, format, quality, locale);
+      const { blob, width, height } = await convertRasterImage(image, format, quality, locale);
       setResult({ url: URL.createObjectURL(blob), filename: filenameFor(image.file, "compressed", format), size: blob.size, sourceSize: image.file.size, width, height, format });
       setError("");
     } catch (caught) { setError(toolErrorMessage(locale, caught, "image_process_failed")); }
   }
-  return <div className="tool-grid"><section className="tool-panel"><h2>{t(locale, "Параметры", "Settings")}</h2><FileField locale={locale} onLoaded={setImage} /><FormatField locale={locale} value={format} onChange={onFormatChange} /><label className="field"><span>{t(locale, "Качество JPEG/WebP/AVIF", "JPEG/WebP/AVIF quality")}: {Math.round(quality * 100)}%</span><input type="range" min="0.1" max="1" step="0.05" value={quality} onChange={(event) => setQuality(Number(event.target.value))} /></label><button className="button" type="button" onClick={() => void run()}>{t(locale, "Оптимизировать", "Optimize")}</button>{error && <p className="form-error" role="alert">{error}</p>}</section><ResultPanel locale={locale} result={result} /></div>;
+  return <div className="tool-grid"><section className="tool-panel"><h2>{t(locale, "Параметры", "Settings")}</h2><FileField locale={locale} onLoaded={setImage} /><FormatField locale={locale} value={format} onChange={onFormatChange} />{format === "image/avif" && <p className="muted-text">{t(locale, "Для AVIF файл отправляется в конвертер WebDiag. Он обрабатывается в памяти и не сохраняется.", "For AVIF, your file is uploaded to the WebDiag converter, processed in memory and not stored.")}</p>}<label className="field"><span>{t(locale, "Качество JPEG/WebP/AVIF", "JPEG/WebP/AVIF quality")}: {Math.round(quality * 100)}%</span><input type="range" min="0.1" max="1" step="0.05" value={quality} onChange={(event) => setQuality(Number(event.target.value))} /></label><button className="button" type="button" onClick={() => void run()}>{t(locale, "Оптимизировать", "Optimize")}</button>{error && <p className="form-error" role="alert">{error}</p>}</section><ResultPanel locale={locale} result={result} /></div>;
 }
 
 export function ImageFormatConverterTool({ locale }: { locale: Locale }) {
@@ -290,13 +280,14 @@ export function ImageFormatConverterTool({ locale }: { locale: Locale }) {
 
   async function run() {
     if (!image) return setError(t(locale, "Выберите изображение.", "Choose an image."));
+    setResult(null);
     try {
-      const { blob, width, height } = await convertImageWithFallback(image, format, quality, locale);
+      const { blob, width, height } = await convertRasterImage(image, format, quality, locale);
       setResult({ url: URL.createObjectURL(blob), filename: filenameFor(image.file, "converted", format), size: blob.size, sourceSize: image.file.size, width, height, format });
       setError("");
     } catch (caught) { setError(toolErrorMessage(locale, caught, "image_process_failed")); }
   }
-  return <div className="tool-grid"><section className="tool-panel"><h2>{t(locale, "Параметры", "Settings")}</h2><FileField locale={locale} onLoaded={setImage} /><FormatField locale={locale} value={format} onChange={onFormatChange} />{format !== "image/png" && <label className="field"><span>{t(locale, "Качество JPEG/WebP/AVIF", "JPEG/WebP/AVIF quality")}: {Math.round(quality * 100)}%</span><input type="range" min="0.1" max="1" step="0.05" value={quality} onChange={(event) => setQuality(Number(event.target.value))} /></label>}<button className="button" type="button" onClick={() => void run()}>{t(locale, "Конвертировать", "Convert")}</button>{error && <p className="form-error" role="alert">{error}</p>}</section><ResultPanel locale={locale} result={result} /></div>;
+  return <div className="tool-grid"><section className="tool-panel"><h2>{t(locale, "Параметры", "Settings")}</h2><FileField locale={locale} onLoaded={setImage} /><FormatField locale={locale} value={format} onChange={onFormatChange} />{format === "image/avif" && <p className="muted-text">{t(locale, "Для AVIF файл отправляется в конвертер WebDiag. Он обрабатывается в памяти и не сохраняется.", "For AVIF, your file is uploaded to the WebDiag converter, processed in memory and not stored.")}</p>}{format !== "image/png" && <label className="field"><span>{t(locale, "Качество JPEG/WebP/AVIF", "JPEG/WebP/AVIF quality")}: {Math.round(quality * 100)}%</span><input type="range" min="0.1" max="1" step="0.05" value={quality} onChange={(event) => setQuality(Number(event.target.value))} /></label>}<button className="button" type="button" onClick={() => void run()}>{t(locale, "Конвертировать", "Convert")}</button>{error && <p className="form-error" role="alert">{error}</p>}</section><ResultPanel locale={locale} result={result} /></div>;
 }
 
 export function ImageResizerTool({ locale }: { locale: Locale }) {

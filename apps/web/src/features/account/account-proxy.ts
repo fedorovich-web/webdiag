@@ -6,6 +6,8 @@ import {
   resolveRequestSessionCookie,
   selectAccountRetryAfter,
 } from "./account-proxy-contract";
+import { isAccountWriteAllowed } from "./account-origin";
+import { readBoundedBody, RequestBodyError } from "../../lib/request-body";
 
 const REQUEST_TIMEOUT_MS = 12_000;
 const MAX_BODY_BYTES = 16_384;
@@ -14,7 +16,6 @@ type AccountMethod = "GET" | "POST";
 type AccountPath =
   | "/v1/account/register"
   | "/v1/account/login"
-  | "/v1/account/oauth"
   | "/v1/account/logout"
   | "/v1/account/me"
   | "/v1/account/password"
@@ -51,6 +52,9 @@ function errorPayload(code: string, message: string) {
 
 export function createAccountProxy(options: ProxyOptions) {
   return async function handler(request: NextRequest) {
+    if (options.method !== "GET" && !isAccountWriteAllowed(request)) {
+      return toResponse(errorPayload("account_cross_origin", "Cross-origin request rejected."), 403);
+    }
     const isHttps =
       request.headers.get("x-forwarded-proto") === "https" ||
       request.nextUrl.protocol === "https:" ||
@@ -63,9 +67,13 @@ export function createAccountProxy(options: ProxyOptions) {
 
     let body: string | undefined;
     if (options.body) {
-      body = await request.text();
-      if (new TextEncoder().encode(body).byteLength > MAX_BODY_BYTES) {
-        return toResponse(errorPayload("account_request_too_large", "Request body is too large."), 413, null, null, isHttps);
+      try {
+        body = new TextDecoder().decode(await readBoundedBody(request, MAX_BODY_BYTES));
+      } catch (error) {
+        if (error instanceof RequestBodyError) {
+          return toResponse(errorPayload("account_request_body_invalid", error.message), error.status);
+        }
+        return toResponse(errorPayload("account_request_body_invalid", "Invalid request body."), 400);
       }
     }
 
@@ -96,6 +104,7 @@ export function createAccountProxy(options: ProxyOptions) {
         },
         body,
         cache: "no-store",
+        redirect: "error",
         signal: controller.signal,
       });
       const text = await upstream.text();
@@ -111,13 +120,14 @@ export function createAccountProxy(options: ProxyOptions) {
           isHttps,
         );
       }
-      return toResponse(
+      const response = toResponse(
         payload,
         upstream.status,
         upstream.headers.get("set-cookie"),
         upstream.headers.get("retry-after"),
         isHttps,
       );
+      return response;
     } catch (error) {
       const timedOut = error instanceof Error && error.name === "AbortError";
       return toResponse(

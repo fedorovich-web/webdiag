@@ -15,6 +15,7 @@ import {
 import type { Locale } from "@webdiag/tool-registry";
 import { getAccountSession } from "../account/account-client";
 import type { AccountSessionResponse } from "../account/account-contract";
+import { billingSku, planSku } from "../account/billing-catalog";
 
 interface PricingHubPageProps {
   readonly locale: Locale;
@@ -44,6 +45,7 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
   }, []);
 
   function handleBuyPack(packId: string) {
+    packId = billingSku(packId, locale);
     setLoadingPack(packId);
     setBillingError(null);
     const targetUrl = `${ru ? "/account/checkout" : "/en/account/checkout"}?pack=${encodeURIComponent(packId)}`;
@@ -500,7 +502,7 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
       };
 
   return (
-    <div className="wd-pricing-page">
+    <main className="wd-pricing-page" id="main-content">
       {/* Breadcrumbs (strictly 12px) */}
       <nav className="shell breadcrumbs wd-pricing-breadcrumbs" aria-label="Breadcrumbs">
         <Link href={homeHref}>{t.breadcrumbs.home}</Link>
@@ -587,7 +589,9 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
           <div className="wd-pricing-cards-grid">
             {t.plans.map((plan) => {
               const price = annual ? plan.priceAnnual : plan.priceMonthly;
-              const isPlanLoading = loadingPack === `plan-${plan.id}`;
+              const sku = planSku(plan.id, annual, locale);
+              const checkoutHref = `${ru ? "/account/checkout" : "/en/account/checkout"}?pack=${encodeURIComponent(sku)}`;
+              const isPlanLoading = loadingPack === sku;
               return (
                 <div
                   className={`wd-pricing-card ${plan.isPopular ? "is-popular" : ""}`}
@@ -607,7 +611,7 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
                   {session && plan.id !== "free" ? (
                     <button
                       type="button"
-                      onClick={() => handleBuyPack(`plan-${plan.id}`)}
+                      onClick={() => handleBuyPack(sku)}
                       disabled={isPlanLoading}
                       className={`wd-pricing-card-btn ${plan.isPopular ? "is-primary" : ""}`}
                       style={{ width: "100%", cursor: isPlanLoading ? "wait" : "pointer" }}
@@ -629,7 +633,7 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
                     </Link>
                   ) : (
                     <Link
-                      href={plan.btnHref}
+                      href={plan.id === "free" ? plan.btnHref : `${registerHref}?return_to=${encodeURIComponent(checkoutHref)}`}
                       className={`wd-pricing-card-btn ${plan.isPopular ? "is-primary" : ""}`}
                     >
                       <span>{plan.btnText}</span>
@@ -840,6 +844,6 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
           </div>
         </div>
       </section>
-    </div>
+    </main>
   );
 }

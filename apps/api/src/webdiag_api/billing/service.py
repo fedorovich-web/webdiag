@@ -1,71 +1,29 @@
 from __future__ import annotations
 
-import hashlib
-import hmac
 import logging
 import secrets
-import uuid
+from decimal import Decimal, InvalidOperation
 from typing import Any
+from urllib.parse import urlsplit
+from uuid import UUID
 
 import httpx
 
 from webdiag_api.accounts.service import AccountService
 from webdiag_api.ai.storage import SqliteAIStore
+from webdiag_api.billing.catalog import billing_product
 from webdiag_api.billing.models import (
     BillingStatusResponse,
-    ConfirmPaymentRequest,
     ConfirmPaymentResponse,
     CreateInvoiceRequest,
     CreateInvoiceResponse,
+    PlanStatusResponse,
     WebhookResponse,
 )
+from webdiag_api.billing.storage import Invoice, SqliteBillingStore
 from webdiag_api.config import settings
 
 logger = logging.getLogger(__name__)
-
-
-CREDIT_PACKS: dict[str, dict[str, Any]] = {
-    "pack-50": {
-        "credits": 50,
-        "price_rub": 390.0,
-        "title": "50 AI-кредитов WebDiag",
-    },
-    "credit-pack-50": {
-        "credits": 50,
-        "price_rub": 390.0,
-        "title": "50 AI-кредитов WebDiag",
-    },
-    "pack-150": {
-        "credits": 150,
-        "price_rub": 890.0,
-        "title": "150 AI-кредитов WebDiag",
-    },
-    "credit-pack-150": {
-        "credits": 150,
-        "price_rub": 890.0,
-        "title": "150 AI-кредитов WebDiag",
-    },
-    "pack-500": {
-        "credits": 500,
-        "price_rub": 1990.0,
-        "title": "500 AI-кредитов WebDiag",
-    },
-    "credit-pack-500": {
-        "credits": 500,
-        "price_rub": 1990.0,
-        "title": "500 AI-кредитов WebDiag",
-    },
-    "plan-pro": {
-        "credits": 150,
-        "price_rub": 990.0,
-        "title": "Тариф Pro (150 AI-кредитов)",
-    },
-    "plan-team": {
-        "credits": 500,
-        "price_rub": 2990.0,
-        "title": "Тариф Team (500 AI-кредитов)",
-    },
-}
 
 
 class BillingServiceError(Exception):
@@ -78,267 +36,225 @@ class BillingServiceError(Exception):
 
 class BillingService:
     def __init__(self, account_service: AccountService, ai_store: SqliteAIStore) -> None:
-        self._account_service = account_service
-        self._ai_store = ai_store
+        self._store = SqliteBillingStore(account_service.database_path, ai_store)
 
-    def get_status(self) -> BillingStatusResponse:
-        is_live = bool(settings.lava_api_key.strip())
+    def get_status(self, user_id: str | None = None) -> BillingStatusResponse:
+        plan = None
+        if user_id:
+            plan_id, expires_at = self._store.plan(user_id)
+            plan = PlanStatusResponse(plan_id=plan_id, expires_at=expires_at)
         return BillingStatusResponse(
-            provider="lava",
-            is_live=is_live,
-            currency="RUB",
+            provider="lava", is_live=self._configured(), currency="RUB", plan=plan
         )
+
+    @staticmethod
+    def _configured() -> bool:
+        try:
+            UUID(settings.lava_offer_id.strip())
+        except ValueError:
+            return False
+        return bool(settings.lava_api_key.strip() and settings.lava_webhook_secret.strip())
+
+    @staticmethod
+    def _provider_request(method: str, path: str, payload: dict | None = None) -> dict:
+        if settings.lava_base_url.rstrip("/") != "https://gate.lava.top":
+            raise BillingServiceError(
+                503, "billing_misconfigured", "Payment service is not configured."
+            )
+        try:
+            with httpx.Client(timeout=15.0, follow_redirects=False, trust_env=False) as client:
+                response = client.request(
+                    method,
+                    f"https://gate.lava.top{path}",
+                    json=payload,
+                    headers={
+                        "X-Api-Key": settings.lava_api_key.strip(),
+                        "Accept": "application/json",
+                    },
+                )
+            if response.status_code not in {200, 201}:
+                logger.warning("Lava request failed with HTTP %s", response.status_code)
+                raise BillingServiceError(
+                    502, "billing_provider_error", "Payment service rejected the request."
+                )
+            if len(response.content) > 65536:
+                raise ValueError("oversized response")
+            data = response.json()
+            if not isinstance(data, dict):
+                raise ValueError("invalid response")
+            return data
+        except (httpx.HTTPError, ValueError) as error:
+            raise BillingServiceError(
+                502, "billing_provider_unavailable", "Payment service is unavailable."
+            ) from error
 
     def create_invoice(
-        self,
-        *,
-        user_id: str,
-        email: str,
-        request: CreateInvoiceRequest,
-        origin: str | None = None,
+        self, *, user_id: str, email: str, request: CreateInvoiceRequest, origin: str | None = None
     ) -> CreateInvoiceResponse:
-        pack = CREDIT_PACKS.get(request.pack_id)
-        if not pack:
-            raise BillingServiceError(400, "invalid_pack_id", f"Unknown package: {request.pack_id}")
-
-        amount = float(pack["price_rub"])
-        credits = int(pack["credits"])
-
-        if settings.lava_api_key.strip():
-            api_url = f"{settings.lava_base_url.rstrip('/')}/api/v3/invoice"
-            offer_id = settings.lava_offer_id.strip() or "webdiag-credits"
-            return_base = (request.return_url or origin or "https://app.webdiag.ru").rstrip("/")
-            payload = {
+        pack = billing_product(request.pack_id)
+        if pack is None:
+            raise BillingServiceError(400, "invalid_pack_id", "Unknown payment package.")
+        if pack.plan_id:
+            active_plan, _ = self._store.plan(user_id)
+            if active_plan not in {"starter", pack.plan_id}:
+                raise BillingServiceError(
+                    409,
+                    "billing_active_plan_change",
+                    "Contact support to change an active paid plan "
+                    "without losing its remaining period.",
+                )
+        if not self._configured():
+            raise BillingServiceError(
+                503, "billing_not_configured", "Payment service is not configured."
+            )
+        # Redirects never trust client headers or a buyer-supplied destination.
+        return_base = settings.account_public_origin.rstrip("/")
+        return_path = "/en/account/checkout" if pack.currency == "USD" else "/account/checkout"
+        if request.return_url and request.return_url.rstrip("/") != return_base:
+            raise BillingServiceError(
+                400, "billing_invalid_return_url", "Invalid payment return URL."
+            )
+        data = self._provider_request(
+            "POST",
+            "/api/v3/invoice",
+            {
                 "email": email,
-                "offerId": offer_id,
-                "currency": "RUB",
-                "amount": amount,
-                "successful_return_url": f"{return_base}/account/checkout?billing=success&pack={request.pack_id}&user={user_id}",
-                "failure_return_url": f"{return_base}/account/checkout?billing=failed&pack={request.pack_id}",
-                "cancel_return_url": f"{return_base}/account/settings#billing",
-            }
-            headers = {
-                "X-Api-Key": settings.lava_api_key.strip(),
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-            }
-            try:
-                with httpx.Client(timeout=15.0) as client:
-                    resp = client.post(api_url, json=payload, headers=headers)
-                    if resp.status_code in (200, 201):
-                        data = resp.json()
-                        invoice_id = str(data.get("id") or uuid.uuid4())
-                        payment_url = str(data.get("paymentUrl") or data.get("url") or "")
-                        if payment_url:
-                            return CreateInvoiceResponse(
-                                invoice_id=invoice_id,
-                                payment_url=payment_url,
-                                amount=amount,
-                                currency="RUB",
-                                pack_id=request.pack_id,
-                                credits=credits,
-                                is_live=True,
-                            )
-                    logger.error(
-                        "Lava invoice creation API returned status %s: %s",
-                        resp.status_code,
-                        resp.text,
-                    )
-            except Exception as error:
-                logger.exception("Failed to connect to Lava.top API: %s", error)
-
-        # Sandbox / Checkout page URL - user proceeds through checkout before credit grant
-        sim_id = f"inv-{uuid.uuid4().hex[:12]}"
-        sim_url = f"/account/checkout?pack={request.pack_id}&invoice={sim_id}"
-        return CreateInvoiceResponse(
-            invoice_id=sim_id,
-            payment_url=sim_url,
-            amount=amount,
-            currency="RUB",
-            pack_id=request.pack_id,
-            credits=credits,
-            is_live=False,
+                "offerId": settings.lava_offer_id.strip(),
+                "currency": pack.currency,
+                "amount": pack.amount_minor / 100,
+                "successful_return_url": f"{return_base}{return_path}?pack={request.pack_id}",
+                "failure_return_url": f"{return_base}{return_path}?pack={request.pack_id}",
+                "cancel_return_url": f"{return_base}{return_path}?pack={request.pack_id}",
+            },
         )
+        try:
+            invoice_id = str(UUID(data["id"]))
+            payment_url = data["paymentUrl"]
+            parsed = urlsplit(payment_url)
+            if (
+                parsed.scheme != "https"
+                or not parsed.hostname
+                or parsed.username
+                or parsed.password
+            ):
+                raise ValueError("invalid payment URL")
+            if len(payment_url) > 2048 or any(ord(c) < 32 for c in payment_url):
+                raise ValueError("invalid payment URL")
+            total = data.get("amountTotal")
+            if total is not None and (
+                not isinstance(total, dict)
+                or self._kopeks(total.get("amount")) != pack.amount_minor
+                or total.get("currency") != pack.currency
+            ):
+                raise ValueError("unexpected invoice amount")
+        except (KeyError, TypeError, ValueError) as error:
+            raise BillingServiceError(
+                502, "billing_invalid_response", "Payment service returned an invalid invoice."
+            ) from error
+        invoice = Invoice(
+            invoice_id,
+            user_id,
+            request.pack_id,
+            pack.amount_minor,
+            pack.credits,
+            settings.lava_offer_id.strip(),
+            "pending",
+            currency=pack.currency,
+            plan_id=pack.plan_id,
+            duration_days=pack.duration_days,
+        )
+        self._store.create(invoice)
+        return CreateInvoiceResponse(
+            invoice_id=invoice.id,
+            payment_url=payment_url,
+            amount=invoice.amount_minor / 100,
+            currency=invoice.currency,
+            pack_id=invoice.pack_id,
+            credits=invoice.credits,
+            is_live=True,
+        )
+
+    @staticmethod
+    def _kopeks(value: object) -> int:
+        try:
+            amount = Decimal(str(value))
+            if not amount.is_finite() or not 0 < amount <= 10000000:
+                raise ValueError("invalid amount")
+            scaled = amount * 100
+            if not amount.is_finite() or scaled <= 0 or scaled != scaled.to_integral_value():
+                raise ValueError("invalid amount")
+            return int(scaled)
+        except (InvalidOperation, TypeError) as error:
+            raise ValueError("invalid amount") from error
 
     def confirm_invoice(
-        self,
-        *,
-        user_id: str,
-        pack_id: str,
-        invoice_id: str,
-        payment_method: str = "card",
+        self, *, user_id: str, pack_id: str, invoice_id: str, payment_method: str = "card"
     ) -> ConfirmPaymentResponse:
-        pack = CREDIT_PACKS.get(pack_id)
-        if not pack:
-            raise BillingServiceError(400, "invalid_pack_id", f"Unknown package: {pack_id}")
-        amount = float(pack["price_rub"])
-        credits = int(pack["credits"])
-        self._ai_store.grant_credits(
-            user_id=user_id,
-            quantity=credits,
-            reason=f"Payment for {pack['title']} via {payment_method} ({invoice_id})",
-            correlation_id=f"pay-{invoice_id}",
-        )
+        invoice = self._store.get(invoice_id)
+        if invoice is None or invoice.user_id != user_id:
+            raise BillingServiceError(
+                404, "billing_invoice_not_found", "Payment invoice was not found."
+            )
+        if pack_id != invoice.pack_id:
+            raise BillingServiceError(
+                409, "billing_invoice_mismatch", "Payment package does not match."
+            )
+        if invoice.state != "paid":
+            data = self._provider_request("GET", f"/api/v1/invoices/{invoice.id}")
+            if data.get("id") != invoice.id:
+                raise BillingServiceError(
+                    502, "billing_invalid_response", "Payment invoice does not match."
+                )
+            if data.get("status") != "COMPLETED":
+                return self._confirmation(invoice, "pending", payment_method)
+            receipt = data.get("receipt")
+            if not isinstance(receipt, dict) or not self._matches_payment(invoice, receipt):
+                raise BillingServiceError(
+                    409, "billing_payment_mismatch", "Payment amount does not match."
+                )
+            invoice = self._store.settle(invoice.id)
+        return self._confirmation(invoice, "paid", payment_method)
+
+    def _confirmation(self, invoice: Invoice, status: str, method: str) -> ConfirmPaymentResponse:
+        period = self._store.period(invoice.id) if invoice.plan_id else None
         return ConfirmPaymentResponse(
-            status="paid",
-            invoice_id=invoice_id,
-            pack_id=pack_id,
-            amount=amount,
-            credits=credits,
-            payment_method=payment_method,
+            status=status,
+            invoice_id=invoice.id,
+            pack_id=invoice.pack_id,
+            amount=invoice.amount_minor / 100,
+            currency=invoice.currency,
+            credits=invoice.credits,
+            payment_method=method,
+            plan_starts_at=period[0] if period else None,
+            plan_expires_at=period[1] if period else None,
         )
 
-    def verify_webhook_authentication(
-        self,
-        *,
-        raw_body: bytes,
-        headers: dict[str, str],
-    ) -> bool:
+    def verify_webhook_authentication(self, *, raw_body: bytes, headers: dict[str, str]) -> bool:
         secret = settings.lava_webhook_secret.strip()
-        api_key = settings.lava_api_key.strip()
+        supplied = headers.get("x-api-key", "")
+        return bool(secret and supplied and secrets.compare_digest(supplied, secret))
 
-        # If no secret configured, allow in development/testing
-        if not secret and not api_key:
-            return True
-
-        # 1. Check X-Api-Key header (Lava webhook API Key authentication)
-        header_key = headers.get("x-api-key") or headers.get("X-Api-Key")
-        if header_key:
-            if secret and secrets.compare_digest(header_key, secret):
-                return True
-            if api_key and secrets.compare_digest(header_key, api_key):
-                return True
-
-        # 2. Check Signature / X-Signature header (HMAC-SHA256 signature)
-        sig = headers.get("signature") or headers.get("x-signature")
-        if sig and secret:
-            computed_sig = hmac.new(
-                secret.encode("utf-8"),
-                raw_body,
-                hashlib.sha256,
-            ).hexdigest()
-            if hmac.compare_digest(sig.strip().lower(), computed_sig.lower()):
-                return True
-
-        return False
+    def _matches_payment(self, invoice: Invoice, data: dict) -> bool:
+        try:
+            return (
+                data.get("currency") == invoice.currency
+                and self._kopeks(data.get("amount")) == invoice.amount_minor
+            )
+        except ValueError:
+            return False
 
     def handle_webhook_event(self, body: dict[str, Any]) -> WebhookResponse:
-        event_type = (
-            body.get("eventType")
-            or body.get("event_type")
-            or body.get("type")
-            or ""
-        )
-
-        # Lava requires returning 2xx on ANY event including unknown or unhandled
-        if event_type != "payment.success":
-            logger.info("Ignoring non-success or auxiliary Lava webhook event: %s", event_type)
-            return WebhookResponse(
-                status="ignored",
-                detail=f"Unhandled event type: {event_type}",
+        if body.get("eventType") != "payment.success":
+            return WebhookResponse(status="ignored")
+        invoice_id = body.get("contractId")
+        if not isinstance(invoice_id, str):
+            return WebhookResponse(status="ignored")
+        invoice = self._store.get(invoice_id)
+        if invoice is None:
+            return WebhookResponse(status="ignored")
+        if not self._matches_payment(invoice, body):
+            raise BillingServiceError(
+                409, "billing_payment_mismatch", "Payment amount does not match."
             )
-
-        # Extract payment details
-        # Lava structure can have data nested or top-level
-        data = body.get("data") if isinstance(body.get("data"), dict) else body
-
-        contract_id = str(
-            data.get("contractId")
-            or data.get("contract_id")
-            or data.get("invoice_id")
-            or data.get("id")
-            or body.get("event_id")
-            or uuid.uuid4()
-        )
-
-        client_utm = data.get("clientUtm") or {}
-        user_id = client_utm.get("utm_medium") if isinstance(client_utm, dict) else None
-        pack_id = client_utm.get("utm_campaign") if isinstance(client_utm, dict) else None
-
-        # Look up user if user_id was not in utm_medium
-        user = None
-        if user_id:
-            try:
-                user = self._account_service._store.get_user(user_id)
-            except Exception:
-                user = None
-
-        buyer = data.get("buyer") or body.get("buyer")
-        buyer_email: str | None = None
-        if isinstance(buyer, dict):
-            buyer_email = buyer.get("email")
-        elif isinstance(buyer, str) and "@" in buyer:
-            buyer_email = buyer
-        if not buyer_email:
-            raw_email = (
-                data.get("email")
-                or body.get("email")
-                or data.get("buyer_email")
-                or body.get("buyer_email")
-            )
-            if isinstance(raw_email, str) and "@" in raw_email:
-                buyer_email = raw_email
-
-        if user is None and buyer_email:
-            try:
-                user = self._account_service._store.get_user_by_email(buyer_email.strip().lower())
-            except Exception:
-                user = None
-
-        if user is None:
-            logger.warning(
-                "Lava payment %s received but user could not be found (utm_medium=%s, email=%s)",
-                contract_id,
-                user_id,
-                buyer_email,
-            )
-            return WebhookResponse(
-                status="user_not_found",
-                detail=f"User could not be found for email: {buyer_email}",
-                contract_id=contract_id,
-            )
-
-        # Determine package and credits
-        amount = float(data.get("amount") or 0.0)
-        credits_to_grant = 0
-        pack_title = "AI-кредиты"
-
-        if pack_id and pack_id in CREDIT_PACKS:
-            pack_info = CREDIT_PACKS[pack_id]
-            credits_to_grant = pack_info["credits"]
-            pack_title = pack_info["title"]
-        else:
-            # Match by amount
-            for _pid, pinfo in CREDIT_PACKS.items():
-                if abs(pinfo["price_rub"] - amount) < 1.0:
-                    credits_to_grant = pinfo["credits"]
-                    pack_title = pinfo["title"]
-                    break
-
-        if credits_to_grant <= 0:
-            credits_to_grant = max(10, int(amount / 8))  # fallback ratio
-            pack_title = f"{credits_to_grant} AI-кредитов"
-
-        # Grant credits idempotently via correlation_id
-        correlation_id = f"lava-{contract_id}"
-        self._ai_store.grant_credits(
-            user_id=user.id,
-            quantity=credits_to_grant,
-            reason=f"Lava.top payment {contract_id} ({pack_title})",
-            correlation_id=correlation_id,
-        )
-
-        logger.info(
-            "Granted %d credits to user %s (%s) for Lava transaction %s",
-            credits_to_grant,
-            user.id,
-            user.email,
-            contract_id,
-        )
-
-        return WebhookResponse(
-            status="ok",
-            credited=credits_to_grant,
-            contract_id=contract_id,
-            detail="Credits granted successfully",
-        )
+        self._store.settle(invoice.id)
+        return WebhookResponse(status="ok", credited=invoice.credits, contract_id=invoice.id)

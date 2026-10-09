@@ -30,13 +30,31 @@ from webdiag_api.accounts.storage import StoredUser
 
 
 class AccountStore(Protocol):
-    def create_user(
-        self, *, email: str, display_name: str, password_hash: str
-    ) -> StoredUser: ...
+    @property
+    def database_path(self) -> str: ...
+
+    def create_user(self, *, email: str, display_name: str, password_hash: str) -> StoredUser: ...
 
     def get_user_by_email(self, email: str) -> StoredUser | None: ...
 
     def get_user_by_id(self, user_id: str) -> StoredUser | None: ...
+
+    def resolve_yandex_user(
+        self,
+        *,
+        subject: str,
+        email: str,
+        display_name: str,
+        password_hash: str,
+    ) -> tuple[StoredUser, bool]: ...
+
+    def create_oauth_link(self, *, token_hash: str, subject: str, user_id: str) -> None: ...
+
+    def prepare_oauth_recovery(self, *, token_hash: str, code_hash: str) -> str: ...
+
+    def consume_oauth_recovery(
+        self, *, token_hash: str, code_hash: str, password_hash: str
+    ) -> StoredUser | None: ...
 
     def create_session(
         self,
@@ -58,9 +76,7 @@ class AccountStore(Protocol):
         active_session_limit: int,
     ) -> bool: ...
 
-    def get_user_id_for_session(
-        self, *, token_hash: str, now: int | None = None
-    ) -> str | None: ...
+    def get_user_id_for_session(self, *, token_hash: str, now: int | None = None) -> str | None: ...
 
     def delete_session(self, *, token_hash: str) -> None: ...
 
@@ -120,6 +136,12 @@ class AccountServiceError(RuntimeError):
         self.retry_after = retry_after
 
 
+class OAuthAccountLinkRequired(AccountServiceError):
+    def __init__(self, token: str) -> None:
+        super().__init__(409, "account_link_required", "Sign in with your password to link Yandex.")
+        self.token = token
+
+
 @dataclass(frozen=True, slots=True)
 class AuthenticatedSession:
     token: str
@@ -149,6 +171,10 @@ class AccountService:
             "webdiag-dummy-password-value",
             self._scrypt_parameters,
         )
+
+    @property
+    def database_path(self) -> str:
+        return self._store.database_path
 
     def register(self, request: RegisterRequest) -> AuthenticatedSession:
         try:
@@ -182,9 +208,10 @@ class AccountService:
             raise
         return self._create_session(user)
 
-    def authenticate_oauth_user(
+    def authenticate_yandex_user(
         self,
         *,
+        subject: str,
         email: str,
         display_name: str,
     ) -> tuple[AuthenticatedSession, bool]:
@@ -193,19 +220,60 @@ class AccountService:
             normalized_display = normalize_display_name(display_name or "Yandex User")
         except AccountValidationError as error:
             raise AccountServiceError(400, error.code, error.message) from error
-
-        user = self._store.get_user_by_email(normalized_email)
-        is_new = False
-        if user is None:
-            is_new = True
-            random_secret = secrets.token_urlsafe(32)
-            password_hash = hash_password(random_secret, self._scrypt_parameters)
-            user = self._store.create_user(
+        try:
+            user, is_new = self._store.resolve_yandex_user(
+                subject=subject,
                 email=normalized_email,
                 display_name=normalized_display,
-                password_hash=password_hash,
+                password_hash=hash_password(secrets.token_urlsafe(32), self._scrypt_parameters),
             )
+        except ValueError as error:
+            if str(error) != "account_link_required":
+                raise AccountServiceError(
+                    409, "account_oauth_conflict", "Yandex identity is already linked."
+                ) from error
+            user = self._store.get_user_by_email(normalized_email)
+            token = secrets.token_urlsafe(32)
+            self._store.create_oauth_link(
+                token_hash=hash_session_token(token), subject=subject, user_id=user.id
+            )
+            raise OAuthAccountLinkRequired(token) from error
         return self._create_session(user), is_new
+
+    def prepare_yandex_recovery(self, token: str) -> tuple[str, str]:
+        code = f"{secrets.randbelow(1_000_000):06d}"
+        try:
+            email = self._store.prepare_oauth_recovery(
+                token_hash=hash_session_token(token),
+                code_hash=hash_session_token(f"{token}:{code}"),
+            )
+        except ValueError as error:
+            rate_limited = str(error) == "account_oauth_recovery_rate_limited"
+            raise AccountServiceError(
+                429 if rate_limited else 409,
+                str(error),
+                "Wait before requesting another code."
+                if rate_limited
+                else "Restart Yandex sign-in.",
+            ) from error
+        return email, code
+
+    def recover_yandex_session(self, *, token: str, code: str) -> AuthenticatedSession:
+        try:
+            user = self._store.consume_oauth_recovery(
+                token_hash=hash_session_token(token),
+                code_hash=hash_session_token(f"{token}:{code}"),
+                password_hash=hash_password(secrets.token_urlsafe(32), self._scrypt_parameters),
+            )
+        except ValueError as error:
+            raise AccountServiceError(
+                409, "account_oauth_conflict", "Yandex identity is already linked."
+            ) from error
+        if user is None:
+            raise AccountServiceError(
+                409, "account_oauth_recovery_invalid", "Code is invalid or expired."
+            )
+        return self._create_session(user)
 
     def login(self, request: LoginRequest) -> AuthenticatedSession:
         try:
@@ -267,16 +335,12 @@ class AccountService:
 
     def session_summary(self, token: str | None) -> AccountSessionSummaryResponse:
         token_hash = self._session_token_hash(token)
-        count = self._store.active_session_count_for_token(
-            current_token_hash=token_hash
-        )
+        count = self._store.active_session_count_for_token(current_token_hash=token_hash)
         if count is None:
             raise self._unauthenticated_error()
         return AccountSessionSummaryResponse(active_session_count=count)
 
-    def revoke_other_sessions(
-        self, token: str | None
-    ) -> AccountSessionsRevokedResponse:
+    def revoke_other_sessions(self, token: str | None) -> AccountSessionsRevokedResponse:
         token_hash = self._session_token_hash(token)
         revoked = self._store.delete_other_sessions_for_token(
             current_token_hash=token_hash,
@@ -301,9 +365,8 @@ class AccountService:
             raise self._credential_rate_limit_error(retry_after)
 
         current_password = request.current_password.get_secret_value()
-        current_matches = (
-            1 <= len(current_password) <= 128
-            and verify_password(current_password, user.password_hash)
+        current_matches = 1 <= len(current_password) <= 128 and verify_password(
+            current_password, user.password_hash
         )
         if not current_matches:
             retry_after = self._store.record_login_failure(

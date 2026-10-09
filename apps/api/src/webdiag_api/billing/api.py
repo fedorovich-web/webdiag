@@ -18,7 +18,6 @@ from webdiag_api.billing.models import (
     WebhookResponse,
 )
 from webdiag_api.billing.service import BillingService, BillingServiceError
-from webdiag_api.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +29,7 @@ SessionCookie = Annotated[str | None, Cookie(alias=SESSION_COOKIE_NAME)]
 def get_billing_service(
     account_service: AccountServiceDependency,
 ) -> BillingService:
-    database_path = str(getattr(account_service._store, "_path", settings.account_database_path))
+    database_path = account_service.database_path
     ai_store = SqliteAIStore(database_path)
     return BillingService(account_service, ai_store)
 
@@ -41,8 +40,17 @@ BillingServiceDependency = Annotated[BillingService, Depends(get_billing_service
 @router.get("/status", response_model=BillingStatusResponse)
 def get_billing_status(
     service: BillingServiceDependency,
+    account_service: AccountServiceDependency,
+    webdiag_session: SessionCookie = None,
 ) -> BillingStatusResponse:
-    return service.get_status()
+    if not webdiag_session:
+        return service.get_status()
+    try:
+        return service.get_status(account_service.get_session(webdiag_session).user.id)
+    except AccountServiceError as error:
+        raise HTTPException(
+            status_code=error.status_code, detail={"code": error.code, "message": error.message}
+        ) from error
 
 
 @router.post("/invoice", response_model=CreateInvoiceResponse)
@@ -129,4 +137,13 @@ async def lava_webhook(
             detail={"code": "invalid_json", "message": "Invalid JSON body"},
         ) from error
 
-    return service.handle_webhook_event(body_dict)
+    if not isinstance(body_dict, dict):
+        raise HTTPException(
+            status_code=400, detail={"code": "invalid_json", "message": "Expected an object."}
+        )
+    try:
+        return service.handle_webhook_event(body_dict)
+    except BillingServiceError as error:
+        raise HTTPException(
+            status_code=error.status_code, detail={"code": error.code, "message": error.message}
+        ) from error

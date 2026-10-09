@@ -5,13 +5,16 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 
-function render(files) {
-  const args = ["compose", ...files.flatMap((file) => ["-f", file]), "config", "--no-interpolate", "--format", "json"];
+function render(files, env) {
+  const args = ["compose", ...files.flatMap((file) => ["-f", file]), "config"];
+  if (!env) args.push("--no-interpolate");
+  args.push("--format", "json");
   const result = spawnSync("docker", args, {
     cwd: root,
     encoding: "utf8",
     maxBuffer: 4 * 1024 * 1024,
     windowsHide: true,
+    env: env ?? process.env,
   });
   assert.equal(result.status, 0, `Compose could not render ${files.join(", ")}`);
   return JSON.parse(result.stdout);
@@ -53,4 +56,25 @@ test("Dokploy preflight fails closed without production credentials", () => {
   assert.equal(result.status, 1);
   assert.match(result.stderr, /preflight failed: Compose configuration is invalid/u);
   assert.doesNotMatch(result.stderr, /\$\{WEBDIAG_/u);
+});
+
+test("the broker overlay keeps provider credentials on its dedicated worker", () => {
+  const model = render([
+    "docker-compose.yml", "docker-compose.account.override.yml",
+    "docker-compose.production.yml", "docker-compose.production.ai.yml",
+  ], {
+    ...process.env,
+    WEBDIAG_MONITORING_INTERNAL_TOKEN: "M123456789012345678901234567890123456789",
+    WEBDIAG_CRAWLER_INTERNAL_TOKEN: "C123456789012345678901234567890123456789",
+    WEBDIAG_AI_INTERNAL_TOKEN: "A123456789012345678901234567890123456789",
+    WEBDIAG_AI_SAFETY_IDENTIFIER_SECRET: "S123456789012345678901234567890123456789",
+    RABBITMQ_DEFAULT_PASS: "test-rabbit-password-1234567890",
+    AI_GATEWAY_API_KEY: "test-gateway-key-1234567890",
+  });
+  assert.equal(model.services.api.environment.WEBDIAG_AI_RUNTIME_ENABLED, "true");
+  assert.equal(model.services.monitoring_scheduler.environment.WEBDIAG_AI_RUNTIME_ENABLED, "false");
+  for (const key of ["AI_PROVIDER", "AI_GATEWAY_API_KEY", "AI_GATEWAY_BASE_URL", "AI_MODEL", "AI_REASONING_EFFORT"]) {
+    assert.equal(Object.hasOwn(model.services.monitoring_scheduler.environment, key), false, key);
+    assert.equal(Object.hasOwn(model.services.worker.environment, key), true, key);
+  }
 });

@@ -33,6 +33,10 @@ class SqliteAccountStore:
         self._schema_lock = threading.Lock()
         self._schema_ready = False
 
+    @property
+    def database_path(self) -> str:
+        return str(self._path)
+
     def _connect(self) -> sqlite3.Connection:
         self._path.parent.mkdir(parents=True, exist_ok=True)
         connection = sqlite3.connect(self._path, timeout=10, isolation_level=None)
@@ -78,9 +82,168 @@ class SqliteAccountStore:
                     );
                     CREATE INDEX IF NOT EXISTS account_login_attempts_updated_at_idx
                         ON account_login_attempts(updated_at);
+                    CREATE TABLE IF NOT EXISTS account_oauth_identities (
+                        provider TEXT NOT NULL, subject TEXT NOT NULL,
+                        user_id TEXT NOT NULL REFERENCES account_users(id),
+                        PRIMARY KEY(provider, subject), UNIQUE(provider, user_id)
+                    );
+                    CREATE TABLE IF NOT EXISTS account_oauth_links (
+                        token_hash TEXT PRIMARY KEY, subject TEXT NOT NULL,
+                        user_id TEXT NOT NULL REFERENCES account_users(id),
+                        expires_at INTEGER NOT NULL,
+                        recovery_hash TEXT, recovery_expires_at INTEGER,
+                        recovery_attempts INTEGER NOT NULL DEFAULT 0,
+                        recovery_sent_at INTEGER NOT NULL DEFAULT 0
+                    );
+                    CREATE INDEX IF NOT EXISTS account_oauth_links_expiry
+                        ON account_oauth_links(expires_at);
+                    CREATE TABLE IF NOT EXISTS account_oauth_mail_limits (
+                        user_id TEXT PRIMARY KEY REFERENCES account_users(id),
+                        sent_at INTEGER NOT NULL
+                    );
                     """
                 )
             self._schema_ready = True
+
+    def resolve_yandex_user(
+        self,
+        *,
+        subject: str,
+        email: str,
+        display_name: str,
+        password_hash: str,
+    ) -> tuple[StoredUser, bool]:
+        self.ensure_schema()
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                "SELECT u.* FROM account_users u "
+                "JOIN account_oauth_identities i ON i.user_id = u.id "
+                "WHERE i.provider = 'yandex' AND i.subject = ?",
+                (subject,),
+            ).fetchone()
+            if row is not None:
+                connection.execute("COMMIT")
+                return self._stored_user(row), False
+            row = connection.execute(
+                "SELECT * FROM account_users WHERE email = ?", (email,)
+            ).fetchone()
+            if row is not None:
+                raise ValueError("account_link_required")
+            is_new = row is None
+            if is_new:
+                user_id = str(uuid.uuid4())
+                connection.execute(
+                    "INSERT INTO account_users VALUES (?, ?, ?, ?, ?)",
+                    (user_id, email, display_name, password_hash, int(time.time())),
+                )
+                row = connection.execute(
+                    "SELECT * FROM account_users WHERE id = ?", (user_id,)
+                ).fetchone()
+            self._bind_yandex_identity(connection, subject, row["id"])
+            connection.execute("COMMIT")
+        return self._stored_user(row), is_new
+
+    @staticmethod
+    def _bind_yandex_identity(connection: sqlite3.Connection, subject: str, user_id: str) -> None:
+        rows = connection.execute(
+            "SELECT subject, user_id FROM account_oauth_identities "
+            "WHERE provider = 'yandex' AND (subject = ? OR user_id = ?)",
+            (subject, user_id),
+        ).fetchall()
+        if rows:
+            if all(row["subject"] == subject and row["user_id"] == user_id for row in rows):
+                return
+            raise ValueError("account_oauth_conflict")
+        connection.execute(
+            "INSERT INTO account_oauth_identities VALUES ('yandex', ?, ?)", (subject, user_id)
+        )
+
+    def create_oauth_link(self, *, token_hash: str, subject: str, user_id: str) -> None:
+        self.ensure_schema()
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            connection.execute(
+                "DELETE FROM account_oauth_links WHERE expires_at <= ? OR user_id = ?",
+                (int(time.time()), user_id),
+            )
+            connection.execute(
+                "INSERT INTO account_oauth_links(token_hash, subject, user_id, expires_at) "
+                "VALUES (?, ?, ?, ?)",
+                (token_hash, subject, user_id, int(time.time()) + 600),
+            )
+            connection.execute("COMMIT")
+
+    def prepare_oauth_recovery(self, *, token_hash: str, code_hash: str) -> str:
+        self.ensure_schema()
+        now = int(time.time())
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                "SELECT l.*, u.email FROM account_oauth_links l "
+                "JOIN account_users u ON u.id = l.user_id "
+                "WHERE token_hash = ? AND expires_at > ?",
+                (token_hash, now),
+            ).fetchone()
+            if row is None:
+                raise ValueError("account_oauth_link_expired")
+            limit = connection.execute(
+                "SELECT sent_at FROM account_oauth_mail_limits WHERE user_id = ?",
+                (row["user_id"],),
+            ).fetchone()
+            if limit and limit["sent_at"] > now - 60:
+                raise ValueError("account_oauth_recovery_rate_limited")
+            connection.execute(
+                "INSERT INTO account_oauth_mail_limits VALUES (?, ?) ON CONFLICT(user_id) "
+                "DO UPDATE SET sent_at = excluded.sent_at",
+                (row["user_id"], now),
+            )
+            connection.execute(
+                "UPDATE account_oauth_links SET recovery_hash = ?, recovery_expires_at = ?, "
+                "recovery_attempts = 0, recovery_sent_at = ? WHERE token_hash = ?",
+                (code_hash, min(now + 600, row["expires_at"]), now, token_hash),
+            )
+            connection.execute("COMMIT")
+        return row["email"]
+
+    def consume_oauth_recovery(
+        self, *, token_hash: str, code_hash: str, password_hash: str
+    ) -> StoredUser | None:
+        import hmac
+
+        self.ensure_schema()
+        now = int(time.time())
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                "SELECT * FROM account_oauth_links WHERE token_hash = ? AND expires_at > ? "
+                "AND recovery_expires_at > ? AND recovery_attempts < 5",
+                (token_hash, now, now),
+            ).fetchone()
+            if row is None:
+                return None
+            if not row["recovery_hash"] or not hmac.compare_digest(row["recovery_hash"], code_hash):
+                connection.execute(
+                    "UPDATE account_oauth_links SET recovery_attempts = recovery_attempts + 1 "
+                    "WHERE token_hash = ?",
+                    (token_hash,),
+                )
+                connection.execute("COMMIT")
+                return None
+            self._bind_yandex_identity(connection, row["subject"], row["user_id"])
+            connection.execute(
+                "UPDATE account_users SET password_hash = ? WHERE id = ?",
+                (password_hash, row["user_id"]),
+            )
+            connection.execute("DELETE FROM account_sessions WHERE user_id = ?", (row["user_id"],))
+            user = connection.execute(
+                "SELECT * FROM account_users WHERE id = ?", (row["user_id"],)
+            ).fetchone()
+            connection.execute(
+                "DELETE FROM account_oauth_links WHERE token_hash = ?", (token_hash,)
+            )
+            connection.execute("COMMIT")
+        return self._stored_user(user)
 
     def create_user(self, *, email: str, display_name: str, password_hash: str) -> StoredUser:
         self.ensure_schema()
@@ -426,9 +589,7 @@ class SqliteAccountStore:
                 (identity_hash,),
             )
 
-    def update_password_hash(
-        self, *, user_id: str, expected_hash: str, password_hash: str
-    ) -> None:
+    def update_password_hash(self, *, user_id: str, expected_hash: str, password_hash: str) -> None:
         self.ensure_schema()
         with self._connect() as connection:
             connection.execute(

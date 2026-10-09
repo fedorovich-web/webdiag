@@ -90,7 +90,9 @@ expect(api.WEBDIAG_ACCOUNT_REGISTRATION_WINDOW_SECONDS === "60", "registration w
 expect(api.WEBDIAG_ACCOUNT_REGISTRATION_CONCURRENCY_LIMIT === "2", "registration concurrency differs");
 expect(api.WEBDIAG_ACCOUNT_REGISTRATION_LEASE_SECONDS === "30", "registration lease differs");
 expect(api.WEBDIAG_PUBLIC_RELEASE === "true", "API public release flag is disabled");
-expect(api.WEBDIAG_AI_RUNTIME_ENABLED === "false", "AI runtime is not disabled");
+const aiEnabled = api.WEBDIAG_AI_RUNTIME_ENABLED === "true";
+expect(["true", "false"].includes(api.WEBDIAG_AI_RUNTIME_ENABLED), "AI runtime flag is invalid");
+expect(scheduler.WEBDIAG_AI_RUNTIME_ENABLED === api.WEBDIAG_AI_RUNTIME_ENABLED, "AI runtime propagation differs");
 expect(
   (service("api").healthcheck?.test ?? []).some(
     (item) => typeof item === "string" && item.includes("127.0.0.1:8000/ready"),
@@ -116,19 +118,45 @@ expect(
   "scheduler internal API origins differ",
 );
 
-const forbiddenCoreNames =
-  /RABBITMQ|BROKER|OPENROUTER|AI_GATEWAY|WEBDIAG_AI_(?!RUNTIME_ENABLED)/u;
+const forbiddenCoreNames = /RABBITMQ|BROKER|OPENROUTER|AI_ARTIFACT/u;
+const aiPlacements = new Map([
+  ["WEBDIAG_AI_RUNTIME_ENABLED", ["api", "monitoring_scheduler"]],
+  ["WEBDIAG_AI_INTERNAL_TOKEN", ["api", "monitoring_scheduler"]],
+  ["WEBDIAG_AI_SAFETY_IDENTIFIER_SECRET", ["api"]],
+  ["WEBDIAG_AI_API_INTERNAL_URL", ["monitoring_scheduler"]],
+  ["AI_GATEWAY_API_KEY", ["monitoring_scheduler"]],
+  ["AI_GATEWAY_BASE_URL", ["monitoring_scheduler"]],
+  ["AI_MODEL", ["monitoring_scheduler"]],
+  ["AI_PROVIDER", ["monitoring_scheduler"]],
+  ["AI_REASONING_EFFORT", ["monitoring_scheduler"]],
+]);
 for (const name of expectedServices) {
   for (const key of Object.keys(environment(name))) {
-    expect(!forbiddenCoreNames.test(key), `service ${name} received optional AI setting ${key}`);
+    expect(!forbiddenCoreNames.test(key), `service ${name} received forbidden setting ${key}`);
+    if (key.startsWith("AI_") || key.startsWith("WEBDIAG_AI_")) {
+      expect(aiPlacements.get(key)?.includes(name), `service ${name} received AI setting outside its allowlist`);
+    }
   }
 }
+expect(scheduler.AI_PROVIDER === "vercel", "AI provider policy differs");
+expect(scheduler.AI_GATEWAY_BASE_URL === "https://ai-gateway.vercel.sh/v1", "AI gateway policy differs");
+expect(scheduler.AI_MODEL === "openai/gpt-6-luna", "AI model policy differs");
+expect(scheduler.AI_REASONING_EFFORT === "medium", "AI reasoning policy differs");
+expect(scheduler.WEBDIAG_AI_API_INTERNAL_URL === "http://api:8000", "AI internal origin differs");
+expect(!Object.hasOwn(web, "WEBDIAG_YANDEX_CLIENT_SECRET"), "web received the Yandex client secret");
+expect(api.WEBDIAG_ACCOUNT_PUBLIC_ORIGIN === web.WEBDIAG_ACCOUNT_PUBLIC_ORIGIN, "account public origin propagation differs");
+expect(api.WEBDIAG_ACCOUNT_INTERNAL_TOKEN === web.WEBDIAG_ACCOUNT_INTERNAL_TOKEN, "account bridge token propagation differs");
+expect(!Object.hasOwn(scheduler, "WEBDIAG_ACCOUNT_INTERNAL_TOKEN"), "scheduler received account bridge token");
 
 const allowedEnvironmentPlacements = new Map([
   ["WEBDIAG_MONITORING_INTERNAL_TOKEN", ["api", "monitoring_scheduler"]],
   ["WEBDIAG_CRAWLER_INTERNAL_TOKEN", ["api", "monitoring_scheduler"]],
 ]);
 const distinctSecrets = [];
+if (api.WEBDIAG_ACCOUNT_INTERNAL_TOKEN) {
+  expect(/^[\x21-\x7E]{32,256}$/u.test(api.WEBDIAG_ACCOUNT_INTERNAL_TOKEN), "account bridge token is not bounded");
+  distinctSecrets.push(api.WEBDIAG_ACCOUNT_INTERNAL_TOKEN);
+}
 for (const [name, allowedServices] of allowedEnvironmentPlacements) {
   const values = [];
   for (const serviceName of expectedServices) {
@@ -141,6 +169,14 @@ for (const [name, allowedServices] of allowedEnvironmentPlacements) {
   expect(typeof value === "string" && /^[\x21-\x7E]{32,256}$/u.test(value), `${name} is not bounded`);
   expect(values.every((item) => item === value), `${name} propagation differs`);
   distinctSecrets.push(value);
+}
+if (aiEnabled) {
+  for (const value of [api.WEBDIAG_AI_INTERNAL_TOKEN, api.WEBDIAG_AI_SAFETY_IDENTIFIER_SECRET]) {
+    expect(typeof value === "string" && /^[\x21-\x7E]{32,256}$/u.test(value), "AI internal secret is not bounded");
+    distinctSecrets.push(value);
+  }
+  expect(api.WEBDIAG_AI_INTERNAL_TOKEN === scheduler.WEBDIAG_AI_INTERNAL_TOKEN, "AI token propagation differs");
+  expect(typeof scheduler.AI_GATEWAY_API_KEY === "string" && /^[\x21-\x7E]{16,512}$/u.test(scheduler.AI_GATEWAY_API_KEY), "AI gateway credential is missing");
 }
 expect(new Set(distinctSecrets).size === distinctSecrets.length, "internal secrets are not distinct");
 

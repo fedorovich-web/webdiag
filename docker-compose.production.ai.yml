@@ -47,5 +47,11 @@ services:
 
   monitoring_scheduler:
     environment:
+      WEBDIAG_AI_RUNTIME_ENABLED: "false"
+      AI_PROVIDER: !reset null
+      AI_GATEWAY_API_KEY: !reset null
+      AI_GATEWAY_BASE_URL: !reset null
+      AI_MODEL: !reset null
+      AI_REASONING_EFFORT: !reset null
       WEBDIAG_AI_API_INTERNAL_URL: http://api:8000
       WEBDIAG_AI_INTERNAL_TOKEN: "${WEBDIAG_AI_INTERNAL_TOKEN:?set a distinct AI internal token}"

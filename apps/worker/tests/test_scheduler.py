@@ -3,6 +3,18 @@ from unittest.mock import patch
 from webdiag_worker.scheduler import run_cycle
 
 
+def test_monitoring_cycle_does_not_block_ai_processing(monkeypatch) -> None:
+    monkeypatch.setenv("WEBDIAG_AI_INTERNAL_TOKEN", "a" * 32)
+    monkeypatch.delenv("WEBDIAG_CRAWLER_INTERNAL_TOKEN", raising=False)
+    with (
+        patch("webdiag_worker.scheduler.run_due_monitors", return_value=0),
+        patch("webdiag_worker.scheduler.cleanup_ai_artifacts", return_value=(0, 0)),
+        patch("webdiag_worker.scheduler._drain_ai_jobs") as drain,
+    ):
+        run_cycle()
+    drain.assert_not_called()
+
+
 def test_scheduler_runs_artifact_cleanup_only_when_ai_is_configured(monkeypatch) -> None:
     monkeypatch.delenv("WEBDIAG_CRAWLER_INTERNAL_TOKEN", raising=False)
     monkeypatch.delenv("WEBDIAG_AI_INTERNAL_TOKEN", raising=False)

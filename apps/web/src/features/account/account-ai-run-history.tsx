@@ -3,6 +3,7 @@
 import type { Locale } from "@webdiag/tool-registry";
 import type { AIRun } from "./account-ai-contract";
 import { aiRunStateLabel, aiToolDescriptor } from "./account-ai-presentation";
+import { AccountAIResult } from "./account-ai-result";
 
 interface AccountAIRunHistoryProps {
   readonly locale: Locale;
@@ -48,6 +49,7 @@ export function AccountAIRunHistory({
               <div>
                 <strong>{aiToolDescriptor(locale, run.tool_id).title}</strong>
                 <time dateTime={run.created_at}>{formatRunTime(locale, run.created_at)}</time>
+                {run.state === "succeeded" && run.output && <details><summary>{ru ? "Результат" : "Result"}</summary><AccountAIResult locale={locale} output={run.output} /></details>}
               </div>
               <span className="wd-ai-run-state" data-state={run.state}>{aiRunStateLabel(locale, run.state)}</span>
               <button

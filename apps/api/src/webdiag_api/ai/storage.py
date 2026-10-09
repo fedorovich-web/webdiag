@@ -534,14 +534,10 @@ class SqliteAIStore:
             ProviderEvaluationSample(
                 contract_version=str(row["contract_version"]),
                 model_policy=str(row["model_policy"]),
-                input_json=(
-                    str(row["input_json"]) if row["input_json"] is not None else None
-                ),
+                input_json=(str(row["input_json"]) if row["input_json"] is not None else None),
                 input_bytes=int(row["input_bytes"]),
                 input_sha256=str(row["input_sha256"]),
-                output_json=(
-                    str(row["output_json"]) if row["output_json"] is not None else None
-                ),
+                output_json=(str(row["output_json"]) if row["output_json"] is not None else None),
                 output_bytes=int(row["output_bytes"]),
                 output_sha256=str(row["output_sha256"]),
                 provider_request_id=(
@@ -568,6 +564,30 @@ class SqliteAIStore:
         reason: str,
         correlation_id: str,
     ) -> CreditLedgerEntry:
+        self.ensure_schema()
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            entry = self.grant_credits_in_transaction(
+                connection,
+                user_id=user_id,
+                quantity=quantity,
+                reason=reason,
+                correlation_id=correlation_id,
+            )
+            connection.execute("COMMIT")
+        return entry
+
+    def grant_credits_in_transaction(
+        self,
+        connection: sqlite3.Connection,
+        *,
+        user_id: str,
+        quantity: int,
+        reason: str,
+        correlation_id: str,
+    ) -> CreditLedgerEntry:
+        if not connection.in_transaction:
+            raise ValueError("credit grant requires an active transaction")
         if isinstance(quantity, bool) or not isinstance(quantity, int) or quantity <= 0:
             raise ValueError("credit quantity must be a positive integer")
         normalized_reason = self._bounded_text(reason, name="reason", maximum=200)
@@ -576,82 +596,75 @@ class SqliteAIStore:
             name="correlation ID",
             maximum=128,
         )
-        self.ensure_schema()
-        with self._connect() as connection:
-            connection.execute("BEGIN IMMEDIATE")
-            existing = connection.execute(
-                """
-                SELECT * FROM credit_ledger
-                WHERE user_id = ? AND correlation_id = ?
-                """,
-                (user_id, normalized_correlation),
-            ).fetchone()
-            if existing is not None:
-                entry = self._ledger_entry(existing)
-                if (
-                    entry.operation_type != "admin_grant"
-                    or entry.available_delta != quantity
-                    or entry.reserved_delta != 0
-                    or entry.reason != normalized_reason
-                ):
-                    connection.execute("ROLLBACK")
-                    raise CreditConflictError("credit correlation already has different content")
-                connection.execute("COMMIT")
-                return entry
-            user = connection.execute(
-                "SELECT id FROM account_users WHERE id = ?",
-                (user_id,),
-            ).fetchone()
-            if user is None:
-                connection.execute("ROLLBACK")
-                raise ValueError("account not found")
-            connection.execute(
-                """
-                INSERT INTO credit_accounts(user_id, available, reserved, version)
-                VALUES (?, 0, 0, 0)
-                ON CONFLICT(user_id) DO NOTHING
-                """,
-                (user_id,),
-            )
-            entry = CreditLedgerEntry(
-                id=str(uuid.uuid4()),
-                user_id=user_id,
-                operation_type="admin_grant",
-                available_delta=quantity,
-                reserved_delta=0,
-                run_id=None,
-                correlation_id=normalized_correlation,
-                reason=normalized_reason,
-                created_at=self._clock_ns(),
-            )
-            connection.execute(
-                """
-                INSERT INTO credit_ledger(
-                    id, user_id, operation_type, available_delta, reserved_delta,
-                    run_id, correlation_id, reason, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    entry.id,
-                    entry.user_id,
-                    entry.operation_type,
-                    entry.available_delta,
-                    entry.reserved_delta,
-                    entry.run_id,
-                    entry.correlation_id,
-                    entry.reason,
-                    entry.created_at,
-                ),
-            )
-            connection.execute(
-                """
-                UPDATE credit_accounts
-                SET available = available + ?, version = version + 1
-                WHERE user_id = ?
-                """,
-                (quantity, user_id),
-            )
-            connection.execute("COMMIT")
+        existing = connection.execute(
+            """
+            SELECT * FROM credit_ledger
+            WHERE user_id = ? AND correlation_id = ?
+            """,
+            (user_id, normalized_correlation),
+        ).fetchone()
+        if existing is not None:
+            entry = self._ledger_entry(existing)
+            if (
+                entry.operation_type != "admin_grant"
+                or entry.available_delta != quantity
+                or entry.reserved_delta != 0
+                or entry.reason != normalized_reason
+            ):
+                raise CreditConflictError("credit correlation already has different content")
+            return entry
+        user = connection.execute(
+            "SELECT id FROM account_users WHERE id = ?",
+            (user_id,),
+        ).fetchone()
+        if user is None:
+            raise ValueError("account not found")
+        connection.execute(
+            """
+            INSERT INTO credit_accounts(user_id, available, reserved, version)
+            VALUES (?, 0, 0, 0)
+            ON CONFLICT(user_id) DO NOTHING
+            """,
+            (user_id,),
+        )
+        entry = CreditLedgerEntry(
+            id=str(uuid.uuid4()),
+            user_id=user_id,
+            operation_type="admin_grant",
+            available_delta=quantity,
+            reserved_delta=0,
+            run_id=None,
+            correlation_id=normalized_correlation,
+            reason=normalized_reason,
+            created_at=self._clock_ns(),
+        )
+        connection.execute(
+            """
+            INSERT INTO credit_ledger(
+                id, user_id, operation_type, available_delta, reserved_delta,
+                run_id, correlation_id, reason, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                entry.id,
+                entry.user_id,
+                entry.operation_type,
+                entry.available_delta,
+                entry.reserved_delta,
+                entry.run_id,
+                entry.correlation_id,
+                entry.reason,
+                entry.created_at,
+            ),
+        )
+        connection.execute(
+            """
+            UPDATE credit_accounts
+            SET available = available + ?, version = version + 1
+            WHERE user_id = ?
+            """,
+            (quantity, user_id),
+        )
         return entry
 
     def get_credit_account(self, *, user_id: str) -> CreditAccount:
@@ -1212,9 +1225,7 @@ class SqliteAIStore:
             user_id=str(row["user_id"]),
             input_json=str(row["input_json"]),
             artifact_reservation=(
-                self._artifact_reservation(reservation_row)
-                if reservation_row is not None
-                else None
+                self._artifact_reservation(reservation_row) if reservation_row is not None else None
             ),
         )
 
@@ -1395,9 +1406,7 @@ class SqliteAIStore:
                         "SELECT * FROM ai_artifacts WHERE run_id = ?",
                         (run_id,),
                     ).fetchone()
-                    artifact_matches = (
-                        artifact is None and persisted_artifact is None
-                    ) or (
+                    artifact_matches = (artifact is None and persisted_artifact is None) or (
                         artifact is not None
                         and persisted_artifact is not None
                         and artifact.id == persisted_artifact["id"]
@@ -1631,8 +1640,7 @@ class SqliteAIStore:
             not error_code
             or len(error_code) > 120
             or any(
-                character not in "abcdefghijklmnopqrstuvwxyz0123456789_"
-                for character in error_code
+                character not in "abcdefghijklmnopqrstuvwxyz0123456789_" for character in error_code
             )
         ):
             raise ValueError("AI public error code is invalid")
@@ -1861,10 +1869,13 @@ class SqliteAIStore:
             or not 1 <= byte_size <= 4 * 1024 * 1024
         ):
             raise ValueError("upload byte size is invalid")
-        if any(
-            isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= 8192
-            for value in (width, height)
-        ) or width * height > 8_000_000:
+        if (
+            any(
+                isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= 8192
+                for value in (width, height)
+            )
+            or width * height > 8_000_000
+        ):
             raise ValueError("upload dimensions are invalid")
         if len(sha256) != 64 or any(character not in "0123456789abcdef" for character in sha256):
             raise ValueError("upload SHA-256 is invalid")
@@ -1937,13 +1948,9 @@ class SqliteAIStore:
             input_sha256=str(row["input_sha256"]),
             state=str(row["state"]),
             output_json=str(row["output_json"]) if row["output_json"] is not None else None,
-            output_sha256=(
-                str(row["output_sha256"]) if row["output_sha256"] is not None else None
-            ),
+            output_sha256=(str(row["output_sha256"]) if row["output_sha256"] is not None else None),
             public_error_code=(
-                str(row["public_error_code"])
-                if row["public_error_code"] is not None
-                else None
+                str(row["public_error_code"]) if row["public_error_code"] is not None else None
             ),
             created_at=int(row["created_at"]),
             updated_at=int(row["updated_at"]),
@@ -1963,9 +1970,7 @@ class SqliteAIStore:
             sha256=str(row["sha256"]),
             created_at=int(row["created_at"]),
             expires_at=int(row["expires_at"]),
-            bound_run_id=(
-                str(row["bound_run_id"]) if row["bound_run_id"] is not None else None
-            ),
+            bound_run_id=(str(row["bound_run_id"]) if row["bound_run_id"] is not None else None),
             deletion_state=str(row["deletion_state"]),
             deleted_at=int(row["deleted_at"]) if row["deleted_at"] is not None else None,
         )

@@ -56,7 +56,7 @@ test.describe("single-page technical audit", () => {
     await page.getByRole("button", { name: "Проверить страницу" }).click();
     await expect(page.getByRole("heading", { name: "Результат технического аудита" })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
-    await expect(page.getByText("Отсутствует title")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Отсутствует title", exact: true })).toBeVisible();
   });
 
   test("localizes the bounded admission error without exposing backend detail", async ({ page }) => {

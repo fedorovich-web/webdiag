@@ -1,206 +1,180 @@
-<div align="center">
-
 # WebDiag
 
-**High-Performance Technical SEO, Security Auditing & AI-Driven Remediation Platform**
+WebDiag is a website diagnostics MVP with technical SEO and security tools, saved projects, audits, crawling, monitoring, reports and AI assistance. The interface supports Russian and English.
 
-[![Tests](https://img.shields.io/badge/Tests-1%2C380%2B%20Passing-success?style=flat-square&logo=vitest)](apps/web)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x%20Strict-blue?style=flat-square&logo=typescript)](packages/tool-core)
-[![Python](https://img.shields.io/badge/Python-3.14%20FastAPI-3776AB?style=flat-square&logo=python)](apps/api)
-[![Next.js](https://img.shields.io/badge/Next.js-15.1%20App%20Router-black?style=flat-square&logo=next.js)](apps/web)
-[![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)](apps/web)
-[![Linters](https://img.shields.io/badge/Linters-ESLint%20%7C%20Ruff%200%20Errors-emerald?style=flat-square)](scripts)
-[![License](https://img.shields.io/badge/License-Proprietary-lightgrey?style=flat-square)](#license)
+[Website](https://webdiag.ru) · [Application](https://app.webdiag.ru) · [Tool registry](packages/tool-registry/registry/tools.json) · [Verification history](docs/VERIFICATION.md) · [Provider repair evidence](docs/provider-repair-verification-2026-10-08.md)
 
-[🌐 Production App (app.webdiag.ru)](https://app.webdiag.ru) • [📖 Documentation](docs) • [🛠 Tool Catalog](https://webdiag.ru)
+The repository is a beta release (`1.0.0-beta.0`). A deployed version can differ from this source. A successful build, configured credentials and healthy containers are separate from a verified OAuth login, payment or delivered email.
 
-</div>
+## Capabilities
 
----
+- 125 registry definitions: 115 public tools and 10 internal definitions replaced by public tools. Public builds exclude internal definitions from client bundles.
+- Browser utilities for text, encoding, images and developer workflows; server tools for bounded website and infrastructure diagnostics.
+- Email/password accounts, scrypt hashing, revocable sessions, projects and saved audit history.
+- Yandex authorization code flow with PKCE and provider subject identities. Linking an existing email account requires proof of account ownership.
+- Persistent crawl/monitoring jobs with ownership checks, budgets, deadlines and worker leases.
+- Lava credit packs and monthly/annual plans. A verified payment settles credits and plan activation once in the account database.
+- Six AI workflows: audit action plans, competitor gaps, content briefs, content optimization, search intent/page fit and internal linking. They require an enabled, configured runtime.
+- Contact mail through Nevtan SMTP; registration and ownership confirmation mail through Resend.
 
-## 📌 Executive Overview
-
-**WebDiag** is a full-stack, enterprise-grade diagnostic engine and SaaS platform designed for technical SEOs, web security engineers, and digital agencies. Unlike typical toy projects or wrapper apps, WebDiag features a **real asynchronous crawler and execution runtime** that executes deep socket-level, HTTP-level, and DOM-level diagnostics across 140+ tools and workbenches, coupled with an automated AI remediation engine that synthesizes action plans and patch diffs.
-
-### Key Highlights
-- **140+ Specialized Tools & Workbenches**: Real network probes, SSL/TLS handshake analyses, DNSSEC inspection, Core Web Vitals simulation, schema validation, and accessibility checkers.
-- **Fail-Closed Security**: Integrated SSRF protection against RFC 1918 / loopback addresses, strict Pydantic v2 input schemas, and Scrypt password derivation.
-- **Production Monorepo**: Decoupled Next.js 15 App Router frontend (`apps/web`), high-throughput Python 3.14 FastAPI core (`apps/api`), and shared TypeScript packages (`packages/tool-core`, `packages/tool-registry`).
-- **Resilient Billing & OAuth**: Zero-friction Yandex ID OAuth login alongside email authentication, integrated Lava.top payment gateway with HMAC-SHA256 signature verification and idempotent webhook delivery.
-- **1,380+ Automated Tests**: Continuous verification spanning 660+ Vitest tests and 720+ Pytest tests with 0 TypeScript and 0 linter errors.
-
----
-
-## 🏛 System Architecture
+## Architecture
 
 ```mermaid
-flowchart TD
-    Client["Client Browser / Webhooks"] -->|HTTPS / Port 443| Ingress["Dokploy / Traefik Reverse Proxy"]
-    
-    subgraph Frontend ["apps/web — Next.js 15 + React 19"]
-        Ingress -->|Edge Middleware| EdgeFilter["Edge Security & Probe Filter\n(CVE-2026-64643 Mitigation)"]
-        EdgeFilter --> RSC["React Server Components & Pages"]
-        EdgeFilter --> APIProxy["Edge API Route Handlers (/api/*)"]
-    end
-
-    subgraph Backend ["apps/api — Python 3.14 + FastAPI"]
-        APIProxy -->|Internal Network| FastAPI["FastAPI Gateway"]
-        FastAPI --> Auth["Scrypt Auth & Yandex ID OAuth"]
-        FastAPI --> ToolRuntime["Diagnostics Engine\n(Socket / HTTP / DOM)"]
-        FastAPI --> Billing["Billing & Lava.top HMAC Webhooks"]
-        FastAPI --> AI["Gemini AI Remediation Engine"]
-        FastAPI --> Crawler["Async Domain Crawler & Workers"]
-    end
-
-    subgraph Storage ["Persistent Data Layer"]
-        FastAPI --> SQLite[("SQLite in WAL Mode\nZero ORM Overhead")]
-        FastAPI --> ArtifactStore[("Artifact & Audit Storage\n(Encrypted Reports)")]
-    end
-
-    subgraph External ["External Services"]
-        Auth --> YandexOAuth["Yandex ID OAuth API"]
-        Billing --> LavaTop["Lava.top Payment Gateway"]
-        AI --> GeminiAPI["Google Gemini API"]
-    end
+flowchart LR
+    Browser -->|HTTPS| Web[Next.js web and API proxies]
+    Lava[Lava webhook] -->|X-Api-Key| Web
+    Web -->|private HTTP| API[FastAPI]
+    API --> DB[(SQLite account and audit storage)]
+    Scheduler[Monitoring, crawl and AI scheduler] -->|distinct internal tokens| API
+    Scheduler --> Gateway[Vercel AI Gateway]
+    API --> Yandex[Yandex ID]
+    API --> LavaAPI[Lava API]
+    Web --> Resend[Resend transactional mail]
+    Web --> SMTP[Nevtan support SMTP]
 ```
 
----
+The Dokploy core consists of `web`, `api` and `monitoring_scheduler`. Only `web:3000` is exposed to Dokploy's reverse proxy. API and worker endpoints stay on the private Compose network. The API owns persistent state in the `account_data` volume. SQLite is the active storage layer; the core does not use PostgreSQL or RabbitMQ. Other Compose overlays describe optional development or AI topologies.
 
-## 🛠 Feature Modules
-
-### 1. Diagnostics & SEO Suite (125+ Registered Tools)
-- **Technical SEO**: Canonical tag consistency, Robots.txt syntax parser, XML Sitemap hierarchy validator, OpenGraph & Twitter Card validator, hreflang bidirectional verification.
-- **Infrastructure & Protocol Security**: TLS 1.2/1.3 cipher suite validation, certificate expiration, HSTS preload compliance, CSP parser, DNS records (A, AAAA, MX, TXT, CAA, DNSSEC).
-- **Core Web Vitals & Performance**: TTFB latency analyzer, resource compression (Brotli/Gzip) verification, responsive image srcset checker, HTTP/2 & HTTP/3 ALPN probes.
-- **Accessibility & Content Analysis**: WCAG 2.1 color contrast calculation, heading hierarchy validator, image alt text analysis, readability scoring, and semantic DOM integrity.
-
-### 2. Deep Crawler & Scheduled Monitoring
-- Asynchronous domain crawling with configurable concurrency, rate limiting, and maximum depth.
-- Automated link graph traversal detecting 404 broken links, circular redirects, and orphan pages.
-- Cron-driven scheduled monitoring triggering email and webhook alerts on regressions.
-
-### 3. AI Remediation Engine
-- Generates context-aware, step-by-step remediation plans for detected site defects.
-- Produces code diffs (Nginx/Apache configurations, React components, meta tags, and structured JSON-LD).
-- Token-efficient caching and credit-based debiting system.
-
-### 4. Enterprise Identity & Monetization
-- **Authentication**: Scrypt password hashing with cryptographically secure salts, session token rotation, and native 1-click **Yandex ID OAuth** integration.
-- **Monetization**: Top-tier payment processing through **Lava.top**, supporting credit packs, dynamic invoice generation, and idempotent webhook handlers guarded by HMAC-SHA256 signatures.
-
----
-
-## 📂 Monorepo Organization
+AI polling runs separately from the monitoring/crawl cycle. Workers use internal API endpoints instead of mounting the account database. AI jobs reserve credits before execution; validated outputs, lease ownership and terminal state determine settlement. Ambiguous provider outcomes remain subject to reconciliation.
 
 ```text
-webdiag/
-├── apps/
-│   ├── web/                     # Next.js 15 App Router frontend (React 19, Tailwind CSS)
-│   │   ├── src/app/             # Pages, layouts, metadata, and dynamic routes
-│   │   ├── src/features/        # Modular domains (account, billing, audit, tools)
-│   │   └── src/middleware.ts    # Edge request filter, auth guards & vulnerability shields
-│   ├── api/                     # Python 3.14 FastAPI backend
-│   │   ├── src/webdiag_api/     # Core domain logic, crawler, audit engines, AI modules
-│   │   └── tests/               # 720+ Pytest tests covering APIs, tools, and security
-│   └── worker/                  # Background worker processes for long-running crawls
-├── packages/
-│   ├── tool-core/               # Shared TypeScript schemas, contracts, and scoring models
-│   └── tool-registry/           # 125+ registered tool definitions, i18n copy, and categories
-├── scripts/                     # Rigorous CI/CD verification gates and lockfile integrity scripts
-└── deploy/                      # Docker Compose configs, Dokploy templates, and Caddyfile
+apps/web/               Next.js App Router, API proxies and interface
+apps/api/               FastAPI, accounts, storage, audit, crawl, billing and AI contracts
+apps/worker/            Monitoring/crawl execution and Vercel AI Gateway adapter
+packages/tool-core/     Shared TypeScript contracts and utilities
+packages/tool-registry/ Tool definitions, localized content and availability
+scripts/                Tests, build verification, dependency and Compose checks
+docs/                   Specifications, operations notes and dated evidence
 ```
 
----
+## Local development
 
-## 🔬 Engineering Standards & Code Quality
+Use Node.js 22–24, npm 10.9.2 and Python 3.14. npm and hashed Python lock files pin dependencies. Python commands use the repository `.venv`.
 
-WebDiag adheres to uncompromising engineering standards:
+From a fresh checkout in PowerShell:
 
-| Metric | WebDiag Benchmark | Status |
-| :--- | :--- | :--- |
-| **Vitest Tests** | 661 tests across 139 suites | ✅ **100% Passed** |
-| **Pytest Tests** | 722 tests across API, crawler, and tools | ✅ **100% Passed** |
-| **TypeScript Coverage** | Strict mode enabled across all 3 workspaces | ✅ **0 Errors** |
-| **Frontend Linter** | ESLint with React Compiler & Next.js rules | ✅ **0 Errors** |
-| **Backend Linter** | Ruff checking PEP 8, import sorting, and complexity | ✅ **0 Errors** |
-| **Zero-ORM Philosophy** | Direct parameterized SQLite queries with WAL mode | ✅ **Optimal Latency** |
-| **Security Architecture** | Edge mitigation of CVE-2026-64643, SSRF blocker | ✅ **Hardened** |
-
----
-
-## 🚀 Quickstart & Local Development
-
-### Prerequisites
-- **Node.js**: `22.x` (LTS)
-- **Python**: `3.14.x`
-- **npm**: `10.9.x`
-
-### 1. Clone & Install Dependencies
-
-```bash
-git clone https://github.com/fedorovich-web/webdiag.git
-cd webdiag
-
-# Install Node dependencies
+```powershell
 npm ci
-
-# Initialize Python virtual environment
-python -m venv .venv
-
-# Install locked Python dependencies
+py -3.14 -m venv .venv
 npm run python:install
 ```
 
-### 2. Configure Environment
+Run the API in one terminal:
 
-Copy `.env.example` to `.env` in `apps/api`:
-
-```ini
-WEBDIAG_SECRET_KEY="your-cryptographic-secret"
-WEBDIAG_CORS_ORIGINS="http://localhost:3000"
-WEBDIAG_YANDEX_CLIENT_ID="your_yandex_client_id"
-WEBDIAG_YANDEX_CLIENT_SECRET="your_yandex_client_secret"
-WEBDIAG_LAVA_API_KEY="your_lava_api_key"
-WEBDIAG_LAVA_WEBHOOK_SECRET="your_lava_webhook_secret"
-WEBDIAG_LAVA_OFFER_ID="your_lava_offer_uuid"
+```powershell
+node scripts/run-python.mjs -m uvicorn webdiag_api.main:app --host 127.0.0.1 --port 8000
 ```
 
-### 3. Run Quality Verification
+Set `WEBDIAG_API_INTERNAL_URL=http://127.0.0.1:8000` in `apps/web/.env.local`, then run `npm run dev` in a second terminal. Open `http://localhost:3000`.
 
-Run the full local verification pipeline:
+Development defaults use SQLite files under `.webdiag` and HTTP session cookies. OAuth requires the configured HTTPS callback origin. Use provider fixtures for local checks; do not point development OAuth at production or commit real credentials.
 
-```bash
-npm run typecheck       # Verify TypeScript types
-npm run lint            # Verify JavaScript / React code
-npm run lint:python     # Verify Python code with Ruff
-npm test                # Run Vitest test suites (660+ tests)
-npm run test:python     # Run Pytest test suites (720+ tests)
-npm run verify:registry # Validate all 125 tools against schema
+## Configuration
+
+[.env.production.example](.env.production.example) lists core deployment settings. Keep real values in Dokploy or an untracked environment file. A variable set in Dokploy reaches a container only when its Compose service explicitly references it.
+
+| Integration | Required settings and placement |
+| --- | --- |
+| Accounts | `WEBDIAG_ACCOUNT_PUBLIC_ORIGIN`; secure production cookies; separate account/audit database paths |
+| Internal jobs | Distinct `WEBDIAG_MONITORING_INTERNAL_TOKEN` and `WEBDIAG_CRAWLER_INTERNAL_TOKEN`, 32–256 visible ASCII characters |
+| Yandex | `WEBDIAG_YANDEX_CLIENT_ID` and `WEBDIAG_YANDEX_CLIENT_SECRET` on API; secret excluded from web |
+| Legacy OAuth recovery | Distinct `WEBDIAG_ACCOUNT_INTERNAL_TOKEN`, shared only by API/web; working Resend configuration |
+| Lava | `WEBDIAG_LAVA_API_KEY`, `WEBDIAG_LAVA_WEBHOOK_SECRET`, `WEBDIAG_LAVA_OFFER_ID`; unprefixed Lava aliases also accepted |
+| Transactional mail | `RESEND_API_KEY`, `EMAIL_FROM=no-replay@webdiag.ru`; replies go to support |
+| Support mail | `NEVTAN_SMTP_HOST`, `NEVTAN_SMTP_PORT`, `NEVTAN_SMTP_USER=support@webdiag.ru`, `NEVTAN_SMTP_PASS`, `CONTACT_RECIPIENT_EMAIL=support@webdiag.ru` |
+| AI | `WEBDIAG_AI_RUNTIME_ENABLED=true`, distinct `WEBDIAG_AI_INTERNAL_TOKEN` / `WEBDIAG_AI_SAFETY_IDENTIFIER_SECRET`, scheduler-only `AI_GATEWAY_API_KEY` |
+
+### Yandex ID
+
+Register the exact Redirect URI `https://app.webdiag.ru/api/account/yandex/callback`, or the same callback path under the configured public origin. Scopes: `login:email` and `login:info`. Web creates random state and a PKCE verifier; only API exchanges the code and obtains the provider identity.
+
+The first Yandex binding to an existing email account requires an emailed ownership code, even if local credentials already exist. This supports legacy OAuth accounts without a known local password. Codes expire after ten minutes, allow five attempts and have a persistent resend throttle. The private code-preparation endpoint requires the account bridge token. Recovery atomically invalidates prior sessions and the unverified local password; the confirmed owner continues signing in through Yandex ID. An already-linked subject signs in normally without resetting credentials. This prevents an attacker who preregistered another person's email from retaining access.
+
+The login button uses the [official round Yandex asset](https://yandex.ru/dev/id/doc/ru/codes/buttons-design), stored in `apps/web/public/icons/yandex-id.svg`.
+
+### Lava.top
+
+The Lava offer must permit **Price on request via API** for dynamic amounts. The provider origin is fixed to `https://gate.lava.top`. Configure `https://app.webdiag.ru/api/billing/lava/webhook` with its dedicated webhook **X-Api-Key**. The outbound API key and webhook secret serve different purposes.
+
+Every invoice stores its owner, product, currency, amount, credits and plan period. A successful return query is not payment evidence. Confirmation retrieves the provider invoice and validates the completed receipt. Webhook settlement requires authenticated `payment.success` data matching the saved invoice. Unknown invoices, other users' invoices and mismatched payments cannot grant credits. Replayed callbacks cannot extend a plan or credit a balance twice.
+
+Existing prices are preserved:
+
+| Product | RUB | USD |
+| --- | ---: | ---: |
+| Pro, 30 days | 990 | 14 |
+| Pro, annual | 9,480 (790/month equivalent) | 132 (11/month equivalent) |
+| Team, 30 days | 2,990 | 42 |
+| Team, annual | 28,680 (2,390/month equivalent) | 408 (34/month equivalent) |
+| 50 AI credits | 390 | 5 |
+| 150 AI credits | 890 | 12 |
+| 500 AI credits | 1,990 | 28 |
+
+Annual products are paid upfront for 365 days, without automatic renewal. Billing retains the existing monthly plan credit allocations (Pro 150, Team 500), with twelve allocations credited upfront for annual purchases. Product period and currency survive registration, OAuth and checkout.
+
+Paid plan periods are retained individually. Same-tier renewal extends the paid term. Changing an active tier requires support rather than silently discarding prepaid days. Already-issued invoices that settle concurrently retain consecutive periods; confirmation reports the purchased period's start and expiry.
+
+### Email
+
+`support@webdiag.ru` is the Nevtan support mailbox. Nevtan handles incoming domain mail. Resend sends automated mail from `no-replay@webdiag.ru`; its sending-domain verification does not create a receiving mailbox. Keep root MX pointed at Nevtan for incoming support mail.
+
+Verify Nevtan MX/SPF/DKIM and Resend's DKIM/return-path records against provider dashboards and authoritative DNS. Port 465 uses implicit TLS; port 587 requires STARTTLS. Certificate validation stays enabled. Check the actual SMTP hostname and authenticate from the deployed web container.
+
+Successful registration schedules welcome mail with Next.js `after`, using the persisted email. New Yandex registrations receive it too. Missing credentials or rejected recipients produce failures, never simulated success. A Resend message ID proves acceptance; a delivery event and recipient readback prove delivery. Welcome mail has a bounded attempt without a durable retry outbox.
+
+### AI runtime
+
+The core scheduler uses `AI_PROVIDER=vercel`, `AI_GATEWAY_BASE_URL=https://ai-gateway.vercel.sh/v1`, `AI_MODEL=openai/gpt-6-luna`, `AI_REASONING_EFFORT=medium`. The adapter validates these settings. Activation requires internal secrets and a gateway credential. Disabling the runtime hides runnable AI tools and rejects paid job creation.
+
+The six public contracts use server-owned evidence and validated structured output. There is no heuristic provider or hidden model fallback. Prove a real run through job state, output, provider outcome and the credit ledger before claiming production provider success.
+
+## Verification
+
+```powershell
+npm run verify:registry
+npm test
+npm run lint
+npm run typecheck
+npm run test:python
+npm run lint:python
+npm run verify:python-lock
+$env:PUBLIC_RELEASE = "true"
+npm run build
+npm run test:browser
+npm run test:dokploy-compose
 ```
 
-### 4. Run Development Servers
+Browser checks require `npx playwright install chromium` or `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` pointing to an installed compatible browser. Tests use fixtures; they do not charge a Lava invoice, send production mail or certify a live AI provider. Compose checks render configuration without starting containers.
 
-```bash
-# Terminal 1 — Next.js frontend (port 3000)
-npm run dev
+The build gate checks registry availability, localized metadata/JSON-LD and absence of internal tools in public bundles. Provider regressions cover OAuth state/PKCE, account ownership, recovery limits, invoice ownership, amount/currency validation, replay/concurrent settlement and failure paths. Image checks decode real AVIF bytes and verify orientation/dimensions.
 
-# Terminal 2 — FastAPI backend (port 8000)
-node scripts/run-python.mjs -m uvicorn webdiag_api.main:app --reload --port 8000
+## Dokploy operations
+
+Use `docker-compose.dokploy.yml` for the three-service core. Validate its effective configuration before deployment:
+
+```powershell
+npm run verify:dokploy-compose -- --env-file .env.production
 ```
 
----
+Keep `.env.production` untracked. Inspect Patches/Preview Compose as well as repository YAML: a full-file patch can override configuration. Check running-container settings without logging credentials.
 
-## 🚢 Production Deployment
+Back up SQLite with its backup API or a stopped-writer procedure. Preserve matching account/audit databases and recovery instructions; copying only the main database while WAL writes continue is unsafe. Readiness does not prove restore capability.
 
-WebDiag is containerized and ready for 1-click deployment via **Docker Compose** or **Dokploy**:
+After deployment, confirm commit identity, container readiness and changed flows. Keep sanitized provider receipts separate from local test results. **On Push autodeploy** means publishing to the tracked branch starts a production rollout; local tests or GitHub review alone do not approve that operation.
 
-```bash
-# Build and run production containers
-docker compose -f deploy/docker-compose.dokploy.yml up -d --build
-```
+## MVP limits
 
----
+- SQLite and current workers target a single deployment. Horizontal writes and multi-region operation need a different coordination design.
+- Existing pricing descriptions are retained. Billing persists plan/payment/credits, but project/history quotas, seats, white-label reports and priority queues are not all enforced from plan state. Plan activation does not certify those entitlements.
+- The core crawler budget is 100 pages, independently of advertised plan limits. The runtime exposes six AI contracts; other internal definitions are not production features.
+- Monitoring persists results and notification events. Contact SMTP does not certify a complete monitoring email alert pipeline.
+- Welcome mail has no durable retry queue. Acceptance does not guarantee inbox placement.
+- Fixtures and local checks do not establish live payment, email or AI delivery; those require separate deployed acceptance checks.
 
-## 📄 License
+## Contributing and security
 
-Proprietary. All rights reserved © 2026 [WebDiag Team](https://webdiag.ru).
+Keep design/commercial pricing changes separate from behavioral fixes. Reproduce defects, check changed behavior and preserve ownership/session boundaries. Never expose provider secrets, raw exceptions or synthetic success. Use bounded requests and SSRF controls in network tools.
+
+Current versions: Next.js 16.3.4, React 19.2.8, FastAPI 0.139.1. Review pinned versions in lock files and Python project metadata. Report vulnerabilities privately to `support@webdiag.ru`, without credentials or exploit details in public issues.
+
+No redistribution license is included. Obtain the owner's permission before reusing the source.

@@ -16,7 +16,7 @@ describe("AI run polling", () => {
     expect(aiPollDelayMs(99)).toBe(5000);
     expect(shouldPollAIRun("running", 0)).toBe(true);
     expect(shouldPollAIRun("pending", 11)).toBe(true);
-    expect(shouldPollAIRun("pending", 12)).toBe(false);
+    expect(shouldPollAIRun("pending", 60)).toBe(false);
     expect(shouldPollAIRun("failed", 0)).toBe(false);
   });
 
