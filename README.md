@@ -2,7 +2,7 @@
 
 WebDiag is a website diagnostics MVP with technical SEO and security tools, saved projects, audits, crawling, monitoring, reports and AI assistance. The interface supports Russian and English.
 
-[Website](https://webdiag.ru) · [Application](https://app.webdiag.ru) · [Tool registry](packages/tool-registry/registry/tools.json) · [Verification history](docs/VERIFICATION.md) · [Provider repair evidence](docs/provider-repair-verification-2026-10-08.md)
+[Website](https://webdiag.ru) · [Application](https://app.webdiag.ru) · [Tool registry](packages/tool-registry/registry/tools.json) · [Verification history](docs/VERIFICATION.md) · [Provider repair evidence](docs/provider-repair-verification-2026-10-08.md) · [AI suite acceptance](docs/ai-suite-verification-2026-10-09.md)
 
 The repository is a beta release (`1.0.0-beta.0`). A deployed version can differ from this source. A successful build, configured credentials and healthy containers are separate from a verified OAuth login, payment or delivered email.
 
@@ -130,7 +130,7 @@ The core scheduler uses `AI_PROVIDER=vercel`, `AI_GATEWAY_BASE_URL=https://ai-ga
 
 The original 15 contracts cover audit action plans, meta tags, Schema.org, FAQ, alt text, content briefs, page revisions, search intent, competitor gaps, internal linking, redirect migration, localization, regular expressions, image generation and image editing. The thirteen text/vision tools cost one credit per successful run; image generation and editing retain their two-credit price. Each runner displays the server catalog price before submission. There is no heuristic provider or hidden model fallback. Prove a real run through job state, output, provider outcome and the credit ledger before claiming production provider success.
 
-Image generation and editing use `openai/gpt-image-2` through the Gateway Images API. Text tools retain the Gateway zero-data-retention restriction; image models do not claim ZDR. The server decodes and normalizes image bytes, removes metadata and validates the result against the leased artifact reservation. An ambiguous image request is never automatically resubmitted.
+Image generation and editing use `openai/gpt-image-2` through the Gateway Images API. Text tools retain the Gateway zero-data-retention restriction; image models do not claim ZDR. The text runtime therefore requires a Vercel plan that supports ZDR. The current production Hobby team rejects that restriction with HTTP 403; GPT Image 2 also rejects the free-credit tier and requires purchased Gateway credits. A valid key and positive free balance alone do not establish provider readiness. These provider prerequisites must be resolved before treating the fifteen-tool suite as live-certified; see the dated acceptance evidence. The server decodes and normalizes image bytes, removes metadata and validates the result against the leased artifact reservation. An ambiguous image request is never automatically resubmitted.
 
 Gateway-reported usage is retained. If an image response omits its optional cost, the attempt stores an unknown cost (`NULL`), preserves the verified result and excludes that attempt from measured cost statistics. An unavailable cost is never recorded as a free generation.
 
