@@ -86,13 +86,12 @@ expect(
 );
 const apiVolumes = service("api").volumes ?? [];
 expect(
-  apiVolumes.length === 1 &&
-    apiVolumes[0].source === "account_data" &&
-    apiVolumes[0].target === "/data",
+  apiVolumes.length === 2 && apiVolumes.some(v => v.source === "account_data" && v.target === "/data") &&
+    apiVolumes.some(v => v.source === "ai_artifacts" && v.target === "/var/lib/webdiag-ai-artifacts"),
   "API volume topology differs",
 );
 expect(
-  JSON.stringify(Object.keys(model?.volumes ?? {}).sort()) === JSON.stringify(["account_data"]),
+  JSON.stringify(Object.keys(model?.volumes ?? {}).sort()) === JSON.stringify(["account_data", "ai_artifacts"]),
   "named volume inventory differs",
 );
 

@@ -9,12 +9,13 @@ import { AccountAIResult } from "./account-ai-result";
 import { aiRunStateLabel, aiToolDescriptor } from "./account-ai-presentation";
 import { aiPollDelayMs, isAIRunTerminal, newAIIdempotencyKey, shouldPollAIRun } from "./account-ai-query";
 
-type TextToolId = Exclude<AIToolId, "ai_audit_action_plan">;
+export type TextToolId = Extract<AIToolId, "ai_competitor_gap_report" | "ai_content_brief" | "ai_content_optimizer" | "ai_search_intent_page_fit" | "ai_internal_linking_planner">;
 type FormValues = Record<string, string>;
 
 interface AccountAITextToolRunnerProps {
   readonly locale: Locale;
   readonly toolId: TextToolId;
+  readonly creditPrice: number;
   readonly onClose: () => void;
   readonly onSuccess?: () => void;
 }
@@ -93,7 +94,7 @@ function requiredFields(toolId: TextToolId): readonly string[] {
   return ["pages"];
 }
 
-export function AccountAITextToolRunner({ locale, toolId, onClose, onSuccess }: AccountAITextToolRunnerProps) {
+export function AccountAITextToolRunner({ locale, toolId, creditPrice, onClose, onSuccess }: AccountAITextToolRunnerProps) {
   const ru = locale === "ru";
   const [values, setValues] = useState<FormValues>(() => ({ ...EMPTY_VALUES }));
   const [run, setRun] = useState<AIRun | null>(null);
@@ -164,7 +165,7 @@ export function AccountAITextToolRunner({ locale, toolId, onClose, onSuccess }: 
         ) : (
           <label key={key}>{fieldLabel(locale, key)}{key.includes("content") || key === "facts" || key === "pages" ? <textarea value={fieldValue(values, key)} onChange={(event) => setValues((current) => ({ ...current, [key]: event.target.value }))} minLength={20} required={required.has(key)} rows={key === "pages" ? 5 : 6} /> : <input value={fieldValue(values, key)} onChange={(event) => setValues((current) => ({ ...current, [key]: event.target.value }))} required={required.has(key)} />}</label>
         ))}
-        <button className="wd-button wd-button-primary" type="submit" disabled={pending || Boolean(run && !isAIRunTerminal(run.state))} aria-busy={pending}>{pending ? (ru ? "Ставим в очередь…" : "Queuing…") : (ru ? "Запустить инструмент (1 AI-кредит)" : "Run tool (1 AI credit)")}</button>
+        <button className="wd-button wd-button-primary" type="submit" disabled={pending || creditPrice <= 0 || Boolean(run && !isAIRunTerminal(run.state))} aria-busy={pending}>{pending ? (ru ? "Ставим в очередь…" : "Queuing…") : `${ru ? "Запустить инструмент" : "Run tool"} (${creditPrice} ${ru ? "AI-кредитов" : "AI credits"})`}</button>
       </form>
       {run && <p className="wd-ai-copilot-status" role="status">{aiRunStateLabel(locale, run.state)}{!isAIRunTerminal(run.state) && !shouldPollAIRun(run.state, attempt) ? (ru ? " — обновите позже" : " — check again later") : ""}</p>}
       {error && <p className="wd-account-error" role="alert">{error}</p>}

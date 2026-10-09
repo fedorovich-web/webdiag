@@ -16,6 +16,6 @@ it("does not enable any paid AI tool when the server catalog is empty", () => {
     locale: "en", loading: false,
     catalog: { contract_version: "webdiag.ai.catalog.v1", tools: [] }, onSelect: () => {},
   }));
-  expect(html.match(/ disabled=""/gu)).toHaveLength(6);
+  expect(html.match(/ disabled=""/gu)).toHaveLength(15);
   expect(html).not.toContain('is-ready');
 });

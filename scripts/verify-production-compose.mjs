@@ -119,7 +119,7 @@ expect(
   "scheduler internal API origins differ",
 );
 
-const forbiddenCoreNames = /RABBITMQ|BROKER|OPENROUTER|AI_ARTIFACT/u;
+const forbiddenCoreNames = /RABBITMQ|BROKER|OPENROUTER/u;
 const aiPlacements = new Map([
   ["WEBDIAG_AI_RUNTIME_ENABLED", ["api", "monitoring_scheduler"]],
   ["WEBDIAG_AI_INTERNAL_TOKEN", ["api", "monitoring_scheduler"]],
@@ -130,6 +130,8 @@ const aiPlacements = new Map([
   ["AI_MODEL", ["monitoring_scheduler"]],
   ["AI_PROVIDER", ["monitoring_scheduler"]],
   ["AI_REASONING_EFFORT", ["monitoring_scheduler"]],
+  ["WEBDIAG_AI_ARTIFACT_STORAGE", ["api", "monitoring_scheduler"]],
+  ["WEBDIAG_AI_ARTIFACT_LOCAL_ROOT", ["api", "monitoring_scheduler"]],
 ]);
 for (const name of expectedServices) {
   for (const key of Object.keys(environment(name))) {
@@ -190,14 +192,22 @@ expect(new Set(distinctSecrets).size === distinctSecrets.length, "internal secre
 
 const apiVolumes = service("api").volumes ?? [];
 expect(
-  apiVolumes.length === 1 && apiVolumes[0].source === "account_data" &&
-    apiVolumes[0].target === "/data" && apiVolumes[0].read_only !== true,
+  apiVolumes.length === 2 && apiVolumes.some(v => v.source === "account_data" &&
+    v.target === "/data" && v.read_only !== true) && apiVolumes.some(v =>
+    v.source === "ai_artifacts" && v.target === "/var/lib/webdiag-ai-artifacts" && v.read_only !== true),
   "API volume topology differs",
 );
 expect(
-  JSON.stringify(Object.keys(model?.volumes ?? {}).sort()) === JSON.stringify(["account_data"]),
+  JSON.stringify(Object.keys(model?.volumes ?? {}).sort()) === JSON.stringify(["account_data", "ai_artifacts"]),
   "named volume inventory differs",
 );
+for (const name of ["api", "monitoring_scheduler"]) {
+  expect(environment(name).WEBDIAG_AI_ARTIFACT_STORAGE === "local", `${name} artifact storage differs`);
+  expect(environment(name).WEBDIAG_AI_ARTIFACT_LOCAL_ROOT === "/var/lib/webdiag-ai-artifacts", `${name} artifact root differs`);
+}
+const schedulerVolumes = service("monitoring_scheduler").volumes ?? [];
+expect(schedulerVolumes.length === 1 && schedulerVolumes[0].source === "ai_artifacts" && schedulerVolumes[0].target === "/var/lib/webdiag-ai-artifacts", "worker artifact volume differs");
+expect(!(service("web").volumes ?? []).some(v => v.source === "ai_artifacts"), "web must not mount private image artifacts");
 
 const forbiddenValues = new Set([
   "change-me",

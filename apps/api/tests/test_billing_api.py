@@ -111,7 +111,7 @@ def test_invoice_preserves_owner_product_and_authoritative_amount(lava):
     assert credits.get_credit_account(user_id=saved.user_id).available == 0
     assert (
         calls[0][2]["json"]["successful_return_url"]
-        == "https://app.webdiag.ru/account/checkout?pack=pack-50"
+        == "https://app.webdiag.ru/account/checkout?pack=pack-50&payment_return=1"
     )
     assert "user=" not in calls[0][2]["json"]["successful_return_url"]
 

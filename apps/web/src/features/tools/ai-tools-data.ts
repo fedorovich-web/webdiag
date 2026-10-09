@@ -34,8 +34,8 @@ export const AI_CATALOG_TOOLS: readonly AIToolEntry[] = [
     slug: "ai-content-brief",
     titleRu: "AI-бриф контента и ТЗ",
     titleEn: "AI Content Brief Generator",
-    descriptionRu: "Формирует структурированное техническое задание для копирайтеров с заголовками H2-H4 и LSI-словами.",
-    descriptionEn: "Creates a detailed content brief with target intent, recommended H2-H4 structure, and LSI entities.",
+    descriptionRu: "Формирует бриф, структуру текста и требования к материалу на основе ваших фактов, цели и аудитории.",
+    descriptionEn: "Creates a content brief, outline, and editorial requirements from your facts, objective, and audience.",
     category: "ai-tools",
     badge: "AI",
   },
@@ -43,8 +43,8 @@ export const AI_CATALOG_TOOLS: readonly AIToolEntry[] = [
     slug: "ai-content-optimizer",
     titleRu: "AI-оптимизатор текста страницы",
     titleEn: "AI Page Text Optimizer",
-    descriptionRu: "Анализирует текст, улучшает читаемость и плотность ключевых вхождений без переспама и воды.",
-    descriptionEn: "Optimizes copy for clarity, readability, and topic coverage without keyword stuffing.",
+    descriptionRu: "Предлагает правки текста публичной страницы и показывает фрагменты до и после изменения.",
+    descriptionEn: "Proposes revisions to a public page's text and shows before-and-after excerpts.",
     category: "ai-tools",
     badge: "AI",
   },
@@ -62,19 +62,91 @@ export const AI_CATALOG_TOOLS: readonly AIToolEntry[] = [
     titleRu: "AI-план внутренней перелинковки",
     titleEn: "AI Internal Linking Planner",
     descriptionRu: "Подбирает релевантные посадочные страницы для перелинковки и генерирует естественные анкоры.",
-    descriptionEn: "Suggests contextually relevant internal link opportunities and high-converting anchor texts.",
+    descriptionEn: "Suggests internal links and anchor texts grounded in the supplied page content.",
     category: "ai-tools",
     badge: "AI",
   },
-
-
-
-
-
-
-
-
-
+  {
+    slug: "ai-meta-serp-studio",
+    titleRu: "AI-генератор Title и Description",
+    titleEn: "AI Meta Tags Generator",
+    descriptionRu: "Предлагает три варианта title и description по предоставленным данным страницы.",
+    descriptionEn: "Suggests three title and description variants from the page facts you provide.",
+    category: "ai-tools",
+    badge: "AI",
+  },
+  {
+    slug: "ai-schema-studio",
+    titleRu: "AI-генератор Schema.org микроразметки",
+    titleEn: "AI Schema.org JSON-LD Generator",
+    descriptionRu: "Собирает JSON-LD для страницы, статьи, организации, местного бизнеса или товара только из ваших фактов.",
+    descriptionEn: "Builds JSON-LD for a page, article, organization, local business, or product using only your source facts.",
+    category: "ai-tools",
+    badge: "AI",
+  },
+  {
+    slug: "ai-faq-studio",
+    titleRu: "AI-генератор вопросов и ответов (FAQ)",
+    titleEn: "AI FAQ & Q&A Generator",
+    descriptionRu: "Составляет вопросы и ответы по вашему тексту и приводит подтверждающие фрагменты источника.",
+    descriptionEn: "Creates questions and answers from your text with supporting source excerpts.",
+    category: "ai-tools",
+    badge: "AI",
+  },
+  {
+    slug: "ai-alt-text-studio",
+    titleRu: "AI-генератор Alt-текстов для картинок",
+    titleEn: "AI Image Alt Text Generator",
+    descriptionRu: "Формирует точные и лаконичные описания alt для изображений с учетом контекста страницы и доступности.",
+    descriptionEn: "Creates descriptive, accessible alt text for images to enhance image SEO and screen reader usability.",
+    category: "ai-tools",
+    badge: "AI",
+  },
+  {
+    slug: "ai-redirect-migration-mapper",
+    titleRu: "AI-карта редиректов при миграции",
+    titleEn: "AI Redirect Migration Mapper",
+    descriptionRu: "Сопоставляет старые и новые URL при переезде сайта или смене структуры, исключая цепочки редиректов.",
+    descriptionEn: "Maps old and new URLs during site migrations or structure overhauls, eliminating redirect loops.",
+    category: "ai-tools",
+    badge: "AI",
+  },
+  {
+    slug: "ai-localization-workbench",
+    titleRu: "AI-локализация контента",
+    titleEn: "AI SEO Localization Workbench",
+    descriptionRu: "Переводит контент между русским и английским с учётом вашего словаря и неизменяемых фрагментов.",
+    descriptionEn: "Translates content between Russian and English while preserving your glossary and verbatim constraints.",
+    category: "ai-tools",
+    badge: "AI",
+  },
+  {
+    slug: "ai-regex-workbench",
+    titleRu: "AI-генератор Regex для robots и редиректов",
+    titleEn: "AI Regex Workbench for SEO",
+    descriptionRu: "Предлагает регулярное выражение для Python, JavaScript или RE2 и план проверки на ваших примерах.",
+    descriptionEn: "Proposes a Python, JavaScript, or RE2 pattern and a verification plan using your examples.",
+    category: "ai-tools",
+    badge: "AI",
+  },
+  {
+    slug: "ai-image-studio",
+    titleRu: "AI-генератор веб-графики",
+    titleEn: "AI Web Image Studio",
+    descriptionRu: "Создаёт изображение по описанию и сохраняет его в приватном хранилище вашего кабинета.",
+    descriptionEn: "Generates an image from your description and saves it privately in your account.",
+    category: "ai-tools",
+    badge: "AI",
+  },
+  {
+    slug: "ai-image-edit-studio",
+    titleRu: "AI-редактор и ремастер изображений",
+    titleEn: "AI Image Remaster & Edit Studio",
+    descriptionRu: "Улучшает четкость, удаляет артефакты и адаптирует пропорции картинок под сетку каталога.",
+    descriptionEn: "Enhances visual clarity, removes compression noise, and reformats aspect ratios for page layouts.",
+    category: "ai-tools",
+    badge: "AI",
+  },
 ];
 
 export function getAICatalogTools(locale: Locale): readonly CatalogTool[] {

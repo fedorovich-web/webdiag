@@ -28,7 +28,8 @@ services:
       dockerfile: apps/worker/Dockerfile
     restart: unless-stopped
     command: ["dramatiq", "--processes", "1", "--threads", "1", "webdiag_worker.actors"]
-    volumes: []
+    volumes:
+      - ai_artifacts:/var/lib/webdiag-ai-artifacts
     environment:
       WEBDIAG_BROKER_URL: "amqp://${RABBITMQ_DEFAULT_USER:-webdiag}:${RABBITMQ_DEFAULT_PASS:?set the production RabbitMQ password}@rabbitmq:5672/"
       WEBDIAG_ENVIRONMENT: production
@@ -39,6 +40,8 @@ services:
       AI_GATEWAY_BASE_URL: "${AI_GATEWAY_BASE_URL:-https://ai-gateway.vercel.sh/v1}"
       AI_MODEL: "${AI_MODEL:-openai/gpt-6-luna}"
       AI_REASONING_EFFORT: "${AI_REASONING_EFFORT:-medium}"
+      WEBDIAG_AI_ARTIFACT_STORAGE: local
+      WEBDIAG_AI_ARTIFACT_LOCAL_ROOT: /var/lib/webdiag-ai-artifacts
     depends_on:
       rabbitmq:
         condition: service_healthy

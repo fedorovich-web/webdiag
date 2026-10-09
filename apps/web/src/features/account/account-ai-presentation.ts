@@ -1,5 +1,7 @@
 import type { Locale } from "@webdiag/tool-registry";
 import { AI_TOOL_IDS, type AIToolId, type AIRunState } from "./account-ai-contract";
+import { AI_CATALOG_TOOLS } from "../tools/ai-tools-data";
+import { STUDIO_TOOL_IDS } from "./account-ai-studio-input";
 
 export interface AIWorkspaceToolDescriptor {
   readonly id: AIToolId;
@@ -120,11 +122,16 @@ const RUN_STATE_LABELS: Record<Locale, Record<AIRunState, string>> = {
 };
 
 export function aiToolDescriptors(locale: Locale): readonly AIWorkspaceToolDescriptor[] {
-  return DESCRIPTORS[locale];
+  const restored = STUDIO_TOOL_IDS.map((id, index): AIWorkspaceToolDescriptor => {
+    const entry = AI_CATALOG_TOOLS.find((tool) => tool.slug === id.replaceAll("_", "-"));
+    if (!entry) throw new Error(`Missing AI catalog description: ${id}`);
+    return { id, title: locale === "ru" ? entry.titleRu : entry.titleEn, summary: locale === "ru" ? entry.descriptionRu : entry.descriptionEn, limits: locale === "ru" ? "Результат сохраняется в аккаунте и требует проверки." : "Results are saved to your account and need review.", workflowOrder: index + 7 };
+  });
+  return [...DESCRIPTORS[locale], ...restored];
 }
 
 export function aiToolDescriptor(locale: Locale, toolId: AIToolId): AIWorkspaceToolDescriptor {
-  const descriptor = DESCRIPTORS[locale].find((item) => item.id === toolId);
+  const descriptor = aiToolDescriptors(locale).find((item) => item.id === toolId);
   if (!descriptor || !AI_TOOL_IDS.includes(toolId)) {
     throw new Error(`Unknown AI tool: ${toolId}`);
   }

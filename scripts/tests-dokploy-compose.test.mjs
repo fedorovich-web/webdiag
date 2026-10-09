@@ -42,7 +42,7 @@ test("Dokploy core matches the production core without host-published ports", ()
   const dokploy = render(["docker-compose.dokploy.yml"]);
 
   assert.deepEqual(Object.keys(dokploy.services).sort(), ["api", "monitoring_scheduler", "web"]);
-  assert.deepEqual(Object.keys(dokploy.volumes), ["account_data"]);
+  assert.deepEqual(Object.keys(dokploy.volumes).sort(), ["account_data", "ai_artifacts"]);
   assert.deepEqual(dokploy.volumes, core.volumes);
   assert.equal(core.services.web.environment.HOSTNAME, "0.0.0.0");
   assert.equal(dokploy.services.web.environment.HOSTNAME, "0.0.0.0");
@@ -58,6 +58,18 @@ test("Dokploy core matches the production core without host-published ports", ()
     assert.deepEqual(dokploy.services[name], expected, `${name} differs from production core`);
     assert.equal(Object.hasOwn(dokploy.services[name], "ports"), false, `${name} publishes a host port`);
   }
+});
+
+test("server image artifacts persist privately across API and worker containers", () => {
+  const model = render(["docker-compose.dokploy.yml"]);
+  for (const name of ["api", "monitoring_scheduler"]) {
+    const service = model.services[name];
+    assert.equal(service.environment.WEBDIAG_AI_ARTIFACT_STORAGE, "local");
+    assert.equal(service.environment.WEBDIAG_AI_ARTIFACT_LOCAL_ROOT, "/var/lib/webdiag-ai-artifacts");
+    assert.equal(service.volumes.filter(v => v.source === "ai_artifacts" && v.target === "/var/lib/webdiag-ai-artifacts" && !v.read_only).length, 1);
+  }
+  assert.equal(model.services.web.volumes?.some(v => v.source === "ai_artifacts") ?? false, false);
+  assert.equal(model.services.monitoring_scheduler.volumes.some(v => v.source === "account_data"), false);
 });
 
 test("Dokploy preflight fails closed without production credentials", () => {

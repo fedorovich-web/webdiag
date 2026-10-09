@@ -14,11 +14,12 @@ import type { AccountProject, SavedAuditSummary } from "./account-workspace-cont
 
 interface AccountAIAuditPlanRunnerProps {
   readonly locale: Locale;
+  readonly creditPrice: number;
   readonly onClose: () => void;
   readonly onSuccess?: () => void;
 }
 
-export function AccountAIAuditPlanRunner({ locale, onClose, onSuccess }: AccountAIAuditPlanRunnerProps) {
+export function AccountAIAuditPlanRunner({ locale, creditPrice, onClose, onSuccess }: AccountAIAuditPlanRunnerProps) {
   const ru = locale === "ru";
   const descriptor = aiToolDescriptor(locale, "ai_audit_action_plan");
 
@@ -299,13 +300,13 @@ export function AccountAIAuditPlanRunner({ locale, onClose, onSuccess }: Account
         <button
           className="wd-button wd-button-primary"
           type="submit"
-          disabled={pending || Boolean(run && !isAIRunTerminal(run.state)) || (!useManualInput && (!selectedProjectId || !selectedAuditId))}
+          disabled={pending || creditPrice <= 0 || Boolean(run && !isAIRunTerminal(run.state)) || (!useManualInput && (!selectedProjectId || !selectedAuditId))}
           aria-busy={pending}
           style={{ minHeight: "44px", fontSize: "14px", fontWeight: 700 }}
         >
           {pending
             ? (ru ? "Ставим в очередь…" : "Queuing…")
-            : (ru ? "Сгенерировать план исправлений (1 AI-кредит)" : "Generate action plan (1 AI credit)")}
+            : `${ru ? "Сгенерировать план исправлений" : "Generate action plan"} (${creditPrice} ${ru ? "AI-кредитов" : "AI credits"})`}
         </button>
       </form>
 

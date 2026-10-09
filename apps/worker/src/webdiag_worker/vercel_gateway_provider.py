@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import binascii
 import hashlib
 import hmac
 import json
@@ -17,11 +18,14 @@ from pydantic import BaseModel
 
 from webdiag_worker.ai import (
     KnownSafeProviderError,
+    ProviderArtifact,
+    ProviderArtifactReservation,
     ProviderOutcomeUnknownError,
     ProviderRequest,
     ProviderResult,
 )
 from webdiag_worker.artifact_storage import ArtifactStorage, artifact_storage_from_env
+from webdiag_worker.image_output import MAX_IMAGE_BYTES, normalize_generated_image
 from webdiag_worker.tool_contracts import (
     AltTextOutput,
     AuditActionPlanOutput,
@@ -216,7 +220,21 @@ _TOOL_POLICIES = {
 
 _KNOWN_REJECTED_STATUS_CODES = frozenset({400, 401, 402, 403, 404, 413, 422, 429})
 _MAX_ATTEMPTS = 3
-_RETRYABLE_STATUS_CODES = frozenset({429, *range(500, 600)})
+_IMAGE_MODEL = "openai/gpt-image-2"
+_IMAGE_TOOLS = frozenset({"ai_image_studio", "ai_image_edit_studio"})
+_IMAGE_RESPONSE_MAX_BYTES = 8 * 1024 * 1024
+# GPT Image 2 permits multiples of 16, ratios up to 3:1 and >=655,360 pixels.
+_IMAGE_SIZES = {
+    "auto": "auto",
+    "1:1": "1024x1024",
+    "3:2": "1536x1024",
+    "2:3": "1024x1536",
+    "4:3": "1536x1152",
+    "3:4": "1152x1536",
+    "16:9": "1536x864",
+    "9:16": "864x1536",
+    "21:9": "1792x768",
+}
 
 
 class VercelAIGatewayProvider:
@@ -255,9 +273,8 @@ class VercelAIGatewayProvider:
             or os.getenv("AI_API_KEY")
             or ""
         )
-        if (
-            not 16 <= len(api_key) <= 512
-            or any(character.isspace() or not character.isascii() for character in api_key)
+        if not 16 <= len(api_key) <= 512 or any(
+            character.isspace() or not character.isascii() for character in api_key
         ):
             raise RuntimeError(
                 "AI_GATEWAY_API_KEY must contain 16 to 512 visible ASCII characters"
@@ -287,6 +304,8 @@ class VercelAIGatewayProvider:
         self._client.close()
 
     def execute(self, request: ProviderRequest) -> ProviderResult:
+        if request.tool_id in _IMAGE_TOOLS:
+            return self._execute_image(request)
         policy = _TOOL_POLICIES.get(request.tool_id)
         if (
             policy is None
@@ -320,7 +339,9 @@ class VercelAIGatewayProvider:
                 max_response_bytes=_CHAT_RESPONSE_MAX_BYTES,
             )
         except (httpx.TimeoutException, httpx.TransportError) as error:
-            raise ProviderOutcomeUnknownError("AI provider outcome is unknown") from error
+            raise ProviderOutcomeUnknownError(
+                "AI provider outcome is unknown"
+            ) from error
         if status_code in _KNOWN_REJECTED_STATUS_CODES:
             raise KnownSafeProviderError("AI provider rejected the request")
         if status_code != 200 or response_content is None:
@@ -334,8 +355,16 @@ class VercelAIGatewayProvider:
             input_units, output_units, provider_cost_nano_usd = _provider_usage(body)
         except KnownSafeProviderError:
             raise
-        except (ValueError, TypeError, KeyError, IndexError, json.JSONDecodeError) as error:
-            raise ProviderOutcomeUnknownError("AI provider response is invalid") from error
+        except (
+            ValueError,
+            TypeError,
+            KeyError,
+            IndexError,
+            json.JSONDecodeError,
+        ) as error:
+            raise ProviderOutcomeUnknownError(
+                "AI provider response is invalid"
+            ) from error
         output = parsed.model_dump(mode="json")
         if request.tool_id == "ai_schema_studio":
             output = _schema_output(request.input, output)
@@ -347,6 +376,118 @@ class VercelAIGatewayProvider:
             provider_cost_nano_usd=provider_cost_nano_usd,
         )
 
+    def _execute_image(self, request: ProviderRequest) -> ProviderResult:
+        payload = _image_payload(request)
+        reservation = request.artifact_reservation
+        assert reservation is not None  # Validated before any provider request.
+        storage = self._image_storage()
+        endpoint = (
+            "edits" if request.tool_id == "ai_image_edit_studio" else "generations"
+        )
+        try:
+            # A timeout or 5xx may occur after a paid generation was accepted. Never retry.
+            with self._client.stream(
+                "POST",
+                f"{_GATEWAY_BASE_URL}/images/{endpoint}",
+                json=payload,
+                follow_redirects=False,
+            ) as response:
+                if response.status_code in _KNOWN_REJECTED_STATUS_CODES:
+                    raise KnownSafeProviderError(
+                        "AI provider rejected the image request"
+                    )
+                if response.status_code != 200:
+                    raise ProviderOutcomeUnknownError(
+                        "AI image provider outcome is unknown"
+                    )
+                content = bytearray()
+                for chunk in response.iter_bytes(chunk_size=_RESPONSE_CHUNK_BYTES):
+                    if len(content) + len(chunk) > _IMAGE_RESPONSE_MAX_BYTES:
+                        raise ProviderOutcomeUnknownError(
+                            "AI image provider response is too large"
+                        )
+                    content.extend(chunk)
+            body = json.loads(content, parse_float=Decimal)
+            if (
+                not isinstance(body, dict)
+                or body.get("model", _IMAGE_MODEL) != _IMAGE_MODEL
+            ):
+                raise ValueError("invalid image response model")
+            images = body.get("data")
+            if (
+                not isinstance(images, list)
+                or len(images) != 1
+                or not isinstance(images[0], dict)
+            ):
+                raise ValueError("invalid image response data")
+            encoded = images[0].get("b64_json")
+            if (
+                not isinstance(encoded, str)
+                or not encoded
+                or len(encoded) > 4 * ((MAX_IMAGE_BYTES + 2) // 3)
+                or "url" in images[0]
+            ):
+                raise ValueError("invalid inline image response")
+            generated = normalize_generated_image(
+                base64.b64decode(encoded, validate=True),
+                declared_media_type="image/png",
+            )
+            input_units, output_units, cost = _image_provider_usage(body)
+            provider_request_id = _provider_request_id(body) if "id" in body else None
+            stored = storage.put_reserved(
+                artifact_id=reservation.artifact_id,
+                object_key=reservation.object_key,
+                data=generated.data,
+                media_type=generated.media_type,
+            )
+            if (
+                stored.object_key != reservation.object_key
+                or stored.byte_size != generated.byte_size
+                or stored.media_type != generated.media_type
+                or not hmac.compare_digest(stored.sha256, generated.sha256)
+            ):
+                raise ValueError("stored image integrity check failed")
+            artifact = ProviderArtifact(
+                artifact_id=reservation.artifact_id,
+                object_key=stored.object_key,
+                media_type=stored.media_type,
+                byte_size=stored.byte_size,
+                sha256=stored.sha256,
+            )
+            return ProviderResult(
+                output={
+                    "artifact_id": artifact.artifact_id,
+                    "media_type": artifact.media_type,
+                    "byte_size": artifact.byte_size,
+                    "sha256": artifact.sha256,
+                },
+                provider_request_id=provider_request_id,
+                input_units=input_units,
+                output_units=output_units,
+                provider_cost_nano_usd=cost,
+                artifact=artifact,
+            )
+        except KnownSafeProviderError:
+            raise
+        except ProviderOutcomeUnknownError:
+            raise
+        except Exception as error:
+            raise ProviderOutcomeUnknownError(
+                "AI image provider outcome is unknown"
+            ) from error
+
+    def _image_storage(self) -> ArtifactStorage:
+        try:
+            if self._artifact_storage is None:
+                self._artifact_storage = artifact_storage_from_env()
+            if not callable(getattr(self._artifact_storage, "put_reserved", None)):
+                raise ValueError("reserved artifact writes are unavailable")
+            return self._artifact_storage
+        except Exception as error:
+            raise KnownSafeProviderError(
+                "AI image artifact storage is unavailable"
+            ) from error
+
     def _post_bounded(
         self,
         url: str,
@@ -355,38 +496,39 @@ class VercelAIGatewayProvider:
         max_response_bytes: int,
     ) -> tuple[int, bytes | None]:
         for attempt in range(_MAX_ATTEMPTS):
-            try:
-                with self._client.stream("POST", url, json=payload) as response:
-                    if response.status_code != 200:
-                        if (
-                            response.status_code in _RETRYABLE_STATUS_CODES
-                            and attempt + 1 < _MAX_ATTEMPTS
-                        ):
-                            self._sleep(
-                                _retry_delay(
-                                    response.headers.get("Retry-After"),
-                                    attempt,
-                                    now=self._now(),
-                                )
+            with self._client.stream(
+                "POST",
+                url,
+                json=payload,
+                follow_redirects=False,
+            ) as response:
+                if response.status_code != 200:
+                    # Only a known rejected rate-limit request may be resubmitted.
+                    if response.status_code == 429 and attempt + 1 < _MAX_ATTEMPTS:
+                        self._sleep(
+                            _retry_delay(
+                                response.headers.get("Retry-After"),
+                                attempt,
+                                now=self._now(),
                             )
-                            continue
-                        return response.status_code, None
-                    content = bytearray()
-                    for chunk in response.iter_bytes(chunk_size=_RESPONSE_CHUNK_BYTES):
-                        if len(content) + len(chunk) > max_response_bytes:
-                            raise ProviderOutcomeUnknownError(
-                                "AI provider response is too large"
-                            )
-                        content.extend(chunk)
-                    return response.status_code, bytes(content)
-            except (httpx.TimeoutException, httpx.TransportError):
-                if attempt + 1 >= _MAX_ATTEMPTS:
-                    raise
-                self._sleep(_retry_delay(None, attempt, now=self._now()))
+                        )
+                        continue
+                    return response.status_code, None
+                content = bytearray()
+                for chunk in response.iter_bytes(chunk_size=_RESPONSE_CHUNK_BYTES):
+                    if len(content) + len(chunk) > max_response_bytes:
+                        raise ProviderOutcomeUnknownError(
+                            "AI provider response is too large"
+                        )
+                    content.extend(chunk)
+                return response.status_code, bytes(content)
         raise RuntimeError("unreachable AI provider retry state")
 
     def prepare(self, request: ProviderRequest) -> ProviderRequest:
-        if request.tool_id != "ai_alt_text_studio":
+        if request.tool_id in _IMAGE_TOOLS:
+            _validate_image_request(request)
+            self._image_storage()
+        if request.tool_id not in {"ai_alt_text_studio", "ai_image_edit_studio"}:
             return request
         descriptor = request.input.get("image")
         if not isinstance(descriptor, dict) or set(descriptor) != {
@@ -406,6 +548,7 @@ class VercelAIGatewayProvider:
         digest = descriptor.get("sha256")
         if (
             not isinstance(object_key, str)
+            or not isinstance(media_type, str)
             or media_type not in {"image/jpeg", "image/png", "image/webp"}
             or isinstance(byte_size, bool)
             or not isinstance(byte_size, int)
@@ -431,7 +574,9 @@ class VercelAIGatewayProvider:
             hashlib.sha256(data).hexdigest(), digest
         ):
             raise KnownSafeProviderError("AI image object integrity check failed")
-        prepared_input = {key: value for key, value in request.input.items() if key != "image"}
+        prepared_input = {
+            key: value for key, value in request.input.items() if key != "image"
+        }
         encoded = base64.b64encode(data).decode("ascii")
         prepared_input["_image_data_url"] = f"data:{media_type};base64,{encoded}"
         return ProviderRequest(
@@ -443,6 +588,75 @@ class VercelAIGatewayProvider:
             safety_identifier=request.safety_identifier,
             artifact_reservation=request.artifact_reservation,
         )
+
+
+def _validate_image_request(request: ProviderRequest) -> None:
+    value = request.input
+    allowed_keys = {"locale", "prompt", "aspect_ratio", "quality", "background"}
+    if request.tool_id == "ai_image_edit_studio":
+        allowed_keys |= {"image", "_image_data_url"}
+    if (
+        request.contract_version != "v1"
+        or request.model_policy != _IMAGE_MODEL
+        or not isinstance(request.safety_identifier, str)
+        or not 1 <= len(request.safety_identifier) <= 200
+        or not isinstance(request.artifact_reservation, ProviderArtifactReservation)
+        or not set(value) <= allowed_keys
+        or any(
+            not isinstance(value.get(name, default), str)
+            for name, default in (
+                ("locale", ""),
+                ("aspect_ratio", "auto"),
+                ("quality", "medium"),
+                ("background", "auto"),
+            )
+        )
+        or value.get("locale") not in {"en", "ru"}
+        or not isinstance(value.get("prompt"), str)
+        or not 10 <= len(value["prompt"]) <= 4_000
+        or "\x00" in value["prompt"]
+        or value.get("aspect_ratio", "auto") not in _IMAGE_SIZES
+        or value.get("quality", "medium") not in {"auto", "low", "medium", "high"}
+        or value.get("background", "auto") not in {"auto", "opaque"}
+    ):
+        raise KnownSafeProviderError("AI image provider request was rejected locally")
+
+
+def _image_payload(request: ProviderRequest) -> dict[str, object]:
+    _validate_image_request(request)
+    value = request.input
+    payload: dict[str, object] = {
+        "model": _IMAGE_MODEL,
+        "prompt": value["prompt"],
+        "n": 1,
+        "size": _IMAGE_SIZES[value.get("aspect_ratio", "auto")],
+        "quality": value.get("quality", "medium"),
+        "background": value.get("background", "auto"),
+        "output_format": "png",
+        "user": request.safety_identifier,
+    }
+    if request.tool_id == "ai_image_edit_studio":
+        data_url = value.get("_image_data_url")
+        if (
+            not isinstance(data_url, str)
+            or len(data_url) > 6_000_000
+            or not data_url.startswith(
+                (
+                    "data:image/png;base64,",
+                    "data:image/jpeg;base64,",
+                    "data:image/webp;base64,",
+                )
+            )
+        ):
+            raise KnownSafeProviderError("AI image input is not prepared")
+        try:
+            source = base64.b64decode(data_url.split(",", 1)[1], validate=True)
+            if not 1 <= len(source) <= MAX_IMAGE_BYTES:
+                raise ValueError("invalid prepared image size")
+        except (ValueError, binascii.Error) as error:
+            raise KnownSafeProviderError("AI image input is not prepared") from error
+        payload["images"] = [{"image_url": data_url}]
+    return payload
 
 
 def _retry_delay(retry_after: str | None, attempt: int, *, now: float) -> float:
@@ -478,7 +692,11 @@ def _messages(request: ProviderRequest, policy: _ToolPolicy) -> list[dict[str, o
     if (
         not isinstance(image_data_url, str)
         or not image_data_url.startswith(
-            ("data:image/jpeg;base64,", "data:image/png;base64,", "data:image/webp;base64,")
+            (
+                "data:image/jpeg;base64,",
+                "data:image/png;base64,",
+                "data:image/webp;base64,",
+            )
         )
         or len(image_data_url) > 6_000_000
     ):
@@ -568,7 +786,9 @@ def _provider_usage(body: object) -> tuple[int, int, int]:
         raise ValueError("invalid provider usage")
     values = (usage.get("prompt_tokens"), usage.get("completion_tokens"))
     if any(
-        isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 1_000_000_000
+        isinstance(value, bool)
+        or not isinstance(value, int)
+        or not 0 <= value <= 1_000_000_000
         for value in values
     ):
         raise ValueError("invalid provider usage")
@@ -580,6 +800,32 @@ def _provider_usage(body: object) -> tuple[int, int, int]:
         raise ValueError("invalid provider cost")
     nano_usd = _cost_to_nano_usd(cost)
     return values[0], values[1], nano_usd
+
+
+def _image_provider_usage(body: dict[str, object]) -> tuple[int, int, int | None]:
+    # Images API reports input/output tokens; Gateway cost is optional metadata.
+    usage = body.get("usage")
+    if not isinstance(usage, dict):
+        raise ValueError("image usage is unavailable")
+    values = (usage.get("input_tokens"), usage.get("output_tokens"))
+    if any(
+        isinstance(value, bool)
+        or not isinstance(value, int)
+        or not 0 <= value <= 1_000_000_000
+        for value in values
+    ):
+        raise ValueError("invalid image provider usage")
+    if "cost" not in usage:
+        return values[0], values[1], None
+    return _provider_usage(
+        {
+            "usage": {
+                "prompt_tokens": values[0],
+                "completion_tokens": values[1],
+                "cost": usage["cost"],
+            }
+        }
+    )
 
 
 def _schema_output(
@@ -606,10 +852,16 @@ def _schema_output(
         name = item.get("name")
         value = item.get("value")
         indexes = item.get("source_fact_indexes")
-        if not isinstance(name, str) or not isinstance(value, str) or not isinstance(indexes, list):
+        if (
+            not isinstance(name, str)
+            or not isinstance(value, str)
+            or not isinstance(indexes, list)
+        ):
             raise ProviderOutcomeUnknownError("AI provider response is invalid")
         if name in json_ld:
-            raise ProviderOutcomeUnknownError("AI provider response contains duplicate properties")
+            raise ProviderOutcomeUnknownError(
+                "AI provider response contains duplicate properties"
+            )
         json_ld[name] = value
         escaped = name.replace("~", "~0").replace("/", "~1")
         sources[f"/{escaped}"] = indexes

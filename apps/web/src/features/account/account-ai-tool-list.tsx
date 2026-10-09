@@ -46,7 +46,7 @@ export function AccountAIToolList({ locale, catalog, loading, onSelect }: Accoun
           <span className="eyebrow">{ru ? "AI WORKSPACE" : "AI WORKSPACE"}</span>
           <h2 id="account-ai-tools-heading">{ru ? "Инструменты по рабочему процессу" : "Workflow tools"}</h2>
         </div>
-        <p>{ru ? "Шесть текстовых сценариев для аккуратной работы с подтверждёнными данными проекта." : "Six text-only workflows for careful work with confirmed project evidence."}</p>
+        <p>{ru ? "15 инструментов для работы с данными проекта, текстом и изображениями." : "15 tools for working with project evidence, text and images."}</p>
       </div>
       <div className="wd-ai-tool-grid">
         {descriptors.map((descriptor) => {

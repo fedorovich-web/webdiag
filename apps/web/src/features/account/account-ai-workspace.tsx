@@ -16,6 +16,9 @@ import type {
   AIToolId,
   AIRun,
 } from "./account-ai-contract";
+import { AI_TOOL_IDS as ALL_AI_TOOL_IDS } from "./account-ai-contract";
+import { AccountAIStudioRunner } from "./account-ai-studio-runner";
+import { isStudioToolId } from "./account-ai-studio-input";
 import { aiWorkspaceEmptyCopy } from "./account-ai-presentation";
 import { AccountAIToolList } from "./account-ai-tool-list";
 import { AccountAIRunHistory } from "./account-ai-run-history";
@@ -44,7 +47,11 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
   const [loadState, setLoadState] = useState<"loading" | "ready" | "unavailable">("loading");
   const [error, setError] = useState("");
   const [deletingRunId, setDeletingRunId] = useState<string | null>(null);
-  const [selectedTool, setSelectedTool] = useState<AIToolId | null>(null);
+  const [selectedTool, setSelectedTool] = useState<AIToolId | null>(() => {
+    if (typeof window === "undefined") return null;
+    const requested = new URLSearchParams(window.location.search).get("tool");
+    return ALL_AI_TOOL_IDS.find((id) => requested === id || requested === id.replaceAll("_", "-")) ?? null;
+  });
 
   const diagnosticTools = useMemo(() => getPublicCatalogTools(locale), [locale]);
   const diagnosticCategories = useMemo(
@@ -118,6 +125,13 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
 
   const availableTools = catalog?.tools.length ?? 0;
   const balance = credits?.account.available ?? null;
+  const selectedCatalogTool = catalog?.tools.find((tool) => tool.id === selectedTool);
+  const refreshResults = useCallback(() => {
+    Promise.allSettled([getAICredits(), listAIRuns()]).then(([creditResult, runResult]) => {
+      if (creditResult.status === "fulfilled") setCredits(creditResult.value);
+      if (runResult.status === "fulfilled") setRuns(runResult.value.runs);
+    });
+  }, []);
 
   return (
     <div className="wd-ai-workspace">
@@ -179,7 +193,7 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
       <section className="wd-ai-workspace-summary" aria-label={ru ? "Сводка AI" : "AI summary"}>
         <article>
           <span>{ru ? "Инструменты" : "Tools"}</span>
-          <strong>{loadState === "loading" ? "—" : `${availableTools}/6`}</strong>
+          <strong>{loadState === "loading" ? "—" : `${availableTools}/15`}</strong>
           <small>{ru ? "доступно для запуска" : "available to run"}</small>
         </article>
         <article className="wd-ai-credits-summary-article">
@@ -237,11 +251,12 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
             loading={false}
             onSelect={(toolId) => setSelectedTool(toolId)}
           />
-          {selectedTool && (
+          {selectedTool && selectedCatalogTool && (
             <div
               className="wd-ai-modal-overlay"
               role="dialog"
               aria-modal="true"
+              aria-labelledby={selectedTool === "ai_audit_action_plan" ? "ai-audit-runner-title" : isStudioToolId(selectedTool) ? "ai-studio-title" : "ai-text-runner-title"}
               onClick={(e) => {
                 if (e.target === e.currentTarget) setSelectedTool(null);
               }}
@@ -250,15 +265,19 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
                 {selectedTool === "ai_audit_action_plan" ? (
                   <AccountAIAuditPlanRunner
                     locale={locale}
+                    creditPrice={selectedCatalogTool.credit_price}
                     onClose={() => setSelectedTool(null)}
-                    onSuccess={() => loadWorkspace()}
+                    onSuccess={refreshResults}
                   />
+                ) : isStudioToolId(selectedTool) ? (
+                  <AccountAIStudioRunner key={selectedTool} locale={locale} toolId={selectedTool} creditPrice={selectedCatalogTool.credit_price} onClose={() => setSelectedTool(null)} onSuccess={refreshResults} />
                 ) : (
                   <AccountAITextToolRunner
                     locale={locale}
                     toolId={selectedTool}
+                    creditPrice={selectedCatalogTool.credit_price}
                     onClose={() => setSelectedTool(null)}
-                    onSuccess={() => loadWorkspace()}
+                    onSuccess={refreshResults}
                   />
                 )}
               </div>
