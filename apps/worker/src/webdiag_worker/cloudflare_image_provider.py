@@ -207,7 +207,9 @@ class CloudflareImageProvider:
                 raise ValueError("invalid inline image size")
             data = base64.b64decode(encoded, validate=True)
             normalized = normalize_generated_image(
-                data, declared_media_type=_media_type(data)
+                data,
+                declared_media_type=_media_type(data),
+                output_media_type="image/png",
             )
             artifact = persist_generated_image(
                 request.artifact_reservation, self._storage, normalized
