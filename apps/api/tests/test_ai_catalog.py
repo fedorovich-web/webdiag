@@ -93,3 +93,14 @@ def test_cloudflare_catalog_keeps_prices_and_text_models():
             "@cf/black-forest-labs/flux-2-klein-4b" if image else "openai/gpt-6-luna"
         )
         assert tool.credit_price == (2 if image else 1)
+
+
+def test_cloudflare_text_catalog_records_actual_model_without_changing_prices():
+    catalog = build_production_ai_catalog(image_provider="cloudflare", text_provider="cloudflare")
+    assert len(catalog.available()) == 15
+    for tool in catalog.available():
+        image = tool.id in {"ai_image_studio", "ai_image_edit_studio"}
+        assert tool.model_policy == (
+            "@cf/black-forest-labs/flux-2-klein-4b" if image else "@cf/qwen/qwen3.8-27b"
+        )
+        assert tool.credit_price == (2 if image else 1)

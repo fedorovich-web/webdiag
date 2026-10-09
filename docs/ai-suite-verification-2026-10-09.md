@@ -6,8 +6,8 @@ This change restores the fifteen original AI contracts to the account interface 
 
 - Thirteen text/vision tools use the existing one-credit price. Image generation and editing retain their two-credit price.
 - Image uploads and outputs live in a private persistent `ai_artifacts` volume shared by API and worker. Web serves them through authenticated owner routes; web has no artifact volume mount.
-- Generation and editing use the Gateway Images API, inline edit inputs, bounded response bytes, image normalization and reserved output keys. No public provider image URL is fetched.
-- Ambiguous image and text provider outcomes do not cause another paid request. Text retries are restricted to explicit HTTP 429 responses. Missing image cost is stored as SQL NULL rather than an invented zero.
+- Generation and editing use the explicitly selected Cloudflare Workers AI or Vercel Images API, inline edit inputs, bounded response bytes, image normalization and reserved output keys. No public provider image URL is fetched.
+- Ambiguous image and text provider outcomes do not cause another paid request. Vercel text retries are restricted to explicit HTTP 429 responses; Cloudflare does not automatically retry any request. Missing monetary cost is stored as SQL NULL rather than an invented zero.
 - New forms submit typed evidence. Results remain visible when credits/history refresh. Freeform result text is preserved, including strings resembling enum values or object prototype properties.
 - Return from Lava restores the session/product-bound invoice selector. Provider confirmation remains authoritative for payment and settlement; a return URL or cookie cannot grant credits.
 
@@ -68,3 +68,26 @@ After the first live refusal, the operator explicitly authorized the Hobby confi
 The operator selected Cloudflare Workers AI and supplied credentials directly in Dokploy. Image generation and editing now support an explicit `WEBDIAG_AI_IMAGE_PROVIDER=cloudflare` policy with FLUX.2 klein 4B, while all thirteen text/vision contracts retain Vercel and their model. Reference images are resized to fit 511×511 as required by the provider; output resolution follows the existing quality and aspect-ratio selection. Image request failures never trigger an automatic retry or provider fallback. API catalog run policy and executor routing must be deployed together. Local acceptance includes multipart generation/editing, private normalized artifacts, model and credential rejection, ambiguous-outcome handling and executor-only credential placement. Live Cloudflare results will be added only after deployment and actual requests.
 
 A pre-merge independent review found that JPEG/WebP worker output would fail the API's byte-identical normalization check after lossy recompression. Cloudflare output is now canonical PNG. Three nonuniform JPEG/WebP/PNG regressions exercise provider response, reserved storage, actual API completion and owned artifact readback; all pass. The changed normalizer and image/queue/artifact checks passed together (110 tests).
+
+## Live Cloudflare results and text policy follow-up
+
+PR #51 was merged as `f161b85435ff1f2f2aec94503116122c7a1b504c` and Dokploy deployed that exact commit. The actual executor selected Cloudflare images, private local artifacts and Vercel text without ZDR.
+
+Two synthetic jobs were submitted through the signed-in production account:
+
+| Tool | Run | Observed result |
+|---|---|---|
+| Image generation | `869c2edf-d332-4bc6-8d36-2d0033ea6abe` | Succeeded; authenticated preview loaded PNG 512×512, 85 KiB; available credits 310 → 308 |
+| Image editing | `c104646c-6f90-42c4-86b9-63c2a89bb5be` | Succeeded; authenticated preview loaded PNG 512×512, 91 KiB; available credits 308 → 306 |
+
+Read-only production SQLite and file readback confirmed one attempt per job, a two-credit reserve followed by capture, available balance 306 and reserved balance 0. Both artifact hashes and byte sizes match the database (86,620 and 92,240 bytes), files have mode 0600 and are available in the private volume. Provider monetary cost is SQL NULL for both jobs. Yandex client ID/secret and the AI safety identifier secret remain present in the API; no values were printed.
+
+The text follow-up still failed. A single guarded synthetic diagnostic confirmed HTTP 403 from Vercel: the selected GPT-6 Luna model is unavailable to the free-credit tier. Its request included a safety identifier and omitted ZDR, so this is a separate model-access restriction. It was not automatically retried.
+
+The operator then explicitly selected Cloudflare for all thirteen text/vision tools. `WEBDIAG_AI_TEXT_PROVIDER=cloudflare` records `@cf/qwen/qwen3.8-27b` on new runs and routes the executor accordingly. Existing jobs retain their original model and are not silently migrated. The independent image policy and all fifteen credit prices remain unchanged. Both policies select Cloudflare without requiring a Vercel credential; any policy that still selects Vercel must retain its credential.
+
+One real synthetic Qwen FAQ probe returned HTTP 200, the exact expected model, a locally valid strict JSON-Schema result and a normal stop: 160 prompt tokens, 482 completion tokens and approximately 146.76 neurons. Cloudflare did not report a dollar charge. This probe does not certify the other twelve contracts or deployed vision handling.
+
+The text adapter shares the original instructions, output schemas, token budgets, message construction and Schema.org conversion with Vercel. It bounds responses, uses `store=false`, verifies the actual model and never redirects, retries or falls back. Local checks passed: complete API/worker suite 886 passed, 3 skipped; 22 Compose/workspace checks, including actual parser preflights for all three layouts with Cloudflare credentials and no Vercel key. TypeScript and the public build passed. Review found and corrected an outdated GPT-6 Luna sentence in the catalog without changing layout.
+
+Main CI run `37967800457` on `f161b854…` passed Python locks and homepage visual QA, with 121 browser tests passing and the existing PageSpeed color-contrast failure remaining. CI is not green. Deployment and full text/vision acceptance for the new policy remain pending until the new commit is deployed and actual requests are completed.

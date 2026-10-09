@@ -295,8 +295,8 @@ export function ToolCatalog({
               <div className="wd-ai-catalog-banner-copy">
                 <strong>
                   {locale === "ru"
-                    ? "AI-инструменты работают на базе GPT-6 Luna и используют AI-кредиты"
-                    : "AI Tools are powered by GPT-6 Luna and use AI credits"}
+                    ? "AI-инструменты используют AI-кредиты; стоимость указана перед запуском"
+                    : "AI tools use AI credits; the price is shown before each run"}
                 </strong>
                 <p>
                   {locale === "ru"
