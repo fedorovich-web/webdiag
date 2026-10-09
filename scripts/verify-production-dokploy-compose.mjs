@@ -68,11 +68,14 @@ expect(
 );
 for (const name of expectedServices) {
   expect((service(name).ports ?? []).length === 0, `service ${name} publishes a host port`);
+  expect(JSON.stringify(Object.keys(service(name).networks ?? {})) === JSON.stringify(["backend"]), `service ${name} is outside the private backend network`);
 }
+expect(model.networks?.backend?.driver === "bridge", "private backend network is missing");
+expect(JSON.stringify(service("api").networks.backend.aliases) === JSON.stringify(["webdiag-api"]), "private API alias differs");
 const webExpose = (service("web").expose ?? []).map(String);
 expect(webExpose.includes("3000"), "web internal port 3000 is not exposed to the Compose network");
 expect(
-  environment("web").WEBDIAG_API_INTERNAL_URL === "http://api:8000",
+  environment("web").WEBDIAG_API_INTERNAL_URL === "http://webdiag-api:8000",
   "web API origin differs",
 );
 expect(

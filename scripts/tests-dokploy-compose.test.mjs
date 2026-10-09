@@ -20,6 +20,19 @@ function render(files, env) {
   return JSON.parse(result.stdout);
 }
 
+test("Dokploy resolves its API through a private network alias", () => {
+  const model = render(["docker-compose.dokploy.yml"]);
+  assert.equal(model.networks.backend.driver, "bridge");
+  for (const service of Object.values(model.services)) {
+    assert.deepEqual(Object.keys(service.networks), ["backend"]);
+  }
+  assert.deepEqual(model.services.api.networks.backend.aliases, ["webdiag-api"]);
+  assert.equal(model.services.web.environment.WEBDIAG_API_INTERNAL_URL, "http://webdiag-api:8000");
+  for (const key of ["WEBDIAG_MONITORING_API_INTERNAL_URL", "WEBDIAG_CRAWLER_API_INTERNAL_URL", "WEBDIAG_AI_API_INTERNAL_URL"]) {
+    assert.equal(model.services.monitoring_scheduler.environment[key], "http://webdiag-api:8000");
+  }
+});
+
 test("Dokploy core matches the production core without host-published ports", () => {
   const core = render([
     "docker-compose.yml",
@@ -37,6 +50,10 @@ test("Dokploy core matches the production core without host-published ports", ()
   for (const name of Object.keys(dokploy.services)) {
     const expected = structuredClone(core.services[name]);
     delete expected.ports;
+    expected.networks = name === "api" ? { backend: { aliases: ["webdiag-api"] } } : { backend: {} };
+    for (const key of ["WEBDIAG_API_INTERNAL_URL", "WEBDIAG_MONITORING_API_INTERNAL_URL", "WEBDIAG_CRAWLER_API_INTERNAL_URL", "WEBDIAG_AI_API_INTERNAL_URL"]) {
+      if (Object.hasOwn(expected.environment, key)) expected.environment[key] = "http://webdiag-api:8000";
+    }
     if (name === "web") expected.expose = ["3000"];
     assert.deepEqual(dokploy.services[name], expected, `${name} differs from production core`);
     assert.equal(Object.hasOwn(dokploy.services[name], "ports"), false, `${name} publishes a host port`);
