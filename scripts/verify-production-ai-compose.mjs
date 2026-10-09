@@ -121,6 +121,9 @@ const allowedEnvironmentPlacements = new Map([
   ["AI_MODEL", ["worker"]],
   ["AI_REASONING_EFFORT", ["worker"]],
   ["WEBDIAG_AI_REQUIRE_ZDR", ["worker"]],
+  ["WEBDIAG_AI_IMAGE_PROVIDER", ["api", "worker"]],
+  ["CLOUDFLARE_ACCOUNT_ID", ["worker"]],
+  ["CLOUDFLARE_API_TOKEN", ["worker"]],
 ]);
 for (const [name, allowedServices] of allowedEnvironmentPlacements) {
   for (const serviceName of expectedServices) {
@@ -156,6 +159,13 @@ expect(
 expect(worker.AI_MODEL === "openai/gpt-6-luna", "worker AI model differs");
 expect(worker.AI_REASONING_EFFORT === "medium", "worker AI reasoning effort differs");
 expect(["true", "false"].includes(worker.WEBDIAG_AI_REQUIRE_ZDR), "AI retention policy must be explicit");
+expect(["vercel", "cloudflare"].includes(api.WEBDIAG_AI_IMAGE_PROVIDER), "AI image provider policy is invalid");
+expect(worker.WEBDIAG_AI_IMAGE_PROVIDER === api.WEBDIAG_AI_IMAGE_PROVIDER, "API and executor image policies differ");
+if (api.WEBDIAG_AI_IMAGE_PROVIDER === "cloudflare" && api.WEBDIAG_AI_RUNTIME_ENABLED === "true") {
+  expect(/^[a-f0-9]{32}$/iu.test(worker.CLOUDFLARE_ACCOUNT_ID), "Cloudflare account ID is invalid");
+  expect(/^[\x21-\x7e]{16,512}$/u.test(worker.CLOUDFLARE_API_TOKEN), "Cloudflare API token is invalid");
+}
+
 
 const apiVolumes = service("api").volumes ?? [];
 expect(apiVolumes.length === 2 && apiVolumes.some((mount) => mount.source === "account_data" && mount.target === "/data") && apiVolumes.some((mount) => mount.source === "ai_artifacts" && mount.target === "/var/lib/webdiag-ai-artifacts"), "API volume topology differs");

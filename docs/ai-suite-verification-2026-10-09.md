@@ -61,3 +61,8 @@ Back up both account data and the artifact volume. A named volume survives conta
 ## Operator-approved retention change
 
 After the first live refusal, the operator explicitly authorized the Hobby configuration without mandatory ZDR. `WEBDIAG_AI_REQUIRE_ZDR=false` is a deliberate deployment setting; omitted settings retain ZDR and malformed settings fail initialization. No automatic downgrade or model fallback occurs after a provider rejection. Both localized privacy policies disclose transmitted job content and possible provider retention. Image access still requires purchased Gateway credits. Follow-up live outcomes will be recorded after deployment.
+
+
+## Explicit Cloudflare image integration
+
+The operator selected Cloudflare Workers AI and supplied credentials directly in Dokploy. Image generation and editing now support an explicit `WEBDIAG_AI_IMAGE_PROVIDER=cloudflare` policy with FLUX.2 klein 4B, while all thirteen text/vision contracts retain Vercel and their model. Reference images are resized to fit 511×511 as required by the provider; output resolution follows the existing quality and aspect-ratio selection. Image request failures never trigger an automatic retry or provider fallback. API catalog run policy and executor routing must be deployed together. Local acceptance includes multipart generation/editing, private normalized artifacts, model and credential rejection, ambiguous-outcome handling and executor-only credential placement. Live Cloudflare results will be added only after deployment and actual requests.

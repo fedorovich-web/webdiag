@@ -8,7 +8,9 @@ def test_actor_is_registered_with_stub_broker(monkeypatch) -> None:
     actors = importlib.import_module("webdiag_worker.actors")
     assert actors.health_probe.actor_name.endswith("health_probe")
     assert actors.run_pending_ai.actor_name.endswith("run_pending_ai")
-    assert actors.cleanup_ai_artifacts_task.actor_name.endswith("cleanup_ai_artifacts_task")
+    assert actors.cleanup_ai_artifacts_task.actor_name.endswith(
+        "cleanup_ai_artifacts_task"
+    )
 
 
 def test_unknown_broker_backend_is_rejected(monkeypatch) -> None:
@@ -49,7 +51,7 @@ def test_ai_actor_executes_one_job_with_lazily_created_provider(monkeypatch) -> 
     provider = Provider()
     seen = []
 
-    monkeypatch.setattr(actors.VercelAIGatewayProvider, "from_env", lambda: provider)
+    monkeypatch.setattr(actors.ConfiguredAIProvider, "from_env", lambda: provider)
 
     def run_one(value):
         seen.append(value)

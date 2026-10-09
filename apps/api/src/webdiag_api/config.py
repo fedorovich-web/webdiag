@@ -1,7 +1,7 @@
 import os
 import re
 from pathlib import Path, PurePosixPath, PureWindowsPath
-from typing import Self
+from typing import Literal, Self
 
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -123,6 +123,7 @@ class Settings(BaseSettings):
     crawler_active_job_limit_per_user: int = Field(default=2, ge=1, le=20)
     crawler_active_job_limit_global: int = Field(default=25, ge=1, le=1_000)
     ai_safety_identifier_secret: str = ""
+    ai_image_provider: Literal["vercel", "cloudflare"] = "vercel"
     ai_artifact_prefix: str = "ai-uploads"
     ai_lease_seconds: int = Field(default=900, ge=60, le=3600)
     ai_lease_renew_interval_seconds: int = Field(default=300, ge=10, le=1200)
