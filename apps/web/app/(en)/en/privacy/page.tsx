@@ -45,7 +45,7 @@ export default function Page() {
         <article>
           <h2>4. Tools, AI and shared reports</h2>
           <p>Some tools run in your browser; network tools contact WebDiag servers and external sources. Server image conversion receives the uploaded file. Each tool describes its processing mode.</p>
-          <p>AI jobs send submitted text and necessary diagnostic evidence through Vercel AI Gateway to the selected model provider. An abuse-prevention identifier is pseudonymous; submitted content is not thereby anonymous.</p>
+          <p>AI jobs send submitted text and necessary diagnostic evidence through Vercel AI Gateway to the selected model provider. An abuse-prevention identifier is pseudonymous; submitted content is not thereby anonymous. The current configuration uses an OpenAI model through Vercel AI Gateway without mandatory Zero Data Retention. Selected job text, images and diagnostic evidence are transmitted. Providers may retain requests and outputs under their processing and abuse-monitoring policies; WebDiag does not guarantee absence of provider retention. See <a href="https://vercel.com/docs/ai-gateway/security-and-compliance/zdr">Vercel AI Gateway</a> and <a href="https://platform.openai.com/docs/guides/your-data">OpenAI</a>.</p>
           <p>Do not submit passwords, API keys, payment credentials, sensitive personal data or third-party data without an appropriate basis. You must have permission to check a website and submit its contents. A public report link you create is accessible to its recipients; revoking it does not erase copies already made.</p>
         </article>
         <article>

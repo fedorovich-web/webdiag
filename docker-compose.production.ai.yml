@@ -40,6 +40,7 @@ services:
       AI_GATEWAY_BASE_URL: "${AI_GATEWAY_BASE_URL:-https://ai-gateway.vercel.sh/v1}"
       AI_MODEL: "${AI_MODEL:-openai/gpt-6-luna}"
       AI_REASONING_EFFORT: "${AI_REASONING_EFFORT:-medium}"
+      WEBDIAG_AI_REQUIRE_ZDR: "${WEBDIAG_AI_REQUIRE_ZDR:-true}"
       WEBDIAG_AI_ARTIFACT_STORAGE: local
       WEBDIAG_AI_ARTIFACT_LOCAL_ROOT: /var/lib/webdiag-ai-artifacts
     depends_on:
@@ -57,6 +58,7 @@ services:
       AI_GATEWAY_BASE_URL: !reset null
       AI_MODEL: !reset null
       AI_REASONING_EFFORT: !reset null
+      WEBDIAG_AI_REQUIRE_ZDR: !reset null
       WEBDIAG_AI_ARTIFACT_STORAGE: !reset null
       WEBDIAG_AI_ARTIFACT_LOCAL_ROOT: !reset null
       WEBDIAG_AI_API_INTERNAL_URL: http://api:8000

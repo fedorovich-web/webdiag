@@ -57,3 +57,7 @@ Main run [37928824717](https://github.com/fedorovich-web/webdiag/actions/runs/37
 The focused empty-catalog and RU 404 browser checks passed together (2 tests). CI is not reported as green. New functional regressions must be addressed separately from the retained contrast issue.
 
 Back up both account data and the artifact volume. A named volume survives container replacement but does not protect against server or disk loss. No independent off-server backup or restore exercise is claimed here.
+
+## Operator-approved retention change
+
+After the first live refusal, the operator explicitly authorized the Hobby configuration without mandatory ZDR. `WEBDIAG_AI_REQUIRE_ZDR=false` is a deliberate deployment setting; omitted settings retain ZDR and malformed settings fail initialization. No automatic downgrade or model fallback occurs after a provider rejection. Both localized privacy policies disclose transmitted job content and possible provider retention. Image access still requires purchased Gateway credits. Follow-up live outcomes will be recorded after deployment.

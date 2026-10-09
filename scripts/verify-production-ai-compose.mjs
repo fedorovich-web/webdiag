@@ -120,6 +120,7 @@ const allowedEnvironmentPlacements = new Map([
   ["AI_GATEWAY_BASE_URL", ["worker"]],
   ["AI_MODEL", ["worker"]],
   ["AI_REASONING_EFFORT", ["worker"]],
+  ["WEBDIAG_AI_REQUIRE_ZDR", ["worker"]],
 ]);
 for (const [name, allowedServices] of allowedEnvironmentPlacements) {
   for (const serviceName of expectedServices) {
@@ -154,6 +155,7 @@ expect(
 );
 expect(worker.AI_MODEL === "openai/gpt-6-luna", "worker AI model differs");
 expect(worker.AI_REASONING_EFFORT === "medium", "worker AI reasoning effort differs");
+expect(["true", "false"].includes(worker.WEBDIAG_AI_REQUIRE_ZDR), "AI retention policy must be explicit");
 
 const apiVolumes = service("api").volumes ?? [];
 expect(apiVolumes.length === 2 && apiVolumes.some((mount) => mount.source === "account_data" && mount.target === "/data") && apiVolumes.some((mount) => mount.source === "ai_artifacts" && mount.target === "/var/lib/webdiag-ai-artifacts"), "API volume topology differs");
