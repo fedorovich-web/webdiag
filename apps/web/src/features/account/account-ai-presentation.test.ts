@@ -7,7 +7,7 @@ import {
 } from "./account-ai-presentation";
 
 describe("AI workspace presentation", () => {
-  it("describes the approved six-tool workflow in both locales", () => {
+  it("describes the approved 15-tool workflow in both locales", () => {
     expect(aiToolDescriptors("ru").map((tool) => tool.id)).toEqual([
       "ai_audit_action_plan",
       "ai_competitor_gap_report",
@@ -15,6 +15,8 @@ describe("AI workspace presentation", () => {
       "ai_content_optimizer",
       "ai_search_intent_page_fit",
       "ai_internal_linking_planner",
+      "ai_meta_serp_studio", "ai_schema_studio", "ai_faq_studio", "ai_alt_text_studio",
+      "ai_redirect_migration_mapper", "ai_localization_workbench", "ai_regex_workbench", "ai_image_studio", "ai_image_edit_studio",
     ]);
     expect(aiToolDescriptor("ru", "ai_audit_action_plan")).toMatchObject({
       title: "AI-план исправлений",

@@ -1,3 +1,5 @@
+import { isRestoredOutput, type RestoredOutput } from "./account-ai-restored-contract";
+
 export const AI_TOOL_IDS = [
   "ai_audit_action_plan",
   "ai_competitor_gap_report",
@@ -5,6 +7,15 @@ export const AI_TOOL_IDS = [
   "ai_content_optimizer",
   "ai_search_intent_page_fit",
   "ai_internal_linking_planner",
+  "ai_meta_serp_studio",
+  "ai_schema_studio",
+  "ai_faq_studio",
+  "ai_alt_text_studio",
+  "ai_redirect_migration_mapper",
+  "ai_localization_workbench",
+  "ai_regex_workbench",
+  "ai_image_studio",
+  "ai_image_edit_studio",
 ] as const;
 
 export type AIToolId = (typeof AI_TOOL_IDS)[number];
@@ -111,7 +122,8 @@ export type AIOutput =
   | ContentOptimizerOutput
   | SearchIntentPageFitOutput
   | CompetitorGapOutput
-  | InternalLinkingOutput;
+  | InternalLinkingOutput
+  | RestoredOutput;
 
 export interface AIRun {
   readonly id: string;
@@ -350,7 +362,7 @@ function isAIOutput(toolId: AIToolId, value: unknown): value is AIOutput {
   if (toolId === "ai_search_intent_page_fit") return isSearchIntentPageFitOutput(value);
   if (toolId === "ai_competitor_gap_report") return isCompetitorGapOutput(value);
   if (toolId === "ai_internal_linking_planner") return isInternalLinkingOutput(value);
-  return false;
+  return isRestoredOutput(toolId, value);
 }
 
 function isAIRunState(value: unknown): value is AIRunState {

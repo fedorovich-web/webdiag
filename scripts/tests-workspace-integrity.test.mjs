@@ -161,13 +161,15 @@ test("production core and opt-in AI overlay have separate fail-closed preflights
   assert.match(productionCompose, /127\.0\.0\.1:8000\/ready/);
   assert.doesNotMatch(
     productionCompose,
-    /RABBITMQ|OPENROUTER|AI_ARTIFACT/,
+    /RABBITMQ|OPENROUTER/,
   );
   assert.match(productionCompose, /rabbitmq:\s*!reset\s+null/);
   assert.match(productionCompose, /worker:\s*!reset\s+null/);
   assert.match(productionCompose, /PUBLIC_RELEASE:\s*["']true["']/g);
   assert.match(productionCompose, /api:[\s\S]*?volumes:\s*!override\s*\n\s+- account_data:\/data/);
-  assert.match(productionCompose, /ai_artifacts:\s*!reset\s+null/);
+  assert.doesNotMatch(productionCompose, /ai_artifacts:\s*!reset\s+null/);
+  assert.match(productionCompose, /WEBDIAG_AI_ARTIFACT_STORAGE:\s*local/);
+  assert.match(productionCompose, /ai_artifacts:\/var\/lib\/webdiag-ai-artifacts/);
   for (const name of coreSecrets) {
     assert.match(productionCompose, new RegExp(`\\$\\{${name}:\\?[^}]+\\}`), name);
     assert.match(environmentExample, new RegExp(`^${name}=$`, "m"), name);
@@ -196,7 +198,8 @@ test("production core and opt-in AI overlay have separate fail-closed preflights
     aiCompose,
     /AI_REASONING_EFFORT:\s*["']?\$\{AI_REASONING_EFFORT:-medium\}["']?/,
   );
-  assert.doesNotMatch(aiCompose, /WEBDIAG_AI_ARTIFACT_/);
+  assert.match(aiCompose, /WEBDIAG_AI_ARTIFACT_STORAGE:\s*local/);
+  assert.match(aiCompose, /WEBDIAG_AI_ARTIFACT_LOCAL_ROOT:\s*\/var\/lib\/webdiag-ai-artifacts/);
   assert.match(
     aiCompose,
     /command:\s*\["dramatiq",\s*"--processes",\s*"1",\s*"--threads",\s*"1",\s*"webdiag_worker\.actors"\]/,

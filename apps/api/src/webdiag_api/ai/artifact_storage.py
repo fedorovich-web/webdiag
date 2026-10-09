@@ -54,7 +54,7 @@ class LocalArtifactStorage:
     def __init__(self, root: str | Path, *, prefix: str = "ai-uploads") -> None:
         self._root = Path(root).resolve()
         self._prefix = _normalize_prefix(prefix)
-        self._root.mkdir(parents=True, exist_ok=True)
+        self._root.mkdir(parents=True, exist_ok=True, mode=0o700)
 
     def put(self, *, artifact_id: str, data: bytes, media_type: str) -> StoredArtifact:
         _validate_put(artifact_id=artifact_id, data=data, media_type=media_type)
@@ -77,7 +77,7 @@ class LocalArtifactStorage:
         _validate_put(artifact_id=artifact_id, data=data, media_type=media_type)
         _validate_object_key(object_key, self._prefix)
         target = self._resolve(object_key)
-        target.parent.mkdir(parents=True, exist_ok=True)
+        target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         temporary_path: Path | None = None
         try:
             with tempfile.NamedTemporaryFile(
@@ -185,9 +185,9 @@ def artifact_storage_from_env(
     environment = values.get("WEBDIAG_ENVIRONMENT", "development").strip().casefold()
     backend = values.get("WEBDIAG_AI_ARTIFACT_STORAGE", "").strip().casefold()
     if backend == "local":
-        if environment == "production":
-            raise ArtifactConfigurationError("production artifact storage must use S3")
         root = _required(values, "WEBDIAG_AI_ARTIFACT_LOCAL_ROOT")
+        if environment == "production" and not Path(root).is_absolute():
+            raise ArtifactConfigurationError("production artifact root must be an absolute path")
         return LocalArtifactStorage(
             root,
             prefix=values.get("WEBDIAG_AI_ARTIFACT_PREFIX", "ai-uploads"),

@@ -1362,7 +1362,7 @@ class SqliteAIStore:
         provider_request_id: str | None = None,
         input_units: int = 0,
         output_units: int = 0,
-        provider_cost_nano_usd: int = 0,
+        provider_cost_nano_usd: int | None = 0,
         artifact: StoredAIArtifact | None = None,
         now: int | None = None,
     ) -> StoredAIRun:
@@ -1399,8 +1399,7 @@ class SqliteAIStore:
                     and attempt["provider_request_id"] == provider_request_id
                     and int(attempt["input_units"]) == input_units
                     and int(attempt["output_units"]) == output_units
-                    and attempt["provider_cost_nano_usd"] is not None
-                    and int(attempt["provider_cost_nano_usd"]) == provider_cost_nano_usd
+                    and attempt["provider_cost_nano_usd"] == provider_cost_nano_usd
                 ):
                     persisted_artifact = connection.execute(
                         "SELECT * FROM ai_artifacts WHERE run_id = ?",
@@ -1886,7 +1885,7 @@ class SqliteAIStore:
         provider_request_id: str | None,
         input_units: int,
         output_units: int,
-        provider_cost_nano_usd: int,
+        provider_cost_nano_usd: int | None,
     ) -> None:
         if provider_request_id is not None and not 1 <= len(provider_request_id) <= 200:
             raise ValueError("provider request ID is invalid")
@@ -1897,7 +1896,7 @@ class SqliteAIStore:
                 or not 0 <= value <= 1_000_000_000
             ):
                 raise ValueError("provider usage must use bounded non-negative integers")
-        if (
+        if provider_cost_nano_usd is not None and (
             isinstance(provider_cost_nano_usd, bool)
             or not isinstance(provider_cost_nano_usd, int)
             or not 0 <= provider_cost_nano_usd <= 1_000_000_000_000

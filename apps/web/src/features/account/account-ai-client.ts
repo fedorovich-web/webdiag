@@ -1,6 +1,7 @@
 import type { Locale } from "@webdiag/tool-registry";
 import { AccountClientError } from "./account-client";
 import { isAccountErrorPayload } from "./account-contract";
+import { isAIUploadResponse, canonicalAIResourceId, type AIUploadResponse } from "./account-ai-restored-contract";
 import {
   isAICatalogResponse,
   isAICreditBalanceResponse,
@@ -162,4 +163,14 @@ export async function deleteAIRun(runId: string, fetcher: Fetcher = fetch): Prom
     });
   }
   if (response.status !== 204) throw invalidResponse(response.status);
+}
+
+export async function uploadAIImage(file: File, fetcher: Fetcher = fetch): Promise<AIUploadResponse> {
+  if (!["image/png", "image/jpeg", "image/webp"].includes(file.type) || file.size < 1 || file.size > 4 * 1024 * 1024) throw new AccountClientError("Use PNG, JPEG or WebP up to 4 MiB.", { status: 422, code: "ai_invalid_image" });
+  return parse(await fetcher("/api/account/ai/uploads/image", { ...common, method: "POST", headers: { accept: "application/json", "content-type": file.type }, body: file }), isAIUploadResponse);
+}
+
+export function privateAIArtifactPath(runId: string, artifactId: string): string {
+  if (!canonicalAIResourceId(runId) || !canonicalAIResourceId(artifactId)) throw invalidResponse(200);
+  return `/api/account/ai/runs/${runId}/artifacts/${artifactId}`;
 }

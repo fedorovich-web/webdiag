@@ -28,7 +28,7 @@ const actionPlan = {
 };
 
 describe("account AI response contracts", () => {
-  it("accepts only the six approved tools with positive fixed prices", () => {
+  it("accepts approved tools with positive backend prices", () => {
     const catalog = {
       contract_version: "webdiag.ai.catalog.v1",
       tools: [
@@ -44,7 +44,7 @@ describe("account AI response contracts", () => {
     expect(isAICatalogResponse(catalog)).toBe(true);
     expect(isAICatalogResponse({
       ...catalog,
-      tools: [{ id: "ai_image_studio", contract_version: "v1", credit_price: 5 }],
+      tools: [{ id: "ai_unapproved_tool", contract_version: "v1", credit_price: 5 }],
     })).toBe(false);
     expect(isAICatalogResponse({
       ...catalog,

@@ -442,16 +442,23 @@ def _failure(
     return failure
 
 
-def _evidence_cost(evidence: dict[str, object]) -> int:
+def _evidence_cost(evidence: dict[str, object]) -> int | None:
     raw_cases = evidence.get("cases")
     total = 0
     if isinstance(raw_cases, list):
         for case in raw_cases:
+            if isinstance(case, dict) and case.get("provider_cost_nano_usd") is None:
+                return None
             if isinstance(case, dict) and isinstance(
                 case.get("provider_cost_nano_usd"), int
             ):
                 total += case["provider_cost_nano_usd"]
     failure = evidence.get("failure")
+    if isinstance(failure, dict) and (
+        failure.get("class") == "provider_unknown"
+        or ("provider_cost_nano_usd" in failure and failure["provider_cost_nano_usd"] is None)
+    ):
+        return None
     if isinstance(failure, dict) and isinstance(
         failure.get("provider_cost_nano_usd"), int
     ):

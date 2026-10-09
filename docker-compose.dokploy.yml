@@ -36,6 +36,8 @@ services:
       WEBDIAG_CRAWLER_ACTIVE_JOB_LIMIT_PER_USER: "${WEBDIAG_CRAWLER_ACTIVE_JOB_LIMIT_PER_USER:-2}"
       WEBDIAG_CRAWLER_ACTIVE_JOB_LIMIT_GLOBAL: "${WEBDIAG_CRAWLER_ACTIVE_JOB_LIMIT_GLOBAL:-25}"
       WEBDIAG_AI_RUNTIME_ENABLED: "${WEBDIAG_AI_RUNTIME_ENABLED:-false}"
+      WEBDIAG_AI_ARTIFACT_STORAGE: local
+      WEBDIAG_AI_ARTIFACT_LOCAL_ROOT: /var/lib/webdiag-ai-artifacts
       WEBDIAG_AI_INTERNAL_TOKEN: "${WEBDIAG_AI_INTERNAL_TOKEN:-}"
       WEBDIAG_AI_SAFETY_IDENTIFIER_SECRET: "${WEBDIAG_AI_SAFETY_IDENTIFIER_SECRET:-}"
       WEBDIAG_ACCOUNT_PUBLIC_ORIGIN: "${WEBDIAG_ACCOUNT_PUBLIC_ORIGIN:-https://app.webdiag.ru}"
@@ -48,6 +50,7 @@ services:
       WEBDIAG_LAVA_SHOP_ID: "${WEBDIAG_LAVA_SHOP_ID:-${LAVA_SHOP_ID:-}}"
     volumes:
       - account_data:/data
+      - ai_artifacts:/var/lib/webdiag-ai-artifacts
     networks:
       backend:
         aliases:
@@ -87,6 +90,10 @@ services:
       AI_MODEL: "${AI_MODEL:-openai/gpt-6-luna}"
       AI_REASONING_EFFORT: "${AI_REASONING_EFFORT:-medium}"
       AI_GATEWAY_API_KEY: "${AI_GATEWAY_API_KEY:-}"
+      WEBDIAG_AI_ARTIFACT_STORAGE: local
+      WEBDIAG_AI_ARTIFACT_LOCAL_ROOT: /var/lib/webdiag-ai-artifacts
+    volumes:
+      - ai_artifacts:/var/lib/webdiag-ai-artifacts
     networks:
       backend: {}
     depends_on:
@@ -140,6 +147,7 @@ services:
 
 volumes:
   account_data:
+  ai_artifacts:
 
 networks:
   backend:
