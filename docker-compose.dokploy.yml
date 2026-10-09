@@ -1,6 +1,6 @@
 # Single-file production core for Dokploy's Compose Path.
 # Configure only the web service (internal port 3000) in Dokploy Domains.
-# Enable Isolated Deployments; Dokploy supplies the Traefik network and labels.
+# Dokploy supplies the web Traefik network and labels. API traffic uses backend.
 services:
   api:
     build:
@@ -48,6 +48,10 @@ services:
       WEBDIAG_LAVA_SHOP_ID: "${WEBDIAG_LAVA_SHOP_ID:-${LAVA_SHOP_ID:-}}"
     volumes:
       - account_data:/data
+    networks:
+      backend:
+        aliases:
+          - webdiag-api
     healthcheck:
       test:
         - CMD
@@ -70,12 +74,12 @@ services:
     restart: unless-stopped
     environment:
       WEBDIAG_ENVIRONMENT: production
-      WEBDIAG_MONITORING_API_INTERNAL_URL: http://api:8000
+      WEBDIAG_MONITORING_API_INTERNAL_URL: http://webdiag-api:8000
       WEBDIAG_MONITORING_INTERNAL_TOKEN: "${WEBDIAG_MONITORING_INTERNAL_TOKEN:?set a distinct monitoring internal token}"
-      WEBDIAG_CRAWLER_API_INTERNAL_URL: http://api:8000
+      WEBDIAG_CRAWLER_API_INTERNAL_URL: http://webdiag-api:8000
       WEBDIAG_CRAWLER_INTERNAL_TOKEN: "${WEBDIAG_CRAWLER_INTERNAL_TOKEN:?set a distinct crawler internal token}"
       WEBDIAG_CRAWLER_WORKER_TIMEOUT_SECONDS: "${WEBDIAG_CRAWLER_WORKER_TIMEOUT_SECONDS:-270}"
-      WEBDIAG_AI_API_INTERNAL_URL: http://api:8000
+      WEBDIAG_AI_API_INTERNAL_URL: http://webdiag-api:8000
       WEBDIAG_AI_RUNTIME_ENABLED: "${WEBDIAG_AI_RUNTIME_ENABLED:-false}"
       WEBDIAG_AI_INTERNAL_TOKEN: "${WEBDIAG_AI_INTERNAL_TOKEN:-}"
       AI_PROVIDER: "${AI_PROVIDER:-vercel}"
@@ -83,6 +87,8 @@ services:
       AI_MODEL: "${AI_MODEL:-openai/gpt-6-luna}"
       AI_REASONING_EFFORT: "${AI_REASONING_EFFORT:-medium}"
       AI_GATEWAY_API_KEY: "${AI_GATEWAY_API_KEY:-}"
+    networks:
+      backend: {}
     depends_on:
       api:
         condition: service_healthy
@@ -98,7 +104,7 @@ services:
       NODE_ENV: production
       HOSTNAME: 0.0.0.0
       PUBLIC_RELEASE: "true"
-      WEBDIAG_API_INTERNAL_URL: http://api:8000
+      WEBDIAG_API_INTERNAL_URL: http://webdiag-api:8000
       RESEND_API_KEY: "${RESEND_API_KEY:-}"
       EMAIL_FROM: "${EMAIL_FROM:-WebDiag <no-replay@webdiag.ru>}"
       NEVTAN_SMTP_HOST: "${NEVTAN_SMTP_HOST:-smtp.nevtan.com}"
@@ -113,6 +119,8 @@ services:
       WEBDIAG_LAVA_WEBHOOK_SECRET: "${WEBDIAG_LAVA_WEBHOOK_SECRET:-}"
     expose:
       - "3000"
+    networks:
+      backend: {}
     healthcheck:
       test:
         - CMD
@@ -132,3 +140,7 @@ services:
 
 volumes:
   account_data:
+
+networks:
+  backend:
+    driver: bridge
