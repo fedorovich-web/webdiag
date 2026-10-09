@@ -61,3 +61,22 @@ test("English annual checkout displays its existing USD total", async ({ page })
   await expect(page.locator("main")).toContainText("Payment for one year");
   await expect(page.locator("main")).not.toContainText("₽");
 });
+
+test("checkout explains provider configuration and rejection errors in the selected language", async ({ page }) => {
+  for (const [path, code, expected] of [
+    ["/account/checkout", "billing_misconfigured", "Оплата временно недоступна"],
+    ["/account/checkout", "billing_provider_error", "Не удалось получить ссылку на оплату"],
+    ["/en/account/checkout", "billing_misconfigured", "Payments are temporarily unavailable"],
+    ["/en/account/checkout", "billing_provider_error", "Could not obtain a payment link"],
+  ]) {
+    await page.route("**/api/billing/lava/invoice", (route) => route.fulfill({
+      status: 503, json: { detail: { code, message: "Payment service rejected the request." } },
+    }));
+    await page.goto(path!);
+    await page.locator("main").getByRole("button", { name: /Перейти к оплате|with Lava.top/ }).click();
+    await expect(page.locator("main").getByRole("alert")).toContainText(expected!);
+    await expect(page.locator("main").getByRole("alert")).toContainText("support@webdiag.ru");
+    await expect(page.locator("main").getByRole("alert")).not.toContainText("Payment service rejected the request.");
+    await page.unroute("**/api/billing/lava/invoice");
+  }
+});
