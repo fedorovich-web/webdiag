@@ -312,14 +312,14 @@
 }
 
 
-/* Auth-only desktop chrome: keep the page focused without removing real navigation. */
-@media (min-width: 1181px) {
-  body:has(.wd-auth-page) .wd-site-header .wd-main-nav {
-    justify-content: flex-end;
-    padding-left: 0;
-  }
+/* Keep catalog navigation out of login and registration headers. */
+body:has(.wd-auth-page) .wd-site-header .wd-main-nav,
+body:has(.wd-auth-page) .wd-site-header .wd-mobile-nav a[href="/tools"],
+body:has(.wd-auth-page) .wd-site-header .wd-mobile-nav a[href="/en/tools"] {
+  display: none;
+}
 
-  body:has(.wd-auth-page) .wd-site-header .wd-main-nav > a,
+@media (min-width: 1181px) {
   body:has(.wd-auth-page) .wd-site-header .wd-header-actions {
     display: none;
   }
