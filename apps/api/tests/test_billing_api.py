@@ -132,6 +132,33 @@ def test_lava_invoice_rejection_is_not_a_fake_success(lava, monkeypatch):
     assert error.value.status_code == 502
 
 
+@pytest.mark.parametrize("status", [401, 403, 404])
+def test_invalid_lava_credentials_or_offer_are_configuration_errors(lava, monkeypatch, status):
+    monkeypatch.setattr(
+        httpx.Client,
+        "request",
+        lambda *args, **kwargs: httpx.Response(status, json={"error": "private provider detail"}),
+    )
+    with pytest.raises(BillingServiceError) as error:
+        lava[-1]()
+    assert error.value.status_code == 503
+    assert error.value.code == "billing_misconfigured"
+    assert "private provider detail" not in error.value.message
+    assert lava[3]._store.plan(lava[1].response.user.id)[0] == "starter"
+
+
+def test_missing_invoice_is_not_reported_as_a_bad_offer(lava, monkeypatch):
+    invoice = lava[-1]()
+    monkeypatch.setattr(
+        httpx.Client, "request", lambda *args, **kwargs: httpx.Response(404, json={})
+    )
+    with pytest.raises(BillingServiceError) as error:
+        lava[3].confirm_invoice(
+            user_id=lava[1].response.user.id, pack_id=invoice.pack_id, invoice_id=invoice.invoice_id
+        )
+    assert error.value.code == "billing_provider_error"
+
+
 def test_changed_provider_amount_is_rejected(lava, monkeypatch):
     monkeypatch.setattr(
         httpx.Client,

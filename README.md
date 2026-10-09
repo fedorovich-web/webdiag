@@ -94,7 +94,7 @@ The login button uses the [official round Yandex asset](https://yandex.ru/dev/id
 
 ### Lava.top
 
-The Lava offer must permit **Price on request via API** for dynamic amounts. The provider origin is fixed to `https://gate.lava.top`. Configure `https://app.webdiag.ru/api/billing/lava/webhook` with its dedicated webhook **X-Api-Key**. The outbound API key and webhook secret serve different purposes.
+Set `WEBDIAG_LAVA_OFFER_ID` to the **price ID (offer ID)**, not the product ID. Both are UUIDs, so checking the format alone cannot distinguish them. The Lava offer must permit **Price on request via API** for dynamic amounts. Retrieve products with `GET /api/v2/products?feedVisibility=ALL` to include offers hidden from the storefront and match the price to your WebDiag product. The provider origin is fixed to `https://gate.lava.top`. Configure `https://app.webdiag.ru/api/billing/lava/webhook` with its dedicated webhook **X-Api-Key**. The outbound API key and webhook secret serve different purposes.
 
 Every invoice stores its owner, product, currency, amount, credits and plan period. A successful return query is not payment evidence. Confirmation retrieves the provider invoice and validates the completed receipt. Webhook settlement requires authenticated `payment.success` data matching the saved invoice. Unknown invoices, other users' invoices and mismatched payments cannot grant credits. Replayed callbacks cannot extend a plan or credit a balance twice.
 

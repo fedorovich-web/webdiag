@@ -74,6 +74,12 @@ class BillingService:
                 )
             if response.status_code not in {200, 201}:
                 logger.warning("Lava request failed with HTTP %s", response.status_code)
+                if response.status_code in {401, 403} or (
+                    response.status_code == 404 and method == "POST" and path == "/api/v3/invoice"
+                ):
+                    raise BillingServiceError(
+                        503, "billing_misconfigured", "Payment service is not configured."
+                    )
                 raise BillingServiceError(
                     502, "billing_provider_error", "Payment service rejected the request."
                 )

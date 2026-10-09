@@ -65,6 +65,16 @@ export function AccountCheckoutView({
         if (data?.detail?.code === "billing_active_plan_change" && ru) {
           throw new Error("Для смены действующего оплаченного тарифа обратитесь в поддержку. Оставшийся срок сохраняется.");
         }
+        if (["billing_misconfigured", "billing_not_configured"].includes(data?.detail?.code)) {
+          throw new Error(ru
+            ? "Оплата временно недоступна. Обратитесь в support@webdiag.ru."
+            : "Payments are temporarily unavailable. Contact support@webdiag.ru.");
+        }
+        if (["billing_provider_error", "billing_provider_unavailable", "billing_invalid_response"].includes(data?.detail?.code)) {
+          throw new Error(ru
+            ? "Не удалось получить ссылку на оплату. Попробуйте позже или обратитесь в support@webdiag.ru."
+            : "Could not obtain a payment link. Try again later or contact support@webdiag.ru.");
+        }
         throw new Error(
           data?.detail?.message ||
             (ru ? "Не удалось выставить счёт на оплату." : "Failed to create payment invoice.")
