@@ -1,6 +1,6 @@
 # Проверка исправлений провайдеров — 2026-10-08
 
-База: Git main `b00dba0f0b28217e335e7f9ac62b1e53c15cf96a`. Код проверен в отдельной копии этого commit. Изменённые пользовательские checkout и detached worktree не переносились и не перезаписывались. Этот документ фиксирует локальную проверку; он не подтверждает публикацию или работу новых изменений в production.
+База: Git main `b00dba0f0b28217e335e7f9ac62b1e53c15cf96a`. Код проверен в отдельной копии этого commit и опубликован в draft [PR #44](https://github.com/fedorovich-web/webdiag/pull/44). Изменённые пользовательские checkout и detached worktree не переносились и не перезаписывались. Документ фиксирует локальные результаты и GitHub CI; он не подтверждает работу новых изменений в production.
 
 ## Исправления
 
@@ -32,6 +32,10 @@
 
 Независимая проверка кода ограничивалась OAuth/recovery, оплатой/периодами и доступностью AI. Обнаруженные P1 pre-account hijack и P2 потеря оплаченного периода исправлены и повторно проверены. Это не утверждение независимого аудита всего проекта.
 
+## GitHub CI, проверено 2026-10-09
+
+[Run 37820875198](https://github.com/fedorovich-web/webdiag/actions/runs/37820875198), commit `3a91186c65c8dcf9670e5bc1bd2b875a9cc7b189`: Python locks (3.14) и Homepage visual QA — success. Linux job включает Python tests/lint, core/Dokploy/optional AI Compose preflight и production image checks. Full verification — failure на browser color-contrast, 116 passed / 1 failed; следующие шаги Windows Python пропущены после этого падения. Python проверен отдельно в успешном Linux job. Provider credentials удалены из scheduler в broker overlay, чтобы исключить конкурирующий core poller; push/PR одного исходного branch больше не запускают дублирующие CI одновременно.
+
 ## Подтверждённая production-диагностика до обновления
 
 - Основной commit в Git совпадал с проверенным deployment Dokploy.
@@ -47,4 +51,4 @@
 
 Descriptions существующих тарифов сохранены. Платёж и срок действия реализованы, но тарифные quotas, seats, white-label и priority queues не полностью связаны с plan state; обещанные 10 AI-сценариев и crawler limits 500/10000 не подтверждены текущим runtime (6 сценариев, core budget 100). Эти возможности нельзя считать реализованными только по успешной оплате.
 
-Новые изменения не опубликованы и не развёрнуты. Для production приёмки нужны: корректные текущие секреты в private окружении; совпадающие account/AI internal tokens; включение runtime; Lava offer с Price on request via API и webhook X-Api-Key; реальные OAuth/mail/AI/payment receipts и readback. Оплата и отправка тестовых писем в ходе локальных проверок не выполнялись.
+Изменения опубликованы в draft PR и не развёрнуты. Для production приёмки нужны: корректные текущие секреты в private окружении; совпадающие account/AI internal tokens; включение runtime; Lava offer с Price on request via API и webhook X-Api-Key; реальные OAuth/mail/AI/payment receipts и readback. Оплата и отправка тестовых писем в ходе локальных проверок не выполнялись.
