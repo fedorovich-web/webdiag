@@ -327,7 +327,7 @@ export function CoreWebVitalsTool({ locale }: { locale: Locale }) {
                 <h3 style={{ marginBottom: "4px" }}>
                   {item.strategy === "mobile" ? (ru ? "📱 Мобильные устройства" : "📱 Mobile") : (ru ? "🖥️ Десктоп" : "🖥️ Desktop")}
                 </h3>
-                <p style={{ fontSize: "13px", color: "var(--wd-ms, #64748b)", marginBottom: "16px" }}>
+                <p style={{ fontSize: "13px", color: "var(--muted)", marginBottom: "16px" }}>
                   {item.available
                     ? (item.field_data_available
                         ? (ru ? "✓ Данные из реального трафика + лабораторные измерения" : "✓ Real user field data + lab measurements")
@@ -344,7 +344,7 @@ export function CoreWebVitalsTool({ locale }: { locale: Locale }) {
                     return (
                       <article key={category} style={{ borderLeft: `3px solid ${scoreColor}`, paddingLeft: "10px" }}>
                         <span>{lighthouseCategoryLabels[locale][category as keyof typeof lighthouseCategoryLabels.ru] ?? category}</span>
-                        <strong style={{ color: scoreColor, fontSize: "18px" }}>{score ?? "—"}</strong>
+                        <strong style={{ color: scoreVal >= 90 ? "var(--success)" : scoreVal >= 50 ? "var(--warning)" : "var(--danger)", fontSize: "18px" }}>{score ?? "—"}</strong>
                         <small>/100</small>
                       </article>
                     );
@@ -378,20 +378,20 @@ export function CoreWebVitalsTool({ locale }: { locale: Locale }) {
                               <div style={{ flex: 1 }}>
                                 <strong style={{ fontSize: "13px", display: "block", color: "var(--wd-f, #0f172a)" }}>{titleDisplay}</strong>
                                 {guide && (
-                                  <small style={{ color: isGood ? "#059669" : "#dc2626", fontSize: "11px" }}>
+                                  <small style={{ color: isGood ? "var(--success)" : "var(--danger)", fontSize: "11px" }}>
                                     {isGood ? guide.good : guide.bad}
                                   </small>
                                 )}
                               </div>
                               <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
-                                <strong style={{ fontSize: "15px", color: borderColor }}>{metric.display_value ?? metric.value ?? "—"}</strong>
+                                <strong style={{ fontSize: "15px", color: isGood ? "var(--success)" : isWarn ? "var(--warning)" : "var(--danger)" }}>{metric.display_value ?? metric.value ?? "—"}</strong>
                                 <span className={badgeClass(metric.status)} style={{ fontSize: "10px" }}>
                                   {statusLabel(metric.status, locale)}
                                 </span>
                               </div>
                             </div>
                             {guide && !isGood && (
-                              <div style={{ fontSize: "12px", color: "var(--wd-ms, #475569)", background: "rgba(0,0,0,0.03)", padding: "8px 10px", borderRadius: "6px", marginTop: "8px" }}>
+                              <div style={{ fontSize: "12px", color: "var(--muted)", background: "rgba(0,0,0,0.03)", padding: "8px 10px", borderRadius: "6px", marginTop: "8px" }}>
                                 <strong style={{ display: "block", marginBottom: "2px", color: "#374151" }}>💡 {ru ? "Что исправить:" : "How to fix:"}</strong>
                                 {guide.tip}
                               </div>
@@ -417,7 +417,7 @@ export function CoreWebVitalsTool({ locale }: { locale: Locale }) {
                           <li key={opportunity.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "10px 12px", background: "rgba(245,158,11,0.06)", borderRadius: "8px", border: "1px solid rgba(245,158,11,0.2)", gap: "12px" }}>
                             <span style={{ fontSize: "13px", flex: 1 }}>{titleDisplay}</span>
                             {savings && (
-                              <strong style={{ fontSize: "12px", color: "#d97706", whiteSpace: "nowrap" }}>
+                              <strong style={{ fontSize: "12px", color: "color-mix(in srgb, var(--warning) 90%, var(--text))", whiteSpace: "nowrap" }}>
                                 {ru ? `≈ ${savings} экономии` : `≈ ${savings}`}
                               </strong>
                             )}
@@ -440,7 +440,7 @@ export function CoreWebVitalsTool({ locale }: { locale: Locale }) {
                           </span>
                           <span style={{ flex: 1, fontSize: "13px" }}>
                             <strong>{finding.title}</strong>
-                            {finding.display_value && <em style={{ color: "var(--wd-ms, #64748b)", marginLeft: "6px" }}>{finding.display_value}</em>}
+                            {finding.display_value && <em style={{ color: "var(--muted)", marginLeft: "6px" }}>{finding.display_value}</em>}
                           </span>
                         </li>
                       ))}
