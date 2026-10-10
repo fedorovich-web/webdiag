@@ -49,3 +49,29 @@ def test_invalid_image_provider_is_rejected_before_creating_clients(monkeypatch)
     monkeypatch.setenv("WEBDIAG_AI_IMAGE_PROVIDER", "unapproved")
     with pytest.raises(RuntimeError, match="WEBDIAG_AI_IMAGE_PROVIDER"):
         ConfiguredAIProvider.from_env()
+
+
+def test_cloudflare_text_and_images_do_not_require_a_vercel_client(monkeypatch):
+    from webdiag_worker import configured_ai_provider as module
+
+    monkeypatch.setenv("WEBDIAG_AI_TEXT_PROVIDER", "cloudflare")
+    monkeypatch.setenv("WEBDIAG_AI_IMAGE_PROVIDER", "cloudflare")
+    text, images = object(), object()
+    monkeypatch.setattr(module.CloudflareTextProvider, "from_env", lambda **kw: text)
+    monkeypatch.setattr(module.CloudflareImageProvider, "from_env", lambda **kw: images)
+    monkeypatch.setattr(
+        module.VercelAIGatewayProvider,
+        "from_env",
+        lambda **kw: pytest.fail("Unexpected Vercel client"),
+    )
+    p = module.ConfiguredAIProvider.from_env()
+    assert p._text is text
+    assert p._images is images
+
+
+def test_invalid_text_provider_fails_before_clients(monkeypatch):
+    from webdiag_worker.configured_ai_provider import ConfiguredAIProvider
+
+    monkeypatch.setenv("WEBDIAG_AI_TEXT_PROVIDER", "unapproved")
+    with pytest.raises(RuntimeError, match="WEBDIAG_AI_TEXT_PROVIDER"):
+        ConfiguredAIProvider.from_env()

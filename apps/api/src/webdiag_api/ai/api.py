@@ -64,7 +64,9 @@ def get_ai_service() -> AIService:
             active_run_limit_global=settings.ai_active_run_limit_global,
         ),
         catalog=(
-            build_production_ai_catalog(image_provider=settings.ai_image_provider)
+            build_production_ai_catalog(
+                image_provider=settings.ai_image_provider, text_provider=settings.ai_text_provider
+            )
             if settings.ai_runtime_enabled
             else DEFAULT_AI_CATALOG
         ),

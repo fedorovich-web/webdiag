@@ -122,6 +122,7 @@ const allowedEnvironmentPlacements = new Map([
   ["AI_REASONING_EFFORT", ["worker"]],
   ["WEBDIAG_AI_REQUIRE_ZDR", ["worker"]],
   ["WEBDIAG_AI_IMAGE_PROVIDER", ["api", "worker"]],
+  ["WEBDIAG_AI_TEXT_PROVIDER", ["api", "worker"]],
   ["CLOUDFLARE_ACCOUNT_ID", ["worker"]],
   ["CLOUDFLARE_API_TOKEN", ["worker"]],
 ]);
@@ -147,11 +148,13 @@ for (const [name, destinations] of propagatedSecrets) {
 }
 expect(new Set(distinctSecrets).size === distinctSecrets.length, "internal secrets are not distinct");
 expect(worker.AI_PROVIDER === "vercel", "worker AI provider differs");
+if ([api.WEBDIAG_AI_TEXT_PROVIDER, api.WEBDIAG_AI_IMAGE_PROVIDER].includes("vercel")) {
 expect(
   typeof worker.AI_GATEWAY_API_KEY === "string" &&
     /^[\x21-\x7E]{16,512}$/u.test(worker.AI_GATEWAY_API_KEY),
   "worker AI Gateway key is missing",
 );
+}
 expect(
   worker.AI_GATEWAY_BASE_URL === "https://ai-gateway.vercel.sh/v1",
   "worker AI Gateway base URL differs",
@@ -160,8 +163,10 @@ expect(worker.AI_MODEL === "openai/gpt-6-luna", "worker AI model differs");
 expect(worker.AI_REASONING_EFFORT === "medium", "worker AI reasoning effort differs");
 expect(["true", "false"].includes(worker.WEBDIAG_AI_REQUIRE_ZDR), "AI retention policy must be explicit");
 expect(["vercel", "cloudflare"].includes(api.WEBDIAG_AI_IMAGE_PROVIDER), "AI image provider policy is invalid");
+expect(["vercel", "cloudflare"].includes(api.WEBDIAG_AI_TEXT_PROVIDER), "AI text provider policy is invalid");
 expect(worker.WEBDIAG_AI_IMAGE_PROVIDER === api.WEBDIAG_AI_IMAGE_PROVIDER, "API and executor image policies differ");
-if (api.WEBDIAG_AI_IMAGE_PROVIDER === "cloudflare" && api.WEBDIAG_AI_RUNTIME_ENABLED === "true") {
+expect(worker.WEBDIAG_AI_TEXT_PROVIDER === api.WEBDIAG_AI_TEXT_PROVIDER, "API and executor text policies differ");
+if ((api.WEBDIAG_AI_IMAGE_PROVIDER === "cloudflare" || api.WEBDIAG_AI_TEXT_PROVIDER === "cloudflare") && api.WEBDIAG_AI_RUNTIME_ENABLED === "true") {
   expect(/^[a-f0-9]{32}$/iu.test(worker.CLOUDFLARE_ACCOUNT_ID), "Cloudflare account ID is invalid");
   expect(/^[\x21-\x7e]{16,512}$/u.test(worker.CLOUDFLARE_API_TOKEN), "Cloudflare API token is invalid");
 }

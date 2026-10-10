@@ -4,7 +4,6 @@ import base64
 import io
 import json
 import math
-import os
 import re
 from dataclasses import replace
 
@@ -18,6 +17,7 @@ from webdiag_worker.ai import (
     ProviderResult,
 )
 from webdiag_worker.artifact_storage import ArtifactStorage, artifact_storage_from_env
+from webdiag_worker.cloudflare_client import cloudflare_client_from_env
 from webdiag_worker.image_output import MAX_IMAGE_BYTES, normalize_generated_image
 from webdiag_worker.image_requests import (
     image_artifact_output,
@@ -75,28 +75,13 @@ class CloudflareImageProvider:
     def from_env(
         cls, *, artifact_storage: ArtifactStorage | None = None
     ) -> CloudflareImageProvider:
-        account = os.getenv("CLOUDFLARE_ACCOUNT_ID", "").strip()
-        token = os.getenv("CLOUDFLARE_API_TOKEN", "").strip()
-        if not re.fullmatch(r"[a-fA-F0-9]{32}", account):
-            raise RuntimeError(
-                "CLOUDFLARE_ACCOUNT_ID must contain 32 hexadecimal characters"
-            )
-        if not 16 <= len(token) <= 512 or any(
-            not 0x21 <= ord(char) <= 0x7E for char in token
-        ):
-            raise RuntimeError(
-                "CLOUDFLARE_API_TOKEN must contain 16 to 512 visible ASCII characters"
-            )
-        storage = artifact_storage or artifact_storage_from_env()
-        return cls(
-            httpx.Client(
-                headers={"Authorization": f"Bearer {token}"},
-                timeout=httpx.Timeout(connect=5, read=120, write=10, pool=5),
-                trust_env=False,
-            ),
-            account_id=account,
-            artifact_storage=storage,
-        )
+        account, client = cloudflare_client_from_env()
+        try:
+            storage = artifact_storage or artifact_storage_from_env()
+            return cls(client, account_id=account, artifact_storage=storage)
+        except Exception:
+            client.close()
+            raise
 
     def __enter__(self) -> CloudflareImageProvider:
         return self
