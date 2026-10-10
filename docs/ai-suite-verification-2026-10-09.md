@@ -91,3 +91,11 @@ One real synthetic Qwen FAQ probe returned HTTP 200, the exact expected model, a
 The text adapter shares the original instructions, output schemas, token budgets, message construction and Schema.org conversion with Vercel. It bounds responses, uses `store=false`, verifies the actual model and never redirects, retries or falls back. Local checks passed: complete API/worker suite 886 passed, 3 skipped; 22 Compose/workspace checks, including actual parser preflights for all three layouts with Cloudflare credentials and no Vercel key. TypeScript and the public build passed. Review found and corrected an outdated GPT-6 Luna sentence in the catalog without changing layout.
 
 Main CI run `37967800457` on `f161b854…` passed Python locks and homepage visual QA, with 121 browser tests passing and the existing PageSpeed color-contrast failure remaining. CI is not green. Deployment and full text/vision acceptance for the new policy remain pending until the new commit is deployed and actual requests are completed.
+
+## CI repairs — 2026-10-10
+
+PR [52](https://github.com/fedorovich-web/webdiag/pull/52) initially failed web lint on an unescaped apostrophe in the English privacy page. Escaping it preserves the rendered text. Targeted ESLint now reports no errors and one existing image-element warning.
+
+Main run [37967800457](https://github.com/fedorovich-web/webdiag/actions/runs/37967800457) also exposed real insufficient text contrast in the PageSpeed result. Its failure artifact identified muted text, category scores, metric values and the savings label. The owner approved text-color-only changes. Those elements now use the existing semantic text tokens; the tinted savings label blends its warning token with 10% of the text token to meet the threshold. Dimensions, backgrounds and colored borders remain unchanged. Axe and test assertions remain enabled.
+
+The production build passed. The two existing PageSpeed browser tests passed using the installed Brave executable, including the English axe check and the mobile RU layout check. The component unit tests passed (3/3), and its ESLint check passed. These local fixture results do not establish GitHub CI success or deployed Cloudflare text/vision acceptance.
