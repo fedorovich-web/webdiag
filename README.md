@@ -26,7 +26,8 @@ flowchart LR
     Web -->|private HTTP| API[FastAPI]
     API --> DB[(SQLite account and audit storage)]
     Scheduler[Monitoring, crawl and AI scheduler] -->|distinct internal tokens| API
-    Scheduler --> Gateway[Vercel AI Gateway]
+    Scheduler --> Cloudflare[Cloudflare Workers AI]
+    Scheduler -.->|optional explicit configuration| Gateway[Vercel AI Gateway]
     API --> Yandex[Yandex ID]
     API --> LavaAPI[Lava API]
     Web --> Resend[Resend transactional mail]
@@ -40,7 +41,7 @@ AI polling runs separately from the monitoring/crawl cycle. Workers use internal
 ```text
 apps/web/               Next.js App Router, API proxies and interface
 apps/api/               FastAPI, accounts, storage, audit, crawl, billing and AI contracts
-apps/worker/            Monitoring/crawl execution and Vercel AI Gateway adapter
+apps/worker/            Monitoring/crawl execution, Cloudflare and Vercel AI adapters
 packages/tool-core/     Shared TypeScript contracts and utilities
 packages/tool-registry/ Tool definitions, localized content and availability
 scripts/                Tests, build verification, dependency and Compose checks
