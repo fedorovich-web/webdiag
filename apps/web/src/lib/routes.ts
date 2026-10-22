@@ -36,10 +36,6 @@ export function reportPath(locale: Locale, reportId: string): string {
   return `${reportsPath(locale)}/${reportId}`;
 }
 
-export function publicReportPath(shareToken: string): string {
-  return `/reports/share/${encodeURIComponent(shareToken)}`;
-}
-
 export function projectPath(locale: Locale, projectId: string): string {
   return locale === "ru"
     ? `/account/projects/${projectId}`

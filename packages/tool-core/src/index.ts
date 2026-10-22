@@ -153,7 +153,6 @@ export function contrastRatio(first: string, second: string): number {
 function greatestCommonDivisor(first: number, second: number): number {
   let a = Math.abs(Math.trunc(first));
   let b = Math.abs(Math.trunc(second));
-  if (a === 0 && b === 0) throw new TypeError("At least one dimension must be greater than zero.");
   while (b !== 0) [a, b] = [b, a % b];
   return a;
 }
@@ -328,11 +327,11 @@ export function detectImageMetadataSignals(input: ArrayBuffer | Uint8Array): Ima
   else if (text.startsWith("RIFF") && text.slice(8, 12) === "WEBP") format = "webp";
   else if (/ftyp(?:avif|avis|mif1|msf1)/.test(text.slice(4, 32))) format = "avif";
 
-  const exif = text.includes("Exif\0\0") || text.includes("Exif");
+  const exif = text.includes("Exif");
   const xmp = text.includes("http://ns.adobe.com/xap/1.0/") || /xmpmeta/i.test(text);
   const iccProfile = text.includes("ICC_PROFILE") || text.includes("iCCP") || text.includes("ICCP");
   const iptc = text.includes("Photoshop 3.0") || text.includes("8BIM") || text.includes("IPTC");
-  const jfif = text.includes("JFIF\0") || text.includes("JFIF");
+  const jfif = text.includes("JFIF");
   const pngTextChunks = format === "png" ? countOccurrences(text, "tEXt") + countOccurrences(text, "zTXt") + countOccurrences(text, "iTXt") : 0;
   const physicalDensity = text.includes("pHYs") || jfif;
   const detectedSegments = [

@@ -79,7 +79,7 @@ test.describe("production browser smoke", () => {
     }));
     expect(dimensions.scroll).toBe(dimensions.viewport);
 
-    const menu = page.locator(".mobile-menu summary");
+    const menu = page.getByRole("button", { name: "Открыть меню", exact: true });
     const menuBox = await menu.boundingBox();
     expect(menuBox?.height).toBeGreaterThanOrEqual(44);
     await menu.click();
@@ -101,7 +101,7 @@ test.describe("production browser smoke", () => {
     await expect(page.locator('.wd-brand[data-brand-variant="header"] .brand-picture')).toBeHidden();
     await expect(page.locator('.wd-brand[data-brand-variant="header"] .brand-mark')).toBeVisible();
 
-    await page.locator(".mobile-menu summary").click();
+    await page.getByRole("button", { name: "Open menu", exact: true }).click();
     await expect(page.getByRole("switch")).toHaveCount(0);
     await expect(page.getByRole("navigation", { name: "Language selection" })).toBeVisible();
   });

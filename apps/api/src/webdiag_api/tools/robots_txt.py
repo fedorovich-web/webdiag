@@ -131,7 +131,7 @@ def inspect_robots_txt(
 def _rule_response(rule: RobotsTxtRule) -> RobotsTxtRuleResponse:
     return RobotsTxtRuleResponse(
         user_agent=rule.user_agent,
-        directive=rule.directive,  # type: ignore[arg-type]
+        directive=rule.directive,
         value=rule.value,
     )
 

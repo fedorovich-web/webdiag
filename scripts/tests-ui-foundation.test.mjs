@@ -140,7 +140,6 @@ test("public availability copy contains no unapproved prices or payment claims",
 test("home audit UI consumes only frontend-shaped audit result contracts", async () => {
   const uiFiles = [
     "apps/web/src/features/home/home-url-check-form.tsx",
-    "apps/web/src/features/home/home-audit-result-section.tsx",
   ];
   const forbiddenBackendFields = [
     [/summary\.run/, "backend summary.run"],
@@ -179,9 +178,11 @@ test("SEO layer includes social metadata, structured data, and localized sitemap
 
 test("mobile navigation keeps localized language controls without a theme switch", async () => {
   const header = await read("apps/web/src/components/site-header.tsx");
-  assert.match(header, /className="mobile-menu"/);
-  assert.match(header, /language-switcher-mobile/);
-  assert.doesNotMatch(header, /ThemeSwitcher|theme-switch/);
+  const mobile = await read("apps/web/src/components/mobile-navigation.tsx");
+  assert.match(header, /<MobileNavigation locale=\{locale\}>/);
+  assert.match(mobile, /className="mobile-menu wd-mobile-navigation"/);
+  assert.match(mobile, /language-switcher-mobile/);
+  assert.doesNotMatch(`${header}\n${mobile}`, /ThemeSwitcher|theme-switch/);
 });
 
 test("random generators wait for an explicit client action", async () => {

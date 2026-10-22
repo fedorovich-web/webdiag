@@ -15,9 +15,10 @@ router = APIRouter(tags=["tools"])
 
 RecordType = Literal["A", "AAAA", "CNAME", "MX", "NS", "TXT", "DS", "DNSKEY"]
 DnsHealthStatus = Literal["pass", "warning", "fail"]
+SpfQualifier = Literal["+", "-", "~", "?"]
 
 _ALLOWED_RECORD_TYPES: tuple[RecordType, ...] = ("A", "AAAA", "CNAME", "MX", "NS", "TXT")
-_RECORD_TYPE_CODES: dict[str, int] = {
+_RECORD_TYPE_CODES: dict[RecordType, int] = {
     "A": 1,
     "NS": 2,
     "CNAME": 5,
@@ -28,6 +29,7 @@ _RECORD_TYPE_CODES: dict[str, int] = {
     "DNSKEY": 48,
 }
 _CODE_RECORD_TYPES = {value: key for key, value in _RECORD_TYPE_CODES.items()}
+_SPF_QUALIFIERS: dict[str, SpfQualifier] = {"+": "+", "-": "-", "~": "~", "?": "?"}
 _MAX_DOMAIN_LENGTH = 253
 _MAX_LABEL_LENGTH = 63
 _MAX_DNS_UDP_SIZE = 4_096
@@ -127,7 +129,7 @@ class SpfMechanismResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     value: str = Field(min_length=1, max_length=240)
-    qualifier: Literal["+", "-", "~", "?"]
+    qualifier: SpfQualifier
     name: str = Field(min_length=1, max_length=80)
 
 
@@ -237,7 +239,7 @@ class DnssecCheckerResponse(BaseModel):
 
 @dataclass(frozen=True, slots=True)
 class DnsAnswer:
-    record_type: str
+    record_type: RecordType
     name: str
     value: str
     ttl: int
@@ -701,7 +703,7 @@ def _parse_rdata(
 
 def _record_response(answer: DnsAnswer) -> DnsRecordResponse:
     return DnsRecordResponse(
-        record_type=answer.record_type,  # type: ignore[arg-type]
+        record_type=answer.record_type,
         name=answer.name,
         value=answer.value,
         ttl=answer.ttl,
@@ -711,9 +713,10 @@ def _record_response(answer: DnsAnswer) -> DnsRecordResponse:
 
 def _mx_host_response(resolver: DnsResolver, record: DnsAnswer) -> MxHostResponse:
     addresses: list[str] = []
-    for record_type in ("A", "AAAA"):
+    address_record_types: tuple[RecordType, ...] = ("A", "AAAA")
+    for record_type in address_record_types:
         try:
-            answers = resolver.query(record.value, record_type)  # type: ignore[arg-type]
+            answers = resolver.query(record.value, record_type)
         except DnsResolverError:
             continue
         addresses.extend(answer.value for answer in answers if answer.record_type == record_type)
@@ -731,15 +734,15 @@ def _spf_mechanisms(record: str) -> tuple[SpfMechanismResponse, ...]:
     for token in record.split()[1:]:
         if token.startswith("exp="):
             continue
-        qualifier = token[0] if token[0] in "+-~?" else "+"
-        body = token[1:] if token[0] in "+-~?" else token
+        qualifier = _SPF_QUALIFIERS.get(token[0], "+")
+        body = token[1:] if token[0] in _SPF_QUALIFIERS else token
         name = body.split(":", 1)[0].split("=", 1)[0].split("/", 1)[0]
         if not name:
             continue
         mechanisms.append(
             SpfMechanismResponse(
                 value=token[:240],
-                qualifier=qualifier,  # type: ignore[arg-type]
+                qualifier=qualifier,
                 name=name.lower()[:80],
             )
         )

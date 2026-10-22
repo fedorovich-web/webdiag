@@ -1206,11 +1206,11 @@ def _count_ungrouped_choice_sets(
             fieldset.index if (fieldset := _nearest_fieldset(node, index)) else None
             for node in nodes
         }
-        if len(fieldsets) != 1 or None in fieldsets:
+        if len(fieldsets) != 1:
             count += 1
             continue
-        fieldset = index.nodes[next(iter(fieldsets))]  # type: ignore[arg-type]
-        if not _fieldset_has_legend(fieldset, index):
+        fieldset_index = next(iter(fieldsets))
+        if fieldset_index is None or not _fieldset_has_legend(index.nodes[fieldset_index], index):
             count += 1
     return count
 

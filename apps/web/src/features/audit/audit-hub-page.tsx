@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import type { Locale } from "@webdiag/tool-registry";
 import { toolsPath } from "../../lib/routes";
+import { PriceAmount } from "../../components/price-amount";
 import { parseAuditUrlInput } from "../home/audit-client";
 
 interface AuditHubPageProps {
@@ -65,7 +66,7 @@ export function AuditHubPage({ locale }: AuditHubPageProps) {
         stats: [
           { value: "22", label: "Группы проверок", desc: "Статические сигналы и PageSpeed" },
           { value: "1 URL", label: "Проверка страницы", desc: "Без обхода всего сайта" },
-          { value: "0 ₽", label: "Бесплатный запуск", desc: "Без обязательной регистрации" },
+          { value: <PriceAmount amount={0} currency="RUB" locale={locale} />, label: "Бесплатный запуск", desc: "Без обязательной регистрации" },
           { value: "HTML", label: "Источник данных", desc: "Фактический ответ сервера" },
         ],
         dimensionsTitle: "Что проверяет SEO-аудит WebDiag",
@@ -128,31 +129,31 @@ export function AuditHubPage({ locale }: AuditHubPageProps) {
           },
           {
             name: "Глубокий аудит сайта",
-            subtitle: "Краулинг до 500 страниц",
-            price: "В тарифе Pro",
-            badge: "Популярный",
+            subtitle: "HTML-обход проекта",
+            price: "В личном кабинете",
+            badge: "В проекте",
             features: [
-              "Полный обход внутренней структуры сайта",
-              "Поиск битых ссылок (404) и цепочек редиректов",
-              "Анализ дублей Title, H1 и мета-тегов",
-              "Выгрузка отчетов в PDF и CSV",
-              "Доступ к AI-плану исправлений",
+              "Обход внутренних HTML-ссылок и sitemap",
+              "Бюджет по умолчанию — 100 URL",
+              "Поиск дублей Title и Description",
+              "Анализ серверного HTML без JavaScript",
+              "Сохранённые результаты аудита проекта",
             ],
-            btn: "Подробнее о Pro",
+            btn: "Сравнить тарифы",
             href: "/pricing",
           },
           {
             name: "Мониторинг и Enterprise",
-            subtitle: "Регулярный авто-аудит",
-            price: "В тарифе Team",
+            subtitle: "Проверки URL по расписанию",
+            price: "По расписанию",
             features: [
-              "Регулярное сканирование по расписанию",
-              "Уведомления в Telegram и на Email об ошибках",
-              "Сравнение снимков сайта до и после релизов",
-              "Приоритетная очередь выполнения задач",
-              "Доступ для всей команды разработчиков",
+              "Настройка интервала и часового пояса",
+              "История запусков и сохранённые состояния",
+              "Сравнение оценок и найденных проблем",
+              "Статус и время следующей проверки",
+              "Пауза и возобновление мониторинга",
             ],
-            btn: "Подробнее о Team",
+            btn: "Сравнить тарифы",
             href: "/pricing",
           },
         ],
@@ -161,11 +162,11 @@ export function AuditHubPage({ locale }: AuditHubPageProps) {
         faqs: [
           {
             q: "Как часто необходимо проводить технический аудит сайта?",
-            a: "Рекомендуется выполнять экспресс-проверку ключевых посадочных страниц после каждого значимого релиза или обновления контента, а полный аудит всего сайта проводить не реже 1-2 раз в месяц. Это позволяет вовремя заметить случайно закрытые от индексации разделы, появление битых ссылок или падение скорости.",
+            a: "Проверяйте затронутые страницы после изменений шаблонов, метатегов, редиректов и настроек индексации. Частоту повторных проверок выбирайте под частоту изменений сайта. В проекте можно сохранить результаты, а для регулярных проверок URL — настроить мониторинг.",
           },
           {
             q: "Влияет ли технический аудит на позиции сайта в поиске?",
-            a: "Сам по себе запуск аудита безопасен и не влияет на позиции. Однако исправление найденных ошибок (устранение дублей, ускорение загрузки по Core Web Vitals, корректная настройка canonical и robots.txt) напрямую улучшает ранжирование и краулинговый бюджет в Google и Яндекс.",
+            a: "Аудит показывает обнаруженные технические сигналы и рекомендации. WebDiag не меняет код сайта и настройки поисковых систем. Отчёт помогает выбрать исправления, но не предсказывает и не гарантирует изменение позиций.",
           },
           {
             q: "Поддерживает ли WebDiag сайты на JavaScript (React, Next.js, Vue)?",
@@ -173,11 +174,11 @@ export function AuditHubPage({ locale }: AuditHubPageProps) {
           },
           {
             q: "Что делать после завершения аудита?",
-            a: "WebDiag автоматически группирует ошибки по приоритетам: критические (High), предупреждения (Medium) и уведомления (Low). Вы можете сразу передать список разработчикам или воспользоваться нашими AI-инструментами для составления пошагового плана исправлений.",
+            a: "Изучите данные и рекомендации по каждой проблеме, выберите исправления с учётом приоритета и задач сайта. После изменений запустите проверку повторно. Сохранённый отчёт можно скачать в HTML, открыть для печати или передать по ссылке с ограниченным сроком действия; ссылку можно отозвать.",
           },
           {
             q: "Безопасно ли сканирование для сервера сайта?",
-            a: "Абсолютно безопасно. Наш краулер соблюдает паузы между запросами, имитирует стандартные заголовки браузера и не перегружает сервер избыточным трафиком.",
+            a: "Проверка отправляет HTTP-запросы к публичным адресам и не редактирует сайт. У обхода проекта есть ограничения по числу URL и времени, но запросы создают нагрузку. Для своего сайта учитывайте доступную мощность сервера и выбирайте подходящее время запуска.",
           },
         ],
         finalCta: {
@@ -199,7 +200,7 @@ export function AuditHubPage({ locale }: AuditHubPageProps) {
         stats: [
           { value: "22", label: "Check groups", desc: "Static signals and PageSpeed" },
           { value: "1 URL", label: "Page audit", desc: "No whole-site crawl" },
-          { value: "$0", label: "Free Express Audit", desc: "No registration required" },
+          { value: <PriceAmount amount={0} currency="USD" locale={locale} />, label: "Free Express Audit", desc: "No registration required" },
           { value: "HTML", label: "Evidence source", desc: "Actual server response" },
         ],
         dimensionsTitle: "What WebDiag SEO Audit Covers",
@@ -262,31 +263,31 @@ export function AuditHubPage({ locale }: AuditHubPageProps) {
           },
           {
             name: "Deep Site Crawl",
-            subtitle: "Crawl up to 500 pages",
-            price: "In Pro Plan",
-            badge: "Most Popular",
+            subtitle: "Project HTML crawl",
+            price: "In your workspace",
+            badge: "Project workflow",
             features: [
-              "Comprehensive internal link graph traversal",
-              "Detect 404 broken links and redirect chains",
-              "Duplicate title, H1, and meta tag finder",
-              "Exportable PDF and CSV reports",
-              "Full access to AI Fix Action Plan",
+              "Follow internal HTML links and sitemap URLs",
+              "Default crawl budget of 100 URLs",
+              "Find duplicate titles and descriptions",
+              "Analyze server HTML without JavaScript",
+              "Saved project audit results",
             ],
-            btn: "Explore Pro Plan",
+            btn: "Compare plans",
             href: "/en/pricing",
           },
           {
             name: "Continuous Monitoring",
-            subtitle: "Scheduled recurring audits",
-            price: "In Team Plan",
+            subtitle: "Scheduled URL checks",
+            price: "Scheduled checks",
             features: [
-              "Automated weekly & monthly crawls",
-              "Telegram and Email alerts on critical regressions",
-              "Pre-release and post-release snapshot diffs",
-              "High-priority worker processing queue",
-              "Multi-seat team collaboration",
+              "Configure the interval and time zone",
+              "Run history and saved states",
+              "Compare scores and detected issues",
+              "Check status and next scheduled run",
+              "Pause and resume monitoring",
             ],
-            btn: "Explore Team Plan",
+            btn: "Compare plans",
             href: "/en/pricing",
           },
         ],
@@ -295,11 +296,11 @@ export function AuditHubPage({ locale }: AuditHubPageProps) {
         faqs: [
           {
             q: "How often should I run an SEO audit on my website?",
-            a: "We recommend running an express audit on critical landing pages after every deployment or major content update. For full site-wide crawls, once or twice a month is best practice to catch accidental noindex directives, broken redirects, or performance drops early.",
+            a: "Check affected pages after changing templates, metadata, redirects or indexing settings. Choose a repeat schedule that matches how often your site changes. You can save results in a project and configure monitoring for recurring URL checks.",
           },
           {
             q: "Does running an SEO audit affect my live website speed or ranking?",
-            a: "No, running an audit is completely safe and read-only. Our crawler adheres to request rate limits and does not degrade production server performance.",
+            a: "WebDiag sends HTTP requests to public URLs without editing your site or search engine settings. Crawl budgets limit URLs and execution time, but requests still create server load. The report identifies technical findings; it does not predict or guarantee ranking changes.",
           },
           {
             q: "Does WebDiag support JavaScript-heavy single-page applications (React, Next.js, Vue)?",
@@ -307,11 +308,11 @@ export function AuditHubPage({ locale }: AuditHubPageProps) {
           },
           {
             q: "What should I do after receiving my audit report?",
-            a: "WebDiag sorts issues by impact: High (Critical), Medium (Warnings), and Low (Notices). You can forward the checklist directly to your engineering team or use our AI Fix Action Plan to prioritize the quickest wins.",
+            a: "Review the evidence and recommendations for each issue, then choose fixes using their priority and your site's needs. Run the check again after making changes. Saved project results help you review previous findings.",
           },
           {
             q: "Are audit reports shareable with clients or team members?",
-            a: "Yes. Pro and Team plans allow generating public read-only report links and downloading branded PDF and CSV summaries.",
+            a: "For a saved report, you can enable a share link with an expiry date and revoke it later. The report also provides an HTML download and a print view for saving a PDF through your browser.",
           },
         ],
         finalCta: {
@@ -361,7 +362,7 @@ export function AuditHubPage({ locale }: AuditHubPageProps) {
           <div className="wd-audit-stats-grid">
             {t.stats.map((stat, idx) => (
               <div className="wd-audit-stat-card" key={idx}>
-                <span className="wd-audit-stat-val">{stat.value}</span>
+                <span className="wd-summary-value">{stat.value}</span>
                 <strong className="wd-audit-stat-label">{stat.label}</strong>
                 <small className="wd-audit-stat-desc">{stat.desc}</small>
               </div>

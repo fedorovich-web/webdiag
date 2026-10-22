@@ -1,13 +1,9 @@
 "use client";
 
-import { ACTIVE_AI_CATALOG_TOOLS } from "../tools/ai-tools-data";
-
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   Check,
-  Minus,
   ShieldCheck,
   ArrowRight,
   ChevronDown,
@@ -17,7 +13,8 @@ import {
 import type { Locale } from "@webdiag/tool-registry";
 import { getAccountSession } from "../account/account-client";
 import type { AccountSessionResponse } from "../account/account-contract";
-import { billingSku, planSku } from "../account/billing-catalog";
+import { billingSku, checkoutPackage, planSku } from "../account/billing-catalog";
+import { PriceAmount } from "../../components/price-amount";
 
 interface PricingHubPageProps {
   readonly locale: Locale;
@@ -25,11 +22,8 @@ interface PricingHubPageProps {
 
 export function PricingHubPage({ locale }: PricingHubPageProps) {
   const ru = locale === "ru";
-  const router = useRouter();
   const [annual, setAnnual] = useState(true);
   const [activeFaq, setActiveFaq] = useState<number | null>(0);
-  const [loadingPack, setLoadingPack] = useState<string | null>(null);
-  const [billingError, setBillingError] = useState<string | null>(null);
   const [session, setSession] = useState<AccountSessionResponse | null>(null);
 
   useEffect(() => {
@@ -46,18 +40,6 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
     };
   }, []);
 
-  function handleBuyPack(packId: string) {
-    packId = billingSku(packId, locale);
-    setLoadingPack(packId);
-    setBillingError(null);
-    const targetUrl = `${ru ? "/account/checkout" : "/en/account/checkout"}?pack=${encodeURIComponent(packId)}`;
-    if (!session) {
-      router.push(`${ru ? "/login" : "/en/login"}?return_to=${encodeURIComponent(targetUrl)}`);
-      return;
-    }
-    router.push(targetUrl);
-  }
-
   const homeHref = ru ? "/" : "/en";
   const registerHref = ru ? "/register" : "/en/register";
 
@@ -67,10 +49,10 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
         hero: {
           eyebrow: "Прозрачные условия",
           title: "Простые и понятные тарифы без скрытых платежей",
-          lead: "Выберите подходящий тариф для одного сайта или целого пула клиентских проектов. Начните бесплатно или получите максимум возможностей с тарифами Pro и Team.",
-          monthly: "Ежемесячно",
+          lead: "Базовые проверки доступны бесплатно. Для AI-задач выберите разовый пакет кредитов или тариф Pro и Team.",
+          monthly: "Оплата за 30 дней",
           annual: "Оплата за год",
-          discountBadge: "Скидка 20%",
+          discountBadge: "Без автопродления",
         },
         plans: [
           {
@@ -78,210 +60,247 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
             name: "Стартовый",
             badge: null,
             desc: "Для владельцев сайтов и базовой экспресс-диагностики.",
-            priceMonthly: "0 ₽",
-            priceAnnual: "0 ₽",
             period: "навсегда",
             features: [
-              "125 бесплатных диагностических инструментов",
-              "10 приветственных AI-кредитов при регистрации",
-              "Экспресс-аудиты отдельных страниц",
-              "Проверка Core Web Vitals и скорости",
-              "Базовый SSL и HTTP-анализ",
-              "1 проект в личном кабинете",
-              "Хранение истории 7 дней",
-            ],
-            missing: [
-              "Глубокий краулинг всего сайта",
-              "Неограниченные AI-планы исправлений (требуются кредиты)",
-              "Экспорт отчетов в PDF и CSV",
-              "Авто-мониторинг по расписанию",
+              "Бесплатные диагностические инструменты",
+              "Экспресс-аудит отдельных страниц",
+              "HTML-краулинг: до 100 страниц по умолчанию",
+              "Сохранение аудитов в личном кабинете",
+              "HTML-отчеты с печатью через браузер",
+              "Мониторинг по расписанию и история проверок",
+              "AI-инструменты при достаточном балансе кредитов"
             ],
             btnText: "Начать бесплатно",
-            btnHref: session ? "/account" : registerHref,
             isPopular: false,
           },
           {
             id: "pro",
             name: "Профессиональный",
-            badge: "Популярный выбор",
+            badge: "Pro",
             desc: "Для SEO-специалистов, вебмастеров и растущих проектов.",
-            priceMonthly: "990 ₽",
-            priceAnnual: "790 ₽",
             period: "в месяц",
             features: [
-              "Все возможности тарифа Стартовый",
-              "Краулинг сайтов до 500 страниц",
-              "5 активных проектов в мониторинге",
-              "Доступ ко всем 10 AI-инструментам",
-              "Приоритетный AI-план исправлений",
-              "Выгрузка отчетов в PDF и CSV",
-              "Хранение истории 90 дней",
-              "Поиск битых ссылок и цепочек редиректов",
+              "Все базовые диагностические инструменты",
+              "150 AI-кредитов при оплате за 30 дней",
+              "1 800 AI-кредитов при оплате за год",
+              "Годовой период действует 365 дней",
+              "Текстовый AI-запуск — 1 кредит",
+              "Создание или редактирование изображения — 2 кредита",
+              "HTML-отчеты и мониторинг по расписанию",
+              "Разовая оплата без автопродления"
             ],
-            missing: [
-              "Командный доступ и несколько мест",
-              "White-label брендирование отчетов",
-            ],
-            btnText: "Попробовать Pro",
-            btnHref: session ? "/account/settings#billing" : `${registerHref}?plan=pro`,
+            btnText: "Выбрать Pro",
             isPopular: true,
           },
           {
             id: "team",
-            name: "Команда / Агентство",
-            badge: "Для агентств",
-            desc: "Для digital-агентств, веб-студий и крупных порталов.",
-            priceMonthly: "2 990 ₽",
-            priceAnnual: "2 390 ₽",
+            name: "Team",
+            badge: "Больше AI-кредитов",
+            desc: "Для регулярной работы с текстами и изображениями.",
             period: "в месяц",
             features: [
-              "Все возможности тарифа Pro",
-              "Глубокий краулинг до 10 000 страниц",
-              "25 проектов с авто-сканированием",
-              "Регулярный мониторинг по расписанию",
-              "White-label отчеты (ваш логотип в PDF)",
-              "До 5 рабочих мест для команды",
-              "Хранение истории 365 дней",
-              "Приоритетная очередь обработки данных",
-              "Персональная поддержка в Telegram",
+              "Все базовые диагностические инструменты",
+              "500 AI-кредитов при оплате за 30 дней",
+              "6 000 AI-кредитов при оплате за год",
+              "Годовой период действует 365 дней",
+              "Текстовый AI-запуск — 1 кредит",
+              "Создание или редактирование изображения — 2 кредита",
+              "HTML-отчеты и мониторинг по расписанию",
+              "Дополнительные пакеты кредитов доступны отдельно",
+              "Разовая оплата без автопродления"
             ],
-            missing: [],
             btnText: "Выбрать Team",
-            btnHref: session ? "/account/settings#billing" : `${registerHref}?plan=team`,
             isPopular: false,
           },
         ],
         comparisonTitle: "Сравнение возможностей тарифов",
-        comparisonLead: "Подробный обзор функционала и лимитов для каждого уровня подписки.",
-        tableHeaders: ["Функция", "Стартовый", "Pro", "Team"],
+        comparisonLead: "Доступные проверки, AI-кредиты и условия оплаты.",
         comparisonGroups: [
           {
-            category: "Проекты и сканирование",
-            rows: [
-              { name: "Количество активных проектов", free: "1 проект", pro: "5 проектов", team: "25 проектов" },
-              { name: "Глубина краулинга на один аудит", free: "1 страница", pro: "500 страниц", team: "10 000 страниц" },
-              { name: "Частота авто-проверок", free: "Вручную", pro: "Еженедельно", team: "Ежедневно / По расписанию" },
-              { name: "Рендеринг Chromium (JS & SPA)", free: "Да", freeCheck: true, pro: "Да", proCheck: true, team: "Да", teamCheck: true },
-            ],
+            "category": "Диагностика и краулинг",
+            "rows": [
+              {
+                "name": "Диагностические инструменты",
+                "free": "Доступны",
+                "pro": "Доступны",
+                "team": "Доступны"
+              },
+              {
+                "name": "Краулинг по умолчанию",
+                "free": "До 100 HTML-страниц",
+                "pro": "До 100 HTML-страниц",
+                "team": "До 100 HTML-страниц"
+              },
+              {
+                "name": "Обработка страниц",
+                "free": "HTML без выполнения JavaScript",
+                "pro": "HTML без выполнения JavaScript",
+                "team": "HTML без выполнения JavaScript"
+              }
+            ]
           },
           {
-            category: "AI-инструменты и аналитика",
-            rows: [
-              { name: "Доступ к 10 AI-сценариям", free: "Нет", freeCheck: false, pro: "Да (включено)", proCheck: true, team: "Неограниченно", teamCheck: true },
-              { name: "AI-план исправлений по аудиту", free: "Нет", freeCheck: false, pro: "Да", proCheck: true, team: "Да", teamCheck: true },
-              { name: "AI-брифы и оптимизатор текстов", free: "Нет", freeCheck: false, pro: "Да", proCheck: true, team: "Да", teamCheck: true },
-              { name: "Анализ конкурентных пробелов", free: "Нет", freeCheck: false, pro: "Да", proCheck: true, team: "Да", teamCheck: true },
-            ],
+            "category": "AI-кредиты и инструменты",
+            "rows": [
+              {
+                "name": "Кредиты в оплаченном тарифе",
+                "free": "Отдельная покупка",
+                "pro": "150 за 30 дней; 1 800 за год",
+                "team": "500 за 30 дней; 6 000 за год"
+              },
+              {
+                "name": "AI-инструменты каталога",
+                "free": "При достаточном балансе",
+                "pro": "При достаточном балансе",
+                "team": "При достаточном балансе"
+              },
+              {
+                "name": "Текстовый AI-запуск",
+                "free": "1 кредит",
+                "pro": "1 кредит",
+                "team": "1 кредит"
+              },
+              {
+                "name": "Создание или редактирование изображения",
+                "free": "2 кредита",
+                "pro": "2 кредита",
+                "team": "2 кредита"
+              }
+            ]
           },
           {
-            category: "Отчеты и командная работа",
-            rows: [
-              { name: "Выгрузка в PDF и CSV", free: "Нет", freeCheck: false, pro: "Да", proCheck: true, team: "Да", teamCheck: true },
-              { name: "White-label отчеты с вашим логотипом", free: "Нет", freeCheck: false, pro: "Нет", proCheck: false, team: "Да", teamCheck: true },
-              { name: "Количество рабочих мест (seats)", free: "1 пользователь", pro: "1 пользователь", team: "До 5 пользователей" },
-              { name: "Срок хранения истории", free: "7 дней", pro: "90 дней", team: "365 дней" },
-            ],
+            "category": "Отчеты и мониторинг",
+            "rows": [
+              {
+                "name": "Сохраненные аудиты",
+                "free": "В личном кабинете",
+                "pro": "В личном кабинете",
+                "team": "В личном кабинете"
+              },
+              {
+                "name": "Формат отчета",
+                "free": "HTML и печать в браузере",
+                "pro": "HTML и печать в браузере",
+                "team": "HTML и печать в браузере"
+              },
+              {
+                "name": "Мониторинг",
+                "free": "Расписание и история проверок",
+                "pro": "Расписание и история проверок",
+                "team": "Расписание и история проверок"
+              }
+            ]
           },
           {
-            category: "Поддержка и закрывающие документы",
-            rows: [
-              { name: "Канал поддержки", free: "Email", pro: "Email (до 4 ч)", team: "Приоритетный Telegram + Email" },
-              { name: "Оплата по безналичному расчету (юрлица)", free: "Нет", freeCheck: false, pro: "Да (при годовой)", proCheck: true, team: "Да (с актами и ЭДО)", teamCheck: true },
-            ],
-          },
+            "category": "Оплата и поддержка",
+            "rows": [
+              {
+                "name": "Период оплаченного тарифа",
+                "free": "Без оплаты тарифа",
+                "pro": "30 или 365 дней",
+                "team": "30 или 365 дней"
+              },
+              {
+                "name": "Автоматическое продление",
+                "free": "Не применяется",
+                "pro": "Нет",
+                "team": "Нет"
+              },
+              {
+                "name": "Дополнительные AI-кредиты",
+                "free": "Разовые пакеты без срока действия",
+                "pro": "Разовые пакеты без срока действия",
+                "team": "Разовые пакеты без срока действия"
+              },
+              {
+                "name": "Вопросы об оплате",
+                "free": "support@webdiag.ru",
+                "pro": "support@webdiag.ru",
+                "team": "support@webdiag.ru"
+              }
+            ]
+          }
         ],
         faqTitle: "Вопросы и ответы по тарифам",
-        faqLead: "Все, что нужно знать об оплате, смене планов и возвратах.",
+        faqLead: "Как выбрать пакет, оплатить заказ и использовать кредиты.",
         faqs: [
           {
-            q: "Можно ли сменить тариф или отменить подписку в любой момент?",
-            a: "Да, вы можете повысить, понизить тариф или отменить автопродление в личном кабинете в любое время в один клик. При переходе на более высокий план оплаченные дни автоматически пересчитываются.",
+            "q": "Что доступно без покупки тарифа?",
+            "a": "Бесплатные диагностические инструменты и экспресс-аудит можно использовать без покупки тарифа. Для сохраненных аудитов, отчетов и мониторинга нужен личный кабинет. AI-инструменты требуют достаточного баланса кредитов; купить разовый пакет можно и без платного тарифа."
           },
           {
-            q: "Работаете ли вы с юридическими лицами и ИП?",
-            a: "Да, мы предоставляем полный пакет закрывающих документов (счета, акты) через системы ЭДО (Диадок, СБИС) или на бумажном носителе. Для выставления счета напишите нам на support@webdiag.ru.",
+            "q": "На какой срок оплачиваются Pro и Team?",
+            "a": "Оплата за 30 дней включает 150 кредитов для Pro или 500 для Team. Годовой платеж включает 1 800 или 6 000 кредитов соответственно и период 365 дней. Годовая сумма оплачивается целиком, кредиты начисляются после подтверждения оплаты. Автоматического продления нет."
           },
           {
-            q: "Что происходит при исчерпании лимитов тарифа?",
-            a: "Сервис предупредит вас заранее. Вы сможете докупить дополнительный объем проверок или безопасно дождаться следующего расчетного периода без потери сохраненных данных.",
+            "q": "Как продлить или сменить оплаченный тариф?",
+            "a": "Повторная покупка того же тарифа продлевает его период. Для перехода с действующего Pro на Team или обратно обратитесь на support@webdiag.ru. Автоматического пересчета стоимости оставшихся дней в личном кабинете нет."
           },
           {
-            q: "Какие способы оплаты поддерживаются?",
-            a: "Мы принимаем банковские карты МИР, Visa, Mastercard, СБП, а также безналичные платежи от юридических лиц и индивидуальных предпринимателей.",
+            "q": "Как расходуются кредиты и можно ли их докупить?",
+            "a": "Текстовый AI-запуск стоит 1 кредит, создание или редактирование изображения — 2 кредита. Доступные инструменты показаны в AI-каталоге. Дополнить баланс можно пакетами на 50, 150 или 500 кредитов; у купленных пакетов нет срока действия. Если баланса недостаточно, сначала пополните его."
           },
           {
-            q: "Есть ли бесплатный пробный период для тарифов Pro?",
-            a: "Вы можете сразу зарегистрироваться на бесплатном тарифе и протестировать работу платформы. Все базовые инструменты и экспресс-аудиты доступны без привязки банковской карты.",
-          },
+            "q": "Как проходит оплата?",
+            "a": "Для выбранного тарифа или пакета создается заказ с переходом на платежную страницу Lava. Доступные способы оплаты показывает провайдер. Кредиты начисляются после подтверждения платежа. По вопросам оплаты и документов напишите на support@webdiag.ru, указав email аккаунта и номер заказа."
+          }
         ],
         creditPacks: {
           eyebrow: "Без абонентской платы",
           title: "Разовые пакеты AI-кредитов (Pay-As-You-Go)",
-          lead: "Нужны только AI-инструменты для решения разовых задач без регулярной подписки? Покупайте кредиты по мере необходимости — они никогда не сгорают и действуют бессрочно.",
+          lead: "Пополняйте AI-баланс разовыми пакетами без покупки тарифа. Купленные кредиты не имеют срока действия. Текстовый запуск стоит 1 кредит, создание или редактирование изображения — 2 кредита.",
           badgeNonExpiring: "Кредиты никогда не сгорают",
           packs: [
             {
               id: "pack-50",
               name: "Старт",
-              credits: "50",
               creditsUnit: "AI-кредитов",
-              price: "390 ₽",
-              perCredit: "~7.8 ₽ за кредит",
-              desc: "Для быстрой оптимизации и исправления 1 сайта.",
+              desc: "Для отдельных задач с текстом и изображениями.",
               badge: null,
               features: [
-                "5–10 запусков любых AI-инструментов",
-                "Бессрочный баланс (кредиты не сгорают)",
-                "AI-план устранения ошибок аудита",
-                "Генерация микроразметки Schema.org и мета-тегов",
+                "50 AI-кредитов на баланс",
+                "Кредиты без срока действия",
+                "Текстовый запуск — 1 кредит",
+                "Создание или редактирование изображения — 2 кредита"
               ],
               btnText: "Выбрать 50 кредитов",
-              btnHref: session ? "/account/settings#billing" : `${registerHref}?pack=50`,
               isPopular: false,
             },
             {
               id: "pack-150",
               name: "Оптимум",
-              credits: "150",
               creditsUnit: "AI-кредитов",
-              price: "890 ₽",
-              perCredit: "~5.9 ₽ за кредит",
-              desc: "Оптимальный выбор для аудита и доработки 3–5 сайтов.",
-              badge: "Хит продаж · Выгода 25%",
+              desc: "Запас кредитов для повторяющихся задач.",
+              badge: "150 кредитов",
               features: [
-                "До 30 запусков любых AI-инструментов",
-                "Бессрочный баланс без ограничений по времени",
-                "Анализ конкурентных пробелов и ТЗ копирайтерам",
-                "Оптимизатор контента и внутренняя перелинковка",
+                "150 AI-кредитов на баланс",
+                "Кредиты без срока действия",
+                "Доступ к инструментам при достаточном балансе",
+                "Покупка без платного тарифа"
               ],
               btnText: "Выбрать 150 кредитов",
-              btnHref: session ? "/account/settings#billing" : `${registerHref}?pack=150`,
               isPopular: true,
             },
             {
               id: "pack-500",
               name: "Бизнес",
-              credits: "500",
               creditsUnit: "AI-кредитов",
-              price: "1 990 ₽",
-              perCredit: "~3.9 ₽ за кредит",
-              desc: "Для постоянной работы вебмастеров, SEO-специалистов и агентств.",
-              badge: "Максимальная выгода 50%",
+              desc: "Больший запас кредитов для регулярной работы.",
+              badge: "500 кредитов",
               features: [
-                "До 100 запусков любых AI-инструментов",
-                "Бессрочный баланс без сгорания",
-                "Приоритетная очередь генерации в LLM",
-                `Доступ ко всем ${ACTIVE_AI_CATALOG_TOOLS.length} AI-инструментам платформы`,
+                "500 AI-кредитов на баланс",
+                "Кредиты без срока действия",
+                "Доступ к инструментам при достаточном балансе",
+                "Разовая оплата без автопродления"
               ],
               btnText: "Выбрать 500 кредитов",
-              btnHref: session ? "/account/settings#billing" : `${registerHref}?pack=500`,
               isPopular: false,
             },
           ],
         },
         guarantee: {
-          title: "14 дней гарантии возврата средств",
-          text: "Если платформа WebDiag не подойдет под ваши задачи, мы вернем оплату в течение 14 дней с момента оформления первого платного заказа без лишних вопросов.",
+          "title": "Помощь с оплатой",
+          "text": "Вопросы о заказе, платеже или подтверждающих документах можно отправить на support@webdiag.ru. Укажите email аккаунта и номер заказа, чтобы мы могли найти платеж."
         },
       }
     : {
@@ -289,10 +308,10 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
         hero: {
           eyebrow: "Transparent Pricing",
           title: "Simple, Predictable Plans with Zero Hidden Fees",
-          lead: "Choose the plan tailored to your single website or an entire client portfolio. Start free or unlock comprehensive diagnostics with Pro and Team tiers.",
-          monthly: "Monthly billing",
+          lead: "Basic diagnostics are free. Choose a one-off credit package or a Pro or Team plan for AI tasks.",
+          monthly: "30-day payment",
           annual: "Annual billing",
-          discountBadge: "Save 20%",
+          discountBadge: "No auto-renewal",
         },
         plans: [
           {
@@ -300,206 +319,247 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
             name: "Starter",
             badge: null,
             desc: "For website owners and quick technical health checks.",
-            priceMonthly: "$0",
-            priceAnnual: "$0",
             period: "forever free",
             features: [
-              "125 free diagnostic web tools",
-              "10 welcome AI credits upon signup",
-              "Express single page audits",
-              "Core Web Vitals & speed checks",
-              "Basic SSL & HTTP header analysis",
-              "1 project in workspace",
-              "7-day history retention",
-            ],
-            missing: [
-              "Deep multi-page website crawling",
-              "Unlimited AI fix action plans (requires credits)",
-              "PDF and CSV report exports",
-              "Scheduled automated monitoring",
+              "Free diagnostic tools",
+              "Single-page express audits",
+              "HTML crawling: up to 100 pages by default",
+              "Saved audits in your account",
+              "HTML reports with browser printing",
+              "Scheduled monitoring and check history",
+              "AI tools with a sufficient credit balance"
             ],
             btnText: "Start Free",
-            btnHref: session ? "/en/account" : registerHref,
             isPopular: false,
           },
           {
             id: "pro",
             name: "Professional",
-            badge: "Most Popular",
+            badge: "Pro",
             desc: "For SEO consultants, developers, and growing websites.",
-            priceMonthly: "$14",
-            priceAnnual: "$11",
             period: "per month",
             features: [
-              "Everything in Starter plan",
-              "Deep crawling up to 500 pages",
-              "5 active projects in monitoring",
-              "Full access to all 10 AI workflows",
-              "Actionable AI Fix Plan",
-              "PDF & CSV report downloads",
-              "90-day history retention",
-              "Broken links and redirect chain finder",
+              "All basic diagnostic tools",
+              "150 AI credits with a 30-day purchase",
+              "1,800 AI credits with an annual purchase",
+              "Annual plan period of 365 days",
+              "Text AI runs cost 1 credit",
+              "Image generation or editing costs 2 credits",
+              "HTML reports and scheduled monitoring",
+              "One-time payment with no automatic renewal"
             ],
-            missing: [
-              "Multi-seat team collaboration",
-              "White-label branded reports",
-            ],
-            btnText: "Try Pro",
-            btnHref: session ? "/en/account/settings#billing" : `${registerHref}?plan=pro`,
+            btnText: "Choose Pro",
             isPopular: true,
           },
           {
             id: "team",
-            name: "Team & Agency",
-            badge: "For Agencies",
-            desc: "For digital agencies, web studios, and large web portals.",
-            priceMonthly: "$42",
-            priceAnnual: "$34",
+            name: "Team",
+            badge: "More AI credits",
+            desc: "For regular work with text and images.",
             period: "per month",
             features: [
-              "Everything in Pro plan",
-              "Deep crawl up to 10,000 pages",
-              "25 projects with automated crawls",
-              "Scheduled recurring monitoring",
-              "White-label PDF reports (your branding)",
-              "Up to 5 team member seats",
-              "365-day history retention",
-              "High-priority worker processing queue",
-              "Dedicated priority support",
+              "All basic diagnostic tools",
+              "500 AI credits with a 30-day purchase",
+              "6,000 AI credits with an annual purchase",
+              "Annual plan period of 365 days",
+              "Text AI runs cost 1 credit",
+              "Image generation or editing costs 2 credits",
+              "HTML reports and scheduled monitoring",
+              "Additional credit packs available separately",
+              "One-time payment with no automatic renewal"
             ],
-            missing: [],
             btnText: "Choose Team",
-            btnHref: session ? "/en/account/settings#billing" : `${registerHref}?plan=team`,
             isPopular: false,
           },
         ],
         comparisonTitle: "Compare Features Across Plans",
-        comparisonLead: "An in-depth matrix of technical features and limits for each subscription level.",
-        tableHeaders: ["Feature", "Starter", "Pro", "Team"],
+        comparisonLead: "Available diagnostics, AI credits, and payment terms.",
         comparisonGroups: [
           {
-            category: "Projects & Crawling",
-            rows: [
-              { name: "Active projects in workspace", free: "1 project", pro: "5 projects", team: "25 projects" },
-              { name: "Crawl depth per audit", free: "1 page", pro: "500 pages", team: "10,000 pages" },
-              { name: "Automated scan frequency", free: "Manual", pro: "Weekly", team: "Daily / Scheduled" },
-              { name: "Chromium rendering (JS & SPA)", free: "Yes", freeCheck: true, pro: "Yes", proCheck: true, team: "Yes", teamCheck: true },
-            ],
+            "category": "Diagnostics and crawling",
+            "rows": [
+              {
+                "name": "Diagnostic tools",
+                "free": "Available",
+                "pro": "Available",
+                "team": "Available"
+              },
+              {
+                "name": "Default crawl limit",
+                "free": "Up to 100 HTML pages",
+                "pro": "Up to 100 HTML pages",
+                "team": "Up to 100 HTML pages"
+              },
+              {
+                "name": "Page processing",
+                "free": "HTML without JavaScript execution",
+                "pro": "HTML without JavaScript execution",
+                "team": "HTML without JavaScript execution"
+              }
+            ]
           },
           {
-            category: "AI Tools & Intelligence",
-            rows: [
-              { name: "Access to 10 AI workflows", free: "No", freeCheck: false, pro: "Yes (included)", proCheck: true, team: "Unlimited", teamCheck: true },
-              { name: "Audit Action Plan generation", free: "No", freeCheck: false, pro: "Yes", proCheck: true, team: "Yes", teamCheck: true },
-              { name: "Content brief & text optimizer", free: "No", freeCheck: false, pro: "Yes", proCheck: true, team: "Yes", teamCheck: true },
-              { name: "Competitor gap analysis", free: "No", freeCheck: false, pro: "Yes", proCheck: true, team: "Yes", teamCheck: true },
-            ],
+            "category": "AI credits and tools",
+            "rows": [
+              {
+                "name": "Credits included in a paid plan",
+                "free": "Purchased separately",
+                "pro": "150 per 30 days; 1,800 per year",
+                "team": "500 per 30 days; 6,000 per year"
+              },
+              {
+                "name": "AI tools in the catalog",
+                "free": "With a sufficient balance",
+                "pro": "With a sufficient balance",
+                "team": "With a sufficient balance"
+              },
+              {
+                "name": "Text AI run",
+                "free": "1 credit",
+                "pro": "1 credit",
+                "team": "1 credit"
+              },
+              {
+                "name": "Image generation or editing",
+                "free": "2 credits",
+                "pro": "2 credits",
+                "team": "2 credits"
+              }
+            ]
           },
           {
-            category: "Reporting & Collaboration",
-            rows: [
-              { name: "PDF and CSV exports", free: "No", freeCheck: false, pro: "Yes", proCheck: true, team: "Yes", teamCheck: true },
-              { name: "White-label custom branding", free: "No", freeCheck: false, pro: "No", proCheck: false, team: "Yes", teamCheck: true },
-              { name: "Team user seats", free: "1 user", pro: "1 user", team: "Up to 5 users" },
-              { name: "History data retention", free: "7 days", pro: "90 days", team: "365 days" },
-            ],
+            "category": "Reports and monitoring",
+            "rows": [
+              {
+                "name": "Saved audits",
+                "free": "In your account",
+                "pro": "In your account",
+                "team": "In your account"
+              },
+              {
+                "name": "Report format",
+                "free": "HTML and browser printing",
+                "pro": "HTML and browser printing",
+                "team": "HTML and browser printing"
+              },
+              {
+                "name": "Monitoring",
+                "free": "Schedules and check history",
+                "pro": "Schedules and check history",
+                "team": "Schedules and check history"
+              }
+            ]
           },
           {
-            category: "Support & SLA",
-            rows: [
-              { name: "Support channel", free: "Email", pro: "Priority Email (<4h)", team: "Dedicated Slack / Telegram & Email" },
-              { name: "Invoicing & corporate VAT", free: "No", freeCheck: false, pro: "Yes (annual)", proCheck: true, team: "Yes (with VAT invoices)", teamCheck: true },
-            ],
-          },
+            "category": "Payments and support",
+            "rows": [
+              {
+                "name": "Paid plan period",
+                "free": "No plan purchase required",
+                "pro": "30 or 365 days",
+                "team": "30 or 365 days"
+              },
+              {
+                "name": "Automatic renewal",
+                "free": "Not applicable",
+                "pro": "No",
+                "team": "No"
+              },
+              {
+                "name": "Additional AI credits",
+                "free": "One-time packs that never expire",
+                "pro": "One-time packs that never expire",
+                "team": "One-time packs that never expire"
+              },
+              {
+                "name": "Payment questions",
+                "free": "support@webdiag.ru",
+                "pro": "support@webdiag.ru",
+                "team": "support@webdiag.ru"
+              }
+            ]
+          }
         ],
         faqTitle: "Pricing & Billing FAQ",
-        faqLead: "Common questions about payments, plan upgrades, and invoices.",
+        faqLead: "How to choose a package, pay, and use credits.",
         faqs: [
           {
-            q: "Can I switch plans or cancel at any time?",
-            a: "Yes. You can upgrade, downgrade, or cancel auto-renewal in your account settings with a single click. Unused time on upgrades is prorated automatically.",
+            "q": "What can I use without buying a plan?",
+            "a": "Free diagnostic tools and single-page express audits are available without a plan purchase. An account is required for saved audits, reports, and monitoring. AI tools require a sufficient credit balance; you can buy a one-time credit pack without a paid plan."
           },
           {
-            q: "Do you offer corporate invoicing for companies?",
-            a: "Yes. We support wire transfer invoices and electronic tax documentation for business clients on annual plans.",
+            "q": "How long do Pro and Team purchases last?",
+            "a": "A 30-day purchase includes 150 credits for Pro or 500 for Team. An annual purchase includes 1,800 or 6,000 credits respectively and a 365-day plan period. The annual amount is paid in full, and credits are added after payment confirmation. Plans do not renew automatically."
           },
           {
-            q: "What happens when I hit my monthly crawl limit?",
-            a: "You will receive an alert in your dashboard. You can add extra credits on-demand or wait for the next billing cycle without losing any existing reports.",
+            "q": "How do I extend or change a paid plan?",
+            "a": "Buying the same plan again extends its period. To switch an active Pro plan to Team or the other way around, contact support@webdiag.ru. The account does not automatically prorate the remaining days."
           },
           {
-            q: "What payment methods are supported?",
-            a: "We accept all major credit and debit cards (Visa, Mastercard, MIR), Apple Pay, Google Pay, and bank wire transfers for businesses.",
+            "q": "How are credits used, and can I buy more?",
+            "a": "A text AI run costs 1 credit; image generation or editing costs 2 credits. Available tools are shown in the AI catalog. You can add packs of 50, 150, or 500 credits, and purchased packs never expire. If your balance is insufficient, top it up before starting a run."
           },
+          {
+            "q": "How does payment work?",
+            "a": "An order is created for your selected plan or pack and opens the Lava payment page. The provider shows the payment methods available to you. Credits are added after payment confirmation. For payment or document questions, email support@webdiag.ru with your account email and order number."
+          }
         ],
         creditPacks: {
           eyebrow: "No Recurring Subscription",
           title: "On-Demand AI Credit Packages (Pay-As-You-Go)",
-          lead: "Need AI tools without monthly commitments? Purchase credits on demand — they never expire and can be used anytime for any website.",
+          lead: "Top up your AI balance with one-time packs without buying a plan. Purchased credits never expire. A text run costs 1 credit; image generation or editing costs 2 credits.",
           badgeNonExpiring: "Credits never expire",
           packs: [
             {
               id: "pack-50",
               name: "Starter",
-              credits: "50",
               creditsUnit: "AI credits",
-              price: "$5",
-              perCredit: "~$0.10 per credit",
-              desc: "For quick optimization and fixing a single website.",
+              desc: "For individual text and image tasks.",
               badge: null,
               features: [
-                "5–10 runs of any AI workflow",
-                "Non-expiring permanent balance",
-                "AI Site Fix Action Plan",
-                "Schema.org JSON-LD and meta tag generator",
+                "50 AI credits added to your balance",
+                "Credits never expire",
+                "Text AI runs cost 1 credit",
+                "Image generation or editing costs 2 credits"
               ],
               btnText: "Get 50 Credits",
-              btnHref: session ? "/en/account/settings#billing" : `${registerHref}?pack=50`,
               isPopular: false,
             },
             {
               id: "pack-150",
               name: "Pro Pack",
-              credits: "150",
               creditsUnit: "AI credits",
-              price: "$11",
-              perCredit: "~$0.07 per credit",
-              desc: "Best value for auditing and optimizing 3–5 websites.",
-              badge: "Popular · Save 25%",
+              desc: "A credit reserve for recurring tasks.",
+              badge: "150 credits",
               features: [
-                "Up to 30 runs of any AI workflow",
-                "Non-expiring permanent balance",
-                "Competitor gap analysis & content briefs",
-                "Copy optimizer & internal linking planner",
+                "150 AI credits added to your balance",
+                "Credits never expire",
+                "Tools available with a sufficient balance",
+                "No paid plan required"
               ],
               btnText: "Get 150 Credits",
-              btnHref: session ? "/en/account/settings#billing" : `${registerHref}?pack=150`,
               isPopular: true,
             },
             {
               id: "pack-500",
               name: "Business",
-              credits: "500",
               creditsUnit: "AI credits",
-              price: "$25",
-              perCredit: "~$0.05 per credit",
-              desc: "For SEO consultants, freelancers, and ongoing client audits.",
-              badge: "Best Value · Save 50%",
+              desc: "A larger credit reserve for regular work.",
+              badge: "500 credits",
               features: [
-                "Up to 100 runs of any AI workflow",
-                "Non-expiring permanent balance",
-                "Priority LLM queue processing",
-                `Full access to all ${ACTIVE_AI_CATALOG_TOOLS.length} AI tools`,
+                "500 AI credits added to your balance",
+                "Credits never expire",
+                "Tools available with a sufficient balance",
+                "One-time payment with no automatic renewal"
               ],
               btnText: "Get 500 Credits",
-              btnHref: session ? "/en/account/settings#billing" : `${registerHref}?pack=500`,
               isPopular: false,
             },
           ],
         },
         guarantee: {
-          title: "14-Day Money-Back Guarantee",
-          text: "If WebDiag doesn't fully satisfy your diagnostic requirements, contact us within 14 days of your initial purchase for a full refund.",
+          "title": "Payment support",
+          "text": "For questions about an order, a payment, or supporting documents, email support@webdiag.ru. Include your account email and order number so we can locate the payment."
         },
       };
 
@@ -560,11 +620,11 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
                 <span style={{ fontSize: "14px", color: "var(--wd-f, #1e293b)", lineHeight: 1.5 }}>
                   {ru ? (
                     <>
-                      Вы авторизованы как <strong>{session.user.email}</strong>. При выборе тарифа или покупке кредитов заказ сразу привязывается к вашему аккаунту.
+                      Вы авторизованы как <strong>{session.user.email}</strong>. Оплаченные кредиты поступят на баланс этого аккаунта.
                     </>
                   ) : (
                     <>
-                      Signed in as <strong>{session.user.email}</strong>. Plan upgrades and credit packages will be applied directly to your account.
+                      Signed in as <strong>{session.user.email}</strong>. Purchased credits will be added to this account after payment confirmation.
                     </>
                   )}
                 </span>
@@ -586,10 +646,14 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
 
           <div className="wd-pricing-cards-grid">
             {t.plans.map((plan) => {
-              const price = annual ? plan.priceAnnual : plan.priceMonthly;
               const sku = planSku(plan.id, annual, locale);
+              const amount = plan.id === "free" ? 0 : checkoutPackage(sku, locale)?.amount;
+              if (amount === undefined) throw new Error(`Unknown billing plan: ${sku}`);
+              const price = annual && plan.id !== "free" ? amount / 12 : amount;
               const checkoutHref = `${ru ? "/account/checkout" : "/en/account/checkout"}?pack=${encodeURIComponent(sku)}`;
-              const isPlanLoading = loadingPack === sku;
+              const planHref = plan.id === "free"
+                ? session ? (ru ? "/account" : "/en/account") : registerHref
+                : session ? checkoutHref : `${registerHref}?return_to=${encodeURIComponent(checkoutHref)}`;
               return (
                 <div
                   className={`wd-pricing-card ${plan.isPopular ? "is-popular" : ""}`}
@@ -602,42 +666,14 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
                   </div>
 
                   <div className="wd-pricing-card-price-row">
-                    <span className="wd-pricing-card-amount">{price}</span>
+                    <PriceAmount className="wd-pricing-card-amount" amount={price} currency={ru ? "RUB" : "USD"} locale={locale} />
                     <span className="wd-pricing-card-period">/ {plan.period}</span>
                   </div>
 
-                  {session && plan.id !== "free" ? (
-                    <button
-                      type="button"
-                      onClick={() => handleBuyPack(sku)}
-                      disabled={isPlanLoading}
-                      className={`wd-pricing-card-btn ${plan.isPopular ? "is-primary" : ""}`}
-                      style={{ width: "100%", cursor: isPlanLoading ? "wait" : "pointer" }}
-                    >
-                      <span>
-                        {isPlanLoading
-                          ? (ru ? "Создание счета..." : "Creating invoice...")
-                          : (ru ? `Перейти на ${plan.name}` : `Upgrade to ${plan.name}`)}
-                      </span>
-                      <ArrowRight size={16} aria-hidden="true" />
-                    </button>
-                  ) : session && plan.id === "free" ? (
-                    <Link
-                      href={ru ? "/account" : "/en/account"}
-                      className="wd-pricing-card-btn"
-                    >
-                      <span>{ru ? "Текущий тариф (Кабинет)" : "Current Plan (Dashboard)"}</span>
-                      <ArrowRight size={16} aria-hidden="true" />
-                    </Link>
-                  ) : (
-                    <Link
-                      href={plan.id === "free" ? plan.btnHref : `${registerHref}?return_to=${encodeURIComponent(checkoutHref)}`}
-                      className={`wd-pricing-card-btn ${plan.isPopular ? "is-primary" : ""}`}
-                    >
-                      <span>{plan.btnText}</span>
-                      <ArrowRight size={16} aria-hidden="true" />
-                    </Link>
-                  )}
+                  <Link href={planHref} className={`wd-pricing-card-btn ${plan.isPopular ? "is-primary" : ""}`}>
+                    <span>{session && plan.id === "free" ? (ru ? "Открыть кабинет" : "Open workspace") : plan.btnText}</span>
+                    <ArrowRight size={16} aria-hidden="true" />
+                  </Link>
 
                 <div className="wd-pricing-features-wrap">
                   <strong className="wd-pricing-features-title">
@@ -647,12 +683,6 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
                     {plan.features.map((feat, idx) => (
                       <li key={idx} className="is-included">
                         <Check size={16} aria-hidden="true" />
-                        <span>{feat}</span>
-                      </li>
-                    ))}
-                    {plan.missing.map((feat, idx) => (
-                      <li key={idx} className="is-missing">
-                        <Minus size={16} aria-hidden="true" />
                         <span>{feat}</span>
                       </li>
                     ))}
@@ -673,14 +703,19 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
             <p className="wd-pricing-sub-h2">{t.creditPacks.lead}</p>
           </div>
 
-          {billingError && (
-            <div className="wd-credit-pack-error" role="alert" style={{ marginBottom: "20px", padding: "12px 18px", borderRadius: "12px", background: "#fef2f2", border: "1px solid #fecaca", color: "#dc2626", fontSize: "14px", textAlign: "center" }}>
-              {billingError}
-            </div>
-          )}
-
           <div className="wd-credit-packs-grid">
-            {t.creditPacks.packs.map((pack) => (
+            {t.creditPacks.packs.map((pack) => {
+              const product = checkoutPackage(billingSku(pack.id, locale), locale);
+              if (!product) throw new Error(`Unknown credit package: ${pack.id}`);
+              const checkoutHref = `${ru ? "/account/checkout" : "/en/account/checkout"}?pack=${encodeURIComponent(billingSku(pack.id, locale))}`;
+              const packHref = session ? checkoutHref : `${ru ? "/login" : "/en/login"}?return_to=${encodeURIComponent(checkoutHref)}`;
+              const rate = new Intl.NumberFormat(ru ? "ru-RU" : "en-US", {
+                style: "currency",
+                currency: product.currency,
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              }).format(product.amount / product.credits);
+              return (
               <div
                 className={`wd-credit-pack-card ${pack.isPopular ? "is-popular" : ""}`}
                 key={pack.id}
@@ -689,7 +724,7 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
                 <div className="wd-credit-pack-head">
                   <div className="wd-credit-pack-credits-wrap">
                     <Sparkles size={20} className="wd-credit-pack-icon" aria-hidden="true" />
-                    <span className="wd-credit-pack-amount">{pack.credits}</span>
+                    <span className="wd-credit-pack-amount">{product.credits}</span>
                     <span className="wd-credit-pack-unit">{pack.creditsUnit}</span>
                   </div>
                   <h3>{pack.name}</h3>
@@ -697,20 +732,17 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
                 </div>
 
                 <div className="wd-credit-pack-price-row">
-                  <span className="wd-credit-pack-price">{pack.price}</span>
-                  <span className="wd-credit-pack-rate">{pack.perCredit}</span>
+                  <PriceAmount className="wd-credit-pack-price" amount={product.amount} currency={product.currency} locale={locale} />
+                  <span className="wd-credit-pack-rate">{rate} {ru ? "за кредит" : "per credit"}</span>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => handleBuyPack(pack.id)}
-                  disabled={loadingPack === pack.id}
+                <Link
+                  href={packHref}
                   className={`wd-pricing-card-btn ${pack.isPopular ? "is-primary" : ""}`}
-                  style={{ width: "100%", cursor: loadingPack === pack.id ? "wait" : "pointer" }}
                 >
-                  <span>{loadingPack === pack.id ? (ru ? "Создание счета..." : "Creating invoice...") : pack.btnText}</span>
+                  <span>{pack.btnText}</span>
                   <ArrowRight size={16} aria-hidden="true" />
-                </button>
+                </Link>
 
                 <div className="wd-credit-pack-features">
                   <ul>
@@ -723,44 +755,18 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
                   </ul>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="wd-pricing-section wd-comparison-section">
-        <div className="shell">
-          <div className="wd-pricing-section-header">
-            <span className="wd-eyebrow">{ru ? "Матрица тарифов" : "Plan Matrix"}</span>
-            <h2>{t.comparisonTitle}</h2>
-            <p className="wd-pricing-sub-h2">{t.comparisonLead}</p>
-          </div>
-
-          <div className="wd-comparison-table-wrapper">
-            <table className="wd-comparison-table">
-              <thead>
-                <tr>
-                  {t.tableHeaders.map((header, idx) => (
-                    <th key={idx}>{header}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {t.comparisonGroups.map((group, gIdx) => (
-                  <tr key={gIdx} className="wd-table-group-header-row">
-                    <td colSpan={4} className="wd-table-group-header">
-                      {group.category}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+              );
+            })}
           </div>
         </div>
       </section>
 
       <section className="wd-pricing-section wd-comparison-details-section">
         <div className="shell">
+          <div className="wd-pricing-section-header">
+            <h2>{t.comparisonTitle}</h2>
+            <p className="wd-pricing-sub-h2">{t.comparisonLead}</p>
+          </div>
           <div className="wd-comparison-groups">
             {t.comparisonGroups.map((group, gIdx) => (
               <div className="wd-comparison-group-card" key={gIdx}>
@@ -771,7 +777,7 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
                       <span className="wd-comparison-row-name">{row.name}</span>
                       <div className="wd-comparison-row-values">
                         <div className="wd-comparison-val-item">
-                          <small>Стартовый:</small>
+                          <small>{ru ? "Стартовый:" : "Starter:"}</small>
                           <span>{row.free}</span>
                         </div>
                         <div className="wd-comparison-val-item is-highlight">

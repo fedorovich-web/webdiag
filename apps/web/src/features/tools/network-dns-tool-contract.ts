@@ -2,7 +2,7 @@ export interface ToolApiErrorPayload {
   readonly detail: { readonly code: string; readonly message: string };
 }
 
-export interface DnsRecordResult {
+interface DnsRecordResult {
   readonly record_type: string;
   readonly name: string;
   readonly value: string;
@@ -21,7 +21,7 @@ export interface DnsLookupResponse {
   readonly recommendation: string;
 }
 
-export interface MxHostResult {
+interface MxHostResult {
   readonly host: string;
   readonly priority: number;
   readonly address_count: number;
@@ -56,7 +56,7 @@ export interface SpfCheckerResponse {
   readonly recommendation: string;
 }
 
-export interface MailPolicyTagResult {
+interface MailPolicyTagResult {
   readonly name: string;
   readonly value: string;
 }
@@ -119,7 +119,7 @@ export type NetworkDnsToolResponse =
   | DmarcCheckerResponse
   | DnssecCheckerResponse;
 
-export function isRecord(value: unknown): value is Record<string, unknown> {
+function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
 }
 

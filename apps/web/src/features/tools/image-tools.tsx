@@ -176,7 +176,6 @@ function ResultPanel({ locale, result }: { locale: Locale; result: ResultFile | 
   return <section className="tool-panel">
     <h2>{t(locale, "Результат", "Result")}</h2>
     {result ? <>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img className="image-preview" src={result.url} alt={t(locale, "Предпросмотр обработанного изображения", "Processed image preview")} />
       <dl className="result-meta">
         <div><dt>{t(locale, "Размеры", "Dimensions")}</dt><dd>{result.width} × {result.height}</dd></div>

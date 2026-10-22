@@ -3,7 +3,7 @@ export const FRONTEND_AUDIT_RESULT_CONTRACT_VERSION = "webdiag.web.audit_result.
 
 type NumberBuckets = Record<string, number>;
 
-export interface AuditEvidence {
+interface AuditEvidence {
   readonly kind: string;
   readonly source: string;
   readonly value: string;
@@ -18,7 +18,7 @@ export interface AuditApiErrorPayload {
   };
 }
 
-export interface BackendAuditRunSummary {
+interface BackendAuditRunSummary {
   readonly status: string;
   readonly score: number | null;
   readonly check_count: number;
@@ -30,7 +30,7 @@ export interface BackendAuditRunSummary {
   readonly top_priority: string | null;
 }
 
-export interface BackendAuditIssuePreview {
+interface BackendAuditIssuePreview {
   readonly issue_id: string;
   readonly check_id?: string | null;
   readonly category: string;
@@ -51,7 +51,7 @@ export interface BackendAuditIssuePreview {
   };
 }
 
-export interface BackendAuditCheckPreview {
+interface BackendAuditCheckPreview {
   readonly check_id: string;
   readonly name: string;
   readonly category: string;
@@ -86,7 +86,7 @@ export interface BackendAuditSnapshotResponse {
   } | null;
 }
 
-export interface AuditFrontendSummary {
+interface AuditFrontendSummary {
   readonly status: string;
   readonly score: number | null;
   readonly checkCount: number;
@@ -146,7 +146,7 @@ export interface AuditFrontendResult {
   } | null;
 }
 
-export function isRecord(value: unknown): value is Record<string, unknown> {
+function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
 }
 

@@ -7,7 +7,7 @@ import { useState, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { CopyButton } from "../../components/copy-button";
 
-export interface RedirectHopResult {
+interface RedirectHopResult {
   readonly source_url: string;
   readonly target_url: string;
   readonly status_code: number;

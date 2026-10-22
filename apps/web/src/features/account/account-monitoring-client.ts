@@ -39,12 +39,6 @@ async function parse<T>(response: Response, validator: (value: unknown) => value
   return payload;
 }
 
-export function getAccountMonitor(projectId: string, fetcher: Fetcher = fetch): Promise<AccountMonitor> {
-  return fetcher(`/api/account/projects/${projectId}/monitor`, {
-    ...common, method: "GET", headers: { accept: "application/json" },
-  }).then((response) => parse(response, isAccountMonitor));
-}
-
 export function createAccountMonitor(
   projectId: string,
   input: { readonly cadence: MonitorCadence; readonly timezone: string },

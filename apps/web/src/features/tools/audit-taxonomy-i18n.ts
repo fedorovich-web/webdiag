@@ -62,7 +62,7 @@ export const DISPLAY_CHECK_NAMES: Readonly<Record<Locale, Readonly<Record<string
   },
 };
 
-export const RU_CATEGORIES: Readonly<Record<string, string>> = {
+const RU_CATEGORIES: Readonly<Record<string, string>> = {
   http: "HTTP",
   redirects: "редиректы",
   metadata: "метаданные",
@@ -74,21 +74,6 @@ export const RU_CATEGORIES: Readonly<Record<string, string>> = {
   performance: "производительность",
   accessibility: "доступность",
   media: "медиа",
-  url: "URL",
-};
-
-export const EN_CATEGORIES: Readonly<Record<string, string>> = {
-  http: "HTTP",
-  redirects: "Redirects",
-  metadata: "Metadata",
-  indexability: "Indexability",
-  crawlability: "Crawlability",
-  content: "Content",
-  structured_data: "Structured Data",
-  security: "Security",
-  performance: "Performance",
-  accessibility: "Accessibility",
-  media: "Media",
   url: "URL",
 };
 
@@ -330,7 +315,7 @@ export const RU_AUDIT_ISSUES: Readonly<Record<string, Translation>> = {
   },
 };
 
-export const EXTRA_AUDIT_ISSUES: Readonly<Record<string, Translation>> = {
+const EXTRA_AUDIT_ISSUES: Readonly<Record<string, Translation>> = {
   "indexability.x_robots_tag.noindex": {"title": "HTTP-заголовок запрещает индексацию", "description": "В X-Robots-Tag найдено noindex или none.", "summary": "Проверьте X-Robots-Tag. Уберите запрет только для страниц, которые должны индексироваться.", "steps": ["Проверьте X-Robots-Tag. Уберите запрет только для страниц, которые должны индексироваться."], "expectedImpact": null},
   "security.https.missing": {"title": "Страница доступна по HTTP", "description": "Финальный адрес страницы использует HTTP.", "summary": "Настройте HTTPS и перенаправление с HTTP на защищённый адрес.", "steps": ["Настройте HTTPS и перенаправление с HTTP на защищённый адрес."], "expectedImpact": null},
   "metadata.viewport.missing": {"title": "Требуется настройка viewport", "description": "Viewport отсутствует или не задаёт width=device-width.", "summary": "Задайте width=device-width в meta viewport и проверьте адаптивность на мобильном устройстве.", "steps": ["Задайте width=device-width в meta viewport и проверьте адаптивность на мобильном устройстве."], "expectedImpact": null},
@@ -416,7 +401,7 @@ export interface AuditCheckGuide {
   readonly toolTitle: string;
 }
 
-export const AUDIT_CHECK_GUIDES: Readonly<Record<Locale, Readonly<Record<string, AuditCheckGuide>>>> = {
+const AUDIT_CHECK_GUIDES: Readonly<Record<Locale, Readonly<Record<string, AuditCheckGuide>>>> = {
   ru: {
     "http.status": {
       title: "HTTP-статус ответа сервера",

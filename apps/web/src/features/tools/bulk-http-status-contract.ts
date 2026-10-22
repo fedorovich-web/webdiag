@@ -7,7 +7,7 @@ export interface BulkHttpStatusResult {
   readonly items: readonly BulkHttpStatusItem[];
 }
 
-export interface BulkHttpStatusItem {
+interface BulkHttpStatusItem {
   readonly index: number;
   readonly requested_url: string;
   readonly status: "succeeded" | "failed";

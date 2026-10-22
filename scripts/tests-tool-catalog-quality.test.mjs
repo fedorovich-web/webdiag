@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import { validateToolCatalogQuality } from "./verify-tool-catalog-quality.mjs";
 
 const rootUrl = new URL("../", import.meta.url);
@@ -9,6 +11,16 @@ const readJson = async (relativePath) => JSON.parse(await readText(relativePath)
 
 const tools = await readJson("packages/tool-registry/registry/tools.json");
 const strategyDocument = await readText("docs/TOOL_CATALOG_STRATEGY.md");
+
+test("catalog quality CLI runs its verification when invoked directly", () => {
+  const result = spawnSync(process.execPath, [fileURLToPath(new URL("./verify-tool-catalog-quality.mjs", import.meta.url))], {
+    encoding: "utf8",
+    windowsHide: true,
+  });
+  assert.equal(result.error, undefined);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /Tool catalog quality verified:/);
+});
 
 test("catalog strategy records the no-microtool product policy", () => {
   for (const marker of [

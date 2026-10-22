@@ -24,7 +24,7 @@ export interface AccountOverviewResponse {
   readonly projects: readonly AccountOverviewProject[];
 }
 
-export type AccountNextActionKind =
+type AccountNextActionKind =
   | "create_project"
   | "run_audit"
   | "review_change"

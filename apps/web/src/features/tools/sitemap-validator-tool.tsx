@@ -7,7 +7,7 @@ import type { Locale } from "@webdiag/tool-registry";
 import { CopyButton } from "../../components/copy-button";
 import { localizeRecommendation } from "./tool-localization";
 
-export interface SitemapLocResult {
+interface SitemapLocResult {
   readonly url: string;
 }
 
