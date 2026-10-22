@@ -118,7 +118,7 @@ function badgeClass(status: string) {
 }
 
 export function ImagePerformanceCheckerTool({ locale }: { locale: Locale }) {
-  const [url, setUrl] = useState("https://example.com/");
+  const [url, setUrl] = useState("");
   const [result, setResult] = useState<ImagePerformanceResponse | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -140,7 +140,7 @@ export function ImagePerformanceCheckerTool({ locale }: { locale: Locale }) {
 }
 
 export function ImageSeoAuditTool({ locale }: { locale: Locale }) {
-  const [url, setUrl] = useState("https://example.com/");
+  const [url, setUrl] = useState("");
   const [result, setResult] = useState<ImageSeoResponse | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -162,7 +162,7 @@ export function ImageSeoAuditTool({ locale }: { locale: Locale }) {
 }
 
 export function FaviconCheckerTool({ locale }: { locale: Locale }) {
-  const [url, setUrl] = useState("https://example.com/");
+  const [url, setUrl] = useState("");
   const [result, setResult] = useState<FaviconResponse | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);

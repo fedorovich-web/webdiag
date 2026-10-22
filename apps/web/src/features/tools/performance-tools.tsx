@@ -206,7 +206,7 @@ function RenderBlockingEvidence({ result, locale }: { result: LighthouseNetworkR
 }
 
 export function LighthouseNetworkTool({ locale, view }: { locale: Locale; view: "resources" | "blocking" }) {
-  const [url, setUrl] = useState("https://example.com/");
+  const [url, setUrl] = useState("");
   const [strategy, setStrategy] = useState<"mobile" | "desktop">("mobile");
   const [result, setResult] = useState<LighthouseNetworkResponse | null>(null);
   const [error, setError] = useState("");
@@ -274,7 +274,7 @@ function CoreWebVitalsFromQuery({ locale }: { locale: Locale }) {
 function CoreWebVitalsWorkbench({ locale, initialUrl }: { locale: Locale; initialUrl: string }) {
   const ru = locale === "ru";
   const target = parsePerformanceToolUrlInput(initialUrl)?.href ?? "";
-  const [url, setUrl] = useState(target || initialUrl || "https://example.com/");
+  const [url, setUrl] = useState(target || initialUrl);
   const [strategy, setStrategy] = useState<"mobile" | "desktop" | "both">("mobile");
   const [result, setResult] = useState<PageSpeedResponse | null>(null);
   const [error, setError] = useState(initialUrl && !target ? dictionary[locale].invalidUrl : "");
@@ -425,7 +425,7 @@ function CoreWebVitalsWorkbench({ locale, initialUrl }: { locale: Locale; initia
 }
 
 export function CachePolicyTool({ locale }: { locale: Locale }) {
-  const [url, setUrl] = useState("https://example.com/app.css");
+  const [url, setUrl] = useState("");
   const [result, setResult] = useState<CachePolicyResponse | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -449,7 +449,7 @@ export function CachePolicyTool({ locale }: { locale: Locale }) {
 }
 
 export function PageWeightTool({ locale }: { locale: Locale }) {
-  const [url, setUrl] = useState("https://example.com/");
+  const [url, setUrl] = useState("");
   const [result, setResult] = useState<PageWeightResponse | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);

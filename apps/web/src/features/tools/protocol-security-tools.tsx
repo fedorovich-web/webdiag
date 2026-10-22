@@ -124,7 +124,7 @@ function HostForm({
   onSubmit: (hostname: string, port: number) => void;
   loading: boolean;
 }) {
-  const [hostname, setHostname] = useState("example.com");
+  const [hostname, setHostname] = useState("");
   const [port, setPort] = useState("443");
   const [error, setError] = useState("");
 
@@ -144,7 +144,7 @@ function HostForm({
     <form className="tool-form" onSubmit={submit}>
       <label className="field">
         <span>{dictionary[locale].host}</span>
-        <input value={hostname} onChange={(event) => setHostname(event.target.value)} />
+        <input placeholder="example.com" value={hostname} onChange={(event) => setHostname(event.target.value)} />
       </label>
       <label className="field">
         <span>Port</span>
@@ -167,7 +167,7 @@ function UrlForm({
   onSubmit: (url: string) => void;
   loading: boolean;
 }) {
-  const [url, setUrl] = useState("https://example.com/");
+  const [url, setUrl] = useState("");
   const [error, setError] = useState("");
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -185,7 +185,7 @@ function UrlForm({
     <form className="tool-form" onSubmit={submit}>
       <label className="field">
         <span>{dictionary[locale].url}</span>
-        <input value={url} onChange={(event) => setUrl(event.target.value)} />
+        <input placeholder="https://example.com/" value={url} onChange={(event) => setUrl(event.target.value)} />
       </label>
       {error && <p className="form-error" role="alert">{error}</p>}
       <button className="button" type="submit" disabled={loading}>
@@ -204,8 +204,8 @@ function CorsForm({
   onSubmit: (url: string, origin: string) => void;
   loading: boolean;
 }) {
-  const [url, setUrl] = useState("https://api.example.com/");
-  const [origin, setOrigin] = useState("https://example.com");
+  const [url, setUrl] = useState("");
+  const [origin, setOrigin] = useState("");
   const [error, setError] = useState("");
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -224,11 +224,11 @@ function CorsForm({
     <form className="tool-form" onSubmit={submit}>
       <label className="field">
         <span>{dictionary[locale].url}</span>
-        <input value={url} onChange={(event) => setUrl(event.target.value)} />
+        <input placeholder="https://example.com/" value={url} onChange={(event) => setUrl(event.target.value)} />
       </label>
       <label className="field">
         <span>Origin</span>
-        <input value={origin} onChange={(event) => setOrigin(event.target.value)} />
+        <input placeholder="https://example.com" value={origin} onChange={(event) => setOrigin(event.target.value)} />
       </label>
       {error && <p className="form-error" role="alert">{error}</p>}
       <button className="button" type="submit" disabled={loading}>

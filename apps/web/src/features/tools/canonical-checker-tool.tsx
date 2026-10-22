@@ -146,7 +146,7 @@ function booleanLabel(value: boolean | null, locale: Locale): string {
 }
 
 export function CanonicalCheckerTool({ locale }: { locale: Locale }) {
-  const [input, setInput] = useState("https://example.com/catalog/page");
+  const [input, setInput] = useState("");
   const [result, setResult] = useState<CanonicalToolResponse | null>(null);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);

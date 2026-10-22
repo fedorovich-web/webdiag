@@ -61,6 +61,7 @@ test.describe("PageSpeed Lighthouse workbench", () => {
 
   test("renders four categories and an inert fix order in English", async ({ page }, testInfo) => {
     await page.goto("/en/tools/core-web-vitals-checker");
+    await page.getByLabel("Page URL").fill("https://example.com/");
     await page.getByRole("button", { name: "Run check" }).click();
 
     await expect(page.getByRole("heading", { name: "Lighthouse categories" })).toBeVisible();
@@ -88,6 +89,7 @@ test.describe("PageSpeed Lighthouse workbench", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.addInitScript(() => localStorage.setItem("webdiag-theme", "dark"));
     await page.goto("/tools/core-web-vitals-checker");
+    await page.getByLabel("URL страницы").fill("https://example.com/");
     await page.getByRole("button", { name: "Запустить проверку" }).click();
 
     await expect(page.getByRole("heading", { name: "Категории Lighthouse" })).toBeVisible();

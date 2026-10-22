@@ -126,7 +126,7 @@ function BaseTool<T extends TechnicalSeoToolResponse>({
   validator: (payload: unknown) => payload is T;
   render: (result: T) => React.ReactNode;
 }) {
-  const [url, setUrl] = useState("https://example.com/");
+  const [url, setUrl] = useState("");
   const [result, setResult] = useState<T | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
