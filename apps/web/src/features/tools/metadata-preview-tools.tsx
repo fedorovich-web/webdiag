@@ -124,7 +124,7 @@ function ToolForm({
   button: string;
   onRun: (url: string) => Promise<void>;
 }) {
-  const [input, setInput] = useState("https://example.com/");
+  const [input, setInput] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const invalid = locale === "ru"

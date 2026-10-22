@@ -159,7 +159,7 @@ async function runRobotsTxtCheck(url: string, userAgent: string): Promise<Robots
 }
 
 export function RobotsTxtTool({ locale }: { locale: Locale }) {
-  const [input, setInput] = useState("https://example.com/catalog/page");
+  const [input, setInput] = useState("");
   const [userAgent, setUserAgent] = useState("WebDiagBot");
   const [result, setResult] = useState<RobotsTxtToolResponse | null>(null);
   const [error, setError] = useState("");
