@@ -143,7 +143,7 @@ export function AuditHubPage({ locale }: AuditHubPageProps) {
             href: "/pricing",
           },
           {
-            name: "Мониторинг и Enterprise",
+            name: "Мониторинг сайта",
             subtitle: "Проверки URL по расписанию",
             price: "По расписанию",
             features: [
