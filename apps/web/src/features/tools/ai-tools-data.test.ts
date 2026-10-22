@@ -4,6 +4,8 @@ import { getAICatalogTools } from "./ai-tools-data";
 
 it("advertises only AI workflows with a supported public runtime contract", () => {
   const tools = getAICatalogTools("en");
-  expect(tools).toHaveLength(AI_TOOL_IDS.length);
-  expect(tools.map((tool) => tool.slug.replaceAll("-", "_")).sort()).toEqual([...AI_TOOL_IDS].sort());
+  expect(tools.map((tool) => tool.slug.replaceAll("-", "_")).sort()).toEqual(
+    AI_TOOL_IDS.filter((id) => id !== "ai_faq_studio").sort(),
+  );
+  expect(tools).toHaveLength(14);
 });

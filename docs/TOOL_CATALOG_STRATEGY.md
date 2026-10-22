@@ -5,7 +5,7 @@ Scope: A10.6 catalog strategy and quality gate.
 
 ## Product target
 
-WebDiag targets a broad catalog of approximately 125–145 practical tools without padding the catalog with one-bit checks. The catalog should compete by practical usefulness, evidence, execution safety, and good reporting rather than by inflated tool count.
+WebDiag counts the tools in its active public catalog, including active AI workflows, without adding internal definitions or retired tools. Product pages and structured data derive this count from the same catalog. The catalog should compete by practical usefulness, evidence, execution safety, and good reporting rather than by inflated tool count.
 
 The target catalog groups are:
 

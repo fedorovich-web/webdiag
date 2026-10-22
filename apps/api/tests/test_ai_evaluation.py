@@ -392,8 +392,6 @@ def test_provider_eval_report_rejects_semantically_invalid_saved_output(
             """,
             (invalid_output, hashlib.sha256(invalid_output.encode()).hexdigest()),
         )
-    # Rebuild the manifest after controlled corruption so recovery verification
-    # succeeds and the evaluation layer must catch the grounding violation.
     replacement = _rebuild_snapshot(
         tmp_path, account_database, "invalid-eval-backup"
     )

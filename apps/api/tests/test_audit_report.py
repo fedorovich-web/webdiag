@@ -7,6 +7,23 @@ from webdiag_api.audit.report import assemble_single_page_report
 from webdiag_api.tools.performance import PageSpeedMetricResponse, PageSpeedStrategyResponse
 
 
+def test_page_audit_uses_document_base_for_relative_canonical() -> None:
+    url = "https://example.com/catalog/product"
+    target = build_audit_target(url, resolved_addresses=["93.184.216.34"])
+    fetched = SafeFetchResult(
+        requested_url=url, final_url=url, status_code=200,
+        headers={"content-type": "text/html"}, content_type="text/html", redirect_chain=(),
+        body_text=(
+            '<base href="https://example.com/">'
+            '<link rel="canonical" href="catalog/product">'
+        ),
+    )
+    report = assemble_single_page_report(job_id=UUID(int=10), target=target, fetched=fetched)
+    assert "metadata.canonical.final_url_mismatch" not in {
+        issue.issue_id for issue in report.issues
+    }
+
+
 def test_assemble_single_page_report_passes_core_metadata_checks() -> None:
     target = build_audit_target("https://example.com", resolved_addresses=["93.184.216.34"])
     fetched = SafeFetchResult(
@@ -23,7 +40,7 @@ def test_assemble_single_page_report_passes_core_metadata_checks() -> None:
             "x-frame-options": "DENY",
         },
         body_text="""
-        <html><head>
+        <html lang='en'><head><meta name='viewport' content='width=device-width, initial-scale=1'>
           <title>WebDiag technical audit</title>
           <meta name="description" content="Technical audit report for a website.">
           <link rel="canonical" href="https://example.com/">
@@ -57,7 +74,9 @@ def test_assemble_single_page_report_creates_prioritized_issues() -> None:
         status_code=200,
         headers={"content-type": "text/html"},
         body_text="""
-        <html><head><meta name="robots" content="noindex"></head>
+        <html lang='en'><head>
+          <meta name='viewport' content='width=device-width, initial-scale=1'>
+          <meta name="robots" content="noindex"></head>
         <body><p>No headings</p></body></html>
         """,
         content_type="text/html",
@@ -96,7 +115,11 @@ def test_assemble_single_page_report_handles_http_errors() -> None:
         final_url="https://example.com/missing",
         status_code=404,
         headers={"content-type": "text/html"},
-        body_text="<html><head><title>Missing</title></head><body><h1>Missing</h1></body></html>",
+        body_text=(
+            "<html lang='en'><head>"
+            "<meta name='viewport' content='width=device-width, initial-scale=1'>"
+            "<title>Missing</title></head><body><h1>Missing</h1></body></html>"
+        ),
         content_type="text/html",
         redirect_chain=(),
     )
@@ -125,7 +148,7 @@ def test_assemble_single_page_report_sets_check_timestamps() -> None:
             "x-frame-options": "DENY",
         },
         body_text="""
-        <html><head>
+        <html lang='en'><head><meta name='viewport' content='width=device-width, initial-scale=1'>
           <title>Technical SEO audit page</title>
           <meta name="description" content="Technical audit report for a website.">
           <link rel="canonical" href="https://example.com/">
@@ -164,7 +187,7 @@ def test_assemble_single_page_report_flags_incomplete_open_graph_and_invalid_jso
             "x-frame-options": "DENY",
         },
         body_text="""
-        <html><head>
+        <html lang='en'><head><meta name='viewport' content='width=device-width, initial-scale=1'>
           <title>Technical SEO audit page</title>
           <meta name="description" content="Technical audit report for a website.">
           <link rel="canonical" href="https://example.com/">
@@ -203,7 +226,7 @@ def test_assemble_single_page_report_resolves_relative_canonical_against_final_u
             "x-frame-options": "DENY",
         },
         body_text="""
-        <html><head>
+        <html lang='en'><head><meta name='viewport' content='width=device-width, initial-scale=1'>
           <title>Technical SEO audit page</title>
           <meta name="description" content="Technical audit report for a website.">
           <link rel="canonical" href="/page">
@@ -235,7 +258,9 @@ def test_assemble_single_page_report_includes_mobile_pagespeed_findings() -> Non
             "x-frame-options": "DENY",
         },
         body_text=(
-            "<html><head><title>Technical SEO audit page</title>"
+            "<html lang='en'><head>"
+            "<meta name='viewport' content='width=device-width, initial-scale=1'>"
+            "<title>Technical SEO audit page</title>"
             '<meta name="description" content="Technical audit report for a website.">'
             '<link rel="canonical" href="https://example.com/"></head>'
             "<body><h1>Website audit</h1></body></html>"
@@ -289,9 +314,7 @@ def test_assemble_single_page_report_includes_mobile_pagespeed_findings() -> Non
         pagespeed=pagespeed,
     )
 
-    check = next(
-        item for item in report.checks if item.check_id == "performance.pagespeed_mobile"
-    )
+    check = next(item for item in report.checks if item.check_id == "performance.pagespeed_mobile")
     issue = next(
         item for item in report.issues if item.issue_id == "performance.pagespeed_mobile.poor"
     )
@@ -324,7 +347,9 @@ def test_assemble_single_page_report_skips_unavailable_pagespeed_without_penalty
             "x-frame-options": "DENY",
         },
         body_text=(
-            "<html><head><title>Technical SEO audit page</title>"
+            "<html lang='en'><head>"
+            "<meta name='viewport' content='width=device-width, initial-scale=1'>"
+            "<title>Technical SEO audit page</title>"
             '<meta name="description" content="Technical audit report for a website.">'
             '<link rel="canonical" href="https://example.com/"></head>'
             "<body><h1>Website audit</h1></body></html>"
@@ -359,9 +384,7 @@ def test_assemble_single_page_report_skips_unavailable_pagespeed_without_penalty
         pagespeed=pagespeed,
     )
 
-    check = next(
-        item for item in report.checks if item.check_id == "performance.pagespeed_mobile"
-    )
+    check = next(item for item in report.checks if item.check_id == "performance.pagespeed_mobile")
     assert check.status.value == "skipped"
     assert not any(issue.category is IssueCategory.PERFORMANCE for issue in report.issues)
     assert report.score == 100

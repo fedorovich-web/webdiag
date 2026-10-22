@@ -20,7 +20,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         const data = await readOAuthJson(response);
         if (data.configured === true && typeof data.yandex_client_id === "string") clientId = data.yandex_client_id;
       }
-    } catch { /* The controlled error redirect below handles an unavailable API. */ }
+    } catch {   }
   }
   if (!clientId) {
     const response = NextResponse.redirect(new URL(`${loginPath}?error=yandex_not_configured`, origin));

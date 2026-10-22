@@ -348,7 +348,6 @@
   }
 }
 
-/* A11.2 account workspace shell */
 .wd-account-workspace-page {
   min-height: 68vh;
   padding-block: clamp(1.5rem, 4vw, 3rem);
@@ -760,7 +759,6 @@
 .wd-account-actions { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
 @media (max-width: 860px) { .wd-monitoring-config { grid-template-columns: 1fr; } }
 
-/* A11.5 — saved reports, private exports, and expiring share links */
 .wd-report-list,
 .wd-report-snapshot,
 .wd-report-snapshot > section {
@@ -2807,7 +2805,6 @@ body:has(.wd-public-report-page) .site-footer {
   }
 }
 
-/* AI workspace: compact, evidence-first account surface */
 .wd-ai-workspace {
   display: grid;
   gap: 16px;
@@ -3522,7 +3519,6 @@ body:has(.wd-account-workspace-page) .site-footer {
   }
 }
 
-/* Account production polish: compact operations hierarchy */
 .wd-account-menu-slot {
   display: none;
 }
@@ -4187,7 +4183,6 @@ body:has(.wd-account-workspace-page) .site-footer {
 }
 
 
-/* Unified render fidelity — account dashboard + project issues */
 .wd-account-workspace-page.shell {
   width: min(1360px, calc(100% - 32px));
   max-width: none;
@@ -4284,7 +4279,6 @@ body:has(.wd-account-workspace-page) .site-footer {
   font-size: 13px;
 }
 
-/* Dashboard */
 .wd-dashboard-render {
   gap: 14px;
 }
@@ -4422,12 +4416,7 @@ body:has(.wd-account-workspace-page) .site-footer {
   font-size: 12px;
 }
 
-.wd-dashboard-quick-check .wd-live-audit-card {
-  position: relative;
-  z-index: 5;
-  margin-top: 10px;
-  background: #fff;
-}
+
 
 .wd-dashboard-kpis {
   display: grid;
@@ -4819,7 +4808,6 @@ body:has(.wd-account-workspace-page) .site-footer {
   border-bottom: 1px solid #e8eef4;
 }
 
-/* Project issues screen */
 .wd-account-issues-render {
   gap: 12px !important;
 }
@@ -5240,7 +5228,6 @@ body:has(.wd-account-workspace-page) .site-footer {
 }
 
 
-/* Unified render fidelity — audit report */
 .wd-report-render {
   gap: 12px !important;
 }
@@ -5841,7 +5828,6 @@ body:has(.wd-account-workspace-page) .site-footer {
 }
 
 
-/* Unified account family — project, monitoring, settings and AI */
 .wd-project-render,
 .wd-account-settings-page,
 .wd-monitoring-page,
@@ -6028,7 +6014,6 @@ body:has(.wd-account-workspace-page) .site-footer {
   font-size: 12px;
 }
 
-/* Monitoring */
 .wd-account-workspace-page .wd-monitoring-hero {
   padding: 20px 22px;
   align-items: center;
@@ -6095,7 +6080,6 @@ body:has(.wd-account-workspace-page) .site-footer {
   background: #fbfdff;
 }
 
-/* Settings */
 .wd-account-workspace-page .wd-account-settings-page > .wd-account-dashboard-head {
   padding: 20px 22px;
 }
@@ -6147,7 +6131,6 @@ body:has(.wd-account-workspace-page) .site-footer {
   text-transform: none;
 }
 
-/* AI */
 .wd-account-workspace-page .wd-ai-workspace-hero {
   min-height: 148px;
   padding: 20px 22px;
@@ -6317,7 +6300,6 @@ body:has(.wd-account-workspace-page) .site-footer {
 }
 
 
-/* Unified account family — issue detail + reports list */
 .wd-issue-detail-render,
 .wd-reports-render {
   gap: 12px !important;
@@ -6423,7 +6405,6 @@ body:has(.wd-account-workspace-page) .site-footer {
   font-size: 12px;
 }
 
-/* Saved reports list */
 .wd-account-workspace-page .wd-reports-render-hero {
   min-height: 132px;
   display: grid;
@@ -6556,7 +6537,6 @@ body:has(.wd-account-workspace-page) .site-footer {
 }
 
 
-/* Final desktop fidelity: approved account renders use a wide application canvas. */
 @media (min-width: 901px) {
   .wd-account-workspace-page.shell {
     width: min(1480px, calc(100% - 28px));
@@ -6579,7 +6559,6 @@ body:has(.wd-account-workspace-page) .site-footer {
 }
 
 
-/* Final account chrome — mirrors the approved workspace references without changing data contracts. */
 body:has(.wd-account-workspace-page) .wd-site-header,
 body:has(.wd-account-workspace-page) .site-footer {
   display: none;
@@ -6816,7 +6795,6 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 }
 
 
-/* Account navigation fidelity: match the approved flat dashboard rail. */
 body:has(.wd-account-workspace-page) .wd-workspace-navigation {
   gap: 6px;
 }
@@ -6846,7 +6824,6 @@ body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
 }
 
 
-/* Dashboard data blocks — match the approved table/card hierarchy using live account data. */
 .wd-dashboard-panel-link {
   color: #1988f4;
   font-size: 12px;
@@ -7057,7 +7034,6 @@ body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
 }
 
 
-/* Dashboard summary fidelity — live aggregates only, no fabricated historical values. */
 .wd-dashboard-kpis article {
   grid-template-columns: 48px minmax(0, 1fr);
   align-items: center;
@@ -7346,7 +7322,6 @@ body:has(.wd-account-workspace-page) .wd-workspace-project-switcher {
 }
 
 
-/* Account chrome fidelity: persistent rail, project control and real user dropdown. */
 @media (min-width: 901px) {
   body:has(.wd-account-workspace-page) .wd-workspace-layout {
     grid-template-columns: 220px minmax(0, 1fr);
@@ -7646,7 +7621,6 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 }
 
 
-/* Resolve legacy account-shell rules after the dashboard chrome rebuild. */
 @media (min-width: 901px) {
   body:has(.wd-account-workspace-page) .wd-workspace-layout {
     min-height: calc(100vh - 80px);
@@ -7680,7 +7654,6 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 }
 
 
-/* Dashboard topbar alignment and sparse-data panel proportions. */
 @media (min-width: 981px) {
   .wd-account-topbar-inner {
     grid-template-columns: 220px 180px minmax(0, 1fr) 280px;
@@ -7706,7 +7679,6 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 }
 
 
-/* Project-context account chrome and issues workspace fidelity. */
 @media (min-width: 901px) {
   .wd-account-topbar[data-project-context="true"] .wd-account-topbar-inner {
     grid-template-columns: 176px 1fr auto;
@@ -8534,7 +8506,6 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 }
 
 
-/* Saved audit PageSpeed snapshot */
 .wd-saved-pagespeed {
   display: grid;
   gap: 12px;
@@ -8888,7 +8859,6 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 }
 
 
-/* Project-level PageSpeed summary */
 .wd-project-pagespeed {
   display: grid;
   grid-template-columns: minmax(210px, .78fr) minmax(0, 1.7fr) auto;
@@ -8992,7 +8962,6 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 }
 
 
-/* Dashboard final density: keep the rail compact and let sparse data size naturally. */
 @media (min-width: 901px) {
   body:has(.wd-account-workspace-page) .wd-workspace-sidebar {
     display: flex;
@@ -9023,7 +8992,6 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 }
 
 
-/* Project issues: real saved-audit trend instead of static audit context. */
 .wd-issues-trend-card {
   min-width: 0;
   display: grid;
@@ -9173,7 +9141,6 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 }
 
 
-/* Project issues working area fidelity: denser list and richer selected issue card. */
 .wd-issues-results-heading > div {
   min-width: 0;
 }
@@ -9420,9 +9387,6 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 }
 
 
-/* ==========================================================================
-   ENHANCED ACCOUNT WORKSPACE BUTTONS & TYPOGRAPHY FOUNDATION
-   ========================================================================== */
 
 .wd-button {
   display: inline-flex;
@@ -9530,7 +9494,6 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   outline: none;
 }
 
-/* Tool Workspace Tabs */
 .wd-tools-tabs {
   display: flex;
   gap: 8px;
@@ -9588,7 +9551,6 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   margin: 0;
 }
 
-/* Quick Search Command Palette Modal */
 .wd-quick-search-backdrop {
   position: fixed;
   inset: 0;

@@ -1,200 +1,47 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
-import Link from "next/link";
+import { type FormEvent, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Locale } from "@webdiag/tool-registry";
-import {
-  AuditSnapshotResponse,
-  parseAuditUrlInput,
-} from "./audit-client";
+import { parseAuditUrlInput } from "./audit-client";
 
 const copy = {
   ru: {
-    label: "Адрес сайта или страницы",
-    placeholder: "https://example.ru",
-    button: "Проверить сайт",
-    buttonLoading: "Проверяем...",
-    empty: "Введите адрес сайта или страницы.",
-    invalid: "Введите полный URL, например https://example.ru.",
-    successPrefix: "Проверка завершена:",
-    errorPrefix: "Не удалось запустить проверку:",
-    apiUnavailable: "сервис проверки временно недоступен. Ниже можно посмотреть пример отчёта.",
-    resultTitle: "Результат быстрой проверки",
-    score: "Оценка",
-    issues: "Проблемы",
-    checks: "Проверки",
-    severity: "Риск",
-    topIssues: "Первые проблемы",
-    noIssues: "Критичных проблем в быстрой проверке не найдено.",
-    reportLink: "Посмотреть пример подробного отчёта",
+    label: "Адрес сайта или страницы", placeholder: "https://example.ru", button: "Проверить сайт",
+    empty: "Введите адрес сайта или страницы.", invalid: "Введите публичный HTTP(S) URL с доменом.",
   },
   en: {
-    label: "Website or page URL",
-    placeholder: "https://example.com",
-    button: "Check website",
-    buttonLoading: "Checking...",
-    empty: "Enter a website or page URL.",
-    invalid: "Enter a full URL, for example https://example.com.",
-    successPrefix: "Check completed:",
-    errorPrefix: "Could not start the check:",
-    apiUnavailable: "the checking service is temporarily unavailable. You can still view the sample report below.",
-    resultTitle: "Quick check result",
-    score: "Score",
-    issues: "Issues",
-    checks: "Checks",
-    severity: "Risk",
-    topIssues: "First issues",
-    noIssues: "No critical issues were found in the quick check.",
-    reportLink: "View detailed report example",
+    label: "Website or page URL", placeholder: "https://example.com", button: "Check website",
+    empty: "Enter a website or page URL.", invalid: "Enter a public HTTP(S) URL with a domain.",
   },
 } as const;
 
-const severityLabels = {
-  ru: {
-    critical: "критично",
-    high: "высокий",
-    medium: "средний",
-    low: "низкий",
-    info: "инфо",
-  },
-  en: {
-    critical: "critical",
-    high: "high",
-    medium: "medium",
-    low: "low",
-    info: "info",
-  },
-} as const;
-
-const priorityLabels = {
-  ru: { p0: "P0", p1: "P1", p2: "P2", p3: "P3" },
-  en: { p0: "P0", p1: "P1", p2: "P2", p3: "P3" },
-} as const;
-
-type SubmitState = "idle" | "loading" | "success" | "error";
-type FormInstance = "hero" | "final";
-
-function AuditResultPreview({ locale, snapshot }: { locale: Locale; snapshot: AuditSnapshotResponse }) {
-  const t = copy[locale];
-  const runSummary = snapshot.summary;
-  const issues = snapshot.run?.issues.slice(0, 3) ?? [];
-  const score = runSummary?.score ?? snapshot.run?.score ?? null;
-  const issueCount = runSummary?.issueCount ?? snapshot.run?.issues.length ?? 0;
-  const checkCount = runSummary?.checkCount ?? snapshot.run?.checks.length ?? 0;
-  const highestSeverity = runSummary?.highestSeverity ?? "info";
-  const severityLabel = severityLabels[locale][highestSeverity as keyof typeof severityLabels.ru] ?? highestSeverity;
-
-  return (
-    <section className="wd-live-audit-card" aria-labelledby="wd-live-audit-title">
-      <div className="wd-live-audit-card-header">
-        <div>
-          <span>{snapshot.job.target.hostname}</span>
-          <h2 id="wd-live-audit-title">{t.resultTitle}</h2>
-        </div>
-        <b>{snapshot.summary?.status ?? snapshot.job.status}</b>
-      </div>
-      <div className="wd-live-audit-metrics">
-        <article><span>{t.score}</span><strong>{score ?? "—"}</strong></article>
-        <article><span>{t.issues}</span><strong>{issueCount}</strong></article>
-        <article><span>{t.checks}</span><strong>{checkCount}</strong></article>
-        <article><span>{t.severity}</span><strong>{severityLabel}</strong></article>
-      </div>
-      <div className="wd-live-audit-issues">
-        <strong>{t.topIssues}</strong>
-        {issues.length ? (
-          <ul>
-            {issues.map((issue) => {
-              const priority = priorityLabels[locale][issue.priority as keyof typeof priorityLabels.ru] ?? issue.priority;
-              const severity = severityLabels[locale][issue.severity as keyof typeof severityLabels.ru] ?? issue.severity;
-              return (
-                <li key={issue.id}>
-                  <span>{priority} · {severity}</span>
-                  <b>{issue.title}</b>
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-          <p>{t.noIssues}</p>
-        )}
-      </div>
-      <Link
-        className="wd-live-audit-link"
-        href={
-          locale === "ru"
-            ? `/tools/single-page-audit?url=${encodeURIComponent(snapshot.job.target.normalizedUrl || snapshot.job.target.originalUrl)}`
-            : `/en/tools/single-page-audit?url=${encodeURIComponent(snapshot.job.target.normalizedUrl || snapshot.job.target.originalUrl)}`
-        }
-      >
-        {locale === "ru" ? "Посмотреть полный технический отчёт" : "View full technical audit report"}
-        <span aria-hidden="true">→</span>
-      </Link>
-    </section>
-  );
-}
-
-export function HomeUrlCheckForm({ locale, instance = "hero" }: { locale: Locale; instance?: FormInstance }) {
+export function HomeUrlCheckForm({ locale, instance = "hero" }: { locale: Locale; instance?: "hero" | "final" }) {
   const t = copy[locale];
   const router = useRouter();
+  const inputId = useId();
   const [value, setValue] = useState("");
   const [message, setMessage] = useState("");
-  const [state, setState] = useState<SubmitState>("idle");
-  const [snapshot, setSnapshot] = useState<AuditSnapshotResponse | null>(null);
-  const inputId = useMemo(() => `wd-url-check-${locale}-${instance}`, [instance, locale]);
-  const isLoading = state === "loading";
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
+  function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const parsed = parseAuditUrlInput(value);
-    if (!value.trim()) {
-      setSnapshot(null);
-      setState("error");
-      setMessage(t.empty);
-      return;
-    }
     if (!parsed) {
-      setSnapshot(null);
-      setState("error");
-      setMessage(t.invalid);
+      setMessage(value.trim() ? t.invalid : t.empty);
       return;
     }
-
-    const targetUrl = parsed.href;
-    const fullAuditHref =
-      locale === "ru"
-        ? `/tools/single-page-audit?url=${encodeURIComponent(targetUrl)}`
-        : `/en/tools/single-page-audit?url=${encodeURIComponent(targetUrl)}`;
-    router.push(fullAuditHref);
+    const prefix = locale === "ru" ? "" : "/en";
+    router.push(`${prefix}/tools/single-page-audit?url=${encodeURIComponent(parsed.href)}`);
   }
 
-  return (
-    <form className={`wd-url-check wd-url-check-${instance}`} id={`check-url-${instance}`} onSubmit={submit} noValidate>
-      <label htmlFor={inputId}>{t.label}</label>
-      <div>
-        <input
-          id={inputId}
-          type="url"
-          inputMode="url"
-          autoComplete="url"
-          placeholder={t.placeholder}
-          value={value}
-          aria-invalid={state === "error" ? "true" : undefined}
-          aria-describedby={`${inputId}-status`}
-          disabled={isLoading}
-          onChange={(event) => {
-            setValue(event.target.value);
-            if (message || snapshot) {
-              setMessage("");
-              setSnapshot(null);
-              setState("idle");
-            }
-          }}
-        />
-        <button type="submit" disabled={isLoading}>{isLoading ? t.buttonLoading : t.button}</button>
-      </div>
-      <p id={`${inputId}-status`} aria-live="polite" data-state={state}>{message}</p>
-      {snapshot ? <AuditResultPreview locale={locale} snapshot={snapshot} /> : null}
-    </form>
-  );
+  return <form className={`wd-url-check wd-url-check-${instance}`} id={`check-url-${instance}`} onSubmit={submit} noValidate>
+    <label htmlFor={inputId}>{t.label}</label>
+    <div>
+      <input id={inputId} type="url" inputMode="url" autoComplete="url" placeholder={t.placeholder}
+        value={value} aria-invalid={message ? "true" : undefined} aria-describedby={`${inputId}-status`}
+        onChange={(event) => { setValue(event.target.value); setMessage(""); }} />
+      <button type="submit">{t.button}</button>
+    </div>
+    <p id={`${inputId}-status`} aria-live="polite" data-state={message ? "error" : "idle"}>{message}</p>
+  </form>;
 }

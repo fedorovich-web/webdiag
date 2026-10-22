@@ -44,6 +44,10 @@ describe("home audit client", () => {
     expect(parseAuditUrlInput("ftp://example.ru")).toBeNull();
   });
 
+  it("rejects credentials before they can be placed in the audit page query", () => {
+    expect(parseAuditUrlInput("https://user:secret@example.com/page")).toBeNull();
+  });
+
   it("posts the normalized URL to the audit proxy", async () => {
     const fetcher = async (input: string, init: RequestInit) => {
       expect(input).toBe("/api/audits");

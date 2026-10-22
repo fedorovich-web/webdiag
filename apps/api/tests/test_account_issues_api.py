@@ -28,7 +28,7 @@ from webdiag_api.main import app
 
 
 class UnusedAuditService:
-    def start_single_url_audit(self, origin: str):  # pragma: no cover - defensive
+    def start_single_url_audit(self, origin: str):
         raise AssertionError(f"Unexpected audit execution for {origin}")
 
 

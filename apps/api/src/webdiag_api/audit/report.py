@@ -5,8 +5,10 @@ from time import perf_counter_ns
 from urllib.parse import urljoin, urlsplit, urlunsplit
 from uuid import UUID
 
+from webdiag_api.audit.document_checks import evaluate_document_checks
 from webdiag_api.audit.fetcher import SafeFetchResult
 from webdiag_api.audit.html_metadata import HtmlMetadata, parse_html_metadata
+from webdiag_api.audit.html_resources import document_base_url
 from webdiag_api.audit.models import (
     AffectedUrl,
     AuditCheck,
@@ -73,6 +75,41 @@ def assemble_single_page_report(
         site_resources=site_resources,
         pagespeed=pagespeed,
     )
+    document_checks, document_issues = evaluate_document_checks(fetched, metadata)
+    issues.extend(document_issues)
+    checks.extend(
+        _check(
+            check_id=check.check_id,
+            name=check.name,
+            category=check.category,
+            failed_when=check.status is CheckStatus.WARNING,
+            evidence=check.evidence,
+            issue_ids=list(check.issue_ids),
+            status=check.status,
+        )
+        for check in document_checks
+    )
+    is_html = (fetched.content_type or "").split(";", maxsplit=1)[0].strip().lower() in {
+        "text/html",
+        "application/xhtml+xml",
+    }
+    if not is_html:
+        html_checks = {
+            "metadata.title",
+            "metadata.description",
+            "metadata.h1",
+            "metadata.canonical",
+            "indexability.robots_meta",
+            "metadata.open_graph",
+            "structured_data.json_ld",
+        }
+        issues = [issue for issue in issues if issue.check_id not in html_checks]
+        checks = [
+            check.model_copy(update={"status": CheckStatus.SKIPPED, "issue_ids": ()})
+            if check.check_id in html_checks
+            else check
+            for check in checks
+        ]
     score = _score(issues)
     return AuditRun(
         job_id=job_id,
@@ -105,7 +142,7 @@ def _collect_checks(
             category=IssueCategory.HTTP,
             failed_when=bool(issue_ids_by_check.get("http.status")),
             evidence=(
-                Evidence(
+                _evidence(
                     kind=EvidenceKind.SYSTEM,
                     source="http.status_code",
                     value=str(fetched.status_code),
@@ -119,7 +156,7 @@ def _collect_checks(
             category=IssueCategory.REDIRECTS,
             failed_when=bool(issue_ids_by_check.get("redirects.chain")),
             evidence=tuple(
-                Evidence(
+                _evidence(
                     kind=EvidenceKind.REDIRECT_HOP,
                     source=hop.source_url,
                     value=f"{hop.status_code} -> {hop.target_url}",
@@ -134,7 +171,7 @@ def _collect_checks(
             category=IssueCategory.HTTP,
             failed_when=bool(issue_ids_by_check.get("content_type.html")),
             evidence=(
-                Evidence(
+                _evidence(
                     kind=EvidenceKind.HTTP_HEADER,
                     source="content-type",
                     value=fetched.content_type or "missing",
@@ -148,7 +185,7 @@ def _collect_checks(
             category=IssueCategory.METADATA,
             failed_when=bool(issue_ids_by_check.get("metadata.title")),
             evidence=(
-                Evidence(
+                _evidence(
                     kind=EvidenceKind.HTML_ELEMENT,
                     source="head > title",
                     value=metadata.title or "missing",
@@ -162,7 +199,7 @@ def _collect_checks(
             category=IssueCategory.METADATA,
             failed_when=bool(issue_ids_by_check.get("metadata.description")),
             evidence=(
-                Evidence(
+                _evidence(
                     kind=EvidenceKind.HTML_ELEMENT,
                     source='meta[name="description"]',
                     value=metadata.meta_description or "missing",
@@ -176,7 +213,7 @@ def _collect_checks(
             category=IssueCategory.CONTENT,
             failed_when=bool(issue_ids_by_check.get("metadata.h1")),
             evidence=(
-                Evidence(
+                _evidence(
                     kind=EvidenceKind.HTML_ELEMENT,
                     source="h1",
                     value=str(len(metadata.h1)),
@@ -191,7 +228,7 @@ def _collect_checks(
             category=IssueCategory.INDEXABILITY,
             failed_when=bool(issue_ids_by_check.get("metadata.canonical")),
             evidence=(
-                Evidence(
+                _evidence(
                     kind=EvidenceKind.HTML_ELEMENT,
                     source='link[rel="canonical"]',
                     value=metadata.canonical_url or "missing",
@@ -206,7 +243,7 @@ def _collect_checks(
             category=IssueCategory.INDEXABILITY,
             failed_when=bool(issue_ids_by_check.get("indexability.robots_meta")),
             evidence=tuple(
-                Evidence(
+                _evidence(
                     kind=EvidenceKind.ROBOTS_DIRECTIVE,
                     source=f"meta[name={directive.user_agent}]",
                     value=directive.content,
@@ -214,7 +251,7 @@ def _collect_checks(
                 for directive in metadata.robots
             )
             or (
-                Evidence(
+                _evidence(
                     kind=EvidenceKind.HTML_ELEMENT,
                     source='meta[name="robots"]',
                     value="not set",
@@ -248,7 +285,7 @@ def _collect_checks(
             category=IssueCategory.SECURITY,
             failed_when=bool(issue_ids_by_check.get("security.headers")),
             evidence=tuple(
-                Evidence(
+                _evidence(
                     kind=EvidenceKind.HTTP_HEADER,
                     source=finding.header,
                     value=finding.value,
@@ -272,7 +309,7 @@ def _collect_checks(
                     category=IssueCategory.CRAWLABILITY,
                     failed_when=bool(issue_ids_by_check.get("crawlability.robots_txt")),
                     evidence=(
-                        Evidence(
+                        _evidence(
                             kind=EvidenceKind.ROBOTS_DIRECTIVE,
                             source=site_resources.robots.robots_url,
                             value=(
@@ -293,6 +330,7 @@ def _collect_checks(
                         ),
                     ),
                     issue_ids=issue_ids_by_check.get("crawlability.robots_txt", []),
+                    status=CheckStatus.SKIPPED if not site_resources.robots.available else None,
                 ),
                 _check(
                     check_id="crawlability.sitemap_xml",
@@ -300,7 +338,7 @@ def _collect_checks(
                     category=IssueCategory.CRAWLABILITY,
                     failed_when=bool(issue_ids_by_check.get("crawlability.sitemap_xml")),
                     evidence=(
-                        Evidence(
+                        _evidence(
                             kind=EvidenceKind.SITEMAP_ENTRY,
                             source=site_resources.sitemap.sitemap_url,
                             value=(
@@ -319,6 +357,12 @@ def _collect_checks(
                         ),
                     ),
                     issue_ids=issue_ids_by_check.get("crawlability.sitemap_xml", []),
+                    status=(
+                        CheckStatus.SKIPPED
+                        if not site_resources.sitemap.available
+                        and site_resources.sitemap.status_code not in {404, 410}
+                        else None
+                    ),
                 ),
             ]
         )
@@ -375,7 +419,7 @@ def _collect_issues(
                 priority=Priority.P0,
                 title="Server error response",
                 description="The audited URL returned a 5xx HTTP status code.",
-                evidence=Evidence(
+                evidence=_evidence(
                     kind=EvidenceKind.SYSTEM,
                     source="http.status_code",
                     value=str(fetched.status_code),
@@ -400,7 +444,7 @@ def _collect_issues(
                 priority=Priority.P0,
                 title="Client error response",
                 description="The audited URL returned a 4xx HTTP status code.",
-                evidence=Evidence(
+                evidence=_evidence(
                     kind=EvidenceKind.SYSTEM,
                     source="http.status_code",
                     value=str(fetched.status_code),
@@ -428,7 +472,7 @@ def _collect_issues(
                 description=(
                     "The URL needs more than two redirects before reaching the final response."
                 ),
-                evidence=Evidence(
+                evidence=_evidence(
                     kind=EvidenceKind.REDIRECT_HOP,
                     source="redirect_chain",
                     value=str(len(fetched.redirect_chain)),
@@ -455,7 +499,7 @@ def _collect_issues(
                 priority=Priority.P1,
                 title="Response is not HTML",
                 description="The audited URL did not return an HTML content type.",
-                evidence=Evidence(
+                evidence=_evidence(
                     kind=EvidenceKind.HTTP_HEADER,
                     source="content-type",
                     value=fetched.content_type or "missing",
@@ -523,7 +567,7 @@ def _collect_issues(
                 priority=Priority.P1,
                 title="H1 is missing",
                 description="The page does not contain a primary H1 heading.",
-                evidence=Evidence(kind=EvidenceKind.HTML_ELEMENT, source="h1", value="missing"),
+                evidence=_evidence(kind=EvidenceKind.HTML_ELEMENT, source="h1", value="missing"),
                 recommendation=Recommendation(
                     summary="Add one clear H1 that matches the page intent.",
                     steps=("Use a visible heading that describes the main page topic.",),
@@ -541,7 +585,7 @@ def _collect_issues(
                 priority=Priority.P3,
                 title="Multiple H1 headings",
                 description="The page contains more than one H1 heading.",
-                evidence=Evidence(
+                evidence=_evidence(
                     kind=EvidenceKind.HTML_ELEMENT,
                     source="h1",
                     value=str(len(metadata.h1)),
@@ -565,7 +609,7 @@ def _collect_issues(
                 priority=Priority.P3,
                 title="Canonical link is missing",
                 description="The page does not declare a canonical URL.",
-                evidence=Evidence(
+                evidence=_evidence(
                     kind=EvidenceKind.HTML_ELEMENT,
                     source='link[rel="canonical"]',
                     value="missing",
@@ -580,7 +624,7 @@ def _collect_issues(
         )
     elif _normalize_url_for_comparison(
         metadata.canonical_url,
-        base_url=fetched.final_url,
+        base_url=document_base_url(metadata, fetched.final_url),
     ) != _normalize_url_for_comparison(fetched.final_url):
         issues.append(
             _issue(
@@ -592,7 +636,7 @@ def _collect_issues(
                 description=(
                     "The page canonical URL differs from the final URL reached after redirects."
                 ),
-                evidence=Evidence(
+                evidence=_evidence(
                     kind=EvidenceKind.HTML_ELEMENT,
                     source='link[rel="canonical"]',
                     value=metadata.canonical_url,
@@ -619,7 +663,7 @@ def _collect_issues(
                 priority=Priority.P0,
                 title="Page is marked noindex",
                 description="The robots meta directives include noindex.",
-                evidence=Evidence(
+                evidence=_evidence(
                     kind=EvidenceKind.ROBOTS_DIRECTIVE,
                     source='meta[name="robots"]',
                     value=", ".join(directive.content for directive in metadata.robots),
@@ -634,7 +678,6 @@ def _collect_issues(
                 affected_urls=affected,
             )
         )
-
 
     missing_open_graph = _missing_social_signals(
         {signal.name: signal.content for signal in metadata.open_graph},
@@ -652,7 +695,7 @@ def _collect_issues(
                     "The page exposes Open Graph metadata, but one or more baseline "
                     "sharing signals are missing."
                 ),
-                evidence=Evidence(
+                evidence=_evidence(
                     kind=EvidenceKind.HTML_ELEMENT,
                     source="meta[property^=og]",
                     value=", ".join(missing_open_graph),
@@ -680,7 +723,7 @@ def _collect_issues(
                 priority=Priority.P2,
                 title="JSON-LD structured data is invalid",
                 description="One or more application/ld+json blocks could not be parsed as JSON.",
-                evidence=Evidence(
+                evidence=_evidence(
                     kind=EvidenceKind.TOOL_OUTPUT,
                     source="script[type=application/ld+json]",
                     value=f"{structured_data.invalid_count} invalid block(s)",
@@ -721,13 +764,12 @@ def _collect_issues(
                 description=(
                     "The response is missing or weakening one or more baseline security headers."
                 ),
-                evidence=Evidence(
+                evidence=_evidence(
                     kind=EvidenceKind.HTTP_HEADER,
                     source="security.headers",
                     value=", ".join(finding.header for finding in actionable_security_findings),
                     metadata={
-                        finding.header: finding.status
-                        for finding in actionable_security_findings
+                        finding.header: finding.status for finding in actionable_security_findings
                     },
                 ),
                 recommendation=Recommendation(
@@ -782,7 +824,7 @@ def _collect_site_resource_issues(
                 description=(
                     "The origin robots.txt contains a Disallow rule matching the audited URL path."
                 ),
-                evidence=Evidence(
+                evidence=_evidence(
                     kind=EvidenceKind.ROBOTS_DIRECTIVE,
                     source=site_resources.robots.robots_url,
                     value=site_resources.robots.matched_disallow_rule or "matched disallow",
@@ -800,7 +842,7 @@ def _collect_site_resource_issues(
             )
         )
 
-    if not site_resources.sitemap.available:
+    if not site_resources.sitemap.available and site_resources.sitemap.status_code in {404, 410}:
         issues.append(
             _issue(
                 issue_id="crawlability.sitemap_xml.missing",
@@ -809,12 +851,11 @@ def _collect_site_resource_issues(
                 priority=Priority.P3,
                 title="Sitemap.xml was not discovered",
                 description="The default /sitemap.xml endpoint is not available for this origin.",
-                evidence=Evidence(
+                evidence=_evidence(
                     kind=EvidenceKind.SITEMAP_ENTRY,
                     source=site_resources.sitemap.sitemap_url,
                     value=str(
-                        site_resources.sitemap.status_code
-                        or site_resources.sitemap.fetch_error
+                        site_resources.sitemap.status_code or site_resources.sitemap.fetch_error
                     ),
                 ),
                 recommendation=Recommendation(
@@ -828,7 +869,7 @@ def _collect_site_resource_issues(
                 affected_urls=affected_urls,
             )
         )
-    elif not site_resources.sitemap.valid_xml:
+    elif site_resources.sitemap.available and not site_resources.sitemap.valid_xml:
         issues.append(
             _issue(
                 issue_id="crawlability.sitemap_xml.invalid",
@@ -837,7 +878,7 @@ def _collect_site_resource_issues(
                 priority=Priority.P2,
                 title="Sitemap.xml is invalid",
                 description="The discovered sitemap.xml could not be parsed as valid XML.",
-                evidence=Evidence(
+                evidence=_evidence(
                     kind=EvidenceKind.SITEMAP_ENTRY,
                     source=site_resources.sitemap.sitemap_url,
                     value=site_resources.sitemap.parse_error or "invalid XML",
@@ -850,7 +891,7 @@ def _collect_site_resource_issues(
                 affected_urls=affected_urls,
             )
         )
-    elif site_resources.sitemap.url_count == 0:
+    elif site_resources.sitemap.available and site_resources.sitemap.url_count == 0:
         issues.append(
             _issue(
                 issue_id="crawlability.sitemap_xml.empty",
@@ -859,7 +900,7 @@ def _collect_site_resource_issues(
                 priority=Priority.P3,
                 title="Sitemap.xml contains no URLs",
                 description="The discovered sitemap.xml did not expose any loc entries.",
-                evidence=Evidence(
+                evidence=_evidence(
                     kind=EvidenceKind.SITEMAP_ENTRY,
                     source=site_resources.sitemap.sitemap_url,
                     value="0 urls",
@@ -879,7 +920,7 @@ def _collect_site_resource_issues(
 def _pagespeed_evidence(pagespeed: PageSpeedStrategyResponse) -> tuple[Evidence, ...]:
     if not pagespeed.available:
         return (
-            Evidence(
+            _evidence(
                 kind=EvidenceKind.TOOL_OUTPUT,
                 source="google.pagespeed.mobile",
                 value="unavailable",
@@ -888,7 +929,7 @@ def _pagespeed_evidence(pagespeed: PageSpeedStrategyResponse) -> tuple[Evidence,
         )
 
     evidence: list[Evidence] = [
-        Evidence(
+        _evidence(
             kind=EvidenceKind.TOOL_OUTPUT,
             source="google.pagespeed.mobile.performance",
             value=str(
@@ -910,7 +951,7 @@ def _pagespeed_evidence(pagespeed: PageSpeedStrategyResponse) -> tuple[Evidence,
     ]
     for metric in pagespeed.metrics:
         evidence.append(
-            Evidence(
+            _evidence(
                 kind=EvidenceKind.TOOL_OUTPUT,
                 source=f"google.pagespeed.mobile.{metric.id}",
                 value=(
@@ -939,13 +980,11 @@ def _pagespeed_issues(
 
     metric_statuses = {metric.status for metric in pagespeed.metrics}
     poor = (
-        (pagespeed.performance_score is not None and pagespeed.performance_score < 50)
-        or "fail" in metric_statuses
-    )
+        pagespeed.performance_score is not None and pagespeed.performance_score < 50
+    ) or "fail" in metric_statuses
     needs_improvement = (
-        (pagespeed.performance_score is not None and pagespeed.performance_score < 90)
-        or "warning" in metric_statuses
-    )
+        pagespeed.performance_score is not None and pagespeed.performance_score < 90
+    ) or "warning" in metric_statuses
     if not poor and not needs_improvement:
         return []
 
@@ -954,7 +993,7 @@ def _pagespeed_issues(
         "Review the slowest PageSpeed metrics and the highest-impact Lighthouse findings.",
         "Rerun the mobile PageSpeed check after deploying performance changes.",
     )
-    evidence = Evidence(
+    evidence = _evidence(
         kind=EvidenceKind.TOOL_OUTPUT,
         source="google.pagespeed.mobile.performance",
         value=str(
@@ -965,9 +1004,7 @@ def _pagespeed_issues(
         metadata={
             "metric_statuses": {metric.id: metric.status for metric in pagespeed.metrics},
             "affected_metrics": [
-                metric.title
-                for metric in pagespeed.metrics
-                if metric.status in {"warning", "fail"}
+                metric.title for metric in pagespeed.metrics if metric.status in {"warning", "fail"}
             ],
             "field_data_available": pagespeed.field_data_available,
         },
@@ -1024,14 +1061,17 @@ def _pagespeed_issues(
 
 
 def _normalize_url_for_comparison(raw_url: str, *, base_url: str | None = None) -> str:
-    normalized_url = urljoin(base_url, raw_url.strip()) if base_url else raw_url.strip()
-    parsed = urlsplit(normalized_url)
+    try:
+        normalized_url = urljoin(base_url, raw_url.strip()) if base_url else raw_url.strip()
+        parsed = urlsplit(normalized_url)
+        port = parsed.port
+    except ValueError:
+        return "invalid-canonical:" + raw_url
     scheme = parsed.scheme.lower()
     hostname = parsed.hostname.lower() if parsed.hostname else ""
     if not scheme or not hostname:
         return normalized_url.rstrip("/")
 
-    port = parsed.port
     default_port = (scheme == "http" and port == 80) or (scheme == "https" and port == 443)
     authority = hostname
     if port is not None and not default_port:
@@ -1090,7 +1130,7 @@ def _social_metadata_evidence(
 ) -> tuple[Evidence, ...]:
     if not signals:
         return (
-            Evidence(
+            _evidence(
                 kind=EvidenceKind.HTML_ELEMENT,
                 source=source_prefix,
                 value="not set",
@@ -1098,7 +1138,7 @@ def _social_metadata_evidence(
             ),
         )
     return tuple(
-        Evidence(
+        _evidence(
             kind=EvidenceKind.HTML_ELEMENT,
             source=name,
             value=value,
@@ -1110,14 +1150,14 @@ def _social_metadata_evidence(
 def _structured_data_evidence(report: StructuredDataReport) -> tuple[Evidence, ...]:
     if report.block_count == 0:
         return (
-            Evidence(
+            _evidence(
                 kind=EvidenceKind.TOOL_OUTPUT,
                 source="script[type=application/ld+json]",
                 value="not set",
             ),
         )
     return tuple(
-        Evidence(
+        _evidence(
             kind=EvidenceKind.TOOL_OUTPUT,
             source=f"script[type=application/ld+json]#{block.index}",
             value="valid" if block.valid else "invalid",
@@ -1157,7 +1197,7 @@ def _metadata_issue(
         priority=priority,
         title=title,
         description=description,
-        evidence=Evidence(kind=EvidenceKind.HTML_ELEMENT, source=source, value=value),
+        evidence=_evidence(kind=EvidenceKind.HTML_ELEMENT, source=source, value=value),
         recommendation=Recommendation(
             summary=summary,
             steps=("Keep the signal unique for every important URL.",),
@@ -1207,3 +1247,32 @@ def _issue(
 def _score(issues: list[AuditIssue]) -> int:
     penalty = sum(SEVERITY_WEIGHTS[issue.severity] for issue in issues)
     return max(0, 100 - penalty)
+
+
+def _evidence(
+    *,
+    kind: EvidenceKind,
+    source: str,
+    value: str,
+    excerpt: str | None = None,
+    metadata: dict[str, object] | None = None,
+) -> Evidence:
+    details = dict(metadata or {})
+    truncated = [
+        key
+        for key, raw, limit in (
+            ("source", source, 200),
+            ("value", value, 2000),
+            ("excerpt", excerpt, 2000),
+        )
+        if raw is not None and len(raw) > limit
+    ]
+    if truncated:
+        details["truncated_fields"] = truncated
+    return Evidence(
+        kind=kind,
+        source=source[:200],
+        value=value[:2000],
+        excerpt=excerpt[:2000] if excerpt is not None else None,
+        metadata=details,
+    )

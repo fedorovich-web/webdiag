@@ -216,9 +216,9 @@ test.describe("account monitoring", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/en/account/ai");
     await expect(page.getByRole("heading", { level: 1, name: "WebDiag AI tools" })).toBeVisible();
-    await expect(page.getByText("0/15", { exact: true })).toBeVisible();
-    await expect(page.locator(".wd-ai-tool-status").filter({ hasText: /^Not available$/u })).toHaveCount(15);
-    await expect(page.getByRole("button", { name: "Not available" })).toHaveCount(15);
+    await expect(page.getByText("0/14", { exact: true })).toBeVisible();
+    await expect(page.locator(".wd-ai-tool-status").filter({ hasText: /^Not available$/u })).toHaveCount(14);
+    await expect(page.getByRole("button", { name: "Not available" })).toHaveCount(14);
     await expect(page.getByText(/soon|coming soon|uptime|incident/i)).toHaveCount(0);
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   });

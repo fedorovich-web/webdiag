@@ -29,7 +29,7 @@ describe("single-page audit presentation", () => {
   });
 
   it("covers the complete backend taxonomy in RU and leaves EN source text unchanged", () => {
-    expect(Object.keys(RU_AUDIT_CHECK_NAMES)).toHaveLength(13);
+    expect(Object.keys(RU_AUDIT_CHECK_NAMES)).toHaveLength(22);
     expect(Object.keys(RU_AUDIT_ISSUES)).toHaveLength(19);
     const source = issue("metadata.title.missing", "p1", "medium");
     expect(localizeAuditIssue(source, "ru").title).toBe("Отсутствует title");

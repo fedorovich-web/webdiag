@@ -1,4 +1,5 @@
-import { getCategoryTitle, getPublicTool, localize, publicTools, type Locale } from "@webdiag/tool-registry";
+import { getCategoryTitle, getPublicTool, type Locale } from "@webdiag/tool-registry";
+import { getPublicCatalogTools } from "../features/tools/public-catalog-data";
 import { getToolPageContent, localizeContent } from "../content/tool-pages";
 import { siteUrl } from "./seo";
 
@@ -19,16 +20,17 @@ export function websiteJsonLd(locale: Locale) {
 
 export function toolItemListJsonLd(locale: Locale) {
   const prefix = locale === "ru" ? "" : "/en";
+  const tools = getPublicCatalogTools(locale);
   return {
     "@context": "https://schema.org",
     "@type": "ItemList",
     name: locale === "ru" ? "Дополнительные инструменты WebDiag для исправлений" : "WebDiag supporting tools for fixes",
-    numberOfItems: publicTools.length,
-    itemListElement: publicTools.map((tool, index) => ({
+    numberOfItems: tools.length,
+    itemListElement: tools.map((tool, index) => ({
       "@type": "ListItem",
       position: index + 1,
-      url: `${siteUrl}${prefix}/tools/${tool.slug}`,
-      name: localize(tool.title, locale),
+      url: `${siteUrl}${tool.href ?? `${prefix}/tools/${tool.slug}`}`,
+      name: tool.title,
     })),
   };
 }

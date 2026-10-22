@@ -148,8 +148,8 @@ class StubAdmission:
 def healthy_html() -> bytes:
     return b"""
     <!doctype html>
-    <html>
-      <head>
+    <html lang="en">
+      <head><meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Technical SEO audit page</title>
         <meta name="description" content="A clean test page for WebDiag audit API checks.">
         <link rel="canonical" href="https://example.com/">

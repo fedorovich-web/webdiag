@@ -312,7 +312,6 @@
 }
 
 
-/* Keep catalog navigation out of login and registration headers. */
 body:has(.wd-auth-page) .wd-site-header .wd-main-nav,
 body:has(.wd-auth-page) .wd-site-header .wd-mobile-nav a[href="/tools"],
 body:has(.wd-auth-page) .wd-site-header .wd-mobile-nav a[href="/en/tools"] {

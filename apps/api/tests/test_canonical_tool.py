@@ -2,6 +2,7 @@ import asyncio
 from collections.abc import Callable
 
 import httpx
+import pytest
 
 from webdiag_api.audit.fetcher import SafeFetchConfig, SafeHttpFetcher
 from webdiag_api.main import app
@@ -140,3 +141,49 @@ def test_canonical_tool_rejects_disallowed_urls() -> None:
         "code": "tool_url_rejected",
         "message": "Private or reserved addresses are not allowed.",
     }
+
+
+@pytest.mark.parametrize(
+    "href", ["https://[invalid", "https://example.com:bad/page", "javascript:void(0)"]
+)
+def test_canonical_tool_reports_invalid_canonical_without_failing(href: str) -> None:
+    with_fetcher(build_fetcher(lambda request: streaming_response(
+        200, request=request, headers={"content-type": "text/html"},
+        content=f'<link rel="canonical" href="{href}">'.encode(),
+    )))
+    try:
+        response = asyncio.run(request({"url": "https://example.com/page"}))
+    finally:
+        clear_overrides()
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["canonical_present"] is True
+    assert payload["canonical_matches_final_url"] is False
+    assert payload["resolved_canonical_url"] is None
+    assert "invalid" in payload["recommendation"].lower()
+
+
+def test_canonical_comparison_preserves_meaningful_trailing_slash() -> None:
+    with_fetcher(build_fetcher(lambda request: streaming_response(
+        200, request=request, content=b'<link rel="canonical" href="https://example.com/page/">'
+    )))
+    try:
+        response = asyncio.run(request({"url": "https://example.com/page"}))
+    finally:
+        clear_overrides()
+    assert response.status_code == 200
+    assert response.json()["canonical_matches_final_url"] is False
+
+
+def test_canonical_tool_includes_noindex_response_header() -> None:
+    with_fetcher(build_fetcher(lambda request: streaming_response(
+        200, request=request, headers={"x-robots-tag": "googlebot: none"},
+        content=b'<link rel="canonical" href="https://example.com/page">'
+    )))
+    try:
+        response = asyncio.run(request({"url": "https://example.com/page"}))
+    finally:
+        clear_overrides()
+    assert response.status_code == 200
+    assert response.json()["has_noindex"] is True
+    assert "noindex" in response.json()["recommendation"].lower()

@@ -5,7 +5,6 @@ import sharp from "sharp";
 
 describe("/api/tools/image-convert", () => {
   it("converts a sample image to genuine AVIF", async () => {
-    // Create a 100x100 test PNG
     const pngBuffer = await sharp({
       create: {
         width: 100,
@@ -34,9 +33,8 @@ describe("/api/tools/image-convert", () => {
 
     const avifBuffer = await response.arrayBuffer();
     expect(avifBuffer.byteLength).toBeGreaterThan(0);
-    // Check that sharp can read the generated AVIF
     const avifMetadata = await sharp(Buffer.from(avifBuffer)).metadata();
-    expect(avifMetadata.format).toBe("heif"); // sharp categorizes avif as heif
+    expect(avifMetadata.format).toBe("heif");
     expect(avifMetadata.width).toBe(100);
     expect(avifMetadata.height).toBe(100);
   });

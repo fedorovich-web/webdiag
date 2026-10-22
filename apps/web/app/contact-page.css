@@ -67,7 +67,6 @@
   background: #fff;
 }
 
-/* Direct Support Banner */
 .wd-contact-direct-banner {
   display: flex;
   align-items: center;
@@ -140,7 +139,6 @@
   color: #0284c7;
 }
 
-/* Main Grid */
 .wd-contact-main-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.42fr) minmax(340px, 1fr);
@@ -278,7 +276,6 @@
   max-width: 320px;
 }
 
-/* Alerts */
 .wd-contact-alert {
   display: flex;
   align-items: flex-start;
@@ -302,7 +299,6 @@
   color: #991b1b;
 }
 
-/* Online Panel */
 .wd-contact-online-panel {
   padding: clamp(28px, 4vw, 36px);
 }
@@ -370,7 +366,6 @@
   white-space: nowrap;
 }
 
-/* FAQ Section */
 .wd-contact-faq-full {
   margin-top: 24px;
 }
@@ -425,7 +420,6 @@
   line-height: 1.65;
 }
 
-/* Support CTA */
 .wd-contact-support-cta {
   padding: clamp(48px, 6vw, 72px) 0;
   background:

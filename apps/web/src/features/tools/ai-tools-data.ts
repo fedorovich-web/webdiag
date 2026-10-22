@@ -52,8 +52,8 @@ export const AI_CATALOG_TOOLS: readonly AIToolEntry[] = [
     slug: "ai-search-intent-page-fit",
     titleRu: "AI-соответствие поисковому интенту",
     titleEn: "AI Search Intent Alignment",
-    descriptionRu: "Проверяет соответствие содержимого страницы реальным потребностям пользователей и поисковому запросу.",
-    descriptionEn: "Evaluates whether your page accurately matches the target commercial or informational search intent.",
+    descriptionRu: "Сопоставляет текст страницы с вашим запросом и выбранным типом страницы, показывает подтверждающие фрагменты.",
+    descriptionEn: "Compares page text with your query and intended page type, showing supporting excerpts.",
     category: "ai-tools",
     badge: "AI",
   },
@@ -97,8 +97,8 @@ export const AI_CATALOG_TOOLS: readonly AIToolEntry[] = [
     slug: "ai-alt-text-studio",
     titleRu: "AI-генератор Alt-текстов для картинок",
     titleEn: "AI Image Alt Text Generator",
-    descriptionRu: "Формирует точные и лаконичные описания alt для изображений с учетом контекста страницы и доступности.",
-    descriptionEn: "Creates descriptive, accessible alt text for images to enhance image SEO and screen reader usability.",
+    descriptionRu: "Предлагает alt-текст по загруженному изображению и вашему контексту страницы; результат нужно проверить.",
+    descriptionEn: "Suggests alt text from your uploaded image and page context; review the result before use.",
     category: "ai-tools",
     badge: "AI",
   },
@@ -106,8 +106,8 @@ export const AI_CATALOG_TOOLS: readonly AIToolEntry[] = [
     slug: "ai-redirect-migration-mapper",
     titleRu: "AI-карта редиректов при миграции",
     titleEn: "AI Redirect Migration Mapper",
-    descriptionRu: "Сопоставляет старые и новые URL при переезде сайта или смене структуры, исключая цепочки редиректов.",
-    descriptionEn: "Maps old and new URLs during site migrations or structure overhauls, eliminating redirect loops.",
+    descriptionRu: "Предлагает соответствия старых и новых страниц по переданным текстам и показывает основания для карты редиректов.",
+    descriptionEn: "Suggests mappings between old and new pages from the text you supply, with evidence for a redirect plan.",
     category: "ai-tools",
     badge: "AI",
   },
@@ -142,17 +142,24 @@ export const AI_CATALOG_TOOLS: readonly AIToolEntry[] = [
     slug: "ai-image-edit-studio",
     titleRu: "AI-редактор и ремастер изображений",
     titleEn: "AI Image Remaster & Edit Studio",
-    descriptionRu: "Улучшает четкость, удаляет артефакты и адаптирует пропорции картинок под сетку каталога.",
-    descriptionEn: "Enhances visual clarity, removes compression noise, and reformats aspect ratios for page layouts.",
+    descriptionRu: "Редактирует загруженное изображение по вашему описанию и сохраняет результат для проверки в кабинете.",
+    descriptionEn: "Edits an uploaded image according to your instructions and saves the result in your account for review.",
     category: "ai-tools",
     badge: "AI",
   },
 ];
 
+export const ACTIVE_AI_CATALOG_TOOLS = AI_CATALOG_TOOLS.filter((tool) => tool.slug !== "ai-faq-studio");
+const activeToolIds = new Set(ACTIVE_AI_CATALOG_TOOLS.map((tool) => tool.slug.replaceAll("-", "_")));
+
+export function isActiveAIToolId(value: string): boolean {
+  return activeToolIds.has(value.replaceAll("-", "_"));
+}
+
 export function getAICatalogTools(locale: Locale): readonly CatalogTool[] {
   const isRu = locale === "ru";
   const aiHref = isRu ? "/account/ai" : "/en/account/ai";
-  return AI_CATALOG_TOOLS.map((tool) => {
+  return ACTIVE_AI_CATALOG_TOOLS.map((tool) => {
     const isImage = tool.slug.includes("image");
     const cost = isImage ? 2 : 1;
     const creditText = isRu

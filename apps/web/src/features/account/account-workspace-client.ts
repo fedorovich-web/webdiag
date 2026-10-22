@@ -10,6 +10,8 @@ import {
   isSavedAuditDetailResponse,
   isAccountCrawlDetail,
   isAccountCrawlList,
+  isAccountSiteAuditDetail,
+  isAccountSiteAuditList,
   type AccountProject,
   type AccountProjectDetailResponse,
   type AccountProjectListResponse,
@@ -18,6 +20,8 @@ import {
   type SavedAuditDetailResponse,
   type AccountCrawlDetail,
   type AccountCrawlList,
+  type AccountSiteAuditDetail,
+  type AccountSiteAuditList,
 } from "./account-workspace-contract";
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
@@ -220,4 +224,46 @@ export async function getAccountCrawl(
     }),
     isAccountCrawlDetail,
   );
+}
+
+export async function startAccountSiteAudit(
+  projectId: string,
+  fetcher: Fetcher = fetch,
+): Promise<AccountSiteAuditDetail> {
+  return parse(await fetcher(`/api/account/projects/${projectId}/site-audits`, {
+    ...common, method: "POST", headers: { accept: "application/json" },
+  }), isAccountSiteAuditDetail);
+}
+
+export async function listAccountSiteAudits(
+  projectId: string,
+  fetcher: Fetcher = fetch,
+): Promise<AccountSiteAuditList> {
+  return parse(await fetcher(`/api/account/projects/${projectId}/site-audits`, {
+    ...common, method: "GET", headers: { accept: "application/json" },
+  }), isAccountSiteAuditList);
+}
+
+export async function getAccountSiteAudit(
+  projectId: string,
+  jobId: string,
+  fetcher: Fetcher = fetch,
+): Promise<AccountSiteAuditDetail> {
+  return parse(await fetcher(`/api/account/projects/${projectId}/site-audits/${jobId}`, {
+    ...common, method: "GET", headers: { accept: "application/json" },
+  }), isAccountSiteAuditDetail);
+}
+
+export async function getAccountPageCheck(
+  projectId: string,
+  jobId: string,
+  fetcher: Fetcher = fetch,
+): Promise<AccountSiteAuditDetail | AccountCrawlDetail> {
+  try {
+    return await getAccountSiteAudit(projectId, jobId, fetcher);
+  } catch (caught) {
+    if (!(caught instanceof AccountClientError) || caught.status !== 409
+      || caught.code !== "site_audit_result_version_unavailable") throw caught;
+    return getAccountCrawl(projectId, jobId, fetcher);
+  }
 }

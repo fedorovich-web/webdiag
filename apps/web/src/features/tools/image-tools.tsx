@@ -222,7 +222,6 @@ async function convertRasterImage(
     return { blob, width, height };
   }
 
-  // Client-side canvas conversion
   const { canvas, context } = makeCanvas(image.bitmap.width, image.bitmap.height);
   context.drawImage(image.bitmap, 0, 0);
   const blob = await canvasToBlob(canvas, format, quality, locale);

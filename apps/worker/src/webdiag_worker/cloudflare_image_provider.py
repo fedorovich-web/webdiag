@@ -154,7 +154,6 @@ class CloudflareImageProvider:
             except Exception as error:
                 raise KnownSafeProviderError("AI input image is invalid") from error
         try:
-            # Never retry: a timeout or 5xx can follow an accepted generation.
             with self._client.stream(
                 "POST",
                 f"https://api.cloudflare.com/client/v4/accounts/{self._account_id}/ai/run/{MODEL}",

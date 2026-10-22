@@ -152,7 +152,6 @@ body::before { display: none; }
 }
 .wd-icon-box svg { width: 25px; height: 25px; stroke-width: 2; }
 
-/* Header */
 .wd-site-header {
   position: sticky;
   top: 0;
@@ -246,7 +245,6 @@ body::before { display: none; }
 
 .wd-header-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 
-/* Desktop language switcher */
 .language-switcher-desktop {
   display: inline-grid;
 }
@@ -291,7 +289,6 @@ body::before { display: none; }
 .wd-header-cta::after { content: "→"; margin-left: 8px; }
 .wd-header-cta:hover { transform: translateY(-1px); filter: saturate(1.08); color: #06191b; }
 
-/* Hero */
 .wd-hero {
   position: relative;
   padding: clamp(64px, 8vw, 96px) 0 clamp(48px, 6vw, 72px);
@@ -390,7 +387,6 @@ body::before { display: none; }
 .wd-hero-benefit img { width: 56px; height: 56px; flex: 0 0 56px; object-fit: contain; }
 .wd-hero-benefit span { color: #203354; font-size: 14px; font-weight: 700; line-height: 1.4; }
 
-/* CMS trust strip */
 .wd-platform-strip { padding: 26px 0 28px; background: #f3f8ff; border-block: 1px solid #edf3fa; }
 .wd-platform-strip .shell { display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 32px; row-gap: 16px; }
 .wd-platform-strip p { grid-column: 1 / -1; margin: 0; text-align: center; color: #64748b; font-size: 14px; font-weight: 600; }
@@ -398,7 +394,6 @@ body::before { display: none; }
 .wd-platform-strip .shell > div span { color: #475569; font-size: 15px; font-weight: 700; white-space: nowrap; }
 .wd-platform-more { color: #64748b; font-size: 14px; font-weight: 600; white-space: nowrap; }
 
-/* Popular tools */
 .wd-popular-tools-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
 .wd-popular-tool-card {
   min-height: 104px;
@@ -422,7 +417,6 @@ body::before { display: none; }
 .wd-popular-tool-card p { margin: 4px 0 0; color: #556987; font-size: 14px; line-height: 1.45; }
 .wd-card-arrow { width: 18px; color: #1488ff; }
 
-/* Process */
 .wd-process-section { padding-top: var(--wd-section-y); padding-bottom: var(--wd-section-y); }
 .wd-process-panel {
   position: relative;
@@ -448,7 +442,6 @@ body::before { display: none; }
 .wd-process-steps p { margin: 6px 0 0; font-size: 14px; line-height: 1.5; color: var(--wd-m); }
 .wd-process-accent { position: absolute; right: 0; bottom: -8px; width: 220px; height: auto; pointer-events: none; opacity: 0.85; }
 
-/* Checks */
 #checks { padding-top: var(--wd-section-y); }
 #checks .wd-section-intro { margin-bottom: 24px; }
 #checks .wd-section-intro h2 { font-size: 32px; }
@@ -471,7 +464,6 @@ body::before { display: none; }
 .wd-check-grid h3 { font-size: 15px; font-weight: 700; }
 .wd-check-grid p { margin: 4px 0 0; font-size: 14px; line-height: 1.45; color: var(--wd-m); }
 
-/* Report + monitoring */
 .wd-product-section { padding-top: var(--wd-section-y); padding-bottom: var(--wd-section-y); }
 .wd-product-split { display: grid; grid-template-columns: 1.42fr .78fr; gap: 36px; align-items: start; }
 .wd-product-column .wd-section-intro { margin-bottom: 18px; }
@@ -518,7 +510,6 @@ body::before { display: none; }
 .wd-monitoring-score-row span { margin-top: 4px; color: #64748b; font-size: 14px; }
 .wd-product-link { margin-top: 14px; }
 
-/* Knowledge + FAQ */
 .wd-knowledge-faq-section {
   padding-top: var(--wd-section-y);
   padding-bottom: var(--wd-section-y);
@@ -618,7 +609,6 @@ body::before { display: none; }
 .wd-faq-column .wd-faq-item[data-open="true"] .wd-faq-answer { grid-template-rows: 1fr; }
 .wd-faq-column .wd-faq-answer p { margin: 0 0 14px; color: #556987; font-size: 14px; line-height: 1.6; }
 
-/* FAQ Standalone */
 .wd-faq-section {
   padding-top: var(--wd-section-y);
   padding-bottom: var(--wd-section-y);
@@ -642,7 +632,6 @@ body::before { display: none; }
 .wd-faq-item[data-open="true"] .wd-faq-answer { grid-template-rows: 1fr; }
 .wd-faq-answer p { margin: 0 0 14px; font-size: 14px; line-height: 1.6; color: var(--wd-m); }
 
-/* Final CTA */
 .wd-final-section {
   position: relative;
   overflow: hidden;
@@ -657,26 +646,7 @@ body::before { display: none; }
 .wd-final-copy p { max-width: 520px; margin: 8px 0 0; font-size: 16px; color: var(--wd-m); line-height: 1.5; }
 .wd-url-check-final { width: 100%; margin-top: 0; }
 
-/* Live result after a real URL check */
-.wd-live-audit-card { margin-top: 18px; padding: 20px; border: 1px solid var(--wd-l); border-radius: 16px; background: var(--wd-s); box-shadow: var(--wd-shadow-card); }
-.wd-live-audit-card-header { display: flex; justify-content: space-between; gap: 16px; }
-.wd-live-audit-card-header span { color: var(--wd-ms); font-size: 14px; }
-.wd-live-audit-card-header h2 { margin-top: 4px; font-size: 20px; }
-.wd-live-audit-card-header > b { color: #148b7c; font-size: 14px; }
-.wd-live-audit-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 16px; }
-.wd-live-audit-metrics article { padding: 14px; border-radius: 12px; background: var(--wd-soft); }
-.wd-live-audit-metrics span, .wd-live-audit-metrics strong { display: block; }
-.wd-live-audit-metrics span { color: var(--wd-ms); font-size: 14px; }
-.wd-live-audit-metrics strong { margin-top: 4px; font-size: 20px; }
-.wd-live-audit-issues { margin-top: 16px; }
-.wd-live-audit-issues > strong { font-size: 15px; }
-.wd-live-audit-issues ul { display: grid; gap: 8px; margin: 10px 0 0; padding: 0; list-style: none; }
-.wd-live-audit-issues li { display: grid; grid-template-columns: auto 1fr; gap: 10px; padding: 10px 12px; border: 1px solid var(--wd-l2); border-radius: 10px; font-size: 14px; }
-.wd-live-audit-issues li span { color: #e17030; font-size: 14px; font-weight: 800; }
-.wd-live-audit-issues li b { font-size: 14px; }
-.wd-live-audit-link { display: inline-flex; gap: 8px; margin-top: 14px; color: #076ccb; font-size: 14px; font-weight: 800; text-decoration: none; }
 
-/* Footer */
 .site-footer { padding: clamp(54px, 6vw, 76px) 0 32px; border-top: 1px solid #e7eef5; background: #fff; }
 .wd-footer-grid { display: grid; grid-template-columns: 1.5fr repeat(5, minmax(0, 1fr)); gap: 32px; }
 .wd-footer-brand p { max-width: 280px; margin: 12px 0 0; color: #64748b; font-size: 14px; line-height: 1.6; }
@@ -742,7 +712,6 @@ body::before { display: none; }
   .wd-report-issue-list > div > .wd-priority-mark { grid-column: 2 / -1; }
   .wd-report-bottom-row { grid-template-columns: 1fr; }
   .wd-resource-visual { height: 160px; }
-  .wd-live-audit-metrics { grid-template-columns: repeat(2, 1fr); }
   .wd-footer-grid { grid-template-columns: 1fr 1fr; }
   .wd-footer-brand { grid-column: 1 / -1; }
   .footer-bottom { flex-direction: column; gap: 8px; text-align: center; }

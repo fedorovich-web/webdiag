@@ -1,3 +1,4 @@
+import { PUBLIC_CATALOG_TOOL_COUNT } from "../features/tools/public-catalog-data";
 import type { HomeContent } from "./types";
 
 export const homeContent: HomeContent = {
@@ -24,7 +25,7 @@ export const homeContent: HomeContent = {
     en: "Run a quick URL check without complex setup. Below you can see a detailed report example with priorities and recommendations.",
   },
   trustFacts: [
-    { ru: "140+ инструментов для SEO и диагностики", en: "140+ tools for SEO and diagnostics" },
+    { ru: `${PUBLIC_CATALOG_TOOL_COUNT} инструментов для SEO и диагностики`, en: `${PUBLIC_CATALOG_TOOL_COUNT} tools for SEO and diagnostics` },
     { ru: "Понятные отчёты с приоритетами", en: "Clear reports with priorities" },
     { ru: "Экономия времени для владельцев и SEO-специалистов", en: "Save time for site owners and SEO specialists" },
   ],
@@ -40,7 +41,7 @@ export const homeContent: HomeContent = {
     ru: "Быстрые проверки для самых частых технических и SEO-задач.",
     en: "Focused checks for common technical and SEO tasks.",
   },
-  popularToolsAction: { ru: "Все 140+ инструментов", en: "All 140+ tools" },
+  popularToolsAction: { ru: `Все ${PUBLIC_CATALOG_TOOL_COUNT} инструментов`, en: `All ${PUBLIC_CATALOG_TOOL_COUNT} tools` },
   popularTools: [
     {
       slug: "single-page-audit",

@@ -2,6 +2,16 @@ import type { Locale } from "@webdiag/tool-registry";
 import type { AuditFrontendCheck, AuditFrontendIssue } from "../home/audit-contract";
 
 export const RU_AUDIT_CHECK_NAMES: Readonly<Record<string, string>> = {
+  "performance.pagespeed_mobile": "Google PageSpeed (мобильные устройства)",
+  "indexability.x_robots_tag": "Директивы X-Robots-Tag",
+  "security.https": "Защищённое соединение HTTPS",
+  "metadata.viewport": "Мобильный viewport",
+  "accessibility.language": "Язык HTML-документа",
+  "media.image_alt": "Альтернативный текст изображений",
+  "media.image_dimensions": "Размеры изображений в HTML",
+  "content.heading_order": "Порядок уровней заголовков",
+  "metadata.unique_tags": "Повторяющиеся метатеги",
+
   "http.status": "HTTP-статус",
   "redirects.chain": "Цепочка редиректов",
   "content_type.html": "HTML content type",
@@ -89,6 +99,51 @@ interface Translation {
   steps: readonly string[];
   expectedImpact: string | null;
 }
+
+const RU_SITE_AUDIT_ISSUES: Readonly<Record<string, Translation>> = {
+  "site.metadata.duplicate_title": {
+    title: "Повторяющиеся title",
+    description: "Несколько проверенных страниц используют одинаковый title.",
+    summary: "Напишите отдельный title для каждой важной страницы.",
+    steps: ["Проверьте назначение каждой затронутой страницы.", "Замените повторяющиеся title с учётом содержимого страниц.", "Повторите аудит и проверьте, что дубли устранены."],
+    expectedImpact: null,
+  },
+  "site.metadata.duplicate_description": {
+    title: "Повторяющиеся метаописания",
+    description: "Несколько проверенных страниц используют одинаковое метаописание.",
+    summary: "Напишите отдельное метаописание для каждой важной страницы.",
+    steps: ["Проверьте назначение каждой затронутой страницы.", "Замените повторяющиеся метаописания с учётом содержимого страниц.", "Повторите аудит и проверьте, что дубли устранены."],
+    expectedImpact: null,
+  },
+  "site.crawlability.orphan_candidate": {
+    title: "URL из sitemap без обнаруженных внутренних ссылок",
+    description: "Эти URL из sitemap не найдены в ссылках проверенных страниц. Требуется проверить внутреннюю перелинковку.",
+    summary: "Проверьте навигацию и контекстные ссылки на эти URL.",
+    steps: ["Уточните, должна ли каждая страница индексироваться.", "Добавьте подходящую внутреннюю ссылку с доступной страницы.", "Повторите аудит и проверьте обнаружение URL."],
+    expectedImpact: "Помогает обнаружению страниц без обещания их индексации.",
+  },
+  "site.http.fetch_failed": {
+    title: "Не удалось загрузить страницы",
+    description: "Не удалось получить проверяемый HTTP-ответ для этих обнаруженных URL.",
+    summary: "Восстановите стабильный общедоступный HTTP-ответ для каждого URL.",
+    steps: ["Проверьте сервер и доступность затронутых URL.", "Повторите аудит и проверьте фактический ответ."],
+    expectedImpact: null,
+  },
+  "site.crawlability.robots_disallowed": {
+    title: "Страницы исключены в robots.txt",
+    description: "Запросы к этим обнаруженным URL не выполнялись из-за запрета в robots.txt.",
+    summary: "Убедитесь, что каждое исключение в robots.txt намеренное.",
+    steps: ["Проверьте правила robots.txt для затронутых URL.", "После необходимых изменений повторите аудит."],
+    expectedImpact: null,
+  },
+  "site.http.non_html": {
+    title: "Обнаруженные URL не являются HTML-страницами",
+    description: "Эти обнаруженные URL вернули другой тип содержимого и не прошли анализ HTML-страницы.",
+    summary: "Убедитесь, что такой тип ответа предусмотрен для каждого URL.",
+    steps: ["Проверьте Content-Type и содержимое ответа для затронутых URL.", "После необходимых изменений повторите аудит."],
+    expectedImpact: null,
+  },
+};
 
 export const RU_AUDIT_ISSUES: Readonly<Record<string, Translation>> = {
   "http.status.server_error": {
@@ -276,6 +331,14 @@ export const RU_AUDIT_ISSUES: Readonly<Record<string, Translation>> = {
 };
 
 export const EXTRA_AUDIT_ISSUES: Readonly<Record<string, Translation>> = {
+  "indexability.x_robots_tag.noindex": {"title": "HTTP-заголовок запрещает индексацию", "description": "В X-Robots-Tag найдено noindex или none.", "summary": "Проверьте X-Robots-Tag. Уберите запрет только для страниц, которые должны индексироваться.", "steps": ["Проверьте X-Robots-Tag. Уберите запрет только для страниц, которые должны индексироваться."], "expectedImpact": null},
+  "security.https.missing": {"title": "Страница доступна по HTTP", "description": "Финальный адрес страницы использует HTTP.", "summary": "Настройте HTTPS и перенаправление с HTTP на защищённый адрес.", "steps": ["Настройте HTTPS и перенаправление с HTTP на защищённый адрес."], "expectedImpact": null},
+  "metadata.viewport.missing": {"title": "Требуется настройка viewport", "description": "Viewport отсутствует или не задаёт width=device-width.", "summary": "Задайте width=device-width в meta viewport и проверьте адаптивность на мобильном устройстве.", "steps": ["Задайте width=device-width в meta viewport и проверьте адаптивность на мобильном устройстве."], "expectedImpact": null},
+  "accessibility.language.missing": {"title": "Не указан язык документа", "description": "В HTML отсутствует непустой атрибут lang.", "summary": "Задайте html lang в соответствии с языком страницы.", "steps": ["Задайте html lang в соответствии с языком страницы."], "expectedImpact": null},
+  "media.image_alt.missing": {"title": "У изображений отсутствует alt", "description": "Найдены img без атрибута alt.", "summary": "Добавьте описание значимым изображениям и alt=\"\" декоративным.", "steps": ["Добавьте описание значимым изображениям и alt=\"\" декоративным."], "expectedImpact": null},
+  "media.image_dimensions.missing": {"title": "В HTML не указаны размеры изображений", "description": "У части изображений нет положительных width и height. CSS-размеры этой проверкой не оцениваются.", "summary": "Зарезервируйте место через width/height или CSS aspect-ratio и проверьте сдвиги в браузере.", "steps": ["Зарезервируйте место через width/height или CSS aspect-ratio и проверьте сдвиги в браузере."], "expectedImpact": null},
+  "content.heading_order.skipped_level": {"title": "Пропущены уровни заголовков", "description": "В статической структуре есть переход через уровень, например H1 → H3.", "summary": "Используйте последовательные уровни заголовков по структуре документа.", "steps": ["Используйте последовательные уровни заголовков по структуре документа."], "expectedImpact": null},
+  "metadata.unique_tags.duplicate": {"title": "Метатеги повторяются", "description": "Найдено несколько title, meta description или canonical.", "summary": "Оставьте один title, один meta description и один canonical для страницы.", "steps": ["Оставьте один title, один meta description и один canonical для страницы."], "expectedImpact": null},
   "http.response.server_error": {
     title: "Сервер вернул ошибку (5xx)",
     description: "Проверяемый URL вернул код ответа сервера 5xx.",
@@ -435,7 +498,7 @@ types {
     "metadata.title": {
       title: "Тег Title (Заголовок страницы)",
       category: "метаданные",
-      whatIsChecked: "Наличие элемента <title> в блоке <head>, его уникальность, соответствие длине 35–65 символов и наличие главных ключевых слов.",
+      whatIsChecked: "Наличие title и базовая проверка длины: менее 10 символов отмечается как слишком короткий заголовок. Ключевые слова и кликабельность автоматически не оцениваются.",
       impact: "Критическое. Тег Title — важнейший онпейдж-фактор ранжирования в Яндекс и Google, формирующий синюю строку в поисковой выдаче.",
       whatToFix: [
         "Если тег отсутствует — добавить немедленно.",
@@ -459,7 +522,7 @@ types {
     "metadata.description": {
       title: "Метатег Description (Описание страницы)",
       category: "метаданные",
-      whatIsChecked: "Наличие тега <meta name=\"description\">, длина от 120 до 160 символов, читаемость и привлекательность для клика (CTR).",
+      whatIsChecked: "Наличие непустого meta description в HTML. Кликабельность и качество текста этой проверкой не измеряются.",
       impact: "Высокое для CTR. Поисковые системы часто используют этот текст как сниппет в результатах поиска.",
       whatToFix: [
         "Если Description отсутствует — поисковик выберет случайный текст со страницы.",
@@ -480,7 +543,7 @@ types {
     "metadata.h1": {
       title: "Главный заголовок H1",
       category: "контент",
-      whatIsChecked: "Наличие ровно одного тега <h1> на странице, его видимость для пользователей и логическая согласованность с тегом Title.",
+      whatIsChecked: "Количество непустых H1 в статическом HTML. Видимость и соответствие заголовка теме страницы требуют отдельной проверки.",
       impact: "Высокое. Заголовок H1 задает основную тему страницы для поисковых ботов и помогает посетителю мгновенно сориентироваться.",
       whatToFix: [
         "Если H1 отсутствует — добавить в шапку контента.",
@@ -506,7 +569,7 @@ types {
     "metadata.canonical": {
       title: "Канонический адрес (Canonical URL)",
       category: "индексация",
-      whatIsChecked: "Наличие тега <link rel=\"canonical\">, его абсолютный HTTPS-формат и совпадение с финальным URL страницы.",
+      whatIsChecked: "Наличие canonical и сравнение разрешённого адреса с финальным URL страницы. Доступность адреса canonical отдельно не запрашивается.",
       impact: "Критическое. Предотвращает дублирование контента при наличии UTM-меток, параметров сортировки, фильтров и пагинации.",
       whatToFix: [
         "Если canonical отсутствует — добавить ссылку на предпочтительный адрес страницы.",
@@ -527,7 +590,7 @@ types {
     "indexability.robots_meta": {
       title: "Директивы индексации (Robots Meta)",
       category: "индексация",
-      whatIsChecked: "Наличие и значение директив meta robots и HTTP-заголовка X-Robots-Tag (noindex, nofollow, noarchive, max-image-preview:large).",
+      whatIsChecked: "Директивы meta robots, googlebot и yandex: noindex и none. HTTP-заголовок X-Robots-Tag проверяется отдельным пунктом.",
       impact: "Критическое. Случайный тег noindex полностью исключает страницу из поисковой выдачи, сводя органический трафик к нулю.",
       whatToFix: [
         "Для всех продвигаемых страниц удалите директиву noindex.",
@@ -779,8 +842,8 @@ types {
     "metadata.title": {
       title: "Page Title Tag",
       category: "Metadata",
-      whatIsChecked: "Presence of the <title> tag in <head>, optimal length between 35 and 65 characters, and inclusion of primary search keywords.",
-      impact: "Critical for SEO. Title is the single most influential on-page ranking factor and forms the primary clickable link in search results.",
+      whatIsChecked: "Presence of a title and a baseline short-title check for fewer than 10 characters. Keyword relevance and click-through performance are not measured.",
+      impact: "A descriptive title helps identify the page. Search engines may use or rewrite it in search results.",
       whatToFix: [
         "Add unique <title> if missing.",
         "Expand title if shorter than 30 characters.",
@@ -802,7 +865,7 @@ types {
     "metadata.description": {
       title: "Meta Description Tag",
       category: "Metadata",
-      whatIsChecked: "Presence of <meta name=\"description\"> with 120-160 characters length and a persuasive call to action (CTA).",
+      whatIsChecked: "Presence of a non-empty meta description in the HTML. Text quality and click-through performance are not measured.",
       impact: "High for search CTR. Search engines frequently use this snippet to display beneath the title in search results.",
       whatToFix: [
         "Add a unique descriptive tag if missing.",
@@ -1053,9 +1116,15 @@ export function localizeAuditCheck(check: AuditFrontendCheck, locale: Locale): A
   };
 }
 
+export function getAuditIssueTranslation(issueId: string, locale: Locale): Translation | null {
+  return locale === "ru"
+    ? RU_AUDIT_ISSUES[issueId] ?? EXTRA_AUDIT_ISSUES[issueId] ?? RU_SITE_AUDIT_ISSUES[issueId] ?? null
+    : null;
+}
+
 export function localizeAuditIssue(issue: AuditFrontendIssue, locale: Locale): AuditFrontendIssue {
   if (locale === "en") return issue;
-  const translated = RU_AUDIT_ISSUES[issue.id] ?? EXTRA_AUDIT_ISSUES[issue.id];
+  const translated = getAuditIssueTranslation(issue.id, locale);
   return translated
     ? {
         ...issue,

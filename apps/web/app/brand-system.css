@@ -1,4 +1,3 @@
-/* Shared WebDiag visual language: Fresh Mint brand across public UI and account workspace. */
 body[data-theme="light"] {
   --brand: #0e9fba;
   --brand-hover: #087f98;
@@ -15,7 +14,6 @@ body[data-theme="light"] {
   --wd-ms: #5b6974;
 }
 
-/* Never fall back to the legacy violet accent on shared public surfaces. */
 .eyebrow-on-dark {
   color: #67e8f9;
 }
@@ -25,7 +23,6 @@ body[data-theme="light"] {
   color: #06191b;
 }
 
-/* Primary actions share the same Fresh Mint product signature as the homepage. */
 .button:not(.button-secondary),
 .wd-account-page .wd-button:not(.wd-button-secondary),
 .wd-account-workspace-page .wd-button:not(.wd-button-secondary) {
@@ -48,23 +45,19 @@ body[data-theme="light"] {
   outline-color: var(--focus);
 }
 
-/* Account controls share one minimum interactive target across desktop and mobile. */
 .wd-account-page .wd-button,
 .wd-account-workspace-page .wd-button {
   min-height: 44px;
 }
 
-/* clientHeight excludes the 1px button borders; keep 44px of usable crawler target area. */
 .wd-account-workspace-page .wd-crawl-console-head > .wd-button {
   min-height: 46px;
 }
 
-/* Keep the compact homepage report action readable at WCAG AA contrast. */
 body[data-theme="light"] .wd-home .wd-report-recommendation > span {
   color: #0774dc;
 }
 
-/* Full production footer. */
 .site-footer .wd-footer-grid {
   grid-template-columns: minmax(240px, 1.35fr) repeat(5, minmax(120px, .72fr));
   gap: 36px;
@@ -91,7 +84,6 @@ body[data-theme="light"] .wd-home .wd-report-recommendation > span {
   gap: 24px;
 }
 
-/* Account workspace: same surfaces, border language and accents as the public product. */
 .wd-account-page,
 .wd-account-workspace-page {
   background:
@@ -226,7 +218,6 @@ body[data-theme="light"] .wd-home .wd-report-recommendation > span {
 }
 
 
-/* Unified account workspace — same light product language as the public WebDiag UI. */
 .wd-account-workspace-page {
   --wd-account-canvas: #f5f9fd;
   --wd-account-surface: #ffffff;
@@ -379,7 +370,6 @@ body[data-theme="light"] .wd-home .wd-report-recommendation > span {
 }
 
 :root {
-  /* Centralized Spacing and Padding Variables */
   --wd-hero-pt: clamp(96px, 9vw, 136px);
   --wd-hero-pb: clamp(56px, 6vw, 88px);
   --wd-section-py: clamp(64px, 7vw, 96px);
@@ -389,7 +379,6 @@ body[data-theme="light"] .wd-home .wd-report-recommendation > span {
   --wd-card-p: clamp(24px, 2.5vw, 36px);
   --wd-card-gap: clamp(20px, 2vw, 30px);
 
-  /* Centralized Typography Scale */
   --wd-font-h1: clamp(28px, 3.2vw, 38px);
   --wd-font-h2: clamp(22px, 2.4vw, 28px);
   --wd-font-h3: clamp(17px, 1.8vw, 20px);
@@ -415,7 +404,6 @@ p, small, label, input, select, textarea, td, th, li {
   font-size: max(var(--wd-font-min, 14px), 14px);
 }
 
-/* Ensure inline elements inside headings inherit parent font size */
 h1 *, h1 span, h1 strong, h1 b, h1 a,
 h2 *, h2 span, h2 strong, h2 b, h2 a,
 h3 *, h3 span, h3 strong, h3 b, h3 a,
@@ -423,14 +411,12 @@ h4 *, h4 span, h4 strong, h4 b, h4 a {
   font-size: inherit;
 }
 
-/* Breadcrumbs: the ONLY element allowed at 12px */
 .breadcrumbs,
 .breadcrumbs a,
 .breadcrumbs span {
   font-size: var(--wd-font-breadcrumbs, 12px) !important;
 }
 
-/* Subtitles directly under H1: strictly 18px */
 h1 + p,
 .page-heading p,
 .wd-hero-lead,
@@ -441,7 +427,6 @@ h1 + p,
   line-height: 1.55 !important;
 }
 
-/* Subtitles directly under H2 or H3: strictly 16px */
 h2 + p,
 h3 + p,
 .section-subtitle,

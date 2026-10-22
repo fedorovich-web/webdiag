@@ -51,6 +51,20 @@ def test_crawl_service_returns_false_without_pending_job() -> None:
     assert store.failed == []
 
 
+def test_crawl_service_preserves_robots_unavailable_code(monkeypatch) -> None:
+    claim = StoredCrawlClaim(job(), 1, "lease-token", 999)
+    store = StubStore(claim)
+    service = CrawlService(store, fetcher_factory=lambda: object())
+
+    def fail(*args, **kwargs):
+        raise CrawlExecutionError("crawl_robots_unavailable")
+
+    monkeypatch.setattr("webdiag_api.crawl.service.crawl_origin", fail)
+    assert service.run_one() is True
+    assert store.completed == []
+    assert store.failed[0]["error_code"] == "crawl_robots_unavailable"
+
+
 def test_crawl_service_persists_only_stable_public_error_code(monkeypatch) -> None:
     claim = StoredCrawlClaim(job(), 1, "lease-token", 999)
     store = StubStore(claim)

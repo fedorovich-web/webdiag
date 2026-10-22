@@ -412,8 +412,11 @@ class SqliteMonitoringStore:
         with self._connect() as connection:
             rows = connection.execute(
                 """
-                SELECT * FROM account_workspace_monitors
-                WHERE user_id = ? ORDER BY updated_at DESC, id DESC LIMIT 100
+                SELECT monitor.* FROM account_workspace_monitors AS monitor
+                JOIN account_workspace_projects AS project
+                  ON project.id = monitor.project_id AND project.user_id = monitor.user_id
+                WHERE monitor.user_id = ? AND project.archived_at IS NULL
+                ORDER BY monitor.updated_at DESC, monitor.id DESC LIMIT 100
                 """,
                 (user_id,),
             ).fetchall()
@@ -459,8 +462,15 @@ class SqliteMonitoringStore:
             new_cadence = cadence or current.cadence
             new_timezone = timezone or current.timezone
             new_enabled = current.enabled if enabled is None else enabled
+            if (
+                new_cadence == current.cadence
+                and new_timezone == current.timezone
+                and new_enabled == current.enabled
+            ):
+                connection.execute("COMMIT")
+                return current
             now = int(time.time())
-            schedule_changed = cadence is not None or timezone is not None
+            schedule_changed = new_cadence != current.cadence or new_timezone != current.timezone
             if not new_enabled:
                 next_run = None
             elif not current.enabled or schedule_changed or current.next_run_at is None:
@@ -639,10 +649,15 @@ class SqliteMonitoringStore:
                 WHERE monitor_id = ? AND id NOT IN (
                     SELECT id FROM account_workspace_monitor_runs
                     WHERE monitor_id = ?
-                    ORDER BY completed_at DESC, rowid DESC LIMIT ?
+                    ORDER BY (id = COALESCE((
+                        SELECT id FROM account_workspace_monitor_runs
+                        WHERE monitor_id = ? AND status IN ('passed', 'changed')
+                            AND payload_json IS NOT NULL
+                        ORDER BY completed_at DESC, rowid DESC LIMIT 1
+                    ), '')) DESC, completed_at DESC, rowid DESC LIMIT ?
                 )
                 """,
-                (current.id, current.id, MAX_MONITOR_RUNS),
+                (current.id, current.id, current.id, MAX_MONITOR_RUNS),
             )
             connection.execute("COMMIT")
         return run
