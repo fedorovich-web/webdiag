@@ -33,7 +33,9 @@ test.describe("RU and EN segmented navigation", () => {
     );
 
     const [ruBox, enBox] = await Promise.all([ru.boundingBox(), en.boundingBox()]);
-    expect(ruBox?.width).toBe(enBox?.width);
+    expect(ruBox).not.toBeNull();
+    expect(enBox).not.toBeNull();
+    expect(ruBox!.width).toBeCloseTo(enBox!.width, 2);
     expect(ruBox?.height).toBeGreaterThanOrEqual(44);
     expect(enBox?.height).toBeGreaterThanOrEqual(44);
 
