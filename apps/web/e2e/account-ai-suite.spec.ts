@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { AI_TOOL_IDS } from "../src/features/account/account-ai-contract";
+import { ACTIVE_AI_CATALOG_TOOLS, isActiveAIToolId } from "../src/features/tools/ai-tools-data";
 import { session, emptyOverview } from "./account-fixtures";
 
 const runId = "11111111-1111-4111-8111-111111111111";
@@ -51,17 +52,33 @@ test.beforeEach(async ({ page }) => {
   );
 });
 
-test("all fifteen tools open from their RU and EN deep links", async ({
+for (const locale of ["ru", "en"] as const) {
+  test(`${locale} empty audit explains that no paid AI action plan is needed`, async ({ page }) => {
+    await page.route("**/api/account/ai/runs", (route) => route.request().method() === "POST"
+      ? route.fulfill({ status: 422, json: { detail: { code: "ai_source_no_issues", message: "Private backend detail" } } })
+      : route.fulfill({ json: { contract_version: "webdiag.ai.run_list.v1", next_cursor: null, runs: [] } }));
+    await page.goto(`${locale === "en" ? "/en" : ""}/account/ai?tool=ai_audit_action_plan`);
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel(locale === "ru" ? "ID проекта (UUID):" : "Project ID (UUID):", { exact: true }).fill("11111111-1111-4111-8111-111111111111");
+    await dialog.getByLabel(locale === "ru" ? "ID аудита (UUID):" : "Audit ID (UUID):", { exact: true }).fill("22222222-2222-4222-8222-222222222222");
+    await dialog.getByRole("button", { name: locale === "ru" ? /Сгенерировать план исправлений/ : /Generate action plan/ }).click();
+    await expect(dialog.getByRole("alert")).toContainText(locale === "ru" ? "нет замечаний" : "no issues");
+    await expect(dialog.getByRole("alert")).toContainText(locale === "ru" ? "не списаны" : "not charged");
+    await expect(dialog).not.toContainText("Private backend detail");
+  });
+}
+
+test("all active AI tools open from their RU and EN deep links", async ({
   page,
 }) => {
   test.setTimeout(90000);
   for (const path of ["/account/ai", "/en/account/ai"]) {
-    for (const id of AI_TOOL_IDS) {
+    for (const id of AI_TOOL_IDS.filter(isActiveAIToolId)) {
       await page.goto(`${path}?tool=${id}`);
-      await expect(page.locator(".wd-ai-tool-card")).toHaveCount(15);
+      await expect(page.locator(".wd-ai-tool-card")).toHaveCount(ACTIVE_AI_CATALOG_TOOLS.length);
       await expect(
         page.locator('.wd-ai-tool-card[data-enabled="true"]'),
-      ).toHaveCount(15);
+      ).toHaveCount(ACTIVE_AI_CATALOG_TOOLS.length);
       const dialog = page.getByRole("dialog");
       await expect(dialog).toBeVisible();
       await expect(dialog.getByRole("heading", { level: 2 })).toHaveCount(1);
@@ -69,6 +86,29 @@ test("all fifteen tools open from their RU and EN deep links", async ({
       await expect(dialog).toHaveCount(0);
     }
   }
+});
+
+test("retired AI FAQ cannot be launched but its saved result remains readable", async ({ page }) => {
+  await page.route("**/api/account/ai/runs", (route) => route.fulfill({ json: {
+    contract_version: "webdiag.ai.run_list.v1", next_cursor: null,
+    runs: [{
+      id: runId, tool_id: "ai_faq_studio", contract_version: "v1", credit_price: 1,
+      state: "succeeded", error_code: null,
+      created_at: "2026-10-09T12:00:00Z", updated_at: "2026-10-09T12:01:00Z",
+      output: { items: Array.from({ length: 3 }, (_, index) => ({
+        question: `Saved question ${index + 1}?`, answer: "Saved factual answer.", evidence: "Saved source evidence.",
+      })) },
+    }],
+  } }));
+  await page.goto("/en/account/ai?tool=ai-faq-studio");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.locator(".wd-ai-tool-card")).toHaveCount(14);
+  await expect(page.locator(".wd-ai-tool-card").filter({ hasText: /FAQ/ })).toHaveCount(0);
+  await expect(page.getByText("14/14", { exact: true })).toBeVisible();
+  const saved = page.locator(".wd-ai-run-row");
+  await expect(saved).toContainText("FAQ");
+  await saved.getByText("Result", { exact: true }).click();
+  await expect(saved).toContainText("Saved factual answer.");
 });
 
 test("Schema runner submits evidence and keeps its result after balance refresh", async ({

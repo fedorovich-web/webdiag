@@ -2,10 +2,37 @@ import asyncio
 from collections.abc import Callable
 
 import httpx
+import pytest
 
 from webdiag_api.audit.fetcher import SafeFetchConfig, SafeHttpFetcher
 from webdiag_api.main import app
 from webdiag_api.tools.technical_seo import get_technical_seo_fetcher
+
+
+@pytest.mark.parametrize(
+    "directive,blocked",
+    [
+        ("none", True),
+        ("googlebot: none", True),
+        ("not-noindex", False),
+    ],
+)
+def test_indexability_uses_actual_header_directives(directive, blocked):
+    def response_handler(request):
+        response = handler(request)
+        if request.url.path != "/robots.txt":
+            response.headers["x-robots-tag"] = directive
+        return response
+
+    app.dependency_overrides[get_technical_seo_fetcher] = lambda: build_fetcher(response_handler)
+    try:
+        response = asyncio.run(post("/v1/tools/indexability", {"url": "https://example.com/en/"}))
+    finally:
+        clear_overrides()
+    assert response.status_code == 200
+    assert response.json()["x_robots_tag_noindex"] is blocked
+    assert response.json()["indexable_candidate"] is (not blocked)
+
 
 SAFE_IP = "93.184.216.34"
 
@@ -90,9 +117,7 @@ def handler(request: httpx.Request) -> httpx.Response:
 def test_indexability_checker_reports_static_indexing_signals() -> None:
     app.dependency_overrides[get_technical_seo_fetcher] = lambda: build_fetcher(handler)
     try:
-        response = asyncio.run(
-            post("/v1/tools/indexability", {"url": "https://example.com/en/"})
-        )
+        response = asyncio.run(post("/v1/tools/indexability", {"url": "https://example.com/en/"}))
     finally:
         clear_overrides()
 
@@ -108,9 +133,7 @@ def test_indexability_checker_reports_static_indexing_signals() -> None:
 def test_hreflang_checker_reports_alternates_and_x_default() -> None:
     app.dependency_overrides[get_technical_seo_fetcher] = lambda: build_fetcher(handler)
     try:
-        response = asyncio.run(
-            post("/v1/tools/hreflang", {"url": "https://example.com/en/"})
-        )
+        response = asyncio.run(post("/v1/tools/hreflang", {"url": "https://example.com/en/"}))
     finally:
         clear_overrides()
 
@@ -146,9 +169,7 @@ def test_technology_detector_reports_headers_assets_and_generator() -> None:
 def test_technical_seo_tools_reject_private_targets() -> None:
     app.dependency_overrides[get_technical_seo_fetcher] = lambda: build_fetcher(handler)
     try:
-        response = asyncio.run(
-            post("/v1/tools/indexability", {"url": "http://127.0.0.1/"})
-        )
+        response = asyncio.run(post("/v1/tools/indexability", {"url": "http://127.0.0.1/"}))
     finally:
         clear_overrides()
 

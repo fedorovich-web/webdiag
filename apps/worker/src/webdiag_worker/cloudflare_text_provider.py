@@ -103,7 +103,6 @@ class CloudflareTextProvider:
             "user": request.safety_identifier,
         }
         try:
-            # Never retry an ambiguous response; quota exhaustion also fails explicitly.
             with self._client.stream(
                 "POST",
                 f"https://api.cloudflare.com/client/v4/accounts/{self._account_id}/ai/v1/chat/completions",
@@ -142,7 +141,6 @@ class CloudflareTextProvider:
             output = parsed.model_dump(mode="json")
             if request.tool_id == "ai_schema_studio":
                 output = schema_output(request.input, output)
-            # Neurons are a usage unit, not a receipt for a dollar charge.
             return ProviderResult(
                 output=output,
                 provider_request_id=request_id,

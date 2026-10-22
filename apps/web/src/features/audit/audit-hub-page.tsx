@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import type { Locale } from "@webdiag/tool-registry";
 import { toolsPath } from "../../lib/routes";
+import { parseAuditUrlInput } from "../home/audit-client";
 
 interface AuditHubPageProps {
   readonly locale: Locale;
@@ -30,6 +31,7 @@ export function AuditHubPage({ locale }: AuditHubPageProps) {
   const router = useRouter();
   const ru = locale === "ru";
   const [url, setUrl] = useState("");
+  const [error, setError] = useState("");
   const [activeFaq, setActiveFaq] = useState<number | null>(0);
 
   const homeHref = ru ? "/" : "/en";
@@ -37,11 +39,12 @@ export function AuditHubPage({ locale }: AuditHubPageProps) {
 
   function handleStartAudit(e: FormEvent) {
     e.preventDefault();
-    const trimmed = url.trim();
-    if (!trimmed) return;
-    const targetUrl = trimmed.startsWith("http://") || trimmed.startsWith("https://")
-      ? trimmed
-      : `https://${trimmed}`;
+    const parsed = parseAuditUrlInput(url);
+    if (!parsed) {
+      setError(ru ? "Введите публичный HTTP(S) URL с доменом." : "Enter a public HTTP(S) URL with a domain.");
+      return;
+    }
+    const targetUrl = parsed.href;
     const singleAuditPath = ru
       ? `/tools/single-page-audit?url=${encodeURIComponent(targetUrl)}`
       : `/en/tools/single-page-audit?url=${encodeURIComponent(targetUrl)}`;
@@ -54,16 +57,16 @@ export function AuditHubPage({ locale }: AuditHubPageProps) {
         hero: {
           eyebrow: "Комплексный технический аудит",
           title: "Глубокий SEO-аудит сайта с пошаговыми рекомендациями",
-          lead: "Мгновенно найдите технические ошибки, проблемы индексации, уязвимости безопасности и слабые места Core Web Vitals, мешающие вашему сайту расти в поиске Яндекс и Google.",
+          lead: "Проверьте HTTP-ответ, метатеги, индексацию, заголовки безопасности и статическую структуру страницы. Измерения скорости Google PageSpeed включаются при ответе провайдера.",
           placeholder: "Введите адрес сайта, например: example.com",
           ctaBtn: "Запустить аудит",
           hint: "Проверка выполняется бесплатно и безопасно в режиме реального времени.",
         },
         stats: [
-          { value: "65+", label: "Факторов проверки", desc: "Все критичные SEO-сигналы" },
-          { value: "< 3 сек", label: "Время экспресс-сканирования", desc: "Быстрый ответ без ожидания" },
+          { value: "22", label: "Группы проверок", desc: "Статические сигналы и PageSpeed" },
+          { value: "1 URL", label: "Проверка страницы", desc: "Без обхода всего сайта" },
           { value: "0 ₽", label: "Бесплатный запуск", desc: "Без обязательной регистрации" },
-          { value: "Chromium", label: "Реалистичный рендеринг", desc: "Точно как у поисковых ботов" },
+          { value: "HTML", label: "Источник данных", desc: "Фактический ответ сервера" },
         ],
         dimensionsTitle: "Что проверяет SEO-аудит WebDiag",
         dimensionsLead: "Шесть ключевых направлений всесторонней технической и поисковой диагностики вашего сайта.",
@@ -77,31 +80,31 @@ export function AuditHubPage({ locale }: AuditHubPageProps) {
           {
             icon: Gauge,
             title: "Скорость и Core Web Vitals",
-            desc: "Точный расчет показателей LCP (скорость загрузки основного контента), INP (отзывчивость на клики), CLS (стабильность верстки) и TTFB.",
+            desc: "Измерения Google PageSpeed при доступности провайдера. Отдельно показываем лабораторные данные и полевые данные реальных пользователей; отсутствующие метрики не подменяем оценками.",
             badge: "Ранжирование",
           },
           {
             icon: ShieldCheck,
             title: "Безопасность и HTTP-заголовки",
-            desc: "Срок действия SSL/TLS сертификатов, протокол TLS 1.3, политика HSTS, заголовки CSP, X-Frame-Options и предотвращение mixed content.",
+            desc: "HTTPS финального адреса и заголовки HSTS, CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy и Permissions-Policy.",
             badge: "Безопасность",
           },
           {
             icon: FileText,
             title: "Метаданные и структура контента",
-            desc: "Оптимальность Title и Description по длине и кликабельности, иерархия заголовков H1-H6, дубликаты текстов и плотность ключевых вхождений.",
+            desc: "Наличие Title и Description, повторяющиеся метатеги, H1, последовательность уровней H1–H6 и Open Graph в HTML страницы.",
             badge: "On-Page",
           },
           {
             icon: Layers,
             title: "Микроразметка Schema.org",
-            desc: "Валидация JSON-LD и Microdata структур (Organization, Article, Product, FAQPage, Breadcrumbs) для расширенных сниппетов в выдаче.",
+            desc: "Синтаксис JSON-LD, обнаруженные типы Schema.org и ошибки разбора. Это не полная проверка требований поисковых систем к расширенным результатам.",
             badge: "Сниппеты",
           },
           {
             icon: Smartphone,
             title: "Мобильная адаптивность и UX",
-            desc: "Настройка Viewport, размер шрифтов и элементов управления для тач-экранов, горизонтальная прокрутка и читаемость без зума.",
+            desc: "Наличие viewport и языка документа, alt изображений и размеры изображений в HTML. Визуальная адаптивность требует отдельной проверки в браузере.",
             badge: "Mobile-First",
           },
         ],
@@ -115,9 +118,9 @@ export function AuditHubPage({ locale }: AuditHubPageProps) {
             subtitle: "Быстрый анализ URL",
             price: "Бесплатно",
             features: [
-              "Анализ конкретной страницы за 3 секунды",
-              "Проверка 40+ технических параметров",
-              "Оценка скорости и Core Web Vitals",
+              "Анализ одного введённого URL",
+              "22 группы проверок с фактическими данными",
+              "Измерения Google PageSpeed при доступности",
               "Базовый чеклист исправлений",
             ],
             btn: "Запустить бесплатно",
@@ -166,7 +169,7 @@ export function AuditHubPage({ locale }: AuditHubPageProps) {
           },
           {
             q: "Поддерживает ли WebDiag сайты на JavaScript (React, Next.js, Vue)?",
-            a: "Да, наш сканер использует реальный движок Chromium. Это гарантирует, что клиентский JavaScript полностью исполняется точно так же, как его видит современный бот Googlebot, позволяя обнаружить проблемы гидратации, рендеринга и скрытого контента.",
+            a: "Основная проверка анализирует HTML, возвращённый сервером, и не выполняет JavaScript сайта. Google PageSpeed запускает свою лабораторную проверку отдельно при доступности провайдера. Контент, появляющийся только после выполнения JavaScript, может отсутствовать в статическом отчёте.",
           },
           {
             q: "Что делать после завершения аудита?",
@@ -179,7 +182,7 @@ export function AuditHubPage({ locale }: AuditHubPageProps) {
         ],
         finalCta: {
           title: "Проверьте здоровье вашего сайта прямо сейчас",
-          lead: "Получите детальный отчет с оценкой всех технических сигналов менее чем за минуту.",
+          lead: "Получите отчёт по выполненным проверкам с данными и рекомендациями для исправления.",
           btn: "Проверить сайт",
         },
       }
@@ -188,16 +191,16 @@ export function AuditHubPage({ locale }: AuditHubPageProps) {
         hero: {
           eyebrow: "Comprehensive Technical Audit",
           title: "In-Depth Website SEO Audit with Actionable Remediation Steps",
-          lead: "Instantly detect technical bottlenecks, indexation hurdles, security gaps, and Core Web Vitals penalties preventing your site from ranking higher in Google and search engines.",
+          lead: "Check HTTP responses, metadata, indexing directives, security headers and static page structure. Google PageSpeed measurements are included when the provider responds.",
           placeholder: "Enter website URL, e.g.: example.com",
           ctaBtn: "Run Audit",
           hint: "Safe, instant real-time diagnostic scan with zero obligation.",
         },
         stats: [
-          { value: "65+", label: "Audit Signals", desc: "All critical SEO checkpoints" },
-          { value: "< 3s", label: "Express Scan Time", desc: "Instant feedback without queues" },
+          { value: "22", label: "Check groups", desc: "Static signals and PageSpeed" },
+          { value: "1 URL", label: "Page audit", desc: "No whole-site crawl" },
           { value: "$0", label: "Free Express Audit", desc: "No registration required" },
-          { value: "Chromium", label: "Real Browser Engine", desc: "Exact Googlebot rendering parity" },
+          { value: "HTML", label: "Evidence source", desc: "Actual server response" },
         ],
         dimensionsTitle: "What WebDiag SEO Audit Covers",
         dimensionsLead: "Six core pillars of thorough technical and on-page search engine diagnostics.",
@@ -211,31 +214,31 @@ export function AuditHubPage({ locale }: AuditHubPageProps) {
           {
             icon: Gauge,
             title: "Speed & Core Web Vitals",
-            desc: "Precise evaluation of LCP (Largest Contentful Paint), INP (Interaction to Next Paint), CLS (Layout Shift), and TTFB server latency.",
+            desc: "Google PageSpeed measurements when available. Lab data and real user field data are identified separately; missing metrics remain unavailable.",
             badge: "Ranking",
           },
           {
             icon: ShieldCheck,
             title: "Security & Transport Security",
-            desc: "SSL/TLS certificate expiration, TLS 1.3 protocol, HSTS preloading, CSP headers, X-Frame-Options, and mixed content detection.",
+            desc: "HTTPS on the final URL and HSTS, CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy and Permissions-Policy headers.",
             badge: "Security",
           },
           {
             icon: FileText,
             title: "Metadata & Content Hierarchy",
-            desc: "Title and description length, CTR optimization, H1-H6 heading hierarchy, duplicate meta tags, and content density.",
+            desc: "Title and description presence, duplicate metadata declarations, H1, heading level order and Open Graph in the page HTML.",
             badge: "On-Page",
           },
           {
             icon: Layers,
             title: "Schema.org Structured Data",
-            desc: "Validation of JSON-LD and Microdata schemas (Organization, Article, Product, FAQPage, BreadcrumbList) for rich snippet eligibility.",
+            desc: "JSON-LD parsing, detected Schema.org types and syntax errors. This does not certify search engine rich result eligibility.",
             badge: "Snippets",
           },
           {
             icon: Smartphone,
             title: "Mobile Usability & UX",
-            desc: "Viewport configuration, touch target sizing, mobile typography readability, responsive layout integrity, and tap accessibility.",
+            desc: "Viewport and document language declarations, image alt attributes and HTML image dimensions. Visual responsiveness requires a separate browser check.",
             badge: "Mobile-First",
           },
         ],
@@ -249,9 +252,9 @@ export function AuditHubPage({ locale }: AuditHubPageProps) {
             subtitle: "Single URL instant inspection",
             price: "Free",
             features: [
-              "Complete single page analysis in under 3 seconds",
-              "Check 40+ technical on-page parameters",
-              "Core Web Vitals and speed evaluation",
+              "Analyze one submitted URL",
+              "22 check groups with observed evidence",
+              "Google PageSpeed measurements when available",
               "Immediate actionable fix checklist",
             ],
             btn: "Start Free",
@@ -300,7 +303,7 @@ export function AuditHubPage({ locale }: AuditHubPageProps) {
           },
           {
             q: "Does WebDiag support JavaScript-heavy single-page applications (React, Next.js, Vue)?",
-            a: "Yes. WebDiag renders pages using headless Chromium. This ensures that client-rendered markup, hydration, and lazy-loaded assets are evaluated exactly as Googlebot interprets them.",
+            a: "The main audit analyzes server-returned HTML without executing page JavaScript. Google PageSpeed runs its own lab analysis separately when available. Content that only appears after JavaScript execution may be absent from the static report.",
           },
           {
             q: "What should I do after receiving my audit report?",
@@ -320,14 +323,12 @@ export function AuditHubPage({ locale }: AuditHubPageProps) {
 
   return (
     <div className="wd-audit-hub-page">
-      {/* Breadcrumbs (strictly 12px) */}
       <nav className="shell breadcrumbs wd-audit-breadcrumbs" aria-label="Breadcrumbs">
         <Link href={homeHref}>{t.breadcrumbs.home}</Link>
         <span aria-hidden="true">/</span>
         <span aria-current="page">{t.breadcrumbs.audit}</span>
       </nav>
 
-      {/* Hero with URL Form */}
       <section className="wd-audit-hero">
         <div className="shell wd-audit-hero-inner">
           <span className="wd-eyebrow">{t.hero.eyebrow}</span>
@@ -340,7 +341,9 @@ export function AuditHubPage({ locale }: AuditHubPageProps) {
               <input
                 type="text"
                 value={url}
-                onChange={(e) => setUrl(e.target.value)}
+                onChange={(e) => { setUrl(e.target.value); setError(""); }}
+                aria-invalid={error ? "true" : undefined}
+                aria-describedby="audit-hub-error"
                 placeholder={t.hero.placeholder}
                 aria-label={t.hero.placeholder}
                 required
@@ -352,9 +355,9 @@ export function AuditHubPage({ locale }: AuditHubPageProps) {
               <ArrowRight size={16} aria-hidden="true" />
             </button>
           </form>
+          <p id="audit-hub-error" className="tool-error" role="alert">{error}</p>
           <small className="wd-audit-form-hint">{t.hero.hint}</small>
 
-          {/* Stats Bar */}
           <div className="wd-audit-stats-grid">
             {t.stats.map((stat, idx) => (
               <div className="wd-audit-stat-card" key={idx}>
@@ -367,7 +370,6 @@ export function AuditHubPage({ locale }: AuditHubPageProps) {
         </div>
       </section>
 
-      {/* Dimensions Section */}
       <section className="wd-audit-section wd-audit-dimensions">
         <div className="shell">
           <div className="wd-audit-section-header">
@@ -396,7 +398,6 @@ export function AuditHubPage({ locale }: AuditHubPageProps) {
         </div>
       </section>
 
-      {/* Interactive Sample Report Preview */}
       <section className="wd-audit-section wd-audit-preview-section">
         <div className="shell">
           <div className="wd-audit-section-header">
@@ -456,7 +457,6 @@ export function AuditHubPage({ locale }: AuditHubPageProps) {
         </div>
       </section>
 
-      {/* Audit Depth Levels */}
       <section className="wd-audit-section wd-audit-levels">
         <div className="shell">
           <div className="wd-audit-section-header">
@@ -499,7 +499,6 @@ export function AuditHubPage({ locale }: AuditHubPageProps) {
         </div>
       </section>
 
-      {/* FAQ */}
       <section className="wd-audit-section wd-audit-faq">
         <div className="shell">
           <div className="wd-audit-section-header">
@@ -534,7 +533,6 @@ export function AuditHubPage({ locale }: AuditHubPageProps) {
         </div>
       </section>
 
-      {/* Bottom CTA Banner */}
       <section className="wd-audit-section wd-audit-final-cta-section">
         <div className="shell">
           <div className="wd-audit-final-cta-card">
@@ -546,7 +544,9 @@ export function AuditHubPage({ locale }: AuditHubPageProps) {
                 <input
                   type="text"
                   value={url}
-                  onChange={(e) => setUrl(e.target.value)}
+                  onChange={(e) => { setUrl(e.target.value); setError(""); }}
+                aria-invalid={error ? "true" : undefined}
+                aria-describedby="audit-hub-error-final"
                   placeholder={t.hero.placeholder}
                   aria-label={t.hero.placeholder}
                   required
@@ -558,6 +558,7 @@ export function AuditHubPage({ locale }: AuditHubPageProps) {
                 <ArrowRight size={16} aria-hidden="true" />
               </button>
             </form>
+            <p id="audit-hub-error-final" className="tool-error" role="alert">{error}</p>
           </div>
         </div>
       </section>

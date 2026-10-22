@@ -47,6 +47,18 @@ test.describe("PageSpeed Lighthouse workbench", () => {
     await assertBrowserClean(testInfo);
   });
 
+  test("automatically checks the URL carried from the audit report", async ({ page }) => {
+    const requests: unknown[] = [];
+    await page.route("**/api/tools/core-web-vitals", async (route) => {
+      requests.push(route.request().postDataJSON());
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(result) });
+    });
+    await page.goto("/en/tools/core-web-vitals-checker?url=https%3A%2F%2Fexample.com%2Ffrom-audit");
+    await expect(page.getByLabel("Page URL")).toHaveValue("https://example.com/from-audit");
+    await expect(page.getByRole("heading", { name: "Lighthouse categories" })).toBeVisible();
+    expect(requests).toEqual([{ url: "https://example.com/from-audit", strategy: "mobile" }]);
+  });
+
   test("renders four categories and an inert fix order in English", async ({ page }, testInfo) => {
     await page.goto("/en/tools/core-web-vitals-checker");
     await page.getByRole("button", { name: "Run check" }).click();

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from typing import Annotated, Literal
-from urllib.parse import urljoin, urlsplit
+from urllib.parse import urlsplit
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
@@ -14,9 +14,14 @@ from webdiag_api.audit.fetcher import (
     SafeHttpFetcher,
 )
 from webdiag_api.audit.html_metadata import HtmlMetadata, MetaSignal, parse_html_metadata
+from webdiag_api.audit.html_resources import bounded_text, document_base_url, resolve_http_reference
 from webdiag_api.security.url_policy import UrlPolicyError
 
 router = APIRouter(tags=["tools"])
+HTTP_PREVIEW_ERROR = (
+    "The page does not return a successful HTTP response. "
+    "Fix its status before relying on metadata previews."
+)
 
 
 class PageMetadataRequest(BaseModel):
@@ -141,7 +146,7 @@ def inspect_meta_tags(
     fetched, metadata = _fetch_metadata(payload.url, fetcher)
     checks = _meta_tags_checks(
         metadata,
-        final_url=fetched.final_url,
+        final_url=document_base_url(metadata, fetched.final_url),
         status_code=fetched.status_code,
     )
     return MetaTagsResponse(
@@ -149,16 +154,21 @@ def inspect_meta_tags(
         final_url=fetched.final_url,
         status_code=fetched.status_code,
         content_type=fetched.content_type,
-        title=metadata.title,
+        title=_bounded_optional(metadata.title, 1000),
         title_length=len(metadata.title or ""),
-        meta_description=metadata.meta_description,
+        meta_description=_bounded_optional(metadata.meta_description, 2000),
         meta_description_length=len(metadata.meta_description or ""),
-        canonical_url=metadata.canonical_url,
+        canonical_url=_bounded_optional(metadata.canonical_url, 2048),
         resolved_canonical_url=(
-            urljoin(fetched.final_url, metadata.canonical_url) if metadata.canonical_url else None
+            resolve_http_reference(
+                metadata.canonical_url, document_base_url(metadata, fetched.final_url)
+            )
+            if metadata.canonical_url else None
         ),
         robots_directives=tuple(
-            MetadataSignalResponse(name=item.user_agent, content=item.content)
+            MetadataSignalResponse(
+                name=bounded_text(item.user_agent, 120), content=bounded_text(item.content, 2048)
+            )
             for item in metadata.robots
         ),
         h1_count=len(metadata.h1),
@@ -180,19 +190,26 @@ def inspect_serp_preview(
     preview_title = metadata.title or _fallback_title(fetched.final_url)
     preview_description = metadata.meta_description or _fallback_description(fetched.final_url)
     checks = _serp_checks(metadata)
+    if not 200 <= fetched.status_code < 300:
+        checks.insert(0, SerpPreviewCheckResponse(
+            id="http-status", status="fail", message=HTTP_PREVIEW_ERROR,
+        ))
     return SerpPreviewResponse(
         requested_url=fetched.requested_url,
         final_url=fetched.final_url,
         status_code=fetched.status_code,
         display_url=display_url,
-        preview_title=preview_title,
-        preview_description=preview_description,
+        preview_title=bounded_text(preview_title, 1000),
+        preview_description=bounded_text(preview_description, 2000),
         title_source="title" if metadata.title else "fallback",
         description_source="meta_description" if metadata.meta_description else "fallback",
         title_length=len(preview_title),
         description_length=len(preview_description),
         checks=tuple(checks),
-        recommendation=_serp_recommendation(checks),
+        recommendation=(
+            HTTP_PREVIEW_ERROR if not 200 <= fetched.status_code < 300
+            else _serp_recommendation(checks)
+        ),
     )
 
 
@@ -204,15 +221,19 @@ def inspect_social_preview(
     fetched, metadata = _fetch_metadata(payload.url, fetcher)
     og = _build_open_graph_preview(metadata, final_url=fetched.final_url)
     twitter = _build_twitter_preview(metadata, final_url=fetched.final_url, open_graph=og)
+    successful = 200 <= fetched.status_code < 300
+    if not successful:
+        og = og.model_copy(update={"complete": False})
+        twitter = twitter.model_copy(update={"complete": False})
     return SocialPreviewResponse(
         requested_url=fetched.requested_url,
         final_url=fetched.final_url,
         status_code=fetched.status_code,
         open_graph=og,
         twitter=twitter,
-        fallback_title=metadata.title,
-        fallback_description=metadata.meta_description,
-        recommendation=_social_recommendation(og, twitter),
+        fallback_title=_bounded_optional(metadata.title, 1000),
+        fallback_description=_bounded_optional(metadata.meta_description, 2000),
+        recommendation=_social_recommendation(og, twitter) if successful else HTTP_PREVIEW_ERROR,
     )
 
 
@@ -230,6 +251,13 @@ def _fetch_metadata(raw_url: str, fetcher: SafeHttpFetcher) -> tuple[SafeFetchRe
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail={"code": "tool_fetch_failed", "message": str(exc)},
         ) from exc
+    if fetched.content_type and fetched.content_type.split(";", 1)[0].strip().lower() not in {
+        "text/html", "application/xhtml+xml"
+    }:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail={"code": "tool_non_html_response", "message": "Target URL did not return HTML."},
+        )
     return fetched, parse_html_metadata(fetched.body_text)
 
 
@@ -339,7 +367,13 @@ def _check_canonical(canonical: str | None, *, final_url: str) -> MetadataCheckR
             value=None,
             recommendation="Add canonical if this page can be reached through duplicate URLs.",
         )
-    resolved = urljoin(final_url, canonical)
+    resolved = resolve_http_reference(canonical, final_url)
+    if resolved is None:
+        return MetadataCheckResponse(
+            id="canonical", title="Canonical summary", status="fail", severity="high",
+            value=bounded_text(canonical, 2048),
+            recommendation="Canonical URL is invalid. Use a valid HTTP or HTTPS page URL.",
+        )
     return MetadataCheckResponse(
         id="canonical",
         title="Canonical summary",
@@ -371,7 +405,7 @@ def _check_robots(metadata: HtmlMetadata) -> MetadataCheckResponse:
             title="Robots meta directives",
             status="pass",
             severity="info",
-            value=", ".join(item.content for item in metadata.robots),
+            value=bounded_text(", ".join(item.content for item in metadata.robots), 2048),
             recommendation="Robots meta directives are present and do not include noindex.",
         )
     return MetadataCheckResponse(
@@ -391,7 +425,7 @@ def _check_h1_summary(headings: tuple[str, ...]) -> MetadataCheckResponse:
             title="Primary heading summary",
             status="pass",
             severity="info",
-            value=headings[0],
+            value=bounded_text(headings[0], 2048),
             recommendation=(
                 "One H1 was found. Use the heading structure checker later for full heading order."
             ),
@@ -576,8 +610,9 @@ def _build_open_graph_preview(
     og = _signal_map(metadata.open_graph)
     title = og.get("og:title") or metadata.title
     description = og.get("og:description") or metadata.meta_description
-    image = _resolve_optional_url(og.get("og:image"), final_url=final_url)
-    url = _resolve_optional_url(og.get("og:url"), final_url=final_url) or final_url
+    base_url = document_base_url(metadata, final_url)
+    image = resolve_http_reference(og.get("og:image"), base_url)
+    url = resolve_http_reference(og.get("og:url"), base_url) or final_url
     card_type = og.get("og:type")
     site_name = og.get("og:site_name")
     missing = tuple(
@@ -590,12 +625,12 @@ def _build_open_graph_preview(
         if not value
     )
     return SocialCardPreviewResponse(
-        title=title,
-        description=description,
+        title=_bounded_optional(title, 1000),
+        description=_bounded_optional(description, 2000),
         image=image,
         url=url,
-        card_type=card_type,
-        site_name=site_name,
+        card_type=_bounded_optional(card_type, 160),
+        site_name=_bounded_optional(site_name, 300),
         missing_fields=missing,
         complete=len(missing) == 0,
     )
@@ -615,7 +650,7 @@ def _build_twitter_preview(
         or metadata.meta_description
     )
     image = (
-        _resolve_optional_url(twitter.get("twitter:image"), final_url=final_url)
+        resolve_http_reference(twitter.get("twitter:image"), document_base_url(metadata, final_url))
         or open_graph.image
     )
     card_type = twitter.get("twitter:card")
@@ -630,12 +665,12 @@ def _build_twitter_preview(
         if not value
     )
     return SocialCardPreviewResponse(
-        title=title,
-        description=description,
+        title=_bounded_optional(title, 1000),
+        description=_bounded_optional(description, 2000),
         image=image,
         url=final_url,
-        card_type=card_type,
-        site_name=site_name,
+        card_type=_bounded_optional(card_type, 160),
+        site_name=_bounded_optional(site_name, 300),
         missing_fields=missing,
         complete=len(missing) == 0,
     )
@@ -655,10 +690,8 @@ def _social_recommendation(
     return "Add at least og:title, og:description and og:image for reliable rich previews."
 
 
-def _resolve_optional_url(raw_url: str | None, *, final_url: str) -> str | None:
-    if not raw_url:
-        return None
-    return urljoin(final_url, raw_url)
+def _bounded_optional(value: str | None, limit: int) -> str | None:
+    return bounded_text(value, limit) if value else None
 
 
 def _display_url(raw_url: str) -> str:

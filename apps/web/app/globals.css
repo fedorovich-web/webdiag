@@ -39,7 +39,6 @@
   --transition-fast: 140ms cubic-bezier(0.2, 0, 0, 1);
   --transition-base: 220ms cubic-bezier(0.2, 0, 0, 1);
 
-  /* WebDiag Unified Spacing & Padding Variables */
   --wd-hero-pt: clamp(96px, 9vw, 136px);
   --wd-hero-pb: clamp(56px, 6vw, 88px);
   --wd-section-py: clamp(64px, 7vw, 96px);
@@ -49,7 +48,6 @@
   --wd-card-p: clamp(24px, 2.5vw, 36px);
   --wd-card-gap: clamp(20px, 2vw, 30px);
 
-  /* WebDiag Unified Typography Variables */
   --wd-font-h1: clamp(28px, 3.2vw, 38px);
   --wd-font-h2: clamp(22px, 2.4vw, 28px);
   --wd-font-h3: clamp(17px, 1.8vw, 20px);
@@ -118,7 +116,6 @@ p { text-wrap: pretty; }
 .eyebrow::before { content: ""; width: 18px; height: 1px; background: currentColor; }
 .eyebrow-on-dark { color: #bbb7ff; }
 
-/* Shared actions */
 .button { min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 9px; border: 1px solid transparent; border-radius: var(--radius-sm); padding: 12px 18px; background: var(--brand); color: var(--brand-contrast); font-weight: 700; line-height: 1.2; cursor: pointer; box-shadow: 0 8px 22px color-mix(in srgb, var(--brand) 22%, transparent); transition: transform var(--transition-fast), background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast); }
 .button:hover { background: var(--brand-hover); transform: translateY(-1px); box-shadow: 0 12px 28px color-mix(in srgb, var(--brand) 26%, transparent); }
 .button:active { transform: translateY(0); }
@@ -135,7 +132,6 @@ p { text-wrap: pretty; }
 .local-badge, .status-chip { display: inline-flex; align-items: center; gap: 8px; color: var(--success); font-size: 12px; font-weight: 700; }
 .local-badge i, .status-chip i { width: 7px; height: 7px; flex: 0 0 auto; border-radius: 999px; background: currentColor; box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 12%, transparent); }
 
-/* Header */
 .site-header { position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid color-mix(in srgb, var(--line) 72%, transparent); background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: blur(22px) saturate(150%); }
 .header-inner { min-height: 76px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 30px; }
 .brand { min-width: max-content; display: inline-flex; align-items: center; text-decoration: none; }
@@ -164,7 +160,6 @@ p { text-wrap: pretty; }
 .mobile-nav a { min-height: 46px; display: flex; align-items: center; padding: 10px 12px; border-radius: 11px; color: var(--text-soft); text-decoration: none; font-weight: 600; }
 .mobile-nav a:hover { background: var(--surface-muted); color: var(--text); }
 
-/* Catalog */
 .page-main { padding: 72px 0 100px; }
 .page-heading { max-width: 980px; margin-bottom: 54px; }
 .page-heading h1 { max-width: 900px; margin: 14px 0 12px; font-size: clamp(28px, 3.2vw, 38px); line-height: 1.15; letter-spacing: -0.03em; }
@@ -203,7 +198,6 @@ p { text-wrap: pretty; }
 .empty-state h2 { margin: 12px 0 4px; }
 .empty-state p { color: var(--muted); }
 
-/* Tool pages */
 .breadcrumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; margin-bottom: 34px; color: var(--muted); font-size: 12px; }
 .breadcrumbs a { text-decoration: none; }
 .breadcrumbs a:hover { color: var(--brand); }
@@ -257,7 +251,6 @@ p { text-wrap: pretty; }
 .related-tools-card strong { font-size: 12px; line-height: 1.35; }
 .related-tools-card small { color: var(--muted); font-size: 10px; }
 
-/* Existing tool controls */
 .tool-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
 .tool-panel { min-width: 0; display: grid; gap: 17px; padding: 22px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-sm); }
 .tool-panel h2 { margin: 0; font-size: 17px; letter-spacing: -0.02em; }
@@ -286,12 +279,6 @@ textarea { resize: vertical; }
 .single-audit-input .button { min-height: 44px; }
 .single-audit-input .tool-error { min-height: 0; grid-column: 1 / -1; }
 .single-audit-input .tool-error:empty { display: none; }
-.single-audit-loading { grid-template-columns: repeat(3, 8px) 1fr; align-items: center; gap: 8px; }
-.single-audit-loading span { width: 8px; height: 8px; border-radius: 50%; background: var(--brand); animation: audit-pulse 1.2s ease-in-out infinite; }
-.single-audit-loading span:nth-child(2) { animation-delay: .15s; }
-.single-audit-loading span:nth-child(3) { animation-delay: .3s; }
-.single-audit-loading p { margin: 0 0 0 6px; color: var(--muted); }
-@keyframes audit-pulse { 50% { opacity: .3; transform: translateY(-2px); } }
 .single-audit-result { gap: 20px; }
 .single-audit-result-header, .single-audit-findings .result-heading, .single-audit-checks .result-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .single-audit-result-header h2, .single-audit-findings h3, .single-audit-checks h3 { margin: 0; }
@@ -353,7 +340,6 @@ textarea { resize: vertical; }
 .check-field { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; }
 .check-field input { width: 18px; height: 18px; accent-color: var(--brand); }
 
-/* Footer */
 .site-footer { border-top: 1px solid var(--line); background: var(--surface); }
 .footer-grid { display: grid; grid-template-columns: 1.45fr repeat(3, minmax(150px, 0.65fr)); gap: 48px; padding: 64px 0 46px; }
 .footer-brand { max-width: 430px; }
@@ -437,10 +423,7 @@ textarea { resize: vertical; }
 }
 
 
-/* Removed obsolete prototype-era audit CSS layers. Current home styles live in home-v11.css;
-   scoped catalog/tool/internal-page rules continue below. */
 
-/* WebDiag v23: real tools/catalog pages use WebDiag 2026 design tokens */
 :root{
   --wd-catalog-shell:var(--wd-shell,1440px);
   --wd-catalog-page-x:64px;
@@ -814,7 +797,6 @@ main.catalog-page.page-main{
   font-size:var(--wd-catalog-text-size);
 }
 
-/* WebDiag v23: individual tool pages also follow the same token system */
 .tool-heading h1{
   max-width:980px;
   color:var(--wd-catalog-text);
@@ -1057,7 +1039,6 @@ main.catalog-page.page-main{
   }
 }
 
-/* Modern Mobile Slide-in Drawer & Trigger */
 .wd-mobile-menu-trigger {
   display: none;
   align-items: center;
@@ -1356,7 +1337,6 @@ main.catalog-page.page-main{
 
 
 
-/* WebDiag v25: full-bleed page/section backgrounds on all routes */
 html,
 body{
   width:100%;
@@ -1364,7 +1344,6 @@ body{
   overflow-x:clip;
 }
 
-/* Keep page content constrained, but paint the page background across the viewport */
 .wd-internal-page.shell,
 .catalog-page.shell,
 main.catalog-page.shell,
@@ -1397,7 +1376,6 @@ body:has(.tool-heading) main.shell::before{
   pointer-events:none;
 }
 
-/* Footer surface is also full-bleed, not container-width */
 .site-footer{
   position:relative;
   isolation:isolate;
@@ -1416,7 +1394,6 @@ body:has(.tool-heading) main.shell::before{
   pointer-events:none;
 }
 
-/* Legacy generic sections/pages: if they carry a background, extend it to the viewport */
 .page-section,
 .section,
 .catalog-section,
@@ -1441,7 +1418,6 @@ body:has(.tool-heading) main.shell::before{
 }
 
 
-/* WebDiag v28: rollback unsafe global heading overrides; footer typography is targeted */
 .site-footer .footer-column strong{
   margin-bottom:7px;
   color:var(--wd-t,var(--text));
@@ -1489,7 +1465,6 @@ body:has(.tool-heading) main.shell::before{
 }
 
 
-/* WebDiag v29: scoped internal-page design system. Homepage selectors are not targeted. */
 .wd-internal-page{
   --wd-internal-h1:var(--wd-h1,clamp(28px,3.2vw,38px));
   --wd-internal-h2:var(--wd-h2,clamp(22px,2.4vw,28px));
@@ -1685,7 +1660,6 @@ body:has(.tool-heading) main.shell::before{
   box-shadow:var(--wd-button-shadow-hover,0 22px 46px rgb(37 99 255/.28)) !important;
 }
 
-/* WebDiag v29: scoped tools/catalog pages. */
 .catalog-page .catalog-heading h1,
 .catalog-page .page-heading h1,
 .tool-heading h1{
@@ -1744,7 +1718,6 @@ body:has(.tool-heading) main.shell::before{
   line-height:1.6 !important;
 }
 
-/* WebDiag v29: keep footer typography request intact. */
 .site-footer .footer-column strong{
   margin-bottom:7px;
   color:var(--wd-t,var(--text));
@@ -1826,7 +1799,6 @@ body:has(.tool-heading) main.shell::before{
   }
 }
 
-/* WebDiag A10.1: HTTP status / redirect chain tool */
 .redirect-chain-form { display: grid; gap: 14px; }
 .redirect-chain-result { gap: 18px; }
 .status-badge { display: inline-flex; min-height: 34px; align-items: center; justify-content: center; padding: 0 12px; border-radius: 999px; font-weight: 700; }
@@ -1844,7 +1816,6 @@ body:has(.tool-heading) main.shell::before{
 .redirect-chain-recommendation { margin: 0; padding: 14px; border-left: 3px solid var(--brand); border-radius: var(--radius-sm); background: var(--surface-muted); color: var(--text-soft); font-size: 13px; line-height: 1.55; }
 @media (max-width: 640px) { .redirect-chain-hops li { grid-template-columns: auto 1fr; } .redirect-chain-hops li span[aria-hidden="true"] { display: none; } .redirect-chain-hops li strong { grid-column: 2; } }
 
-/* WebDiag A10.2: robots.txt tester */
 .robots-txt-form { display: grid; gap: 14px; }
 .robots-txt-result { gap: 18px; }
 .robots-txt-meta dd { overflow-wrap: anywhere; }
@@ -1858,7 +1829,6 @@ body:has(.tool-heading) main.shell::before{
 .robots-txt-recommendation { margin: 0; padding: 14px; border-left: 3px solid var(--brand); border-radius: var(--radius-sm); background: var(--surface-muted); color: var(--text-soft); font-size: 13px; line-height: 1.55; }
 @media (max-width: 720px) { .robots-txt-columns { grid-template-columns: 1fr; } }
 
-/* WebDiag A10.3: sitemap validator tool */
 .sitemap-validator-form { display: grid; gap: 14px; }
 .sitemap-validator-result { gap: 18px; }
 .sitemap-validator-meta dd { overflow-wrap: anywhere; }
@@ -1888,7 +1858,6 @@ body:has(.tool-heading) main.shell::before{
 .canonical-checker-recommendation { margin: 0; padding: 14px; border-left: 3px solid var(--brand); border-radius: var(--radius-sm); background: var(--surface-muted); color: var(--text-soft); font-size: 13px; line-height: 1.55; }
 @media (max-width: 640px) { .canonical-checker-signals { grid-template-columns: 1fr; } }
 
-/* WebDiag A10.5: security headers checker tool */
 .security-headers-form { display: grid; gap: 14px; }
 .security-headers-result { gap: 18px; }
 .security-headers-meta dd { overflow-wrap: anywhere; }
@@ -1913,7 +1882,6 @@ body:has(.tool-heading) main.shell::before{
 .security-headers-recommendation { margin: 0; padding: 14px; border-left: 3px solid var(--brand); border-radius: var(--radius-sm); background: var(--surface-muted); color: var(--text-soft); font-size: 13px; line-height: 1.55; }
 @media (max-width: 640px) { .security-headers-checks li { grid-template-columns: 1fr; } .security-headers-checks li b { justify-self: start; } }
 
-/* WebDiag A10.7: metadata, SERP and social preview tools */
 .metadata-tool-form { display: grid; gap: 14px; }
 .metadata-tool-result { gap: 18px; }
 .metadata-tool-meta dd { overflow-wrap: anywhere; }
@@ -1947,7 +1915,6 @@ body:has(.tool-heading) main.shell::before{
 @media (max-width: 720px) { .social-preview-grid { grid-template-columns: 1fr; } }
 @media (max-width: 640px) { .metadata-tool-checks li { grid-template-columns: 1fr; } .metadata-tool-checks li .status-badge { justify-self: start; } }
 
-/* Performance tool result primitives */
 .tool-panel-wide { grid-column: span 1; }
 .result-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .result-card { min-width: 0; display: grid; gap: 10px; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface-muted); }
@@ -2014,7 +1981,6 @@ body:has(.tool-heading) main.shell::before{
 @media (max-width: 720px) { .certificate-card header { display: grid; } .certificate-card dl { grid-template-columns: 1fr; } }
 
 
-/* Unified WebDiag internal public pages */
 .wd-internal-page {
   padding-top: 28px;
   padding-bottom: 54px;

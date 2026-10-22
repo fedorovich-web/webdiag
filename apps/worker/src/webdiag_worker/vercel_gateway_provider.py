@@ -49,7 +49,6 @@ _MAX_ATTEMPTS = 3
 _IMAGE_MODEL = "openai/gpt-image-2"
 _IMAGE_TOOLS = frozenset({"ai_image_studio", "ai_image_edit_studio"})
 _IMAGE_RESPONSE_MAX_BYTES = 8 * 1024 * 1024
-# GPT Image 2 permits multiples of 16, ratios up to 3:1 and >=655,360 pixels.
 
 
 class VercelAIGatewayProvider:
@@ -202,13 +201,12 @@ class VercelAIGatewayProvider:
     def _execute_image(self, request: ProviderRequest) -> ProviderResult:
         payload = _image_payload(request)
         reservation = request.artifact_reservation
-        assert reservation is not None  # Validated before any provider request.
+        assert reservation is not None
         storage = self._image_storage()
         endpoint = (
             "edits" if request.tool_id == "ai_image_edit_studio" else "generations"
         )
         try:
-            # A timeout or 5xx may occur after a paid generation was accepted. Never retry.
             with self._client.stream(
                 "POST",
                 f"{_GATEWAY_BASE_URL}/images/{endpoint}",
@@ -302,7 +300,6 @@ class VercelAIGatewayProvider:
                 follow_redirects=False,
             ) as response:
                 if response.status_code != 200:
-                    # Only a known rejected rate-limit request may be resubmitted.
                     if response.status_code == 429 and attempt + 1 < _MAX_ATTEMPTS:
                         self._sleep(
                             _retry_delay(
@@ -437,7 +434,6 @@ def _provider_usage(body: object) -> tuple[int, int, int]:
 
 
 def _image_provider_usage(body: dict[str, object]) -> tuple[int, int, int | None]:
-    # Images API reports input/output tokens; Gateway cost is optional metadata.
     usage = body.get("usage")
     if not isinstance(usage, dict):
         raise ValueError("image usage is unavailable")

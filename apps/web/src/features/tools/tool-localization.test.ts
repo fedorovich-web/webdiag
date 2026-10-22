@@ -14,6 +14,12 @@ describe("tool-localization", () => {
     expect(localizeRecommendation(raw, "ru")).toContain("URL возвращает");
   });
 
+  it("explains malformed canonical evidence in the selected language", () => {
+    const raw = "Canonical URL is invalid or exceeds the supported length. Use a valid HTTP or HTTPS URL for the preferred page.";
+    expect(localizeRecommendation(raw, "ru")).toContain("некорректен");
+    expect(localizeRecommendation(raw, "en")).toBe(raw);
+  });
+
   it("localizes audit issues to Russian", () => {
     const issue: AuditFrontendIssue = {
       id: "metadata.title.missing",

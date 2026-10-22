@@ -16,7 +16,6 @@ def create_broker() -> Broker:
     if backend != "rabbitmq":
         raise ValueError(f"Unsupported broker backend: {backend}")
 
-    # Lazy import keeps local unit tests independent from the RabbitMQ client.
     from dramatiq.brokers.rabbitmq import RabbitmqBroker
 
     return RabbitmqBroker(

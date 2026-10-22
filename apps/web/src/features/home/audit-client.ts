@@ -1,7 +1,5 @@
 import { isAuditFrontendResult, type AuditFrontendResult } from "./audit-contract";
 
-export type AuditSnapshotResponse = AuditFrontendResult;
-
 export class AuditClientError extends Error {
   readonly status: number;
   readonly code: string;
@@ -31,6 +29,7 @@ export function parseAuditUrlInput(value: string): URL | null {
     const parsed = new URL(normalized);
     if (!/^https?:$/i.test(parsed.protocol)) return null;
     if (!parsed.hostname.includes(".")) return null;
+    if (parsed.username || parsed.password) return null;
     return parsed;
   } catch {
     return null;
@@ -56,7 +55,7 @@ function extractErrorMessage(payload: unknown): { code?: string; message?: strin
 
 export async function startAuditSnapshot(
   url: string,
-  options: { endpoint?: string; fetcher?: Fetcher } = {},
+  options: { endpoint?: string; fetcher?: Fetcher; signal?: AbortSignal } = {},
 ): Promise<AuditFrontendResult> {
   const endpoint = options.endpoint ?? "/api/audits";
   const fetcher = options.fetcher ?? fetch;
@@ -67,6 +66,7 @@ export async function startAuditSnapshot(
       "content-type": "application/json",
     },
     body: JSON.stringify({ url }),
+    signal: options.signal,
   });
 
   const payload: unknown = await response.json().catch(() => null);

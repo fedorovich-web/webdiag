@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import pytest
 
@@ -58,7 +58,8 @@ def test_crawl_is_same_origin_query_free_robots_aware_and_projects_site_findings
     root = """
       <html><head><title>Home</title><meta name="description" content="Welcome"></head>
       <body>
-        <a href="/about?session=secret#team">About</a>
+        <a href="/about#team">About</a>
+        <a href="/private?session=secret">Private query</a>
         <a href="/duplicate">Duplicate</a>
         <a href="/blocked">Blocked</a>
         <a href="https://outside.example/path">Outside</a>
@@ -79,9 +80,9 @@ def test_crawl_is_same_origin_query_free_robots_aware_and_projects_site_findings
                 f"{origin}/sitemap.xml",
                 """<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
                 <url><loc>https://example.com/</loc></url>
-                <url><loc>https://example.com/about?tracking=secret</loc></url>
+                <url><loc>https://example.com/about</loc></url>
                 <url><loc>https://example.com/duplicate</loc></url>
-                <url><loc>https://example.com/orphan?token=secret</loc></url>
+                <url><loc>https://example.com/orphan</loc></url>
                 <url><loc>https://outside.example/not-ours</loc></url>
                 </urlset>""",
                 content_type="application/xml",
@@ -119,7 +120,8 @@ def test_crawl_is_same_origin_query_free_robots_aware_and_projects_site_findings
     assert result.sitemap_url == f"{origin}/sitemap.xml"
     assert result.sitemap_url_count == 4
     assert result.sitemap_complete is True
-    assert result.orphan_urls == (f"{origin}/orphan",)
+    assert result.orphan_urls == ()
+    assert result.excluded_query_url_count == 1
     assert result.duplicate_titles[0].urls == (
         f"{origin}/about",
         f"{origin}/duplicate",
@@ -187,7 +189,9 @@ def test_crawl_reports_page_budget_without_labelling_reachable_urls_as_orphans()
     origin = "https://example.com"
     fetcher = FixtureFetcher(
         {
-            f"{origin}/robots.txt": SafeFetchError("unavailable"),
+            f"{origin}/robots.txt": fetched(
+                f"{origin}/robots.txt", "", status=404, content_type="text/plain"
+            ),
             f"{origin}/sitemap.xml": fetched(
                 f"{origin}/sitemap.xml",
                 "<urlset><url><loc>https://example.com/next</loc></url></urlset>",
@@ -216,7 +220,9 @@ def test_site_audit_can_process_more_than_twenty_five_pages_with_bounded_evidenc
     page_urls = [f"{origin}/page-{index}" for index in range(1, 30)]
     root_links = "".join(f'<a href="/page-{index}">Page</a>' for index in range(1, 30))
     responses: dict[str, SafeFetchResult | Exception] = {
-        f"{origin}/robots.txt": SafeFetchError("unavailable"),
+        f"{origin}/robots.txt": fetched(
+            f"{origin}/robots.txt", "", status=404, content_type="text/plain"
+        ),
         f"{origin}/sitemap.xml": SafeFetchError("missing"),
         f"{origin}/": fetched(f"{origin}/", f"<html><body>{root_links}</body></html>"),
     }
@@ -256,7 +262,9 @@ def test_incomplete_crawl_does_not_claim_sitemap_only_urls_are_orphans() -> None
     origin = "https://example.com"
     fetcher = FixtureFetcher(
         {
-            f"{origin}/robots.txt": SafeFetchError("unavailable"),
+            f"{origin}/robots.txt": fetched(
+                f"{origin}/robots.txt", "", status=404, content_type="text/plain"
+            ),
             f"{origin}/sitemap.xml": fetched(
                 f"{origin}/sitemap.xml",
                 "<urlset><url><loc>https://example.com/not-yet-seen</loc></url></urlset>",
@@ -286,7 +294,9 @@ def test_site_audit_groups_page_findings_and_failed_urls_without_losing_severity
     origin = "https://example.com"
     fetcher = FixtureFetcher(
         {
-            f"{origin}/robots.txt": SafeFetchError("unavailable"),
+            f"{origin}/robots.txt": fetched(
+                f"{origin}/robots.txt", "", status=404, content_type="text/plain"
+            ),
             f"{origin}/sitemap.xml": SafeFetchError("missing"),
             f"{origin}/": fetched(
                 f"{origin}/",
@@ -329,7 +339,9 @@ def test_crawl_fails_closed_when_root_is_disallowed_or_not_html() -> None:
 
     non_html = FixtureFetcher(
         {
-            f"{origin}/robots.txt": SafeFetchError("missing"),
+            f"{origin}/robots.txt": fetched(
+                f"{origin}/robots.txt", "", status=404, content_type="text/plain"
+            ),
             f"{origin}/sitemap.xml": SafeFetchError("missing"),
             f"{origin}/": fetched(
                 f"{origin}/",
@@ -347,7 +359,9 @@ def test_crawl_does_not_treat_sitemap_index_children_as_page_urls() -> None:
     post_url = f"{origin}/post"
     fetcher = FixtureFetcher(
         {
-            f"{origin}/robots.txt": SafeFetchError("missing"),
+            f"{origin}/robots.txt": fetched(
+                f"{origin}/robots.txt", "", status=404, content_type="text/plain"
+            ),
             f"{origin}/sitemap.xml": fetched(
                 f"{origin}/sitemap.xml",
                 """<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -385,7 +399,9 @@ def test_site_audit_uses_same_origin_sitemap_urls_after_link_graph_is_exhausted(
     hidden_url = f"{origin}/sitemap-only"
     fetcher = FixtureFetcher(
         {
-            f"{origin}/robots.txt": SafeFetchError("missing"),
+            f"{origin}/robots.txt": fetched(
+                f"{origin}/robots.txt", "", status=404, content_type="text/plain"
+            ),
             f"{origin}/sitemap.xml": fetched(
                 f"{origin}/sitemap.xml",
                 (
@@ -422,7 +438,9 @@ def test_incomplete_sitemap_index_never_produces_orphan_claims() -> None:
     origin = "https://example.com"
     fetcher = FixtureFetcher(
         {
-            f"{origin}/robots.txt": SafeFetchError("missing"),
+            f"{origin}/robots.txt": fetched(
+                f"{origin}/robots.txt", "", status=404, content_type="text/plain"
+            ),
             f"{origin}/sitemap.xml": fetched(
                 f"{origin}/sitemap.xml",
                 (
@@ -448,3 +466,282 @@ def test_incomplete_sitemap_index_never_produces_orphan_claims() -> None:
     assert not any(
         issue.issue_id == "site.crawlability.orphan_candidate" for issue in result.issues
     )
+
+
+def test_redirect_aliases_do_not_duplicate_audited_pages_or_metadata_findings() -> None:
+    origin = "https://example.com"
+    target = fetched(
+        f"{origin}/target",
+        "<html><head><title>Target</title></head></html>",
+    )
+    fetcher = FixtureFetcher(
+        {
+            f"{origin}/robots.txt": fetched(
+                f"{origin}/robots.txt", "", status=404, content_type="text/plain"
+            ),
+            f"{origin}/sitemap.xml": SafeFetchError("missing"),
+            f"{origin}/": fetched(
+                f"{origin}/",
+                '<html><title>Home</title><a href="/alias">Alias</a>'
+                '<a href="/target">Target</a><a href="/other-alias">Other</a></html>',
+            ),
+            f"{origin}/alias": replace(target, requested_url=f"{origin}/alias"),
+            f"{origin}/target": target,
+            f"{origin}/other-alias": replace(target, requested_url=f"{origin}/other-alias"),
+        }
+    )
+
+    result = crawl_origin(origin, fetcher=fetcher, config=CrawlConfig(page_limit=2))
+
+    assert [page.url for page in result.pages] == [f"{origin}/", f"{origin}/target"]
+    assert result.page_budget_exhausted is True
+    assert result.duplicate_titles == ()
+    assert result.audit_summary.pages_audited == 2
+
+    complete = crawl_origin(origin, fetcher=fetcher, config=CrawlConfig())
+
+    assert [page.url for page in complete.pages] == [f"{origin}/", f"{origin}/target"]
+    assert complete.duplicate_titles == ()
+    assert complete.audit_summary.pages_audited == 2
+
+
+def test_redirect_target_is_reachable_without_a_direct_internal_link() -> None:
+    origin = "https://example.com"
+    target = fetched(f"{origin}/target", "<html><title>Target</title></html>")
+    fetcher = FixtureFetcher(
+        {
+            f"{origin}/robots.txt": fetched(
+                f"{origin}/robots.txt", "", status=404, content_type="text/plain"
+            ),
+            f"{origin}/sitemap.xml": fetched(
+                f"{origin}/sitemap.xml",
+                f"<urlset><url><loc>{origin}/target</loc></url></urlset>",
+                content_type="application/xml",
+            ),
+            f"{origin}/": fetched(
+                f"{origin}/", '<html><title>Home</title><a href="/alias">Target</a></html>'
+            ),
+            f"{origin}/alias": replace(target, requested_url=f"{origin}/alias"),
+        }
+    )
+
+    result = crawl_origin(origin, fetcher=fetcher, config=CrawlConfig())
+
+    assert [page.url for page in result.pages] == [f"{origin}/", f"{origin}/target"]
+    assert result.sitemap_complete is True
+    assert result.page_budget_exhausted is False
+    assert result.page_failures == ()
+    assert result.orphan_urls == ()
+    assert not any(
+        issue.issue_id == "site.crawlability.orphan_candidate" for issue in result.issues
+    )
+
+
+@pytest.mark.parametrize("blocked", [False, True], ids=["fetch-failed", "robots-excluded"])
+def test_unread_pages_prevent_orphan_claims(blocked: bool) -> None:
+    origin = "https://example.com"
+    fetcher = FixtureFetcher(
+        {
+            f"{origin}/robots.txt": fetched(
+                f"{origin}/robots.txt",
+                "User-agent: *\nDisallow: /unread" if blocked else "User-agent: *\nAllow: /",
+                content_type="text/plain",
+            ),
+            f"{origin}/sitemap.xml": fetched(
+                f"{origin}/sitemap.xml",
+                f"<urlset><url><loc>{origin}/candidate</loc></url></urlset>",
+                content_type="application/xml",
+            ),
+            f"{origin}/": fetched(
+                f"{origin}/",
+                '<html><title>Home</title><a href="/unread">Unread</a></html>',
+            ),
+            f"{origin}/unread": SafeFetchError("unavailable"),
+            f"{origin}/candidate": fetched(
+                f"{origin}/candidate", "<html><title>Candidate</title></html>"
+            ),
+        }
+    )
+
+    result = crawl_origin(origin, fetcher=fetcher, config=CrawlConfig())
+
+    assert len(result.page_failures) == 1
+    assert result.orphan_urls == ()
+    assert not any(
+        issue.issue_id == "site.crawlability.orphan_candidate" for issue in result.issues
+    )
+
+
+def test_non_success_html_response_prevents_orphan_claims_without_losing_http_findings() -> None:
+    origin = "https://example.com"
+    fetcher = FixtureFetcher(
+        {
+            f"{origin}/robots.txt": fetched(
+                f"{origin}/robots.txt", "", status=404, content_type="text/plain"
+            ),
+            f"{origin}/sitemap.xml": fetched(
+                f"{origin}/sitemap.xml",
+                f"<urlset><url><loc>{origin}/hidden</loc></url></urlset>",
+                content_type="application/xml",
+            ),
+            f"{origin}/": fetched(
+                f"{origin}/", '<html><title>Home</title><a href="/section">Section</a></html>'
+            ),
+            f"{origin}/section": fetched(
+                f"{origin}/section", "<html><title>Unavailable</title></html>", status=503
+            ),
+            f"{origin}/hidden": fetched(
+                f"{origin}/hidden", "<html><title>Hidden</title></html>"
+            ),
+        }
+    )
+
+    result = crawl_origin(origin, fetcher=fetcher, config=CrawlConfig())
+
+    assert [page.status_code for page in result.pages] == [200, 503, 200]
+    assert any(f"{origin}/section" in issue.affected_urls for issue in result.issues)
+    assert result.page_budget_exhausted is False
+    assert result.sitemap_complete is True
+    assert result.orphan_urls == ()
+    assert not any(
+        issue.issue_id == "site.crawlability.orphan_candidate" for issue in result.issues
+    )
+
+
+@pytest.mark.parametrize("link_count", [500, 501])
+def test_link_discovery_cap_reports_incomplete_coverage(link_count: int) -> None:
+    origin = "https://example.com"
+    fetcher = FixtureFetcher(
+        {
+            f"{origin}/robots.txt": fetched(
+                f"{origin}/robots.txt", "", status=404, content_type="text/plain"
+            ),
+            f"{origin}/sitemap.xml": SafeFetchError("missing"),
+            f"{origin}/": fetched(
+                f"{origin}/",
+                '<html><title>Home</title>' + '<a href="/">Home</a>' * link_count + "</html>",
+            ),
+        }
+    )
+
+    result = crawl_origin(origin, fetcher=fetcher, config=CrawlConfig())
+
+    assert len(result.pages) == 1
+    assert result.page_budget_exhausted is (link_count > 500)
+
+
+def test_query_urls_are_excluded_instead_of_auditing_a_different_page() -> None:
+    origin = "https://example.com"
+    fetcher = FixtureFetcher(
+        {
+            f"{origin}/robots.txt": fetched(
+                f"{origin}/robots.txt", "", status=404, content_type="text/plain"
+            ),
+            f"{origin}/sitemap.xml": fetched(
+                f"{origin}/sitemap.xml",
+                f"<urlset><url><loc>{origin}/?page=2</loc></url></urlset>",
+                content_type="application/xml",
+            ),
+            f"{origin}/": fetched(
+                f"{origin}/",
+                '<html><title>Home</title><a href="/?page=2">Page 2</a>'
+                '<a href="/?page=3#top">Page 3</a><a href="/">Home</a></html>',
+            ),
+        }
+    )
+
+    result = crawl_origin(origin, fetcher=fetcher, config=CrawlConfig())
+
+    assert result.pages[0].internal_links == (f"{origin}/",)
+    assert result.excluded_query_url_count == 2
+    assert result.sitemap_url_count == 0
+    assert result.sitemap_complete is False
+    assert "page=" not in result.model_dump_json()
+
+
+def test_failed_declared_sitemap_does_not_become_complete_when_fallback_succeeds() -> None:
+    origin = "https://example.com"
+    fetcher = FixtureFetcher(
+        {
+            f"{origin}/robots.txt": fetched(
+                f"{origin}/robots.txt",
+                f"User-agent: *\nSitemap: {origin}/declared.xml",
+                content_type="text/plain",
+            ),
+            f"{origin}/declared.xml": SafeFetchError("unavailable"),
+            f"{origin}/sitemap.xml": fetched(
+                f"{origin}/sitemap.xml", "<urlset/>", content_type="application/xml"
+            ),
+            f"{origin}/": fetched(f"{origin}/", "<html><title>Home</title></html>"),
+        }
+    )
+
+    result = crawl_origin(origin, fetcher=fetcher, config=CrawlConfig())
+
+    assert result.sitemap_url == f"{origin}/sitemap.xml"
+    assert result.sitemap_complete is False
+
+
+def test_deadline_before_first_page_never_returns_an_empty_success() -> None:
+    origin = "https://example.com"
+    fetcher = FixtureFetcher(
+        {
+            f"{origin}/robots.txt": fetched(
+                f"{origin}/robots.txt", "", status=404, content_type="text/plain"
+            ),
+            f"{origin}/sitemap.xml": SafeFetchError("missing"),
+        }
+    )
+    ticks = iter([0.0, 10.0, 10.0, 10.0])
+
+    with pytest.raises(CrawlExecutionError, match="crawl_deadline_exceeded"):
+        crawl_origin(origin, fetcher=fetcher, config=CrawlConfig(deadline_seconds=10),
+                     monotonic=lambda: next(ticks))
+
+
+def test_malformed_sitemap_url_does_not_abort_the_page_audit() -> None:
+    origin = "https://example.com"
+    fetcher = FixtureFetcher(
+        {
+            f"{origin}/robots.txt": fetched(
+                f"{origin}/robots.txt", "", status=404, content_type="text/plain"
+            ),
+            f"{origin}/sitemap.xml": fetched(
+                f"{origin}/sitemap.xml", "<urlset><url><loc>https://[broken</loc></url></urlset>",
+                content_type="application/xml",
+            ),
+            f"{origin}/": fetched(f"{origin}/", "<html><title>Home</title></html>"),
+        }
+    )
+
+    result = crawl_origin(origin, fetcher=fetcher, config=CrawlConfig())
+
+    assert len(result.pages) == 1
+    assert result.sitemap_complete is False
+    assert result.orphan_urls == ()
+
+
+def test_crawl_resolves_navigation_against_the_active_document_base() -> None:
+    origin = "https://example.com"
+    fetcher = FixtureFetcher(
+        {
+            f"{origin}/robots.txt": fetched(
+                f"{origin}/robots.txt", "", status=404, content_type="text/plain"
+            ),
+            f"{origin}/sitemap.xml": SafeFetchError("missing"),
+            f"{origin}/": fetched(
+                f"{origin}/",
+                '<html><head><base href="/docs/"><title>Home</title></head>'
+                '<body><a href="guide">Guide</a></body></html>',
+            ),
+            f"{origin}/guide": SafeFetchError("wrong relative URL"),
+            f"{origin}/docs/guide": fetched(
+                f"{origin}/docs/guide", "<html><title>Guide</title></html>"
+            ),
+        }
+    )
+
+    result = crawl_origin(origin, fetcher=fetcher, config=CrawlConfig())
+
+    assert [page.url for page in result.pages] == [f"{origin}/", f"{origin}/docs/guide"]
+    assert result.page_failures == ()

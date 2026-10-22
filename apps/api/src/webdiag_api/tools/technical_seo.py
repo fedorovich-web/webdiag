@@ -16,7 +16,7 @@ from webdiag_api.audit.fetcher import (
     SafeFetchResult,
     SafeHttpFetcher,
 )
-from webdiag_api.audit.html_metadata import parse_html_metadata
+from webdiag_api.audit.html_metadata import parse_html_metadata, x_robots_has_directive
 from webdiag_api.audit.robots import analyze_robots_txt
 from webdiag_api.security.url_policy import UrlPolicyError
 
@@ -289,8 +289,8 @@ def inspect_indexability(
         robots_txt_status_code=robots_status,
         meta_robots_noindex=metadata.has_noindex,
         meta_robots_nofollow=metadata.has_nofollow,
-        x_robots_tag_noindex="noindex" in x_robots.lower(),
-        x_robots_tag_nofollow="nofollow" in x_robots.lower(),
+        x_robots_tag_noindex=x_robots_has_directive(x_robots, "noindex"),
+        x_robots_tag_nofollow=x_robots_has_directive(x_robots, "nofollow"),
         canonical_url=metadata.canonical_url,
         resolved_canonical_url=resolved_canonical_url,
         canonical_matches_final_url=canonical_matches_final,
@@ -457,14 +457,14 @@ def _indexability_signals(
             message="Meta robots contains noindex." if meta_noindex else "No meta noindex found.",
         )
     )
-    x_robots_lower = x_robots.lower()
+    header_blocks_indexing = x_robots_has_directive(x_robots, "noindex")
     signals.append(
         IndexabilitySignalResponse(
             id="x-robots-tag",
-            status="fail" if "noindex" in x_robots_lower else "pass",
+            status="fail" if header_blocks_indexing else "pass",
             message=(
                 "X-Robots-Tag contains noindex."
-                if "noindex" in x_robots_lower
+                if header_blocks_indexing
                 else "No X-Robots-Tag noindex found."
             ),
         )

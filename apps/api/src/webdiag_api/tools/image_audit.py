@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections import Counter
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from html.parser import HTMLParser
 from typing import Annotated, Literal
 from urllib.parse import urljoin, urlsplit
 
@@ -11,6 +10,15 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from webdiag_api.audit.fetcher import SafeFetchConfig, SafeFetchError, SafeHttpFetcher
+from webdiag_api.audit.html_metadata import parse_html_metadata
+from webdiag_api.audit.html_parser import TemplateAwareHTMLParser
+from webdiag_api.audit.html_resources import (
+    bounded_text,
+    document_base_url,
+    resolve_html_reference,
+    resolve_http_reference,
+    srcset_urls,
+)
 from webdiag_api.security.url_policy import UrlPolicyError
 
 router = APIRouter(tags=["tools"])
@@ -187,7 +195,7 @@ class ParsedIcon:
     declared_type: str | None
 
 
-class ImageHTMLParser(HTMLParser):
+class ImageHTMLParser(TemplateAwareHTMLParser):
     def __init__(self, *, base_url: str) -> None:
         super().__init__(convert_charrefs=True)
         self.base_url = base_url
@@ -199,18 +207,24 @@ class ImageHTMLParser(HTMLParser):
         self.twitter_image_url: str | None = None
         self._picture_depth = 0
         self._link_depth = 0
+        self._template_depth = 0
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag == "template":
+            self._template_depth += 1
+            return
+        if self._template_depth:
+            return
         values = {name.lower(): (value if value is not None else "") for name, value in attrs}
         if tag == "picture":
             self._picture_depth += 1
         if tag == "a":
             self._link_depth += 1
         if tag == "source" and self._picture_depth:
-            for url in _srcset_urls(values.get("srcset")):
+            for url in srcset_urls(values.get("srcset")):
                 self.image_candidates.append(
                     ParsedImage(
-                        url=urljoin(self.base_url, url),
+                        url=_absolute_image_url(url, self.base_url),
                         source="picture-source",
                         alt_present=False,
                         alt_text=None,
@@ -228,8 +242,8 @@ class ImageHTMLParser(HTMLParser):
             srcset = values.get("srcset")
             src = values.get("src")
             urls = [src] if src else []
-            srcset_urls = _srcset_urls(srcset)
-            urls.extend(srcset_urls)
+            candidates = srcset_urls(srcset)
+            urls.extend(candidates)
             if not urls:
                 return
             primary = _absolute_image_url(urls[0], self.base_url)
@@ -244,12 +258,12 @@ class ImageHTMLParser(HTMLParser):
                 loading=_blank_to_none(values.get("loading")),
                 decoding=_blank_to_none(values.get("decoding")),
                 fetchpriority=_blank_to_none(values.get("fetchpriority")),
-                uses_srcset=bool(srcset_urls),
+                uses_srcset=bool(candidates),
                 uses_picture=self._picture_depth > 0,
             )
             self.images.append(image)
             self.image_candidates.append(image)
-            for extra in srcset_urls:
+            for extra in candidates:
                 absolute = _absolute_image_url(extra, self.base_url)
                 if absolute != primary:
                     self.image_candidates.append(
@@ -291,6 +305,11 @@ class ImageHTMLParser(HTMLParser):
                 self.twitter_image_url = _absolute_image_url(content, self.base_url)
 
     def handle_endtag(self, tag: str) -> None:
+        if tag == "template":
+            self._template_depth = max(0, self._template_depth - 1)
+            return
+        if self._template_depth:
+            return
         if tag == "picture" and self._picture_depth:
             self._picture_depth -= 1
         if tag == "a" and self._link_depth:
@@ -313,6 +332,11 @@ def inspect_image_performance(
     parsed = _parse_image_html(fetched.body_text, base_url=fetched.final_url)
     candidates = _dedupe_candidates(parsed.image_candidates + _social_image_candidates(parsed))
     inspected = [_inspect_image_candidate(fetcher, candidate) for candidate in candidates[:50]]
+    unavailable = sum(
+        item.status_code is None or not 200 <= item.status_code < 300
+        or not (item.content_type or "").split(";", 1)[0].strip().lower().startswith("image/")
+        for item in inspected
+    )
     known_bytes = sum(item.content_length or 0 for item in inspected)
     unknown_size_count = sum(1 for item in inspected if item.content_length is None)
     modern_count = sum(1 for item in inspected if item.modern_raster_format is True)
@@ -355,6 +379,7 @@ def inspect_image_performance(
             lazy_candidates=lazy_candidates,
             responsive_count=responsive_count,
             total_images=len(parsed.images),
+            unavailable=unavailable,
         ),
     )
 
@@ -367,6 +392,8 @@ def inspect_image_seo(
     fetched = _fetch_html_or_raise(fetcher, payload.url)
     parsed = _parse_image_html(fetched.body_text, base_url=fetched.final_url)
     images = parsed.images
+    og_image_url = resolve_http_reference(parsed.og_image_url, "")
+    twitter_image_url = resolve_http_reference(parsed.twitter_image_url, "")
     missing_alt = sum(1 for image in images if not image.alt_present)
     empty_alt = sum(
         1 for image in images if image.alt_present and not (image.alt_text or "").strip()
@@ -387,7 +414,7 @@ def inspect_image_seo(
             missing_dimensions=missing_dimensions,
             responsive=responsive,
             lazy=lazy,
-            has_social=bool(parsed.og_image_url or parsed.twitter_image_url),
+            has_social=bool(og_image_url or twitter_image_url),
         )
     )
     return ImageSeoResponse(
@@ -402,8 +429,8 @@ def inspect_image_seo(
         missing_dimensions_count=missing_dimensions,
         responsive_image_count=responsive,
         lazy_loading_count=lazy,
-        og_image_url=parsed.og_image_url,
-        twitter_image_url=parsed.twitter_image_url,
+        og_image_url=og_image_url,
+        twitter_image_url=twitter_image_url,
         checks=checks,
         sample_images=tuple(_seo_image_response(image) for image in images[:12]),
         recommendation=_image_seo_recommendation(checks),
@@ -418,6 +445,7 @@ def inspect_favicon(
     fetched = _fetch_html_or_raise(fetcher, payload.url)
     parsed = _parse_image_html(fetched.body_text, base_url=fetched.final_url)
     fallback_url = urljoin(fetched.final_url, "/favicon.ico")
+    manifest_url = resolve_http_reference(parsed.manifest_url, "")
     icons = list(parsed.icons)
     fallback_checked = False
     if not any(icon.url == fallback_url for icon in icons):
@@ -427,13 +455,17 @@ def inspect_favicon(
         fallback_checked = True
     unique_icons = _dedupe_icons(icons)[:24]
     inspected = tuple(_inspect_icon(fetcher, icon) for icon in unique_icons)
-    successful = [icon for icon in inspected if icon.status_code and icon.status_code < 400]
+    successful = [
+        icon for icon in inspected
+        if icon.status_code is not None and 200 <= icon.status_code < 300
+        and (icon.content_type or "").split(";", 1)[0].strip().lower().startswith("image/")
+    ]
     has_svg = any(icon.format == "svg" for icon in successful)
     has_apple = any(
         "apple-touch-icon" in icon.rel and icon.status_code and icon.status_code < 400
-        for icon in inspected
+        for icon in successful
     )
-    has_favicon = any(icon.status_code and icon.status_code < 400 for icon in inspected)
+    has_favicon = bool(successful)
     return FaviconResponse(
         requested_url=fetched.requested_url,
         final_url=fetched.final_url,
@@ -443,15 +475,15 @@ def inspect_favicon(
         has_favicon=has_favicon,
         has_svg_icon=has_svg,
         has_apple_touch_icon=has_apple,
-        has_manifest=bool(parsed.manifest_url),
-        manifest_url=parsed.manifest_url,
+        has_manifest=bool(manifest_url),
+        manifest_url=manifest_url,
         fallback_ico_checked=fallback_checked,
         icons=inspected,
         recommendation=_favicon_recommendation(
             has_favicon=has_favicon,
             has_svg=has_svg,
             has_apple=has_apple,
-            has_manifest=bool(parsed.manifest_url),
+            has_manifest=bool(manifest_url),
         ),
     )
 
@@ -470,7 +502,17 @@ def _fetch_html_or_raise(fetcher: SafeHttpFetcher, url: str):
             detail={"code": "tool_fetch_failed", "message": str(exc)},
         ) from exc
     content_type = (fetched.content_type or "").lower()
-    if content_type and "html" not in content_type:
+    if not 200 <= fetched.status_code < 300:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail={
+                "code": "tool_fetch_failed",
+                "message": "Target page did not return a successful HTTP response.",
+            },
+        )
+    if content_type and content_type.split(";", 1)[0].strip() not in {
+        "text/html", "application/xhtml+xml"
+    }:
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
             detail={"code": "tool_non_html_response", "message": "Target URL did not return HTML."},
@@ -479,26 +521,14 @@ def _fetch_html_or_raise(fetcher: SafeHttpFetcher, url: str):
 
 
 def _parse_image_html(html: str, *, base_url: str) -> ImageHTMLParser:
-    parser = ImageHTMLParser(base_url=base_url)
+    parser = ImageHTMLParser(base_url=document_base_url(parse_html_metadata(html), base_url))
     parser.feed(html)
+    parser.close()
     return parser
 
 
-def _srcset_urls(value: str | None) -> list[str]:
-    if not value:
-        return []
-    urls: list[str] = []
-    for candidate in value.split(","):
-        first = candidate.strip().split()
-        if first:
-            urls.append(first[0])
-    return urls
-
-
 def _absolute_image_url(value: str, base_url: str) -> str:
-    absolute = urljoin(base_url, value.strip())
-    scheme = urlsplit(absolute).scheme
-    return absolute if scheme in {"http", "https"} else value.strip()
+    return resolve_html_reference(value, base_url)
 
 
 def _blank_to_none(value: str | None) -> str | None:
@@ -517,7 +547,7 @@ def _dedupe_candidates(candidates: list[ParsedImage]) -> list[ParsedImage]:
     seen: set[str] = set()
     deduped: list[ParsedImage] = []
     for candidate in candidates:
-        if not candidate.url.startswith(("http://", "https://")) or candidate.url in seen:
+        if resolve_http_reference(candidate.url, "") is None or candidate.url in seen:
             continue
         seen.add(candidate.url)
         deduped.append(candidate)
@@ -529,7 +559,7 @@ def _dedupe_icons(icons: list[ParsedIcon]) -> list[ParsedIcon]:
     deduped: list[ParsedIcon] = []
     for icon in icons:
         key = (icon.rel, icon.url)
-        if not icon.url.startswith(("http://", "https://")) or key in seen:
+        if resolve_http_reference(icon.url, "") is None or key in seen:
             continue
         seen.add(key)
         deduped.append(icon)
@@ -572,9 +602,9 @@ def _inspect_image_candidate(
             status_code=None,
             content_type=None,
             content_length=None,
-            width_attr=candidate.width,
-            height_attr=candidate.height,
-            loading=candidate.loading,
+            width_attr=bounded_text(candidate.width, 40) if candidate.width else None,
+            height_attr=bounded_text(candidate.height, 40) if candidate.height else None,
+            loading=bounded_text(candidate.loading, 40) if candidate.loading else None,
             uses_srcset=candidate.uses_srcset,
             uses_picture=candidate.uses_picture,
             modern_raster_format=None,
@@ -583,8 +613,13 @@ def _inspect_image_candidate(
                 "Image could not be safely inspected; verify URL accessibility and redirects.",
             ),
         )
-    content_length = _content_length(fetched.headers.get("content-length"))
-    image_format = _image_format(fetched.final_url, fetched.content_type)
+    successful = 200 <= fetched.status_code < 300 and (
+        (fetched.content_type or "").split(";", 1)[0].strip().lower().startswith("image/")
+    )
+    content_length = _content_length(fetched.headers.get("content-length")) if successful else None
+    image_format = (
+        _image_format(fetched.final_url, fetched.content_type) if successful else "unknown"
+    )
     oversized = bool(
         content_length is not None and content_length > 250_000 and image_format != "svg"
     )
@@ -595,9 +630,9 @@ def _inspect_image_candidate(
         status_code=fetched.status_code,
         content_type=fetched.content_type,
         content_length=content_length,
-        width_attr=candidate.width,
-        height_attr=candidate.height,
-        loading=candidate.loading,
+        width_attr=bounded_text(candidate.width, 40) if candidate.width else None,
+        height_attr=bounded_text(candidate.height, 40) if candidate.height else None,
+        loading=bounded_text(candidate.loading, 40) if candidate.loading else None,
         uses_srcset=candidate.uses_srcset,
         uses_picture=candidate.uses_picture,
         modern_raster_format=_modern_raster_format(image_format),
@@ -611,6 +646,8 @@ def _inspect_image_candidate(
                 loading=candidate.loading,
                 source=candidate.source,
             )
+        ) if successful else (
+            "Image response could not be confirmed. Check its HTTP status and Content-Type.",
         ),
     )
 
@@ -620,10 +657,10 @@ def _inspect_icon(fetcher: SafeHttpFetcher, icon: ParsedIcon) -> FaviconIconResp
         fetched = fetcher.fetch(icon.url, read_body=False)
     except (UrlPolicyError, SafeFetchError):
         return FaviconIconResponse(
-            rel=icon.rel,
+            rel=bounded_text(icon.rel, 120),
             url=icon.url,
-            sizes=icon.sizes,
-            declared_type=icon.declared_type,
+            sizes=bounded_text(icon.sizes, 160) if icon.sizes else None,
+            declared_type=bounded_text(icon.declared_type, 160) if icon.declared_type else None,
             status_code=None,
             content_type=None,
             content_length=None,
@@ -636,10 +673,10 @@ def _inspect_icon(fetcher: SafeHttpFetcher, icon: ParsedIcon) -> FaviconIconResp
     length = _content_length(fetched.headers.get("content-length"))
     icon_format = _image_format(fetched.final_url, fetched.content_type or icon.declared_type)
     return FaviconIconResponse(
-        rel=icon.rel,
+        rel=bounded_text(icon.rel, 120),
         url=fetched.final_url,
-        sizes=icon.sizes,
-        declared_type=icon.declared_type,
+        sizes=bounded_text(icon.sizes, 160) if icon.sizes else None,
+        declared_type=bounded_text(icon.declared_type, 160) if icon.declared_type else None,
         status_code=fetched.status_code,
         content_type=fetched.content_type,
         content_length=length,
@@ -659,8 +696,11 @@ def _content_length(value: str | None) -> int | None:
 
 
 def _image_format(url: str, content_type: str | None) -> str:
-    normalized = (content_type or "").lower()
-    path = urlsplit(url).path.lower()
+    normalized = (content_type or "").split(";", 1)[0].strip().lower()
+    try:
+        path = urlsplit(url).path.lower()
+    except ValueError:
+        path = ""
     mapping = (
         ("avif", ("image/avif",), (".avif",)),
         ("webp", ("image/webp",), (".webp",)),
@@ -671,8 +711,13 @@ def _image_format(url: str, content_type: str | None) -> str:
         ("ico", ("image/x-icon", "image/vnd.microsoft.icon"), (".ico",)),
         ("bmp", ("image/bmp",), (".bmp",)),
     )
-    for label, content_types, extensions in mapping:
-        if any(value in normalized for value in content_types) or path.endswith(extensions):
+    for label, content_types, _extensions in mapping:
+        if normalized in content_types:
+            return label
+    if normalized and normalized != "application/octet-stream":
+        return "unknown"
+    for label, _content_types, extensions in mapping:
+        if path.endswith(extensions):
             return label
     return "unknown"
 
@@ -686,7 +731,10 @@ def _modern_raster_format(image_format: str) -> bool | None:
 
 
 def _has_dimensions(image: ParsedImage) -> bool:
-    return bool(image.width and image.height)
+    return all(
+        value is not None and value.isascii() and value.isdigit() and bool(value.lstrip("0"))
+        for value in (image.width, image.height)
+    )
 
 
 def _lazy_loading_candidates(images: list[ParsedImage]) -> int:
@@ -755,12 +803,12 @@ def _alt_status(image: ParsedImage) -> AltStatus:
 def _seo_image_response(image: ParsedImage) -> ImageSeoItemResponse:
     alt_text = (image.alt_text or "").strip()
     return ImageSeoItemResponse(
-        url=image.url,
+        url=bounded_text(image.url, 2048),
         alt_status=_alt_status(image),
         alt_text=alt_text[:240] if alt_text else None,
         in_link=image.in_link,
         has_dimensions=_has_dimensions(image),
-        loading=image.loading,
+        loading=bounded_text(image.loading, 40) if image.loading else None,
         uses_srcset=image.uses_srcset,
         uses_picture=image.uses_picture,
     )
@@ -874,8 +922,13 @@ def _image_performance_recommendation(
     lazy_candidates: int,
     responsive_count: int,
     total_images: int,
+    unavailable: int,
 ) -> str:
     notes: list[str] = []
+    if unavailable:
+        notes.append(
+            "Some image responses could not be confirmed. Check HTTP status and Content-Type."
+        )
     if checked < discovered:
         notes.append(
             "Only the first 50 image candidates were inspected; use PageSpeed/browser "

@@ -39,7 +39,6 @@ export function AccountAIAuditPlanRunner({ locale, creditPrice, onClose, onSucce
   const [pending, setPending] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
 
-  // 1. Fetch user projects on mount
   useEffect(() => {
     let active = true;
     listAccountProjects()
@@ -65,7 +64,6 @@ export function AccountAIAuditPlanRunner({ locale, creditPrice, onClose, onSucce
     };
   }, []);
 
-  // 2. Fetch audits when project changes
   useEffect(() => {
     if (!selectedProjectId) return;
     let active = true;
@@ -90,7 +88,6 @@ export function AccountAIAuditPlanRunner({ locale, creditPrice, onClose, onSucce
     };
   }, [selectedProjectId]);
 
-  // 3. Poll run status until terminal
   useEffect(() => {
     if (!run || isAIRunTerminal(run.state) || !shouldPollAIRun(run.state, attempt)) return;
     let active = true;
@@ -186,7 +183,6 @@ export function AccountAIAuditPlanRunner({ locale, creditPrice, onClose, onSucce
           : "Generates a prioritized step-by-step fix plan based on audit findings. Each action includes rationale, instructions, and verification steps."}
       </p>
 
-      {/* Input Selector / Manual Form */}
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
         {!useManualInput && projects.length > 0 ? (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
@@ -256,7 +252,6 @@ export function AccountAIAuditPlanRunner({ locale, creditPrice, onClose, onSucce
           </div>
         )}
 
-        {/* Toggle between project list and manual input */}
         {projects.length > 0 && (
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "12px" }}>
             <button
@@ -310,7 +305,6 @@ export function AccountAIAuditPlanRunner({ locale, creditPrice, onClose, onSucce
         </button>
       </form>
 
-      {/* Execution status */}
       {run && (
         <div style={{ marginTop: "16px", padding: "12px 14px", borderRadius: "10px", background: "var(--surface-muted, #f8fafc)", border: "1px solid var(--line, #e2e8f0)", display: "flex", alignItems: "center", gap: "10px" }}>
           <Sparkles style={{ width: 18, height: 18, color: "var(--brand, #4f46e5)", flexShrink: 0 }} />
@@ -332,7 +326,6 @@ export function AccountAIAuditPlanRunner({ locale, creditPrice, onClose, onSucce
         </div>
       )}
 
-      {/* Structured Output Display */}
       {output && (
         <div className="wd-ai-text-output" style={{ marginTop: "20px", display: "flex", flexDirection: "column", gap: "16px" }}>
           <div style={{ padding: "14px 16px", borderRadius: "10px", background: "rgba(16, 185, 129, 0.08)", border: "1px solid rgba(16, 185, 129, 0.3)" }}>

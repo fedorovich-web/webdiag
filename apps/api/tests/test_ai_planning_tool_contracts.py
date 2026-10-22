@@ -6,6 +6,7 @@ from webdiag_api.ai.tool_contracts import (
     AIToolContractError,
     has_tool_contract,
     validate_output,
+    validate_provider_input,
     validate_public_input,
 )
 
@@ -69,7 +70,9 @@ def test_planning_tools_accept_strict_inputs_and_redact_url_secrets() -> None:
     gap = validate_public_input("ai_competitor_gap_report", _gap_input())
     linking = validate_public_input("ai_internal_linking_planner", _linking_input())
 
-    assert gap["own_page"]["page_url"] == "https://example.com/guide"
+    assert gap["own_page"]["page_url"] == "https://example.com/guide?token=secret"
+    provider_input = validate_provider_input("ai_competitor_gap_report", gap)
+    assert provider_input["own_page"]["page_url"] == "https://example.com/guide"
     assert linking["locale"] == "en"
 
 
@@ -117,7 +120,7 @@ def test_context_planning_tools_accept_url_references_without_client_evidence() 
                 **_gap_input(),
                 "competitor_pages": [
                     _page(
-                        "https://example.com/guide#copy",
+                        "https://example.com/guide?token=secret#copy",
                         "Duplicate",
                         "Duplicate page content.",
                     )

@@ -15,9 +15,6 @@ export interface TransactionalEmailOptions {
   from?: string;
 }
 
-/**
- * Sends a contact form message via Nevtan SMTP to support@webdiag.ru
- */
 export async function sendContactEmailViaNevtan(data: ContactSubmission): Promise<{ success: boolean; error?: string }> {
   const host = process.env.NEVTAN_SMTP_HOST || process.env.SMTP_HOST || "smtp.nevtan.com";
   const port = Number(process.env.NEVTAN_SMTP_PORT || process.env.SMTP_PORT || "465");
@@ -92,9 +89,6 @@ export async function sendContactEmailViaNevtan(data: ContactSubmission): Promis
   }
 }
 
-/**
- * Sends transactional email via Resend API from no-replay@webdiag.ru
- */
 export async function sendTransactionalEmailViaResend(options: TransactionalEmailOptions): Promise<{ success: boolean; error?: string }> {
   const apiKey = process.env.RESEND_API_KEY;
   const from = options.from || process.env.EMAIL_FROM || "WebDiag <no-replay@webdiag.ru>";
@@ -138,9 +132,6 @@ export async function sendTransactionalEmailViaResend(options: TransactionalEmai
   }
 }
 
-/**
- * Sends a welcome email to a new user after successful registration
- */
 export async function sendWelcomeEmail(email: string, locale: "ru" | "en" = "ru"): Promise<void> {
   const isRu = locale === "ru";
   const subject = isRu

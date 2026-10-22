@@ -10,7 +10,6 @@ class BillingProduct:
     duration_days: int = 0
 
 
-# The existing RU/EN pricing page is the commercial source for these prices.
 PRODUCTS = {
     "pack-50": BillingProduct(39000, "RUB", 50),
     "pack-150": BillingProduct(89000, "RUB", 150),

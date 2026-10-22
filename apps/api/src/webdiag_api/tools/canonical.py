@@ -8,7 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from webdiag_api.audit.fetcher import SafeFetchConfig, SafeFetchError, SafeHttpFetcher
-from webdiag_api.audit.html_metadata import parse_html_metadata
+from webdiag_api.audit.html_metadata import parse_html_metadata, x_robots_has_directive
+from webdiag_api.audit.html_resources import document_base_url, resolve_http_reference
 from webdiag_api.security.url_policy import UrlPolicyError
 
 router = APIRouter(prefix="/v1/tools/canonical", tags=["tools"])
@@ -65,20 +66,36 @@ def inspect_canonical(
             detail={"code": "tool_fetch_failed", "message": str(exc)},
         ) from exc
 
+    if fetched.content_type and fetched.content_type.split(";", 1)[0].strip().lower() not in {
+        "text/html", "application/xhtml+xml"
+    }:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail={"code": "tool_non_html_response", "message": "Target URL did not return HTML."},
+        )
     metadata = parse_html_metadata(fetched.body_text)
     canonical_url = metadata.canonical_url
-    resolved_canonical_url = urljoin(fetched.final_url, canonical_url) if canonical_url else None
-    canonical_is_absolute = _is_absolute_url(canonical_url) if canonical_url else None
-    canonical_matches_final_url = (
-        _normalize_url_for_comparison(resolved_canonical_url)
-        == _normalize_url_for_comparison(fetched.final_url)
-        if resolved_canonical_url
-        else None
+    resolved_canonical_url = (
+        resolve_http_reference(canonical_url, document_base_url(metadata, fetched.final_url))
+        if canonical_url else None
     )
+    canonical_is_absolute = (
+        _is_absolute_url(canonical_url) if resolved_canonical_url else None
+    )
+    canonical_matches_final_url = False if canonical_url else None
+    if resolved_canonical_url:
+        canonical_matches_final_url = (
+            _normalize_url_for_comparison(resolved_canonical_url)
+            == _normalize_url_for_comparison(fetched.final_url)
+        )
     canonical_host_matches_final_url = (
         _hostname(resolved_canonical_url) == _hostname(fetched.final_url)
         if resolved_canonical_url
         else None
+    )
+
+    has_noindex = metadata.has_noindex or x_robots_has_directive(
+        fetched.headers.get("x-robots-tag", ""), "noindex"
     )
 
     return CanonicalResponse(
@@ -86,21 +103,22 @@ def inspect_canonical(
         final_url=fetched.final_url,
         status_code=fetched.status_code,
         content_type=fetched.content_type,
-        canonical_url=canonical_url,
+        canonical_url=canonical_url[:2048] if canonical_url else None,
         resolved_canonical_url=resolved_canonical_url,
         canonical_present=canonical_url is not None,
         canonical_is_absolute=canonical_is_absolute,
         canonical_matches_final_url=canonical_matches_final_url,
         canonical_host_matches_final_url=canonical_host_matches_final_url,
-        has_noindex=metadata.has_noindex,
+        has_noindex=has_noindex,
         redirect_count=len(fetched.redirect_chain),
         recommendation=_recommendation(
             status_code=fetched.status_code,
             canonical_present=canonical_url is not None,
+            canonical_valid=resolved_canonical_url is not None,
             canonical_is_absolute=canonical_is_absolute,
             canonical_matches_final_url=canonical_matches_final_url,
             canonical_host_matches_final_url=canonical_host_matches_final_url,
-            has_noindex=metadata.has_noindex,
+            has_noindex=has_noindex,
             redirect_count=len(fetched.redirect_chain),
         ),
     )
@@ -132,7 +150,7 @@ def _normalize_url_for_comparison(raw_url: str, *, base_url: str | None = None) 
     if port is not None and not default_port:
         authority = f"{hostname}:{port}"
 
-    path = parsed.path.rstrip("/") or "/"
+    path = parsed.path or "/"
     if path == "/":
         path = ""
     return urlunsplit((scheme, authority, path, parsed.query, ""))
@@ -142,6 +160,7 @@ def _recommendation(
     *,
     status_code: int,
     canonical_present: bool,
+    canonical_valid: bool,
     canonical_is_absolute: bool | None,
     canonical_matches_final_url: bool | None,
     canonical_host_matches_final_url: bool | None,
@@ -162,6 +181,11 @@ def _recommendation(
         return (
             "Canonical link is missing. Add link rel=canonical to the preferred final URL "
             "to reduce duplicate URL ambiguity."
+        )
+    if not canonical_valid:
+        return (
+            "Canonical URL is invalid or exceeds the supported length. "
+            "Use a valid HTTP or HTTPS URL for the preferred page."
         )
     if canonical_is_absolute is False:
         return (

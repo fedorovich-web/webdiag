@@ -21,4 +21,15 @@ describe("account error presentation", () => {
     expect(accountErrorMessage("en", error)).toBe("The request failed. Try again.");
     expect(accountErrorMessage("en", error)).not.toContain("Secret internal upstream detail");
   });
+
+  it("explains that an audit without issues needs no paid action plan", () => {
+    const error = new AccountClientError("Internal backend detail", {
+      status: 422,
+      code: "ai_source_no_issues",
+    });
+    expect(accountErrorMessage("ru", error)).toContain("нет замечаний");
+    expect(accountErrorMessage("ru", error)).toContain("не списаны");
+    expect(accountErrorMessage("en", error)).toContain("no issues");
+    expect(accountErrorMessage("en", error)).toContain("not charged");
+  });
 });

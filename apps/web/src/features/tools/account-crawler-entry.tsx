@@ -56,14 +56,14 @@ export function getAccountCrawlerEntryCopy(slug: AccountCrawlerSlug, locale: Loc
         href: accountPath(locale),
         eyebrow: "Доступно после авторизации",
         ...localized,
-        limit: "Обход ограничен 25 HTML-страницами, соблюдает robots.txt, не исполняет JavaScript и не доказывает полное покрытие сайта.",
+        limit: "Обход HTML-страниц ограничен серверными лимитами и robots.txt, не исполняет JavaScript и не доказывает полное покрытие сайта. Лимит и пропуски показаны в результате.",
         action: "Открыть проекты",
       }
     : {
         href: accountPath(locale),
         eyebrow: "Available after sign-in",
         ...localized,
-        limit: "The crawl is limited to 25 HTML pages, respects robots.txt, does not execute JavaScript, and does not prove complete site coverage.",
+        limit: "The crawl of HTML pages uses server limits, respects robots.txt, does not execute JavaScript, and does not prove complete site coverage. Limits and exclusions appear in the result.",
         action: "Open projects",
       };
 }

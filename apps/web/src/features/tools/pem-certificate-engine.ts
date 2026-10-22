@@ -83,7 +83,7 @@ function decodeOid(bytes: Uint8Array, node: Node): string {
 
 function decodeText(bytes: Uint8Array, node: Node): string {
   const data = bytes.subarray(node.valueStart, node.end);
-  if (node.tag === 30) { // BMPString
+  if (node.tag === 30) {
     let result = "";
     for (let i = 0; i + 1 < data.length; i += 2) {
       const high = data[i]; const low = data[i + 1];
@@ -145,7 +145,7 @@ function parseExtensions(bytes: Uint8Array, extensionWrapper: Node | undefined):
         const boolValue = boolNode ? payload[boolNode.valueStart] : undefined;
         result.ca = boolValue === undefined ? false : boolValue !== 0;
       }
-    } catch { /* bounded extension parse: ignore malformed optional extension */ }
+    } catch {   }
   }
   return result;
 }
@@ -172,7 +172,7 @@ async function parseCertificate(block: { pem: string; der: Uint8Array }, index: 
   if (consumed !== block.der.length || root.tag !== 16 || root.children.length < 3) throw new Error("certificate_structure_invalid");
   const tbs = root.children[0]; if (!tbs || tbs.tag !== 16) throw new Error("certificate_structure_invalid");
   let cursor = tbs.children[0]?.cls === 2 && tbs.children[0]?.tag === 0 ? 1 : 0;
-  const serial = tbs.children[cursor++]; cursor++; // tbs signature
+  const serial = tbs.children[cursor++]; cursor++;
   const issuer = tbs.children[cursor++]; const validity = tbs.children[cursor++]; const subject = tbs.children[cursor++]; const spki = tbs.children[cursor++];
   if (!serial || !issuer || !validity || !subject || !spki) throw new Error("certificate_structure_invalid");
   const notBeforeNode = validity.children[0]; const notAfterNode = validity.children[1];
@@ -198,7 +198,6 @@ function orderChain(certificates: readonly ParsedCertificate[]): { order: number
   if (certificates.length <= 1) return { order: certificates.map(c => c.index), complete: true };
   const issuerSubjects = new Set(certificates.map(c => c.issuer));
   let current: ParsedCertificate | undefined = certificates.find(c => !issuerSubjects.has(c.subject) || c.subject === c.issuer) ?? certificates[0];
-  // Prefer leaf: subject is not issuer of another certificate.
   current = certificates.find(c => !certificates.some(other => other.index !== c.index && other.issuer === c.subject)) ?? current;
   const order: number[] = []; const used = new Set<number>();
   while (current && !used.has(current.index)) {

@@ -293,7 +293,6 @@ export interface AIUploadResponse {
     readonly expires_at: string;
   };
 }
-// Uploads have an owner-scoped ID, never a public image URL or storage key.
 export function isAIUploadResponse(v: unknown): v is AIUploadResponse {
   if (
     !exact(v, ["contract_version", "upload"]) ||

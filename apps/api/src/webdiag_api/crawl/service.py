@@ -70,5 +70,7 @@ def _public_error_code(value: str) -> str:
         "crawl_root_disallowed",
         "crawl_root_fetch_failed",
         "crawl_root_not_html",
+        "crawl_deadline_exceeded",
+        "crawl_robots_unavailable",
     }
     return value if value in allowed else "crawl_execution_failed"

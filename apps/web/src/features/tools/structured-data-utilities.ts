@@ -393,7 +393,6 @@ function validateAgainstSchema(
       try {
         if (!new RegExp(schema.pattern, "u").test(value)) addValidationError(context, { path: instancePath, keyword: "pattern", message: "String does not match pattern." });
       } catch {
-        // Reported as a schema error before validation.
       }
     }
     if (typeof schema.format === "string") {

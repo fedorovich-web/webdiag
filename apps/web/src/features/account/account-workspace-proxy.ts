@@ -53,6 +53,13 @@ export function accountCrawlPath(projectId: string, jobId?: string): string | nu
   return `/v1/account/projects/${projectId}/crawls${jobId ? `/${jobId}` : ""}`;
 }
 
+export function accountSiteAuditPath(projectId: string, jobId?: string): string | null {
+  if (!validAccountResourceId(projectId) || (jobId !== undefined && !validAccountResourceId(jobId))) {
+    return null;
+  }
+  return `/v1/account/projects/${projectId}/site-audits${jobId ? `/${jobId}` : ""}`;
+}
+
 export async function proxyAccountWorkspace(
   request: NextRequest,
   options: { readonly method: "GET" | "POST" | "PATCH"; readonly path: string; readonly body?: boolean },

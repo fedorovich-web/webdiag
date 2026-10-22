@@ -109,5 +109,6 @@ def build_production_ai_catalog(
                 ),
             )
             for tool in DEFAULT_AI_CATALOG.all()
+            if tool.id != "ai_faq_studio"
         )
     )

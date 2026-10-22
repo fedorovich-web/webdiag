@@ -3,19 +3,21 @@
 import Link from "next/link";
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
+import { AccountCrawlSummary } from "./account-crawl-summary";
 import { accountErrorMessage } from "./account-messages";
 import { announceAccountAuthenticationLost } from "./account-authentication-state";
 import {
   archiveAccountProject,
-  getAccountCrawl,
+  getAccountPageCheck,
   getAccountProject,
   getAccountSavedAudit,
-  listAccountCrawls,
+  listAccountSiteAudits,
   renameAccountProject,
   runAccountProjectAudit,
-  startAccountCrawl,
+  startAccountSiteAudit,
 } from "./account-workspace-client";
 import type {
+  AccountSiteAuditDetail,
   AccountCrawlDetail,
   AccountCrawlJob,
   AccountProjectDetailResponse,
@@ -28,7 +30,7 @@ export function AccountProjectDetail({ locale, projectId }: { readonly locale: L
   const [detail, setDetail] = useState<AccountProjectDetailResponse | null>(null);
   const [loadedKey, setLoadedKey] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
-  const [crawlDetail, setCrawlDetail] = useState<AccountCrawlDetail | null>(null);
+  const [crawlDetail, setCrawlDetail] = useState<AccountSiteAuditDetail | AccountCrawlDetail | null>(null);
   const [crawlHistory, setCrawlHistory] = useState<readonly AccountCrawlJob[]>([]);
   const [latestPageSpeed, setLatestPageSpeed] = useState<SavedAuditPageSpeed | null>(null);
   const [crawlPending, setCrawlPending] = useState(false);
@@ -81,12 +83,12 @@ export function AccountProjectDetail({ locale, projectId }: { readonly locale: L
 
   useEffect(() => {
     let active = true;
-    listAccountCrawls(projectId)
+    listAccountSiteAudits(projectId)
       .then((value) => {
         if (!active) return;
         setCrawlHistory(value.jobs);
         const latest = value.jobs[0];
-        if (latest) return getAccountCrawl(projectId, latest.id);
+        if (latest) return getAccountPageCheck(projectId, latest.id);
         return null;
       })
       .then((value) => {
@@ -103,7 +105,7 @@ export function AccountProjectDetail({ locale, projectId }: { readonly locale: L
     const job = crawlDetail?.job;
     if (!job || !["queued", "running"].includes(job.state)) return;
     const timer = window.setTimeout(() => {
-      getAccountCrawl(projectId, job.id)
+      getAccountPageCheck(projectId, job.id)
         .then((value) => {
           setCrawlDetail(value);
           setCrawlHistory((current) => [value.job, ...current.filter((item) => item.id !== value.job.id)]);
@@ -138,7 +140,7 @@ export function AccountProjectDetail({ locale, projectId }: { readonly locale: L
     setCrawlPending(true);
     setCrawlError("");
     try {
-      const created = await startAccountCrawl(projectId);
+      const created = await startAccountSiteAudit(projectId);
       setCrawlDetail(created);
       setCrawlHistory((current) => [created.job, ...current.filter((item) => item.id !== created.job.id)]);
     } catch (caught) {
@@ -241,7 +243,7 @@ export function AccountProjectDetail({ locale, projectId }: { readonly locale: L
           <div>
             <span className="eyebrow">{ru ? "Страницы сайта" : "Website pages"}</span>
             <h2 id="crawl-console-title">{ru ? "Проверка страниц проекта" : "Project page check"}</h2>
-            <p>{ru ? "Проверьте до 25 HTML-страниц одного сайта. Закрытые разделы, выполнение JavaScript и отправка форм не используются." : "Check up to 25 HTML pages on one website. Authenticated areas, JavaScript execution, and form submissions are not used."}</p>
+            <p>{ru ? "Проверка общедоступных HTML-страниц сайта. Лимиты обхода и пропуски показаны в результате; JavaScript не выполняется." : "Audit public HTML pages on one website. Crawl limits and exclusions appear in the result; JavaScript is not executed."}</p>
           </div>
           <button
             className="wd-button wd-button-primary"
@@ -257,7 +259,7 @@ export function AccountProjectDetail({ locale, projectId }: { readonly locale: L
         {!crawlDetail ? (
           <div className="wd-crawl-empty"><strong>{ru ? "Проверок страниц пока нет" : "No page checks yet"}</strong><p>{ru ? "Запустите проверку, чтобы найти дубли метаданных и страницы из sitemap без внутренних ссылок." : "Start a check to find duplicate metadata and sitemap pages without internal links."}</p></div>
         ) : (
-          <CrawlSummary locale={locale} detail={crawlDetail} historyCount={crawlHistory.length} />
+          <AccountCrawlSummary locale={locale} detail={crawlDetail} historyCount={crawlHistory.length} />
         )}
       </section>
       <section className="wd-audit-history" aria-labelledby="audit-history-title">
@@ -356,58 +358,8 @@ function ProjectPageSpeedSummary({
       )}
 
       <Link className="wd-button wd-button-secondary" href={auditHref}>
-        {ru ? "Открыть полный аудит" : "Open full audit"}
+        {ru ? "Открыть отчёт страницы" : "Open page report"}
       </Link>
     </section>
   );
-}
-
-function CrawlSummary({ locale, detail, historyCount }: { readonly locale: Locale; readonly detail: AccountCrawlDetail; readonly historyCount: number }) {
-  const ru = locale === "ru";
-  const { job, result } = detail;
-  const state = {
-    queued: ru ? "В очереди" : "Queued",
-    running: ru ? "Выполняется" : "Running",
-    succeeded: ru ? "Готово" : "Completed",
-    failed: ru ? "Не завершено" : "Not completed",
-  }[job.state];
-  if (!result) return (
-    <div className="wd-crawl-progress" aria-live="polite">
-      <span className="wd-crawl-state" data-state={job.state}>{state}</span>
-      <div><strong>{ru ? "Последняя проверка страниц" : "Latest page check"}</strong><p>{new Intl.DateTimeFormat(ru ? "ru-RU" : "en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(job.created_at))}</p></div>
-      {job.state === "failed" && <p>{ru ? "Не удалось получить корневую страницу сайта или HTML-ответ. Повторите проверку позже." : "The website root page or its HTML response could not be retrieved. Try the check again later."}</p>}
-    </div>
-  );
-  const duplicatePages = new Set([...result.duplicate_titles, ...result.duplicate_descriptions].flatMap((group) => group.urls)).size;
-  return (
-    <div className="wd-crawl-result">
-      <div className="wd-crawl-result-meta"><span className="wd-crawl-state" data-state={job.state}>{state}</span><span>{ru ? `История: ${historyCount}` : `History: ${historyCount}`}</span><span>{new Intl.DateTimeFormat(ru ? "ru-RU" : "en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(result.completed_at))}</span></div>
-      <dl>
-        <div><dt>{ru ? "Проверено страниц" : "Pages checked"}</dt><dd>{result.pages.length}</dd></div>
-        <div><dt>{ru ? "Страниц с дублями" : "Pages with duplicates"}</dt><dd>{duplicatePages}</dd></div>
-        <div><dt>{ru ? "Без внутренних ссылок" : "No internal links"}</dt><dd>{result.orphan_urls.length}</dd></div>
-        <div><dt>{ru ? "Не проверено" : "Not checked"}</dt><dd>{result.page_failures.length}</dd></div>
-      </dl>
-      {result.page_budget_exhausted && <p className="wd-crawl-limit-note">{ru ? `Достигнут лимит ${result.page_limit} страниц. Результат не описывает весь сайт.` : `The ${result.page_limit}-page limit was reached. The result does not describe the entire site.`}</p>}
-      {(result.duplicate_titles.length > 0 || result.duplicate_descriptions.length > 0 || result.orphan_urls.length > 0) && (
-        <div className="wd-crawl-findings">
-          {result.duplicate_titles.length > 0 && <div><strong>{ru ? "Повторяющиеся title" : "Duplicate titles"}</strong><p>{formatGroupCount(result.duplicate_titles.length, locale)}</p></div>}
-          {result.duplicate_descriptions.length > 0 && <div><strong>{ru ? "Повторяющиеся description" : "Duplicate descriptions"}</strong><p>{formatGroupCount(result.duplicate_descriptions.length, locale)}</p></div>}
-          {result.orphan_urls.length > 0 && <div><strong>{ru ? "Кандидаты без внутренних ссылок" : "Unlinked candidates"}</strong><p>{ru ? `${result.orphan_urls.length} URL из sitemap` : `${result.orphan_urls.length} sitemap URLs`}</p></div>}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function formatGroupCount(count: number, locale: Locale): string {
-  if (locale === "en") return `${count} ${count === 1 ? "group" : "groups"}`;
-  const mod10 = count % 10;
-  const mod100 = count % 100;
-  const noun = mod10 === 1 && mod100 !== 11
-    ? "группа"
-    : mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)
-      ? "группы"
-      : "групп";
-  return `${count} ${noun}`;
 }
