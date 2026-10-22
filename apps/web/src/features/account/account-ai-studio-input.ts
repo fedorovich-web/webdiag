@@ -173,7 +173,6 @@ export function buildStudioInput(
   }
   if (id === "ai_regex_workbench") {
     function caseLines(key: string): string[] {
-      // Spaces are meaningful regex evidence and must not be trimmed.
       const items = (values[key] ?? "").replace(/\r\n?/gu, "\n")
         .split("\n").filter((line) => line.length > 0);
       if (items.some((line) => line.length > 2000)) throw invalid();

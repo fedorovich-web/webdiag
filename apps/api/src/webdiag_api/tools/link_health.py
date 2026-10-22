@@ -2,14 +2,22 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from html.parser import HTMLParser
 from typing import Annotated, Literal
-from urllib.parse import urljoin, urlsplit, urlunsplit
+from urllib.parse import urlsplit, urlunsplit
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from webdiag_api.audit.fetcher import SafeFetchConfig, SafeFetchError, SafeHttpFetcher
+from webdiag_api.audit.html_metadata import parse_html_metadata
+from webdiag_api.audit.html_parser import TemplateAwareHTMLParser
+from webdiag_api.audit.html_resources import (
+    bounded_text,
+    document_base_url,
+    resolve_html_reference,
+    resolve_http_reference,
+    srcset_urls,
+)
 from webdiag_api.security.url_policy import UrlPolicyError
 
 router = APIRouter(tags=["tools"])
@@ -150,7 +158,7 @@ class ParsedImageCandidate:
     source: ImageSource
 
 
-class LinkHealthHTMLParser(HTMLParser):
+class LinkHealthHTMLParser(TemplateAwareHTMLParser):
     def __init__(self, *, base_url: str) -> None:
         super().__init__(convert_charrefs=True)
         self.base_url = base_url
@@ -158,9 +166,15 @@ class LinkHealthHTMLParser(HTMLParser):
         self.image_candidates: list[ParsedImageCandidate] = []
         self._open_links: list[OpenLink] = []
         self._picture_depth = 0
+        self._template_depth = 0
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         tag = tag.lower()
+        if tag == "template":
+            self._template_depth += 1
+            return
+        if self._template_depth:
+            return
         values = {
             name.lower(): (value if value is not None else "") for name, value in attrs
         }
@@ -181,7 +195,7 @@ class LinkHealthHTMLParser(HTMLParser):
             self._picture_depth += 1
 
         if tag == "source" and self._picture_depth:
-            for url in _srcset_urls(values.get("srcset")):
+            for url in srcset_urls(values.get("srcset")):
                 self.image_candidates.append(
                     ParsedImageCandidate(
                         url=_absolute_url(url, self.base_url),
@@ -197,7 +211,7 @@ class LinkHealthHTMLParser(HTMLParser):
                         source="img-src",
                     )
                 )
-            for url in _srcset_urls(values.get("srcset")):
+            for url in srcset_urls(values.get("srcset")):
                 self.image_candidates.append(
                     ParsedImageCandidate(
                         url=_absolute_url(url, self.base_url),
@@ -217,17 +231,20 @@ class LinkHealthHTMLParser(HTMLParser):
                 )
 
     def handle_data(self, data: str) -> None:
-        if self._open_links:
-            text = " ".join(data.split())
-            if text:
-                self._open_links[-1].parts.append(text)
+        if self._open_links and not self._template_depth:
+            self._open_links[-1].parts.append(data)
 
     def handle_endtag(self, tag: str) -> None:
         tag = tag.lower()
+        if tag == "template":
+            self._template_depth = max(0, self._template_depth - 1)
+            return
+        if self._template_depth:
+            return
         if tag == "a" and self._open_links:
             opened = self._open_links.pop()
             current = self.links[opened.index]
-            text = " ".join(opened.parts).strip()
+            text = " ".join("".join(opened.parts).split())
             self.links[opened.index] = ParsedLink(
                 url=current.url,
                 raw_href=current.raw_href,
@@ -348,7 +365,17 @@ def _fetch_html_or_raise(fetcher: SafeHttpFetcher, url: str):
             detail={"code": "tool_fetch_failed", "message": str(exc)},
         ) from exc
 
-    if fetched.content_type and "html" not in fetched.content_type.lower():
+    if not 200 <= fetched.status_code < 300:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail={
+                "code": "tool_fetch_failed",
+                "message": "Target page did not return a successful HTTP response.",
+            },
+        )
+    if fetched.content_type and fetched.content_type.split(";", 1)[0].strip().lower() not in {
+        "text/html", "application/xhtml+xml"
+    }:
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
             detail={
@@ -360,14 +387,16 @@ def _fetch_html_or_raise(fetcher: SafeHttpFetcher, url: str):
 
 
 def _parse_html(html: str, *, base_url: str) -> LinkHealthHTMLParser:
-    parser = LinkHealthHTMLParser(base_url=base_url)
+    parser = LinkHealthHTMLParser(
+        base_url=document_base_url(parse_html_metadata(html), base_url)
+    )
     parser.feed(html)
+    parser.close()
     return parser
 
 
 def _absolute_url(value: str, base_url: str) -> str:
-    stripped = value.strip()
-    return stripped if stripped.startswith("#") else urljoin(base_url, stripped).strip()
+    return resolve_html_reference(value, base_url)
 
 
 def _blank_to_none(value: str | None) -> str | None:
@@ -377,29 +406,24 @@ def _blank_to_none(value: str | None) -> str | None:
     return stripped or None
 
 
-def _srcset_urls(value: str | None) -> list[str]:
-    if not value:
-        return []
-    urls: list[str] = []
-    for candidate in value.split(","):
-        parts = candidate.strip().split()
-        if parts:
-            urls.append(parts[0])
-    return urls
-
-
 def _kind(url: str, page_url: str) -> LinkKind:
-    if url.startswith("#"):
-        return "same-page"
-
-    parsed = urlsplit(url)
+    if len(url) > 2048:
+        return "non-http"
+    try:
+        parsed = urlsplit(url)
+    except ValueError:
+        return "non-http"
     scheme = parsed.scheme.lower()
     if scheme == "mailto":
         return "mailto"
     if scheme == "tel":
         return "tel"
-    if scheme not in {"http", "https"}:
+    if resolve_http_reference(url, "") is None:
         return "non-http"
+    if (parsed.fragment or url.endswith("#")) and (
+        _strip_fragment_for_http(url) == _strip_fragment_for_http(page_url)
+    ):
+        return "same-page"
 
     page_host = urlsplit(page_url).netloc.lower()
     return "internal" if parsed.netloc.lower() == page_host else "external"
@@ -410,7 +434,10 @@ def _rel_tokens(value: str | None) -> set[str]:
 
 
 def _strip_fragment_for_http(url: str) -> str:
-    parsed = urlsplit(url)
+    try:
+        parsed = urlsplit(url)
+    except ValueError:
+        return url
     if parsed.scheme not in {"http", "https"}:
         return url
     return urlunsplit((parsed.scheme, parsed.netloc, parsed.path, parsed.query, ""))
@@ -425,11 +452,11 @@ def _link_item(link: ParsedLink, page_url: str) -> LinkItemResponse:
     )
 
     return LinkItemResponse(
-        url=_strip_fragment_for_http(link.url),
+        url=bounded_text(_strip_fragment_for_http(link.url), 2048),
         text=link.text,
         kind=kind,
-        rel=link.rel,
-        target=link.target,
+        rel=bounded_text(link.rel, 240) if link.rel else None,
+        target=bounded_text(link.target, 80) if link.target else None,
         nofollow="nofollow" in rels,
         sponsored="sponsored" in rels,
         ugc="ugc" in rels,
@@ -453,7 +480,7 @@ def _dedupe_image_candidates(
     seen: set[str] = set()
     out: list[ParsedImageCandidate] = []
     for candidate in candidates:
-        is_http = urlsplit(candidate.url).scheme in {"http", "https"}
+        is_http = resolve_http_reference(candidate.url, "") is not None
         if is_http and candidate.url not in seen:
             seen.add(candidate.url)
             out.append(candidate)
@@ -510,7 +537,9 @@ def _inspect_image(
         )
 
     content_type = (fetched.content_type or "").lower()
-    not_image = bool(content_type and "image/" not in content_type)
+    not_image = bool(
+        content_type and not content_type.split(";", 1)[0].strip().startswith("image/")
+    )
     broken = fetched.status_code >= 400 or not_image
     problem = _broken_image_problem(fetched.status_code, not_image)
 
@@ -556,6 +585,8 @@ def _broken_links_recommendation(
     inspected: tuple[BrokenLinkItemResponse, ...],
 ) -> str:
     notes: list[str] = []
+    if not inspected:
+        return "No HTTP links were available for checking in the static HTML."
     if inspected and len(inspected) < discovered:
         notes.append(
             "Only the first 80 unique HTTP links were checked; use crawler jobs for "
@@ -580,6 +611,8 @@ def _broken_images_recommendation(
     inspected: tuple[BrokenImageItemResponse, ...],
 ) -> str:
     notes: list[str] = []
+    if not inspected:
+        return "No HTTP image URLs were available for checking in the static HTML."
     if inspected and len(inspected) < discovered:
         notes.append(
             "Only the first 70 unique image candidates were checked; use "

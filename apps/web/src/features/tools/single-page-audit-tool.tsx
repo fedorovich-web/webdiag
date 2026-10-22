@@ -1,8 +1,11 @@
 "use client";
 
 import { toolErrorMessage } from "./tool-error-presentation";
+import { writeClipboardText } from "../../lib/clipboard";
+import { toolsPath } from "../../lib/routes";
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { Suspense, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import type { Locale } from "@webdiag/tool-registry";
 import { AuditClientError, parseAuditUrlInput, startAuditSnapshot } from "../home/audit-client";
@@ -25,9 +28,7 @@ import {
   Gauge,
   CheckCircle2,
   Loader2,
-  Clock,
   ArrowRight,
-  Activity,
   ChevronRight,
   ChevronDown,
   Copy,
@@ -35,10 +36,6 @@ import {
   AlertCircle,
   AlertTriangle,
 } from "lucide-react";
-
-function toolsPath(locale: Locale): string {
-  return locale === "ru" ? "/tools" : "/en/tools";
-}
 
 const priorityRank: Readonly<Record<string, number>> = { p0: 0, p1: 1, p2: 2, p3: 3 };
 const severityRank: Readonly<Record<string, number>> = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
@@ -58,29 +55,11 @@ const copy = {
     placeholder: "https://example.ru/page",
     run: "Проверить страницу",
     loading: "Выполняем полный аудит страницы…",
-    liveTitle: "Выполняется глубокий аудит страницы",
-    liveSubtitle: "Анализ 30+ технических параметров: DNS, SSL, HTML-метатеги, robots.txt, sitemap и PageSpeed",
-    stageDns: "DNS и доступность хоста",
-    stageDnsDesc: "Проверка резолва домена, A/AAAA записей, время отклика сервера",
-    stageSsl: "SSL/TLS и безопасность протокола",
-    stageSslDesc: "HTTPS-сертификат, валидность цепочки, HSTS, CSP и заголовки",
-    stageHtml: "HTML-разметка, Title и Open Graph",
-    stageHtmlDesc: "Title, Description, заголовки H1-H6, микроразметка Schema.org",
-    stageRobots: "Индексация, robots.txt и sitemap.xml",
-    stageRobotsDesc: "Директивы поисковых роботов, правила Disallow, карта сайта",
-    stagePageSpeed: "Google PageSpeed & Core Web Vitals",
-    stagePageSpeedDesc: "Оценка ключевых метрик LCP, CLS, INP, FCP и скорости страницы",
-    stageSynthesis: "Сводный скоринг и генерация отчёта",
-    stageSynthesisDesc: "Расчет итоговой оценки 0-100, приоритизация рекомендаций",
-    statusDone: "Завершено",
-    statusRunning: "Анализируем…",
-    statusPending: "В очереди",
     invalid: "Введите публичный HTTP(S) URL с доменом.",
-    unknownError: "Проверку не удалось завершить.",
     rateLimited: "Достигнут лимит публичных проверок. Повторите попытку позже.",
     capacityUnavailable: "Все слоты публичной проверки заняты. Повторите попытку позже.",
     result: "Результат технического аудита",
-    score: "Оценка сайта",
+    score: "Оценка выполненных проверок",
     issues: "Проблемы",
     checks: "Проверки",
     risk: "Макс. риск",
@@ -92,10 +71,9 @@ const copy = {
     expected: "Ожидаемый эффект",
     noIssues: "Критичных проблем по выполненным проверкам не найдено.",
     checkResults: "Все параметры проверки",
-    scope: "Один URL · статический HTML · robots.txt · один sitemap.xml. Без обхода сайта, рендеринга JavaScript, Lighthouse и мониторинга.",
+    scope: "Один URL · статический HTML · robots.txt · один sitemap.xml. Google PageSpeed доступен при ответе провайдера. Без обхода сайта, локального рендеринга JavaScript и мониторинга.",
     emptyChecks: "Backend не вернул выполненных проверок.",
     pageSpeedTitle: "Оценка Core Web Vitals и Google PageSpeed",
-    pageSpeedDesc: "Ключевые сигналы пользовательского опыта загрузки и стабильности интерфейса:",
     runPageSpeedAudit: "Запустить полный анализ в Google PageSpeed Checker",
     categorySummary: "Сводка по категориям аудита",
     filterAll: "Все",
@@ -105,7 +83,8 @@ const copy = {
     searchPlaceholder: "Поиск по проверкам (robots, ssl, title, canonical...)",
     print: "Печать / PDF",
     copied: "Ссылка скопирована",
-    copyReport: "Поделиться отчётом",
+    copyFailed: "Не удалось скопировать. Проверьте разрешения браузера для буфера обмена.",
+    copyReport: "Скопировать адрес проверки",
     scoreExcellent: "Отличное состояние",
     scoreGood: "Хорошее состояние",
     scoreNeedsWork: "Требует оптимизации",
@@ -119,29 +98,11 @@ const copy = {
     placeholder: "https://example.com/page",
     run: "Audit page",
     loading: "Running comprehensive page audit…",
-    liveTitle: "Running live single-page technical audit",
-    liveSubtitle: "Analyzing 30+ technical checkpoints: DNS, SSL, HTML meta tags, robots.txt, sitemap and PageSpeed",
-    stageDns: "DNS & Host Reachability",
-    stageDnsDesc: "Domain resolution, A/AAAA records, and server TTFB latency",
-    stageSsl: "SSL/TLS & Protocol Security",
-    stageSslDesc: "HTTPS certificate, chain validity, HSTS, CSP and security headers",
-    stageHtml: "HTML Structure, Title & Open Graph",
-    stageHtmlDesc: "Meta Title, Description, H1-H6 hierarchy, Schema.org and Open Graph",
-    stageRobots: "Indexing, robots.txt & sitemap.xml",
-    stageRobotsDesc: "Search crawler directives, Disallow rules, XML sitemap validation",
-    stagePageSpeed: "Google PageSpeed & Core Web Vitals",
-    stagePageSpeedDesc: "Real-world Core Web Vitals, render-blocking items and speed scoring",
-    stageSynthesis: "Synthesis & Final Report Scoring",
-    stageSynthesisDesc: "Calculating 0-100 health score and ranking fix recommendations",
-    statusDone: "Completed",
-    statusRunning: "Analyzing…",
-    statusPending: "Pending",
     invalid: "Enter a public HTTP(S) URL with a domain.",
-    unknownError: "The audit could not be completed.",
     rateLimited: "The public audit limit has been reached. Try again later.",
     capacityUnavailable: "All public audit slots are busy. Try again later.",
     result: "Technical audit result",
-    score: "Site Score",
+    score: "Completed check score",
     issues: "Issues",
     checks: "Checks",
     risk: "Highest risk",
@@ -153,10 +114,9 @@ const copy = {
     expected: "Expected impact",
     noIssues: "No issues were found by the completed checks.",
     checkResults: "All check checkpoints",
-    scope: "One URL · static HTML · robots.txt · one sitemap.xml. No site crawl, JavaScript rendering, Lighthouse, or monitoring.",
+    scope: "One URL · static HTML · robots.txt · one sitemap.xml. Google PageSpeed is included when available. No site crawl, local JavaScript rendering, or monitoring.",
     emptyChecks: "The backend returned no completed checks.",
     pageSpeedTitle: "Core Web Vitals & PageSpeed Assessment",
-    pageSpeedDesc: "Key real-world user experience and performance signals:",
     runPageSpeedAudit: "Run in-depth Google PageSpeed Checker",
     categorySummary: "Category Breakdown",
     filterAll: "All",
@@ -166,7 +126,8 @@ const copy = {
     searchPlaceholder: "Search checkpoints (robots, ssl, title, canonical...)",
     print: "Print / PDF",
     copied: "Link copied",
-    copyReport: "Share report",
+    copyFailed: "Could not copy. Check browser clipboard permissions.",
+    copyReport: "Copy audit URL",
     scoreExcellent: "Excellent health",
     scoreGood: "Good condition",
     scoreNeedsWork: "Needs work",
@@ -184,6 +145,8 @@ const labels = {
     medium: "средний",
     low: "низкий",
     info: "инфо",
+    pass: "пройдено",
+    fail: "не пройдено",
     passed: "пройдено",
     warning: "предупреждение",
     failed: "не пройдено",
@@ -237,275 +200,15 @@ function scoreGrade(score: number | null, locale: Locale): { text: string; color
   return { text: copy[locale].scorePoor, color: "#ef4444" };
 }
 
-function AuditLiveProgressBar({
-  locale,
-  url,
-}: {
-  locale: Locale;
-  url: string;
-}) {
-  const t = copy[locale];
-  const [progress, setProgress] = useState(14);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 94) return prev;
-        const diff = 95 - prev;
-        const increment = Math.max(1, Math.round(diff * 0.16));
-        return Math.min(94, prev + increment);
-      });
-    }, 280);
-    return () => clearInterval(timer);
-  }, []);
-
-  const stages = [
-    {
-      id: "dns",
-      title: t.stageDns,
-      desc: t.stageDnsDesc,
-      threshold: 20,
-    },
-    {
-      id: "ssl",
-      title: t.stageSsl,
-      desc: t.stageSslDesc,
-      threshold: 40,
-    },
-    {
-      id: "html",
-      title: t.stageHtml,
-      desc: t.stageHtmlDesc,
-      threshold: 60,
-    },
-    {
-      id: "robots",
-      title: t.stageRobots,
-      desc: t.stageRobotsDesc,
-      threshold: 78,
-    },
-    {
-      id: "pagespeed",
-      title: t.stagePageSpeed,
-      desc: t.stagePageSpeedDesc,
-      threshold: 90,
-    },
-    {
-      id: "synthesis",
-      title: t.stageSynthesis,
-      desc: t.stageSynthesisDesc,
-      threshold: 100,
-    },
-  ];
-
-  return (
-    <section
-      className="tool-panel"
-      aria-live="polite"
-      style={{
-        marginTop: "20px",
-        padding: "24px",
-        borderRadius: "14px",
-        background: "var(--wd-s, #ffffff)",
-        border: "1px solid var(--wd-l, #cbd5e1)",
-        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.04)",
-      }}
-    >
-      {/* Hidden legacy element for backwards compatibility with existing stylesheets */}
-      <div className="single-audit-loading" style={{ display: "none" }}>
-        <span />
-        <span />
-        <span />
-        <p>{t.loading}</p>
-      </div>
-
-      <header
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          flexWrap: "wrap",
-          gap: "16px",
-          marginBottom: "20px",
-        }}
-      >
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <span
-            className="eyebrow"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "3px 10px",
-              borderRadius: "20px",
-              background: "rgba(14, 165, 233, 0.1)",
-              color: "var(--wd-p, #0ea5e9)",
-              fontWeight: 600,
-              fontSize: "12px",
-            }}
-          >
-            <Activity size={13} />
-            {url || "https://..."}
-          </span>
-          <h2 style={{ margin: "8px 0 4px", fontSize: "20px", fontWeight: 700 }}>
-            {t.liveTitle}
-          </h2>
-          <p style={{ margin: 0, fontSize: "13px", color: "var(--wd-ms, #64748b)" }}>
-            {t.liveSubtitle}
-          </p>
-        </div>
-
-        <div style={{ textAlign: "right", minWidth: "90px" }}>
-          <div
-            style={{
-              fontSize: "36px",
-              fontWeight: 800,
-              fontFamily: "var(--font-mono, monospace)",
-              letterSpacing: "-0.03em",
-              color: "var(--wd-p, #0ea5e9)",
-              lineHeight: 1,
-            }}
-          >
-            {progress}%
-          </div>
-          <small
-            style={{
-              fontSize: "11px",
-              fontWeight: 600,
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              color: "var(--wd-ms, #64748b)",
-              display: "block",
-              marginTop: "4px",
-            }}
-          >
-            {t.statusRunning}
-          </small>
-        </div>
-      </header>
-
-      {/* Animated Gradient Progress Bar */}
-      <div
-        role="progressbar"
-        aria-valuenow={progress}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        style={{
-          width: "100%",
-          height: "10px",
-          borderRadius: "999px",
-          background: "var(--wd-l, #e2e8f0)",
-          overflow: "hidden",
-          position: "relative",
-          marginBottom: "24px",
-        }}
-      >
-        <div
-          style={{
-            height: "100%",
-            width: `${progress}%`,
-            borderRadius: "999px",
-            background: "linear-gradient(90deg, #0284c7 0%, #0ea5e9 40%, #22d3ee 70%, #10b981 100%)",
-            transition: "width 280ms cubic-bezier(0.4, 0, 0.2, 1)",
-            boxShadow: "0 0 12px rgba(14, 165, 233, 0.5)",
-          }}
-        />
-      </div>
-
-      {/* Staged Checklist */}
-      <div
-        style={{
-          display: "grid",
-          gap: "10px",
-        }}
-      >
-        {stages.map((stage, idx) => {
-          const isDone = progress >= stage.threshold;
-          const prevThreshold = idx > 0 ? (stages[idx - 1]?.threshold ?? 0) : 0;
-          const isCurrent = !isDone && (idx === 0 || progress >= prevThreshold);
-
-          return (
-            <div
-              key={stage.id}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: "12px",
-                padding: "10px 14px",
-                borderRadius: "10px",
-                border: isCurrent
-                  ? "1px solid var(--wd-p, #0ea5e9)"
-                  : isDone
-                  ? "1px solid rgba(16, 185, 129, 0.25)"
-                  : "1px solid var(--wd-l, #f1f5f9)",
-                background: isCurrent
-                  ? "rgba(14, 165, 233, 0.04)"
-                  : isDone
-                  ? "rgba(16, 185, 129, 0.02)"
-                  : "transparent",
-                transition: "all 0.2s ease",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
-                <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  {isDone ? (
-                    <CheckCircle2 size={18} color="#10b981" />
-                  ) : isCurrent ? (
-                    <Loader2 size={18} color="#0ea5e9" className="animate-spin" />
-                  ) : (
-                    <Clock size={18} color="#94a3b8" />
-                  )}
-                </div>
-                <div style={{ minWidth: 0 }}>
-                  <strong
-                    style={{
-                      display: "block",
-                      fontSize: "13px",
-                      color: isDone ? "var(--wd-t, #0f172a)" : isCurrent ? "var(--wd-p, #0ea5e9)" : "var(--wd-ms, #64748b)",
-                      fontWeight: isCurrent ? 700 : 600,
-                    }}
-                  >
-                    {stage.title}
-                  </strong>
-                  <span
-                    style={{
-                      display: "block",
-                      fontSize: "11px",
-                      color: "var(--wd-ms, #64748b)",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {stage.desc}
-                  </span>
-                </div>
-              </div>
-
-              <span
-                style={{
-                  flexShrink: 0,
-                  fontSize: "11px",
-                  fontWeight: 600,
-                  padding: "3px 8px",
-                  borderRadius: "999px",
-                  background: isDone
-                    ? "rgba(16, 185, 129, 0.1)"
-                    : isCurrent
-                    ? "rgba(14, 165, 233, 0.1)"
-                    : "var(--wd-l, #f1f5f9)",
-                  color: isDone ? "#10b981" : isCurrent ? "#0ea5e9" : "#94a3b8",
-                }}
-              >
-                {isDone ? t.statusDone : isCurrent ? t.statusRunning : t.statusPending}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </section>
-  );
+function AuditLiveProgressBar({ locale, url }: { locale: Locale; url: string }) {
+  return <section className="tool-panel single-audit-progress" role="status" aria-live="polite">
+    <Loader2 aria-hidden="true" size={22} />
+    <h3>{copy[locale].loading}</h3>
+    <p>{url}</p>
+    <p>{locale === "ru"
+      ? "Ожидаем результаты сервера. Время зависит от ответа сайта и доступности Google PageSpeed."
+      : "Waiting for the server results. Timing depends on the website response and Google PageSpeed availability."}</p>
+  </section>;
 }
 
 function AuditCheckCard({
@@ -526,12 +229,16 @@ function AuditCheckCard({
   );
   const [isOpen, setIsOpen] = useState(check.status !== "passed");
   const [copiedCode, setCopiedCode] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
 
-  function copySnippet(code: string) {
-    if (typeof window !== "undefined") {
-      navigator.clipboard.writeText(code);
+  async function copySnippet(code: string) {
+    setCopyFailed(false);
+    setCopiedCode(false);
+    if (await writeClipboardText(code)) {
       setCopiedCode(true);
       setTimeout(() => setCopiedCode(false), 2000);
+    } else {
+      setCopyFailed(true);
     }
   }
 
@@ -539,13 +246,14 @@ function AuditCheckCard({
   const isPassed = check.status === "passed";
   const isWarning = check.status === "warning";
 
-  const statusTone = isPassed
+  const unavailable = check.status === "skipped" || check.status === "pending" || check.status === "running";
+  const statusTone = unavailable ? "" : isPassed
     ? "tool-badge-success"
     : isWarning
     ? "tool-badge-warning"
     : "tool-badge-danger";
 
-  const statusIcon = isPassed ? (
+  const statusIcon = unavailable ? <span aria-hidden="true">—</span> : isPassed ? (
     <CheckCircle2 size={16} color="#10b981" aria-hidden="true" />
   ) : isWarning ? (
     <AlertTriangle size={16} color="#f59e0b" aria-hidden="true" />
@@ -649,7 +357,13 @@ function AuditCheckCard({
             fontSize: "13px",
           }}
         >
-          {/* What is checked & SEO impact */}
+          {check.evidence && check.evidence.length > 0 && <div>
+            <strong>{ru ? "Фактические данные" : "Observed evidence"}</strong>
+            <dl>{check.evidence.map((item, index) => <div key={`${item.source}-${index}`}>
+              <dt><code style={{ overflowWrap: "anywhere" }}>{item.source}</code></dt>
+              <dd style={{ marginInlineStart: 0, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{item.value}</dd>
+            </div>)}</dl>
+          </div>}
           {guide && (
             <div style={{ background: "var(--wd-s, #f8fafc)", padding: "12px 14px", borderRadius: "10px", marginTop: "12px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "8px", marginBottom: "6px" }}>
@@ -666,7 +380,6 @@ function AuditCheckCard({
             </div>
           )}
 
-          {/* Specific detected issues if any */}
           {checkIssues.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               <strong style={{ color: "#dc2626", fontSize: "13px" }}>
@@ -706,8 +419,7 @@ function AuditCheckCard({
             </div>
           )}
 
-          {/* What to fix (if guide provides and status is not passed) */}
-          {!isPassed && guide?.whatToFix && guide.whatToFix.length > 0 && checkIssues.length === 0 && (
+          {!unavailable && !isPassed && guide?.whatToFix && guide.whatToFix.length > 0 && checkIssues.length === 0 && (
             <div>
               <strong style={{ color: "#d97706", display: "block", marginBottom: "4px" }}>
                 {ru ? "Что требует исправления:" : "What needs fixing:"}
@@ -720,7 +432,6 @@ function AuditCheckCard({
             </div>
           )}
 
-          {/* If passed, show confirmation */}
           {isPassed && checkIssues.length === 0 && (
             <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#059669", background: "#ecfdf5", padding: "10px 14px", borderRadius: "8px" }}>
               <CheckCircle2 size={16} />
@@ -732,7 +443,6 @@ function AuditCheckCard({
             </div>
           )}
 
-          {/* How to fix instructions */}
           {guide?.howToFix && guide.howToFix.length > 0 && (
             <div>
               <strong style={{ color: "var(--wd-f, #0f172a)", display: "block", marginBottom: "4px" }}>
@@ -746,7 +456,7 @@ function AuditCheckCard({
             </div>
           )}
 
-          {/* Copyable code snippet */}
+          {copyFailed && <p role="alert" className="tool-error">{copy[locale].copyFailed}</p>}
           {guide?.codeExample && (
             <div style={{ borderRadius: "8px", overflow: "hidden", border: "1px solid var(--wd-l, #cbd5e1)" }}>
               <div
@@ -796,7 +506,6 @@ function AuditCheckCard({
             </div>
           )}
 
-          {/* Dedicated tool deep link */}
           {guide?.toolSlug && (
             <div style={{ marginTop: "4px", display: "flex", justifyContent: "flex-end" }}>
               <Link
@@ -815,7 +524,7 @@ function AuditCheckCard({
   );
 }
 
-function AuditResult({ locale, result }: { locale: Locale; result: AuditFrontendResult }) {
+function AuditResult({ locale, result, targetUrl }: { locale: Locale; result: AuditFrontendResult; targetUrl: string }) {
   const t = copy[locale];
   const ru = locale === "ru";
   const issues = orderAuditIssues((result.run?.issues ?? []).map((issue) => localizeAuditIssue(issue, locale)));
@@ -828,8 +537,8 @@ function AuditResult({ locale, result }: { locale: Locale; result: AuditFrontend
   const [statusFilter, setStatusFilter] = useState<"all" | "failed" | "warning" | "passed">("all");
   const [search, setSearch] = useState("");
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
 
-  // Group categories from checks
   const categories = useMemo(() => {
     const set = new Set<string>();
     checks.forEach((c) => set.add(c.category));
@@ -868,13 +577,18 @@ function AuditResult({ locale, result }: { locale: Locale; result: AuditFrontend
 
   const passedCount = checks.filter((c) => c.status === "passed").length;
   const warningCount = checks.filter((c) => c.status === "warning").length;
+  const unavailableCount = checks.filter((check) => check.status === "skipped").length;
+  const highRiskIssueCount = issues.filter((issue) => issue.severity === "high" || issue.severity === "critical").length;
   const failedCount = checks.filter((c) => c.status === "failed" || c.status === "error").length;
 
-  function copyUrl() {
-    if (typeof window !== "undefined") {
-      navigator.clipboard.writeText(window.location.href);
+  async function copyUrl() {
+    setCopyFailed(false);
+    setCopied(false);
+    if (await writeClipboardText(window.location.href)) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
+    } else {
+      setCopyFailed(true);
     }
   }
 
@@ -924,8 +638,8 @@ function AuditResult({ locale, result }: { locale: Locale; result: AuditFrontend
           <span className="tool-badge tool-badge-success">{localizedLabel(locale, result.job.status)}</span>
         </div>
       </header>
+      {copyFailed && <p role="alert" className="tool-error">{t.copyFailed}</p>}
 
-      {/* KPI Cards */}
       <div className="single-audit-metrics" style={{ marginTop: "20px" }}>
         <article style={{ borderLeft: `4px solid ${grade.color}` }}>
           <span>{t.score}</span>
@@ -935,12 +649,12 @@ function AuditResult({ locale, result }: { locale: Locale; result: AuditFrontend
         <article style={{ borderLeft: failedCount > 0 ? "4px solid #ef4444" : "4px solid #10b981" }}>
           <span>{t.issues}</span>
           <strong>{summary?.issueCount ?? issues.length}</strong>
-          <small>{failedCount} крит. · {warningCount} пред.</small>
+          <small>{ru ? `${highRiskIssueCount} с высоким риском` : `${highRiskIssueCount} high risk`}</small>
         </article>
         <article style={{ borderLeft: "4px solid #0ea5e9" }}>
           <span>{t.checks}</span>
           <strong>{summary?.checkCount ?? checks.length}</strong>
-          <small>{passedCount} успешно</small>
+          <small>{ru ? `${passedCount} пройдено · ${unavailableCount} недоступно` : `${passedCount} passed · ${unavailableCount} unavailable`}</small>
         </article>
         <article>
           <span>{t.risk}</span>
@@ -948,7 +662,6 @@ function AuditResult({ locale, result }: { locale: Locale; result: AuditFrontend
         </article>
       </div>
 
-      {/* Category Breakdown Chips */}
       {categoryStats.length > 0 && (
         <section style={{ marginTop: "20px" }}>
           <h4 style={{ margin: "0 0 10px", fontSize: "14px", fontWeight: 700, color: "var(--wd-ms, #64748b)" }}>
@@ -989,69 +702,35 @@ function AuditResult({ locale, result }: { locale: Locale; result: AuditFrontend
         </section>
       )}
 
-      {/* Core Web Vitals & PageSpeed Insights Summary */}
-      <section
-        className="tool-panel-wide"
-        style={{
-          marginTop: "24px",
-          padding: "20px",
-          borderRadius: "14px",
-          background: "linear-gradient(135deg, rgba(14, 165, 233, 0.04) 0%, rgba(16, 185, 129, 0.04) 100%)",
-          border: "1px solid var(--wd-l, #e2e8f0)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
-          <Gauge size={22} color="#0ea5e9" />
-          <h3 style={{ margin: 0, fontSize: "17px", fontWeight: 700 }}>{t.pageSpeedTitle}</h3>
+      <section className="tool-panel-wide" aria-labelledby="audit-performance-title">
+        <h3 id="audit-performance-title">{t.pageSpeedTitle}</h3>
+        <p>{locale === "ru"
+          ? "Измерения Google PageSpeed: лабораторные и полевые данные показаны отдельно."
+          : "Google PageSpeed measurements: lab and field evidence are identified separately."}</p>
+        <div className="single-audit-metrics">
+          {[
+            ["LCP", "largest-contentful-paint"], ["CLS", "cumulative-layout-shift"],
+            ["INP", "interaction_to_next_paint"], ["FCP", "first-contentful-paint"],
+          ].map(([label, id]) => {
+            const measurement = result.run?.checks
+              .find((check) => check.id === "performance.pagespeed_mobile")?.evidence
+              ?.find((item) => item.source === `google.pagespeed.mobile.${id}`);
+            return <article key={id}>
+              <span>{label}</span>
+              <strong>{measurement?.value ?? "—"}</strong>
+              <small>{measurement
+                ? `${measurement.metadata.source === "field" ? (ru ? "Полевые данные" : "Field data") : (ru ? "Лаборатория" : "Lab data")} · ${localizedLabel(locale, String(measurement.metadata.status ?? ""))}`
+                : (ru ? "Нет данных" : "No data")}</small>
+            </article>;
+          })}
         </div>
-        <p style={{ margin: "0 0 16px", fontSize: "14px", color: "var(--wd-ms, #64748b)" }}>{t.pageSpeedDesc}</p>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
-            gap: "12px",
-          }}
-        >
-          <div style={{ padding: "12px", borderRadius: "10px", background: "var(--wd-s, #ffffff)", border: "1px solid var(--wd-l, #e2e8f0)" }}>
-            <span style={{ fontSize: "12px", color: "var(--wd-ms, #64748b)", display: "block" }}>LCP (Контент)</span>
-            <strong style={{ fontSize: "18px", color: "#10b981" }}>&lt; 2.5 с</strong>
-            <small style={{ display: "block", fontSize: "11px", color: "#64748b" }}>Хорошо</small>
-          </div>
-          <div style={{ padding: "12px", borderRadius: "10px", background: "var(--wd-s, #ffffff)", border: "1px solid var(--wd-l, #e2e8f0)" }}>
-            <span style={{ fontSize: "12px", color: "var(--wd-ms, #64748b)", display: "block" }}>CLS (Сдвиг верстки)</span>
-            <strong style={{ fontSize: "18px", color: "#10b981" }}>&lt; 0.1</strong>
-            <small style={{ display: "block", fontSize: "11px", color: "#64748b" }}>Стабильно</small>
-          </div>
-          <div style={{ padding: "12px", borderRadius: "10px", background: "var(--wd-s, #ffffff)", border: "1px solid var(--wd-l, #e2e8f0)" }}>
-            <span style={{ fontSize: "12px", color: "var(--wd-ms, #64748b)", display: "block" }}>INP (Отзывчивость)</span>
-            <strong style={{ fontSize: "18px", color: "#10b981" }}>&lt; 200 мс</strong>
-            <small style={{ display: "block", fontSize: "11px", color: "#64748b" }}>Быстро</small>
-          </div>
-          <div style={{ padding: "12px", borderRadius: "10px", background: "var(--wd-s, #ffffff)", border: "1px solid var(--wd-l, #e2e8f0)" }}>
-            <span style={{ fontSize: "12px", color: "var(--wd-ms, #64748b)", display: "block" }}>FCP (Первый рендер)</span>
-            <strong style={{ fontSize: "18px", color: "#10b981" }}>&lt; 1.8 с</strong>
-            <small style={{ display: "block", fontSize: "11px", color: "#64748b" }}>Мгновенно</small>
-          </div>
-        </div>
-
-        <div style={{ marginTop: "16px", display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
-          <Link
-            href={`${toolsPath(locale)}/core-web-vitals-checker?url=${encodeURIComponent(result.job.target.normalizedUrl || result.job.target.originalUrl)}`}
-            className="button button-secondary"
-            style={{ fontSize: "13px", padding: "8px 14px", display: "inline-flex", alignItems: "center", gap: "6px" }}
-          >
-            <Gauge size={15} />
-            {t.runPageSpeedAudit}
-            <ArrowRight size={14} />
-          </Link>
-        </div>
+        <Link href={`${toolsPath(locale)}/core-web-vitals-checker?url=${encodeURIComponent(targetUrl)}`} className="button button-secondary">
+          <Gauge size={15} aria-hidden="true" />{t.runPageSpeedAudit}<ArrowRight size={14} aria-hidden="true" />
+        </Link>
       </section>
 
-      {/* Scope Note (Required for tests & transparency) */}
       <p className="tool-note single-audit-scope" style={{ marginTop: "16px" }}>{t.scope}</p>
 
-      {/* Priority Findings / Issues Section */}
       <section className="single-audit-findings" aria-labelledby="single-audit-findings-title" style={{ marginTop: "28px" }}>
         <div className="result-heading" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <h3 id="single-audit-findings-title">{t.fixOrder}</h3>
@@ -1107,14 +786,12 @@ function AuditResult({ locale, result }: { locale: Locale; result: AuditFrontend
         )}
       </section>
 
-      {/* Detailed Checkpoint Explorer */}
       <section className="single-audit-checks" aria-labelledby="single-audit-checks-title" style={{ marginTop: "32px" }}>
         <div className="result-heading" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
           <h3 id="single-audit-checks-title">{t.checkResults}</h3>
           <strong style={{ background: "var(--wd-l, #e2e8f0)", padding: "2px 10px", borderRadius: "999px" }}>{checks.length}</strong>
         </div>
 
-        {/* Filter controls */}
         <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "18px" }}>
           <div style={{ position: "relative" }}>
             <Search size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
@@ -1135,7 +812,6 @@ function AuditResult({ locale, result }: { locale: Locale; result: AuditFrontend
           </div>
 
           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
-            {/* Status pills */}
             <button
               type="button"
               className={`button button-secondary ${statusFilter === "all" ? "is-active" : ""}`}
@@ -1169,7 +845,6 @@ function AuditResult({ locale, result }: { locale: Locale; result: AuditFrontend
               {t.filterPassed} ({passedCount})
             </button>
 
-            {/* Category separator */}
             {categories.length > 1 && (
               <select
                 value={activeCategory}
@@ -1201,7 +876,7 @@ function AuditResult({ locale, result }: { locale: Locale; result: AuditFrontend
                 key={check.id}
                 check={check}
                 issues={issues}
-                targetUrl={result.job.target.normalizedUrl || result.job.target.originalUrl}
+                targetUrl={targetUrl}
                 locale={locale}
               />
             ))}
@@ -1211,7 +886,6 @@ function AuditResult({ locale, result }: { locale: Locale; result: AuditFrontend
         )}
       </section>
 
-      {/* Whole-Site Crawler Recommendation Card */}
       <section
         className="tool-panel-wide"
         style={{
@@ -1245,53 +919,42 @@ function AuditResult({ locale, result }: { locale: Locale; result: AuditFrontend
 }
 
 export function SinglePageAuditTool({ locale }: { locale: Locale }) {
+  return <Suspense fallback={<p role="status">{copy[locale].loading}</p>}>
+    <AuditFromQuery locale={locale} />
+  </Suspense>;
+}
+
+function AuditFromQuery({ locale }: { locale: Locale }) {
+  const initialUrl = useSearchParams().get("url") ?? "";
+  return <SinglePageAuditWorkbench key={initialUrl} locale={locale} initialUrl={initialUrl} />;
+}
+
+function SinglePageAuditWorkbench({ locale, initialUrl }: { locale: Locale; initialUrl: string }) {
   const t = copy[locale];
-  const [url, setUrl] = useState(() => {
-    if (typeof window === "undefined") return "";
-    return new URLSearchParams(window.location.search).get("url") ?? "";
-  });
+  const parsedInitialUrl = parseAuditUrlInput(initialUrl);
+  const target = parsedInitialUrl?.href ?? "";
+  const [url, setUrl] = useState(target || initialUrl);
   const [result, setResult] = useState<AuditFrontendResult | null>(null);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(() => {
-    if (typeof window === "undefined") return false;
-    const initialUrl = new URLSearchParams(window.location.search).get("url");
-    return Boolean(initialUrl && parseAuditUrlInput(initialUrl));
-  });
+  const [error, setError] = useState(initialUrl && !target ? t.invalid : "");
+  const [loading, setLoading] = useState(Boolean(target));
+  const [attempt, setAttempt] = useState(0);
 
-  // Auto-run when URL is provided in query params (?url=...)
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const initialUrl = new URLSearchParams(window.location.search).get("url");
-    if (!initialUrl) return;
-    const parsed = parseAuditUrlInput(initialUrl);
-    if (!parsed) return;
-
-    let ignore = false;
-    startAuditSnapshot(parsed.href)
-      .then((res) => {
-        if (!ignore) {
-          setResult(res);
-          setError("");
-        }
-      })
+    if (!target) return;
+    const controller = new AbortController();
+    startAuditSnapshot(target, { signal: controller.signal })
+      .then((res) => { if (!controller.signal.aborted) setResult(res); })
       .catch((caught) => {
-        if (!ignore) {
-          if (caught instanceof AuditClientError && caught.code === "audit_rate_limited") setError(t.rateLimited);
-          else if (caught instanceof AuditClientError && caught.code === "audit_capacity_unavailable") setError(t.capacityUnavailable);
-          else setError(toolErrorMessage(locale, caught));
-        }
+        if (controller.signal.aborted) return;
+        if (caught instanceof AuditClientError && caught.code === "audit_rate_limited") setError(t.rateLimited);
+        else if (caught instanceof AuditClientError && caught.code === "audit_capacity_unavailable") setError(t.capacityUnavailable);
+        else setError(toolErrorMessage(locale, caught));
       })
-      .finally(() => {
-        if (!ignore) setLoading(false);
-      });
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    return () => controller.abort();
+  }, [target, attempt, locale, t]);
 
-    return () => {
-      ignore = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  async function submit(event: FormEvent<HTMLFormElement>) {
+  function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const parsed = parseAuditUrlInput(url);
     if (!parsed) {
@@ -1299,27 +962,18 @@ export function SinglePageAuditTool({ locale }: { locale: Locale }) {
       setResult(null);
       return;
     }
+    if (loading) return;
+    if (parsed.href !== target) {
+      const location = new URL(window.location.href);
+      location.searchParams.set("url", parsed.href);
+      window.history.replaceState(null, "", location);
+      return;
+    }
     setUrl(parsed.href);
     setLoading(true);
     setError("");
     setResult(null);
-
-    // Sync browser URL bar without reloading
-    if (typeof window !== "undefined") {
-      const newUrl = new URL(window.location.href);
-      newUrl.searchParams.set("url", parsed.href);
-      window.history.replaceState({}, "", newUrl.toString());
-    }
-
-    try {
-      setResult(await startAuditSnapshot(parsed.href));
-    } catch (caught) {
-      if (caught instanceof AuditClientError && caught.code === "audit_rate_limited") setError(t.rateLimited);
-      else if (caught instanceof AuditClientError && caught.code === "audit_capacity_unavailable") setError(t.capacityUnavailable);
-      else setError(toolErrorMessage(locale, caught));
-    } finally {
-      setLoading(false);
-    }
+    setAttempt((value) => value + 1);
   }
 
   return (
@@ -1341,14 +995,10 @@ export function SinglePageAuditTool({ locale }: { locale: Locale }) {
         <button className="button" type="submit" disabled={loading}>
           {loading ? t.loading : t.run}
         </button>
-        <p className="tool-error" role="alert" aria-live="polite">
-          {error}
-        </p>
+        <p className="tool-error" role="alert" aria-live="polite">{error}</p>
       </section>
-
       {loading && <AuditLiveProgressBar locale={locale} url={url} />}
-
-      {result && <AuditResult locale={locale} result={result} />}
+      {result && <AuditResult locale={locale} result={result} targetUrl={target} />}
     </form>
   );
 }

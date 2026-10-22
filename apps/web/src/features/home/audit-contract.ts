@@ -3,6 +3,14 @@ export const FRONTEND_AUDIT_RESULT_CONTRACT_VERSION = "webdiag.web.audit_result.
 
 type NumberBuckets = Record<string, number>;
 
+export interface AuditEvidence {
+  readonly kind: string;
+  readonly source: string;
+  readonly value: string;
+  readonly excerpt?: string | null;
+  readonly metadata: Record<string, unknown>;
+}
+
 export interface AuditApiErrorPayload {
   readonly detail: {
     readonly code: string;
@@ -48,6 +56,7 @@ export interface BackendAuditCheckPreview {
   readonly name: string;
   readonly category: string;
   readonly status: string;
+  readonly evidence?: readonly AuditEvidence[];
 }
 
 export interface BackendAuditSnapshotResponse {
@@ -110,6 +119,7 @@ export interface AuditFrontendCheck {
   readonly name: string;
   readonly category: string;
   readonly status: string;
+  readonly evidence?: readonly AuditEvidence[];
 }
 
 export interface AuditFrontendResult {
@@ -165,7 +175,8 @@ function isBackendCheckPreview(payload: unknown): payload is BackendAuditCheckPr
     typeof payload.check_id === "string" &&
     typeof payload.name === "string" &&
     typeof payload.category === "string" &&
-    typeof payload.status === "string"
+    typeof payload.status === "string" &&
+    isOptionalEvidence(payload.evidence)
   );
 }
 
@@ -244,9 +255,17 @@ function isFrontendSummary(payload: unknown): payload is AuditFrontendSummary {
   );
 }
 
+function isOptionalEvidence(payload: unknown): payload is readonly AuditEvidence[] | undefined {
+  return payload === undefined || (Array.isArray(payload) && payload.every((item) =>
+    isRecord(item) && typeof item.kind === "string" && typeof item.source === "string"
+    && typeof item.value === "string" && isRecord(item.metadata)
+    && (item.excerpt === undefined || item.excerpt === null || typeof item.excerpt === "string")
+  ));
+}
+
 function isFrontendCheck(payload: unknown): payload is AuditFrontendCheck {
   if (!isRecord(payload)) return false;
-  return typeof payload.id === "string" && typeof payload.name === "string" && typeof payload.category === "string" && typeof payload.status === "string";
+  return typeof payload.id === "string" && typeof payload.name === "string" && typeof payload.category === "string" && typeof payload.status === "string" && isOptionalEvidence(payload.evidence);
 }
 
 function isFrontendIssue(payload: unknown): payload is AuditFrontendIssue {
@@ -349,6 +368,7 @@ export function toAuditFrontendResult(snapshot: BackendAuditSnapshotResponse): A
             name: check.name,
             category: check.category,
             status: check.status,
+            evidence: check.evidence ?? [],
           })),
           issues: snapshot.run.issues.map((issue) => ({
             id: issue.issue_id,

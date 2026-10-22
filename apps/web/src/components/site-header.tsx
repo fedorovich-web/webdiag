@@ -15,6 +15,7 @@ import { LanguageSwitcher } from "./language-switcher";
 import { SiteBrand } from "./site-brand";
 import { ToolsMenuShell } from "./tools-menu-shell";
 import { loginPath, toolsPath } from "../lib/routes";
+import { PUBLIC_CATALOG_TOOL_COUNT } from "../features/tools/public-catalog-data";
 
 interface SiteHeaderProps {
   locale: Locale;
@@ -44,7 +45,7 @@ function NavigationLinks({ locale, compact = false }: { locale: Locale; compact?
         materials: "Материалы",
         about: "О проекте",
         categories: "Категории инструментов",
-        all: "Все 140+ инструментов",
+        all: `Все ${PUBLIC_CATALOG_TOOL_COUNT} инструментов`,
         unavailable: "недоступно",
       }
     : {
@@ -54,7 +55,7 @@ function NavigationLinks({ locale, compact = false }: { locale: Locale; compact?
         materials: "Resources",
         about: "About",
         categories: "Tool categories",
-        all: "All 140+ tools",
+        all: `All ${PUBLIC_CATALOG_TOOL_COUNT} tools`,
         unavailable: "unavailable",
       };
 

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PUBLIC_CATALOG_TOOL_COUNT } from "../../../../src/features/tools/public-catalog-data";
 import { ToolList } from "../../../../src/features/tools/tool-list";
 import { JsonLd } from "../../../../src/components/json-ld";
 import { pageMetadata } from "../../../../src/lib/seo";
@@ -7,7 +8,7 @@ import { toolItemListJsonLd } from "../../../../src/lib/structured-data";
 export const metadata: Metadata = pageMetadata({
   locale: "en",
   title: "All WebDiag Tools",
-  description: "More than 140 WebDiag tools for SEO audits, diagnostics, performance, security, accessibility, images, and development.",
+  description: `${PUBLIC_CATALOG_TOOL_COUNT} WebDiag tools for SEO audits, diagnostics, performance, security, accessibility, images, development and AI workflows.`,
   canonical: "/en/tools",
   ruPath: "/tools",
   enPath: "/en/tools",

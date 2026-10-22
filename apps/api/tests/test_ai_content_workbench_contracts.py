@@ -52,7 +52,7 @@ def _intent_input(locale: str = "ru") -> dict[str, object]:
         (
             "ai_content_optimizer",
             _optimizer_input(),
-            {"locale": "en", "page_url": "https://example.com/guides/seo"},
+            {"locale": "en", "page_url": "https://example.com/guides/seo?token=secret"},
         ),
         (
             "ai_search_intent_page_fit",
@@ -69,6 +69,9 @@ def test_content_workbench_accepts_strict_ru_en_inputs(
     assert has_tool_contract(tool_id) is True
     validated = validate_public_input(tool_id, value)
     assert {key: validated[key] for key in expected} == expected
+    if tool_id == "ai_content_optimizer":
+        provider_input = validate_provider_input(tool_id, validated)
+        assert provider_input["page_url"] == "https://example.com/guides/seo"
 
 
 @pytest.mark.parametrize(

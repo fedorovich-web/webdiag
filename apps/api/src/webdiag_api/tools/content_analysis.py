@@ -207,10 +207,11 @@ class ParsedContent:
     headings: tuple[ParsedHeading, ...]
     text: str
     paragraphs: tuple[str, ...]
+    text_blocks: tuple[str, ...]
 
 
 class _ContentParser(HTMLParser):
-    _SKIP_TAGS = {"script", "style", "noscript", "svg", "canvas", "template"}
+    _SKIP_TAGS = {"head", "script", "style", "noscript", "svg", "canvas", "template"}
     _BLOCK_TAGS = {
         "p",
         "li",
@@ -221,6 +222,23 @@ class _ContentParser(HTMLParser):
         "td",
         "th",
         "blockquote",
+        "address",
+        "aside",
+        "details",
+        "summary",
+        "header",
+        "footer",
+        "nav",
+        "ol",
+        "ul",
+        "dl",
+        "dt",
+        "dd",
+        "table",
+        "tr",
+        "figure",
+        "figcaption",
+        "pre",
     }
 
     def __init__(self) -> None:
@@ -231,6 +249,7 @@ class _ContentParser(HTMLParser):
         self._paragraph_depth = 0
         self._paragraph_parts: list[str] = []
         self._text_parts: list[str] = []
+        self._text_blocks: list[str] = []
         self.headings: list[ParsedHeading] = []
         self.paragraphs: list[str] = []
 
@@ -242,13 +261,20 @@ class _ContentParser(HTMLParser):
             return
         if self._skip_depth > 0:
             return
+        if name == "hr":
+            self._finish_text_block()
+            self._finish_paragraph()
+        elif name == "br":
+            self._append_separator()
         if name in {"h1", "h2", "h3", "h4", "h5", "h6"}:
+            self._finish_text_block()
+            self._finish_paragraph()
             self._heading_level = int(name[1])
             self._heading_parts = []
         if name in self._BLOCK_TAGS:
+            self._finish_text_block()
+            self._finish_paragraph()
             self._paragraph_depth += 1
-            if self._paragraph_depth == 1:
-                self._paragraph_parts = []
 
     def handle_endtag(self, tag: str) -> None:
         name = tag.lower()
@@ -258,6 +284,7 @@ class _ContentParser(HTMLParser):
         if self._skip_depth > 0:
             return
         if name in {"h1", "h2", "h3", "h4", "h5", "h6"} and self._heading_level:
+            self._finish_text_block()
             text = _collapse_whitespace("".join(self._heading_parts))
             self.headings.append(
                 ParsedHeading(
@@ -269,27 +296,44 @@ class _ContentParser(HTMLParser):
             self._heading_level = None
             self._heading_parts = []
         if name in self._BLOCK_TAGS and self._paragraph_depth > 0:
+            self._finish_text_block()
+            self._finish_paragraph()
             self._paragraph_depth -= 1
-            if self._paragraph_depth == 0:
-                paragraph = _collapse_whitespace("".join(self._paragraph_parts))
-                if paragraph:
-                    self.paragraphs.append(paragraph)
-                self._paragraph_parts = []
+
+    def _append_separator(self) -> None:
+        self._text_parts.append(" ")
+        self._heading_parts.append(" ")
+        self._paragraph_parts.append(" ")
+
+    def _finish_paragraph(self) -> None:
+        paragraph = _collapse_whitespace("".join(self._paragraph_parts))
+        if paragraph:
+            self.paragraphs.append(paragraph)
+        self._paragraph_parts = []
+
+    def _finish_text_block(self) -> None:
+        block = _collapse_whitespace("".join(self._text_parts))
+        if block:
+            self._text_blocks.append(block)
+        self._text_parts = []
 
     def handle_data(self, data: str) -> None:
         if self._skip_depth > 0:
             return
         if self._heading_level:
             self._heading_parts.append(data)
-        if self._paragraph_depth > 0:
+        if self._paragraph_depth > 0 and self._heading_level is None:
             self._paragraph_parts.append(data)
         self._text_parts.append(data)
 
     def parsed(self) -> ParsedContent:
+        self._finish_paragraph()
+        self._finish_text_block()
         return ParsedContent(
             headings=tuple(self.headings),
-            text=_collapse_whitespace(" ".join(self._text_parts)),
+            text=" ".join(self._text_blocks),
             paragraphs=tuple(self.paragraphs),
+            text_blocks=tuple(self._text_blocks),
         )
 
 
@@ -334,9 +378,11 @@ def inspect_keyword_frequency(
     words = _content_words(parsed.text)
     meaningful_words = [word for word in words if word not in _STOPWORDS and len(word) > 2]
     top_words = _top_terms(meaningful_words, denominator=max(len(words), 1), limit=15)
-    top_bigrams = _top_terms(_ngrams(meaningful_words, 2), denominator=max(len(words), 1), limit=10)
+    top_bigrams = _top_terms(
+        _content_phrases(parsed.text_blocks, 2), denominator=max(len(words), 1), limit=10
+    )
     top_trigrams = _top_terms(
-        _ngrams(meaningful_words, 3),
+        _content_phrases(parsed.text_blocks, 3),
         denominator=max(len(words), 1),
         limit=10,
     )
@@ -507,10 +553,16 @@ def _sentences(text: str) -> list[str]:
     return [item.strip() for item in _SENTENCE_RE.findall(text) if _content_words(item)]
 
 
-def _ngrams(words: list[str], size: int) -> list[str]:
-    if len(words) < size:
-        return []
-    return [" ".join(words[index : index + size]) for index in range(len(words) - size + 1)]
+def _content_phrases(blocks: tuple[str, ...], size: int) -> list[str]:
+    phrases: list[str] = []
+    for block in blocks:
+        for sentence in _sentences(block):
+            words = _content_words(sentence)
+            phrases.extend(
+                " ".join(words[index : index + size])
+                for index in range(len(words) - size + 1)
+            )
+    return phrases
 
 
 def _top_terms(

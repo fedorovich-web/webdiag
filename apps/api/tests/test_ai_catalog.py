@@ -73,9 +73,9 @@ def test_catalog_rejects_duplicate_tool_ids() -> None:
         AIToolCatalog((definition, definition))
 
 
-def test_production_catalog_restores_all_fifteen_original_tools_and_prices() -> None:
+def test_production_catalog_excludes_retired_faq_and_preserves_other_prices() -> None:
     tools = build_production_ai_catalog().available()
-    assert {tool.id for tool in tools} == EXPECTED_TOOL_IDS
+    assert {tool.id for tool in tools} == EXPECTED_TOOL_IDS - {"ai_faq_studio"}
     assert all(has_tool_contract(tool.id) for tool in tools)
     for tool in tools:
         expected_price = 2 if tool.id in {"ai_image_studio", "ai_image_edit_studio"} else 1
@@ -86,7 +86,7 @@ def test_cloudflare_catalog_keeps_prices_and_text_models():
     from webdiag_api.ai.catalog import build_production_ai_catalog
 
     catalog = build_production_ai_catalog(image_provider="cloudflare")
-    assert len(catalog.available()) == 15
+    assert len(catalog.available()) == 14
     for tool in catalog.available():
         image = tool.id in {"ai_image_studio", "ai_image_edit_studio"}
         assert tool.model_policy == (
@@ -97,7 +97,7 @@ def test_cloudflare_catalog_keeps_prices_and_text_models():
 
 def test_cloudflare_text_catalog_records_actual_model_without_changing_prices():
     catalog = build_production_ai_catalog(image_provider="cloudflare", text_provider="cloudflare")
-    assert len(catalog.available()) == 15
+    assert len(catalog.available()) == 14
     for tool in catalog.available():
         image = tool.id in {"ai_image_studio", "ai_image_edit_studio"}
         assert tool.model_policy == (

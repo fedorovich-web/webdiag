@@ -94,6 +94,7 @@ class SiteAuditResult(StrictCrawlModel):
     sitemap_url: str | None = Field(default=None, max_length=2_048)
     sitemap_url_count: int = Field(default=0, ge=0, le=10_000)
     sitemap_complete: bool = False
+    excluded_query_url_count: int = Field(default=0, ge=0)
     duplicate_titles: tuple[CrawlDuplicateGroup, ...] = Field(default=(), max_length=25)
     duplicate_descriptions: tuple[CrawlDuplicateGroup, ...] = Field(
         default=(), max_length=25

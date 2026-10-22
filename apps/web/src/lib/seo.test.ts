@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { publicTools } from "@webdiag/tool-registry";
 import { getToolPageContent } from "../content/tool-pages";
+import { PUBLIC_CATALOG_TOOL_COUNT } from "../features/tools/public-catalog-data";
 import { pageMetadata, toolMetadata } from "./seo";
 import { toolBreadcrumbJsonLd, toolItemListJsonLd, websiteJsonLd } from "./structured-data";
 
@@ -41,10 +42,10 @@ describe("structured data", () => {
     expect(websiteJsonLd("en")).toMatchObject({ "@type": "WebSite", inLanguage: "en" });
   });
 
-  it("lists only ready tools", () => {
+  it("lists the same active tools as the public catalog", () => {
     const data = toolItemListJsonLd("ru");
-    expect(data.numberOfItems).toBe(publicTools.length);
-    expect(data.itemListElement).toHaveLength(publicTools.length);
+    expect(data.numberOfItems).toBe(PUBLIC_CATALOG_TOOL_COUNT);
+    expect(data.itemListElement).toHaveLength(PUBLIC_CATALOG_TOOL_COUNT);
   });
 
   it("creates a three-level tool breadcrumb", () => {

@@ -36,14 +36,22 @@ describe("canonical checker tool helpers", () => {
   it("maps canonical states to labels and tones", () => {
     expect(canonicalStatusTone(result)).toBe("success");
     expect(canonicalStatusLabel(result, "ru")).toBe("Canonical совпадает");
-    expect(canonicalStatusTone({ canonical_present: false, canonical_matches_final_url: null, has_noindex: false })).toBe("warning");
-    expect(canonicalStatusTone({ canonical_present: true, canonical_matches_final_url: false, has_noindex: false })).toBe("danger");
-    expect(canonicalStatusTone({ canonical_present: true, canonical_matches_final_url: true, has_noindex: true })).toBe("danger");
+    expect(canonicalStatusTone({ ...result, canonical_present: false, canonical_matches_final_url: null })).toBe("warning");
+    expect(canonicalStatusTone({ ...result, canonical_matches_final_url: false })).toBe("danger");
+    expect(canonicalStatusTone({ ...result, has_noindex: true })).toBe("danger");
   });
 
   it("creates copyable text output from a result", () => {
     expect(canonicalResultText(result)).toContain("Final URL: https://example.com/page");
     expect(canonicalResultText(result)).toContain("Canonical: https://example.com/page");
     expect(canonicalResultText(result)).toContain("Matches final URL: true");
+  });
+
+  it("does not present an unsuccessful page response as a matching healthy canonical", () => {
+    const unavailable = { ...result, status_code: 503 };
+    expect(canonicalStatusTone(unavailable)).toBe("danger");
+    expect(canonicalStatusLabel(unavailable, "ru")).toContain("503");
+    expect(canonicalStatusTone({ ...result, canonical_matches_final_url: null })).toBe("warning");
+    expect(canonicalStatusLabel({ ...result, canonical_matches_final_url: null }, "en")).not.toBe("Canonical matches");
   });
 });

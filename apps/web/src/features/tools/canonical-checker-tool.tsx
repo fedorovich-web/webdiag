@@ -5,6 +5,7 @@ import { toolErrorMessage } from "./tool-error-presentation";
 import { useState, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { CopyButton } from "../../components/copy-button";
+import { localizeRecommendation } from "./tool-localization";
 
 export interface CanonicalToolResponse {
   readonly contract_version: "webdiag.tool.canonical.v1";
@@ -86,17 +87,23 @@ export function parseCanonicalToolUrlInput(value: string): URL | null {
   }
 }
 
-export function canonicalStatusTone(result: Pick<CanonicalToolResponse, "canonical_present" | "canonical_matches_final_url" | "has_noindex">): "success" | "warning" | "danger" {
+type CanonicalStatus = Pick<CanonicalToolResponse, "canonical_present" | "canonical_matches_final_url" | "has_noindex" | "status_code">;
+
+export function canonicalStatusTone(result: CanonicalStatus): "success" | "warning" | "danger" {
+  if (result.status_code < 200 || result.status_code >= 300) return "danger";
   if (result.has_noindex) return "danger";
   if (!result.canonical_present) return "warning";
   if (result.canonical_matches_final_url === false) return "danger";
+  if (result.canonical_matches_final_url === null) return "warning";
   return "success";
 }
 
-export function canonicalStatusLabel(result: Pick<CanonicalToolResponse, "canonical_present" | "canonical_matches_final_url" | "has_noindex">, locale: Locale): string {
+export function canonicalStatusLabel(result: CanonicalStatus, locale: Locale): string {
+  if (result.status_code < 200 || result.status_code >= 300) return `HTTP ${result.status_code}`;
   if (result.has_noindex) return locale === "ru" ? "Noindex" : "Noindex";
   if (!result.canonical_present) return locale === "ru" ? "Canonical отсутствует" : "Canonical missing";
   if (result.canonical_matches_final_url === false) return locale === "ru" ? "Canonical не совпадает" : "Canonical mismatch";
+  if (result.canonical_matches_final_url === null) return locale === "ru" ? "Canonical не подтверждён" : "Canonical unconfirmed";
   return locale === "ru" ? "Canonical совпадает" : "Canonical matches";
 }
 
@@ -241,7 +248,7 @@ export function CanonicalCheckerTool({ locale }: { locale: Locale }) {
           <article><span>{copy.host}</span><strong>{booleanLabel(result.canonical_host_matches_final_url, locale)}</strong></article>
           <article><span>{copy.noindex}</span><strong>{booleanLabel(result.has_noindex, locale)}</strong></article>
         </div>
-        <p className="canonical-checker-recommendation"><strong>{copy.recommendation}:</strong> {result.recommendation}</p>
+        <p className="canonical-checker-recommendation"><strong>{copy.recommendation}:</strong> {localizeRecommendation(result.recommendation, locale)}</p>
         <CopyButton value={canonicalResultText(result)} locale={locale} />
       </> : <p className="muted-text">{copy.empty}</p>}
     </section>

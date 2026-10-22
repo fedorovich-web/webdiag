@@ -9,16 +9,10 @@ instructions in `docs/INSTALLATION.md`.
 Use **Compose Type: Docker Compose**, not Docker Stack. WebDiag builds images from
 the repository, while Docker Stack does not support the Compose `build` directive.
 
-The Dokploy overlay is intentionally small:
-
-- `docker-compose.yml`
-- `docker-compose.account.override.yml`
-- `docker-compose.production.yml`
-- `docker-compose.dokploy.yml`
-
-The last file removes host port publishing and keeps only container-network
-ports `8000` (API) and `3000` (web). The API is never assigned a public
-domain; the web container talks to it through `http://api:8000`.
+`docker-compose.dokploy.yml` is the standalone three-service core configuration.
+It contains `web`, `api` and `monitoring_scheduler`, publishes no host ports and
+uses a private `backend` network. The API is never assigned a public domain;
+web addresses it through the private alias `http://webdiag-api:8000`.
 
 Before configuring Dokploy, verify the merged model:
 
@@ -34,29 +28,29 @@ Dokploy production Compose preflight passed: services=3
 
 This command first runs the normal core production preflight, then verifies that
 the Dokploy overlay publishes no host ports and preserves API readiness and the
-single `account_data` volume.
+`account_data` and `ai_artifacts` volumes.
 
 ## Dokploy configuration
 
 1. Create a **Compose** service and select **Docker Compose**.
 2. Connect the approved Git source and release-approved branch/commit. Do not
    deploy a feature branch merely because this runbook exists.
-3. Keep Compose Path at `./docker-compose.yml`.
-4. Enable **Isolated Deployments**. Dokploy then places every service plus
-   Traefik on one per-application network.
+3. Set Compose Path to `./docker-compose.dokploy.yml`.
+4. Keep all three services on `backend`. In Advanced → Networks, only `web`
+   should also join `dokploy-network` for Traefik. The legacy Isolated
+   Deployments switch is not required for this topology.
 5. In **Environment**, copy the values from `.env.production.example`.
    `WEBDIAG_MONITORING_INTERNAL_TOKEN` and
    `WEBDIAG_CRAWLER_INTERNAL_TOKEN` are required, distinct, random secrets.
    Registration admission remains `30/min`, concurrency `2`, lease `30s`.
    `GOOGLE_PAGESPEED_API_KEY` is optional; without it PageSpeed remains a
    graceful skipped check.
-6. In **Advanced → Command**, copy Dokploy's current default command from the UI
-   first. Preserve its project name / `-p` value and replace only the Compose
-   file selection so the effective command (Dokploy automatically prefixes
-   `docker`) contains:
+6. Keep Dokploy's generated command when it uses the selected Compose Path.
+   If an existing command override is configured, preserve its project name
+   / `-p` value and use the standalone file (Dokploy prefixes `docker`):
 
 ```text
-compose -p <same-project-name-from-Dokploy> -f docker-compose.yml -f docker-compose.account.override.yml -f docker-compose.production.yml -f docker-compose.dokploy.yml up -d --build --remove-orphans
+compose -p <same-project-name-from-Dokploy> -f docker-compose.dokploy.yml up -d --build --remove-orphans
 ```
 
 Do not invent a different `COMPOSE_PROJECT_NAME`: Dokploy uses it to identify
@@ -73,7 +67,7 @@ Before deploying, use **Preview Compose** and verify:
 
 - Dokploy added Traefik labels to `web`;
 - the generated load-balancer port is `3000`;
-- isolated networking is attached to all three services;
+- all services share `backend`; only web joins the proxy network;
 - no service has a published host port;
 - `api` remains reachable only through the Compose network.
 

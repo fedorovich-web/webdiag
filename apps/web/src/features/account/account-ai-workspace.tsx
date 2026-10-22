@@ -26,6 +26,7 @@ import { AccountAITextToolRunner } from "./account-ai-text-tool-runner";
 import { AccountAIAuditPlanRunner } from "./account-ai-audit-plan-runner";
 import { ToolCatalog } from "../tools/tool-catalog";
 import { getPublicCatalogCategories, getPublicCatalogTools } from "../tools/public-catalog-data";
+import { ACTIVE_AI_CATALOG_TOOLS, isActiveAIToolId } from "../tools/ai-tools-data";
 import { Sparkles, Wrench } from "lucide-react";
 
 interface AccountAIWorkspaceProps {
@@ -50,7 +51,7 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
   const [selectedTool, setSelectedTool] = useState<AIToolId | null>(() => {
     if (typeof window === "undefined") return null;
     const requested = new URLSearchParams(window.location.search).get("tool");
-    return ALL_AI_TOOL_IDS.find((id) => requested === id || requested === id.replaceAll("_", "-")) ?? null;
+    return ALL_AI_TOOL_IDS.find((id) => isActiveAIToolId(id) && (requested === id || requested === id.replaceAll("_", "-"))) ?? null;
   });
 
   const diagnosticTools = useMemo(() => getPublicCatalogTools(locale), [locale]);
@@ -81,7 +82,7 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
           setError(ru ? "AI-инструменты временно недоступны." : "AI tools are temporarily unavailable.");
           return;
         }
-        setCatalog(catalogResult.value);
+        setCatalog({ ...catalogResult.value, tools: catalogResult.value.tools.filter((tool) => isActiveAIToolId(tool.id)) });
         setCredits(creditsResult.value);
         setRuns(runsResult.value.runs);
         setLoadState("ready");
@@ -193,7 +194,7 @@ export function AccountAIWorkspace({ locale }: AccountAIWorkspaceProps) {
       <section className="wd-ai-workspace-summary" aria-label={ru ? "Сводка AI" : "AI summary"}>
         <article>
           <span>{ru ? "Инструменты" : "Tools"}</span>
-          <strong>{loadState === "loading" ? "—" : `${availableTools}/15`}</strong>
+          <strong>{loadState === "loading" ? "—" : `${availableTools}/${ACTIVE_AI_CATALOG_TOOLS.length}`}</strong>
           <small>{ru ? "доступно для запуска" : "available to run"}</small>
         </article>
         <article className="wd-ai-credits-summary-article">

@@ -13,9 +13,8 @@ describe("createZipArchive", () => {
     expect(blob.size).toBeGreaterThan(0);
 
     const buffer = new Uint8Array(await blob.arrayBuffer());
-    // Check PK header signature
-    expect(buffer[0]).toBe(0x50); // P
-    expect(buffer[1]).toBe(0x4b); // K
+    expect(buffer[0]).toBe(0x50);
+    expect(buffer[1]).toBe(0x4b);
     expect(buffer[2]).toBe(0x03);
     expect(buffer[3]).toBe(0x04);
   });

@@ -169,7 +169,6 @@
   .fidelity :global(.wd-final-copy h2) { font-size: 25px; }
 }
 
-/* WCAG 2.2 AA: preserve the approved layout while strengthening light-theme text contrast. */
 :global(body[data-theme="light"]) .fidelity :global(.wd-eyebrow) { color: #127d7d; }
 :global(body[data-theme="light"]) .fidelity :global(.wd-section-link),
 :global(body[data-theme="light"]) .fidelity :global(.wd-card-link),
@@ -191,7 +190,6 @@
 :global(body[data-theme="light"]) .fidelity :global(.wd-platform-strip p) { color: #68758e; }
 :global(body[data-theme="light"]) .fidelity :global(.wd-platform-strip .shell > div span) { color: #68758e; }
 
-/* Footer links remain visually compact, but each interactive target meets the 24px minimum. */
 :global(.site-footer .footer-column a) {
   min-height: 24px;
   display: flex;

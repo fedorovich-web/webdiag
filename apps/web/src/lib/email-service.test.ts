@@ -23,7 +23,6 @@ it("rejects SMTP without STARTTLS before transmitting credentials", async () => 
       while ((end = pending.indexOf("\r\n")) !== -1) {
         const command = pending.slice(0, end);
         pending = pending.slice(end + 2);
-        // Retain command verbs only, including when testing a failing client.
         const verb = (command.split(" ", 1)[0] ?? "").toUpperCase();
         commands.push(verb);
         if (verb === "EHLO") socket.write("250-test SMTP\r\n250 AUTH PLAIN\r\n");

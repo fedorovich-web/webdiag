@@ -100,19 +100,15 @@ def test_audit_lease_can_be_renewed_during_long_execution(tmp_path) -> None:
     first = controller(database, now=1_000)
     lease = first.acquire()
 
-    # Advance time past half of lease; renew lease to extend expiration
     controller(database, now=1_030).renew(lease)
 
-    # At t=1_050, the original 45s lease would have expired at 1_045,
-    # but the renewed lease remains valid until 1_075
     second = controller(database, now=1_050)
     with pytest.raises(AuditAdmissionError) as caught:
         second.acquire()
     assert caught.value.status_code == 503
     assert caught.value.code == "audit_capacity_unavailable"
-    assert caught.value.retry_after == 25  # 1_075 - 1_050
+    assert caught.value.retry_after == 25
 
-    # Once the first audit completes and releases its lease, capacity is restored
     controller(database, now=1_060).release(lease)
     replacement = second.acquire()
     second.release(replacement)

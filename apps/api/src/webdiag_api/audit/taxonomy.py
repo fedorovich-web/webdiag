@@ -309,6 +309,133 @@ ISSUE_DEFINITIONS: tuple[IssueDefinition, ...] = (
     ),
 )
 
+CHECK_DEFINITIONS += (
+    CheckDefinition(
+        "indexability.x_robots_tag",
+        "X-Robots-Tag",
+        IssueCategory.INDEXABILITY,
+        "Checks response-header indexing directives, including none.",
+    ),
+    CheckDefinition(
+        "security.https",
+        "HTTPS transport",
+        IssueCategory.SECURITY,
+        "Checks that the final document URL uses HTTPS.",
+    ),
+    CheckDefinition(
+        "metadata.viewport",
+        "Mobile viewport",
+        IssueCategory.METADATA,
+        "Checks the static viewport declaration for device-width.",
+    ),
+    CheckDefinition(
+        "accessibility.language",
+        "Document language",
+        IssueCategory.ACCESSIBILITY,
+        "Checks that the HTML document declares its language.",
+    ),
+    CheckDefinition(
+        "media.image_alt",
+        "Image alternative text",
+        IssueCategory.MEDIA,
+        "Checks explicit alt attributes, including empty decorative alternatives.",
+    ),
+    CheckDefinition(
+        "media.image_dimensions",
+        "Image dimensions",
+        IssueCategory.MEDIA,
+        "Checks explicit positive width and height attributes in static markup.",
+    ),
+    CheckDefinition(
+        "content.heading_order",
+        "Heading level order",
+        IssueCategory.CONTENT,
+        "Checks upward jumps in the static heading outline.",
+    ),
+    CheckDefinition(
+        "metadata.unique_tags",
+        "Duplicate metadata tags",
+        IssueCategory.METADATA,
+        "Checks duplicate title, description and canonical declarations.",
+    ),
+)
+
+ISSUE_DEFINITIONS += (
+    IssueDefinition(
+        "indexability.x_robots_tag.noindex",
+        "indexability.x_robots_tag",
+        IssueCategory.INDEXABILITY,
+        Severity.HIGH,
+        Priority.P0,
+        "Response header blocks indexing",
+        "X-Robots-Tag contains noindex or none.",
+    ),
+    IssueDefinition(
+        "security.https.missing",
+        "security.https",
+        IssueCategory.SECURITY,
+        Severity.HIGH,
+        Priority.P1,
+        "Page is served over HTTP",
+        "The final document URL does not use HTTPS.",
+    ),
+    IssueDefinition(
+        "metadata.viewport.missing",
+        "metadata.viewport",
+        IssueCategory.METADATA,
+        Severity.MEDIUM,
+        Priority.P2,
+        "Mobile viewport needs attention",
+        "The viewport declaration is missing or does not use device-width.",
+    ),
+    IssueDefinition(
+        "accessibility.language.missing",
+        "accessibility.language",
+        IssueCategory.ACCESSIBILITY,
+        Severity.LOW,
+        Priority.P3,
+        "Document language is missing",
+        "The HTML lang attribute is absent or empty.",
+    ),
+    IssueDefinition(
+        "media.image_alt.missing",
+        "media.image_alt",
+        IssueCategory.MEDIA,
+        Severity.MEDIUM,
+        Priority.P2,
+        "Images have no alt attribute",
+        "One or more img elements have no explicit alternative text attribute.",
+    ),
+    IssueDefinition(
+        "media.image_dimensions.missing",
+        "media.image_dimensions",
+        IssueCategory.MEDIA,
+        Severity.LOW,
+        Priority.P3,
+        "Image dimensions are not declared in HTML",
+        "One or more images lack positive width and height attributes.",
+    ),
+    IssueDefinition(
+        "content.heading_order.skipped_level",
+        "content.heading_order",
+        IssueCategory.CONTENT,
+        Severity.LOW,
+        Priority.P3,
+        "Heading levels are skipped",
+        "The static heading outline contains an upward jump of more than one level.",
+    ),
+    IssueDefinition(
+        "metadata.unique_tags.duplicate",
+        "metadata.unique_tags",
+        IssueCategory.METADATA,
+        Severity.MEDIUM,
+        Priority.P2,
+        "Metadata tags are duplicated",
+        "The document repeats title, meta description or canonical tags.",
+    ),
+)
+
+
 CHECKS_BY_ID = {definition.check_id: definition for definition in CHECK_DEFINITIONS}
 ISSUES_BY_ID = {definition.issue_id: definition for definition in ISSUE_DEFINITIONS}
 

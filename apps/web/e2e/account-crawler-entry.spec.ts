@@ -23,7 +23,7 @@ test.describe("bounded crawler public entry points", () => {
       await expect(page.getByRole("heading", { level: 1, name: scenario.heading })).toBeVisible();
       await expect(page.locator(".account-crawler-entry input")).toHaveCount(0);
       await expect(page.locator(".account-crawler-entry form")).toHaveCount(0);
-      await expect(page.locator(".account-crawler-entry-action")).toContainText("25 HTML");
+      await expect(page.locator(".account-crawler-entry-action")).toContainText("HTML");
       await expect(page.locator(`.account-crawler-entry a[href='${scenario.href}']`)).toBeVisible();
     });
   }

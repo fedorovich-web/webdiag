@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import type { Locale } from "@webdiag/tool-registry";
 import { toolsPath } from "../../lib/routes";
+import { PUBLIC_CATALOG_TOOL_COUNT } from "../tools/public-catalog-data";
+import { ACTIVE_AI_CATALOG_TOOLS } from "../tools/ai-tools-data";
 
 export function AboutPage({ locale }: { locale: Locale }) {
   const ru = locale === "ru";
@@ -27,12 +29,12 @@ export function AboutPage({ locale }: { locale: Locale }) {
         breadcrumbs: { home: "Главная", about: "О проекте" },
         eyebrow: "О платформе WebDiag",
         title: "Современная платформа для комплексной диагностики и SEO-аудита сайтов",
-        lead: "WebDiag объединяет более 140 инструментов анализа, глубокий технический аудит и интеллектуальные AI-сценарии в единую экосистему для веб-мастеров, SEO-специалистов и разработчиков.",
+        lead: `WebDiag объединяет ${PUBLIC_CATALOG_TOOL_COUNT} инструментов диагностики, включая AI-сценарии, для веб-мастеров, SEO-специалистов и разработчиков.`,
         stats: [
-          { number: "140+", label: "Инструментов анализа", sub: "От HTTP-заголовков до Core Web Vitals и AI" },
-          { number: "15", label: "AI-сценариев", sub: "Готовые планы, брифы и перелинковка" },
-          { number: "100%", label: "Прозрачность данных", sub: "Без скрытых оценок и искажений" },
-          { number: "< 2.5 с", label: "Скорость проверки", sub: "Мгновенные результаты в реальном времени" },
+          { number: String(PUBLIC_CATALOG_TOOL_COUNT), label: "Инструментов анализа", sub: "От HTTP-заголовков до Core Web Vitals и AI" },
+          { number: String(ACTIVE_AI_CATALOG_TOOLS.length), label: "AI-сценариев", sub: "Готовые планы, брифы и перелинковка" },
+          { number: "Данные", label: "Основа проверок", sub: "Введённые данные и ответы источников" },
+          { number: "По задаче", label: "Время проверки", sub: "Зависит от инструмента и ответа источника" },
         ],
         missionTitle: "Наша миссия",
         missionLead: "Сделать профессиональную веб-аналитику и SEO-диагностику доступной, быстрой и понятной каждому владельцу сайта.",
@@ -100,12 +102,12 @@ export function AboutPage({ locale }: { locale: Locale }) {
         breadcrumbs: { home: "Home", about: "About" },
         eyebrow: "About WebDiag Platform",
         title: "Modern Platform for Comprehensive Website Diagnostics and SEO Auditing",
-        lead: "WebDiag brings together over 140 analytical tools, in-depth technical audits, and intelligent AI scenarios into a single ecosystem for webmasters, SEO professionals, and developers.",
+        lead: `WebDiag brings together ${PUBLIC_CATALOG_TOOL_COUNT} diagnostic tools, including AI workflows, for webmasters, SEO professionals, and developers.`,
         stats: [
-          { number: "140+", label: "Diagnostic tools", sub: "From HTTP headers to Core Web Vitals and AI" },
-          { number: "15", label: "AI workflows", sub: "Fix plans, briefs, and internal linking" },
-          { number: "100%", label: "Data transparency", sub: "No opaque formulas or fabricated metrics" },
-          { number: "< 2.5s", label: "Check speed", sub: "Real-time, instantaneous diagnostics" },
+          { number: String(PUBLIC_CATALOG_TOOL_COUNT), label: "Diagnostic tools", sub: "From HTTP headers to Core Web Vitals and AI" },
+          { number: String(ACTIVE_AI_CATALOG_TOOLS.length), label: "AI workflows", sub: "Fix plans, briefs, and internal linking" },
+          { number: "Data", label: "Diagnostic inputs", sub: "Submitted data and source responses" },
+          { number: "Varies", label: "Check duration", sub: "Depends on the tool and source response" },
         ],
         missionTitle: "Our Mission",
         missionLead: "Making professional web diagnostics and technical SEO accessible, fast, and actionable for every website owner.",
@@ -172,14 +174,12 @@ export function AboutPage({ locale }: { locale: Locale }) {
 
   return (
     <div className="wd-about-page">
-      {/* Breadcrumbs (strictly 12px) */}
       <nav className="shell breadcrumbs wd-about-breadcrumbs" aria-label="Breadcrumbs">
         <Link href={homeHref}>{t.breadcrumbs.home}</Link>
         <span aria-hidden="true">/</span>
         <span aria-current="page">{t.breadcrumbs.about}</span>
       </nav>
 
-      {/* Hero */}
       <section className="wd-about-hero">
         <div className="shell wd-about-hero-inner">
           <span className="wd-eyebrow">{t.eyebrow}</span>
@@ -198,7 +198,6 @@ export function AboutPage({ locale }: { locale: Locale }) {
         </div>
       </section>
 
-      {/* Mission */}
       <section className="wd-about-section wd-about-mission">
         <div className="shell wd-about-mission-grid">
           <div className="wd-about-mission-copy">
@@ -235,7 +234,6 @@ export function AboutPage({ locale }: { locale: Locale }) {
         </div>
       </section>
 
-      {/* Pillars */}
       <section className="wd-about-section wd-about-pillars">
         <div className="shell">
           <div className="wd-about-section-header">
@@ -261,7 +259,6 @@ export function AboutPage({ locale }: { locale: Locale }) {
         </div>
       </section>
 
-      {/* Tech Stack */}
       <section className="wd-about-section wd-about-tech">
         <div className="shell">
           <div className="wd-about-section-header">
@@ -287,7 +284,6 @@ export function AboutPage({ locale }: { locale: Locale }) {
         </div>
       </section>
 
-      {/* CTA & Support Banner */}
       <section className="wd-about-section wd-about-cta-section">
         <div className="shell">
           <div className="wd-about-cta-card">

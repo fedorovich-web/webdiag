@@ -45,6 +45,11 @@ def _normalize_content_page_url(value: str) -> str:
     return parsed._replace(query="", fragment="").geturl()
 
 
+def _normalize_fetch_page_url(value: str) -> str:
+    parsed = urlsplit(_normalize_public_url(value))
+    return parsed._replace(fragment="").geturl()
+
+
 class AuditActionPlanInput(_StrictModel):
     locale: Locale
     project_id: str = Field(
@@ -153,7 +158,7 @@ class ContextContentOptimizerInput(_StrictModel):
     @field_validator("page_url")
     @classmethod
     def normalize_page_url(cls, value: str) -> str:
-        return _normalize_content_page_url(value)
+        return _normalize_fetch_page_url(value)
 
 
 PageType = Literal[
@@ -195,7 +200,7 @@ class ContextSearchIntentPageFitInput(_StrictModel):
     @field_validator("page_url")
     @classmethod
     def normalize_page_url(cls, value: str) -> str:
-        return _normalize_content_page_url(value)
+        return _normalize_fetch_page_url(value)
 
 
 class EvidencePageInput(_StrictModel):
@@ -221,7 +226,7 @@ class ContextEvidencePageInput(_StrictModel):
     @field_validator("page_url")
     @classmethod
     def normalize_page_url(cls, value: str) -> str:
-        return _normalize_content_page_url(value)
+        return _normalize_fetch_page_url(value)
 
 
 class CompetitorGapInput(_StrictModel):
@@ -229,13 +234,6 @@ class CompetitorGapInput(_StrictModel):
     objective: str | None = Field(default=None, min_length=1, max_length=1_000)
     own_page: EvidencePageInput
     competitor_pages: list[EvidencePageInput] = Field(min_length=1, max_length=3)
-
-    @model_validator(mode="after")
-    def reject_duplicate_pages(self):
-        urls = [self.own_page.page_url] + [page.page_url for page in self.competitor_pages]
-        if len(set(urls)) != len(urls):
-            raise ValueError("page URLs must be unique")
-        return self
 
 
 class ExistingLinkInput(_StrictModel):
@@ -250,9 +248,6 @@ class InternalLinkingInput(_StrictModel):
 
     @model_validator(mode="after")
     def validate_inventory(self):
-        urls = [page.page_url for page in self.pages]
-        if len(set(urls)) != len(urls):
-            raise ValueError("page URLs must be unique")
         pairs = [
             (link.source_page_index, link.target_page_index) for link in self.existing_links
         ]

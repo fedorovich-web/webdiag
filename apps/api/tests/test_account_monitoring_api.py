@@ -23,6 +23,7 @@ from webdiag_api.accounts.monitoring_models import (
     MonitorCreateRequest,
     MonitorUpdateRequest,
 )
+from webdiag_api.accounts.monitoring_notifications import notification_event
 from webdiag_api.accounts.monitoring_service import MonitoringService, MonitoringServiceError
 from webdiag_api.accounts.monitoring_storage import (
     MonitorProjectInactiveError,
@@ -1251,3 +1252,100 @@ def test_monitor_timezone_requires_an_available_iana_zone() -> None:
         MonitorCreateRequest(timezone="Europe/Not_A_Zone")
     with pytest.raises(ValidationError):
         MonitorUpdateRequest(timezone="Europe/Not_A_Zone")
+
+
+@pytest.mark.parametrize(
+    ("recovered_score", "expected_status", "expected_delta"),
+    [(75, "changed", -15), (90, "passed", 0)],
+)
+def test_failed_history_retention_preserves_the_last_successful_baseline(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    recovered_score: int,
+    expected_status: str,
+    expected_delta: int,
+) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    user_id, project_id, monitoring, store, audit = create_stored_monitor(database)
+    monkeypatch.setattr(monitoring_storage_module, "MAX_MONITOR_RUNS", 3)
+    monitoring.run_monitor(user_id=user_id, project_id=project_id)
+    failing = MonitoringService(
+        store,
+        workspace_store=SqliteWorkspaceStore(str(database)),
+        audit_service=FailedAuditService(),
+    )
+    for _ in range(3):
+        assert failing.run_monitor(user_id=user_id, project_id=project_id).run.status == "failed"
+
+    audit.score = recovered_score
+    recovered = monitoring.run_monitor(user_id=user_id, project_id=project_id)
+
+    assert recovered.run.status == expected_status
+    assert recovered.run.change.previous_score == 90
+    assert recovered.run.change.score_delta == expected_delta
+    event = notification_event(recovered.run)
+    assert (event is not None) is (expected_status == "changed")
+    history = monitoring.get_history(user_id=user_id, project_id=project_id)
+    assert len(history.runs) == 3
+    with sqlite3.connect(database) as connection:
+        count = connection.execute(
+            "SELECT count(*) FROM account_workspace_monitor_runs"
+        ).fetchone()[0]
+    assert count == 3
+
+
+@pytest.mark.parametrize("operation", ["get", "history", "list"])
+def test_archived_project_monitor_is_hidden_from_active_monitoring(
+    tmp_path: Path,
+    operation: str,
+) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    user_id, project_id, monitoring, _, _ = create_stored_monitor(database)
+    assert (
+        SqliteWorkspaceStore(str(database)).archive_project(
+            user_id=user_id,
+            project_id=project_id,
+        )
+        is not None
+    )
+
+    if operation == "list":
+        assert monitoring.list_monitors(user_id=user_id).monitors == ()
+    else:
+        with pytest.raises(MonitoringServiceError) as failure:
+            if operation == "get":
+                monitoring.get_monitor(user_id=user_id, project_id=project_id)
+            else:
+                monitoring.get_history(user_id=user_id, project_id=project_id)
+        assert failure.value.status_code == 404
+
+
+@pytest.mark.parametrize(
+    "request_update",
+    [
+        MonitorUpdateRequest(),
+        MonitorUpdateRequest(cadence="daily"),
+        MonitorUpdateRequest(timezone="UTC"),
+        MonitorUpdateRequest(enabled=True),
+    ],
+)
+def test_unchanged_monitor_update_preserves_an_active_run(
+    tmp_path: Path,
+    request_update: MonitorUpdateRequest,
+) -> None:
+    database = tmp_path / "accounts.sqlite3"
+    user_id, project_id, monitoring, store, _ = create_stored_monitor(database)
+    claimed = store.claim_manual(user_id=user_id, project_id=project_id)
+    assert claimed is not None
+
+    updated = monitoring.update_monitor(
+        user_id=user_id,
+        project_id=project_id,
+        request=request_update,
+    )
+
+    assert updated.status == "running"
+    assert updated.next_run_at is not None
+    assert int(updated.next_run_at.timestamp()) == claimed.next_run_at
+    completed = save_passed_run(store, claimed)
+    assert completed.status == "passed"

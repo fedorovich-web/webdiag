@@ -10,7 +10,7 @@ describe("account crawler public entry", () => {
   it("describes one bounded project crawl instead of separate or complete scans", () => {
     for (const slug of ["whole-site-audit", "duplicate-meta-checker", "orphan-page-finder"] as const) {
       const copy = getAccountCrawlerEntryCopy(slug, "en");
-      expect(copy.limit).toContain("25 HTML pages");
+      expect(copy.limit).toContain("server limits");
       expect(copy.limit).toContain("does not execute JavaScript");
       expect(copy.limit).toContain("does not prove complete site coverage");
     }

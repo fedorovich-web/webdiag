@@ -4,13 +4,15 @@ import time
 from collections import defaultdict, deque
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from html.parser import HTMLParser
-from urllib.parse import urljoin, urlsplit, urlunsplit
+from hashlib import sha256
+from urllib.parse import urlsplit, urlunsplit
 from uuid import UUID
 from xml.etree import ElementTree
 
 from webdiag_api.audit.fetcher import SafeFetchError, SafeFetchResult, SafeHttpFetcher
 from webdiag_api.audit.html_metadata import parse_html_metadata
+from webdiag_api.audit.html_parser import TemplateAwareHTMLParser
+from webdiag_api.audit.html_resources import bounded_text, document_base_url, resolve_html_reference
 from webdiag_api.audit.models import (
     AuditIssue,
     AuditTarget,
@@ -60,18 +62,30 @@ class CrawlConfig:
             raise ValueError("crawl deadline must be between 10 and 240 seconds")
 
 
-class _LinkParser(HTMLParser):
+class _LinkParser(TemplateAwareHTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
         self.hrefs: list[str] = []
+        self.truncated = False
+        self.template_depth = 0
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-        if tag.lower() != "a" or len(self.hrefs) >= MAX_DISCOVERED_LINKS_PER_PAGE:
+        tag = tag.lower()
+        if tag == "template":
+            self.template_depth += 1
+        if self.template_depth or tag != "a":
             return
         for key, value in attrs:
-            if key.lower() == "href" and value:
-                self.hrefs.append(value)
+            if key.lower() == "href":
+                if len(self.hrefs) >= MAX_DISCOVERED_LINKS_PER_PAGE:
+                    self.truncated = True
+                    return
+                self.hrefs.append(value or "")
                 return
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag.lower() == "template" and self.template_depth:
+            self.template_depth -= 1
 
 
 def crawl_origin(
@@ -100,6 +114,8 @@ def crawl_origin(
         )
         robots_body = robots.body_text
         robots_status = robots.status_code
+        if robots_status >= 500:
+            raise CrawlExecutionError("crawl_robots_unavailable")
         root_policy = analyze_robots_txt(
             robots_body,
             robots_url=robots_url,
@@ -110,14 +126,21 @@ def crawl_origin(
         if root_policy.allows_target is False:
             raise CrawlExecutionError("crawl_root_disallowed")
     except (SafeFetchError, UrlPolicyError):
-        robots_body = ""
-        robots_status = None
+        raise CrawlExecutionError("crawl_robots_unavailable") from None
 
+    declared_sitemaps = frozenset(sitemap_candidates)
+    excluded_query_urls: set[str] = set()
     sitemap_candidates.append(f"{normalized_origin}/sitemap.xml")
     sitemap_url, sitemap_urls, sitemap_count, sitemap_complete = _load_sitemap(
         sitemap_candidates,
         origin=normalized_origin,
         fetcher=fetcher,
+        declared_sitemaps=declared_sitemaps,
+        excluded_query_urls=excluded_query_urls,
+        deadline=started + config.deadline_seconds,
+        monotonic=monotonic,
+        robots_body=robots_body,
+        robots_status=robots_status,
     )
 
     queue: deque[str] = deque((f"{normalized_origin}/",))
@@ -128,9 +151,12 @@ def crawl_origin(
     discovered = set(queue)
     discovery_budget_exhausted = False
     visited: set[str] = set()
+    audited_urls: set[str] = set()
     pages: list[AuditedCrawlPage] = []
     failures: list[CrawlPageFailure] = []
     issue_urls: dict[str, tuple[AuditIssue, list[str]]] = {}
+    title_values: dict[bytes, tuple[str, list[str]]] = {}
+    description_values: dict[bytes, tuple[str, list[str]]] = {}
 
     while (queue or sitemap_queue) and len(pages) + len(failures) < config.page_limit:
         if monotonic() - started >= config.deadline_seconds:
@@ -180,12 +206,22 @@ def crawl_origin(
         final_url = _same_origin_url(response.final_url, normalized_origin)
         if final_url is None:
             raise CrawlExecutionError("crawl_origin_changed")
+        if url in discovered:
+            discovered.add(final_url)
+        if final_url in audited_urls:
+            continue
+        visited.add(final_url)
+        audited_urls.add(final_url)
         metadata = parse_html_metadata(response.body_text)
-        internal_links = _internal_links(
+        _record_metadata_value(title_values, metadata.title, final_url, limit=300)
+        _record_metadata_value(description_values, metadata.meta_description, final_url, limit=500)
+        internal_links, links_truncated = _internal_links(
             response.body_text,
-            base_url=final_url,
+            base_url=document_base_url(metadata, final_url),
             origin=normalized_origin,
+            excluded_query_urls=excluded_query_urls,
         )
+        discovery_budget_exhausted |= links_truncated
         for link in internal_links:
             if link not in discovered:
                 if len(discovered) >= MAX_DISCOVERED_URLS:
@@ -206,8 +242,11 @@ def crawl_origin(
             AuditedCrawlPage(
                 url=final_url,
                 status_code=response.status_code,
-                title=metadata.title,
-                meta_description=metadata.meta_description,
+                title=bounded_text(metadata.title, 300) if metadata.title is not None else None,
+                meta_description=(
+                    bounded_text(metadata.meta_description, 500)
+                    if metadata.meta_description is not None else None
+                ),
                 internal_links=internal_links[:MAX_REPORTED_INTERNAL_LINKS_PER_PAGE],
                 audit_score=page_score,
                 issue_count=len(page_issues),
@@ -215,19 +254,27 @@ def crawl_origin(
             )
         )
 
+    if not pages:
+        raise CrawlExecutionError("crawl_deadline_exceeded")
     root_url = f"{normalized_origin}/"
     page_budget_exhausted = (
         discovery_budget_exhausted
-        or bool(queue)
+        or any(url not in visited for url in queue)
         or any(url not in visited for url in sitemap_queue)
     )
     orphan_urls = (
         ()
-        if page_budget_exhausted or not sitemap_complete
+        if (
+            page_budget_exhausted
+            or not sitemap_complete
+            or failures
+            or excluded_query_urls
+            or any(not 200 <= page.status_code < 300 for page in pages)
+        )
         else tuple(sorted((set(sitemap_urls) - discovered) - {root_url}))[:100]
     )
-    duplicate_titles = _duplicate_groups(pages, "title")
-    duplicate_descriptions = _duplicate_groups(pages, "meta_description")
+    duplicate_titles = _duplicate_groups(title_values)
+    duplicate_descriptions = _duplicate_groups(description_values)
     issues = _site_issues(
         issue_urls,
         failures=failures,
@@ -244,6 +291,7 @@ def crawl_origin(
         sitemap_url=sitemap_url,
         sitemap_url_count=sitemap_count,
         sitemap_complete=sitemap_complete,
+        excluded_query_url_count=len(excluded_query_urls),
         duplicate_titles=duplicate_titles,
         duplicate_descriptions=duplicate_descriptions,
         orphan_urls=orphan_urls,
@@ -260,12 +308,14 @@ def _origin(raw_origin: str) -> str:
     return urlunsplit((parsed.scheme, parsed.netloc, "", "", ""))
 
 
-def _same_origin_url(raw_url: str, origin: str) -> str | None:
+def _same_origin_url(
+    raw_url: str, origin: str, *, excluded_query_urls: set[str] | None = None
+) -> str | None:
     if len(raw_url) > 2_048 or any(ord(character) < 0x20 for character in raw_url):
         return None
     try:
         parsed = urlsplit(raw_url)
-        sanitized = urlunsplit((parsed.scheme, parsed.netloc, parsed.path or "/", "", ""))
+        sanitized = urlunsplit((parsed.scheme, parsed.netloc, parsed.path or "/", parsed.query, ""))
         validated = validate_url(sanitized)
         target = urlsplit(origin)
         value = urlsplit(validated.normalized)
@@ -273,21 +323,30 @@ def _same_origin_url(raw_url: str, origin: str) -> str | None:
         return None
     if (value.scheme, value.netloc) != (target.scheme, target.netloc):
         return None
+    if value.query:
+        if excluded_query_urls is not None:
+            excluded_query_urls.add(validated.normalized)
+        return None
     return urlunsplit((value.scheme, value.netloc, value.path or "/", "", ""))
 
 
-def _internal_links(body: str, *, base_url: str, origin: str) -> tuple[str, ...]:
+def _internal_links(
+    body: str, *, base_url: str, origin: str, excluded_query_urls: set[str]
+) -> tuple[tuple[str, ...], bool]:
     parser = _LinkParser()
     parser.feed(body)
     parser.close()
     output: list[str] = []
     seen: set[str] = set()
     for href in parser.hrefs:
-        url = _same_origin_url(urljoin(base_url, href), origin)
+        url = _same_origin_url(
+            resolve_html_reference(href, base_url), origin,
+            excluded_query_urls=excluded_query_urls,
+        )
         if url is not None and url not in seen:
             seen.add(url)
             output.append(url)
-    return tuple(output)
+    return tuple(output), parser.truncated
 
 
 def _robots_allows(
@@ -317,6 +376,8 @@ def _require_robots_allowed(
     robots_url: str,
     robots_status: int | None,
 ) -> None:
+    if urlsplit(url).query:
+        raise UrlPolicyError("Query URLs are excluded from the site audit.")
     if not _robots_allows(
         url,
         robots_body=robots_body,
@@ -331,22 +392,33 @@ def _load_sitemap(
     *,
     origin: str,
     fetcher: SafeHttpFetcher,
+    declared_sitemaps: frozenset[str],
+    excluded_query_urls: set[str],
+    deadline: float,
+    monotonic: Callable[[], float],
+    robots_body: str,
+    robots_status: int | None,
 ) -> tuple[str | None, tuple[str, ...], int, bool]:
     queue: deque[tuple[str, bool]] = deque()
     queued: set[str] = set()
+    complete = True
     for raw_url in candidates:
-        sitemap_url = _same_origin_url(raw_url, origin)
+        sitemap_url = _same_origin_url(raw_url, origin, excluded_query_urls=excluded_query_urls)
+        if sitemap_url is None and raw_url in declared_sitemaps:
+            complete = False
         if sitemap_url is not None and sitemap_url not in queued:
-            queue.append((sitemap_url, True))
+            queue.append((sitemap_url, raw_url not in declared_sitemaps))
             queued.add(sitemap_url)
 
     visited: set[str] = set()
     page_urls: list[str] = []
     page_url_set: set[str] = set()
     primary_sitemap_url: str | None = None
-    complete = True
     while queue:
-        sitemap_url, is_root_candidate = queue.popleft()
+        if monotonic() >= deadline:
+            complete = False
+            break
+        sitemap_url, is_optional = queue.popleft()
         if sitemap_url in visited:
             continue
         if len(visited) >= MAX_SITEMAP_FILES:
@@ -354,37 +426,52 @@ def _load_sitemap(
             break
         visited.add(sitemap_url)
         try:
-            response = fetcher.fetch(sitemap_url, allowed_origin=origin)
+            _require_robots_allowed(
+                sitemap_url, robots_body=robots_body,
+                robots_url=f"{origin}/robots.txt", robots_status=robots_status,
+            )
+            response = fetcher.fetch(
+                sitemap_url,
+                allowed_origin=origin,
+                redirect_validator=lambda url: _require_robots_allowed(
+                    url, robots_body=robots_body,
+                    robots_url=f"{origin}/robots.txt", robots_status=robots_status,
+                ),
+            )
         except (SafeFetchError, UrlPolicyError):
-            if not is_root_candidate:
+            if not is_optional:
                 complete = False
             continue
-        summary = parse_sitemap_xml(
-            response.body_text,
-            sitemap_url=sitemap_url,
-            target_url=f"{origin}/",
-            status_code=response.status_code,
-        )
+        try:
+            summary = parse_sitemap_xml(
+                response.body_text,
+                sitemap_url=sitemap_url,
+                target_url=f"{origin}/",
+                status_code=response.status_code,
+            )
+        except ValueError:
+            complete = False
+            continue
         if not summary.available or not summary.valid_xml:
-            if not is_root_candidate:
+            if not is_optional:
                 complete = False
             continue
         try:
             root = ElementTree.fromstring(response.body_text.encode("utf-8"))
         except ElementTree.ParseError:
-            if not is_root_candidate:
+            if not is_optional:
                 complete = False
             continue
         kind = root.tag.rsplit("}", maxsplit=1)[-1]
         if kind not in {"urlset", "sitemapindex"}:
-            if not is_root_candidate:
+            if not is_optional:
                 complete = False
             continue
         if primary_sitemap_url is None:
             primary_sitemap_url = sitemap_url
         if kind == "sitemapindex":
             for raw_child in summary.loc_urls:
-                child = _same_origin_url(raw_child, origin)
+                child = _same_origin_url(raw_child, origin, excluded_query_urls=excluded_query_urls)
                 if child is None:
                     complete = False
                     continue
@@ -397,7 +484,11 @@ def _load_sitemap(
                 queued.add(child)
             continue
         for raw_page_url in summary.loc_urls:
-            page_url = _same_origin_url(raw_page_url, origin)
+            page_url = _same_origin_url(
+                raw_page_url, origin, excluded_query_urls=excluded_query_urls
+            )
+            if page_url is None and urlsplit(raw_page_url).query:
+                complete = False
             if page_url is None or page_url in page_url_set:
                 continue
             if len(page_urls) >= MAX_SITEMAP_URLS:
@@ -415,18 +506,24 @@ def _is_html(content_type: str | None) -> bool:
     return value in {"text/html", "application/xhtml+xml"}
 
 
+def _record_metadata_value(
+    grouped: dict[bytes, tuple[str, list[str]]], value: str | None, url: str, *, limit: int,
+) -> None:
+    if not value:
+        return
+    key = sha256(value.casefold().encode("utf-8")).digest()
+    if key not in grouped:
+        grouped[key] = (bounded_text(value, limit), [])
+    grouped[key][1].append(url)
+
+
 def _duplicate_groups(
-    pages: Sequence[AuditedCrawlPage], field: str
+    grouped: dict[bytes, tuple[str, list[str]]],
 ) -> tuple[CrawlDuplicateGroup, ...]:
-    grouped: dict[str, list[tuple[str, str]]] = defaultdict(list)
-    for page in pages:
-        value = getattr(page, field)
-        if value:
-            grouped[value.casefold()].append((value, page.url))
     return tuple(
-        CrawlDuplicateGroup(value=rows[0][0], urls=tuple(url for _value, url in rows))
-        for _key, rows in sorted(grouped.items())
-        if len(rows) > 1
+        CrawlDuplicateGroup(value=value, urls=tuple(urls))
+        for value, urls in sorted(grouped.values(), key=lambda item: item[0].casefold())
+        if len(urls) > 1
     )[:25]
 
 

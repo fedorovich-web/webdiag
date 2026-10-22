@@ -265,6 +265,7 @@ class MonitoringService:
         return MonitoringServiceError(404, "account_project_not_found", "Project not found.")
 
     def _owned_monitor(self, *, user_id: str, project_id: str) -> StoredMonitor:
+        self._owned_project(user_id=user_id, project_id=project_id)
         monitor = self._store.get_monitor(user_id=user_id, project_id=project_id)
         if monitor is None:
             raise MonitoringServiceError(404, "account_monitor_not_found", "Monitor not found.")

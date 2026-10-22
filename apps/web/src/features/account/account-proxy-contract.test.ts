@@ -63,13 +63,10 @@ describe("account proxy contract", () => {
 
   it("formats Set-Cookie with or without Secure flag depending on HTTPS connection", () => {
     const raw = "webdiag_session=token; Path=/; Max-Age=2592000; Secure; HttpOnly; SameSite=lax";
-    // Over HTTP, Secure flag is stripped so browsers do not reject it
     expect(formatAccountSetCookie(raw, false)).toBe(
       "webdiag_session=token; Path=/; Max-Age=2592000; HttpOnly; SameSite=lax",
     );
-    // Over HTTPS, Secure flag is preserved
     expect(formatAccountSetCookie(raw, true)).toContain("Secure");
-    // Over HTTPS without Secure in raw, Secure is added
     const rawNoSec = "webdiag_session=token; Path=/; HttpOnly";
     expect(formatAccountSetCookie(rawNoSec, true)).toBe("webdiag_session=token; Path=/; HttpOnly; Secure");
   });

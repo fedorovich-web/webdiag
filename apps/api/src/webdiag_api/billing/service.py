@@ -113,7 +113,6 @@ class BillingService:
             raise BillingServiceError(
                 503, "billing_not_configured", "Payment service is not configured."
             )
-        # Redirects never trust client headers or a buyer-supplied destination.
         return_base = settings.account_public_origin.rstrip("/")
         return_path = "/en/account/checkout" if pack.currency == "USD" else "/account/checkout"
         if request.return_url and request.return_url.rstrip("/") != return_base:
