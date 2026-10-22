@@ -36,8 +36,8 @@ export const cssDesignToolPages = [
       { ru: "При равной частоте цвета сортируются по HEX для стабильного результата.", en: "Equal-frequency colors are sorted by HEX for stable output." },
     ],
     faq: [
-      { question: { ru: "Файл загружается на сервер?", en: "Is the file uploaded?" }, answer: { ru: "Нет. Декодирование, Canvas-выборка и quantization выполняются в браузере.", en: "No. Decoding, Canvas sampling, and quantization run in the browser." } },
-      { question: { ru: "Палитра содержит все цвета изображения?", en: "Does the palette contain every image color?" }, answer: { ru: "Нет. Это ограниченная палитра уменьшенной выборки; мелкие детали могут не попасть в результат.", en: "No. It is a bounded downsampled palette, so small details may be omitted." } },
+      { question: { ru: "Как получить основные цвета фотографии?", en: "How can I extract a photo's main colours?" }, answer: { ru: "Выберите изображение и количество цветов от четырёх до восьми. Инструмент обработает уменьшенную копию в браузере и покажет выбранные цвета с кодами HEX и RGB. Скопируйте нужный код для своего макета.", en: "Choose an image and select four to eight colours. The tool analyses a downsampled copy in the browser and shows selected colours with HEX and RGB codes. Copy the code you need for your design." } },
+      { question: { ru: "Почему небольшой цветной элемент не попал в палитру?", en: "Why is a small coloured detail missing from the palette?" }, answer: { ru: "Палитра показывает ограниченное число цветов из уменьшенной выборки. Небольшие детали и близкие оттенки могут не получить отдельный цвет. Для точного цвета конкретной детали используйте пипетку в редакторе изображения.", en: "The palette contains a limited set of colours from a smaller sample. Small details and similar shades may not appear separately. Use an image editor's colour picker when you need an exact colour from a particular detail." } }
     ],
     relatedToolSlugs: ["color-converter", "color-contrast-checker", "image-optimizer"],
     sourceUrls: ["https://developer.mozilla.org/docs/Web/API/Canvas_API"],
@@ -128,26 +128,8 @@ export const cssDesignToolPages = [
       },
     ],
     faq: [
-      {
-        question: {
-          ru: "Какой коэффициент нужен для обычного текста?",
-          en: "What ratio is required for normal text?",
-        },
-        answer: {
-          ru: "Для уровня AA обычно требуется не менее 4.5:1, а для AAA — 7:1.",
-          en: "Level AA generally requires at least 4.5:1, while AAA requires 7:1.",
-        },
-      },
-      {
-        question: {
-          ru: "Можно проверить прозрачный цвет?",
-          en: "Can it check transparent colors?",
-        },
-        answer: {
-          ru: "Нет. Нужно указать итоговые непрозрачные HEX-цвета текста и фона.",
-          en: "No. Enter the final opaque HEX colors for text and background.",
-        },
-      },
+      { question: { ru: "Как проверить, хорошо ли читается текст на фоне?", en: "How can I check whether text is readable on its background?" }, answer: { ru: "Укажите конечные непрозрачные цвета текста и фона в формате HEX. Инструмент рассчитает их контраст. Для обычного текста порог уровня WCAG AA — 4,5:1; оценивать нужно именно ту пару цветов, которая используется на странице.", en: "Enter the final opaque text and background colours in HEX format. The tool calculates their contrast. The WCAG AA threshold for normal text is 4.5:1; check the actual colour pair used on your page." } },
+      { question: { ru: "Достаточно ли подходящего контраста для доступной страницы?", en: "Does sufficient contrast make a page accessible?" }, answer: { ru: "Контраст — одна из проверок доступности. Дополнительно проверьте размер текста, увеличение страницы, видимость фокуса и работу с клавиатуры. Инструмент оценивает введённые цвета, а не весь интерфейс сайта.", en: "Contrast is one accessibility check. Also assess text size, page zoom, visible focus, and keyboard use. This tool evaluates the entered colours, not your site's entire interface." } }
     ],
     relatedToolSlugs: [
       "px-rem-converter",
@@ -235,26 +217,8 @@ export const cssDesignToolPages = [
       },
     ],
     faq: [
-      {
-        question: {
-          ru: "Почему 16 px часто равно 1rem?",
-          en: "Why is 16 px often equal to 1rem?",
-        },
-        answer: {
-          ru: "Во многих браузерах 16 px — стандартный root font size, если сайт или пользователь его не изменили.",
-          en: "Many browsers use 16 px as the default root font size unless the site or user changes it.",
-        },
-      },
-      {
-        question: {
-          ru: "Чем rem отличается от em?",
-          en: "How does rem differ from em?",
-        },
-        answer: {
-          ru: "rem зависит от корневого размера шрифта, а em обычно зависит от font-size текущего или родительского контекста.",
-          en: "rem is based on the root font size, while em usually depends on the current or parent font-size context.",
-        },
-      },
+      { question: { ru: "Как правильно перевести пиксели в rem?", en: "How do I convert pixels to rem correctly?" }, answer: { ru: "Укажите размер в пикселях и базовый размер шрифта вашего сайта. Например, при базе 16 px размер 24 px равен 1,5 rem. Если база отличается, результат тоже изменится.", en: "Enter the pixel size and your site's root font size. For example, with a 16 px base, 24 px equals 1.5 rem. A different base produces a different result." } },
+      { question: { ru: "Почему рассчитанный размер на сайте выглядит иначе?", en: "Why does the calculated size look different on my site?" }, answer: { ru: "Проверьте размер шрифта корневого элемента страницы и настройки браузера. Единица rem зависит от корневого размера, а em — от размера шрифта в соответствующем месте страницы. Калькулятор использует введённую вами базу и не читает стили сайта.", en: "Check the page's root font size and browser settings. rem depends on the root font size, while em depends on the relevant font-size context. The calculator uses the base you enter; it does not read your site's styles." } }
     ],
     relatedToolSlugs: [
       "color-contrast-checker",
@@ -348,26 +312,8 @@ export const cssDesignToolPages = [
       },
     ],
     faq: [
-      {
-        question: {
-          ru: "Почему вход только HEX?",
-          en: "Why is input HEX only?",
-        },
-        answer: {
-          ru: "Так инструмент остаётся детерминированным и безопасным для быстрого token conversion.",
-          en: "This keeps the tool deterministic and safe for quick token conversion.",
-        },
-      },
-      {
-        question: {
-          ru: "Это заменяет contrast checker?",
-          en: "Does this replace the contrast checker?",
-        },
-        answer: {
-          ru: "Нет. Для проверки доступности пары цветов используйте отдельный инструмент контраста.",
-          en: "No. Use the dedicated contrast tool to evaluate an accessible color pair.",
-        },
-      },
+      { question: { ru: "Как получить RGB и HSL из HEX-цвета?", en: "How do I get RGB and HSL from a HEX colour?" }, answer: { ru: "Введите цвет в поддерживаемом HEX-формате, например #336699. Инструмент покажет его представления в других форматах. Скопируйте нужное значение в редактор или стили сайта.", en: "Enter a supported HEX colour, such as #336699. The tool shows its representations in other formats. Copy the value you need into your editor or stylesheet." } },
+      { question: { ru: "Изменится ли цвет при преобразовании формата?", en: "Will converting formats change the colour?" }, answer: { ru: "Форматы описывают один цвет разными способами; преобразование не подбирает новую палитру. Округление чисел может слегка менять точность записи. Для проверки читаемости текста используйте отдельную проверку контраста.", en: "The formats describe the same colour in different ways; conversion does not choose a new palette. Numeric rounding may affect representation precision slightly. Use the contrast checker to assess text readability." } }
     ],
     relatedToolSlugs: [
       "color-contrast-checker",
@@ -462,26 +408,8 @@ export const cssDesignToolPages = [
       },
     ],
     faq: [
-      {
-        question: {
-          ru: "Почему !important не входит в score?",
-          en: "Why is !important not in the score?",
-        },
-        answer: {
-          ru: "!important относится к cascade resolution, а не к числу specificity selector.",
-          en: "!important belongs to cascade resolution, not to the selector specificity number.",
-        },
-      },
-      {
-        question: {
-          ru: "Можно анализировать весь CSS-файл?",
-          en: "Can it analyze a whole CSS file?",
-        },
-        answer: {
-          ru: "Нет. Инструмент считает явно вставленные selectors, без stylesheet parsing.",
-          en: "No. The tool calculates explicitly pasted selectors without stylesheet parsing.",
-        },
-      },
+      { question: { ru: "Как понять, почему одно CSS-правило перекрывает другое?", en: "How can I understand why one CSS rule overrides another?" }, answer: { ru: "Вставьте селекторы и сравните их специфичность — приоритет, который зависит от состава селектора. Учитывайте и другие правила CSS: порядок подключения, слои и !important. Самого числа специфичности недостаточно для объяснения любого конфликта.", en: "Paste the selectors and compare their specificity, a priority determined by selector structure. Also consider stylesheet order, cascade layers, and !important. Specificity alone cannot explain every conflict." } },
+      { question: { ru: "Нужно ли вставлять весь файл стилей?", en: "Should I paste an entire stylesheet?" }, answer: { ru: "Введите нужные селекторы, а не полный CSS-файл. Калькулятор разбирает их приоритет, но не загружает страницу и не определяет фактически применённый стиль элемента. Такой стиль можно посмотреть в инструментах разработчика браузера.", en: "Enter the selectors you want to compare rather than a complete CSS file. The calculator analyses their priority but does not load a page or determine an element's applied style. Inspect applied styles in your browser's developer tools." } }
     ],
     relatedToolSlugs: [
       "color-converter",
@@ -578,20 +506,8 @@ export const cssDesignToolPages = [
       },
     ],
     faq: [
-      {
-        question: { ru: "Как выбрать ratio?", en: "How do I choose a ratio?" },
-        answer: {
-          ru: "Начните с 1.2–1.333 для интерфейсов и проверьте результат в реальном layout.",
-          en: "Start with 1.2–1.333 for interfaces and review the result in the actual layout.",
-        },
-      },
-      {
-        question: { ru: "Почему нет line-height?", en: "Why no line-height?" },
-        answer: {
-          ru: "Line-height зависит от шрифта, длины строк и компонента; здесь генерируются только font-size tokens.",
-          en: "Line-height depends on the font, line length, and component; this tool generates font-size tokens only.",
-        },
-      },
+      { question: { ru: "Как подобрать размеры заголовков и основного текста?", en: "How can I choose sizes for headings and body text?" }, answer: { ru: "Укажите базовый размер и коэффициент изменения. Генератор рассчитает последовательность размеров, которую можно использовать в стилях. Сравните её на реальных заголовках и абзацах: один коэффициент не подходит всем интерфейсам.", en: "Enter a base size and scale ratio. The generator calculates a sequence of sizes for your styles. Try it with real headings and paragraphs; one ratio will not suit every interface." } },
+      { question: { ru: "Генератор подберёт шрифт и расстояние между строками?", en: "Will the generator choose a font and line spacing?" }, answer: { ru: "Он рассчитывает размеры текста. Семейство шрифта, насыщенность и межстрочный интервал нужно выбрать отдельно. После применения проверьте длинные заголовки и текст на узком экране.", en: "It calculates font sizes. Choose the font family, weight, and line height separately. After applying the sizes, check long headings and text on a narrow screen." } }
     ],
     relatedToolSlugs: [
       "px-rem-converter",
@@ -683,23 +599,8 @@ export const cssDesignToolPages = [
       },
     ],
     faq: [
-      {
-        question: {
-          ru: "Можно добавить больше двух цветов?",
-          en: "Can I add more than two colors?",
-        },
-        answer: {
-          ru: "В этом batch — нет. Инструмент намеренно ограничен двумя stop-позициями, чтобы не превращаться в визуальный редактор.",
-          en: "Not in this batch. The tool is intentionally limited to two stops so it does not become a visual editor.",
-        },
-      },
-      {
-        question: { ru: "Почему только HEX?", en: "Why HEX only?" },
-        answer: {
-          ru: "HEX проще валидировать безопасно и достаточно для быстрого design-token workflow.",
-          en: "HEX is straightforward to validate safely and is enough for a quick design-token workflow.",
-        },
-      },
+      { question: { ru: "Как сделать градиент и перенести его на сайт?", en: "How do I create a gradient and use it on my site?" }, answer: { ru: "Выберите два цвета, тип градиента и доступные настройки направления и положения. Сравните предпросмотр и скопируйте полученное CSS-значение в стили нужного элемента.", en: "Choose two colours, a gradient type, and the available direction and position settings. Check the preview and copy the CSS value into the relevant element's styles." } },
+      { question: { ru: "Можно ли добавить третий цвет?", en: "Can I add a third colour?" }, answer: { ru: "В этом генераторе используются два цвета. Для более сложного перехода отредактируйте скопированный CSS самостоятельно и проверьте его в браузере. Предпросмотр здесь показывает только заданную пару цветов.", en: "This generator uses two colours. Edit the copied CSS yourself for a more complex transition and test it in a browser. The preview here shows only the selected colour pair." } }
     ],
     relatedToolSlugs: [
       "color-contrast-checker",
@@ -793,26 +694,8 @@ export const cssDesignToolPages = [
       },
     ],
     faq: [
-      {
-        question: {
-          ru: "Можно сделать несколько теней?",
-          en: "Can it create multiple shadows?",
-        },
-        answer: {
-          ru: "Нет. Текущая версия генерирует одну тень для предсказуемого token workflow.",
-          en: "No. The current version generates one shadow for a predictable token workflow.",
-        },
-      },
-      {
-        question: {
-          ru: "Почему цвет вводится в HEX?",
-          en: "Why is the color entered as HEX?",
-        },
-        answer: {
-          ru: "HEX удобно валидировать, а opacity затем добавляется отдельно в rgba output.",
-          en: "HEX is easy to validate, and opacity is added separately in the rgba output.",
-        },
-      },
+      { question: { ru: "Как настроить мягкую тень блока?", en: "How can I create a soft box shadow?" }, answer: { ru: "Задайте смещение, размытие, размер, цвет и прозрачность тени. Смотрите на предпросмотр, затем скопируйте CSS для своего элемента. На реальном фоне сайта результат может выглядеть иначе.", en: "Adjust the offset, blur, spread, colour, and opacity. Check the preview, then copy the CSS for your element. The result may look different against your site's actual background." } },
+      { question: { ru: "Можно ли получить несколько теней для одного элемента?", en: "Can I create several shadows for one element?" }, answer: { ru: "Форма создаёт одну тень. Если нужны несколько, добавьте другие значения в CSS через запятую после копирования. Проверяйте итоговый вид на странице, где будет применена тень.", en: "The form generates one shadow. If you need several, add more comma-separated values to the copied CSS. Check the final appearance on the page where the shadow will be used." } }
     ],
     relatedToolSlugs: [
       "gradient-generator",
@@ -907,23 +790,8 @@ export const cssDesignToolPages = [
       },
     ],
     faq: [
-      {
-        question: {
-          ru: "Можно использовать проценты?",
-          en: "Can I use percentages?",
-        },
-        answer: {
-          ru: "Нет. В этой версии поддерживаются только px-значения для стабильного preview и простого shorthand.",
-          en: "No. This version supports only px values for a stable preview and simple shorthand.",
-        },
-      },
-      {
-        question: { ru: "Почему порядок именно такой?", en: "Why this order?" },
-        answer: {
-          ru: "Это стандартный CSS shorthand порядок: top-left, top-right, bottom-right, bottom-left.",
-          en: "It is the standard CSS shorthand order: top-left, top-right, bottom-right, bottom-left.",
-        },
-      },
+      { question: { ru: "Как сделать разное скругление у каждого угла?", en: "How do I give each corner a different radius?" }, answer: { ru: "Укажите значение в пикселях для каждого угла. Предпросмотр поможет сравнить форму, а результат можно скопировать в CSS. Порядок значений: левый верхний, правый верхний, правый нижний и левый нижний угол.", en: "Enter a pixel value for each corner. Compare the shape in the preview and copy the result into CSS. Values run from top-left to top-right, bottom-right, and bottom-left." } },
+      { question: { ru: "Можно ли сделать скругление в процентах?", en: "Can I use percentage corner radii?" }, answer: { ru: "Поля этого генератора принимают значения в пикселях. Если нужны проценты, измените единицы в полученном CSS самостоятельно. Затем проверьте форму на элементах разного размера.", en: "This generator's fields accept pixel values. Change the units in the generated CSS yourself if you need percentages, then test the shape on elements of different sizes." } }
     ],
     relatedToolSlugs: [
       "box-shadow-generator",
@@ -1015,26 +883,8 @@ export const cssDesignToolPages = [
       },
     ],
     faq: [
-      {
-        question: {
-          ru: "Почему найденный section не всегда region?",
-          en: "Why is a section not always a region?",
-        },
-        answer: {
-          ru: "В анализе section считается region candidate только при найденном доступном имени.",
-          en: "The analyzer treats section as a region candidate only when an accessible name is found.",
-        },
-      },
-      {
-        question: {
-          ru: "PASS означает соответствие WCAG?",
-          en: "Does PASS mean WCAG conformance?",
-        },
-        answer: {
-          ru: "Нет. PASS означает отсутствие выбранных static findings в полученном HTML.",
-          en: "No. PASS means the selected static findings were not detected in the fetched HTML.",
-        },
-      },
+      { question: { ru: "Зачем проверять основные области страницы?", en: "Why check a page's main regions?" }, answer: { ru: "Основная часть, меню, шапка и подвал помогают пользователям вспомогательных программ перемещаться по странице. Инструмент ищет такие области в HTML и отмечает выбранные проблемы их структуры и названий.", en: "Main content, navigation, header, and footer help assistive technology users move around a page. The tool finds these regions in HTML and flags selected structural or naming concerns." } },
+      { question: { ru: "Что делать после получения списка замечаний?", en: "What should I do with the findings?" }, answer: { ru: "Проверьте отмеченные области в шаблоне страницы и передайте список разработчику. После изменений повторите проверку и протестируйте страницу с клавиатуры и программой экранного доступа. Разбор HTML не заменяет такую проверку в браузере.", en: "Review the flagged regions in your page template and share the list with a developer. After changing it, rerun the check and test keyboard and screen reader use. HTML inspection does not replace those browser checks." } }
     ],
     relatedToolSlugs: [
       "form-accessibility-analyzer",
@@ -1129,26 +979,8 @@ export const cssDesignToolPages = [
       },
     ],
     faq: [
-      {
-        question: {
-          ru: "Placeholder считается label?",
-          en: "Does placeholder count as a label?",
-        },
-        answer: {
-          ru: "Нет. Инструмент показывает placeholder-only controls как отдельный риск для ручной проверки.",
-          en: "No. The tool reports placeholder-only controls as a separate review risk.",
-        },
-      },
-      {
-        question: {
-          ru: "Проверяется отправка формы?",
-          en: "Does it submit the form?",
-        },
-        answer: {
-          ru: "Нет. Выполняется только bounded static analysis исходного HTML.",
-          en: "No. Only bounded static analysis of source HTML is performed.",
-        },
-      },
+      { question: { ru: "Почему подсказки внутри поля недостаточно вместо подписи?", en: "Why is an in-field placeholder not enough as a label?" }, answer: { ru: "Подсказка исчезает при вводе и не всегда даёт полю надёжное название для вспомогательных программ. У поля должна быть понятная подпись. Инструмент помогает найти поля, для которых в HTML обнаружена только подсказка или нет доступного имени.", en: "A placeholder disappears when typing and does not always provide a reliable accessible name. A field needs a clear label. The tool helps find controls with only a placeholder or no detected accessible name in HTML." } },
+      { question: { ru: "Проверка отправит данные через форму моего сайта?", en: "Will the check submit data through my site's forms?" }, answer: { ru: "Нет. Она разбирает полученный HTML и не заполняет поля, не нажимает кнопки и не отправляет форму. Работу отправки, ошибки ввода и удобство заполнения нужно проверить отдельно.", en: "No. It inspects retrieved HTML without filling controls, clicking buttons, or submitting forms. Test submission, validation errors, and ease of completion separately." } }
     ],
     relatedToolSlugs: [
       "landmark-structure-analyzer",
@@ -1240,26 +1072,8 @@ export const cssDesignToolPages = [
       },
     ],
     faq: [
-      {
-        question: {
-          ru: "Текст внутри SVG считается именем?",
-          en: "Does text inside SVG count as a name?",
-        },
-        answer: {
-          ru: "Может попасть в static text inventory, но итог нужно подтверждать в accessibility tree браузера.",
-          en: "It may appear in the static text inventory, but the final result must be confirmed in the browser accessibility tree.",
-        },
-      },
-      {
-        question: {
-          ru: "Почему title-only отмечается отдельно?",
-          en: "Why is title-only reported separately?",
-        },
-        answer: {
-          ru: "Title не является надёжной заменой видимому тексту или явной ARIA-связи во всех сценариях.",
-          en: "Title is not a reliable replacement for visible text or an explicit ARIA relationship in every scenario.",
-        },
-      },
+      { question: { ru: "Почему кнопке с иконкой нужно понятное название?", en: "Why does an icon button need a clear name?" }, answer: { ru: "По одной иконке программа экранного доступа может не понять назначение кнопки. Инструмент ищет названия ссылок и кнопок в HTML и помогает найти элементы, назначение которых требует проверки.", en: "A screen reader may not be able to determine a button's purpose from its icon alone. The tool looks for link and button names in HTML and helps identify elements whose purpose needs review." } },
+      { question: { ru: "Как проверить исправление названия кнопки?", en: "How can I verify a button name fix?" }, answer: { ru: "Убедитесь, что название описывает действие, затем повторите проверку страницы. Дополнительно послушайте кнопку программой экранного доступа: её итоговое имя в браузере может отличаться от того, что удалось определить по исходному HTML.", en: "Make sure the name describes the action, then rerun the page check. Also listen to it with a screen reader: the final browser name can differ from what was inferred from source HTML." } }
     ],
     relatedToolSlugs: [
       "form-accessibility-analyzer",
@@ -1353,26 +1167,8 @@ export const cssDesignToolPages = [
       },
     ],
     faq: [
-      {
-        question: {
-          ru: "Можно добавить больше точек polygon?",
-          en: "Can I add more polygon points?",
-        },
-        answer: {
-          ru: "Нет. Batch ограничен четырьмя точками, чтобы инструмент оставался bounded.",
-          en: "No. This batch is limited to four points to keep the tool bounded.",
-        },
-      },
-      {
-        question: {
-          ru: "Поддерживается clip-path path()?",
-          en: "Is clip-path path() supported?",
-        },
-        answer: {
-          ru: "Нет. path() требует другого parser/editor workflow и не входит в этот R0 batch.",
-          en: "No. path() requires a different parser/editor workflow and is outside this R0 batch.",
-        },
-      },
+      { question: { ru: "Как получить CSS для фигурной обрезки элемента?", en: "How can I generate CSS for a shaped clipping area?" }, answer: { ru: "Выберите поддерживаемую форму и настройте её параметры. Сравните предпросмотр и скопируйте свойство clip-path в стили элемента. Это меняет видимую область в браузере, но не обрезает исходный файл изображения.", en: "Choose a supported shape and adjust its settings. Check the preview and copy the clip-path property into your element's styles. It changes the visible area in the browser without cropping the original image file." } },
+      { question: { ru: "Можно ли нарисовать произвольную сложную фигуру?", en: "Can I draw an arbitrary complex shape?" }, answer: { ru: "Доступны формы и параметры, показанные в инструменте; многоугольник ограничен четырьмя точками. Для более сложного контура отредактируйте CSS отдельно. Генератор не является редактором SVG-контуров.", en: "Use the shapes and settings shown in the tool; polygons are limited to four points. Edit CSS separately for a more complex outline. The generator is not an SVG path editor." } }
     ],
     relatedToolSlugs: [
       "border-radius-generator",
@@ -1461,26 +1257,8 @@ export const cssDesignToolPages = [
       },
     ],
     faq: [
-      {
-        question: {
-          ru: "Можно применить filter к загруженному изображению?",
-          en: "Can I apply the filter to an uploaded image?",
-        },
-        answer: {
-          ru: "Нет. Этот инструмент только генерирует CSS declaration и preview sample.",
-          en: "No. This tool only generates a CSS declaration and a preview sample.",
-        },
-      },
-      {
-        question: {
-          ru: "Почему нет backdrop-filter?",
-          en: "Why no backdrop-filter?",
-        },
-        answer: {
-          ru: "Backdrop-filter зависит от context и compositing, поэтому вынесен из простого bounded tool.",
-          en: "Backdrop-filter depends on context and compositing, so it is outside this simple bounded tool.",
-        },
-      },
+      { question: { ru: "Как подобрать яркость, контраст и другие CSS-фильтры?", en: "How can I choose brightness, contrast, and other CSS filters?" }, answer: { ru: "Изменяйте доступные параметры и сравнивайте пример в предпросмотре. Скопируйте свойство filter и примените его к нужному элементу на сайте. Затем проверьте результат на своём изображении.", en: "Adjust the available settings and compare the sample preview. Copy the filter property to the relevant element on your site, then check it on your own image." } },
+      { question: { ru: "Можно ли скачать обработанную фотографию?", en: "Can I download a filtered photo?" }, answer: { ru: "Здесь создаётся CSS-код, а не новый графический файл. Собственная фотография в инструмент не загружается. Чтобы сохранить изменённые пиксели в отдельный файл, используйте редактор изображений.", en: "This tool generates CSS rather than a new image file. It does not upload your own photo. Use an image editor if you need the changed pixels saved to a separate file." } }
     ],
     relatedToolSlugs: [
       "clip-path-generator",
@@ -1572,26 +1350,8 @@ export const cssDesignToolPages = [
       },
     ],
     faq: [
-      {
-        question: {
-          ru: "Можно генерировать grid-template-areas?",
-          en: "Can it generate grid-template-areas?",
-        },
-        answer: {
-          ru: "Нет. Это отдельный layout-editor workflow, не часть bounded generator.",
-          en: "No. That is a separate layout-editor workflow, not part of this bounded generator.",
-        },
-      },
-      {
-        question: {
-          ru: "Есть responsive breakpoints?",
-          en: "Are responsive breakpoints included?",
-        },
-        answer: {
-          ru: "Нет. Output намеренно одинарный и не создаёт media queries.",
-          en: "No. The output is intentionally single-state and does not create media queries.",
-        },
-      },
+      { question: { ru: "Как создать сетку из колонок и строк?", en: "How do I create a grid of columns and rows?" }, answer: { ru: "Укажите их количество, расстояния и доступные параметры ширины. Предпросмотр покажет расположение элементов. Скопируйте полученный CSS в стили контейнера и добавьте собственное содержимое на странице.", en: "Set the column and row counts, gaps, and available width settings. The preview shows item placement. Copy the generated CSS into the container's styles and add your own page content." } },
+      { question: { ru: "Будет ли сетка сразу адаптирована под телефон?", en: "Will the grid automatically include a mobile layout?" }, answer: { ru: "Генератор создаёт один набор CSS-правил и не добавляет отдельные правила для ширины экрана. Проверьте сетку на узком экране и при необходимости настройте количество колонок и дополнительные стили самостоятельно.", en: "The generator creates one set of CSS rules without separate screen-width rules. Test the grid on a narrow screen and adjust column counts or add responsive styles as needed." } }
     ],
     relatedToolSlugs: [
       "flexbox-playground",
@@ -1680,23 +1440,8 @@ export const cssDesignToolPages = [
       },
     ],
     faq: [
-      {
-        question: { ru: "Почему нет flex-basis?", en: "Why no flex-basis?" },
-        answer: {
-          ru: "Flex-basis относится к child item rules, а этот tool генерирует только container CSS.",
-          en: "Flex-basis belongs to child item rules, while this tool generates container CSS only.",
-        },
-      },
-      {
-        question: {
-          ru: "Это заменяет layout builder?",
-          en: "Does this replace a layout builder?",
-        },
-        answer: {
-          ru: "Нет. Это bounded generator для быстрого CSS output, не визуальный редактор макета.",
-          en: "No. This is a bounded generator for quick CSS output, not a visual layout editor.",
-        },
-      },
+      { question: { ru: "Как выровнять элементы по центру или распределить между ними место?", en: "How can I centre items or distribute space between them?" }, answer: { ru: "Выберите направление, выравнивание и расстояние между элементами. Посмотрите результат на примере и скопируйте CSS для родительского контейнера. Содержимое и размеры своих элементов нужно проверить на странице.", en: "Choose direction, alignment, and gaps. Check the sample result and copy the CSS for the parent container. Test your own item content and sizes on the actual page." } },
+      { question: { ru: "Что делать, если элементы не помещаются в строку?", en: "What should I do when items do not fit in one row?" }, answer: { ru: "Проверьте настройку переноса и доступную ширину контейнера. Генератор задаёт правила контейнера; ширина, сжатие и рост отдельных элементов настраиваются отдельно. Используйте предпросмотр как основу, затем проверьте реальное содержимое.", en: "Check wrapping and the available container width. The generator sets container rules; individual item widths, shrinking, and growing are configured separately. Use the preview as a starting point, then test real content." } }
     ],
     relatedToolSlugs: [
       "css-grid-generator",

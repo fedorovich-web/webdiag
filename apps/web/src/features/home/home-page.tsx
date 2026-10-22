@@ -80,7 +80,7 @@ const heroAccentStyle = {
 
 const ruProcessSteps = [
   { title: "Укажите URL", description: "Введите адрес страницы или всего сайта" },
-  { title: "Мы проверяем", description: "Анализируем более 100 параметров" },
+  { title: "Мы проверяем", description: "Проверяем страницу и собираем найденные проблемы" },
   { title: "Получите результат", description: "Список проблем, приоритеты и рекомендации" },
 ] as const;
 
