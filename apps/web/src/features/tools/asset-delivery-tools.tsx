@@ -163,7 +163,7 @@ function UrlForm({
   loading: boolean;
   onSubmit: (url: string) => void;
 }) {
-  const [url, setUrl] = useState("https://example.com/");
+  const [url, setUrl] = useState("");
   const [error, setError] = useState("");
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -182,6 +182,7 @@ function UrlForm({
       <label className="field">
         <span>{copy[locale].url}</span>
         <input
+          placeholder="https://example.com/"
           value={url}
           onChange={(event: ChangeEvent<HTMLInputElement>) => setUrl(event.target.value)}
         />

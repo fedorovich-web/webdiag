@@ -50,6 +50,7 @@ test.describe("tool editorial pages", () => {
         recommendation: "Canonical URL is invalid or exceeds the supported length. Use a valid HTTP or HTTPS URL for the preferred page.",
       } }));
       await page.goto(`${locale === "en" ? "/en" : ""}/tools/canonical-checker`);
+      await page.getByPlaceholder("https://example.com/catalog/page").fill("https://example.com/page");
       await page.getByRole("button", { name: locale === "ru" ? "Проверить canonical" : "Check canonical", exact: true }).click();
       await expect(page.locator(".canonical-checker-recommendation")).toContainText(locale === "ru" ? "некорректен" : "invalid");
       await expect(page.locator(".canonical-checker-result .status-badge")).toHaveClass(/is-danger/);

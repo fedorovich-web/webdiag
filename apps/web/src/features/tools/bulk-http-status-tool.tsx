@@ -57,7 +57,7 @@ async function inspectUrls(urls: readonly string[]): Promise<BulkHttpStatusResul
 }
 
 export function BulkHttpStatusTool({ locale }: { locale: Locale }) {
-  const [input, setInput] = useState("https://example.com/\nhttps://example.com/missing");
+  const [input, setInput] = useState("");
   const [result, setResult] = useState<BulkHttpStatusResult | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -113,7 +113,7 @@ export function BulkHttpStatusTool({ locale }: { locale: Locale }) {
     <section className="tool-panel">
       <h2>{copy.title}</h2>
       <form onSubmit={onSubmit}>
-        <label className="field"><span>{copy.label}</span><textarea value={input} onChange={(event) => setInput(event.target.value)} rows={10} /></label>
+        <label className="field"><span>{copy.label}</span><textarea placeholder={"https://example.com/\nhttps://example.com/page"} value={input} onChange={(event) => setInput(event.target.value)} rows={10} /></label>
         <button className="button" type="submit" disabled={loading}>{loading ? copy.loading : copy.button}</button>
       </form>
       {error ? <p className="form-error" role="alert">{error}</p> : null}

@@ -78,7 +78,7 @@ function MarkupToolForm({
   button: string;
   onRun: (url: string) => Promise<void>;
 }) {
-  const [input, setInput] = useState("https://example.com/");
+  const [input, setInput] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const invalid = locale === "ru"
@@ -179,7 +179,7 @@ export function HtmlMarkupValidatorTool({ locale }: { locale: Locale }) {
 export function SchemaMarkupGeneratorTool({ locale }: { locale: Locale }) {
   const [kind, setKind] = useState<SchemaTemplateKind>("Organization");
   const [name, setName] = useState("WebDiag");
-  const [url, setUrl] = useState("https://example.com/");
+  const [url, setUrl] = useState("");
   const [description, setDescription] = useState("Short factual description of the entity or page.");
   const [telephone, setTelephone] = useState("");
   const [address, setAddress] = useState("");
@@ -193,7 +193,7 @@ export function SchemaMarkupGeneratorTool({ locale }: { locale: Locale }) {
       <h2>{copy.input}</h2>
       <label className="field"><span>Type</span><select value={kind} onChange={(event) => setKind(event.target.value as SchemaTemplateKind)}><option>Organization</option><option>LocalBusiness</option><option>FAQPage</option><option>BreadcrumbList</option></select></label>
       <label className="field"><span>{locale === "ru" ? "Название / вопрос / текущая страница" : "Name / question / current page"}</span><input value={name} onChange={(event) => setName(event.target.value)} /></label>
-      <label className="field"><span>URL</span><input value={url} onChange={(event) => setUrl(event.target.value)} /></label>
+      <label className="field"><span>URL</span><input placeholder="https://example.com/" value={url} onChange={(event) => setUrl(event.target.value)} /></label>
       <label className="field"><span>{locale === "ru" ? "Описание / ответ" : "Description / answer"}</span><textarea rows={4} value={description} onChange={(event) => setDescription(event.target.value)} /></label>
       {kind === "LocalBusiness" ? <><label className="field"><span>{locale === "ru" ? "Телефон" : "Phone"}</span><input value={telephone} onChange={(event) => setTelephone(event.target.value)} /></label><label className="field"><span>{locale === "ru" ? "Адрес" : "Address"}</span><input value={address} onChange={(event) => setAddress(event.target.value)} /></label></> : null}
       <p className="muted">{copy.note}</p>

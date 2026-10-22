@@ -92,7 +92,7 @@ const copy = {
   },
 } as const;
 
-const DEFAULT_MAP = `source,target,status
+const MAP_PLACEHOLDER = `source,target,status
 https://example.com/old-page,https://example.com/new-page,301`;
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 
@@ -131,14 +131,14 @@ function Recommendation({ locale, value }: { locale: Locale; value: string }) {
 
 function UrlInputForm({
   locale,
-  defaultValue,
+  placeholder,
   onRun,
 }: {
   locale: Locale;
-  defaultValue: string;
+  placeholder: string;
   onRun: (value: string) => void;
 }) {
-  const [value, setValue] = useState(defaultValue);
+  const [value, setValue] = useState("");
   const [error, setError] = useState("");
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -156,6 +156,7 @@ function UrlInputForm({
       <label className="field">
         <span>{copy[locale].url}</span>
         <input
+          placeholder={placeholder}
           value={value}
           onChange={(event: ChangeEvent<HTMLInputElement>) => setValue(event.target.value)}
         />
@@ -237,7 +238,7 @@ export function UrlNormalizationAnalyzerTool({ locale }: { locale: Locale }) {
   return <div className="tool-grid">
     <UrlInputForm
       locale={locale}
-      defaultValue="HTTPS://Exämple.com:443/a/../b/%7euser/?utm_source=test#section"
+      placeholder="HTTPS://Exämple.com:443/a/../b/%7euser/?utm_source=test#section"
       onRun={run}
     />
     {error ? <p className="form-error" role="alert">{error}</p> : null}
@@ -322,7 +323,7 @@ export function QueryParameterAnalyzerTool({ locale }: { locale: Locale }) {
   return <div className="tool-grid">
     <UrlInputForm
       locale={locale}
-      defaultValue="https://example.com/catalog?page=2&sort=price&utm_source=newsletter&filter_brand=Acme"
+      placeholder="https://example.com/catalog?page=2&sort=price&utm_source=newsletter&filter_brand=Acme"
       onRun={run}
     />
     {error ? <p className="form-error" role="alert">{error}</p> : null}
@@ -475,7 +476,7 @@ function RedirectMapResultView({
 }
 
 export function RedirectMapValidatorTool({ locale }: { locale: Locale }) {
-  const [value, setValue] = useState(DEFAULT_MAP);
+  const [value, setValue] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<RedirectMapResponse | null>(null);
@@ -507,6 +508,7 @@ export function RedirectMapValidatorTool({ locale }: { locale: Locale }) {
         <label className="field">
           <span>{copy[locale].mapLabel}</span>
           <textarea
+            placeholder={MAP_PLACEHOLDER}
             value={value}
             rows={10}
             onChange={(event: ChangeEvent<HTMLTextAreaElement>) => setValue(event.target.value)}

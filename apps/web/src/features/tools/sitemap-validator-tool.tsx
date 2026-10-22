@@ -162,8 +162,8 @@ async function runSitemapCheck(url: string, targetUrl: string): Promise<SitemapX
 }
 
 export function SitemapValidatorTool({ locale }: { locale: Locale }) {
-  const [input, setInput] = useState("https://example.com/sitemap.xml");
-  const [targetUrl, setTargetUrl] = useState("https://example.com/catalog/page");
+  const [input, setInput] = useState("");
+  const [targetUrl, setTargetUrl] = useState("");
   const [result, setResult] = useState<SitemapXmlToolResponse | null>(null);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);

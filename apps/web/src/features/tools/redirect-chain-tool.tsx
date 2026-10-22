@@ -137,7 +137,7 @@ async function runRedirectCheck(url: string): Promise<HttpStatusToolResponse> {
 }
 
 export function RedirectChainTool({ locale }: { locale: Locale }) {
-  const [input, setInput] = useState("https://example.com/");
+  const [input, setInput] = useState("");
   const [result, setResult] = useState<HttpStatusToolResponse | null>(null);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);

@@ -30,7 +30,7 @@ export function ToolPage({ locale, slug }: { locale: Locale; slug: string }) {
   const category = getCategoryTitle(tool.category, locale);
   const related = content.relatedToolSlugs.map((relatedSlug) => getPublicTool(relatedSlug)).filter(Boolean);
   const t = <T extends { readonly ru: string; readonly en: string }>(value: T) => localizeContent(value, locale);
-  const text = getToolPageChromeCopy(locale, tool.executorClass);
+  const text = getToolPageChromeCopy(locale, tool.executorClass, slug);
   const art = toolArtwork(slug, tool.category);
 
   return (
