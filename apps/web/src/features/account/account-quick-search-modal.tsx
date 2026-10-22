@@ -1,5 +1,7 @@
 "use client";
 
+import { PUBLIC_CATALOG_TOOL_COUNT } from "../tools/public-catalog-data";
+
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, FileBarChart2, FolderKanban, Search, Settings, Sparkles, Wrench, X } from "lucide-react";
@@ -41,7 +43,7 @@ export function AccountQuickSearchModal({ locale, isOpen, onClose }: AccountQuic
 
   const quickLinks = useMemo(() => [
     {
-      title: ru ? "Все 140+ инструментов" : "All 140+ tools",
+      title: ru ? `Все ${PUBLIC_CATALOG_TOOL_COUNT} инструментов` : `All ${PUBLIC_CATALOG_TOOL_COUNT} tools`,
       category: ru ? "Каталог" : "Catalog",
       href: ru ? "/tools" : "/en/tools",
       icon: Wrench,
@@ -109,7 +111,7 @@ export function AccountQuickSearchModal({ locale, isOpen, onClose }: AccountQuic
             className="wd-quick-search-input"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={ru ? "Поиск по всем 140+ инструментам и разделам…" : "Search all 140+ tools and sections…"}
+            placeholder={ru ? `Поиск по ${PUBLIC_CATALOG_TOOL_COUNT} инструментам и разделам…` : `Search ${PUBLIC_CATALOG_TOOL_COUNT} tools and sections…`}
             aria-label={ru ? "Поиск" : "Search"}
           />
           {query && (

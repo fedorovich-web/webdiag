@@ -22,6 +22,7 @@ import type { Locale } from "@webdiag/tool-registry";
 import { SiteBrand } from "./site-brand";
 import { LanguageSwitcher } from "./language-switcher";
 import { loginPath, toolsPath } from "../lib/routes";
+import { PUBLIC_CATALOG_TOOL_COUNT } from "../features/tools/public-catalog-data";
 
 interface MobileDrawerProps {
   readonly locale: Locale;
@@ -48,7 +49,6 @@ export function MobileDrawer({ locale }: MobileDrawerProps) {
     setIsOpen(false);
   }
 
-  // Handle escape key & body scroll lock
   useEffect(() => {
     if (!isOpen) return;
 
@@ -73,7 +73,7 @@ export function MobileDrawer({ locale }: MobileDrawerProps) {
       href: toolsPath(locale),
       label: ru ? "Все инструменты" : "All Tools",
       icon: Grid3X3,
-      badge: "140+",
+      badge: String(PUBLIC_CATALOG_TOOL_COUNT),
     },
     {
       href: ru ? "/audit" : "/en/audit",
@@ -125,14 +125,12 @@ export function MobileDrawer({ locale }: MobileDrawerProps) {
       {mounted
         ? createPortal(
             <>
-              {/* Backdrop overlay */}
               <div
                 className={`wd-drawer-overlay ${isOpen ? "is-open" : ""}`}
                 onClick={() => setIsOpen(false)}
                 aria-hidden="true"
               />
 
-              {/* Slide-in drawer panel */}
               <div
                 className={`wd-drawer-panel ${isOpen ? "is-open" : ""}`}
                 role="dialog"

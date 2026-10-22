@@ -68,6 +68,20 @@ class MockPageSpeedClient:
         return self.payload
 
 
+def test_core_web_vitals_redacts_response_urls_but_checks_the_complete_target() -> None:
+    target = "https://example.com/product?id=42#details"
+    client = MockPageSpeedClient(pagespeed_payload())
+    app.dependency_overrides[get_pagespeed_client] = lambda: client
+    try:
+        response = asyncio.run(post("/v1/tools/core-web-vitals", {"url": target}))
+    finally:
+        clear_overrides()
+    assert response.status_code == 200
+    assert response.json()["requested_url"] == "https://example.com/product"
+    assert response.json()["normalized_url"] == "https://example.com/product"
+    assert client.calls[0][0] == target
+
+
 def pagespeed_payload() -> dict[str, object]:
     return {
         "loadingExperience": {

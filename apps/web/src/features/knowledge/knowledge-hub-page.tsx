@@ -1,5 +1,7 @@
 "use client";
 
+import { PUBLIC_CATALOG_TOOL_COUNT } from "../tools/public-catalog-data";
+
 import { useState } from "react";
 import Link from "next/link";
 import {
@@ -144,7 +146,7 @@ export function KnowledgeHubPage({ locale }: KnowledgeHubPageProps) {
         ctaTitle: "Проверьте ваш сайт на практике",
         ctaLead: "Примените полученные знания и запустите полный технический аудит сайта за пару секунд.",
         ctaBtn: "Запустить SEO-аудит",
-        catalogBtn: "Все 140+ инструментов",
+        catalogBtn: `Все ${PUBLIC_CATALOG_TOOL_COUNT} инструментов`,
       }
     : {
         breadcrumbs: { home: "Home", knowledge: "Knowledge Base" },
@@ -264,7 +266,7 @@ export function KnowledgeHubPage({ locale }: KnowledgeHubPageProps) {
         ctaTitle: "Put These Principles into Practice",
         ctaLead: "Run a comprehensive technical SEO inspection of your website in just a few seconds.",
         ctaBtn: "Run SEO Audit",
-        catalogBtn: "Browse 140+ Tools",
+        catalogBtn: `Browse ${PUBLIC_CATALOG_TOOL_COUNT} Tools`,
       };
 
   const filteredArticles = t.articles.filter((art) => {
@@ -277,21 +279,18 @@ export function KnowledgeHubPage({ locale }: KnowledgeHubPageProps) {
 
   return (
     <div className="wd-knowledge-page">
-      {/* Breadcrumbs (strictly 12px) */}
       <nav className="shell breadcrumbs wd-knowledge-breadcrumbs" aria-label="Breadcrumbs">
         <Link href={homeHref}>{t.breadcrumbs.home}</Link>
         <span aria-hidden="true">/</span>
         <span aria-current="page">{t.breadcrumbs.knowledge}</span>
       </nav>
 
-      {/* Hero */}
       <section className="wd-knowledge-hero">
         <div className="shell wd-knowledge-hero-inner">
           <span className="wd-eyebrow">{t.hero.eyebrow}</span>
           <h1 className="wd-knowledge-h1">{t.hero.title}</h1>
           <p className="wd-knowledge-hero-lead">{t.hero.lead}</p>
 
-          {/* Search bar */}
           <div className="wd-knowledge-search-wrap">
             <Search size={20} aria-hidden="true" />
             <input
@@ -305,10 +304,8 @@ export function KnowledgeHubPage({ locale }: KnowledgeHubPageProps) {
         </div>
       </section>
 
-      {/* Categories & Articles Section */}
       <section className="wd-knowledge-section wd-knowledge-articles-section">
         <div className="shell">
-          {/* Category Tabs */}
           <div className="wd-knowledge-tabs">
             {t.categories.map((cat) => (
               <button
@@ -322,7 +319,6 @@ export function KnowledgeHubPage({ locale }: KnowledgeHubPageProps) {
             ))}
           </div>
 
-          {/* Articles Grid */}
           <div className="wd-knowledge-articles-grid">
             {filteredArticles.map((art) => (
               <article className="wd-article-card" key={art.id}>
@@ -347,7 +343,6 @@ export function KnowledgeHubPage({ locale }: KnowledgeHubPageProps) {
         </div>
       </section>
 
-      {/* Technical Glossary Section */}
       <section className="wd-knowledge-section wd-glossary-section">
         <div className="shell">
           <div className="wd-knowledge-section-header">
@@ -367,7 +362,6 @@ export function KnowledgeHubPage({ locale }: KnowledgeHubPageProps) {
         </div>
       </section>
 
-      {/* Pre-launch Checklist Section */}
       <section className="wd-knowledge-section wd-checklist-section">
         <div className="shell">
           <div className="wd-checklist-card">
@@ -389,7 +383,6 @@ export function KnowledgeHubPage({ locale }: KnowledgeHubPageProps) {
         </div>
       </section>
 
-      {/* Final Action CTA */}
       <section className="wd-knowledge-section wd-knowledge-cta-section">
         <div className="shell">
           <div className="wd-knowledge-cta-card">

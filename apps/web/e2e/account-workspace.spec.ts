@@ -139,8 +139,8 @@ test.describe("account workspace", () => {
         saved_audits: [],
       },
     }));
-    await page.route(`**/api/account/projects/${firstProject.id}/crawls`, (route) => route.fulfill({
-      json: { contract_version: "webdiag.account.crawl_list.v1", jobs: [] },
+    await page.route(`**/api/account/projects/${firstProject.id}/site-audits`, (route) => route.fulfill({
+      json: { contract_version: "webdiag.account.site_audit_list.v1", jobs: [] },
     }));
 
     await page.goto(`/account/projects/${firstProject.id}`);
@@ -151,7 +151,7 @@ test.describe("account workspace", () => {
     await expect(page.getByLabel("Текущий проект")).toHaveValue(firstProject.id);
     await expect(page.getByRole("heading", { level: 1, name: "Основной сайт" })).toBeVisible();
     await expect(page.getByRole("heading", { level: 2, name: "Проверка страниц проекта" })).toBeVisible();
-    await expect(page.getByText("Проверьте до 25 HTML-страниц одного сайта.", { exact: false })).toBeVisible();
+    await expect(page.getByText("Проверка общедоступных HTML-страниц сайта.", { exact: false })).toBeVisible();
   });
 
   test("bounded crawl shows persisted findings without claiming full coverage", async ({ page }) => {
@@ -165,7 +165,7 @@ test.describe("account workspace", () => {
       updated_at: "2026-08-13T12:01:00Z",
     };
     const result = {
-      contract_version: "webdiag.crawl.result.v1",
+      contract_version: "webdiag.site_audit.result.v1",
       origin: firstProject.origin,
       pages: [{
         url: "https://example.com/",
@@ -173,15 +173,22 @@ test.describe("account workspace", () => {
         title: "Example",
         meta_description: null,
         internal_links: ["https://example.com/about"],
+        audit_score: 70,
+        issue_count: 1,
+        issues_by_severity: { critical: 0, high: 1, medium: 0, low: 0, info: 0 },
       }],
       page_failures: [],
       page_limit: 25,
       page_budget_exhausted: true,
       sitemap_url: "https://example.com/sitemap.xml",
       sitemap_url_count: 3,
+      sitemap_complete: false,
+      excluded_query_url_count: 2,
+      audit_summary: { pages_audited: 1, pages_with_issues: 1, unique_issue_count: 1, issue_occurrence_count: 1, occurrences_by_severity: { critical: 0, high: 1, medium: 0, low: 0, info: 0 } },
+      issues: [{ issue_id: "http.status.server_error", check_id: "http.status", category: "http", severity: "high", priority: "P1", title: "HTTP error", description: "Observed HTTP failure", affected_urls: ["https://example.com/"], affected_url_count: 1, recommendation: { summary: "Restore HTTP response", steps: [], expected_impact: null } }],
       duplicate_titles: [{ value: "Duplicate", urls: ["https://example.com/a", "https://example.com/b"] }],
       duplicate_descriptions: [],
-      orphan_urls: ["https://example.com/orphan"],
+      orphan_urls: [],
       completed_at: "2026-08-13T12:01:00Z",
     };
     await page.route("**/api/account/me", (route) => route.fulfill({ json: session }));
@@ -191,23 +198,109 @@ test.describe("account workspace", () => {
     await page.route(`**/api/account/projects/${firstProject.id}`, (route) => route.fulfill({
       json: { contract_version: "webdiag.account.project_detail.v1", project: firstProject, saved_audits: [] },
     }));
-    await page.route(`**/api/account/projects/${firstProject.id}/crawls`, (route) => route.fulfill({
-      json: { contract_version: "webdiag.account.crawl_list.v1", jobs: [job] },
+    await page.route(`**/api/account/projects/${firstProject.id}/site-audits`, (route) => route.fulfill({
+      json: { contract_version: "webdiag.account.site_audit_list.v1", jobs: [job] },
     }));
-    await page.route(`**/api/account/projects/${firstProject.id}/crawls/${job.id}`, (route) => route.fulfill({
-      json: { contract_version: "webdiag.account.crawl_detail.v1", job, result },
+    await page.route(`**/api/account/projects/${firstProject.id}/site-audits/${job.id}`, (route) => route.fulfill({
+      json: { contract_version: "webdiag.account.site_audit_detail.v1", job, result },
     }));
 
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(`/account/projects/${firstProject.id}`);
     await expect(page.getByText("Проверено страниц")).toBeVisible();
     await expect(page.getByText("Страниц с дублями")).toBeVisible();
-    await expect(page.getByText("Достигнут лимит 25 страниц. Результат не описывает весь сайт.")).toBeVisible();
+    await expect(page.getByText("Обход ограничен бюджетом страниц, ссылок или времени; лимит страниц: 25.")).toBeVisible();
+    await expect(page.getByText("Частичный результат")).toBeVisible();
+    await expect(page.getByText("URL с query пропущено: 2.", { exact: false })).toBeVisible();
+    const finding = page.locator(".wd-crawl-findings summary");
+    await expect(finding).toHaveText("P1 · Высокая · Сервер вернул ошибку");
+    await finding.click();
+    await expect(page.getByText("Проверяемый URL вернул HTTP-статус 5xx.", { exact: true })).toBeVisible();
+    await expect(page.getByText("Исправьте серверную ошибку до оптимизации второстепенных SEO-сигналов.", { exact: true })).toBeVisible();
+    await expect(page.getByText("Observed HTTP failure", { exact: true })).toHaveCount(0);
     await expect(page.getByText(/100%|полный охват|весь сайт проверен/i)).toHaveCount(0);
     await page.setViewportSize({ width: 390, height: 844 });
     await expect.poll(() => page.getByRole("button", { name: "Проверить страницы" }).evaluate((button) => button.clientHeight >= 44)).toBe(true);
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   });
+
+  for (const locale of ["ru", "en"] as const) {
+    test(`${locale} project keeps historical crawl results readable without inventing full-audit findings`, async ({ page }) => {
+      const job = {
+        id: "55555555-5555-4555-8555-555555555555", project_id: firstProject.id,
+        origin: firstProject.origin, state: "succeeded", error_code: null,
+        created_at: "2026-08-13T12:00:00Z", updated_at: "2026-08-13T12:01:00Z",
+      };
+      expectedBrowserErrors.push(
+        /^console\.error: Failed to load resource: the server responded with a status of 409\b/,
+        new RegExp(`^http 409: .*\\/api\\/account\\/projects\\/${firstProject.id}\\/site-audits\\/${job.id}$`),
+      );
+      await page.route("**/api/account/me", (route) => route.fulfill({ json: session }));
+      await page.route("**/api/account/projects", (route) => route.fulfill({
+        json: { contract_version: "webdiag.account.project_list.v1", projects: [firstProject] },
+      }));
+      await page.route(`**/api/account/projects/${firstProject.id}`, (route) => route.fulfill({
+        json: { contract_version: "webdiag.account.project_detail.v1", project: firstProject, saved_audits: [] },
+      }));
+      await page.route(`**/api/account/projects/${firstProject.id}/site-audits`, (route) => route.fulfill({
+        json: { contract_version: "webdiag.account.site_audit_list.v1", jobs: [job] },
+      }));
+      await page.route(`**/api/account/projects/${firstProject.id}/site-audits/${job.id}`, (route) => route.fulfill({
+        status: 409, json: { detail: { code: "site_audit_result_version_unavailable", message: "Historical result" } },
+      }));
+      await page.route(`**/api/account/projects/${firstProject.id}/crawls/${job.id}`, (route) => route.fulfill({
+        json: { contract_version: "webdiag.account.crawl_detail.v1", job, result: {
+          contract_version: "webdiag.crawl.result.v1", origin: firstProject.origin,
+          pages: [{ url: "https://example.com/", status_code: 200, title: "Home", meta_description: null, internal_links: [] }],
+          page_failures: [], page_limit: 25, page_budget_exhausted: true,
+          sitemap_url: "https://example.com/sitemap.xml", sitemap_url_count: 2,
+          duplicate_titles: [{ value: "Saved duplicate title", urls: ["https://example.com/a", "https://example.com/b"] }],
+          duplicate_descriptions: [], orphan_urls: [], completed_at: "2026-08-13T12:01:00Z",
+        } },
+      }));
+      await page.goto(`${locale === "en" ? "/en" : ""}/account/projects/${firstProject.id}`);
+      await expect(page.getByText(locale === "ru" ? "Историческая проверка страниц" : "Historical page check", { exact: true })).toBeVisible();
+      await expect(page.getByText(locale === "ru"
+        ? "Это сохранённый результат прежнего обхода. Оценки и замечания полного аудита в нём не сохранены."
+        : "This is a saved result from the previous crawl. Full audit scores and findings were not stored.")).toBeVisible();
+      await page.locator(".wd-crawl-findings summary").first().click();
+      await expect(page.getByText("Saved duplicate title", { exact: true })).toBeVisible();
+      await expect(page.getByText("https://example.com/a", { exact: true })).toBeVisible();
+      await expect(page.getByText(locale === "ru" ? "Проверок страниц пока нет" : "No page checks yet", { exact: true })).toHaveCount(0);
+      await expect(page.getByText(locale === "ru" ? "Типов замечаний" : "Finding types", { exact: true })).toHaveCount(0);
+      await expect(page.getByRole("button", { name: locale === "ru" ? "Проверить страницы" : "Check pages", exact: true })).toBeEnabled();
+      await page.setViewportSize({ width: 390, height: 844 });
+      await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    });
+
+    test(`${locale} site audit explains why an unreachable robots policy stopped the crawl`, async ({ page }) => {
+      const job = {
+        id: "55555555-5555-4555-8555-555555555555", project_id: firstProject.id,
+        origin: firstProject.origin, state: "failed", error_code: "crawl_robots_unavailable",
+        created_at: "2026-10-22T07:00:00Z", updated_at: "2026-10-22T07:00:01Z",
+      };
+      await page.route("**/api/account/me", (route) => route.fulfill({ json: session }));
+      await page.route("**/api/account/projects", (route) => route.fulfill({
+        json: { contract_version: "webdiag.account.project_list.v1", projects: [firstProject] },
+      }));
+      await page.route(`**/api/account/projects/${firstProject.id}`, (route) => route.fulfill({
+        json: { contract_version: "webdiag.account.project_detail.v1", project: firstProject, saved_audits: [] },
+      }));
+      await page.route(`**/api/account/projects/${firstProject.id}/site-audits`, (route) => route.fulfill({
+        json: { contract_version: "webdiag.account.site_audit_list.v1", jobs: [job] },
+      }));
+      await page.route(`**/api/account/projects/${firstProject.id}/site-audits/${job.id}`, (route) => route.fulfill({
+        json: { contract_version: "webdiag.account.site_audit_detail.v1", job, result: null },
+      }));
+      await page.goto(`${locale === "en" ? "/en" : ""}/account/projects/${firstProject.id}`);
+      await expect(page.getByText(locale === "ru"
+        ? "Не удалось получить robots.txt из-за ошибки сервера или соединения. Обход остановлен."
+        : "robots.txt could not be fetched due to a server or connection error. The crawl stopped."
+      )).toBeVisible();
+      await expect(page.locator(".wd-crawl-state")).toHaveText(locale === "ru" ? "Не завершено" : "Not completed");
+      await expect(page.locator(".wd-crawl-result")).toHaveCount(0);
+    });
+  }
 
   test("project lifecycle is explicit, recoverable, localized, and mobile-safe", async ({ page }) => {
     let active = true;
@@ -267,8 +360,8 @@ test.describe("account workspace", () => {
         projects: active ? [currentProject] : [],
       },
     }));
-    await page.route(`**/api/account/projects/${firstProject.id}/crawls`, (route) => route.fulfill({
-      json: { contract_version: "webdiag.account.crawl_list.v1", jobs: [] },
+    await page.route(`**/api/account/projects/${firstProject.id}/site-audits`, (route) => route.fulfill({
+      json: { contract_version: "webdiag.account.site_audit_list.v1", jobs: [] },
     }));
 
     await page.goto(`/account/projects/${firstProject.id}`);

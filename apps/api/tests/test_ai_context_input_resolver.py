@@ -58,7 +58,7 @@ def test_competitor_resolver_replaces_all_client_page_evidence_with_fetched_html
     workspace, owner_id, _project = _workspace(tmp_path)
     fetcher = _FakeFetcher(
         {
-            "https://example.com/landing": (
+            "https://example.com/landing?secret=client": (
                 "<html><head><title>Owned title</title></head><body>"
                 "<h1>Owned heading</h1>Owned page evidence from the server.</body></html>"
             ),
@@ -97,7 +97,7 @@ def test_competitor_resolver_replaces_all_client_page_evidence_with_fetched_html
     assert competitor_page["content"] == "Competitor heading Competitor evidence from the server."
     assert "client content" not in str(resolved)
     assert fetcher.calls == [
-        ("https://example.com/landing", "https://example.com"),
+        ("https://example.com/landing?secret=client", "https://example.com"),
         ("https://competitor.example/landing", None),
     ]
 
@@ -267,7 +267,9 @@ def test_service_persists_server_resolved_context_snapshot(tmp_path) -> None:
     workspace, owner_id, _project = _workspace(tmp_path)
     fetcher = _FakeFetcher(
         {
-            "https://example.com/landing": "<h1>Owned</h1>Owned server evidence for the run.",
+            "https://example.com/landing?p=42&token=private": (
+                "<h1>Owned</h1>Owned server evidence for the run."
+            ),
             "https://competitor.example/landing": (
                 "<h1>Competitor</h1>Competitor server evidence for the run."
             ),
@@ -303,7 +305,7 @@ def test_service_persists_server_resolved_context_snapshot(tmp_path) -> None:
             input={
                 "locale": "en",
                 "objective": None,
-                "own_page": {"page_url": "https://example.com/landing"},
+                "own_page": {"page_url": "https://example.com/landing?p=42&token=private#section"},
                 "competitor_pages": [{"page_url": "https://competitor.example/landing"}],
             },
         ),
@@ -316,3 +318,102 @@ def test_service_persists_server_resolved_context_snapshot(tmp_path) -> None:
     assert claim.run_id == run.id
     assert claim.input["own_page"]["content"] == "Owned Owned server evidence for the run."
     assert "Competitor server evidence" in claim.input["competitor_pages"][0]["content"]
+    assert "private" not in str(claim.input)
+    assert "?" not in claim.input["own_page"]["page_url"]
+
+
+@pytest.mark.parametrize("tool_id", ["ai_content_optimizer", "ai_search_intent_page_fit"])
+def test_owned_context_fetches_query_page_without_passing_query_to_provider(
+    tmp_path, tool_id
+) -> None:
+    workspace, owner_id, _project = _workspace(tmp_path)
+    fetcher = _FakeFetcher({
+        "https://example.com/": "<p>Wrong homepage content that must not be analyzed.</p>",
+        "https://example.com/?p=42&token=private": (
+            "<p>Correct article evidence for this query page.</p>"
+        ),
+    })
+    input_value = {"locale": "en", "page_url": "https://example.com/?p=42&token=private#section"}
+    if tool_id == "ai_search_intent_page_fit":
+        input_value.update({"primary_query": "article", "intended_page_type": "informational"})
+    resolved = AIInputResolver(workspace, fetcher=fetcher).resolve(
+        user_id=owner_id, tool_id=tool_id,
+        validated_input=validate_public_input(tool_id, input_value),
+    )
+    assert resolved["content"] == "Correct article evidence for this query page."
+    assert resolved["page_url"] == "https://example.com/"
+    assert "private" not in str(resolved)
+    assert fetcher.calls == [("https://example.com/?p=42&token=private", "https://example.com")]
+
+
+def test_internal_linking_keeps_distinct_query_pages_as_separate_indexed_sources(tmp_path) -> None:
+    workspace, owner_id, _project = _workspace(tmp_path)
+    fetcher = _FakeFetcher({
+        "https://example.com/?p=42": "<p>First article with original source evidence.</p>",
+        "https://example.com/?p=43": "<p>Second article with different target evidence.</p>",
+    })
+    validated = validate_public_input("ai_internal_linking_planner", {
+        "locale": "en", "pages": [
+            {"page_url": "https://example.com/?p=42"},
+            {"page_url": "https://example.com/?p=43"},
+        ], "existing_links": [{"source_page_index": 0, "target_page_index": 1}],
+    })
+    resolved = AIInputResolver(workspace, fetcher=fetcher).resolve(
+        user_id=owner_id, tool_id="ai_internal_linking_planner", validated_input=validated,
+    )
+    assert [page["page_url"] for page in resolved["pages"]] == [
+        "https://example.com/", "https://example.com/"
+    ]
+    assert [page["content"] for page in resolved["pages"]] == [
+        "First article with original source evidence.",
+        "Second article with different target evidence."
+    ]
+    assert resolved["existing_links"] == [{"source_page_index": 0, "target_page_index": 1}]
+
+
+@pytest.mark.parametrize("tool_id", [
+    "ai_search_intent_page_fit", "ai_competitor_gap_report", "ai_internal_linking_planner"
+])
+def test_overlong_snapshot_metadata_is_bounded_and_marked_in_provider_evidence(
+    tmp_path, tool_id
+) -> None:
+    workspace, owner_id, _project = _workspace(tmp_path)
+    fetcher = _FakeFetcher({
+        "https://example.com/page": (
+            f"<head><title>{'T' * 301}</title></head><h1>{'H' * 501}</h1><p>Server evidence.</p>"
+        ),
+        "https://example.com/other": (
+            "<h1>Other</h1><p>Other page with enough evidence to compare.</p>"
+        ),
+    })
+    input_value = {"locale": "en"}
+    if tool_id == "ai_search_intent_page_fit":
+        input_value.update({
+            "page_url": "https://example.com/page",
+            "primary_query": "article",
+            "intended_page_type": "informational",
+        })
+    elif tool_id == "ai_competitor_gap_report":
+        input_value.update({
+            "own_page": {"page_url": "https://example.com/page"},
+            "competitor_pages": [{"page_url": "https://example.com/other"}],
+        })
+    else:
+        input_value["pages"] = [
+            {"page_url": "https://example.com/page"}, {"page_url": "https://example.com/other"}
+        ]
+    resolved = AIInputResolver(workspace, fetcher=fetcher).resolve(
+        user_id=owner_id, tool_id=tool_id,
+        validated_input=validate_public_input(tool_id, input_value),
+    )
+    if tool_id == "ai_search_intent_page_fit":
+        page = resolved
+    elif tool_id == "ai_competitor_gap_report":
+        page = resolved["own_page"]
+    else:
+        page = resolved["pages"][0]
+    title = page["page_title"] if tool_id == "ai_search_intent_page_fit" else page["title"]
+    assert len(title) == 300
+    assert title.endswith("[truncated]")
+    assert len(page["h1"]) == 500
+    assert page["h1"].endswith("[truncated]")

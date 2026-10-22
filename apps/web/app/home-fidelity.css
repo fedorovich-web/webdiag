@@ -1,6 +1,4 @@
-/* Current homepage fidelity layer. Consolidated in the original cascade order. */
 
-/* Final visual-fidelity adjustments against the approved Fresh Mint homepage reference. */
 
 .wd-footer-grid {
   grid-template-columns: 1.5fr repeat(4, minmax(0, 1fr));
@@ -31,7 +29,6 @@
   min-height: 0;
 }
 
-/* The strip is compatibility proof, not a vague social-proof claim. */
 .wd-platform-strip {
   background: linear-gradient(90deg, #f3f8ff 0%, #f8fbff 50%, #f2f8ff 100%);
 }
@@ -45,7 +42,6 @@
   font-weight: 720;
 }
 
-/* Process: reproduce the approved mint corner, small illustration and handwritten cue. */
 .wd-process-panel {
   isolation: isolate;
   overflow: hidden;
@@ -109,7 +105,6 @@
   margin-right: 5px;
 }
 
-/* Monitoring: teal trend, filled area, visible month labels and compact dashboard proportions. */
 .wd-monitoring-dashboard {
   padding: 14px 15px 13px;
   background: linear-gradient(180deg, #fff 0%, #fbfeff 100%);
@@ -265,7 +260,6 @@
   box-shadow: 0 8px 20px rgb(30 94 117 / .08);
 }
 
-/* Final CTA: a full-width visual band with the same airy mint/blue background as the reference. */
 .wd-final-section {
   min-height: 120px;
   padding: 24px 0 26px;
@@ -480,7 +474,6 @@
   }
 }
 
-/* Final code-only polish for the approved homepage reference. */
 
 .wd-home .wd-hero-copy h1 {
   margin-bottom: 28px !important;
@@ -501,7 +494,6 @@
   margin-top: 10px !important;
 }
 
-/* CMS compatibility strip: semantic SVG marks, muted by default and restored on hover. */
 .wd-home .wd-platform-list {
   flex-wrap: wrap;
   overflow: visible;
@@ -530,7 +522,6 @@
   transform: translateY(-1px);
 }
 
-/* Report example: preserve live HTML while matching the approved dashboard composition. */
 .wd-home .wd-report-example-card {
   min-height: 302px;
   padding: 14px 15px 13px;
@@ -680,7 +671,6 @@
   font-weight: 800;
 }
 
-/* Monitoring: exact 128px coordinate space keeps SVG curve and HTML hotspots aligned. */
 .wd-home .wd-monitoring-dashboard {
   min-height: 302px;
   padding: 14px 15px 13px;

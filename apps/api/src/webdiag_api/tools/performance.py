@@ -14,6 +14,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from webdiag_api.audit.fetcher import SafeFetchConfig, SafeFetchError, SafeHttpFetcher
+from webdiag_api.audit.redaction import public_url
 from webdiag_api.security.url_policy import UrlPolicyError, validate_url
 
 router = APIRouter(tags=["tools"])
@@ -345,8 +346,8 @@ def inspect_core_web_vitals(
         for strategy in strategies
     )
     return PageSpeedResponse(
-        requested_url=payload.url,
-        normalized_url=validated.normalized,
+        requested_url=public_url(validated.normalized),
+        normalized_url=public_url(validated.normalized),
         strategy=payload.strategy,
         results=results,
         recommendation=_pagespeed_recommendation(results),

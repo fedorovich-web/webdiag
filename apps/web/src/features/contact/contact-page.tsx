@@ -205,7 +205,6 @@ export function ContactPage({ locale }: { locale: Locale }) {
 
       <section className="wd-contact-content">
         <div className="shell">
-          {/* Direct Support Header Banner */}
           <div className="wd-contact-direct-banner">
             <div className="wd-contact-direct-badge">
               <Mail aria-hidden="true" size={24} />

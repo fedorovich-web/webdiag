@@ -37,7 +37,6 @@
   letter-spacing: -.03em;
 }
 
-/* Subtitle under H1: strictly 18px */
 .wd-tools-hero-copy > p {
   max-width: 680px;
   margin: 0;
@@ -476,7 +475,6 @@
   letter-spacing: -.03em;
 }
 
-/* Subtitle under H2: strictly 16px */
 .wd-tools-suggest p {
   max-width: 500px;
   margin: 10px 0 0;

@@ -17,8 +17,6 @@ export function isMainDomainHost(hostname: string): boolean {
 }
 
 export function middleware(request: NextRequest) {
-  // 0. Intercept any Server Action requests (e.g. CVE-2026-64643 probes sending Next-Action: x)
-  // WebDiag does not expose any Server Actions (all mutations use /api/* route handlers).
   if (request.headers.has("next-action")) {
     return new NextResponse("Server action not found.", {
       status: 404,
@@ -36,7 +34,6 @@ export function middleware(request: NextRequest) {
   const hostname = (host.split(":")[0] ?? "").toLowerCase().trim();
   const { pathname, search } = request.nextUrl;
 
-  // Never intercept static assets, next internal files, or file extensions
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
@@ -48,10 +45,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // --- APP SUBDOMAIN (app.webdiag.ru) ---
-  // Only the personal cabinet (/account), auth (/login, /register), and shared reports
   if (isAppSubdomainHost(hostname)) {
-    // 1. Root of app subdomain immediately opens the account workspace
     if (pathname === "/" || pathname === "") {
       const target = request.nextUrl.clone();
       target.pathname = "/account";
@@ -63,7 +57,6 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(target, 307);
     }
 
-    // 2. Allowed app routes
     const isAppPath =
       pathname === "/account" ||
       pathname.startsWith("/account/") ||
@@ -87,14 +80,10 @@ export function middleware(request: NextRequest) {
       return NextResponse.next();
     }
 
-    // 3. Any public marketing page (about, audit, pricing, knowledge, contacts, tools, etc.)
-    // is NOT part of the app workspace — redirect to the main domain
     const mainUrl = new URL(`https://${MAIN_DOMAIN}${pathname}${search}`);
     return NextResponse.redirect(mainUrl, 308);
   }
 
-  // --- MAIN DOMAIN (webdiag.ru / www.webdiag.ru) ---
-  // Public website only. Account workspace and auth pages redirect to app.webdiag.ru
   if (isMainDomainHost(hostname)) {
     const isAccountOrAuthPath =
       pathname === "/account" ||
@@ -118,7 +107,6 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // In development, localhost, or preview environments without domain routing
   return NextResponse.next();
 }
 

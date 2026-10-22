@@ -68,6 +68,27 @@ const backendSnapshot: BackendAuditSnapshotResponse = {
 };
 
 describe("audit frontend contract", () => {
+  it("preserves measured PageSpeed evidence instead of losing it at the proxy boundary", () => {
+    const snapshot = structuredClone(backendSnapshot);
+    Object.assign(snapshot.run!.checks[0]!, { evidence: [{
+      kind: "tool_output", source: "google.pagespeed.mobile.largest-contentful-paint", value: "4.8 s",
+      metadata: { title: "LCP", status: "fail", source: "lab", unit: "ms", value: 4800 },
+    }] });
+    const frontend = toAuditFrontendResult(snapshot);
+    expect(frontend.run!.checks[0]).toMatchObject({ evidence: [{
+      source: "google.pagespeed.mobile.largest-contentful-paint", value: "4.8 s", metadata: { status: "fail", source: "lab" },
+    }] });
+  });
+
+  it("rejects malformed evidence from both sides of the audit boundary", () => {
+    const snapshot = structuredClone(backendSnapshot);
+    Object.assign(snapshot.run!.checks[0]!, { evidence: [{ source: "lcp", value: 4800 }] });
+    expect(isBackendAuditSnapshotResponse(snapshot)).toBe(false);
+    const frontend = toAuditFrontendResult(backendSnapshot);
+    Object.assign(frontend.run!.checks[0]!, { evidence: [{ source: "lcp", value: 4800 }] });
+    expect(isAuditFrontendResult(frontend)).toBe(false);
+  });
+
   it("validates backend snapshots and maps them to a frontend-safe result", () => {
     expect(isBackendAuditSnapshotResponse(backendSnapshot)).toBe(true);
 

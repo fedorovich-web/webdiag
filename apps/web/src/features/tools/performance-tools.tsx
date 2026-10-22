@@ -1,8 +1,10 @@
 "use client";
 
 import { toolErrorMessage } from "./tool-error-presentation";
+import { PageSpeedMetricCard } from "./pagespeed-metric-card";
 
-import { useState, type FormEvent } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
 import type { Locale } from "@webdiag/tool-registry";
 import { localizeRecommendation } from "./tool-localization";
 import {
@@ -35,11 +37,13 @@ async function runPerformanceTool<T extends PerformanceToolResponse>(
   endpoint: string,
   body: Record<string, string>,
   validator: (payload: unknown) => payload is T,
+  signal?: AbortSignal,
 ): Promise<T> {
   const response = await fetch(endpoint, {
     method: "POST",
     headers: { accept: "application/json", "content-type": "application/json" },
     body: JSON.stringify(body),
+    signal,
   });
   const payload: unknown = await response.json().catch(() => null);
   if (!response.ok) {
@@ -238,26 +242,6 @@ export function LighthouseNetworkTool({ locale, view }: { locale: Locale; view: 
   </form>;
 }
 
-const metricTitlesRu: Record<string, string> = {
-  "largest-contentful-paint": "LCP — Отрисовка крупнейшего элемента",
-  "first-contentful-paint": "FCP — Первая отрисовка контента",
-  "total-blocking-time": "TBT — Суммарное время блокировки",
-  "cumulative-layout-shift": "CLS — Совокупное смещение элементов",
-  "interaction-to-next-paint": "INP — Время до следующей отрисовки",
-  "speed-index": "SI — Индекс скорости",
-  "time-to-first-byte": "TTFB — Время до первого байта",
-};
-
-const metricGuideRu: Record<string, { good: string; bad: string; tip: string }> = {
-  "largest-contentful-paint": { good: "≤ 2.5 с — Хорошо", bad: "> 4 с — Плохо", tip: "Оптимизируйте изображения (AVIF/WebP), добавьте <link rel=\"preload\"> для LCP-элемента, улучшите TTFB." },
-  "first-contentful-paint": { good: "≤ 1.8 с — Хорошо", bad: "> 3 с — Медленно", tip: "Уберите блокирующие CSS/JS (defer/async), используйте CDN, включите серверное кэширование." },
-  "total-blocking-time": { good: "≤ 200 мс — Хорошо", bad: "> 600 мс — Критично", tip: "Разбейте длинные JS-задачи (>50 мс) на чанки, используйте Web Workers, удалите неиспользуемые скрипты." },
-  "cumulative-layout-shift": { good: "≤ 0.1 — Хорошо", bad: "> 0.25 — Плохо", tip: "Задайте явные width/height или aspect-ratio для изображений и видео. Не вставляйте динамический контент над уже загруженным." },
-  "interaction-to-next-paint": { good: "≤ 200 мс — Хорошо", bad: "> 500 мс — Плохо", tip: "Оптимизируйте обработчики событий, перенесите тяжёлые вычисления в Web Workers, используйте debounce." },
-  "speed-index": { good: "≤ 3.4 с — Хорошо", bad: "> 5.8 с — Медленно", tip: "Сократите критический CSS, используйте font-display: swap для шрифтов, оптимизируйте порядок загрузки ресурсов." },
-  "time-to-first-byte": { good: "≤ 800 мс — Хорошо", bad: "> 1800 мс — Медленно", tip: "Настройте серверный кэш (Redis/Varnish), используйте CDN, оптимизируйте запросы к базе данных." },
-};
-
 const opportunityTitlesRu: Record<string, string> = {
   "render-blocking-resources": "Устранить блокирующие рендер ресурсы",
   "unused-javascript": "Удалить неиспользуемый JavaScript",
@@ -277,23 +261,50 @@ const opportunityTitlesRu: Record<string, string> = {
 };
 
 export function CoreWebVitalsTool({ locale }: { locale: Locale }) {
+  return <Suspense fallback={<p role="status">{dictionary[locale].loading}</p>}>
+    <CoreWebVitalsFromQuery locale={locale} />
+  </Suspense>;
+}
+
+function CoreWebVitalsFromQuery({ locale }: { locale: Locale }) {
+  const initialUrl = useSearchParams().get("url") ?? "";
+  return <CoreWebVitalsWorkbench key={initialUrl} locale={locale} initialUrl={initialUrl} />;
+}
+
+function CoreWebVitalsWorkbench({ locale, initialUrl }: { locale: Locale; initialUrl: string }) {
   const ru = locale === "ru";
-  const [url, setUrl] = useState("https://example.com/");
+  const target = parsePerformanceToolUrlInput(initialUrl)?.href ?? "";
+  const [url, setUrl] = useState(target || initialUrl || "https://example.com/");
   const [strategy, setStrategy] = useState<"mobile" | "desktop" | "both">("mobile");
   const [result, setResult] = useState<PageSpeedResponse | null>(null);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(initialUrl && !target ? dictionary[locale].invalidUrl : "");
+  const [loading, setLoading] = useState(Boolean(target));
+  const activeRequest = useRef<AbortController | null>(null);
 
-  async function onSubmit(event: FormEvent) {
+  const run = useCallback((targetUrl: string, selectedStrategy: string) => {
+    activeRequest.current?.abort();
+    const controller = new AbortController();
+    activeRequest.current = controller;
+    return runPerformanceTool("/api/tools/core-web-vitals",
+      { url: targetUrl, strategy: selectedStrategy }, isPageSpeedResponse, controller.signal)
+      .then((response) => { if (!controller.signal.aborted) setResult(response); })
+      .catch((caught) => { if (!controller.signal.aborted) setError(toolErrorMessage(locale, caught)); })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+  }, [locale]);
+
+  useEffect(() => {
+    if (target) void run(target, "mobile");
+    return () => activeRequest.current?.abort();
+  }, [target, run]);
+
+  function onSubmit(event: FormEvent) {
     event.preventDefault();
     const parsed = parsePerformanceToolUrlInput(url);
     if (!parsed) { setError(dictionary[locale].invalidUrl); setResult(null); return; }
-    setLoading(true); setError("");
-    try {
-      setResult(await runPerformanceTool("/api/tools/core-web-vitals", { url: parsed.toString(), strategy }, isPageSpeedResponse));
-    } catch (caught) {
-      setResult(null); setError(toolErrorMessage(locale, caught));
-    } finally { setLoading(false); }
+    if (!loading) {
+      setLoading(true); setError(""); setResult(null);
+      void run(parsed.href, strategy);
+    }
   }
 
   return (
@@ -335,7 +346,6 @@ export function CoreWebVitalsTool({ locale }: { locale: Locale }) {
                     : (item.fetch_error ?? (ru ? "Провайдер PageSpeed недоступен" : "PageSpeed provider unavailable"))}
                 </p>
 
-                {/* Category scores */}
                 <h4 style={{ fontSize: "13px", marginBottom: "10px" }}>{dictionary[locale].categories}</h4>
                 <div className="single-audit-metrics" style={{ marginBottom: "20px" }}>
                   {Object.entries(item.category_scores).map(([category, score]) => {
@@ -351,59 +361,17 @@ export function CoreWebVitalsTool({ locale }: { locale: Locale }) {
                   })}
                 </div>
 
-                {/* Core Web Vitals metrics */}
                 {item.metrics.length > 0 && (
                   <>
                     <h4 style={{ fontSize: "13px", marginBottom: "10px" }}>
                       {ru ? "Core Web Vitals и скоростные метрики" : "Core Web Vitals & Speed Metrics"}
                     </h4>
                     <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "20px" }}>
-                      {item.metrics.map((metric) => {
-                        const guide = ru ? metricGuideRu[metric.id] : null;
-                        const titleDisplay = ru && metricTitlesRu[metric.id] ? metricTitlesRu[metric.id] : metric.title;
-                        const isGood = metric.status === "pass";
-                        const isWarn = metric.status === "warning";
-                        const borderColor = isGood ? "#10b981" : isWarn ? "#f59e0b" : "#ef4444";
-                        return (
-                          <div
-                            key={metric.id}
-                            style={{
-                              padding: "12px 14px",
-                              borderRadius: "10px",
-                              border: `1px solid ${borderColor}30`,
-                              background: isGood ? "rgba(16,185,129,0.04)" : isWarn ? "rgba(245,158,11,0.04)" : "rgba(239,68,68,0.04)",
-                            }}
-                          >
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
-                              <div style={{ flex: 1 }}>
-                                <strong style={{ fontSize: "13px", display: "block", color: "var(--wd-f, #0f172a)" }}>{titleDisplay}</strong>
-                                {guide && (
-                                  <small style={{ color: isGood ? "var(--success)" : "var(--danger)", fontSize: "11px" }}>
-                                    {isGood ? guide.good : guide.bad}
-                                  </small>
-                                )}
-                              </div>
-                              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
-                                <strong style={{ fontSize: "15px", color: isGood ? "var(--success)" : isWarn ? "var(--warning)" : "var(--danger)" }}>{metric.display_value ?? metric.value ?? "—"}</strong>
-                                <span className={badgeClass(metric.status)} style={{ fontSize: "10px" }}>
-                                  {statusLabel(metric.status, locale)}
-                                </span>
-                              </div>
-                            </div>
-                            {guide && !isGood && (
-                              <div style={{ fontSize: "12px", color: "var(--muted)", background: "rgba(0,0,0,0.03)", padding: "8px 10px", borderRadius: "6px", marginTop: "8px" }}>
-                                <strong style={{ display: "block", marginBottom: "2px", color: "#374151" }}>💡 {ru ? "Что исправить:" : "How to fix:"}</strong>
-                                {guide.tip}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                      {item.metrics.map((metric) => <PageSpeedMetricCard key={metric.id} locale={locale} metric={metric} />)}
                     </div>
                   </>
                 )}
 
-                {/* Opportunities */}
                 {item.opportunities.length > 0 && (
                   <>
                     <h4 style={{ fontSize: "13px", marginBottom: "10px" }}>
@@ -428,7 +396,6 @@ export function CoreWebVitalsTool({ locale }: { locale: Locale }) {
                   </>
                 )}
 
-                {/* Audit findings (what to fix) */}
                 {item.audit_findings.length > 0 && (
                   <>
                     <h4 style={{ fontSize: "13px", marginBottom: "10px" }}>{dictionary[locale].findings}</h4>

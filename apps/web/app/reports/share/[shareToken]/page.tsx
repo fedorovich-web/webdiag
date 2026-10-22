@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import "../../../globals.css";
-import "../../../account.css";
 import { PublicReport } from "../../../../src/features/account/public-report";
 import { reportLocaleHint } from "../../../../src/features/account/account-report-presentation";
 

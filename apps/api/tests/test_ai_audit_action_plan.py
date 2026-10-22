@@ -208,3 +208,35 @@ def test_service_persists_resolved_snapshot_instead_of_client_references(tmp_pat
             idempotency_key="action-plan-missing",
         )
     assert (error.value.status_code, error.value.code) == (404, "ai_source_not_found")
+
+
+def test_audit_without_issues_does_not_create_run_or_reserve_credits(tmp_path) -> None:
+    database_path, workspace, owner_id, _foreign_id, project_id, _audit_id = _workspace(tmp_path)
+    audit = workspace.save_audit(
+        user_id=owner_id, project_id=project_id,
+        payload=_payload().model_copy(update={"score": 100, "issues": (), "checks": ()}),
+    )
+    service = AIService(
+        SqliteAIStore(str(database_path), lease_seconds=60),
+        catalog=AIToolCatalog((AIToolDefinition(
+            id="ai_audit_action_plan", contract_version="v1", state=AIToolState.READY,
+            credit_price=5, model_policy="openai/gpt-6-luna",
+        ),)),
+        input_max_bytes=100_000, input_resolver=AIInputResolver(workspace),
+    )
+    service.grant_beta_credits(
+        user_id=owner_id, quantity=10, reason="test", correlation_id="no-issues-grant"
+    )
+    with pytest.raises(AIServiceError) as error:
+        service.create_run(
+            user_id=owner_id,
+            request=AIRunCreateRequest(tool_id="ai_audit_action_plan", input={
+                "locale": "en", "project_id": project_id, "audit_id": audit.id,
+            }),
+            idempotency_key="no-issues-plan",
+        )
+    assert (error.value.status_code, error.value.code) == (422, "ai_source_no_issues")
+    credits = service.get_credits(user_id=owner_id)
+    assert (credits.available, credits.reserved) == (10, 0)
+    assert service.list_runs(user_id=owner_id, limit=10, cursor=None) == ((), None)
+    assert service.claim_pending() is None

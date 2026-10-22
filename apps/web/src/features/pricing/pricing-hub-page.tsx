@@ -1,5 +1,7 @@
 "use client";
 
+import { ACTIVE_AI_CATALOG_TOOLS } from "../tools/ai-tools-data";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -269,7 +271,7 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
                 "До 100 запусков любых AI-инструментов",
                 "Бессрочный баланс без сгорания",
                 "Приоритетная очередь генерации в LLM",
-                "Доступ ко всем 15 AI-инструментам платформы",
+                `Доступ ко всем ${ACTIVE_AI_CATALOG_TOOLS.length} AI-инструментам платформы`,
               ],
               btnText: "Выбрать 500 кредитов",
               btnHref: session ? "/account/settings#billing" : `${registerHref}?pack=500`,
@@ -487,7 +489,7 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
                 "Up to 100 runs of any AI workflow",
                 "Non-expiring permanent balance",
                 "Priority LLM queue processing",
-                "Full access to all 15 AI tools",
+                `Full access to all ${ACTIVE_AI_CATALOG_TOOLS.length} AI tools`,
               ],
               btnText: "Get 500 Credits",
               btnHref: session ? "/en/account/settings#billing" : `${registerHref}?pack=500`,
@@ -503,21 +505,18 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
 
   return (
     <main className="wd-pricing-page" id="main-content">
-      {/* Breadcrumbs (strictly 12px) */}
       <nav className="shell breadcrumbs wd-pricing-breadcrumbs" aria-label="Breadcrumbs">
         <Link href={homeHref}>{t.breadcrumbs.home}</Link>
         <span aria-hidden="true">/</span>
         <span aria-current="page">{t.breadcrumbs.pricing}</span>
       </nav>
 
-      {/* Hero */}
       <section className="wd-pricing-hero">
         <div className="shell wd-pricing-hero-inner">
           <span className="wd-eyebrow">{t.hero.eyebrow}</span>
           <h1 className="wd-pricing-h1">{t.hero.title}</h1>
           <p className="wd-pricing-hero-lead">{t.hero.lead}</p>
 
-          {/* Billing Switcher */}
           <div className="wd-billing-toggle-wrap">
             <span className={`wd-billing-toggle-label ${!annual ? "is-active" : ""}`}>
               {t.hero.monthly}
@@ -538,7 +537,6 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
         </div>
       </section>
 
-      {/* Pricing Cards Grid */}
       <section className="wd-pricing-section wd-pricing-cards-section">
         <div className="shell">
           {session && (
@@ -667,7 +665,6 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
         </div>
       </section>
 
-      {/* On-Demand Credit Packs (Pay-as-you-go) */}
       <section className="wd-pricing-section wd-credit-packs-section" id="credit-packs">
         <div className="shell">
           <div className="wd-pricing-section-header">
@@ -731,7 +728,6 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
         </div>
       </section>
 
-      {/* Comparison Table */}
       <section className="wd-pricing-section wd-comparison-section">
         <div className="shell">
           <div className="wd-pricing-section-header">
@@ -763,7 +759,6 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
         </div>
       </section>
 
-      {/* Detailed comparison list */}
       <section className="wd-pricing-section wd-comparison-details-section">
         <div className="shell">
           <div className="wd-comparison-groups">
@@ -797,7 +792,6 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
         </div>
       </section>
 
-      {/* FAQ */}
       <section className="wd-pricing-section wd-pricing-faq-section">
         <div className="shell">
           <div className="wd-pricing-section-header">
@@ -832,7 +826,6 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
         </div>
       </section>
 
-      {/* Guarantee Banner */}
       <section className="wd-pricing-section wd-guarantee-section">
         <div className="shell">
           <div className="wd-guarantee-card">

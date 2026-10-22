@@ -428,7 +428,6 @@ export function AccountAIStudioRunner({
           : null,
       });
       if (prepared.current?.fingerprint !== fingerprint) {
-        // Validate every field before creating a private upload or reserving credits.
         buildStudioInput(
           locale,
           toolId,

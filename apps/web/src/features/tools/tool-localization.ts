@@ -2,11 +2,35 @@ import type { Locale } from "@webdiag/tool-registry";
 import { RU_AUDIT_ISSUES } from "./audit-taxonomy-i18n";
 import type { AuditFrontendIssue } from "../home/audit-contract";
 
-/**
- * High-quality human translations for all diagnostic tool recommendations across WebDiag.
- */
 export const RECOMMENDATION_DICTIONARY_RU: Readonly<Record<string, string>> = {
-  // HTTP status & Redirects
+  "Some image responses could not be confirmed. Check HTTP status and Content-Type.":
+    "Часть ответов изображений не удалось подтвердить. Проверьте HTTP-статусы и Content-Type.",
+  "The page does not return a successful HTTP response. Fix its status before relying on metadata previews.":
+    "Страница не возвращает успешный HTTP-ответ. Исправьте код ответа, прежде чем оценивать предпросмотр метаданных.",
+  "Canonical URL is invalid. Use a valid HTTP or HTTPS page URL.":
+    "Адрес Canonical некорректен. Укажите корректный HTTP- или HTTPS-адрес страницы.",
+  "No HTTP links were available for checking in the static HTML.":
+    "В статическом HTML не найдено HTTP-ссылок, доступных для проверки.",
+  "No HTTP image URLs were available for checking in the static HTML.":
+    "В статическом HTML не найдено HTTP-адресов изображений, доступных для проверки.",
+  "Canonical URL is invalid or exceeds the supported length. Use a valid HTTP or HTTPS URL for the preferred page.":
+    "Адрес Canonical некорректен или превышает допустимую длину. Укажите корректный HTTP- или HTTPS-адрес предпочтительной страницы.",
+  "The page does not return a successful HTTP response. Fix the status code or redirect before using this URL as a canonical landing page.":
+    "Страница не возвращает успешный HTTP-ответ. Исправьте код ответа или перенаправление, прежде чем использовать её адрес как канонический.",
+  "The page declares noindex. Do not treat it as an indexable canonical target until robots meta directives match the SEO goal.":
+    "Страница содержит директиву noindex. Если она должна индексироваться, проверьте директивы robots в HTML и HTTP-заголовках.",
+  "Canonical link is missing. Add link rel=canonical to the preferred final URL to reduce duplicate URL ambiguity.":
+    "Canonical отсутствует. Добавьте <link rel=\"canonical\"> с предпочтительным конечным адресом страницы.",
+  "Canonical is relative. It can be resolved by browsers, but absolute canonical URLs are safer for migrations, syndication, and crawler diagnostics.":
+    "Указан относительный Canonical. Используйте полный адрес с протоколом и доменом, чтобы избежать неоднозначности при переносе сайта и проверках.",
+  "Canonical points to another host. Confirm that this is intentional cross-domain canonicalization; otherwise align it with the final indexable URL.":
+    "Canonical указывает на другой домен. Проверьте, что это сделано намеренно; иначе укажите конечный адрес индексируемой страницы на нужном домене.",
+  "Canonical does not match the final URL after redirects. Align canonical, redirects, internal links, and sitemap URLs to the same preferred address.":
+    "Canonical не совпадает с конечным адресом после перенаправлений. Согласуйте Canonical, редиректы, внутренние ссылки и sitemap.",
+  "Canonical matches the final URL, but the tested URL redirects before reaching it. Link internally to the canonical final URL to reduce crawl waste and tracking ambiguity.":
+    "Canonical совпадает с конечным адресом, но проверяемый URL перенаправляет на него. Во внутренних ссылках используйте конечный канонический адрес.",
+  "Canonical is present and matches the final URL. Keep it aligned with sitemap entries, internal links, and redirect rules after releases.":
+    "Canonical указан и совпадает с конечным адресом. Сохраняйте соответствие с sitemap, внутренними ссылками и правилами перенаправлений.",
   "URL opens directly with a successful HTTP response. Keep it stable for users and search crawlers.":
     "URL открывается напрямую с успешным HTTP-ответом (200 OK). Сохраняйте его стабильным для пользователей и поисковых систем.",
   "The final URL returns a successful response. Review the redirect chain and remove avoidable hops when possible.":
@@ -20,7 +44,6 @@ export const RECOMMENDATION_DICTIONARY_RU: Readonly<Record<string, string>> = {
   "The URL returns a server error. Check application logs, upstream services, cache, and deploy health before promoting traffic.":
     "URL возвращает ошибку сервера (5xx). Проверьте логи приложения, работу веб-сервера, базы данных и кэша перед подачей трафика.",
 
-  // Security Headers
   "The tested URL does not return a successful response. Fix availability before treating security header coverage as final.":
     "Проверяемый URL не возвращает успешный ответ. Устраните ошибки доступности перед финальной настройкой заголовков безопасности.",
   "The final URL is not HTTPS. Migrate to HTTPS first, then configure HSTS and the remaining browser security headers.":
@@ -32,7 +55,6 @@ export const RECOMMENDATION_DICTIONARY_RU: Readonly<Record<string, string>> = {
   "Critical security headers are missing or disabled. Prioritize HSTS, anti-clickjacking protection, and content isolation.":
     "Критические заголовки безопасности отсутствуют. В приоритетном порядке настройте HSTS, защиту от кликджекинга и изоляцию контента.",
 
-  // Robots.txt
   "The robots.txt request could not be completed. Check server routing and TLS availability.":
     "Не удалось получить файл robots.txt. Проверьте маршрутизацию веб-сервера, DNS и доступность HTTPS.",
   "No robots.txt was discovered at the origin root. Crawlers assume unconstrained access by default.":
@@ -46,7 +68,6 @@ export const RECOMMENDATION_DICTIONARY_RU: Readonly<Record<string, string>> = {
   "Robots.txt is available, but no Sitemap directive was found. Consider adding Sitemap: https://example.com/sitemap.xml.":
     "Файл robots.txt доступен, но не содержит директиву Sitemap. Рекомендуется указать адрес карты сайта в конце файла.",
 
-  // Sitemap.xml
   "The sitemap request could not be completed. Verify host resolution, SSL configuration, and server status.":
     "Не удалось загрузить sitemap.xml. Проверьте доступность хоста, SSL-сертификат и статус ответа сервера.",
   "The sitemap file could not be parsed as valid XML. Check XML syntax, encoding, and namespaces.":
@@ -58,7 +79,6 @@ export const RECOMMENDATION_DICTIONARY_RU: Readonly<Record<string, string>> = {
   "The XML sitemap is valid and contains active URL entries for search engines.":
     "XML-карта сайта корректна и содержит актуальный список страниц для индексации поисковыми роботами.",
 
-  // Canonical
   "The page does not return a successful response. Resolve HTTP status before evaluating canonical signals.":
     "Страница не возвращает успешный ответ (200 OK). Устраните ошибки перед оценкой сигналов канонизации.",
   "Add a rel=\"canonical\" tag to specify the authoritative URL and prevent duplicate content penalties.":
@@ -72,7 +92,6 @@ export const RECOMMENDATION_DICTIONARY_RU: Readonly<Record<string, string>> = {
   "Canonical tag is correctly configured and matches the canonical page address.":
     "Тег Canonical настроен корректно и полностью совпадает с финальным адресом страницы.",
 
-  // Indexability & Hreflang
   "The static HTML indexability signals look suitable for an indexable page.":
     "Сигналы индексируемости в статическом HTML корректны: страница открыта для поисковых систем.",
   "Fix invalid hreflang language tags before relying on international targeting.":
@@ -88,7 +107,6 @@ export const RECOMMENDATION_DICTIONARY_RU: Readonly<Record<string, string>> = {
   "Detected technologies are based on static HTML assets and response headers.":
     "Обнаруженные технологии определены на основе анализа статических ресурсов HTML и заголовков ответа сервера.",
 
-  // Protocol Security & Performance
   "Fix the HTTP response status before interpreting Server-Timing signals.":
     "Устраните ошибки HTTP-статуса перед анализом метрик Server-Timing.",
   "No Server-Timing header was returned for this response.":
@@ -125,9 +143,6 @@ export const RECOMMENDATION_DICTIONARY_RU: Readonly<Record<string, string>> = {
     "Объём или тип ответа не требует обязательного сжатия данных.",
 };
 
-/**
- * Localizes a recommendation message to Russian when applicable.
- */
 export function localizeRecommendation(value: string | null | undefined, locale: Locale): string {
   if (!value || typeof value !== "string") return "";
   if (locale !== "ru") return value;
@@ -136,7 +151,6 @@ export function localizeRecommendation(value: string | null | undefined, locale:
   const directMatch = RECOMMENDATION_DICTIONARY_RU[trimmed];
   if (directMatch) return directMatch;
 
-  // Pattern-based rules for dynamic / parameterized recommendation strings
   if (/^URL opens directly with a successful HTTP response/i.test(trimmed)) {
     return "URL открывается напрямую с успешным HTTP-ответом (200 OK). Сохраняйте его стабильным для пользователей и поисковых систем.";
   }
@@ -171,9 +185,6 @@ export function localizeRecommendation(value: string | null | undefined, locale:
   return value;
 }
 
-/**
- * Localizes an audit issue from the single-page audit report.
- */
 export function localizeSingleAuditIssue(issue: AuditFrontendIssue, locale: Locale): AuditFrontendIssue {
   if (locale !== "ru") return issue;
 

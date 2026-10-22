@@ -24,7 +24,6 @@ export function AccountCheckoutView({
   const [invoiceId, setInvoiceId] = useState(initialInvoiceId);
   const [isLive, setIsLive] = useState<boolean | null>(null);
 
-  // Flow states
   const [submitting, setSubmitting] = useState(Boolean(initialInvoiceId));
   const [paidSuccess, setPaidSuccess] = useState(false);
   const [planStartsAt, setPlanStartsAt] = useState<number | null>(null);
@@ -120,7 +119,6 @@ export function AccountCheckoutView({
 
   return (
     <div style={{ maxWidth: 880, margin: "0 auto", padding: "24px 16px" }}>
-      {/* Top back navigation */}
       <div style={{ marginBottom: 20 }}>
         <Link
           href={settingsUrl}
@@ -140,7 +138,6 @@ export function AccountCheckoutView({
       </div>
 
       {paidSuccess ? (
-        /* SUCCESS RECEIPT STATE */
         <div
           style={{
             background: "var(--wd-s, #fff)",
@@ -229,9 +226,7 @@ export function AccountCheckoutView({
           </div>
         </div>
       ) : (
-        /* CHECKOUT FORM VIEW */
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 24 }}>
-          {/* LEFT: PAYMENT TERMINAL */}
           <div
             style={{
               background: "var(--wd-s, #fff)",
@@ -248,7 +243,6 @@ export function AccountCheckoutView({
               </h2>
             </div>
 
-            {/* Gateway indicator banner */}
             {isLive ? (
               <div
                 style={{
@@ -315,7 +309,6 @@ export function AccountCheckoutView({
               </div>
             )}
 
-            {/* LIVE GATEWAY REDIRECT BUTTON */}
             {(
               <div style={{ textAlign: "center", padding: "20px 0" }}>
                 <p style={{ fontSize: 14, color: "var(--wd-ms, #64748b)", marginBottom: 20 }}>
@@ -339,7 +332,6 @@ export function AccountCheckoutView({
             )}
           </div>
 
-          {/* RIGHT: ORDER SUMMARY CARD */}
           <div>
             <div
               style={{
@@ -388,7 +380,6 @@ export function AccountCheckoutView({
                   </div>
                 </div>
 
-                {/* Change pack buttons */}
                 <div>
                   <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--wd-ms, #64748b)", marginBottom: 6 }}>
                     {ru ? "Выбрать другой пакет:" : "Switch package:"}

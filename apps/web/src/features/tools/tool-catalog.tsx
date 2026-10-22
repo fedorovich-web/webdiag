@@ -158,11 +158,13 @@ export function ToolCatalog({
   const pageTools = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
   const prefix = locale === "ru" ? "" : "/en";
 
+  const diagnosticToolCount = tools.filter((tool) => tool.category !== "ai-tools").length;
+
   const copy = locale === "ru"
     ? {
         eyebrow: "Инструменты WebDiag",
         title: "Все инструменты",
-        lead: "Более 140+ бесплатных инструментов для анализа, диагностики и улучшения вашего сайта. Выберите нужный инструмент или найдите его через поиск.",
+        lead: `${tools.length} инструментов для анализа, диагностики и улучшения вашего сайта. AI-сценарии используют кредиты; цена указана перед запуском.`,
         placeholder: "Найдите инструмент... например «robots.txt» или «скорость сайта»",
         find: "Найти",
         hint: "Например: robots.txt, sitemap, редиректы, скорость, HTTPS, изображения",
@@ -184,7 +186,7 @@ export function ToolCatalog({
     : {
         eyebrow: "WebDiag tools",
         title: "All tools",
-        lead: "More than 140 free tools for analyzing, diagnosing and improving your website. Choose a tool or find it through search.",
+        lead: `${tools.length} tools for analyzing, diagnosing and improving your website. AI workflows use credits; the price is shown before each run.`,
         placeholder: "Find a tool... for example “robots.txt” or “site speed”",
         find: "Find",
         hint: "For example: robots.txt, sitemap, redirects, speed, HTTPS, images",
@@ -300,8 +302,8 @@ export function ToolCatalog({
                 </strong>
                 <p>
                   {locale === "ru"
-                    ? "125 стандартных инструментов аудита полностью бесплатны. AI-инструменты расходуют кредиты (10 бесплатных кредитов начисляются при регистрации, далее доступны разовые пакеты от 390 ₽ без подписки)."
-                    : "All 125 core diagnostic tools are 100% free with no limits. AI workflows require credits (10 free credits upon signup, then on-demand packs from $5 with no subscription)."}
+                    ? `В каталоге ${diagnosticToolCount} обычных инструментов; условия и ограничения указаны на их страницах. AI-инструменты расходуют кредиты (10 бесплатных кредитов начисляются при регистрации, далее доступны разовые пакеты от 390 ₽ без подписки).`
+                    : `The catalog includes ${diagnosticToolCount} diagnostic tools; their pages describe processing conditions and limits. AI workflows require credits (10 free credits upon signup, then on-demand packs from $5 with no subscription).`}
                 </p>
               </div>
               <Link href={locale === "ru" ? "/pricing#credit-packs" : "/en/pricing#credit-packs"} className="wd-ai-catalog-banner-btn">

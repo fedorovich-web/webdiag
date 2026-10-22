@@ -5,6 +5,7 @@ import { toolErrorMessage } from "./tool-error-presentation";
 import { useState, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { CopyButton } from "../../components/copy-button";
+import { localizeRecommendation } from "./tool-localization";
 import {
   isMetaTagsResponse,
   isSerpPreviewResponse,
@@ -166,7 +167,7 @@ function CheckList({ checks, locale }: { checks: MetaTagsResponse["checks"]; loc
         <span>{check.value ?? "—"}</span>
       </div>
       <b className={`status-badge is-${metadataStatusTone(check.status)}`}>{metadataCheckStatusLabel(check.status, locale)}</b>
-      <p>{check.recommendation}</p>
+      <p>{localizeRecommendation(check.recommendation, locale)}</p>
     </li>)}
   </ul>;
 }
@@ -194,7 +195,7 @@ export function MetaTagsCheckerTool({ locale }: { locale: Locale }) {
         <div className="metadata-tool-card"><h3>Description</h3><p>{result.meta_description ?? "—"}</p></div>
         <div className="metadata-tool-card"><h3>Canonical</h3><p>{result.resolved_canonical_url ?? "—"}</p></div>
         <CheckList checks={result.checks} locale={locale} />
-        <p className="metadata-tool-recommendation"><strong>{copy.recommendation}:</strong> {result.recommendation}</p>
+        <p className="metadata-tool-recommendation"><strong>{copy.recommendation}:</strong> {localizeRecommendation(result.recommendation, locale)}</p>
         <CopyButton value={metaTagsResultText(result)} locale={locale} />
       </> : <p className="muted">{copy.empty}</p>}
     </section>
@@ -229,7 +230,7 @@ export function SerpPreviewTool({ locale }: { locale: Locale }) {
             <b className={`status-badge is-${metadataStatusTone(check.status)}`}>{metadataCheckStatusLabel(check.status, locale)}</b>
           </li>)}
         </ul>
-        <p className="metadata-tool-recommendation"><strong>{copy.recommendation}:</strong> {result.recommendation}</p>
+        <p className="metadata-tool-recommendation"><strong>{copy.recommendation}:</strong> {localizeRecommendation(result.recommendation, locale)}</p>
         <CopyButton value={serpPreviewResultText(result)} locale={locale} />
       </> : <p className="muted">{copy.empty}</p>}
     </section>
@@ -265,7 +266,7 @@ export function SocialPreviewTool({ locale }: { locale: Locale }) {
           <SocialCard title="Open Graph" card={result.open_graph} locale={locale} />
           <SocialCard title="Twitter/X" card={result.twitter} locale={locale} />
         </div>
-        <p className="metadata-tool-recommendation"><strong>{copy.recommendation}:</strong> {result.recommendation}</p>
+        <p className="metadata-tool-recommendation"><strong>{copy.recommendation}:</strong> {localizeRecommendation(result.recommendation, locale)}</p>
         <CopyButton value={socialPreviewResultText(result)} locale={locale} />
       </> : <p className="muted">{copy.empty}</p>}
     </section>

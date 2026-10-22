@@ -11,6 +11,7 @@ from webdiag_api.accounts.workspace_storage import (
 from webdiag_api.ai.tool_contracts import AIToolContractError, validate_provider_input
 from webdiag_api.audit.fetcher import SafeFetchError, SafeFetchResult
 from webdiag_api.audit.html_metadata import parse_html_metadata
+from webdiag_api.audit.html_resources import bounded_text
 from webdiag_api.security.url_policy import UrlPolicyError, validate_url
 
 CONTEXT_SNAPSHOT_TOOL_IDS = frozenset(
@@ -85,6 +86,12 @@ class AIInputResolver:
                 "ai_source_unavailable",
                 "AI source is temporarily unavailable.",
             ) from error
+        if not payload.issues:
+            raise AIInputResolutionError(
+                422,
+                "ai_source_no_issues",
+                "The saved audit has no issues to build an action plan from.",
+            )
         return {
             "locale": locale,
             "target_origin": payload.target_origin,
@@ -253,8 +260,7 @@ class AIInputResolver:
         parsed = urlsplit(validated.normalized)
         origin = urlunsplit((parsed.scheme, parsed.netloc, "", "", ""))
         if any(
-            project.origin == origin
-            for project in self._workspace.list_projects(user_id=user_id)
+            project.origin == origin for project in self._workspace.list_projects(user_id=user_id)
         ):
             return origin
         raise AIInputResolutionError(404, "ai_source_not_found", "AI source was not found.")
@@ -324,8 +330,8 @@ class AIInputResolver:
             )
         return {
             "page_url": urlunsplit((parsed.scheme, parsed.netloc, parsed.path or "/", "", "")),
-            "title": metadata.title,
-            "h1": metadata.h1[0] if metadata.h1 else None,
+            "title": bounded_text(metadata.title, 300) if metadata.title else None,
+            "h1": bounded_text(metadata.h1[0], 500) if metadata.h1 else None,
             "content": content,
         }
 
@@ -342,6 +348,48 @@ class AIInputResolver:
 
 
 class _BodyTextParser(HTMLParser):
+    _BLOCK_TAGS = frozenset(
+        {
+            "address",
+            "article",
+            "aside",
+            "blockquote",
+            "br",
+            "dd",
+            "div",
+            "dl",
+            "dt",
+            "details",
+            "summary",
+            "caption",
+            "fieldset",
+            "figcaption",
+            "figure",
+            "footer",
+            "form",
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "h5",
+            "h6",
+            "header",
+            "hr",
+            "li",
+            "main",
+            "nav",
+            "ol",
+            "p",
+            "pre",
+            "section",
+            "table",
+            "td",
+            "th",
+            "tr",
+            "ul",
+        }
+    )
+
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
         self._ignored_depth = 0
@@ -350,17 +398,23 @@ class _BodyTextParser(HTMLParser):
     def handle_starttag(self, tag: str, _attrs: list[tuple[str, str | None]]) -> None:
         if tag.lower() in {"head", "script", "style", "noscript", "template", "svg"}:
             self._ignored_depth += 1
+        elif self._ignored_depth == 0 and tag.lower() in self._BLOCK_TAGS:
+            self._parts.append(" ")
 
     def handle_endtag(self, tag: str) -> None:
         if tag.lower() in {"head", "script", "style", "noscript", "template", "svg"}:
             self._ignored_depth = max(0, self._ignored_depth - 1)
+        elif self._ignored_depth == 0 and tag.lower() in self._BLOCK_TAGS:
+            self._parts.append(" ")
 
     def handle_data(self, data: str) -> None:
-        if self._ignored_depth == 0 and data.strip():
+        if self._ignored_depth == 0:
             self._parts.append(data)
 
     def text(self) -> str:
-        return " ".join(" ".join(self._parts).split())[:MAX_SNAPSHOT_CONTENT_CHARS]
+        return bounded_text(
+            " ".join("".join(self._parts).split()), MAX_SNAPSHOT_CONTENT_CHARS
+        )
 
 
 def _body_text(html: str) -> str:

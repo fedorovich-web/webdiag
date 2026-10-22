@@ -1,0 +1,35 @@
+.result {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.result details {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--wd-account-border, #e2e8f0);
+  border-radius: 10px;
+}
+
+.result summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.result summary:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
+
+.result ul,
+.result ol {
+  padding-inline-start: 24px;
+}
+
+.result li + li {
+  margin-block-start: 8px;
+}
+
+.result .partial {
+  color: #854d0e;
+  background: #fef3c7;
+}

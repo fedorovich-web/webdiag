@@ -1,4 +1,3 @@
-/* WebDiag SEO Audit Hub Styles */
 .wd-audit-hub-page {
   overflow: clip;
   background: #ffffff;
@@ -50,7 +49,6 @@
   color: #091121;
 }
 
-/* Subtitle under H1: strictly 18px */
 .wd-audit-hero-lead {
   max-width: 760px;
   margin: 0 auto 36px;
@@ -59,7 +57,6 @@
   color: #4b5b75;
 }
 
-/* Form */
 .wd-audit-url-form {
   max-width: 720px;
   margin: 0 auto;
@@ -123,7 +120,6 @@
   color: #64748b;
 }
 
-/* Stats */
 .wd-audit-stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -158,7 +154,6 @@
   color: #64748b;
 }
 
-/* Section Shared */
 .wd-audit-section {
   padding: clamp(64px, 7vw, 96px) 0;
 }
@@ -181,7 +176,6 @@
   margin: 0;
 }
 
-/* Dimensions Section */
 .wd-audit-dimensions {
   background: #f8faff;
   border-top: 1px solid #edf2f7;
@@ -243,7 +237,6 @@
   margin: 0;
 }
 
-/* Preview Card */
 .wd-audit-preview-card {
   max-width: 920px;
   margin: 0 auto;
@@ -365,7 +358,6 @@
   color: #1d4ed8;
 }
 
-/* Levels */
 .wd-audit-levels-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -474,7 +466,6 @@
   box-shadow: 0 12px 26px rgba(37, 99, 255, 0.35);
 }
 
-/* FAQ */
 .wd-audit-faq {
   background: #f8faff;
   border-top: 1px solid #edf2f7;
@@ -530,7 +521,6 @@
   margin: 0;
 }
 
-/* Bottom CTA */
 .wd-audit-final-cta-section {
   padding-bottom: 84px;
 }
@@ -561,7 +551,6 @@
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
 }
 
-/* Responsive */
 @media (max-width: 1024px) {
   .wd-audit-dimensions-grid {
     grid-template-columns: repeat(2, 1fr);

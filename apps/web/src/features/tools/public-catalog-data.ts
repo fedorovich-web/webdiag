@@ -1,6 +1,6 @@
 import type { Locale } from "@webdiag/tool-registry";
 import type { CatalogTool } from "./catalog-utils";
-import { getAICatalogTools } from "./ai-tools-data";
+import { ACTIVE_AI_CATALOG_TOOLS, getAICatalogTools } from "./ai-tools-data";
 
 export interface PublicToolItem {
   readonly slug: string;
@@ -1517,6 +1517,8 @@ export const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
     }
   }
 ];
+
+export const PUBLIC_CATALOG_TOOL_COUNT = PUBLIC_TOOLS_DEFINITIONS.length + ACTIVE_AI_CATALOG_TOOLS.length;
 
 export function getPublicCatalogTools(locale: Locale): CatalogTool[] {
   const isRu = locale === "ru";

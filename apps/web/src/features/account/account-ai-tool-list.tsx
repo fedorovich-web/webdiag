@@ -1,5 +1,7 @@
 "use client";
 
+import { isActiveAIToolId } from "../tools/ai-tools-data";
+
 import type { Locale } from "@webdiag/tool-registry";
 import type { AICatalogResponse, AIToolSummary } from "./account-ai-contract";
 import {
@@ -37,7 +39,9 @@ function toolActionLabel(
 
 export function AccountAIToolList({ locale, catalog, loading, onSelect }: AccountAIToolListProps) {
   const ru = locale === "ru";
-  const descriptors = aiToolDescriptors(locale);
+  const descriptors = aiToolDescriptors(locale)
+    .filter((tool) => isActiveAIToolId(tool.id))
+    .map((tool, index) => ({ ...tool, workflowOrder: index + 1 }));
 
   return (
     <section className="wd-ai-tool-section" aria-labelledby="account-ai-tools-heading">
@@ -46,7 +50,7 @@ export function AccountAIToolList({ locale, catalog, loading, onSelect }: Accoun
           <span className="eyebrow">{ru ? "AI WORKSPACE" : "AI WORKSPACE"}</span>
           <h2 id="account-ai-tools-heading">{ru ? "Инструменты по рабочему процессу" : "Workflow tools"}</h2>
         </div>
-        <p>{ru ? "15 инструментов для работы с данными проекта, текстом и изображениями." : "15 tools for working with project evidence, text and images."}</p>
+        <p>{ru ? `${descriptors.length} инструментов для работы с данными проекта, текстом и изображениями.` : `${descriptors.length} tools for working with project evidence, text and images.`}</p>
       </div>
       <div className="wd-ai-tool-grid">
         {descriptors.map((descriptor) => {

@@ -160,6 +160,50 @@ export interface AccountCrawlList {
   readonly jobs: readonly AccountCrawlJob[];
 }
 
+export interface CrawlSeverityCounts {
+  readonly critical: number;
+  readonly high: number;
+  readonly medium: number;
+  readonly low: number;
+  readonly info: number;
+}
+
+export interface AuditedCrawlPage extends CrawlPage {
+  readonly audit_score: number;
+  readonly issue_count: number;
+  readonly issues_by_severity: CrawlSeverityCounts;
+}
+
+export interface SiteAuditIssue extends SavedAuditIssue {
+  readonly affected_url_count: number;
+}
+
+export interface SiteAuditResult extends Omit<CrawlResult, "contract_version" | "pages"> {
+  readonly contract_version: "webdiag.site_audit.result.v1";
+  readonly pages: readonly AuditedCrawlPage[];
+  readonly sitemap_complete: boolean;
+  readonly excluded_query_url_count: number;
+  readonly audit_summary: {
+    readonly pages_audited: number;
+    readonly pages_with_issues: number;
+    readonly unique_issue_count: number;
+    readonly issue_occurrence_count: number;
+    readonly occurrences_by_severity: CrawlSeverityCounts;
+  };
+  readonly issues: readonly SiteAuditIssue[];
+}
+
+export interface AccountSiteAuditDetail {
+  readonly contract_version: "webdiag.account.site_audit_detail.v1";
+  readonly job: AccountCrawlJob;
+  readonly result: SiteAuditResult | null;
+}
+
+export interface AccountSiteAuditList {
+  readonly contract_version: "webdiag.account.site_audit_list.v1";
+  readonly jobs: readonly AccountCrawlJob[];
+}
+
 function record(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
@@ -362,5 +406,63 @@ export function isAccountCrawlDetail(value: unknown): value is AccountCrawlDetai
 export function isAccountCrawlList(value: unknown): value is AccountCrawlList {
   return record(value) && only(value, ["contract_version", "jobs"])
     && value.contract_version === "webdiag.account.crawl_list.v1"
+    && Array.isArray(value.jobs) && value.jobs.every(isCrawlJob);
+}
+
+function nonnegativeInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+}
+
+function isSeverityCounts(value: unknown): value is CrawlSeverityCounts {
+  return record(value) && only(value, ["critical", "high", "medium", "low", "info"])
+    && Object.values(value).every(nonnegativeInteger);
+}
+
+function isAuditedCrawlPage(value: unknown): value is AuditedCrawlPage {
+  if (!record(value)) return false;
+  const { audit_score, issue_count, issues_by_severity, ...page } = value;
+  return isCrawlPage(page) && nonnegativeInteger(audit_score) && audit_score <= 100
+    && nonnegativeInteger(issue_count) && isSeverityCounts(issues_by_severity);
+}
+
+function isSiteAuditIssue(value: unknown): value is SiteAuditIssue {
+  if (!record(value)) return false;
+  const { affected_url_count, ...issue } = value;
+  return isIssue(issue) && nonnegativeInteger(affected_url_count)
+    && affected_url_count > 0 && affected_url_count >= issue.affected_urls.length;
+}
+
+function isSiteAuditResult(value: unknown): value is SiteAuditResult {
+  if (!record(value)) return false;
+  const { sitemap_complete, excluded_query_url_count, audit_summary, issues, pages, ...crawl } = value;
+  if (!isCrawlResult({ ...crawl, contract_version: "webdiag.crawl.result.v1", pages: [] })
+    || value.contract_version !== "webdiag.site_audit.result.v1"
+    || !Array.isArray(pages) || !pages.every(isAuditedCrawlPage)
+    || typeof sitemap_complete !== "boolean" || !nonnegativeInteger(excluded_query_url_count)
+    || !Array.isArray(issues) || !issues.every(isSiteAuditIssue)
+    || !record(audit_summary) || !only(audit_summary, [
+      "pages_audited", "pages_with_issues", "unique_issue_count", "issue_occurrence_count",
+      "occurrences_by_severity",
+    ]) || !nonnegativeInteger(audit_summary.pages_audited)
+    || !nonnegativeInteger(audit_summary.pages_with_issues)
+    || !nonnegativeInteger(audit_summary.unique_issue_count)
+    || !nonnegativeInteger(audit_summary.issue_occurrence_count)
+    || !isSeverityCounts(audit_summary.occurrences_by_severity)) return false;
+  return audit_summary.pages_audited === pages.length
+    && audit_summary.pages_with_issues <= pages.length
+    && audit_summary.unique_issue_count === issues.length
+    && audit_summary.issue_occurrence_count === issues.reduce((sum, issue) => sum + issue.affected_url_count, 0);
+}
+
+export function isAccountSiteAuditDetail(value: unknown): value is AccountSiteAuditDetail {
+  return record(value) && only(value, ["contract_version", "job", "result"])
+    && value.contract_version === "webdiag.account.site_audit_detail.v1"
+    && isCrawlJob(value.job) && (value.result === null || isSiteAuditResult(value.result))
+    && (value.result === null || value.result.origin === value.job.origin);
+}
+
+export function isAccountSiteAuditList(value: unknown): value is AccountSiteAuditList {
+  return record(value) && only(value, ["contract_version", "jobs"])
+    && value.contract_version === "webdiag.account.site_audit_list.v1"
     && Array.isArray(value.jobs) && value.jobs.every(isCrawlJob);
 }
