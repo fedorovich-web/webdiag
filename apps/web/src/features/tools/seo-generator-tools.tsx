@@ -26,19 +26,19 @@ const DEFAULT_ROBOTS: RobotsForm = {
   userAgent: "*",
   allow: "/",
   disallow: "/admin\n/private",
-  sitemap: "https://example.com/sitemap.xml",
+  sitemap: "",
   crawlDelay: "",
 };
 
 const DEFAULT_SITEMAP: SitemapForm = {
-  urls: "https://example.com/\nhttps://example.com/services\nhttps://example.com/contacts",
+  urls: "",
   lastmod: "",
   changefreq: "weekly",
   priority: "0.8",
 };
 
 const DEFAULT_FAQ: FaqForm = {
-  url: "https://example.com/faq",
+  url: "",
   questions: "What is WebDiag?\nWebDiag checks technical SEO and site quality.\n\nHow fast is it?\nMost lightweight checks run quickly; crawler and PageSpeed jobs are separate.",
 };
 
@@ -218,7 +218,7 @@ export function RobotsTxtGeneratorTool({ locale }: { locale: Locale }) {
         <label className="field"><span>User-agent</span><input value={tool.input.userAgent} onChange={(event) => tool.setInput({ ...tool.input, userAgent: event.target.value })} /></label>
         <label className="field"><span>Allow</span><textarea value={tool.input.allow} onChange={(event) => tool.setInput({ ...tool.input, allow: event.target.value })} rows={4} /></label>
         <label className="field"><span>Disallow</span><textarea value={tool.input.disallow} onChange={(event) => tool.setInput({ ...tool.input, disallow: event.target.value })} rows={4} /></label>
-        <label className="field"><span>Sitemap URL</span><input value={tool.input.sitemap} onChange={(event) => tool.setInput({ ...tool.input, sitemap: event.target.value })} /></label>
+        <label className="field"><span>Sitemap URL</span><input placeholder="https://example.com/sitemap.xml" value={tool.input.sitemap} onChange={(event) => tool.setInput({ ...tool.input, sitemap: event.target.value })} /></label>
         <label className="field"><span>Crawl-delay</span><input value={tool.input.crawlDelay} onChange={(event) => tool.setInput({ ...tool.input, crawlDelay: event.target.value })} inputMode="decimal" /></label>
         <button className="button" type="submit">{submitLabel}</button>
         <ErrorMessage value={tool.error} />
@@ -236,7 +236,7 @@ export function SitemapGeneratorTool({ locale }: { locale: Locale }) {
   return <div className="tool-grid">
     <Panel title={locale === "ru" ? "URL списка" : "URL list"}>
       <form onSubmit={tool.run}>
-        <label className="field"><span>{locale === "ru" ? "URL, по одному на строку" : "URLs, one per line"}</span><textarea value={tool.input.urls} onChange={(event) => tool.setInput({ ...tool.input, urls: event.target.value })} rows={8} /></label>
+        <label className="field"><span>{locale === "ru" ? "URL, по одному на строку" : "URLs, one per line"}</span><textarea placeholder={"https://example.com/\nhttps://example.com/services\nhttps://example.com/contacts"} value={tool.input.urls} onChange={(event) => tool.setInput({ ...tool.input, urls: event.target.value })} rows={8} /></label>
         <label className="field"><span>lastmod</span><input placeholder="2026-07-21" value={tool.input.lastmod} onChange={(event) => tool.setInput({ ...tool.input, lastmod: event.target.value })} /></label>
         <label className="field"><span>changefreq</span><input value={tool.input.changefreq} onChange={(event) => tool.setInput({ ...tool.input, changefreq: event.target.value })} /></label>
         <label className="field"><span>priority</span><input value={tool.input.priority} onChange={(event) => tool.setInput({ ...tool.input, priority: event.target.value })} inputMode="decimal" /></label>
@@ -256,7 +256,7 @@ export function FaqSchemaGeneratorTool({ locale }: { locale: Locale }) {
   return <div className="tool-grid">
     <Panel title={locale === "ru" ? "FAQ данные" : "FAQ data"}>
       <form onSubmit={tool.run}>
-        <label className="field"><span>{locale === "ru" ? "URL страницы" : "Page URL"}</span><input value={tool.input.url} onChange={(event) => tool.setInput({ ...tool.input, url: event.target.value })} /></label>
+        <label className="field"><span>{locale === "ru" ? "URL страницы" : "Page URL"}</span><input placeholder="https://example.com/faq" value={tool.input.url} onChange={(event) => tool.setInput({ ...tool.input, url: event.target.value })} /></label>
         <label className="field"><span>{locale === "ru" ? "Вопрос и ответ, блоками через пустую строку" : "Question and answer blocks separated by a blank line"}</span><textarea value={tool.input.questions} onChange={(event) => tool.setInput({ ...tool.input, questions: event.target.value })} rows={10} /></label>
         <button className="button" type="submit">{submitLabel}</button>
         <ErrorMessage value={tool.error} />

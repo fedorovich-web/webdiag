@@ -36,8 +36,8 @@ export const mediaUtilityToolPages = [
       { ru: "Повторное кодирование может изменить цветовой профиль, metadata и точное представление пикселей.", en: "Re-encoding can change color-profile data, metadata, and exact pixel representation." },
     ],
     faq: [
-      { question: { ru: "Почему PNG может не стать меньше?", en: "Why might a PNG not become smaller?" }, answer: { ru: "Canvas-кодирование и исходная оптимизация файла различаются. Уже оптимизированный PNG может остаться такого же размера или увеличиться.", en: "Canvas encoding differs from the source optimization. An already optimized PNG can remain similar in size or become larger." } },
-      { question: { ru: "Файл отправляется на сервер?", en: "Is the file uploaded?" }, answer: { ru: "Для AVIF — да: файл обрабатывается в памяти сервера и не сохраняется. WebP, JPEG и PNG кодируются в браузере.", en: "For AVIF, yes: the file is processed in server memory without storage. WebP, JPEG and PNG are encoded in the browser." } },
+      { question: { ru: "Как уменьшить файл и сохранить приемлемое качество?", en: "How can I reduce file size while keeping acceptable quality?" }, answer: { ru: "Выберите изображение, формат результата и качество, затем сравните полученный файл с оригиналом. Если появились заметные искажения, увеличьте качество. Уже сжатый файл может не стать меньше — проверьте итоговый размер перед скачиванием.", en: "Choose an image, output format, and quality, then compare the result with the original. Increase quality if visible artefacts appear. An already compressed file may not get smaller, so check the output size before downloading." } },
+      { question: { ru: "Какие форматы доступны и куда отправляется изображение?", en: "Which formats are available, and where is the image processed?" }, answer: { ru: "Можно выбрать JPEG, PNG, WebP или AVIF. JPEG, PNG и WebP обрабатываются в браузере. При выборе AVIF изображение отправляется в конвертер WebDiag, обрабатывается в памяти сервера и не сохраняется.", en: "You can choose JPEG, PNG, WebP, or AVIF. JPEG, PNG, and WebP are processed in your browser. AVIF uploads the image to the WebDiag converter, which processes it in server memory without storing it." } }
     ],
     relatedToolSlugs: ["image-format-converter", "image-resizer", "image-cropper"],
     sourceUrls: ["https://developer.mozilla.org/docs/Web/API/HTMLCanvasElement/toBlob"],
@@ -77,8 +77,8 @@ export const mediaUtilityToolPages = [
       { ru: "Качество и поддержка WebP зависят от возможностей браузера.", en: "WebP support and encoding behavior depend on browser capabilities." },
     ],
     faq: [
-      { question: { ru: "Можно конвертировать HEIC?", en: "Can it convert HEIC?" }, answer: { ru: "Только если конкретный браузер умеет декодировать выбранный файл; HEIC не заявлен как поддерживаемый формат.", en: "Only if the current browser can decode the selected file; HEIC is not an advertised supported format." } },
-      { question: { ru: "Сохранится прозрачность?", en: "Will transparency be preserved?" }, answer: { ru: "PNG, WebP и AVIF могут поддерживать прозрачность, JPEG — нет.", en: "PNG, WebP, and AVIF can support transparency; JPEG cannot." } },
+      { question: { ru: "Какой формат выбрать, если нужен прозрачный фон?", en: "Which format should I choose for a transparent background?" }, answer: { ru: "Выберите PNG, WebP или AVIF: эти форматы могут сохранять прозрачность. JPEG прозрачность не поддерживает. После преобразования проверьте фон на предпросмотре и скачайте подходящий вариант.", en: "Choose PNG, WebP, or AVIF, which can preserve transparency. JPEG does not support it. Check the background in the preview after converting, then download the suitable version." } },
+      { question: { ru: "Можно ли преобразовать несколько изображений сразу?", en: "Can I convert several images at once?" }, answer: { ru: "Здесь обрабатывается одно изображение за запуск. Выберите файл, укажите формат и скачайте результат, прежде чем переходить к следующему. Для AVIF файл отправляется в конвертер WebDiag; JPEG, PNG и WebP создаются в браузере.", en: "This tool processes one image per run. Choose the file and output format, then download the result before moving to the next image. AVIF uses the WebDiag server converter; JPEG, PNG, and WebP are created in the browser." } }
     ],
     relatedToolSlugs: ["image-optimizer", "image-resizer", "image-cropper"],
     sourceUrls: ["https://developer.mozilla.org/docs/Web/API/HTMLCanvasElement/toBlob"],
@@ -118,8 +118,8 @@ export const mediaUtilityToolPages = [
       { ru: "Увеличение изображения создаёт больше пикселей, но не добавляет исходных деталей.", en: "Upscaling creates more pixels but cannot add original detail." },
     ],
     faq: [
-      { question: { ru: "Можно не сохранять пропорции?", en: "Can I ignore the aspect ratio?" }, answer: { ru: "Да. Отключите сохранение пропорций и задайте обе стороны вручную.", en: "Yes. Disable aspect-ratio preservation and enter both dimensions manually." } },
-      { question: { ru: "Инструмент улучшает качество?", en: "Does it enhance image quality?" }, answer: { ru: "Нет. Он только масштабирует и повторно кодирует изображение.", en: "No. It only scales and re-encodes the image." } },
+      { question: { ru: "Как изменить ширину и не исказить изображение?", en: "How can I change width without distorting the image?" }, answer: { ru: "Оставьте включённым сохранение пропорций и измените ширину: высота пересчитается автоматически. Если нужны строго заданные ширина и высота, отключите этот параметр, но учитывайте возможное растяжение изображения.", en: "Keep aspect ratio preservation enabled and change the width; the height updates automatically. Disable it if you need exact independent dimensions, but watch for stretching." } },
+      { question: { ru: "Станет ли маленькое изображение чётче после увеличения?", en: "Will enlarging a small image make it sharper?" }, answer: { ru: "Увеличение добавляет пиксели, но не восстанавливает утраченные детали. Инструмент меняет размеры и создаёт новый файл; для лучшего результата используйте исходник достаточного разрешения и сравните предпросмотр с оригиналом.", en: "Enlargement adds pixels but does not recover missing detail. The tool resizes the image and creates a new file. Use a sufficiently large source and compare the preview with the original." } }
     ],
     relatedToolSlugs: ["image-optimizer", "image-format-converter", "image-aspect-ratio-calculator"],
     sourceUrls: ["https://developer.mozilla.org/docs/Web/API/CanvasRenderingContext2D/drawImage"],
@@ -159,8 +159,8 @@ export const mediaUtilityToolPages = [
       { ru: "Если область выходит за изображение, размеры ограничиваются доступными пикселями.", en: "If the rectangle extends outside the image, dimensions are clamped to available pixels." },
     ],
     faq: [
-      { question: { ru: "Можно выделить область мышью?", en: "Can I drag to select an area?" }, answer: { ru: "Нет. Текущая версия использует числовые координаты и размеры.", en: "No. The current version uses numeric coordinates and dimensions." } },
-      { question: { ru: "Что означает X и Y?", en: "What do X and Y mean?" }, answer: { ru: "Это положение верхнего левого угла области относительно верхнего левого угла изображения.", en: "They define the crop area's top-left corner relative to the image's top-left corner." } },
+      { question: { ru: "Как указать область, которую нужно оставить?", en: "How do I specify the area to keep?" }, answer: { ru: "X и Y задают расстояние от левого верхнего угла изображения до начала области. Ширина и высота определяют размер сохраняемого фрагмента в пикселях. Укажите эти значения в форме и проверьте результат обрезки.", en: "X and Y give the distance from the image's top-left corner to the crop area's start. Width and height set the saved area's size in pixels. Enter these values and check the cropped result." } },
+      { question: { ru: "Обрезка заменит мой исходный файл?", en: "Will cropping replace my original file?" }, answer: { ru: "Инструмент создаёт отдельный результат для скачивания. Исходный файл на устройстве не изменяется. Сохраните результат, если выбранный фрагмент вас устраивает; область задаётся числами, без выделения мышью.", en: "The tool creates a separate downloadable result and does not alter the source file on your device. Save the result when you are satisfied with the crop. The area is set numerically, without dragging a selection." } }
     ],
     relatedToolSlugs: ["image-resizer", "image-format-converter", "image-aspect-ratio-calculator"],
     sourceUrls: ["https://developer.mozilla.org/docs/Web/API/CanvasRenderingContext2D/drawImage"],
@@ -200,8 +200,8 @@ export const mediaUtilityToolPages = [
       { ru: "Результат расчёта стороны может быть дробным и потребовать округления для пиксельного размера.", en: "A calculated dimension can be fractional and may need rounding for pixel output." },
     ],
     faq: [
-      { question: { ru: "Нужно загружать изображение?", en: "Do I need to upload an image?" }, answer: { ru: "Нет. Инструмент работает только с введёнными числами.", en: "No. The tool works only with entered numbers." } },
-      { question: { ru: "Какое соотношение у Full HD?", en: "What is the Full HD aspect ratio?" }, answer: { ru: "Размер 1920×1080 сокращается до 16:9.", en: "1920×1080 reduces to 16:9." } },
+      { question: { ru: "Нужно ли загружать фотографию для расчёта пропорций?", en: "Do I need to upload a photo to calculate its aspect ratio?" }, answer: { ru: "Достаточно ввести её ширину и высоту в пикселях. Калькулятор сократит соотношение сторон и поможет рассчитать размер с теми же пропорциями. Само изображение он не открывает и не изменяет.", en: "Enter its width and height in pixels. The calculator simplifies the aspect ratio and helps calculate another size with the same proportions. It does not open or modify the image." } },
+      { question: { ru: "Как подобрать новый размер без растяжения?", en: "How do I choose another size without stretching?" }, answer: { ru: "Сохраните найденное соотношение ширины и высоты. Например, у 1920 × 1080 оно равно 16:9, поэтому 1280 × 720 имеет те же пропорции. Для изменения самого файла используйте инструмент изменения размера изображений.", en: "Keep the same width-to-height ratio. For example, 1920 × 1080 is 16:9, so 1280 × 720 has the same proportions. Use the image resizer to change the actual file." } }
     ],
     relatedToolSlugs: ["image-resizer", "image-cropper", "px-rem-converter"],
     sourceUrls: ["https://developer.mozilla.org/docs/Web/CSS/aspect-ratio"],
@@ -242,8 +242,8 @@ export const mediaUtilityToolPages = [
       { ru: "Активный SVG-контент намеренно блокируется.", en: "Active SVG content is intentionally blocked." },
     ],
     faq: [
-      { question: { ru: "Это полноценная замена SVGO?", en: "Is this a full SVGO replacement?" }, answer: { ru: "Нет. Это безопасный локальный optimizer для базовой очистки SVG перед публикацией.", en: "No. It is a safe local optimizer for basic SVG cleanup before publishing." } },
-      { question: { ru: "SVG отправляется на сервер?", en: "Is the SVG uploaded?" }, answer: { ru: "Нет. Обработка идёт в браузере.", en: "No. Processing happens in the browser." } },
+      { question: { ru: "Что делает оптимизация SVG?", en: "What does SVG optimisation do?" }, answer: { ru: "Инструмент очищает вставленный код SVG в пределах поддерживаемых правил и показывает результат для копирования. Сравните внешний вид изображения после изменения, прежде чем заменять файл на сайте.", en: "The tool cleans pasted SVG code using its supported rules and shows the result for copying. Compare the image's appearance after the change before replacing the file on your site." } },
+      { question: { ru: "Будет ли результат всегда меньше исходного кода?", en: "Will the result always be smaller than the source?" }, answer: { ru: "Размер зависит от того, как подготовлен исходник. Базовая очистка не заменяет все возможности специализированных SVG-оптимизаторов. Обработка выполняется в браузере; инструмент не загружает код на сайт и не заменяет файлы автоматически.", en: "Size depends on how the source was prepared. Basic cleanup does not replace every feature of a dedicated SVG optimiser. Processing runs in the browser; the tool does not upload code to your site or replace files automatically." } }
     ],
     relatedToolSlugs: ["image-optimizer", "image-format-converter", "favicon-checker"],
     sourceUrls: ["https://developer.mozilla.org/docs/Web/SVG"],
@@ -283,8 +283,8 @@ export const mediaUtilityToolPages = [
       { ru: "Результат является новым raster-файлом и может потерять исходные metadata.", en: "The result is a new raster file and can lose source metadata." },
     ],
     faq: [
-      { question: { ru: "Можно удалить водяной знак?", en: "Can it remove watermarks?" }, answer: { ru: "Нет. Инструмент только добавляет watermark на ваши изображения.", en: "No. The tool only adds a watermark to your images." } },
-      { question: { ru: "Файл загружается на сервер?", en: "Is the file uploaded?" }, answer: { ru: "Нет. Обработка происходит локально в браузере.", en: "No. Processing happens locally in the browser." } },
+      { question: { ru: "Как добавить подпись на изображение?", en: "How do I add a caption or watermark to an image?" }, answer: { ru: "Выберите своё изображение, введите текст водяного знака и настройте доступные параметры размещения. Проверьте результат и скачайте новый файл. Исходное изображение на устройстве останется прежним.", en: "Choose your image, enter the watermark text, and adjust the available placement settings. Check the result and download the new file. The original on your device remains unchanged." } },
+      { question: { ru: "Водяной знак гарантирует защиту от копирования?", en: "Does a watermark guarantee protection against copying?" }, answer: { ru: "Он помогает обозначить авторство, но не запрещает скачивание или редактирование картинки. Используйте инструмент для добавления своей подписи. Удаление чужих водяных знаков здесь не предусмотрено.", en: "It can identify authorship, but it does not prevent downloading or editing the image. Use the tool to add your own caption. It does not remove other people's watermarks." } }
     ],
     relatedToolSlugs: ["image-optimizer", "image-format-converter", "image-metadata-viewer"],
     sourceUrls: ["https://developer.mozilla.org/docs/Web/API/CanvasRenderingContext2D/fillText"],
@@ -324,8 +324,8 @@ export const mediaUtilityToolPages = [
       { ru: "Canvas output обычно не сохраняет исходные metadata chunks.", en: "Canvas output normally does not preserve source metadata chunks." },
     ],
     faq: [
-      { question: { ru: "Это показывает GPS координаты?", en: "Does it show GPS coordinates?" }, answer: { ru: "Нет. Текущая версия показывает наличие metadata chunks, а не декодирует каждое поле.", en: "No. This version shows metadata chunk presence, not every decoded field." } },
-      { question: { ru: "Удаление гарантировано?", en: "Is removal guaranteed?" }, answer: { ru: "Для Canvas re-encode исходные EXIF/XMP chunks не переносятся, но итог зависит от возможностей браузера и формата.", en: "Canvas re-encode does not carry source EXIF/XMP chunks, but output depends on browser and format capabilities." } },
+      { question: { ru: "Покажет ли инструмент место, где сделана фотография?", en: "Will this tool show where a photo was taken?" }, answer: { ru: "Он показывает наличие служебных блоков данных в файле, но не расшифровывает каждое поле EXIF и GPS-координаты. По этому отчёту нельзя определить место съёмки или подтвердить отсутствие всех личных данных.", en: "It detects metadata blocks in the file but does not decode every EXIF field or GPS coordinates. This report cannot locate a photo or confirm the absence of all personal information." } },
+      { question: { ru: "Как получить копию без исходных служебных данных?", en: "How can I obtain a copy without the source metadata?" }, answer: { ru: "Используйте доступную в инструменте обработку с созданием нового изображения и скачайте результат. Исходные блоки EXIF и XMP при таком перекодировании не переносятся. Перед публикацией проверьте новый файл, особенно если он содержал чувствительные сведения.", en: "Use the tool's image re-encoding option and download the result. Source EXIF and XMP blocks are not carried over during that process. Check the new file before publishing, particularly if it contained sensitive information." } }
     ],
     relatedToolSlugs: ["image-optimizer", "image-format-converter", "add-watermark-to-image"],
     sourceUrls: ["https://developer.mozilla.org/docs/Web/API/Canvas_API"],
@@ -365,8 +365,8 @@ export const mediaUtilityToolPages = [
       { ru: "Каждый результат кодируется отдельно через Canvas PNG encoder браузера.", en: "Each result is encoded separately through the browser Canvas PNG encoder." },
     ],
     faq: [
-      { question: { ru: "Генератор создаёт favicon.ico?", en: "Does it create favicon.ico?" }, answer: { ru: "Нет. Текущий инструмент создаёт только пять явно перечисленных PNG-файлов.", en: "No. The current tool creates only the five explicitly listed PNG files; it does not create .ico." } },
-      { question: { ru: "Файл отправляется на сервер?", en: "Is the file uploaded?" }, answer: { ru: "Нет. Декодирование, обрезка и PNG-кодирование происходят в браузере.", en: "No. Decoding, cropping, and PNG encoding happen in the browser." } },
+      { question: { ru: "Как подготовить изображение для иконки сайта?", en: "How should I prepare an image for a site icon?" }, answer: { ru: "Выберите изображение, которое остаётся узнаваемым в маленьком размере. Инструмент подготовит квадратные PNG-иконки из центральной области исходника. Проверьте, что важные детали не обрезались, и скачайте нужные размеры.", en: "Choose an image that remains recognisable at a small size. The tool creates square PNG icons from the centre of the source. Check that important details were not cropped out, then download the sizes you need." } },
+      { question: { ru: "Какие файлы я получу и что делать с ними дальше?", en: "Which files will I receive, and how do I use them?" }, answer: { ru: "Генератор создаёт пять PNG-иконок: 32 × 32, 48 × 48, 180 × 180, 192 × 192 и 512 × 512. Разместите выбранные файлы на сайте и подключите их в настройках или разметке страницы. Файл favicon.ico инструмент не создаёт.", en: "The generator creates five PNG icons: 32 × 32, 48 × 48, 180 × 180, 192 × 192, and 512 × 512. Upload the chosen files to your site and reference them in its settings or page markup. The tool does not create favicon.ico." } }
     ],
     relatedToolSlugs: ["favicon-checker", "image-cropper", "image-resizer"],
     sourceUrls: [
@@ -409,8 +409,8 @@ export const mediaUtilityToolPages = [
       { ru: "Изображение декодируется в RGBA pixels; найденный текст показывается только в read-only textarea.", en: "The image is decoded to RGBA pixels; found text is shown only in a read-only textarea." },
     ],
     faq: [
-      { question: { ru: "Инструмент открывает найденную ссылку?", en: "Does the tool open a decoded link?" }, answer: { ru: "Нет. Любое содержимое остаётся обычным текстом и требует ручной проверки.", en: "No. All decoded content remains plain text and requires manual inspection." } },
-      { question: { ru: "Файл отправляется на сервер?", en: "Is the image uploaded?" }, answer: { ru: "Нет. Генерация, декодирование и PNG export выполняются локально в браузере.", en: "No. Generation, decoding, and PNG export happen locally in the browser." } },
+      { question: { ru: "Как создать QR-код для ссылки?", en: "How do I create a QR code for a link?" }, answer: { ru: "Вставьте полный адрес, создайте код и скачайте PNG. Перед публикацией считайте полученное изображение телефоном и проверьте адрес. Генератор кодирует введённый текст и не проверяет, работает ли ссылка.", en: "Paste the full address, generate the code, and download the PNG. Scan the result with a phone and verify the address before publishing. The generator encodes your text; it does not check whether the link works." } },
+      { question: { ru: "Как посмотреть содержимое готового QR-кода?", en: "How can I read an existing QR code?" }, answer: { ru: "Выберите изображение в режиме чтения кода. Найденное содержимое появится как текст; инструмент не открывает ссылки автоматически. Проверьте текст и адрес перед тем, как переходить по нему.", en: "Select an image in the code-reading mode. Detected content appears as text, and links are not opened automatically. Review the text and address before visiting a link." } }
     ],
     relatedToolSlugs: ["image-data-uri-converter", "image-optimizer", "responsive-image-srcset-generator"],
     sourceUrls: [
@@ -453,8 +453,8 @@ export const mediaUtilityToolPages = [
       { ru: "Placeholder декодируется и кодируется через Canvas API текущего браузера.", en: "The placeholder is decoded and encoded through the current browser's Canvas API." },
     ],
     faq: [
-      { question: { ru: "Файл отправляется на сервер?", en: "Is the file uploaded?" }, answer: { ru: "Нет. Чтение, декодирование и кодирование выполняются локально в браузере.", en: "No. Reading, decoding, and encoding happen locally in the browser." } },
-      { question: { ru: "Это оптимизатор изображений?", en: "Is this an image optimizer?" }, answer: { ru: "Нет. Точный Data URI сохраняет все байты исходника, а PNG placeholder создаётся отдельно.", en: "No. The exact Data URI preserves every source byte, while the PNG placeholder is generated separately." } },
+      { question: { ru: "Для чего изображение преобразуют в Data URI?", en: "Why convert an image to a Data URI?" }, answer: { ru: "Так изображение можно включить прямо в HTML или CSS одной текстовой строкой без отдельной ссылки на файл. Это удобно для небольших ресурсов. Преобразование в строку не сжимает исходное изображение и может увеличить объём данных.", en: "It lets you embed an image directly in HTML or CSS as one text string instead of linking a separate file. This can be useful for small resources. Converting to text does not compress the image and can increase data size." } },
+      { question: { ru: "Чем точная копия отличается от изображения-заглушки?", en: "How does an exact copy differ from a placeholder image?" }, answer: { ru: "Режим точной копии сохраняет байты выбранного файла в текстовом представлении. Заглушка создаёт отдельное небольшое PNG-изображение для предварительного отображения. Выберите подходящий режим и проверьте результат перед использованием в коде.", en: "Exact-copy mode preserves the selected file's bytes as text. Placeholder mode creates a separate small PNG for an initial preview. Choose the mode you need and inspect the result before using it in code." } }
     ],
     relatedToolSlugs: ["image-optimizer", "responsive-image-srcset-generator", "color-palette-extractor"],
     sourceUrls: [
@@ -497,8 +497,8 @@ export const mediaUtilityToolPages = [
       { ru: "Результат показывается как текст и не исполняется в DOM.", en: "The result is rendered as text and is not executed in the DOM." },
     ],
     faq: [
-      { question: { ru: "Инструмент создаёт изображения нужных размеров?", en: "Does it create images at the requested widths?" }, answer: { ru: "Нет. Все файлы должны существовать заранее, а ширину вводит пользователь.", en: "No. The tool does not create image files; every file must already exist and the user supplies its intrinsic width." } },
-      { question: { ru: "URL проверяются по сети?", en: "Are URLs checked over the network?" }, answer: { ru: "Нет. Инструмент проверяет только форму введённых данных локально в браузере.", en: "No. It validates only the entered text locally in the browser." } },
+      { question: { ru: "Что нужно подготовить для адаптивного изображения?", en: "What should I prepare for a responsive image?" }, answer: { ru: "Создайте несколько файлов одного изображения с разной шириной. Укажите адрес и реальную ширину каждого файла в форме. Генератор соберёт разметку, по которой браузер сможет выбирать подходящий вариант.", en: "Create several files of the same image at different widths. Enter each file's address and actual width. The generator builds markup that lets a browser select an appropriate version." } },
+      { question: { ru: "Генератор сам уменьшит картинку и загрузит файлы на сайт?", en: "Will the generator resize the picture and upload the files?" }, answer: { ru: "Файлы нужно создать и разместить самостоятельно. Здесь проверяется введённый список и формируется код, а доступность адресов по сети не проверяется. Для подготовки файлов используйте инструмент изменения размера изображений.", en: "Create and host the files yourself. This tool validates the entered list and generates code without checking addresses over the network. Use the image resizer to prepare the files." } }
     ],
     relatedToolSlugs: ["image-resizer", "image-format-converter", "image-performance-checker"],
     sourceUrls: [

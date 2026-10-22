@@ -86,8 +86,8 @@ describe("tool editorial content", () => {
   it("publishes the bounded crawler pages with the current technical review date", () => {
     for (const slug of ["whole-site-audit", "duplicate-meta-checker", "orphan-page-finder"]) {
       const page = toolPageContents.find((item) => item.slug === slug);
-      expect(page?.lastReviewedAt).toBe("2026-08-13");
-      expect(JSON.stringify(page)).toContain("25 HTML");
+      expect(page?.lastReviewedAt).toBe("2026-10-22");
+      expect(JSON.stringify(page)).toContain("100 HTML");
     }
   });
 });

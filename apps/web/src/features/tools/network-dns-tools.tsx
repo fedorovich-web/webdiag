@@ -102,7 +102,7 @@ function DomainForm({
   onSubmit: (domain: string) => void;
   loading: boolean;
 }) {
-  const [domain, setDomain] = useState("example.com");
+  const [domain, setDomain] = useState("");
   const [error, setError] = useState("");
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -120,7 +120,7 @@ function DomainForm({
     <form className="tool-form" onSubmit={submit}>
       <label className="field">
         <span>{dictionary[locale].domain}</span>
-        <input value={domain} onChange={(event) => setDomain(event.target.value)} />
+        <input placeholder="example.com" value={domain} onChange={(event) => setDomain(event.target.value)} />
       </label>
       {error && <p className="form-error" role="alert">{error}</p>}
       <button className="button" type="submit" disabled={loading}>
@@ -139,7 +139,7 @@ function DkimForm({
   onSubmit: (domain: string, selector: string) => void;
   loading: boolean;
 }) {
-  const [domain, setDomain] = useState("example.com");
+  const [domain, setDomain] = useState("");
   const [selector, setSelector] = useState("default");
   const [error, setError] = useState("");
 
@@ -163,7 +163,7 @@ function DkimForm({
     <form className="tool-form" onSubmit={submit}>
       <label className="field">
         <span>{dictionary[locale].domain}</span>
-        <input value={domain} onChange={(event) => setDomain(event.target.value)} />
+        <input placeholder="example.com" value={domain} onChange={(event) => setDomain(event.target.value)} />
       </label>
       <label className="field">
         <span>Selector</span>

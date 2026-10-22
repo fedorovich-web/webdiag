@@ -206,7 +206,7 @@ function IpRdapResultView({ locale, result }: { locale: Locale; result: IpRdapRe
 }
 
 export function DnsResolverComparisonTool({ locale }: { locale: Locale }) {
-  const [domain, setDomain] = useState("example.com");
+  const [domain, setDomain] = useState("");
   const [recordType, setRecordType] = useState<ComparisonRecordType>("A");
   const [result, setResult] = useState<DnsResolverComparisonResponse | null>(null);
   const [error, setError] = useState("");
@@ -227,7 +227,7 @@ export function DnsResolverComparisonTool({ locale }: { locale: Locale }) {
   }
 
   return <div className="tool-grid"><Panel title={dictionary[locale].domain}><form className="tool-form" onSubmit={submit}>
-    <label className="field"><span>{dictionary[locale].domain}</span><input value={domain} onChange={(event) => setDomain(event.target.value)} /></label>
+    <label className="field"><span>{dictionary[locale].domain}</span><input placeholder="example.com" value={domain} onChange={(event) => setDomain(event.target.value)} /></label>
     <label className="field"><span>{dictionary[locale].recordType}</span><select value={recordType} onChange={(event) => setRecordType(event.target.value as ComparisonRecordType)}>{recordTypes.map((item) => <option key={item}>{item}</option>)}</select></label>
     {error && <p className="form-error" role="alert">{error}</p>}
     <button className="button" disabled={loading}>{loading ? dictionary[locale].loading : dictionary[locale].run}</button>
@@ -235,7 +235,7 @@ export function DnsResolverComparisonTool({ locale }: { locale: Locale }) {
 }
 
 export function DomainRdapLookupTool({ locale }: { locale: Locale }) {
-  const [domain, setDomain] = useState("example.com");
+  const [domain, setDomain] = useState("");
   const [result, setResult] = useState<DomainRdapResponse | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -255,7 +255,7 @@ export function DomainRdapLookupTool({ locale }: { locale: Locale }) {
   }
 
   return <div className="tool-grid"><Panel title={dictionary[locale].domain}><form className="tool-form" onSubmit={submit}>
-    <label className="field"><span>{dictionary[locale].domain}</span><input value={domain} onChange={(event) => setDomain(event.target.value)} /></label>
+    <label className="field"><span>{dictionary[locale].domain}</span><input placeholder="example.com" value={domain} onChange={(event) => setDomain(event.target.value)} /></label>
     {error && <p className="form-error" role="alert">{error}</p>}
     <button className="button" disabled={loading}>{loading ? dictionary[locale].loading : dictionary[locale].run}</button>
   </form></Panel>{result && <DomainRdapResultView locale={locale} result={result} />}</div>;

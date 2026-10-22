@@ -43,6 +43,7 @@ test.describe("bounded Lighthouse network evidence", () => {
 
   test("renders a bounded inert resource timeline in English", async ({ page }, testInfo) => {
     await page.goto("/en/tools/resource-waterfall-analyzer");
+    await page.getByLabel("Page URL").fill("https://example.com/");
     await page.getByRole("button", { name: "Run check" }).click();
 
     await expect(page.getByRole("heading", { name: "Resource timeline", exact: true })).toBeVisible();
@@ -62,6 +63,7 @@ test.describe("bounded Lighthouse network evidence", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.addInitScript(() => localStorage.setItem("webdiag-theme", "dark"));
     await page.goto("/tools/render-blocking-resources-checker");
+    await page.getByLabel("URL страницы").fill("https://example.com/");
     await page.getByRole("button", { name: "Запустить проверку" }).click();
 
     await expect(page.getByRole("heading", { name: "Блокирующие ресурсы", exact: true })).toBeVisible();
@@ -77,6 +79,7 @@ test.describe("bounded Lighthouse network evidence", () => {
       body: JSON.stringify({ ...result, render_blocking_available: false, render_blocking_score: null, render_blocking_display_value: null, render_blocking_savings_ms: null, render_blocking_items: [], recommendation: "The exact audit is unavailable for this provider run." }),
     }));
     await page.goto("/en/tools/render-blocking-resources-checker");
+    await page.getByLabel("Page URL").fill("https://example.com/");
     await page.getByRole("button", { name: "Run check" }).click();
 
     await expect(page.getByText("PageSpeed did not return the exact render-blocking-resources audit. WebDiag does not replace it with a heuristic.")).toBeVisible();

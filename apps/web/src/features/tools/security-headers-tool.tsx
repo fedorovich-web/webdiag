@@ -162,7 +162,7 @@ function yesNo(value: boolean, locale: Locale): string {
 }
 
 export function SecurityHeadersTool({ locale }: { locale: Locale }) {
-  const [input, setInput] = useState("https://example.com/");
+  const [input, setInput] = useState("");
   const [result, setResult] = useState<SecurityHeadersResponse | null>(null);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);

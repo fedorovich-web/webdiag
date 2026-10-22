@@ -31,10 +31,10 @@ export function AboutPage({ locale }: { locale: Locale }) {
         title: "Современная платформа для комплексной диагностики и SEO-аудита сайтов",
         lead: `WebDiag объединяет ${PUBLIC_CATALOG_TOOL_COUNT} инструментов диагностики, включая AI-сценарии, для веб-мастеров, SEO-специалистов и разработчиков.`,
         stats: [
-          { number: String(PUBLIC_CATALOG_TOOL_COUNT), label: "Инструментов анализа", sub: "От HTTP-заголовков до Core Web Vitals и AI" },
-          { number: String(ACTIVE_AI_CATALOG_TOOLS.length), label: "AI-сценариев", sub: "Готовые планы, брифы и перелинковка" },
-          { number: "Данные", label: "Основа проверок", sub: "Введённые данные и ответы источников" },
-          { number: "По задаче", label: "Время проверки", sub: "Зависит от инструмента и ответа источника" },
+          { value: PUBLIC_CATALOG_TOOL_COUNT, label: "Инструментов анализа", sub: "От HTTP-заголовков до Core Web Vitals и AI" },
+          { value: ACTIVE_AI_CATALOG_TOOLS.length, label: "AI-сценариев", sub: "Готовые планы, брифы и перелинковка" },
+          { value: "Данные", label: "Основа проверок", sub: "Введённые данные и ответы источников" },
+          { value: "По задаче", label: "Время проверки", sub: "Зависит от инструмента и ответа источника" },
         ],
         missionTitle: "Наша миссия",
         missionLead: "Сделать профессиональную веб-аналитику и SEO-диагностику доступной, быстрой и понятной каждому владельцу сайта.",
@@ -104,10 +104,10 @@ export function AboutPage({ locale }: { locale: Locale }) {
         title: "Modern Platform for Comprehensive Website Diagnostics and SEO Auditing",
         lead: `WebDiag brings together ${PUBLIC_CATALOG_TOOL_COUNT} diagnostic tools, including AI workflows, for webmasters, SEO professionals, and developers.`,
         stats: [
-          { number: String(PUBLIC_CATALOG_TOOL_COUNT), label: "Diagnostic tools", sub: "From HTTP headers to Core Web Vitals and AI" },
-          { number: String(ACTIVE_AI_CATALOG_TOOLS.length), label: "AI workflows", sub: "Fix plans, briefs, and internal linking" },
-          { number: "Data", label: "Diagnostic inputs", sub: "Submitted data and source responses" },
-          { number: "Varies", label: "Check duration", sub: "Depends on the tool and source response" },
+          { value: PUBLIC_CATALOG_TOOL_COUNT, label: "Diagnostic tools", sub: "From HTTP headers to Core Web Vitals and AI" },
+          { value: ACTIVE_AI_CATALOG_TOOLS.length, label: "AI workflows", sub: "Fix plans, briefs, and internal linking" },
+          { value: "Data", label: "Diagnostic inputs", sub: "Submitted data and source responses" },
+          { value: "Varies", label: "Check duration", sub: "Depends on the tool and source response" },
         ],
         missionTitle: "Our Mission",
         missionLead: "Making professional web diagnostics and technical SEO accessible, fast, and actionable for every website owner.",
@@ -189,7 +189,9 @@ export function AboutPage({ locale }: { locale: Locale }) {
           <div className="wd-about-stats-grid">
             {t.stats.map((item, idx) => (
               <div className="wd-about-stat-card" key={idx}>
-                <span className="wd-about-stat-number">{item.number}</span>
+                <span className={typeof item.value === "number" ? "wd-about-stat-value wd-about-stat-number" : "wd-about-stat-value"}>
+                  {item.value}
+                </span>
                 <strong className="wd-about-stat-label">{item.label}</strong>
                 <small className="wd-about-stat-sub">{item.sub}</small>
               </div>
