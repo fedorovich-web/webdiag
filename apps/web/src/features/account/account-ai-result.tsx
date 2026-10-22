@@ -191,7 +191,6 @@ export function AccountAIResult({
     const path = privateAIArtifactPath(runId, output.artifact_id);
     return (
       <div className="wd-ai-text-output">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={path}
           alt={

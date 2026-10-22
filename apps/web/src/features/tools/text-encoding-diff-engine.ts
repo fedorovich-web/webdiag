@@ -1,7 +1,7 @@
 export const MAX_TEXT_LENGTH = 200_000;
-export const MAX_DIFF_LINES = 5_000;
-export const MAX_DIFF_CELLS = 2_000_000;
-export const MAX_DIFF_OUTPUT_LENGTH = 350_000;
+const MAX_DIFF_LINES = 5_000;
+const MAX_DIFF_CELLS = 2_000_000;
+const MAX_DIFF_OUTPUT_LENGTH = 350_000;
 
 const MAX_ENTITY_BODY_LENGTH = 32;
 
@@ -58,14 +58,14 @@ export interface HtmlEntityEncodeOptions {
   readonly numericFormat: EntityNumericFormat;
 }
 
-export type DiffLineKind = "unchanged" | "addition" | "deletion";
+type DiffLineKind = "unchanged" | "addition" | "deletion";
 
-export interface DiffLine {
+interface DiffLine {
   readonly kind: DiffLineKind;
   readonly value: string;
 }
 
-export interface DiffSummary {
+interface DiffSummary {
   readonly additions: number;
   readonly deletions: number;
   readonly unchanged: number;

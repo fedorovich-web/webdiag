@@ -76,7 +76,7 @@ def test_worker_rejects_redirect_without_forwarding_bearer_token(monkeypatch) ->
     redirected_authorization: list[str | None] = []
 
     class RedirectTarget(BaseHTTPRequestHandler):
-        def do_GET(self) -> None:  # noqa: N802 - stdlib callback name
+        def do_GET(self) -> None:
             redirected_authorization.append(self.headers.get("Authorization"))
             payload = json.dumps(
                 {
@@ -96,7 +96,7 @@ def test_worker_rejects_redirect_without_forwarding_bearer_token(monkeypatch) ->
     target_server = ThreadingHTTPServer(("127.0.0.1", 0), RedirectTarget)
 
     class RedirectSource(BaseHTTPRequestHandler):
-        def do_POST(self) -> None:  # noqa: N802 - stdlib callback name
+        def do_POST(self) -> None:
             target_port = target_server.server_address[1]
             self.send_response(302)
             self.send_header("Location", f"http://127.0.0.1:{target_port}/capture")

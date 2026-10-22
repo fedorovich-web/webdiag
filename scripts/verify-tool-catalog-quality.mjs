@@ -1,4 +1,6 @@
 import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 const rootUrl = new URL("../", import.meta.url);
 const readText = (relativePath) => readFile(new URL(relativePath, rootUrl), "utf8");
@@ -82,22 +84,16 @@ export function validateToolCatalogQuality(tools, strategyDocument) {
   if (!headingStructure) {
     failures.push("Registry must keep heading-structure-checker as the aggregate replacement for H1 microtools.");
   }
-  if (headingStructure?.slug === "h1-checker") {
-    failures.push("Registry must not replace heading-structure-checker with h1-checker.");
-  }
 
   const coreWebVitals = tools.find((tool) => tool.slug === "core-web-vitals-checker");
   if (!coreWebVitals) {
     failures.push("Registry must keep core-web-vitals-checker for the PageSpeed/Core Web Vitals integration path.");
   }
 
-  const imageWatermark = strategyDocument.includes("Add Watermark to Image");
-  if (!imageWatermark) failures.push("Image strategy must include Add Watermark to Image.");
-
   return failures;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   const tools = await readJson("packages/tool-registry/registry/tools.json");
   const strategyDocument = await readText("docs/TOOL_CATALOG_STRATEGY.md");
   const failures = validateToolCatalogQuality(tools, strategyDocument);

@@ -45,7 +45,7 @@ export interface SavedAuditCheck {
   readonly status: string;
 }
 
-export interface SavedAuditPageSpeedMetric {
+interface SavedAuditPageSpeedMetric {
   readonly id: string;
   readonly title: string;
   readonly value: number | null;
@@ -86,7 +86,7 @@ export interface SavedAuditIssue {
   readonly recommendation: SavedAuditRecommendation;
 }
 
-export interface SavedAuditPayload {
+interface SavedAuditPayload {
   readonly contract_version: "webdiag.account.saved_audit_payload.v1";
   readonly target_origin: string;
   readonly status: "succeeded";
@@ -104,7 +104,7 @@ export interface SavedAuditDetailResponse {
   readonly payload: SavedAuditPayload;
 }
 
-export type CrawlState = "queued" | "running" | "succeeded" | "failed";
+type CrawlState = "queued" | "running" | "succeeded" | "failed";
 
 export interface AccountCrawlJob {
   readonly id: string;
@@ -116,7 +116,7 @@ export interface AccountCrawlJob {
   readonly updated_at: string;
 }
 
-export interface CrawlPage {
+interface CrawlPage {
   readonly url: string;
   readonly status_code: number;
   readonly title: string | null;
@@ -124,17 +124,17 @@ export interface CrawlPage {
   readonly internal_links: readonly string[];
 }
 
-export interface CrawlPageFailure {
+interface CrawlPageFailure {
   readonly url: string;
   readonly code: "fetch_failed" | "not_html" | "robots_disallowed";
 }
 
-export interface CrawlDuplicateGroup {
+interface CrawlDuplicateGroup {
   readonly value: string;
   readonly urls: readonly string[];
 }
 
-export interface CrawlResult {
+interface CrawlResult {
   readonly contract_version: "webdiag.crawl.result.v1";
   readonly origin: string;
   readonly pages: readonly CrawlPage[];
@@ -160,7 +160,7 @@ export interface AccountCrawlList {
   readonly jobs: readonly AccountCrawlJob[];
 }
 
-export interface CrawlSeverityCounts {
+interface CrawlSeverityCounts {
   readonly critical: number;
   readonly high: number;
   readonly medium: number;
@@ -168,17 +168,17 @@ export interface CrawlSeverityCounts {
   readonly info: number;
 }
 
-export interface AuditedCrawlPage extends CrawlPage {
+interface AuditedCrawlPage extends CrawlPage {
   readonly audit_score: number;
   readonly issue_count: number;
   readonly issues_by_severity: CrawlSeverityCounts;
 }
 
-export interface SiteAuditIssue extends SavedAuditIssue {
+interface SiteAuditIssue extends SavedAuditIssue {
   readonly affected_url_count: number;
 }
 
-export interface SiteAuditResult extends Omit<CrawlResult, "contract_version" | "pages"> {
+interface SiteAuditResult extends Omit<CrawlResult, "contract_version" | "pages"> {
   readonly contract_version: "webdiag.site_audit.result.v1";
   readonly pages: readonly AuditedCrawlPage[];
   readonly sitemap_complete: boolean;

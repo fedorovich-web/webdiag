@@ -46,7 +46,7 @@ export interface AICreditBalanceResponse {
   };
 }
 
-export interface AuditActionPlanAction {
+interface AuditActionPlanAction {
   readonly issue_ids: readonly string[];
   readonly title: string;
   readonly rationale: string;
@@ -60,7 +60,7 @@ export interface AuditActionPlanOutput {
   readonly actions: readonly AuditActionPlanAction[];
 }
 
-export interface ContentBriefOutput {
+interface ContentBriefOutput {
   readonly suggested_title: string;
   readonly sections: readonly {
     readonly heading: string;
@@ -70,7 +70,7 @@ export interface ContentBriefOutput {
   readonly warnings: readonly string[];
 }
 
-export interface ContentOptimizerOutput {
+interface ContentOptimizerOutput {
   readonly revised_content: string;
   readonly changes: readonly {
     readonly kind: "clarity" | "structure" | "relevance" | "style";
@@ -82,7 +82,7 @@ export interface ContentOptimizerOutput {
   readonly warnings: readonly string[];
 }
 
-export interface SearchIntentPageFitOutput {
+interface SearchIntentPageFitOutput {
   readonly inferred_intent: "informational" | "commercial" | "transactional" | "navigational" | "local" | "unknown";
   readonly confidence: "low" | "medium" | "high";
   readonly fit: "aligned" | "partial" | "misaligned" | "insufficient_evidence";
@@ -92,7 +92,7 @@ export interface SearchIntentPageFitOutput {
   readonly warnings: readonly string[];
 }
 
-export interface CompetitorGapOutput {
+interface CompetitorGapOutput {
   readonly summary: string;
   readonly gaps: readonly {
     readonly topic: string;
@@ -103,7 +103,7 @@ export interface CompetitorGapOutput {
   readonly warnings: readonly string[];
 }
 
-export interface InternalLinkingOutput {
+interface InternalLinkingOutput {
   readonly summary: string;
   readonly proposals: readonly {
     readonly source_page_index: number;

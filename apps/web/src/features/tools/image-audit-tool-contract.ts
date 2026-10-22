@@ -1,13 +1,13 @@
 export interface ToolApiErrorPayload { readonly detail: { readonly code: string; readonly message: string } }
 
-export interface ImageFormatSummaryResponse {
+interface ImageFormatSummaryResponse {
   readonly format: string;
   readonly count: number;
   readonly known_bytes: number;
   readonly unknown_size_count: number;
 }
 
-export interface ImagePerformanceItemResponse {
+interface ImagePerformanceItemResponse {
   readonly url: string;
   readonly source: "img-src" | "img-srcset" | "picture-source" | "social-image";
   readonly format: string;
@@ -47,7 +47,7 @@ export interface ImagePerformanceResponse {
   readonly recommendation: string;
 }
 
-export interface ImageSeoCheckResponse {
+interface ImageSeoCheckResponse {
   readonly id: string;
   readonly title: string;
   readonly status: "pass" | "warning" | "fail";
@@ -56,7 +56,7 @@ export interface ImageSeoCheckResponse {
   readonly recommendation: string;
 }
 
-export interface ImageSeoItemResponse {
+interface ImageSeoItemResponse {
   readonly url: string;
   readonly alt_status: "missing" | "empty" | "decorative" | "present";
   readonly alt_text: string | null;
@@ -88,7 +88,7 @@ export interface ImageSeoResponse {
   readonly recommendation: string;
 }
 
-export interface FaviconIconResponse {
+interface FaviconIconResponse {
   readonly rel: string;
   readonly url: string;
   readonly sizes: string | null;
@@ -120,7 +120,7 @@ export interface FaviconResponse {
 
 export type ImageAuditToolResponse = ImagePerformanceResponse | ImageSeoResponse | FaviconResponse;
 
-export function isRecord(value: unknown): value is Record<string, unknown> {
+function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
 }
 

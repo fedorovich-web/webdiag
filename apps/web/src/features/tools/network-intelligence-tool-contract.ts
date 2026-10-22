@@ -1,18 +1,18 @@
-export type ToolStatus = "pass" | "warning" | "fail";
-export type ResolverStatus = "ok" | "error";
+type ToolStatus = "pass" | "warning" | "fail";
+type ResolverStatus = "ok" | "error";
 export type ComparisonRecordType = "A" | "AAAA" | "CNAME" | "MX" | "NS" | "TXT";
 
 export interface ToolApiErrorPayload {
   readonly detail: { readonly code: string; readonly message: string };
 }
 
-export interface ResolverAnswer {
+interface ResolverAnswer {
   readonly value: string;
   readonly ttl: number;
   readonly priority: number | null;
 }
 
-export interface ResolverSnapshot {
+interface ResolverSnapshot {
   readonly resolver_id: string;
   readonly resolver_name: string;
   readonly nameserver: string;
@@ -38,7 +38,7 @@ export interface DnsResolverComparisonResponse {
   readonly recommendation: string;
 }
 
-export interface RdapEvent {
+interface RdapEvent {
   readonly action:
     | "registration"
     | "expiration"
@@ -51,7 +51,7 @@ export interface RdapEvent {
   readonly date: string;
 }
 
-export interface RdapNameserver {
+interface RdapNameserver {
   readonly ldh_name: string | null;
   readonly unicode_name: string | null;
   readonly statuses: readonly string[];
@@ -78,7 +78,7 @@ export interface DomainRdapResponse {
   readonly recommendation: string;
 }
 
-export interface IpRdapCidr {
+interface IpRdapCidr {
   readonly version: "v4" | "v6";
   readonly prefix: string;
   readonly length: number;

@@ -5,12 +5,12 @@ export interface ToolApiErrorPayload {
   };
 }
 
-export interface MetadataSignalResponse {
+interface MetadataSignalResponse {
   readonly name: string;
   readonly content: string;
 }
 
-export interface MetadataCheckResponse {
+interface MetadataCheckResponse {
   readonly id: string;
   readonly title: string;
   readonly status: "pass" | "warning" | "fail";
@@ -41,7 +41,7 @@ export interface MetaTagsResponse {
   readonly recommendation: string;
 }
 
-export interface SerpPreviewCheckResponse {
+interface SerpPreviewCheckResponse {
   readonly id: string;
   readonly status: "pass" | "warning" | "fail";
   readonly message: string;
@@ -99,11 +99,11 @@ export function isToolErrorPayload(payload: unknown): payload is ToolApiErrorPay
   return typeof payload.detail.code === "string" && typeof payload.detail.message === "string";
 }
 
-export function isMetadataSignalResponse(payload: unknown): payload is MetadataSignalResponse {
+function isMetadataSignalResponse(payload: unknown): payload is MetadataSignalResponse {
   return isRecord(payload) && typeof payload.name === "string" && typeof payload.content === "string";
 }
 
-export function isMetadataCheckResponse(payload: unknown): payload is MetadataCheckResponse {
+function isMetadataCheckResponse(payload: unknown): payload is MetadataCheckResponse {
   if (!isRecord(payload)) return false;
   return (
     typeof payload.id === "string" &&
@@ -141,7 +141,7 @@ export function isMetaTagsResponse(payload: unknown): payload is MetaTagsRespons
   );
 }
 
-export function isSerpPreviewCheckResponse(payload: unknown): payload is SerpPreviewCheckResponse {
+function isSerpPreviewCheckResponse(payload: unknown): payload is SerpPreviewCheckResponse {
   if (!isRecord(payload)) return false;
   return (
     typeof payload.id === "string" &&
@@ -170,7 +170,7 @@ export function isSerpPreviewResponse(payload: unknown): payload is SerpPreviewR
   );
 }
 
-export function isSocialCardPreviewResponse(payload: unknown): payload is SocialCardPreviewResponse {
+function isSocialCardPreviewResponse(payload: unknown): payload is SocialCardPreviewResponse {
   if (!isRecord(payload)) return false;
   return (
     (typeof payload.title === "string" || payload.title === null) &&

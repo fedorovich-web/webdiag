@@ -1,4 +1,4 @@
-export interface ValidationIssue {
+interface ValidationIssue {
   readonly path: string;
   readonly keyword: string;
   readonly message: string;
@@ -80,7 +80,7 @@ function countNodes(value: unknown, depth = 0): number {
   return 1;
 }
 
-export function parseBoundedJson(text: string): unknown {
+function parseBoundedJson(text: string): unknown {
   if (!text.trim()) throw new Error("JSON input is empty.");
   if (text.length > MAX_INPUT_CHARS) throw new Error("JSON input exceeds 500,000 characters.");
   const value: unknown = JSON.parse(text);

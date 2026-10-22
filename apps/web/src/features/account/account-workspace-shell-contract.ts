@@ -22,7 +22,7 @@ export type AccountWorkspaceSection =
   | "report"
   | "settings";
 
-export type AccountWorkspaceNavigationId =
+type AccountWorkspaceNavigationId =
   | "overview"
   | "projects"
   | "checks"
@@ -37,7 +37,7 @@ export type AccountWorkspaceNavigationId =
   | "monitoring"
   | "project_reports";
 
-export interface AccountWorkspaceNavigationItem {
+interface AccountWorkspaceNavigationItem {
   readonly id: AccountWorkspaceNavigationId;
   readonly label: string;
   readonly href: string | null;

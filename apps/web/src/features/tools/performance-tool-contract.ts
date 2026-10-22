@@ -15,7 +15,7 @@ export interface PageSpeedMetricResponse {
   readonly status: "pass" | "warning" | "fail" | "unavailable";
 }
 
-export interface PageSpeedOpportunityResponse {
+interface PageSpeedOpportunityResponse {
   readonly id: string;
   readonly title: string;
   readonly display_value: string | null;
@@ -23,9 +23,9 @@ export interface PageSpeedOpportunityResponse {
   readonly score: number | null;
 }
 
-export type LighthouseCategory = "performance" | "accessibility" | "best-practices" | "seo";
+type LighthouseCategory = "performance" | "accessibility" | "best-practices" | "seo";
 
-export interface LighthouseAuditFindingResponse {
+interface LighthouseAuditFindingResponse {
   readonly id: string;
   readonly category: LighthouseCategory;
   readonly title: string;
@@ -35,7 +35,7 @@ export interface LighthouseAuditFindingResponse {
   readonly weight: number;
 }
 
-export interface PageSpeedStrategyResponse {
+interface PageSpeedStrategyResponse {
   readonly strategy: "mobile" | "desktop";
   readonly available: boolean;
   readonly performance_score: number | null;
@@ -60,7 +60,7 @@ export interface PageSpeedResponse {
   readonly recommendation: string;
 }
 
-export interface CachePolicyCheckResponse {
+interface CachePolicyCheckResponse {
   readonly id: string;
   readonly title: string;
   readonly status: "pass" | "warning" | "fail";
@@ -87,14 +87,14 @@ export interface CachePolicyResponse {
   readonly recommendation: string;
 }
 
-export interface ResourceSummaryResponse {
+interface ResourceSummaryResponse {
   readonly type: "document" | "image" | "script" | "style" | "font" | "video" | "other";
   readonly count: number;
   readonly known_bytes: number;
   readonly unknown_size_count: number;
 }
 
-export interface PageResourceResponse {
+interface PageResourceResponse {
   readonly url: string;
   readonly type: "document" | "image" | "script" | "style" | "font" | "video" | "other";
   readonly status_code: number | null;
@@ -124,7 +124,7 @@ export interface PageWeightResponse {
   readonly recommendation: string;
 }
 
-export interface LighthouseNetworkResourceResponse {
+interface LighthouseNetworkResourceResponse {
   readonly url: string;
   readonly resource_type: string;
   readonly protocol: string | null;
@@ -137,7 +137,7 @@ export interface LighthouseNetworkResourceResponse {
   readonly resource_bytes: number | null;
 }
 
-export interface LighthouseRenderBlockingItemResponse {
+interface LighthouseRenderBlockingItemResponse {
   readonly url: string;
   readonly total_bytes: number | null;
   readonly wasted_bytes: number | null;
@@ -170,7 +170,7 @@ export interface LighthouseNetworkResponse {
 
 export type PerformanceToolResponse = PageSpeedResponse | CachePolicyResponse | PageWeightResponse | LighthouseNetworkResponse;
 
-export function isRecord(value: unknown): value is Record<string, unknown> {
+function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
@@ -418,7 +418,7 @@ export function isLighthouseNetworkResponse(payload: unknown): payload is Lighth
     typeof payload.recommendation === "string";
 }
 
-export function normalizePerformanceToolUrlInput(value: string): string {
+function normalizePerformanceToolUrlInput(value: string): string {
   const trimmed = value.trim();
   if (!trimmed) return "";
   if (/^https?:\/\//i.test(trimmed)) return trimmed;

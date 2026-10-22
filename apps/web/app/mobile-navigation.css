@@ -1,0 +1,197 @@
+.wd-site-header .wd-mobile-navigation {
+  display: none;
+}
+
+.wd-mobile-navigation-trigger,
+.wd-mobile-navigation-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--wd-l, #dce5f2);
+  border-radius: 12px;
+  color: var(--wd-t, #091121);
+  background: var(--surface, #fff);
+  cursor: pointer;
+  transition: background-color 140ms, color 140ms, border-color 140ms;
+}
+
+.wd-mobile-navigation-trigger:hover,
+.wd-mobile-navigation-close:hover {
+  color: var(--wd-accent, #08758b);
+  border-color: var(--wd-accent, #08758b);
+  background: var(--surface-muted, #f4f9fa);
+}
+
+.wd-mobile-navigation-dialog {
+  position: fixed;
+  inset: 0 0 0 auto;
+  width: min(400px, calc(100vw - 32px));
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 0;
+  border-radius: 24px 0 0 24px;
+  color: var(--wd-t, #091121);
+  background: var(--surface, #fff);
+  box-shadow: -20px 0 60px rgb(9 17 33 / 0.18);
+  transform: translateX(100%);
+  transition: transform 220ms cubic-bezier(0.4, 0, 1, 1), display 220ms allow-discrete, overlay 220ms allow-discrete;
+}
+
+.wd-mobile-navigation-dialog[open] {
+  display: flex;
+  flex-direction: column;
+  transform: translateX(0);
+  transition-duration: 320ms;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.wd-mobile-navigation-dialog::backdrop {
+  background: rgb(9 17 33 / 0);
+  transition: background-color 220ms ease-out, display 220ms allow-discrete, overlay 220ms allow-discrete;
+}
+
+.wd-mobile-navigation-dialog[open]::backdrop {
+  background: rgb(9 17 33 / 0.58);
+  transition-duration: 320ms;
+}
+
+@starting-style {
+  .wd-mobile-navigation-dialog[open] {
+    transform: translateX(100%);
+  }
+
+  .wd-mobile-navigation-dialog[open]::backdrop {
+    background: rgb(9 17 33 / 0);
+  }
+}
+
+html:has(.wd-mobile-navigation-dialog[open]),
+body:has(.wd-mobile-navigation-dialog[open]) {
+  overflow: hidden;
+}
+
+.wd-mobile-navigation-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  gap: 16px;
+  padding: calc(20px + env(safe-area-inset-top)) 20px 20px;
+}
+
+.wd-mobile-navigation-dialog .wd-mobile-navigation-brand .brand-picture {
+  display: block;
+}
+
+.wd-mobile-navigation-dialog .wd-mobile-navigation-brand .brand-logo {
+  height: 26px;
+}
+
+.wd-mobile-navigation-dialog .wd-mobile-navigation-brand .brand-mark {
+  display: none;
+}
+
+.wd-mobile-navigation-body {
+  padding: 12px 20px 32px;
+}
+
+.wd-mobile-navigation-dialog .wd-mobile-nav {
+  display: grid;
+  gap: 8px;
+}
+
+.wd-mobile-navigation-dialog .wd-mobile-nav a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 56px;
+  gap: 16px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  color: var(--wd-t, #091121);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  transition: color 140ms, background-color 140ms;
+}
+
+.wd-mobile-navigation-dialog .wd-mobile-nav a:hover {
+  color: var(--wd-accent, #08758b);
+  background: var(--surface-muted, #f4f9fa);
+}
+
+.wd-mobile-navigation-footer {
+  display: grid;
+  flex-shrink: 0;
+  gap: 24px;
+  margin-top: auto;
+  padding: 24px 20px calc(24px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line, #dbe6e8);
+}
+
+.wd-site-header .wd-mobile-navigation-dialog .language-switcher {
+  justify-self: start;
+}
+
+.wd-mobile-navigation-account {
+  display: grid;
+  gap: 12px;
+}
+
+.wd-mobile-navigation-account > a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 12px 16px;
+  border: 1px solid var(--line, #dbe6e8);
+  border-radius: 12px;
+  color: var(--wd-t, #091121);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.5;
+  text-align: center;
+  text-decoration: none;
+}
+
+.wd-mobile-navigation-account > .wd-mobile-navigation-register {
+  border-color: transparent;
+  color: var(--wd-button-text, #fff);
+  background: var(--wd-button-bg, #2563ff);
+}
+
+.wd-mobile-navigation-account > a:hover {
+  filter: brightness(0.95);
+}
+
+.wd-mobile-navigation-trigger:focus-visible,
+.wd-mobile-navigation-dialog :is(button, a):focus-visible {
+  outline: 3px solid var(--wd-accent, #08758b);
+  outline-offset: 3px;
+}
+
+@media (max-width: 960px) {
+  .wd-site-header .wd-mobile-navigation {
+    display: block;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wd-mobile-navigation-dialog,
+  .wd-mobile-navigation-dialog[open],
+  .wd-mobile-navigation-dialog::backdrop,
+  .wd-mobile-navigation-dialog[open]::backdrop {
+    transition: none;
+  }
+}

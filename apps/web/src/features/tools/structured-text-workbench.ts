@@ -1,10 +1,10 @@
-export interface WorkbenchIssue {
+interface WorkbenchIssue {
   readonly path: string;
   readonly code: string;
   readonly message: string;
 }
 
-export interface JsonPathMatch {
+interface JsonPathMatch {
   readonly path: string;
   readonly value: unknown;
 }
