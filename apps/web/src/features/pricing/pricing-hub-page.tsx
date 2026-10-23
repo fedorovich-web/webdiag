@@ -8,7 +8,6 @@ import {
   ArrowRight,
   ChevronDown,
   Sparkles,
-  UserCheck,
 } from "lucide-react";
 import type { Locale } from "@webdiag/tool-registry";
 import { getAccountSession } from "../account/account-client";
@@ -599,51 +598,6 @@ export function PricingHubPage({ locale }: PricingHubPageProps) {
 
       <section className="wd-pricing-section wd-pricing-cards-section">
         <div className="shell">
-          {session && (
-            <div
-              className="wd-pricing-session-banner"
-              style={{
-                marginBottom: "32px",
-                padding: "16px 24px",
-                background: "linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(124, 58, 237, 0.08))",
-                border: "1px solid rgba(99, 102, 241, 0.25)",
-                borderRadius: "14px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                flexWrap: "wrap",
-                gap: "16px",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <UserCheck size={22} color="#2563eb" aria-hidden="true" />
-                <span style={{ fontSize: "14px", color: "var(--wd-f, #1e293b)", lineHeight: 1.5 }}>
-                  {ru ? (
-                    <>
-                      Вы авторизованы как <strong>{session.user.email}</strong>. Оплаченные кредиты поступят на баланс этого аккаунта.
-                    </>
-                  ) : (
-                    <>
-                      Signed in as <strong>{session.user.email}</strong>. Purchased credits will be added to this account after payment confirmation.
-                    </>
-                  )}
-                </span>
-              </div>
-              <Link
-                href={ru ? "/account" : "/en/account"}
-                style={{
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  color: "#2563eb",
-                  textDecoration: "none",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {ru ? "Перейти в кабинет →" : "Open workspace →"}
-              </Link>
-            </div>
-          )}
-
           <div className="wd-pricing-cards-grid">
             {t.plans.map((plan) => {
               const sku = planSku(plan.id, annual, locale);
