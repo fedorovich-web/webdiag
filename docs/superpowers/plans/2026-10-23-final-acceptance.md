@@ -13,7 +13,8 @@
 - [x] Reproduce malformed internal worker responses and silently clamped timeout configuration; enforce explicit contracts before network requests.
 - [x] Check every ordinary public tool page in both languages at mobile width; repair confirmed failures without changing the approved design.
 - [x] Run final registry/release, dead-code, JavaScript, Python, lint, type, build and browser gates on the combined tree.
-- [ ] Review the combined diff, merge and push; verify the exact deployed commit, health and production user flows.
+- [x] Review and merge PR #59; verify deployed commit b68b6cb2bea7070c33123aa7f65a4b761e0675d8, healthy web/API and running monitoring scheduler in Dokploy.
+- [x] Finish bilingual ordinary-tool copy and catalog consistency, review capability claims and run affected checks. Record the follow-up Git delivery and deployed commit separately after merge.
 
 Final acceptance records must distinguish controlled provider fixtures, actual production checks, GitHub quota restrictions and dependency advisories without an upstream fix.
 
