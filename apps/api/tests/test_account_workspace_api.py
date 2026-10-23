@@ -811,3 +811,48 @@ def test_project_lifecycle_api_is_versioned_owned_idempotent_and_no_store(
         assert repeated_restore.json() == restored.json()
     finally:
         app.dependency_overrides.clear()
+
+
+def test_saved_audit_rejects_digest_consistent_duplicate_payload_keys(
+    tmp_path: Path,
+) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    account = build_account_service(database_path)
+    user_id, _ = register(account, "owner@example.com")
+    workspace = build_workspace(database_path)
+    project = workspace.create_project(
+        user_id=user_id,
+        request=ProjectCreateRequest(name="Main", origin="https://example.com"),
+    )
+    saved = workspace.run_and_save_audit(user_id=user_id, project_id=project.id)
+
+    with sqlite3.connect(database_path) as connection:
+        payload_json = connection.execute(
+            "SELECT payload_json FROM account_workspace_saved_audits WHERE id = ?",
+            (saved.audit.id,),
+        ).fetchone()[0]
+        original = '"target_origin":"https://example.com"'
+        assert payload_json.count(original) == 1
+        ambiguous = payload_json.replace(
+            original,
+            '"target_origin":"https://invalid.example",'
+            '"target_origin":"https://example.com"',
+        )
+        connection.execute(
+            "UPDATE account_workspace_saved_audits "
+            "SET payload_json = ?, payload_sha256 = ? WHERE id = ?",
+            (
+                ambiguous,
+                hashlib.sha256(ambiguous.encode()).hexdigest(),
+                saved.audit.id,
+            ),
+        )
+
+    with pytest.raises(WorkspaceServiceError) as unavailable:
+        workspace.get_saved_audit(
+            user_id=user_id,
+            project_id=project.id,
+            audit_id=saved.audit.id,
+        )
+    assert unavailable.value.status_code == 500
+    assert unavailable.value.code == "account_saved_audit_unavailable"

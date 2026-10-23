@@ -271,7 +271,7 @@ def crawl_origin(
             or excluded_query_urls
             or any(not 200 <= page.status_code < 300 for page in pages)
         )
-        else tuple(sorted((set(sitemap_urls) - discovered) - {root_url}))[:100]
+        else tuple(sorted((set(sitemap_urls) - discovered) - {root_url}))
     )
     duplicate_titles = _duplicate_groups(title_values)
     duplicate_descriptions = _duplicate_groups(description_values)
@@ -292,9 +292,9 @@ def crawl_origin(
         sitemap_url_count=sitemap_count,
         sitemap_complete=sitemap_complete,
         excluded_query_url_count=len(excluded_query_urls),
-        duplicate_titles=duplicate_titles,
-        duplicate_descriptions=duplicate_descriptions,
-        orphan_urls=orphan_urls,
+        duplicate_titles=duplicate_titles[:25],
+        duplicate_descriptions=duplicate_descriptions[:25],
+        orphan_urls=orphan_urls[:100],
         audit_summary=_audit_summary(pages, issues),
         issues=issues,
     )
@@ -487,8 +487,12 @@ def _load_sitemap(
             page_url = _same_origin_url(
                 raw_page_url, origin, excluded_query_urls=excluded_query_urls
             )
-            if page_url is None and urlsplit(raw_page_url).query:
-                complete = False
+            if page_url is None:
+                try:
+                    if urlsplit(raw_page_url).query:
+                        complete = False
+                except ValueError:
+                    complete = False
             if page_url is None or page_url in page_url_set:
                 continue
             if len(page_urls) >= MAX_SITEMAP_URLS:
@@ -524,7 +528,7 @@ def _duplicate_groups(
         CrawlDuplicateGroup(value=value, urls=tuple(urls))
         for value, urls in sorted(grouped.values(), key=lambda item: item[0].casefold())
         if len(urls) > 1
-    )[:25]
+    )
 
 
 def _audit_page(

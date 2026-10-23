@@ -13,6 +13,8 @@ from contextlib import closing
 from dataclasses import dataclass
 from pathlib import Path
 
+from webdiag_api.json_contract import decode_json_object
+
 LEDGER_OPERATIONS = (
     "admin_grant",
     "purchase",
@@ -50,6 +52,10 @@ class AIIdempotencyConflictError(RuntimeError):
 
 
 class AIRunStateError(RuntimeError):
+    pass
+
+
+class AIRunDataIntegrityError(RuntimeError):
     pass
 
 
@@ -1168,6 +1174,15 @@ class SqliteAIStore:
             if row is None:
                 connection.execute("COMMIT")
                 return None
+            try:
+                input_json = str(row["input_json"])
+                digest = hashlib.sha256(input_json.encode("utf-8")).hexdigest()
+                expected = str(row["input_sha256"])
+                if not expected.isascii() or not hmac.compare_digest(digest, expected):
+                    raise ValueError("AI input digest does not match")
+                decode_json_object(input_json)
+            except (ValueError, UnicodeError) as error:
+                raise AIRunDataIntegrityError("AI input data is unavailable") from error
             attempt_number = int(
                 connection.execute(
                     """

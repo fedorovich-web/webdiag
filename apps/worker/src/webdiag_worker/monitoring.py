@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-import json
 import os
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
+
+from webdiag_worker.json_contract import decode_json_object
+from webdiag_worker.runtime_config import bounded_int_env
 
 MAX_RESPONSE_BYTES = 1_000_000
 
@@ -46,7 +48,9 @@ def run_due_monitors() -> int:
         raise RuntimeError("WEBDIAG_MONITORING_API_INTERNAL_URL must be a clean HTTP origin")
     base = f"{parsed.scheme}://{parsed.netloc}"
     token = os.getenv("WEBDIAG_MONITORING_INTERNAL_TOKEN", "")
-    timeout = max(5, min(120, int(os.getenv("WEBDIAG_MONITORING_WORKER_TIMEOUT_SECONDS", "60"))))
+    timeout = bounded_int_env(
+        "WEBDIAG_MONITORING_WORKER_TIMEOUT_SECONDS", 60, minimum=5, maximum=120,
+    )
     if not token:
         raise RuntimeError("WEBDIAG_MONITORING_INTERNAL_TOKEN is required")
     if any(not 0x21 <= ord(character) <= 0x7E for character in token):
@@ -64,12 +68,12 @@ def run_due_monitors() -> int:
             payload = response.read(MAX_RESPONSE_BYTES + 1)
             if len(payload) > MAX_RESPONSE_BYTES:
                 raise RuntimeError("Monitoring API response is too large")
-            parsed = json.loads(payload.decode("utf-8"))
+            parsed = decode_json_object(payload, error_message="Monitoring API returned invalid JSON")
     except (HTTPError, URLError, TimeoutError) as error:
         raise RuntimeError("Monitoring API request failed") from error
     if parsed.get("contract_version") != "webdiag.monitoring.run_due.v1":
         raise RuntimeError("Monitoring API returned an invalid contract")
     processed = parsed.get("processed")
-    if not isinstance(processed, int) or not 0 <= processed <= 20:
+    if type(processed) is not int or not 0 <= processed <= 20:
         raise RuntimeError("Monitoring API returned an invalid processed count")
     return processed
