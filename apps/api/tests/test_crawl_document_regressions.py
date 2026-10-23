@@ -164,3 +164,65 @@ def test_long_metadata_is_bounded_without_merging_different_values(field, limit)
     assert len(groups) == 1
     assert groups[0].urls == (f"{ORIGIN}/", f"{ORIGIN}/a")
     assert groups[0].value.endswith("… [truncated]")
+
+
+def test_malformed_sitemap_entry_after_matching_root_preserves_valid_pages() -> None:
+    fixtures = responses()
+    fixtures[f"{ORIGIN}/sitemap.xml"] = fetched(
+        f"{ORIGIN}/sitemap.xml",
+        f"<urlset><url><loc>{ORIGIN}/</loc></url>"
+        "<url><loc>https://[broken</loc></url>"
+        f"<url><loc>{ORIGIN}/valid</loc></url></urlset>",
+        content_type="application/xml",
+    )
+    fixtures[f"{ORIGIN}/valid"] = fetched(f"{ORIGIN}/valid", "<title>Valid</title>")
+
+    result = crawl_origin(ORIGIN, fetcher=FixtureFetcher(fixtures), config=CrawlConfig())
+
+    assert [page.url for page in result.pages] == [f"{ORIGIN}/", f"{ORIGIN}/valid"]
+    assert result.sitemap_complete is False
+    assert result.orphan_urls == ()
+
+
+def test_duplicate_issue_counts_all_groups_when_result_samples_are_bounded() -> None:
+    fixtures = responses()
+    urls = [f"{ORIGIN}/page-{number}" for number in range(52)]
+    fixtures[f"{ORIGIN}/"] = fetched(
+        f"{ORIGIN}/", "<title>Home</title>" + "".join(
+            f'<a href="{url}">Page</a>' for url in urls
+        )
+    )
+    for number, url in enumerate(urls):
+        fixtures[url] = fetched(url, f"<title>Duplicate group {number // 2}</title>")
+
+    result = crawl_origin(ORIGIN, fetcher=FixtureFetcher(fixtures), config=CrawlConfig())
+
+    assert len(result.duplicate_titles) == 25
+    duplicate_issue = next(
+        issue for issue in result.issues if issue.issue_id == "site.metadata.duplicate_title"
+    )
+    assert len(duplicate_issue.affected_urls) == 25
+    assert duplicate_issue.affected_url_count == 52
+
+
+def test_orphan_issue_counts_all_candidates_when_url_samples_are_bounded() -> None:
+    fixtures = responses()
+    urls = [f"{ORIGIN}/orphan-{number}" for number in range(101)]
+    fixtures[f"{ORIGIN}/sitemap.xml"] = fetched(
+        f"{ORIGIN}/sitemap.xml", "<urlset>" + "".join(
+            f"<url><loc>{url}</loc></url>" for url in urls
+        ) + "</urlset>", content_type="application/xml",
+    )
+    for number, url in enumerate(urls):
+        fixtures[url] = fetched(url, f"<title>Orphan {number}</title>")
+
+    result = crawl_origin(
+        ORIGIN, fetcher=FixtureFetcher(fixtures), config=CrawlConfig(page_limit=200)
+    )
+
+    assert len(result.orphan_urls) == 100
+    orphan_issue = next(
+        issue for issue in result.issues if issue.issue_id == "site.crawlability.orphan_candidate"
+    )
+    assert len(orphan_issue.affected_urls) == 25
+    assert orphan_issue.affected_url_count == 101

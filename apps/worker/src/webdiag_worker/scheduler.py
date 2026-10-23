@@ -8,6 +8,7 @@ from webdiag_worker.ai import cleanup_ai_artifacts, run_one_ai_job
 from webdiag_worker.configured_ai_provider import ConfiguredAIProvider
 from webdiag_worker.crawler import run_one_crawl
 from webdiag_worker.monitoring import run_due_monitors
+from webdiag_worker.runtime_config import bounded_int_env
 
 
 def _drain_ai_jobs(limit: int = 10) -> int:
@@ -46,8 +47,9 @@ def _run_ai_loop() -> None:
 
 
 def main() -> None:
-    configured = int(os.getenv("WEBDIAG_MONITORING_SCHEDULER_INTERVAL_SECONDS", "60"))
-    interval = max(30, min(300, configured))
+    interval = bounded_int_env(
+        "WEBDIAG_MONITORING_SCHEDULER_INTERVAL_SECONDS", 60, minimum=30, maximum=300,
+    )
     if os.getenv("WEBDIAG_AI_RUNTIME_ENABLED", "false").lower() == "true":
         if not os.getenv("WEBDIAG_AI_INTERNAL_TOKEN"):
             raise RuntimeError("AI worker requires its internal token")

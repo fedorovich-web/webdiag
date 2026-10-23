@@ -33,6 +33,7 @@ from webdiag_api.ai.storage import (
     AIIdempotencyConflictError,
     AIInsufficientCreditsError,
     AIQueueCapacityError,
+    AIRunDataIntegrityError,
     AIRunLimitReachedError,
     AIRunStateError,
     AIUploadQuotaError,
@@ -51,6 +52,7 @@ from webdiag_api.ai.tool_contracts import (
     validate_output,
     validate_public_input,
 )
+from webdiag_api.json_contract import decode_json_object
 
 
 class AIServiceError(RuntimeError):
@@ -396,7 +398,12 @@ class AIService:
             ) from error
 
     def claim_pending(self) -> AIWorkerClaim | None:
-        claim = self._store.claim_pending(artifact_prefix=self._artifact_prefix)
+        try:
+            claim = self._store.claim_pending(artifact_prefix=self._artifact_prefix)
+        except AIRunDataIntegrityError as error:
+            raise AIServiceError(
+                500, "ai_data_integrity_failed", "AI run data is unavailable."
+            ) from error
         return self._public_claim(claim) if claim is not None else None
 
     def renew_lease(self, *, run_id: str, lease_token: str) -> int:
@@ -662,7 +669,25 @@ class AIService:
 
     @staticmethod
     def _public_run(run: StoredAIRun) -> AIRunResponse:
-        output = json.loads(run.output_json) if run.output_json is not None else None
+        try:
+            if run.output_json is None:
+                if run.output_sha256 is not None or run.state == "succeeded":
+                    raise ValueError("AI output metadata is inconsistent")
+                output = None
+            else:
+                digest = hashlib.sha256(run.output_json.encode("utf-8")).hexdigest()
+                if (
+                    run.state != "succeeded"
+                    or run.output_sha256 is None
+                    or not run.output_sha256.isascii()
+                    or not hmac.compare_digest(digest, run.output_sha256)
+                ):
+                    raise ValueError("AI output digest does not match")
+                output = decode_json_object(run.output_json)
+        except (ValueError, UnicodeError) as error:
+            raise AIServiceError(
+                500, "ai_data_integrity_failed", "AI run data is unavailable."
+            ) from error
         return AIRunResponse(
             id=run.id,
             tool_id=run.tool_id,
