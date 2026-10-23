@@ -28,27 +28,11 @@ test.describe("home functional smoke", () => {
       await expect(page.locator(`#${id}`)).toHaveCount(1);
     }
 
-    const desktopScreenshot = await page.screenshot({ fullPage: true });
+    await page.screenshot({ path: "test-results/homepage-current.png", fullPage: true, animations: "disabled" });
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
-    const mobileScreenshot = await page.screenshot({ fullPage: true });
-
-    await page.setViewportSize({ width: 1854, height: 1200 });
-    await page.setContent(`
-      <style>
-        html, body { margin: 0; background: #eef3f7; }
-        main { display: flex; align-items: flex-start; gap: 24px; }
-        img { display: block; height: auto; }
-        .desktop { width: 1440px; }
-        .mobile { width: 390px; }
-      </style>
-      <main>
-        <img class="desktop" alt="" src="data:image/png;base64,${desktopScreenshot.toString("base64")}">
-        <img class="mobile" alt="" src="data:image/png;base64,${mobileScreenshot.toString("base64")}">
-      </main>
-    `);
-    await page.screenshot({ path: "test-results/homepage-current.png", fullPage: true });
+    await page.screenshot({ path: "test-results/homepage-mobile.png", fullPage: true, animations: "disabled" });
   });
 
   test("homepage uses the approved standalone artwork without duplicate hero callouts", async ({ page }) => {

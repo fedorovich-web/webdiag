@@ -80,8 +80,8 @@ export function NotFoundPage({ locale }: { locale: Locale }) {
           <h1>{copy.title}</h1>
           <p>{copy.lead}</p>
           <div className="wd-not-found-actions">
-            <Link href={homePath(locale)}><Home aria-hidden="true" />{copy.home}<ArrowRight aria-hidden="true" /></Link>
-            <Link className="is-secondary" href={toolsPath(locale)}><Grid3X3 aria-hidden="true" />{copy.tools}</Link>
+            <Link href={homePath(locale)} prefetch={false}><Home aria-hidden="true" />{copy.home}<ArrowRight aria-hidden="true" /></Link>
+            <Link className="is-secondary" href={toolsPath(locale)} prefetch={false}><Grid3X3 aria-hidden="true" />{copy.tools}</Link>
           </div>
         </div>
         <div className="wd-not-found-art" aria-hidden="true">
@@ -108,7 +108,7 @@ export function NotFoundPage({ locale }: { locale: Locale }) {
         </header>
         <div className="wd-not-found-card-grid">
           {sections.map(({ href, icon: Icon, title, text }) => (
-            <Link href={href} key={href}>
+            <Link href={href} key={href} prefetch={false}>
               <span><Icon aria-hidden="true" /></span>
               <div><strong>{title}</strong><small>{text}</small></div>
               <ArrowRight aria-hidden="true" />
@@ -124,7 +124,7 @@ export function NotFoundPage({ locale }: { locale: Locale }) {
         </header>
         <div className="wd-not-found-tool-grid">
           {popularTools.map((tool) => (
-            <Link href={`${toolsPath(locale)}/${tool.slug}`} key={tool.slug}>
+            <Link href={`${toolsPath(locale)}/${tool.slug}`} key={tool.slug} prefetch={false}>
               <SearchCheck aria-hidden="true" />
               <div>
                 <strong>{localize(tool.title, locale)}</strong>
@@ -139,7 +139,7 @@ export function NotFoundPage({ locale }: { locale: Locale }) {
       <section className="wd-not-found-support">
         <div className="shell">
           <div><h2>{copy.supportTitle}</h2><p>{copy.supportLead}</p></div>
-          <Link href={`${prefix}/contacts`}><CircleHelp aria-hidden="true" />{copy.supportAction}<ArrowRight aria-hidden="true" /></Link>
+          <Link href={`${prefix}/contacts`} prefetch={false}><CircleHelp aria-hidden="true" />{copy.supportAction}<ArrowRight aria-hidden="true" /></Link>
         </div>
       </section>
     </main>

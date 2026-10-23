@@ -40,6 +40,37 @@ test("RU and EN pricing preserve the selected annual or monthly product", async 
   }
 });
 
+for (const [path, checkout, registration] of [
+  ["/pricing", "/account/checkout?pack=plan-pro-annual", "/register"],
+  ["/en/pricing", "/en/account/checkout?pack=plan-pro-annual-usd", "/en/register"],
+] as const) {
+  test(`${path} keeps checkout clickable while the account response arrives`, async ({ page }) => {
+    let releaseSession!: () => void;
+    let markRequested!: () => void;
+    const sessionGate = new Promise<void>((resolve) => { releaseSession = resolve; });
+    const requested = new Promise<void>((resolve) => { markRequested = resolve; });
+    await page.route("**/api/account/me", async (route) => {
+      markRequested();
+      await sessionGate;
+      await route.fulfill({ json: session });
+    });
+
+    await page.goto(path);
+    await requested;
+    const link = page.locator(".wd-pricing-card").nth(1).getByRole("link");
+    await expect(link).toHaveAttribute("href", `${registration}?return_to=${encodeURIComponent(checkout)}`);
+    await link.scrollIntoViewIfNeeded();
+    const box = await link.boundingBox();
+    expect(box).not.toBeNull();
+    await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
+    await page.mouse.down();
+    releaseSession();
+    await expect(link).toHaveAttribute("href", checkout);
+    await page.mouse.up();
+    await expect(page).toHaveURL(checkout);
+  });
+}
+
 test("registration and Yandex retain the chosen annual product and use the official round icon", async ({
   page,
   request,
