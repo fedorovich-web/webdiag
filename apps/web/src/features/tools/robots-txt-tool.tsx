@@ -7,13 +7,13 @@ import { useState, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { CopyButton } from "../../components/copy-button";
 
-export interface RobotsTxtRuleResult {
+interface RobotsTxtRuleResult {
   readonly user_agent: string;
   readonly directive: "allow" | "disallow";
   readonly value: string;
 }
 
-export interface RobotsTxtSitemapResult {
+interface RobotsTxtSitemapResult {
   readonly url: string;
 }
 

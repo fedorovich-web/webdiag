@@ -2,7 +2,7 @@ import type { Locale } from "@webdiag/tool-registry";
 import { RU_AUDIT_ISSUES } from "./audit-taxonomy-i18n";
 import type { AuditFrontendIssue } from "../home/audit-contract";
 
-export const RECOMMENDATION_DICTIONARY_RU: Readonly<Record<string, string>> = {
+const RECOMMENDATION_DICTIONARY_RU: Readonly<Record<string, string>> = {
   "Some image responses could not be confirmed. Check HTTP status and Content-Type.":
     "Часть ответов изображений не удалось подтвердить. Проверьте HTTP-статусы и Content-Type.",
   "The page does not return a successful HTTP response. Fix its status before relying on metadata previews.":

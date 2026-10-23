@@ -1,9 +1,9 @@
 import type { FindingSeverity, ToolStatus } from "./client-delivery-tool-contract";
 
-export type AssetFetchState = "ok" | "rejected" | "failed";
-export type ScriptKind = "classic" | "module";
+type AssetFetchState = "ok" | "rejected" | "failed";
+type ScriptKind = "classic" | "module";
 
-export interface AssetFindingResult {
+interface AssetFindingResult {
   readonly id: string;
   readonly title: string;
   readonly severity: FindingSeverity;
@@ -11,7 +11,7 @@ export interface AssetFindingResult {
   readonly recommendation: string;
 }
 
-export interface JavaScriptAssetResult {
+interface JavaScriptAssetResult {
   readonly position: number;
   readonly raw_src: string;
   readonly resolved_url: string;
@@ -65,7 +65,7 @@ export interface JavaScriptBundleSurfaceResponse {
   readonly recommendation: string;
 }
 
-export interface StylesheetAssetResult {
+interface StylesheetAssetResult {
   readonly position: number;
   readonly raw_href: string;
   readonly resolved_url: string;
@@ -126,7 +126,7 @@ export interface CssDeliveryAnalyzerResponse {
   readonly recommendation: string;
 }
 
-export interface FontFaceResult {
+interface FontFaceResult {
   readonly position: number;
   readonly family: string | null;
   readonly style: string;
@@ -138,7 +138,7 @@ export interface FontFaceResult {
   readonly issues: readonly string[];
 }
 
-export interface FontAssetResult {
+interface FontAssetResult {
   readonly position: number;
   readonly resolved_url: string;
   readonly final_url: string | null;
@@ -159,7 +159,7 @@ export interface FontAssetResult {
   readonly issues: readonly string[];
 }
 
-export interface FontPreloadResult {
+interface FontPreloadResult {
   readonly position: number;
   readonly raw_href: string;
   readonly resolved_url: string | null;

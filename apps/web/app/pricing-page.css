@@ -209,8 +209,8 @@
   margin: 24px 0 28px;
 }
 .wd-pricing-card-amount {
-  font-size: clamp(36px, 3.5vw, 48px);
-  font-weight: 850;
+  font-size: clamp(32px, 3vw, 40px);
+  font-weight: 700;
   color: #091121;
   line-height: 1;
 }
@@ -285,18 +285,6 @@
   color: #16a34a;
   flex-shrink: 0;
   margin-top: 3px;
-}
-.wd-pricing-features-list li.is-missing {
-  color: #94a3b8;
-}
-.wd-pricing-features-list li.is-missing svg {
-  color: #cbd5e1;
-  flex-shrink: 0;
-  margin-top: 3px;
-}
-
-.wd-comparison-section {
-  display: none;
 }
 .wd-comparison-details-section {
   background: #f8faff;
@@ -542,7 +530,7 @@
 
 .wd-credit-pack-price {
   font-size: 32px;
-  font-weight: 850;
+  font-weight: 700;
   color: #091121;
 }
 

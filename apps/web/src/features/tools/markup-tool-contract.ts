@@ -1,8 +1,8 @@
 import { isRecord, isToolErrorPayload } from "./metadata-tool-contract";
 
-export { isRecord, isToolErrorPayload };
+export { isToolErrorPayload };
 
-export interface StructuredDataBlockResponse {
+interface StructuredDataBlockResponse {
   readonly index: number;
   readonly valid: boolean;
   readonly types: readonly string[];
@@ -10,7 +10,7 @@ export interface StructuredDataBlockResponse {
   readonly error: string | null;
 }
 
-export interface StructuredDataTypeSummaryResponse {
+interface StructuredDataTypeSummaryResponse {
   readonly type: string;
   readonly count: number;
 }
@@ -29,7 +29,7 @@ export interface StructuredDataValidatorResponse {
   readonly recommendation: string;
 }
 
-export interface HtmlMarkupCheckResponse {
+interface HtmlMarkupCheckResponse {
   readonly id: string;
   readonly title: string;
   readonly status: "pass" | "warning" | "fail";

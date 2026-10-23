@@ -1,10 +1,10 @@
-export const MAX_PEM_INPUT_CHARS = 1_000_000;
-export const MAX_CERTIFICATES = 20;
-export const MAX_DER_BYTES = 256_000;
+const MAX_PEM_INPUT_CHARS = 1_000_000;
+const MAX_CERTIFICATES = 20;
+const MAX_DER_BYTES = 256_000;
 
-export type CertificateValidityState = "valid" | "expired" | "not_yet_valid";
+type CertificateValidityState = "valid" | "expired" | "not_yet_valid";
 
-export interface ParsedCertificate {
+interface ParsedCertificate {
   readonly index: number;
   readonly subject: string;
   readonly issuer: string;

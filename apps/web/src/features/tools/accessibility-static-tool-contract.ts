@@ -1,6 +1,6 @@
 export type ToolStatus = "pass" | "warning" | "fail";
-export type FindingSeverity = "info" | "medium" | "high";
-export type NameSource =
+type FindingSeverity = "info" | "medium" | "high";
+type NameSource =
   | "aria-label"
   | "aria-labelledby"
   | "label"
@@ -10,7 +10,7 @@ export type NameSource =
   | "default-value"
   | "title"
   | "none";
-export type LandmarkType =
+type LandmarkType =
   | "banner"
   | "navigation"
   | "main"
@@ -19,7 +19,7 @@ export type LandmarkType =
   | "search"
   | "form"
   | "region";
-export type InteractiveKind = "link" | "button" | "role-link" | "role-button";
+type InteractiveKind = "link" | "button" | "role-link" | "role-button";
 
 export interface AccessibilityFinding {
   readonly id: string;
@@ -46,7 +46,7 @@ interface BaseResponse {
   readonly recommendation: string;
 }
 
-export interface LandmarkItem {
+interface LandmarkItem {
   readonly position: number;
   readonly tag: string;
   readonly role: string | null;
@@ -75,7 +75,7 @@ export interface LandmarkStructureResponse extends BaseResponse {
   readonly landmarks: readonly LandmarkItem[];
 }
 
-export interface FormItem {
+interface FormItem {
   readonly position: number;
   readonly id_value: string | null;
   readonly accessible_name: string | null;
@@ -88,7 +88,7 @@ export interface FormItem {
   readonly issues: readonly string[];
 }
 
-export interface FormControlItem {
+interface FormControlItem {
   readonly position: number;
   readonly tag: string;
   readonly input_type: string | null;
@@ -120,7 +120,7 @@ export interface FormAccessibilityResponse extends BaseResponse {
   readonly controls: readonly FormControlItem[];
 }
 
-export interface InteractiveItem {
+interface InteractiveItem {
   readonly position: number;
   readonly kind: InteractiveKind;
   readonly tag: string;

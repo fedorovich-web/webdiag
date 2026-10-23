@@ -97,19 +97,6 @@ export function pageWeightResultText(result: PageWeightResponse): string {
   ].join("\n");
 }
 
-export function lighthouseNetworkResultText(result: LighthouseNetworkResponse): string {
-  return [
-    `URL: ${result.normalized_url}`,
-    `Strategy: ${result.strategy}`,
-    `Resources: ${result.returned_request_count}/${result.request_count}`,
-    ...result.resources.map((resource) => `${resource.resource_type}: ${resource.duration_ms} ms · ${resource.transfer_bytes ?? "—"} B · ${resource.url}`),
-    `Render blocking audit: ${result.render_blocking_available ? (result.render_blocking_display_value ?? result.render_blocking_score ?? "available") : "unavailable"}`,
-    ...result.render_blocking_items.map((item) => `Blocking: ${item.wasted_ms ?? "—"} ms · ${item.url}`),
-    result.fetch_error ? `Error: ${result.fetch_error}` : "",
-    `Recommendation: ${result.recommendation}`,
-  ].filter(Boolean).join("\n");
-}
-
 const dictionary = {
   ru: {
     url: "URL страницы",

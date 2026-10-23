@@ -118,7 +118,7 @@ test.describe("home functional smoke", () => {
     }
 
     await expect(page.locator(".language-switcher-desktop")).toBeHidden();
-    await page.locator(".mobile-menu summary").click();
+    await page.getByRole("button", { name: "Открыть меню", exact: true }).click();
     await expect(page.locator(".language-switcher-mobile")).toBeVisible();
   });
 

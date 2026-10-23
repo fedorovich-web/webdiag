@@ -1,28 +1,28 @@
-export interface MetaOutput {
+interface MetaOutput {
   readonly variants: readonly {
     readonly title: string;
     readonly description: string;
     readonly rationale: string;
   }[];
 }
-export interface SchemaOutput {
+interface SchemaOutput {
   readonly json_ld: Record<string, unknown>;
   readonly property_sources: Record<string, readonly number[]>;
   readonly warnings: readonly string[];
 }
-export interface FAQOutput {
+interface FAQOutput {
   readonly items: readonly {
     readonly question: string;
     readonly answer: string;
     readonly evidence: string;
   }[];
 }
-export interface AltOutput {
+interface AltOutput {
   readonly alt_text: string;
   readonly decorative: boolean;
   readonly rationale: string;
 }
-export interface RedirectOutput {
+interface RedirectOutput {
   readonly summary: string;
   readonly mappings: readonly {
     readonly old_page_index: number;
@@ -35,7 +35,7 @@ export interface RedirectOutput {
   }[];
   readonly warnings: readonly string[];
 }
-export interface LocalizationOutput {
+interface LocalizationOutput {
   readonly localized_content: string;
   readonly glossary_usages: readonly {
     readonly glossary_index: number;
@@ -45,7 +45,7 @@ export interface LocalizationOutput {
   readonly preserved_constraint_indexes: readonly number[];
   readonly warnings: readonly string[];
 }
-export interface RegexOutput {
+interface RegexOutput {
   readonly dialect: "python" | "javascript" | "re2";
   readonly pattern: string;
   readonly validation_status: "unverified";

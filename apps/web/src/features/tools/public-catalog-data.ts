@@ -2,7 +2,7 @@ import type { Locale } from "@webdiag/tool-registry";
 import type { CatalogTool } from "./catalog-utils";
 import { ACTIVE_AI_CATALOG_TOOLS, getAICatalogTools } from "./ai-tools-data";
 
-export interface PublicToolItem {
+interface PublicToolItem {
   readonly slug: string;
   readonly category: string;
   readonly local: boolean;
@@ -10,7 +10,7 @@ export interface PublicToolItem {
   readonly description: { readonly ru: string; readonly en: string };
 }
 
-export const PUBLIC_TOOL_CATEGORIES: Readonly<Record<string, { readonly ru: string; readonly en: string }>> = {
+const PUBLIC_TOOL_CATEGORIES: Readonly<Record<string, { readonly ru: string; readonly en: string }>> = {
   "seo-audit": { ru: "SEO и аудит", en: "SEO and auditing" },
   "security-network": { ru: "Безопасность и сеть", en: "Security and networking" },
   "performance": { ru: "Производительность", en: "Performance" },
@@ -20,7 +20,7 @@ export const PUBLIC_TOOL_CATEGORIES: Readonly<Record<string, { readonly ru: stri
   "ai-tools": { ru: "AI-инструменты", en: "AI tools" },
 };
 
-export const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
+const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
   {
     "slug": "single-page-audit",
     "category": "seo-audit",

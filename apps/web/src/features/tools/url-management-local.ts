@@ -1,6 +1,6 @@
-export type LocalToolStatus = "pass" | "warning";
-export type UrlChangeKind = "normalized" | "review" | "information";
-export type QueryParameterCategory =
+type LocalToolStatus = "pass" | "warning";
+type UrlChangeKind = "normalized" | "review" | "information";
+type QueryParameterCategory =
   | "tracking"
   | "pagination"
   | "sorting"
@@ -9,7 +9,7 @@ export type QueryParameterCategory =
   | "session"
   | "other";
 
-export interface UrlNormalizationChange {
+interface UrlNormalizationChange {
   readonly id: string;
   readonly kind: UrlChangeKind;
   readonly message: string;
@@ -32,7 +32,7 @@ export interface UrlNormalizationResult {
   readonly recommendation: string;
 }
 
-export interface QueryParameterItem {
+interface QueryParameterItem {
   readonly position: number;
   readonly raw_name: string;
   readonly raw_value: string;

@@ -9,7 +9,7 @@ export interface CatalogTool {
   readonly badge?: string;
 }
 
-export function normalizeSearch(value: string): string {
+function normalizeSearch(value: string): string {
   return value.trim().toLocaleLowerCase().replace(/\s+/g, " ");
 }
 

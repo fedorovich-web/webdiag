@@ -36,58 +36,58 @@ export function AboutPage({ locale }: { locale: Locale }) {
           { value: "Данные", label: "Основа проверок", sub: "Введённые данные и ответы источников" },
           { value: "По задаче", label: "Время проверки", sub: "Зависит от инструмента и ответа источника" },
         ],
-        missionTitle: "Наша миссия",
-        missionLead: "Сделать профессиональную веб-аналитику и SEO-диагностику доступной, быстрой и понятной каждому владельцу сайта.",
+        missionTitle: "Задача WebDiag",
+        missionLead: "Помочь разобраться в технических проблемах сайта и выбрать, что исправлять дальше.",
         missionP1:
-          "Большинство существующих сервисов либо перегружены сложными непрозрачными метриками, либо требуют дорогостоящих подписок даже для базовой проверки robots.txt или SSL-сертификата. Мы создали WebDiag как единое окно для проверки любых аспектов сайта.",
+          "WebDiag объединяет проверки HTTP-ответов, DNS, TLS, разметки и содержимого страниц. Можно проверить отдельный URL или запустить обход доступных HTML-страниц, затем сохранить результаты в личном кабинете.",
         missionP2:
-          "Мы верим, что качественный сайт — это фундамент успешного бизнеса. Поэтому базовые диагностические утилиты всегда доступны бесплатно, а сложные проверки сопровождаются конкретными практическими рекомендациями по устранению ошибок.",
-        pillarsTitle: "Почему выбирают WebDiag",
-        pillarsLead: "Четыре фундаментальных принципа, на которых построена наша платформа.",
+          "Базовые диагностические инструменты доступны бесплатно. В отчетах собраны найденные проблемы и рекомендации, а AI-сценарии помогают подготовить план исправлений, текст или разметку на основе данных выбранной задачи.",
+        pillarsTitle: "Как устроена работа с WebDiag",
+        pillarsLead: "От исходных данных к проверке, отчету и следующему действию.",
         pillars: [
           {
             icon: Zap,
-            title: "Высокая скорость и глубина",
-            text: "Мгновенный анализ HTTP-ответов, заголовков безопасности, цепочек редиректов и полный рендеринг страниц на базе современного Chromium.",
+            title: "Проверки HTML и сети",
+            text: "Серверные проверки анализируют HTTP-ответы, заголовки, перенаправления и полученный HTML. JavaScript при обходе страниц не выполняется.",
           },
           {
             icon: Sparkles,
-            title: "Практичные AI-помощники",
-            text: "Наши AI-инструменты не выдумывают абстрактные советы, а работают строго с подтвержденными ошибками вашего аудита, формируя пошаговые планы действий.",
+            title: "AI для конкретных задач",
+            text: "AI-сценарии используют данные аудита, загруженные материалы или введенные вами сведения — в зависимости от задачи. Из этих данных формируются планы, брифы, тексты и разметка.",
           },
           {
             icon: ShieldCheck,
-            title: "Безопасность и конфиденциальность",
-            text: "Мы не собираем лишних персональных данных и изолируем результаты проверок. Доступ к вашим отчетам и проектам есть только у вас.",
+            title: "Проверка входных данных и результатов",
+            text: "Запросы проверяются по формату и ограничениям инструмента. Структурированные результаты AI проходят проверку по контракту перед сохранением.",
           },
           {
             icon: Layers,
-            title: "Единая экосистема инструментов",
-            text: "Вам больше не нужно открывать 10 разных сайтов для валидации Schema.org, проверки Core Web Vitals, теста DNS и генерации мета-тегов — все собрано здесь.",
+            title: "Инструменты в одном каталоге",
+            text: "В каталоге собраны проверки DNS, HTTP и разметки, анализ скорости и AI-сценарии для работы с контентом. Для каждой задачи можно выбрать отдельный инструмент.",
           },
         ],
         techTitle: "Технологический стек",
-        techLead: "Создано на базе передовых стандартов веб-разработки.",
+        techLead: "Компоненты интерфейса, серверных проверок и хранения результатов.",
         techCards: [
           {
             icon: Code2,
-            title: "Современный Frontend",
-            desc: "Next.js 16, React 19 и чистый типизированный TypeScript для молниеносной отзывчивости интерфейса.",
+            title: "Интерфейс",
+            desc: "Next.js, React и TypeScript: страницы инструментов, формы ввода, результаты проверок и личный кабинет.",
           },
           {
             icon: Cpu,
-            title: "Высокопроизводительный Backend",
-            desc: "Асинхронный FastAPI (Python 3.14) с очередями задач для параллельной обработки тяжелых сканирований.",
+            title: "Серверная часть",
+            desc: "Python и FastAPI обрабатывают запросы к API, проверяют входные данные и управляют заданиями аудита и обхода страниц.",
           },
           {
             icon: Layers,
-            title: "Реалистичный рендеринг",
-            desc: "Headless Chromium для точной оценки того, как ваш сайт видит поисковый бот Googlebot и Яндекс.",
+            title: "Источники измерений",
+            desc: "HTML и сетевые ответы используются в серверных проверках. Данные о скорости можно получить из Google PageSpeed, когда источник доступен.",
           },
           {
             icon: Users,
-            title: "Надежная инфраструктура",
-            desc: "Контейнеризация и мониторинг доступности 24/7 с гарантией бесперебойной работы.",
+            title: "Задания и отчеты",
+            desc: "Статусы заданий, результаты аудитов и отчеты сохраняются. Личный кабинет показывает историю проверок и настройки мониторинга.",
           },
         ],
         ctaTitle: "Готовы проверить ваш сайт прямо сейчас?",
@@ -95,7 +95,7 @@ export function AboutPage({ locale }: { locale: Locale }) {
         ctaAuditBtn: "Запустить SEO-аудит",
         ctaToolsBtn: "Каталог инструментов",
         supportTitle: "Есть вопросы или предложения?",
-        supportText: "Наша команда всегда открыта к диалогу. Пишите нам на официальную почту или воспользуйтесь формой обратной связи.",
+        supportText: "Напишите на почту поддержки или воспользуйтесь формой обратной связи. Можно задать вопрос об инструменте или предложить улучшение.",
         contactBtn: "Контакты и поддержка",
       }
     : {
@@ -109,58 +109,58 @@ export function AboutPage({ locale }: { locale: Locale }) {
           { value: "Data", label: "Diagnostic inputs", sub: "Submitted data and source responses" },
           { value: "Varies", label: "Check duration", sub: "Depends on the tool and source response" },
         ],
-        missionTitle: "Our Mission",
-        missionLead: "Making professional web diagnostics and technical SEO accessible, fast, and actionable for every website owner.",
+        missionTitle: "What WebDiag Helps With",
+        missionLead: "Understand technical website issues and decide what to fix next.",
         missionP1:
-          "Most legacy SEO suites are weighed down with complex interfaces, opaque grading systems, or expensive paywalls for basic tests like robots.txt or SSL headers. We built WebDiag as a clean, single pane of glass for all technical diagnostics.",
+          "WebDiag brings together checks for HTTP responses, DNS, TLS, markup, and page content. Check a single URL or crawl accessible HTML pages, then save the results in your account.",
         missionP2:
-          "We believe a fast, secure website is the foundation of any digital business. That is why core utilities are always freely accessible, and complex multi-page audits come with actionable, step-by-step remediation advice.",
-        pillarsTitle: "Why Choose WebDiag",
-        pillarsLead: "Four foundational principles guiding everything we build.",
+          "Basic diagnostic tools are free to use. Reports collect the issues found and suggested fixes. AI workflows help prepare a fix plan, text, or markup using the inputs for the selected task.",
+        pillarsTitle: "Working with WebDiag",
+        pillarsLead: "From source data to a check, a report, and a next step.",
         pillars: [
           {
             icon: Zap,
-            title: "Lightning speed & depth",
-            text: "Instant evaluation of HTTP headers, security policies, canonical tags, and full JavaScript client-side rendering via modern Chromium.",
+            title: "HTML and network checks",
+            text: "Server checks analyze HTTP responses, headers, redirects, and the returned HTML. Page crawls do not execute JavaScript.",
           },
           {
             icon: Sparkles,
-            title: "Action-oriented AI tools",
-            text: "Our AI assistants do not invent hallucinated recommendations; they work strictly from confirmed audit evidence to structure practical fix plans.",
+            title: "AI for specific tasks",
+            text: "AI workflows use audit data, uploaded materials, or facts you enter, depending on the task. These inputs are used to prepare plans, briefs, text, and markup.",
           },
           {
             icon: ShieldCheck,
-            title: "Privacy & security first",
-            text: "We collect only what is strictly required to run your checks, never sell user data, and ensure project isolation across all workspaces.",
+            title: "Input and result validation",
+            text: "Requests are checked against the tool's input format and limits. Structured AI results are validated against the tool contract before they are saved.",
           },
           {
             icon: Layers,
-            title: "All-in-one ecosystem",
-            text: "No more switching between a dozen separate websites to validate JSON-LD, test DNS records, verify Core Web Vitals, and generate metadata.",
+            title: "Tools in one catalog",
+            text: "The catalog includes DNS, HTTP, and markup checks, speed analysis, and AI content workflows. Choose an individual tool for the task you need.",
           },
         ],
         techTitle: "Technology Stack",
-        techLead: "Engineered on modern web standards and reliable infrastructure.",
+        techLead: "Components for the interface, server checks, and stored results.",
         techCards: [
           {
             icon: Code2,
-            title: "Modern Frontend",
-            desc: "Next.js 16, React 19, and strictly typed TypeScript for instant navigation and responsive interfaces.",
+            title: "Interface",
+            desc: "Next.js, React, and TypeScript provide tool pages, input forms, check results, and the account interface.",
           },
           {
             icon: Cpu,
-            title: "High-Performance Backend",
-            desc: "Asynchronous Python 3.14 and FastAPI with worker queues for parallel execution of heavy website crawls.",
+            title: "Server application",
+            desc: "Python and FastAPI handle API requests, validate inputs, and manage audit and crawl jobs.",
           },
           {
             icon: Layers,
-            title: "Real Browser Rendering",
-            desc: "Headless Chromium accurately mimics Googlebot and modern browser rendering engines.",
+            title: "Measurement sources",
+            desc: "Server checks use HTML and network responses. Speed data can be obtained from Google PageSpeed when that source is available.",
           },
           {
             icon: Users,
-            title: "Robust Infrastructure",
-            desc: "Containerized deployments and continuous uptime monitoring for uninterrupted reliability.",
+            title: "Jobs and reports",
+            desc: "Job statuses, audit results, and reports are stored. Your account shows check history and monitoring settings.",
           },
         ],
         ctaTitle: "Ready to inspect your website today?",
@@ -168,7 +168,7 @@ export function AboutPage({ locale }: { locale: Locale }) {
         ctaAuditBtn: "Run SEO Audit",
         ctaToolsBtn: "Browse Tools Catalog",
         supportTitle: "Have questions or ideas?",
-        supportText: "Our team welcomes your feedback. Get in touch via our support email or send us a message through the contact form.",
+        supportText: "Email support or use the contact form to ask about a tool or suggest an improvement.",
         contactBtn: "Contacts & Support",
       };
 
@@ -189,7 +189,7 @@ export function AboutPage({ locale }: { locale: Locale }) {
           <div className="wd-about-stats-grid">
             {t.stats.map((item, idx) => (
               <div className="wd-about-stat-card" key={idx}>
-                <span className={typeof item.value === "number" ? "wd-about-stat-value wd-about-stat-number" : "wd-about-stat-value"}>
+                <span className="wd-summary-value">
                   {item.value}
                 </span>
                 <strong className="wd-about-stat-label">{item.label}</strong>
@@ -217,19 +217,19 @@ export function AboutPage({ locale }: { locale: Locale }) {
             <ul className="wd-about-standards-list">
               <li>
                 <CheckCircle2 size={18} aria-hidden="true" />
-                <span>{ru ? "Строгое соответствие рекомендациям Google Search Central и Яндекс.Вебмастер" : "Strict adherence to Google Search Central and Yandex Webmaster guidelines"}</span>
+                <span>{ru ? "Проверки HTML и сетевых ответов без выполнения JavaScript" : "HTML and network response checks without JavaScript execution"}</span>
               </li>
               <li>
                 <CheckCircle2 size={18} aria-hidden="true" />
-                <span>{ru ? "Реалистичные метрики Core Web Vitals (LCP, INP, CLS) без симуляций" : "Realistic Core Web Vitals (LCP, INP, CLS) based on actual page loads"}</span>
+                <span>{ru ? "Метрики Google PageSpeed с указанием доступности данных" : "Google PageSpeed metrics with data availability shown"}</span>
               </li>
               <li>
                 <CheckCircle2 size={18} aria-hidden="true" />
-                <span>{ru ? "Соблюдение стандартов W3C, RFC и спецификаций Schema.org" : "Compliance with W3C, RFC, and Schema.org structured data specs"}</span>
+                <span>{ru ? "Проверка формата входных данных и структурированных результатов" : "Validation of input formats and structured results"}</span>
               </li>
               <li>
                 <CheckCircle2 size={18} aria-hidden="true" />
-                <span>{ru ? "Без спама, навязчивой рекламы и скрытых платежей" : "No spam, intrusive ad overlays, or hidden paywalls"}</span>
+                <span>{ru ? "Сохраненные аудиты, отчеты и история проверок в личном кабинете" : "Saved audits, reports, and check history in your account"}</span>
               </li>
             </ul>
           </div>

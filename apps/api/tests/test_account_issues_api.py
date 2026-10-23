@@ -124,13 +124,13 @@ async def request(path: str, *, cookie: str | None = None) -> httpx.Response:
 
 def seed_saved_audit(workspace: WorkspaceService, user_id: str) -> SavedAuditDetailResponse:
     detail = saved_detail()
-    project = workspace._store.create_project(  # noqa: SLF001 - test fixture
+    project = workspace._store.create_project(
         user_id=user_id,
         name=detail.project.name,
         origin=detail.project.origin,
     )
     payload = detail.payload.model_copy(update={"target_origin": project.origin})
-    stored = workspace._store.save_audit(  # noqa: SLF001 - test fixture
+    stored = workspace._store.save_audit(
         user_id=user_id,
         project_id=project.id,
         payload=payload,

@@ -3,11 +3,7 @@ import asyncio
 import httpx
 
 from webdiag_api.main import app
-
-try:
-    from webdiag_api.security.request_limits import RequestBodyLimitMiddleware
-except ModuleNotFoundError:
-    RequestBodyLimitMiddleware = None
+from webdiag_api.security.request_limits import ASGIApp, Receive, RequestBodyLimitMiddleware, Send
 
 
 async def get(path: str) -> httpx.Response:
@@ -51,7 +47,7 @@ def test_public_openapi_excludes_internal_operational_routes() -> None:
 
 
 async def call_asgi(
-    app: object,
+    app: ASGIApp,
     scope: dict[str, object],
     incoming: list[dict[str, object]],
 ) -> list[dict[str, object]]:
@@ -69,17 +65,15 @@ async def call_asgi(
     async def send(message: dict[str, object]) -> None:
         sent.append(message)
 
-    await app(scope, receive, send)  # type: ignore[operator]
+    await app(scope, receive, send)
     return sent
 
 
 def test_request_limit_rejects_declared_global_body_before_downstream() -> None:
-    assert RequestBodyLimitMiddleware is not None, "request body limit middleware is missing"
-
     async def downstream(
         scope: dict[str, object],
-        receive: object,
-        send: object,
+        receive: Receive,
+        send: Send,
     ) -> None:
         raise AssertionError("downstream must not run for an oversized declared body")
 
@@ -122,15 +116,13 @@ def test_request_limit_rejects_declared_global_body_before_downstream() -> None:
 
 
 def test_request_limit_rejects_streamed_account_body_with_account_envelope() -> None:
-    assert RequestBodyLimitMiddleware is not None, "request body limit middleware is missing"
-
     async def downstream(
         scope: dict[str, object],
-        receive: object,
-        send: object,
+        receive: Receive,
+        send: Send,
     ) -> None:
         while True:
-            message = await receive()  # type: ignore[operator]
+            message = await receive()
             if message["type"] != "http.request" or not message.get("more_body", False):
                 return
 
@@ -160,15 +152,14 @@ def test_request_limit_rejects_streamed_account_body_with_account_envelope() -> 
 
 
 def test_request_limit_scopes_larger_ai_run_body_without_widening_account_limit() -> None:
-    assert RequestBodyLimitMiddleware is not None, "request body limit middleware is missing"
     replayed: list[bytes] = []
 
     async def downstream(
         scope: dict[str, object],
-        receive: object,
-        send: object,
+        receive: Receive,
+        send: Send,
     ) -> None:
-        message = await receive()  # type: ignore[operator]
+        message = await receive()
         replayed.append(message["body"])
 
     middleware = RequestBodyLimitMiddleware(
@@ -219,15 +210,14 @@ def test_request_limit_scopes_larger_ai_run_body_without_widening_account_limit(
 
 
 def test_request_limit_gives_only_ai_image_upload_the_larger_account_limit() -> None:
-    assert RequestBodyLimitMiddleware is not None, "request body limit middleware is missing"
     replayed: list[bytes] = []
 
     async def downstream(
         scope: dict[str, object],
-        receive: object,
-        send: object,
+        receive: Receive,
+        send: Send,
     ) -> None:
-        message = await receive()  # type: ignore[operator]
+        message = await receive()
         replayed.append(message["body"])
 
     middleware = RequestBodyLimitMiddleware(
@@ -275,13 +265,12 @@ def test_request_limit_gives_only_ai_image_upload_the_larger_account_limit() -> 
 
 
 def test_request_limit_rejects_oversized_stream_before_downstream_that_never_reads() -> None:
-    assert RequestBodyLimitMiddleware is not None, "request body limit middleware is missing"
     downstream_started = False
 
     async def downstream(
         scope: dict[str, object],
-        receive: object,
-        send: object,
+        receive: Receive,
+        send: Send,
     ) -> None:
         nonlocal downstream_started
         downstream_started = True
@@ -305,19 +294,16 @@ def test_request_limit_rejects_oversized_stream_before_downstream_that_never_rea
 
 
 def test_request_limit_rejects_oversized_stream_before_downstream_response_start() -> None:
-    assert RequestBodyLimitMiddleware is not None, "request body limit middleware is missing"
     downstream_started = False
 
     async def downstream(
         scope: dict[str, object],
-        receive: object,
-        send: object,
+        receive: Receive,
+        send: Send,
     ) -> None:
         nonlocal downstream_started
         downstream_started = True
-        await send(  # type: ignore[operator]
-            {"type": "http.response.start", "status": 200, "headers": []}
-        )
+        await send({"type": "http.response.start", "status": 200, "headers": []})
 
     middleware = RequestBodyLimitMiddleware(
         downstream,
@@ -338,12 +324,10 @@ def test_request_limit_rejects_oversized_stream_before_downstream_response_start
 
 
 def test_request_limit_compares_arbitrarily_long_decimal_content_length() -> None:
-    assert RequestBodyLimitMiddleware is not None, "request body limit middleware is missing"
-
     async def downstream(
         scope: dict[str, object],
-        receive: object,
-        send: object,
+        receive: Receive,
+        send: Send,
     ) -> None:
         raise AssertionError("downstream must not run for an oversized declared body")
 
@@ -369,15 +353,14 @@ def test_request_limit_compares_arbitrarily_long_decimal_content_length() -> Non
 
 
 def test_request_limit_coalesces_empty_and_fragmented_request_chunks() -> None:
-    assert RequestBodyLimitMiddleware is not None, "request body limit middleware is missing"
     replayed: list[dict[str, object]] = []
 
     async def downstream(
         scope: dict[str, object],
-        receive: object,
-        send: object,
+        receive: Receive,
+        send: Send,
     ) -> None:
-        replayed.append(await receive())  # type: ignore[operator]
+        replayed.append(await receive())
 
     middleware = RequestBodyLimitMiddleware(
         downstream,
@@ -407,16 +390,15 @@ def test_request_limit_coalesces_empty_and_fragmented_request_chunks() -> None:
 
 
 def test_request_limit_replays_partial_body_before_disconnect() -> None:
-    assert RequestBodyLimitMiddleware is not None, "request body limit middleware is missing"
     replayed: list[dict[str, object]] = []
 
     async def downstream(
         scope: dict[str, object],
-        receive: object,
-        send: object,
+        receive: Receive,
+        send: Send,
     ) -> None:
-        replayed.append(await receive())  # type: ignore[operator]
-        replayed.append(await receive())  # type: ignore[operator]
+        replayed.append(await receive())
+        replayed.append(await receive())
 
     middleware = RequestBodyLimitMiddleware(
         downstream,
@@ -443,15 +425,13 @@ def test_request_limit_replays_partial_body_before_disconnect() -> None:
 
 
 def test_request_limit_counts_invalid_content_length_stream_chunks() -> None:
-    assert RequestBodyLimitMiddleware is not None, "request body limit middleware is missing"
-
     async def downstream(
         scope: dict[str, object],
-        receive: object,
-        send: object,
+        receive: Receive,
+        send: Send,
     ) -> None:
         while True:
-            message = await receive()  # type: ignore[operator]
+            message = await receive()
             if message["type"] != "http.request" or not message.get("more_body", False):
                 return
 
@@ -481,18 +461,16 @@ def test_request_limit_counts_invalid_content_length_stream_chunks() -> None:
 
 
 def test_request_limit_preserves_at_limit_body_and_non_http_scopes() -> None:
-    assert RequestBodyLimitMiddleware is not None, "request body limit middleware is missing"
-
     seen: list[object] = []
 
     async def downstream(
         scope: dict[str, object],
-        receive: object,
-        send: object,
+        receive: Receive,
+        send: Send,
     ) -> None:
         seen.append(scope["type"])
         if scope["type"] == "http":
-            message = await receive()  # type: ignore[operator]
+            message = await receive()
             assert message["body"] == b"1234"
 
     middleware = RequestBodyLimitMiddleware(

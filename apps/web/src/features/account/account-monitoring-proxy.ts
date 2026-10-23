@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { validAccountResourceId, proxyAccountWorkspace } from "./account-workspace-proxy";
 
-export function accountMonitorPath(projectId: string, suffix = ""): string | null {
+function accountMonitorPath(projectId: string, suffix = ""): string | null {
   if (!validAccountResourceId(projectId)) return null;
   if (!["", "/history", "/run"].includes(suffix)) return null;
   return `/v1/account/projects/${projectId}/monitor${suffix}`;

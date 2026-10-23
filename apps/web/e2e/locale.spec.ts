@@ -2,8 +2,8 @@ import { expect, test } from "@playwright/test";
 import { installBrowserGuard } from "./browser-guard";
 
 async function openMobileMenu(page: import("@playwright/test").Page) {
-  await page.locator(".mobile-menu summary").click();
-  await expect(page.locator(".mobile-menu")).toHaveAttribute("open", "");
+  await page.getByRole("button", { name: /^(Открыть меню|Open menu)$/ }).click();
+  await expect(page.getByRole("dialog", { name: /^(Меню сайта|Site menu)$/ })).toBeVisible();
 }
 
 test.describe("RU and EN segmented navigation", () => {
@@ -33,7 +33,9 @@ test.describe("RU and EN segmented navigation", () => {
     );
 
     const [ruBox, enBox] = await Promise.all([ru.boundingBox(), en.boundingBox()]);
-    expect(ruBox?.width).toBe(enBox?.width);
+    expect(ruBox).not.toBeNull();
+    expect(enBox).not.toBeNull();
+    expect(ruBox!.width).toBeCloseTo(enBox!.width, 2);
     expect(ruBox?.height).toBeGreaterThanOrEqual(44);
     expect(enBox?.height).toBeGreaterThanOrEqual(44);
 

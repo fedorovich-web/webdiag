@@ -13,6 +13,7 @@ import {
 import type { Locale } from "@webdiag/tool-registry";
 import { LanguageSwitcher } from "./language-switcher";
 import { SiteBrand } from "./site-brand";
+import { MobileNavigation } from "./mobile-navigation";
 import { ToolsMenuShell } from "./tools-menu-shell";
 import { loginPath, toolsPath } from "../lib/routes";
 import { PUBLIC_CATALOG_TOOL_COUNT } from "../features/tools/public-catalog-data";
@@ -61,9 +62,9 @@ function NavigationLinks({ locale, compact = false }: { locale: Locale; compact?
 
   if (compact) {
     return (
-      <nav className="mobile-nav wd-mobile-nav" aria-label={locale === "ru" ? "Основная навигация" : "Main navigation"}>
+      <nav className="wd-mobile-nav" aria-label={locale === "ru" ? "Основная навигация" : "Main navigation"}>
         <Link href={pages.audit} prefetch={false}>{text.audit}</Link>
-        <Link href={tools} prefetch={false}>{text.tools}</Link>
+        <Link href={tools} prefetch={false}>{text.all}</Link>
         <Link href={pages.pricing} prefetch={false}>{text.pricing}</Link>
         <Link href={pages.materials} prefetch={false}>{text.materials}</Link>
         <Link href={pages.about} prefetch={false}>{text.about}</Link>
@@ -109,7 +110,6 @@ export function SiteHeader({ locale }: SiteHeaderProps) {
   const createAccount = locale === "ru" ? "Создать аккаунт" : "Create account";
   const login = locale === "ru" ? "Войти" : "Sign in";
   const registerHref = locale === "ru" ? "/register" : "/en/register";
-  const menuLabel = locale === "ru" ? "Открыть меню" : "Open menu";
 
   return (
     <header className="wd-site-header">
@@ -122,18 +122,9 @@ export function SiteHeader({ locale }: SiteHeaderProps) {
           <LanguageSwitcher locale={locale} className="language-switcher-desktop" />
           <Link className="wd-header-login" href={loginPath(locale)} prefetch={false}>{login}</Link>
           <Link className="wd-header-cta" href={registerHref} prefetch={false}>{createAccount}</Link>
-          <details className="mobile-menu">
-            <summary aria-label={menuLabel}>
-              <span aria-hidden="true" />
-              <span aria-hidden="true" />
-              <span aria-hidden="true" />
-            </summary>
-            <div className="mobile-menu-panel">
-              <LanguageSwitcher locale={locale} className="language-switcher-mobile" />
-              <NavigationLinks locale={locale} compact />
-              <Link className="wd-header-cta" href={registerHref} prefetch={false}>{createAccount}</Link>
-            </div>
-          </details>
+          <MobileNavigation locale={locale}>
+            <NavigationLinks locale={locale} compact />
+          </MobileNavigation>
         </div>
       </div>
     </header>

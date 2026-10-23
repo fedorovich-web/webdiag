@@ -35,11 +35,13 @@ test.describe("accessibility smoke", () => {
     await page.keyboard.press("Tab");
     await expect(page.locator(".skip-link")).toBeFocused();
 
-    await page.locator(".mobile-menu summary").click();
+    await page.getByRole("button", { name: "Открыть меню", exact: true }).click();
     await expect(page.getByRole("switch")).toHaveCount(0);
 
     const englishVersion = page.getByRole("link", { name: "English version" });
     await englishVersion.focus();
     await expect(englishVersion).toBeFocused();
+    const results = await new AxeBuilder({ page }).withTags(wcagTags).analyze();
+    expect(results.violations).toEqual([]);
   });
 });

@@ -133,14 +133,6 @@
   border-radius: 18px;
   text-align: center;
 }
-.wd-audit-stat-val {
-  display: block;
-  font-size: clamp(28px, 2.8vw, 36px);
-  font-weight: 850;
-  color: #2563ff;
-  line-height: 1.1;
-  margin-bottom: 6px;
-}
 .wd-audit-stat-label {
   display: block;
   font-size: 15px;

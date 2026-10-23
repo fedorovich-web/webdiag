@@ -33,7 +33,7 @@ const manifest = {
 };
 await writeFile(path.join(root, "BUILD-MANIFEST.json"), `${JSON.stringify(manifest, null, 2)}\n`);
 
-const files = (await walk(root)).filter((file) => path.basename(file) !== "SHA256SUMS.txt").sort();
+const files = (await walk(root)).sort();
 const rows = [];
 for (const file of files) {
   const hash = createHash("sha256").update(await readFile(file)).digest("hex");

@@ -1,13 +1,13 @@
 import type { Locale } from "@webdiag/tool-registry";
 
-export type EditorialState = "draft" | "review" | "published" | "outdated" | "archived";
+type EditorialState = "draft" | "review" | "published" | "outdated" | "archived";
 
 export interface LocalizedValue {
   readonly ru: string;
   readonly en: string;
 }
 
-export interface LocalizedFaq {
+interface LocalizedFaq {
   readonly question: LocalizedValue;
   readonly answer: LocalizedValue;
 }
@@ -35,32 +35,32 @@ export interface ToolPageContent {
   readonly reviewDueAt: string;
 }
 
-export interface HomeCategoryContent {
+interface HomeCategoryContent {
   readonly id: string;
   readonly title: LocalizedValue;
   readonly description: LocalizedValue;
   readonly toolSlugs: readonly string[];
 }
 
-export interface HomeAuditArea {
+interface HomeAuditArea {
   readonly id: string;
   readonly title: LocalizedValue;
   readonly description: LocalizedValue;
   readonly checks: readonly LocalizedValue[];
 }
 
-export interface HomeToolCardContent {
+interface HomeToolCardContent {
   readonly slug: string;
   readonly title: LocalizedValue;
   readonly description: LocalizedValue;
 }
 
-export interface HomeStepContent {
+interface HomeStepContent {
   readonly title: LocalizedValue;
   readonly description: LocalizedValue;
 }
 
-export interface HomeResourceContent {
+interface HomeResourceContent {
   readonly title: LocalizedValue;
   readonly description: LocalizedValue;
   readonly href: LocalizedValue;

@@ -1,4 +1,4 @@
-export interface AccountUser {
+interface AccountUser {
   readonly id: string;
   readonly email: string;
   readonly display_name: string;
