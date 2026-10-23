@@ -174,10 +174,6 @@ body[data-theme="light"] .wd-home .wd-report-recommendation > span {
 }
 
 @media (max-width: 1180px) {
-  .wd-site-header .mobile-menu-panel .wd-header-cta {
-    display: inline-flex;
-  }
-
   .site-footer .wd-footer-grid {
     grid-template-columns: 1.25fr repeat(3, minmax(140px, .75fr));
   }
@@ -389,13 +385,6 @@ body[data-theme="light"] .wd-home .wd-report-recommendation > span {
   --wd-font-breadcrumbs: 12px;
 }
 
-/* Global Typography & Spacing Standards:
-   - Minimum font size: 14px across all text, inputs, cards, and UI elements
-   - Breadcrumbs are the only allowed exception at 12px
-   - Subtitle under H1: strictly 18px
-   - Subtitles under H2 / H3: strictly 16px
-   - Headings retain their prominent scale; inner spans inherit font size
-*/
 body {
   font-size: var(--wd-font-body, 15px);
 }

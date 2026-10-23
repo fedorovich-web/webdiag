@@ -3,6 +3,7 @@ import hashlib
 import sqlite3
 import threading
 import time
+from collections.abc import Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
 from dataclasses import replace
@@ -230,14 +231,21 @@ def test_archive_and_monitor_create_race_cannot_schedule_archived_project(
     begin_barrier = threading.Barrier(2)
 
     class BarrierConnection(sqlite3.Connection):
-        def execute(self, sql: str, parameters=(), /):  # type: ignore[no-untyped-def]
+        def execute(
+            self,
+            sql: str,
+            parameters: Sequence[object] | Mapping[str, object] = (),
+            /,
+        ) -> sqlite3.Cursor:
             if sql.strip() == "BEGIN IMMEDIATE":
                 begin_barrier.wait(timeout=5)
             return super().execute(sql, parameters)
 
-    def connect_with_barrier(store: object) -> sqlite3.Connection:
+    def connect_with_barrier(
+        store: SqliteWorkspaceStore | SqliteMonitoringStore,
+    ) -> sqlite3.Connection:
         connection = sqlite3.connect(
-            store._path,  # type: ignore[attr-defined]  # noqa: SLF001
+            store._path,
             timeout=10,
             isolation_level=None,
             factory=BarrierConnection,
@@ -306,14 +314,21 @@ def test_archive_and_manual_claim_race_always_clears_the_lease(
     begin_barrier = threading.Barrier(2)
 
     class BarrierConnection(sqlite3.Connection):
-        def execute(self, sql: str, parameters=(), /):  # type: ignore[no-untyped-def]
+        def execute(
+            self,
+            sql: str,
+            parameters: Sequence[object] | Mapping[str, object] = (),
+            /,
+        ) -> sqlite3.Cursor:
             if sql.strip() == "BEGIN IMMEDIATE":
                 begin_barrier.wait(timeout=5)
             return super().execute(sql, parameters)
 
-    def connect_with_barrier(store: object) -> sqlite3.Connection:
+    def connect_with_barrier(
+        store: SqliteWorkspaceStore | SqliteMonitoringStore,
+    ) -> sqlite3.Connection:
         connection = sqlite3.connect(
-            store._path,  # type: ignore[attr-defined]  # noqa: SLF001
+            store._path,
             timeout=10,
             isolation_level=None,
             factory=BarrierConnection,
@@ -414,7 +429,7 @@ def test_monitor_service_maps_archive_races_to_hidden_project_error(
         request=ProjectCreateRequest(name="Main", origin="https://example.com"),
     )
     workspace_store = SqliteWorkspaceStore(str(database))
-    original_owned_project = monitoring._owned_project  # noqa: SLF001
+    original_owned_project = monitoring._owned_project
 
     def archive_after_ownership_check(*, user_id: str, project_id: str):
         owned = original_owned_project(user_id=user_id, project_id=project_id)
@@ -1186,14 +1201,19 @@ def test_monitoring_hash_migration_is_safe_across_store_instances(
     migration_barrier = threading.Barrier(2)
 
     class BarrierConnection(sqlite3.Connection):
-        def execute(self, sql: str, parameters=(), /):  # type: ignore[no-untyped-def]
+        def execute(
+            self,
+            sql: str,
+            parameters: Sequence[object] | Mapping[str, object] = (),
+            /,
+        ) -> sqlite3.Cursor:
             if sql.strip() == "BEGIN IMMEDIATE":
                 migration_barrier.wait(timeout=5)
             return super().execute(sql, parameters)
 
     def connect_with_barrier(store: SqliteMonitoringStore) -> sqlite3.Connection:
         connection = sqlite3.connect(
-            store._path,  # noqa: SLF001 - test-only connection factory
+            store._path,
             timeout=10,
             isolation_level=None,
             factory=BarrierConnection,

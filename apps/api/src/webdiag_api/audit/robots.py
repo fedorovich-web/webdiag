@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from typing import Literal
 from urllib.parse import urljoin, urlsplit
 
 DEFAULT_ROBOTS_USER_AGENT = "webdiagbot"
@@ -10,7 +11,7 @@ DEFAULT_ROBOTS_USER_AGENT = "webdiagbot"
 @dataclass(frozen=True, slots=True)
 class RobotsTxtRule:
     user_agent: str
-    directive: str
+    directive: Literal["allow", "disallow"]
     value: str
 
 
@@ -86,7 +87,7 @@ def _parse_robots_txt(body_text: str) -> tuple[list[_RobotsTxtGroup], list[str]]
     groups: list[_RobotsTxtGroup] = []
     sitemap_urls: list[str] = []
     current_agents: list[str] = []
-    current_directives: list[tuple[str, str]] = []
+    current_directives: list[tuple[Literal["allow", "disallow"], str]] = []
 
     def flush_group() -> None:
         nonlocal current_agents, current_directives
@@ -122,7 +123,7 @@ def _parse_robots_txt(body_text: str) -> tuple[list[_RobotsTxtGroup], list[str]]
         if directive == "sitemap" and value:
             sitemap_urls.append(value)
             continue
-        if directive in {"allow", "disallow"} and current_agents:
+        if (directive == "allow" or directive == "disallow") and current_agents:
             current_directives.append((directive, value))
 
     flush_group()

@@ -1,7 +1,7 @@
 import type { ToolStatus } from "./client-delivery-tool-contract";
 
-export type RedirectMapFetchState = "ok" | "rejected" | "failed" | "not_checked";
-export type RedirectMapFindingSeverity = "info" | "medium" | "high";
+type RedirectMapFetchState = "ok" | "rejected" | "failed" | "not_checked";
+type RedirectMapFindingSeverity = "info" | "medium" | "high";
 
 export interface RedirectMapInputEntry {
   readonly source_url: string;
@@ -9,7 +9,7 @@ export interface RedirectMapInputEntry {
   readonly expected_status_code?: number;
 }
 
-export interface RedirectMapFindingResult {
+interface RedirectMapFindingResult {
   readonly id: string;
   readonly title: string;
   readonly severity: RedirectMapFindingSeverity;
@@ -17,7 +17,7 @@ export interface RedirectMapFindingResult {
   readonly recommendation: string;
 }
 
-export interface RedirectMapEntryResult {
+interface RedirectMapEntryResult {
   readonly position: number;
   readonly source_url: string;
   readonly target_url: string;

@@ -9,7 +9,7 @@ import { AccountAIResult } from "./account-ai-result";
 import { aiRunStateLabel, aiToolDescriptor } from "./account-ai-presentation";
 import { aiPollDelayMs, isAIRunTerminal, newAIIdempotencyKey, shouldPollAIRun } from "./account-ai-query";
 
-export type TextToolId = Extract<AIToolId, "ai_competitor_gap_report" | "ai_content_brief" | "ai_content_optimizer" | "ai_search_intent_page_fit" | "ai_internal_linking_planner">;
+type TextToolId = Extract<AIToolId, "ai_competitor_gap_report" | "ai_content_brief" | "ai_content_optimizer" | "ai_search_intent_page_fit" | "ai_internal_linking_planner">;
 type FormValues = Record<string, string>;
 
 interface AccountAITextToolRunnerProps {

@@ -183,7 +183,7 @@ def run_cli(
         evidence = _execute_manifest(
             manifest,
             provider_factory=provider_factory
-            or _default_provider_factory(manifest.definition.id, artifact_prefix),
+            or _default_provider_factory(artifact_prefix),
             artifact_prefix=artifact_prefix,
         )
         evidence_bytes = (
@@ -530,7 +530,6 @@ def _evaluation_artifact_prefix(tool_id: str) -> str | None:
 
 
 def _default_provider_factory(
-    tool_id: str,
     artifact_prefix: str | None,
 ) -> _ProviderFactory:
     def factory() -> VercelAIGatewayProvider:

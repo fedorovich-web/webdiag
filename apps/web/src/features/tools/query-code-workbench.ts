@@ -14,9 +14,9 @@ export interface FormatResult {
   readonly warnings: readonly string[];
 }
 
-export type RegexRiskLevel = "low" | "review" | "high";
+type RegexRiskLevel = "low" | "review" | "high";
 
-export interface RegexRiskFinding {
+interface RegexRiskFinding {
   readonly code: string;
   readonly message: string;
   readonly level: Exclude<RegexRiskLevel, "low">;
@@ -35,7 +35,7 @@ export interface RegexWorkerRequest {
   readonly maximumPreviewCharacters: number;
 }
 
-export interface RegexWorkerMatch {
+interface RegexWorkerMatch {
   readonly index: number;
   readonly endIndex: number;
   readonly value: string;
@@ -44,7 +44,7 @@ export interface RegexWorkerMatch {
   readonly indices: readonly (readonly [number, number] | null)[] | null;
 }
 
-export interface RegexWorkerSuccess {
+interface RegexWorkerSuccess {
   readonly kind: "result";
   readonly ok: true;
   readonly matchCount: number;
@@ -53,7 +53,7 @@ export interface RegexWorkerSuccess {
   readonly matches: readonly RegexWorkerMatch[];
 }
 
-export interface RegexWorkerFailure {
+interface RegexWorkerFailure {
   readonly kind: "result";
   readonly ok: false;
   readonly error: string;
@@ -61,7 +61,7 @@ export interface RegexWorkerFailure {
 
 export type RegexWorkerResponse = RegexWorkerSuccess | RegexWorkerFailure;
 
-export interface RegexWorkerReady {
+interface RegexWorkerReady {
   readonly kind: "ready";
 }
 

@@ -19,7 +19,7 @@ export type AccountIssuePriority = "p0" | "p1" | "p2" | "p3";
 export type AccountIssueSort = "priority" | "category" | "title";
 export type AccountIssueOrder = "asc" | "desc";
 
-export interface AccountIssue {
+interface AccountIssue {
   readonly issue_id: string;
   readonly check_id: string | null;
   readonly category: AccountIssueCategory;

@@ -2,6 +2,7 @@ import asyncio
 import hashlib
 import sqlite3
 import threading
+from collections.abc import Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from pathlib import Path
@@ -536,14 +537,19 @@ def test_saved_audit_hash_migration_is_safe_across_store_instances(
     migration_barrier = threading.Barrier(2)
 
     class BarrierConnection(sqlite3.Connection):
-        def execute(self, sql: str, parameters=(), /):  # type: ignore[no-untyped-def]
+        def execute(
+            self,
+            sql: str,
+            parameters: Sequence[object] | Mapping[str, object] = (),
+            /,
+        ) -> sqlite3.Cursor:
             if sql.strip() == "BEGIN IMMEDIATE":
                 migration_barrier.wait(timeout=5)
             return super().execute(sql, parameters)
 
     def connect_with_barrier(store: SqliteWorkspaceStore) -> sqlite3.Connection:
         connection = sqlite3.connect(
-            store._path,  # noqa: SLF001 - test-only connection factory
+            store._path,
             timeout=10,
             isolation_level=None,
             factory=BarrierConnection,

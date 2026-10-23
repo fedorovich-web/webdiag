@@ -1,4 +1,4 @@
-export type OrganizationSchemaType = "Organization" | "Corporation" | "NGO" | "LocalBusiness";
+type OrganizationSchemaType = "Organization" | "Corporation" | "NGO" | "LocalBusiness";
 
 export interface OrganizationSchemaInput {
   readonly organizationType: OrganizationSchemaType;

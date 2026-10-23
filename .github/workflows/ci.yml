@@ -57,6 +57,9 @@ jobs:
       - name: Verify tool registry
         run: npm run verify:registry
 
+      - name: Verify unused code
+        run: npm run verify:dead-code
+
       - name: Run JavaScript tests
         run: npm test
 

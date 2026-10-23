@@ -1,14 +1,14 @@
 export type ToolStatus = "pass" | "warning" | "fail";
 export type FindingSeverity = "info" | "medium" | "high";
-export type CspPolicySource = "header" | "report-only" | "meta";
-export type ScriptHostClassification =
+type CspPolicySource = "header" | "report-only" | "meta";
+type ScriptHostClassification =
   | "analytics-pattern"
   | "tag-manager-pattern"
   | "advertising-pattern"
   | "social-pattern"
   | "cdn-pattern"
   | "other";
-export type ResourceHintRel =
+type ResourceHintRel =
   | "preconnect"
   | "dns-prefetch"
   | "preload"
@@ -20,12 +20,12 @@ export interface ToolApiErrorPayload {
   readonly detail: { readonly code: string; readonly message: string };
 }
 
-export interface CspDirectiveResult {
+interface CspDirectiveResult {
   readonly name: string;
   readonly values: readonly string[];
 }
 
-export interface CspPolicyResult {
+interface CspPolicyResult {
   readonly source: CspPolicySource;
   readonly raw: string;
   readonly directive_count: number;
@@ -33,7 +33,7 @@ export interface CspPolicyResult {
   readonly directives: readonly CspDirectiveResult[];
 }
 
-export interface CspFindingResult {
+interface CspFindingResult {
   readonly id: string;
   readonly title: string;
   readonly severity: FindingSeverity;
@@ -64,7 +64,7 @@ export interface CspAnalyzerResponse {
   readonly recommendation: string;
 }
 
-export interface ScriptItemResult {
+interface ScriptItemResult {
   readonly position: number;
   readonly source_kind: "inline" | "external";
   readonly raw_src: string | null;
@@ -83,7 +83,7 @@ export interface ScriptItemResult {
   readonly issues: readonly string[];
 }
 
-export interface ScriptHostGroupResult {
+interface ScriptHostGroupResult {
   readonly hostname: string;
   readonly count: number;
   readonly classification: ScriptHostClassification;
@@ -120,7 +120,7 @@ export interface ThirdPartyScriptAnalyzerResponse {
   readonly recommendation: string;
 }
 
-export interface ResourceHintItemResult {
+interface ResourceHintItemResult {
   readonly position: number;
   readonly rel: ResourceHintRel;
   readonly raw_href: string | null;
@@ -135,7 +135,7 @@ export interface ResourceHintItemResult {
   readonly issues: readonly string[];
 }
 
-export interface ResourceHintFindingResult {
+interface ResourceHintFindingResult {
   readonly id: string;
   readonly title: string;
   readonly severity: "info" | "medium";

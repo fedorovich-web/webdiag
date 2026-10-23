@@ -263,7 +263,6 @@ export function FaviconGeneratorTool({ locale }: { locale: Locale }) {
       {results.length ? <>
         <div className="favicon-asset-grid">
           {results.map((result) => <article className="favicon-asset" key={result.filename}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={result.url} alt="" width={result.size} height={result.size} />
             <div><strong>{result.filename}</strong><small>{result.size} × {result.size} · {formatBytes(result.bytes, locale)}</small></div>
             <a className="button button-secondary" href={result.url} download={result.filename}>{t(locale, "Скачать", "Download")}</a>
@@ -286,7 +285,6 @@ function RasterResultPanel({ locale, result }: { locale: Locale; result: RasterR
   return <section className="tool-panel">
     <h2>{t(locale, "Результат", "Result")}</h2>
     {result ? <>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img className="image-preview" src={result.url} alt={t(locale, "Предпросмотр результата", "Result preview")} />
       <dl className="result-meta">
         <div><dt>{t(locale, "Размеры", "Dimensions")}</dt><dd>{result.width} × {result.height}</dd></div>

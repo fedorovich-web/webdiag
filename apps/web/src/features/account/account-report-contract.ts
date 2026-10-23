@@ -21,7 +21,7 @@ export interface ReportSnapshot {
   readonly generated_at: string;
 }
 
-export interface AccountReportSummary {
+interface AccountReportSummary {
   readonly id: string;
   readonly project_id: string;
   readonly audit_id: string;
@@ -158,7 +158,7 @@ function isIssue(value: unknown): value is SavedAuditIssue {
     && isRecommendation(value.recommendation);
 }
 
-export function isReportSnapshot(value: unknown): value is ReportSnapshot {
+function isReportSnapshot(value: unknown): value is ReportSnapshot {
   if (!record(value)) return false;
   const baseKeys = [
     "contract_version", "title", "locale", "project_name", "target_origin",

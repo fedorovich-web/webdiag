@@ -2,7 +2,7 @@ export interface ToolApiErrorPayload {
   readonly detail: { readonly code: string; readonly message: string };
 }
 
-export interface CertificateNameResult {
+interface CertificateNameResult {
   readonly common_name: string | null;
   readonly subject_alt_names: readonly string[];
 }
@@ -61,7 +61,7 @@ export interface HttpCompressionResponse {
 }
 
 
-export interface HeaderItemResult {
+interface HeaderItemResult {
   readonly name: string;
   readonly value: string;
 }
@@ -124,7 +124,7 @@ export interface CorsResponse {
 }
 
 
-export interface ServerTimingMetricResult {
+interface ServerTimingMetricResult {
   readonly name: string;
   readonly duration_ms: number | null;
   readonly description: string | null;
@@ -145,7 +145,7 @@ export interface ServerTimingAnalyzerResponse {
   readonly recommendation: string;
 }
 
-export interface CookieItemResult {
+interface CookieItemResult {
   readonly name: string;
   readonly secure: boolean;
   readonly http_only: boolean;
@@ -173,7 +173,7 @@ export interface CookiePolicyResponse {
   readonly recommendation: string;
 }
 
-export interface MixedContentItemResult {
+interface MixedContentItemResult {
   readonly url: string;
   readonly source: string;
   readonly active: boolean;
@@ -207,7 +207,7 @@ export type ProtocolSecurityToolResponse =
   | CookiePolicyResponse
   | MixedContentResponse;
 
-export function isRecord(value: unknown): value is Record<string, unknown> {
+function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
 }
 

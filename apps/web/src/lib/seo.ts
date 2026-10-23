@@ -16,13 +16,6 @@ function localeCode(locale: Locale): "ru_RU" | "en_US" {
   return locale === "ru" ? "ru_RU" : "en_US";
 }
 
-export function localizedAlternates(ruPath: string, enPath: string): Metadata["alternates"] {
-  return {
-    canonical: ruPath,
-    languages: { ru: ruPath, en: enPath, "x-default": ruPath },
-  };
-}
-
 export function pageMetadata({
   locale,
   title,

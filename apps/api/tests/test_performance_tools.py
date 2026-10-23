@@ -374,7 +374,9 @@ def test_lighthouse_network_returns_bounded_redacted_provider_evidence() -> None
 
 def test_lighthouse_network_marks_missing_audits_unavailable_without_fake_empty_success() -> None:
     provider_payload = pagespeed_payload()
-    audits = provider_payload["lighthouseResult"]["audits"]  # type: ignore[index]
+    lighthouse = provider_payload["lighthouseResult"]
+    assert isinstance(lighthouse, dict)
+    audits = lighthouse["audits"]
     assert isinstance(audits, dict)
     audits.pop("network-requests")
     audits.pop("render-blocking-resources")

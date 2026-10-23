@@ -31,11 +31,11 @@ test("RU and EN pricing preserve the selected annual or monthly product", async 
   ]) {
     await page.goto(path!);
     const pro = page.locator(".wd-pricing-card").nth(1);
-    await pro.getByRole("button").click();
+    await pro.getByRole("link").click();
     await expect(page).toHaveURL(new RegExp(`checkout\\?pack=${annualSku}$`));
     await page.goto(path!);
     await page.locator(".wd-billing-toggle-switch").click();
-    await pro.getByRole("button").click();
+    await pro.getByRole("link").click();
     await expect(page).toHaveURL(new RegExp(`checkout\\?pack=${monthlySku}$`));
   }
 });
