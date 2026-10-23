@@ -18,12 +18,12 @@ export const cssDesignToolPages = [
       { ru: "Извлеките палитру и скопируйте нужные HEX-значения.", en: "Extract the palette and copy the HEX values you need." },
     ],
     supportedFeatures: [
-      { ru: "Детерминированная 5-bit RGB quantization уменьшенной выборки.", en: "Deterministic five-bit RGB quantization of a downsampled image." },
+      { ru: "Группировка цветов уменьшенной выборки с точностью 5 бит на канал RGB и воспроизводимым результатом.", en: "Deterministic five-bit RGB quantization of a downsampled image." },
       { ru: "HEX, RGB, количество и процент пикселей выборки.", en: "HEX, RGB, count, and percentage of sampled pixels." },
       { ru: "Прозрачные пиксели пропускаются, частичная прозрачность компонуется на белом.", en: "Transparent pixels are skipped; partial transparency is composited onto white." },
     ],
     limitations: [
-      { ru: "Это палитра уменьшенной выборки, а не точный список всех цветов и не perceptual clustering.", en: "This is a downsampled palette, not an exact color inventory or perceptual clustering model." },
+      { ru: "Палитра строится по уменьшенной выборке. Она не перечисляет все цвета и не группирует их по зрительному сходству.", en: "This is a downsampled palette, not an exact color inventory or perceptual clustering model." },
       { ru: "Инструмент не определяет названия, брендовые роли, контраст или цветовой профиль.", en: "The tool does not infer color names, brand roles, contrast, or color profiles." },
     ],
     useCases: [
@@ -62,8 +62,8 @@ export const cssDesignToolPages = [
     },
     quickFacts: [
       { ru: "HEX 3 или 6 символов", en: "3- or 6-digit HEX" },
-      { ru: "WCAG text thresholds", en: "WCAG text thresholds" },
-      { ru: "Живой preview", en: "Live preview" },
+      { ru: "Пороги WCAG для текста", en: "WCAG text thresholds" },
+      { ru: "Предпросмотр", en: "Live preview" },
     ],
     howToSteps: [
       {
@@ -85,7 +85,7 @@ export const cssDesignToolPages = [
         en: "Three- and six-digit HEX values with or without #.",
       },
       {
-        ru: "Расчёт relative luminance и contrast ratio.",
+        ru: "Расчёт относительной яркости и коэффициента контраста.",
         en: "Relative luminance and contrast-ratio calculation.",
       },
       {
@@ -95,7 +95,7 @@ export const cssDesignToolPages = [
     ],
     limitations: [
       {
-        ru: "RGB, HSL, alpha и градиенты не поддерживаются.",
+        ru: "RGB, HSL, прозрачность и градиенты не поддерживаются.",
         en: "RGB, HSL, alpha, and gradients are not supported.",
       },
       {
@@ -113,7 +113,7 @@ export const cssDesignToolPages = [
         en: "Selecting an accessible color pair for an interface.",
       },
       {
-        ru: "Быстрая проверка design token перед внедрением.",
+        ru: "Проверка цвета из дизайн-системы перед применением.",
         en: "Quickly checking a design token before implementation.",
       },
     ],
@@ -152,7 +152,7 @@ export const cssDesignToolPages = [
     },
     h1: { ru: "Конвертер px ↔ rem", en: "px ↔ rem Converter" },
     lead: {
-      ru: "Рассчитайте относительное rem-значение по пикселям или переведите rem обратно в px для выбранного root font size.",
+      ru: "Переведите пиксели в rem или обратно для заданного размера шрифта корневого элемента.",
       en: "Calculate a relative rem value from pixels or convert rem back to pixels for a selected root font size.",
     },
     quickFacts: [
@@ -173,11 +173,11 @@ export const cssDesignToolPages = [
     ],
     supportedFeatures: [
       {
-        ru: "Преобразование px ÷ root size = rem.",
+        ru: "Перевод в rem: px ÷ базовый размер шрифта.",
         en: "px divided by root size equals rem.",
       },
       {
-        ru: "Преобразование rem × root size = px.",
+        ru: "Перевод в px: rem × базовый размер шрифта.",
         en: "rem multiplied by root size equals px.",
       },
       { ru: "Дробные числовые значения.", en: "Decimal numeric values." },
@@ -198,7 +198,7 @@ export const cssDesignToolPages = [
         en: "Translating design dimensions into relative CSS units.",
       },
       {
-        ru: "Проверка значения при нестандартном root font size.",
+        ru: "Проверка значения при нестандартном размере шрифта корневого элемента.",
         en: "Checking a value with a non-default root font size.",
       },
       {
@@ -241,12 +241,12 @@ export const cssDesignToolPages = [
     },
     h1: { ru: "Конвертер HEX-цветов", en: "HEX Color Converter" },
     lead: {
-      ru: "Введите 3- или 6-значный HEX и получите нормализованный HEX, RGB, HSL и числовые каналы для design-token workflow.",
-      en: "Enter a 3- or 6-digit HEX value and get normalized HEX, RGB, HSL, and numeric channels for a design-token workflow.",
+      ru: "Введите HEX из 3 или 6 символов и получите полную запись HEX, значения RGB, HSL и отдельных цветовых каналов.",
+      en: "Enter a 3- or 6-digit HEX value and get normalized HEX, RGB, HSL, and numeric color channels.",
     },
     quickFacts: [
       { ru: "HEX → RGB/HSL", en: "HEX to RGB/HSL" },
-      { ru: "3/6 digit support", en: "3/6 digit support" },
+      { ru: "HEX из 3 или 6 символов", en: "3/6 digit support" },
       { ru: "Локальный расчёт", en: "Local calculation" },
     ],
     howToSteps: [
@@ -255,59 +255,59 @@ export const cssDesignToolPages = [
         en: "Enter a HEX color with or without #.",
       },
       {
-        ru: "Проверьте нормализованное значение и preview.",
+        ru: "Проверьте нормализованное значение и предпросмотр.",
         en: "Review the normalized value and preview.",
       },
       {
-        ru: "Скопируйте RGB или HSL CSS value.",
+        ru: "Скопируйте значение RGB или HSL для CSS.",
         en: "Copy the RGB or HSL CSS value.",
       },
     ],
     supportedFeatures: [
       {
-        ru: "Нормализация short HEX в полный #RRGGBB.",
+        ru: "Преобразование короткого HEX в полный #RRGGBB.",
         en: "Normalizes short HEX to full #RRGGBB.",
       },
       {
-        ru: "Расчёт RGB channels и CSS rgb() notation.",
+        ru: "Расчёт каналов RGB и запись в формате CSS rgb().",
         en: "Calculates RGB channels and CSS rgb() notation.",
       },
       {
-        ru: "Расчёт HSL hue, saturation и lightness.",
+        ru: "Расчёт цветового тона, насыщенности и светлоты HSL.",
         en: "Calculates HSL hue, saturation, and lightness.",
       },
     ],
     limitations: [
       {
-        ru: "RGB, HSL, alpha, lab/lch и named colors не принимаются как вход.",
+        ru: "Ввод в RGB, HSL, lab/lch, цвета с прозрачностью и именованные цвета не поддерживаются.",
         en: "RGB, HSL, alpha, lab/lch, and named colors are not accepted as input.",
       },
       {
-        ru: "Инструмент не извлекает палитры из файлов и не оценивает contrast ratio.",
+        ru: "Инструмент не извлекает палитры из файлов и не оценивает коэффициент контраста.",
         en: "The tool does not extract palettes from files or evaluate contrast ratio.",
       },
     ],
     useCases: [
       {
-        ru: "Перевод HEX design token в CSS rgb() или hsl().",
+        ru: "Перевод HEX-цвета из дизайн-системы в CSS rgb() или hsl().",
         en: "Converting a HEX design token to CSS rgb() or hsl().",
       },
       {
-        ru: "Проверка цветовых каналов перед документацией UI kit.",
+        ru: "Проверка цветовых каналов для документации компонентов интерфейса.",
         en: "Checking color channels before documenting a UI kit.",
       },
       {
-        ru: "Быстрая нормализация short HEX из макета.",
+        ru: "Преобразование короткого HEX из макета в полную запись.",
         en: "Quickly normalizing short HEX from a design.",
       },
     ],
     technicalNotes: [
       {
-        ru: "HSL округляется до целых градусов и процентов для практического CSS output.",
+        ru: "Значения HSL для CSS округляются до целых градусов и процентов.",
         en: "HSL is rounded to whole degrees and percentages for practical CSS output.",
       },
       {
-        ru: "Расчёт выполняется в браузере и не требует network request.",
+        ru: "Расчёт выполняется в браузере без сетевых запросов.",
         en: "The calculation runs in the browser and does not require a network request.",
       },
     ],
@@ -325,71 +325,71 @@ export const cssDesignToolPages = [
   toolPage({
     slug: "css-specificity-calculator",
     seoTitle: {
-      ru: "Калькулятор специфичности CSS selectors",
+      ru: "Калькулятор специфичности CSS-селекторов",
       en: "CSS Selector Specificity Calculator",
     },
     metaDescription: {
-      ru: "Посчитайте специфичность CSS selector list в формате ID/class/type, включая bounded поддержку :where(), :is(), :not() и :has().",
-      en: "Calculate CSS selector-list specificity as ID/class/type values, including bounded support for :where(), :is(), :not(), and :has().",
+      ru: "Рассчитайте специфичность CSS-селекторов по ID, классам и типам элементов с ограниченной поддержкой :where(), :is(), :not() и :has().",
+      en: "Calculate CSS selector-list specificity by IDs, classes, and element types, with limited support for :where(), :is(), :not(), and :has().",
     },
     h1: {
       ru: "Калькулятор специфичности CSS",
       en: "CSS Specificity Calculator",
     },
     lead: {
-      ru: "Проверьте, почему один selector перекрывает другой, без выполнения CSS и без анализа всего stylesheet.",
+      ru: "Сравните специфичность селекторов, чтобы разобраться в конфликте CSS-правил. Калькулятор не применяет CSS и не анализирует весь файл стилей.",
       en: "Check why one selector overrides another without executing CSS or analyzing a full stylesheet.",
     },
     quickFacts: [
-      { ru: "ID/class/type score", en: "ID/class/type score" },
-      { ru: "Selector list", en: "Selector list" },
-      { ru: "Без CSS execution", en: "No CSS execution" },
+      { ru: "ID, классы и типы элементов", en: "ID/class/type score" },
+      { ru: "Список селекторов", en: "Selector list" },
+      { ru: "Без применения CSS", en: "No CSS execution" },
     ],
     howToSteps: [
       {
-        ru: "Вставьте один selector или список через запятую.",
+        ru: "Вставьте один селектор или список через запятую.",
         en: "Paste one selector or a comma-separated list.",
       },
       {
-        ru: "Проверьте итоговый score для каждого selector.",
+        ru: "Проверьте специфичность каждого селектора.",
         en: "Review the resulting score for each selector.",
       },
       {
-        ru: "Сравните ID, class/attribute/pseudo-class и type buckets.",
+        ru: "Сравните числа ID, классов, атрибутов, псевдоклассов и типов элементов.",
         en: "Compare ID, class/attribute/pseudo-class, and type buckets.",
       },
     ],
     supportedFeatures: [
       {
-        ru: "Подсчёт ID selectors, classes, attributes и pseudo-classes.",
+        ru: "Подсчёт ID-селекторов, классов, атрибутов и псевдоклассов.",
         en: "Counts ID selectors, classes, attributes, and pseudo-classes.",
       },
       {
-        ru: "Подсчёт type selectors и pseudo-elements.",
+        ru: "Подсчёт селекторов типов и псевдоэлементов.",
         en: "Counts type selectors and pseudo-elements.",
       },
       {
-        ru: "Bounded обработка :where() как zero и :is/:not/:has по strongest argument.",
-        en: "Bounded handling of :where() as zero and :is/:not/:has by strongest argument.",
+        ru: "Ограниченная поддержка функций: :where() даёт нулевой вклад, :is(), :not() и :has() — специфичность самого сильного аргумента.",
+        en: "Limited function support: :where() contributes zero; :is(), :not(), and :has() use the most specific argument.",
       },
     ],
     limitations: [
       {
-        ru: "Это не полноценный CSS parser и не учитывает cascade layers, source order или !important.",
+        ru: "Полный разбор CSS не выполняется. Слои каскада, порядок правил и !important не учитываются.",
         en: "This is not a full CSS parser and does not account for cascade layers, source order, or !important.",
       },
       {
-        ru: "Сложные вложенные selector functions ограничены, чтобы расчёт оставался bounded.",
-        en: "Complex nested selector functions are limited so the calculation remains bounded.",
+        ru: "Глубина вложенных функций селекторов ограничена.",
+        en: "The nesting depth of selector functions is limited.",
       },
     ],
     useCases: [
       {
-        ru: "Разбор конфликта между utility class и component selector.",
+        ru: "Разбор конфликта между служебным классом и селектором компонента.",
         en: "Debugging a conflict between a utility class and a component selector.",
       },
       {
-        ru: "Проверка selector перед упрощением CSS.",
+        ru: "Проверка селектора перед упрощением CSS.",
         en: "Checking a selector before simplifying CSS.",
       },
       {
@@ -399,11 +399,11 @@ export const cssDesignToolPages = [
     ],
     technicalNotes: [
       {
-        ru: "Score выводится как IDs-classes-types, например 1-2-0.",
+        ru: "Результат записывается как ID — классы — типы, например 1-2-0.",
         en: "The score is emitted as IDs-classes-types, for example 1-2-0.",
       },
       {
-        ru: "Функция :where() обнуляется согласно современным правилам specificity.",
+        ru: "Вклад :where() в специфичность равен нулю.",
         en: ":where() is zeroed according to modern specificity rules.",
       },
     ],
@@ -427,21 +427,21 @@ export const cssDesignToolPages = [
       en: "px/rem Typography Scale Generator",
     },
     metaDescription: {
-      ru: "Соберите bounded typography scale из базового размера, ratio и диапазона шагов, получите px, rem и CSS custom properties.",
-      en: "Build a bounded typography scale from a base size, ratio, and step range, with px, rem, and CSS custom properties.",
+      ru: "Задайте базовый размер текста, коэффициент и диапазон шагов. Получите шкалу размеров в px, rem и пользовательские свойства CSS.",
+      en: "Set a base text size, ratio, and step range to generate sizes in px and rem with CSS custom properties.",
     },
     h1: {
       ru: "Генератор типографической шкалы",
       en: "Typography Scale Generator",
     },
     lead: {
-      ru: "Настройте modular scale для интерфейса и скопируйте CSS variables без анализа шрифтов или внешних библиотек.",
-      en: "Configure a modular scale for an interface and copy CSS variables without font analysis or external libraries.",
+      ru: "Настройте шкалу размеров текста для интерфейса и скопируйте переменные CSS. Генератор рассчитывает размеры без анализа шрифтов.",
+      en: "Configure a text-size scale for your interface and copy CSS variables. The generator calculates sizes without analyzing fonts.",
     },
     quickFacts: [
-      { ru: "Base px + ratio", en: "Base px + ratio" },
-      { ru: "px и rem output", en: "px and rem output" },
-      { ru: "CSS variables", en: "CSS variables" },
+      { ru: "Базовый размер и коэффициент", en: "Base px + ratio" },
+      { ru: "Размеры в px и rem", en: "px and rem output" },
+      { ru: "Переменные CSS", en: "CSS variables" },
     ],
     howToSteps: [
       {
@@ -449,17 +449,17 @@ export const cssDesignToolPages = [
         en: "Enter the base text size in px.",
       },
       {
-        ru: "Задайте ratio и диапазон шагов.",
+        ru: "Задайте коэффициент и диапазон шагов.",
         en: "Set the ratio and step range.",
       },
       {
-        ru: "Скопируйте CSS custom properties.",
+        ru: "Скопируйте пользовательские свойства CSS.",
         en: "Copy the CSS custom properties.",
       },
     ],
     supportedFeatures: [
       {
-        ru: "Шаги от отрицательных размеров до крупных heading values.",
+        ru: "Отрицательные и положительные шаги для размеров от мелкого текста до крупных заголовков.",
         en: "Steps from smaller text values to larger heading values.",
       },
       {
@@ -467,42 +467,42 @@ export const cssDesignToolPages = [
         en: "Calculates px and rem relative to the selected base.",
       },
       {
-        ru: "Генерация custom properties для token layer.",
-        en: "Generates custom properties for a token layer.",
+        ru: "Генерация пользовательских свойств CSS для дизайн-системы.",
+        en: "Generates CSS custom properties for a design system.",
       },
     ],
     limitations: [
       {
-        ru: "Инструмент не измеряет реальные font metrics, optical size или line-height.",
+        ru: "Инструмент не измеряет метрики шрифта, оптический размер или межстрочный интервал.",
         en: "The tool does not measure real font metrics, optical size, or line-height.",
       },
       {
-        ru: "Он не заменяет визуальную проверку typographic rhythm в макете.",
+        ru: "Соотношение размеров и интервалы нужно оценить на реальном макете.",
         en: "It does not replace visual review of typographic rhythm in a layout.",
       },
     ],
     useCases: [
       {
-        ru: "Подготовка font-size tokens для UI kit.",
+        ru: "Подготовка размеров шрифта для библиотеки компонентов.",
         en: "Preparing font-size tokens for a UI kit.",
       },
       {
-        ru: "Сравнение ratio перед редизайном typography scale.",
+        ru: "Сравнение коэффициентов перед изменением шкалы размеров текста.",
         en: "Comparing a ratio before redesigning a typography scale.",
       },
       {
-        ru: "Быстрая генерация px/rem значений для документации.",
+        ru: "Расчёт значений px/rem для документации.",
         en: "Quickly generating px/rem values for documentation.",
       },
     ],
     technicalNotes: [
       {
-        ru: "Каждый шаг считается как base × ratio^step.",
+        ru: "Размер на каждом шаге равен: база × коэффициент в степени номера шага.",
         en: "Each step is calculated as base multiplied by ratio to the step power.",
       },
       {
-        ru: "Диапазон ограничен, чтобы output оставался читаемым и предсказуемым.",
-        en: "The range is bounded so output remains readable and predictable.",
+        ru: "Диапазон шагов ограничен.",
+        en: "The step range is limited.",
       },
     ],
     faq: [
@@ -519,82 +519,82 @@ export const cssDesignToolPages = [
   toolPage({
     slug: "gradient-generator",
     seoTitle: {
-      ru: "Генератор CSS-градиентов с live preview",
+      ru: "Генератор CSS-градиентов с предпросмотром",
       en: "CSS Gradient Generator with Live Preview",
     },
     metaDescription: {
-      ru: "Собирайте linear и radial CSS-градиенты из двух HEX-цветов, угла и stop-позиций прямо в браузере без изображений и внешних библиотек.",
+      ru: "Создайте линейный или радиальный CSS-градиент из двух HEX-цветов. Настройте угол и позиции цветовых точек прямо в браузере.",
       en: "Build linear and radial CSS gradients from two HEX colors, an angle, and stop positions directly in the browser without images or external libraries.",
     },
     h1: { ru: "Генератор CSS-градиентов", en: "CSS Gradient Generator" },
     lead: {
-      ru: "Настройте безопасный CSS gradient, проверьте preview и скопируйте готовую declaration для интерфейсного слоя или design token.",
-      en: "Configure a safe CSS gradient, review the preview, and copy a ready declaration for UI styling or design tokens.",
+      ru: "Настройте CSS-градиент из двух цветов, оцените предпросмотр и скопируйте готовое CSS-правило для своего интерфейса.",
+      en: "Configure a two-color CSS gradient, check the preview, and copy the declaration for your interface.",
     },
     quickFacts: [
-      { ru: "Linear и radial", en: "Linear and radial" },
-      { ru: "HEX color stops", en: "HEX color stops" },
-      { ru: "Без remote assets", en: "No remote assets" },
+      { ru: "Линейный и радиальный", en: "Linear and radial" },
+      { ru: "Цветовые точки в HEX", en: "HEX color stops" },
+      { ru: "Без внешних изображений", en: "No remote assets" },
     ],
     howToSteps: [
       {
-        ru: "Выберите linear или radial mode.",
+        ru: "Выберите линейный или радиальный градиент.",
         en: "Choose linear or radial mode.",
       },
       {
-        ru: "Введите два HEX-цвета и stop-позиции.",
+        ru: "Введите два HEX-цвета и позиции цветовых точек.",
         en: "Enter two HEX colors and stop positions.",
       },
       {
-        ru: "Скопируйте готовую CSS declaration после проверки preview.",
+        ru: "Проверьте предпросмотр и скопируйте готовое CSS-правило.",
         en: "Copy the generated CSS declaration after checking the preview.",
       },
     ],
     supportedFeatures: [
       {
-        ru: "Linear gradient с углом 0–360 градусов.",
+        ru: "Линейный градиент с углом 0–360 градусов.",
         en: "Linear gradient with a 0–360 degree angle.",
       },
       {
-        ru: "Radial gradient circle at center для базовых UI surfaces.",
+        ru: "Радиальный градиент в виде окружности с центром посередине элемента.",
         en: "Radial gradient circle at center for basic UI surfaces.",
       },
       {
-        ru: "Проверка HEX 3/6 символов и диапазона stop-позиций 0–100%.",
+        ru: "Проверка HEX из 3 или 6 символов и позиций цветовых точек в диапазоне 0–100%.",
         en: "Validation for 3/6-digit HEX and 0–100% stop positions.",
       },
     ],
     limitations: [
       {
-        ru: "Инструмент поддерживает две цветовые точки, а не сложную multi-stop палитру.",
+        ru: "Поддерживаются две цветовые точки; добавить больше нельзя.",
         en: "The tool supports two color stops, not a complex multi-stop palette.",
       },
       {
-        ru: "Он не анализирует существующие CSS-файлы и не проверяет брендовые design tokens.",
+        ru: "Инструмент не анализирует CSS-файлы и не проверяет цвета на соответствие вашей дизайн-системе.",
         en: "It does not analyze existing CSS files or validate brand design tokens.",
       },
     ],
     useCases: [
       {
-        ru: "Быстрый background для hero, карточки или CTA.",
+        ru: "Подбор фона для первого экрана, карточки или блока с призывом к действию.",
         en: "Quick background for a hero, card, or CTA.",
       },
       {
-        ru: "Подбор gradient token перед переносом в дизайн-систему.",
+        ru: "Подбор градиента для дизайн-системы.",
         en: "Choosing a gradient token before moving it into a design system.",
       },
       {
-        ru: "Проверка угла и stop-позиций без ручного CSS набора.",
+        ru: "Проверка угла и позиций цветовых точек без ручного ввода CSS.",
         en: "Checking angle and stop positions without hand-writing CSS.",
       },
     ],
     technicalNotes: [
       {
-        ru: "Preview использует только валидированные HEX-цвета и числовые значения.",
+        ru: "Предпросмотр использует только проверенные HEX-цвета и числовые значения.",
         en: "The preview uses only validated HEX colors and numeric values.",
       },
       {
-        ru: "Генератор выдаёт plain CSS и не создаёт изображения или JavaScript snippets.",
+        ru: "Результат — обычный CSS. Изображения и фрагменты JavaScript не создаются.",
         en: "The generator emits plain CSS and does not create images or JavaScript snippets.",
       },
     ],
@@ -614,54 +614,54 @@ export const cssDesignToolPages = [
   toolPage({
     slug: "box-shadow-generator",
     seoTitle: {
-      ru: "Генератор CSS box-shadow с preview",
+      ru: "Генератор CSS box-shadow с предпросмотром",
       en: "CSS box-shadow Generator with Preview",
     },
     metaDescription: {
-      ru: "Настройте offset, blur, spread, HEX-цвет и opacity для box-shadow, посмотрите preview и скопируйте готовый CSS прямо в браузере.",
+      ru: "Настройте смещение, размытие, расширение, HEX-цвет и прозрачность тени box-shadow. Проверьте предпросмотр и скопируйте CSS.",
       en: "Tune offset, blur, spread, HEX color, and opacity for box-shadow, preview the result, and copy ready CSS directly in the browser.",
     },
     h1: { ru: "Генератор CSS box-shadow", en: "CSS box-shadow Generator" },
     lead: {
-      ru: "Соберите аккуратную тень карточки или панели из явных числовых параметров без сторонних библиотек и скрытых CSS side effects.",
-      en: "Build a clean card or panel shadow from explicit numeric parameters without third-party libraries or hidden CSS side effects.",
+      ru: "Настройте тень карточки или панели: задайте смещение, размытие, расширение, цвет и прозрачность и скопируйте CSS.",
+      en: "Set the offset, blur, spread, color, and opacity of a card or panel shadow, then copy its CSS.",
     },
     quickFacts: [
-      { ru: "Offset/blur/spread", en: "Offset/blur/spread" },
-      { ru: "HEX + opacity", en: "HEX + opacity" },
-      { ru: "Copyable CSS", en: "Copyable CSS" },
+      { ru: "Смещение, размытие и расширение", en: "Offset/blur/spread" },
+      { ru: "HEX и прозрачность", en: "HEX + opacity" },
+      { ru: "Копирование CSS", en: "Copyable CSS" },
     ],
     howToSteps: [
       {
-        ru: "Укажите X/Y offset, blur и spread.",
+        ru: "Укажите смещение по X/Y, размытие и расширение.",
         en: "Enter X/Y offset, blur, and spread.",
       },
       {
-        ru: "Выберите HEX-цвет и opacity от 0 до 1.",
+        ru: "Выберите HEX-цвет и непрозрачность от 0 до 1.",
         en: "Choose a HEX color and opacity from 0 to 1.",
       },
       {
-        ru: "Проверьте preview и скопируйте declaration.",
+        ru: "Проверьте предпросмотр и скопируйте CSS-правило.",
         en: "Check the preview and copy the declaration.",
       },
     ],
     supportedFeatures: [
       {
-        ru: "Отрицательные X/Y offsets в bounded диапазоне.",
-        en: "Negative X/Y offsets within a bounded range.",
+        ru: "Отрицательные смещения по X/Y в пределах допустимого диапазона.",
+        en: "Negative X/Y offsets within the allowed range.",
       },
       {
-        ru: "Blur до 400 px и spread от -200 до 200 px.",
+        ru: "Размытие до 400 px и расширение от -200 до 200 px.",
         en: "Blur up to 400 px and spread from -200 to 200 px.",
       },
       {
-        ru: "HEX to rgba conversion для контролируемой прозрачности.",
+        ru: "Преобразование HEX в rgba для настройки прозрачности.",
         en: "HEX to rgba conversion for controlled opacity.",
       },
     ],
     limitations: [
       {
-        ru: "Multiple shadows и inset mode пока не поддерживаются.",
+        ru: "Несколько теней и внутренняя тень inset не поддерживаются.",
         en: "Multiple shadows and inset mode are not supported yet.",
       },
       {
@@ -671,26 +671,26 @@ export const cssDesignToolPages = [
     ],
     useCases: [
       {
-        ru: "Подбор shadow token для карточек и dropdown.",
+        ru: "Подбор тени для карточек и выпадающих меню.",
         en: "Choosing a shadow token for cards and dropdowns.",
       },
       {
-        ru: "Смягчение border-heavy интерфейса через elevation.",
+        ru: "Подбор тени как альтернативы рамке элемента.",
         en: "Replacing border-heavy UI with elevation.",
       },
       {
-        ru: "Быстрая проверка тени перед переносом в CSS variables.",
+        ru: "Проверка тени перед переносом в переменные CSS.",
         en: "Quickly checking a shadow before moving it into CSS variables.",
       },
     ],
     technicalNotes: [
       {
-        ru: "Цвет выводится как rgba после безопасного HEX parsing.",
-        en: "The color is emitted as rgba after safe HEX parsing.",
+        ru: "После проверки HEX цвет записывается в формате rgba.",
+        en: "After HEX validation, the color is written as rgba.",
       },
       {
-        ru: "Все числовые параметры ограничены, чтобы исключить случайные огромные CSS values.",
-        en: "All numeric parameters are bounded to avoid accidental huge CSS values.",
+        ru: "Для всех числовых параметров заданы допустимые диапазоны.",
+        en: "Each numeric parameter has an allowed range.",
       },
     ],
     faq: [
@@ -711,7 +711,7 @@ export const cssDesignToolPages = [
       en: "Four-Corner CSS border-radius Generator",
     },
     metaDescription: {
-      ru: "Настройте border-radius для каждого угла, проверьте форму на preview и скопируйте короткую CSS declaration без canvas и внешних зависимостей.",
+      ru: "Настройте border-radius для каждого угла, оцените форму в предпросмотре и скопируйте короткую запись CSS-правила.",
       en: "Set border-radius for each corner, inspect the shape in a preview, and copy a compact CSS declaration without canvas or external dependencies.",
     },
     h1: {
@@ -719,46 +719,46 @@ export const cssDesignToolPages = [
       en: "CSS border-radius Generator",
     },
     lead: {
-      ru: "Рассчитайте shorthand border-radius для четырёх углов и быстро проверьте геометрию панели, кнопки или карточки.",
+      ru: "Настройте скругление четырёх углов панели, кнопки или карточки и получите короткую запись border-radius.",
       en: "Calculate a four-corner border-radius shorthand and quickly review the geometry for a panel, button, or card.",
     },
     quickFacts: [
       { ru: "4 угла", en: "4 corners" },
       { ru: "0–240 px", en: "0–240 px" },
-      { ru: "Live preview", en: "Live preview" },
+      { ru: "Предпросмотр", en: "Live preview" },
     ],
     howToSteps: [
       {
-        ru: "Введите radius для каждого угла в px.",
+        ru: "Введите радиус скругления каждого угла в px.",
         en: "Enter the radius for each corner in px.",
       },
       {
-        ru: "Проверьте форму в preview-блоке.",
+        ru: "Проверьте форму в предпросмотре.",
         en: "Review the shape in the preview block.",
       },
       {
-        ru: "Скопируйте готовый shorthand для CSS.",
+        ru: "Скопируйте короткую запись CSS-правила.",
         en: "Copy the generated CSS shorthand.",
       },
     ],
     supportedFeatures: [
       {
-        ru: "Top-left, top-right, bottom-right и bottom-left значения.",
+        ru: "Отдельные значения для левого верхнего, правого верхнего, правого нижнего и левого нижнего угла.",
         en: "Top-left, top-right, bottom-right, and bottom-left values.",
       },
       {
-        ru: "Bounded numeric validation от 0 до 240 px.",
-        en: "Bounded numeric validation from 0 to 240 px.",
+        ru: "Проверка числовых значений в диапазоне от 0 до 240 px.",
+        en: "Numeric validation from 0 to 240 px.",
       },
       {
-        ru: "Короткий shorthand output в стандартном CSS порядке.",
+        ru: "Короткая запись в стандартном порядке значений CSS.",
         en: "Compact shorthand output in standard CSS order.",
       },
     ],
     limitations: [
       {
-        ru: "Elliptical slash syntax не поддерживается в этом batch.",
-        en: "Elliptical slash syntax is not supported in this batch.",
+        ru: "Эллиптическое скругление с разделителем / не поддерживается.",
+        en: "Elliptical border-radius values using a slash are not supported.",
       },
       {
         ru: "Инструмент не измеряет реальные размеры DOM-элемента.",
@@ -767,25 +767,25 @@ export const cssDesignToolPages = [
     ],
     useCases: [
       {
-        ru: "Подбор radius token для карточек и модальных окон.",
+        ru: "Подбор скругления для карточек и модальных окон.",
         en: "Choosing a radius token for cards and modals.",
       },
       {
-        ru: "Проверка асимметричной формы для UI-компонента.",
+        ru: "Проверка асимметричной формы компонента интерфейса.",
         en: "Testing an asymmetric shape for a UI component.",
       },
       {
-        ru: "Быстрое получение shorthand вместо четырёх ручных declarations.",
+        ru: "Получение одного CSS-правила вместо четырёх отдельных.",
         en: "Getting shorthand quickly instead of writing four declarations.",
       },
     ],
     technicalNotes: [
       {
-        ru: "Порядок output: top-left, top-right, bottom-right, bottom-left.",
+        ru: "Порядок значений: левый верхний, правый верхний, правый нижний, левый нижний угол.",
         en: "Output order is top-left, top-right, bottom-right, bottom-left.",
       },
       {
-        ru: "Значения ограничены px, чтобы сохранить простой и проверяемый генератор.",
+        ru: "Поддерживаются только значения в px.",
         en: "Values are limited to px to keep the generator simple and verifiable.",
       },
     ],
@@ -803,64 +803,64 @@ export const cssDesignToolPages = [
   toolPage({
     slug: "landmark-structure-analyzer",
     seoTitle: {
-      ru: "Анализ структуры landmarks страницы",
+      ru: "Анализ основных областей страницы",
       en: "Page Landmark Structure Analyzer",
     },
     metaDescription: {
-      ru: "Проверьте main, navigation, banner, contentinfo, complementary, search, form и region landmarks в исходном HTML без fake WCAG-оценки.",
-      en: "Inspect main, navigation, banner, contentinfo, complementary, search, form, and region landmarks in source HTML without a fake WCAG score.",
+      ru: "Проверьте основные области страницы в исходном HTML: main, navigation, banner, contentinfo, complementary, search, form и region. Проверка не подтверждает соответствие WCAG.",
+      en: "Inspect main, navigation, banner, contentinfo, complementary, search, form, and region landmarks in source HTML. This check does not establish WCAG conformance.",
     },
-    h1: { ru: "Анализ структуры landmarks", en: "Landmark Structure Analyzer" },
+    h1: { ru: "Анализ основных областей страницы", en: "Landmark Structure Analyzer" },
     lead: {
-      ru: "Получите bounded inventory семантических и ARIA landmarks, их доступных имён, дублей и структурных конфликтов.",
-      en: "Get a bounded inventory of semantic and ARIA landmarks, their accessible names, duplicates, and structural conflicts.",
+      ru: "Получите список семантических и ARIA-областей страницы, их доступных имён, повторов и структурных конфликтов.",
+      en: "List semantic and ARIA landmarks, their accessible names, duplicates, and structural conflicts.",
     },
     quickFacts: [
-      { ru: "Один safe fetch", en: "One safe fetch" },
+      { ru: "Одна загрузка страницы", en: "One page fetch" },
       { ru: "До 150 элементов", en: "Up to 150 items" },
-      { ru: "Без browser runtime", en: "No browser runtime" },
+      { ru: "Без запуска страницы в браузере", en: "No browser runtime" },
     ],
     howToSteps: [
       {
-        ru: "Введите публичный HTTP/HTTPS URL.",
+        ru: "Введите публичный адрес HTTP или HTTPS.",
         en: "Enter a public HTTP/HTTPS URL.",
       },
       {
-        ru: "Запустите bounded static HTML scan.",
-        en: "Run the bounded static HTML scan.",
+        ru: "Запустите проверку исходного HTML.",
+        en: "Run the source HTML check.",
       },
       {
-        ru: "Проверьте main, повторяющиеся landmarks и различимость имён.",
+        ru: "Проверьте main, повторяющиеся области и различимость их имён.",
         en: "Review main, repeated landmarks, and distinguishable names.",
       },
     ],
     supportedFeatures: [
       {
-        ru: "Семантические header, nav, main, footer, aside, form, section и search candidates.",
+        ru: "Поиск семантических областей по элементам header, nav, main, footer, aside, form, section и search.",
         en: "Semantic header, nav, main, footer, aside, form, section, and search candidates.",
       },
       {
-        ru: "Явные ARIA roles banner, navigation, main, contentinfo, complementary, search, form и region.",
+        ru: "Явно заданные роли ARIA: banner, navigation, main, contentinfo, complementary, search, form и region.",
         en: "Explicit ARIA roles for banner, navigation, main, contentinfo, complementary, search, form, and region.",
       },
       {
-        ru: "aria-label, aria-labelledby, duplicate role/name, hidden signals и nested main review.",
+        ru: "Проверка aria-label, aria-labelledby, повторяющихся ролей и имён, признаков скрытых элементов и вложенных main.",
         en: "aria-label, aria-labelledby, duplicate role/name, hidden signals, and nested-main review.",
       },
     ],
     limitations: [
       {
-        ru: "JavaScript и browser accessibility tree не выполняются.",
-        en: "JavaScript and the browser accessibility tree are not executed.",
+        ru: "JavaScript не запускается; дерево доступности браузера не исследуется.",
+        en: "JavaScript is not run, and the browser accessibility tree is not inspected.",
       },
       {
-        ru: "Статус означает только выбранные static findings, а не соответствие WCAG.",
+        ru: "Статус отражает только найденные проблемы исходного HTML и не подтверждает соответствие WCAG.",
         en: "Status covers only selected static findings, not WCAG conformance.",
       },
     ],
     useCases: [
       {
-        ru: "Проверка layout-шаблона после редизайна.",
+        ru: "Проверка шаблона страницы после редизайна.",
         en: "Reviewing a layout template after a redesign.",
       },
       {
@@ -868,17 +868,17 @@ export const cssDesignToolPages = [
         en: "Finding multiple main landmarks or identically named nav landmarks.",
       },
       {
-        ru: "Предварительная проверка перед ручным screen-reader audit.",
+        ru: "Предварительная проверка перед тестированием программой экранного доступа.",
         en: "Pre-screening before a manual screen-reader audit.",
       },
     ],
     technicalNotes: [
       {
-        ru: "Header и footer считаются page-level candidates только вне sectioning ancestors по статической структуре.",
+        ru: "По структуре HTML элементы header и footer считаются областями всей страницы, только если не вложены в элементы, задающие отдельный раздел.",
         en: "Header and footer are treated as page-level candidates only outside sectioning ancestors in the static structure.",
       },
       {
-        ru: "Итоговую landmark mapping необходимо подтверждать в accessibility tree браузера.",
+        ru: "Итоговые роли областей нужно подтвердить в дереве доступности браузера.",
         en: "Final landmark mapping must be confirmed in the browser accessibility tree.",
       },
     ],
@@ -896,16 +896,16 @@ export const cssDesignToolPages = [
   toolPage({
     slug: "form-accessibility-analyzer",
     seoTitle: {
-      ru: "Анализ labels и группировки HTML-форм",
+      ru: "Проверка подписей и группировки полей HTML-форм",
       en: "HTML Form Labels and Grouping Analyzer",
     },
     metaDescription: {
-      ru: "Проверьте labels, aria-labelledby, aria-describedby, placeholder-only controls, fieldset/legend и radio/checkbox grouping в исходном HTML.",
+      ru: "Проверьте подписи полей, aria-labelledby, aria-describedby, поля только с подсказкой, fieldset/legend и группировку переключателей и флажков в исходном HTML.",
       en: "Check labels, aria-labelledby, aria-describedby, placeholder-only controls, fieldset/legend, and radio/checkbox grouping in source HTML.",
     },
     h1: { ru: "Анализ доступности форм", en: "Form Accessibility Analyzer" },
     lead: {
-      ru: "Проверьте программные имена controls, связи label/ARIA, fieldset/legend и статические сигналы группировки без отправки формы.",
+      ru: "Проверьте доступные имена полей, связи label и ARIA, fieldset/legend и признаки группировки в HTML без отправки формы.",
       en: "Review programmatic control names, label/ARIA relationships, fieldset/legend, and static grouping signals without submitting the form.",
     },
     quickFacts: [
@@ -913,7 +913,7 @@ export const cssDesignToolPages = [
         ru: "input, select, textarea, button",
         en: "input, select, textarea, button",
       },
-      { ru: "Labels и ARIA references", en: "Labels and ARIA references" },
+      { ru: "Подписи и ссылки ARIA", en: "Labels and ARIA references" },
       { ru: "Без ввода данных", en: "No data entry" },
     ],
     howToSteps: [
@@ -922,45 +922,45 @@ export const cssDesignToolPages = [
         en: "Enter the URL of a page containing a form.",
       },
       {
-        ru: "Запустите static HTML analysis.",
+        ru: "Запустите анализ исходного HTML.",
         en: "Run the static HTML analysis.",
       },
       {
-        ru: "Исправьте controls без имени, broken references и слабую группировку.",
+        ru: "Проверьте элементы без имени, неработающие связи и проблемы группировки.",
         en: "Fix unnamed controls, broken references, and weak grouping.",
       },
     ],
     supportedFeatures: [
       {
-        ru: "Explicit и implicit label, aria-label, aria-labelledby, button text, alt и value sources.",
+        ru: "Источники имён: явные и вложенные label, aria-label, aria-labelledby, текст кнопки, alt и value.",
         en: "Explicit and implicit labels, aria-label, aria-labelledby, button text, alt, and value sources.",
       },
       {
-        ru: "Placeholder-only, title-only, duplicate IDs и broken aria-describedby signals.",
+        ru: "Поиск полей с именем только из placeholder или title, повторяющихся ID и неработающих ссылок aria-describedby.",
         en: "Placeholder-only, title-only, duplicate ID, and broken aria-describedby signals.",
       },
       {
-        ru: "Fieldset/legend и повторяющиеся radio/checkbox name groups.",
+        ru: "Проверка fieldset/legend и групп переключателей и флажков с общим name.",
         en: "Fieldset/legend and repeated radio/checkbox name groups.",
       },
     ],
     limitations: [
       {
-        ru: "Не проверяются focus order, ошибки валидации, live regions и динамические состояния.",
+        ru: "Порядок фокуса, ошибки ввода, динамические области оповещений и состояния элементов не проверяются.",
         en: "Focus order, validation errors, live regions, and dynamic states are not tested.",
       },
       {
-        ru: "CSS visibility и browser-computed accessible names не вычисляются.",
+        ru: "Видимость по CSS и доступные имена, вычисленные браузером, не определяются.",
         en: "CSS visibility and browser-computed accessible names are not calculated.",
       },
     ],
     useCases: [
       {
-        ru: "Проверка формы регистрации или checkout.",
+        ru: "Проверка формы регистрации или оформления заказа.",
         en: "Reviewing a registration or checkout form.",
       },
       {
-        ru: "Поиск placeholder вместо постоянного label.",
+        ru: "Поиск полей с подсказкой вместо постоянной подписи.",
         en: "Finding placeholders used instead of persistent labels.",
       },
       {
@@ -970,11 +970,11 @@ export const cssDesignToolPages = [
     ],
     technicalNotes: [
       {
-        ru: "Hidden input исключается из списка пользовательских controls.",
+        ru: "Скрытые поля input не включаются в список пользовательских элементов формы.",
         en: "Hidden input elements are excluded from the user-control inventory.",
       },
       {
-        ru: "Submit/reset input без value учитывает стандартный default-value signal, но локализация браузера не моделируется.",
+        ru: "Для input типа submit или reset без value учитывается стандартная подпись по умолчанию, но язык браузера не моделируется.",
         en: "Submit/reset inputs without value use a default-value signal, but browser localization is not modeled.",
       },
     ],
@@ -996,7 +996,7 @@ export const cssDesignToolPages = [
       en: "Link and Button Accessible Name Analyzer",
     },
     metaDescription: {
-      ru: "Проверьте доступные имена ссылок, кнопок и role=link/button: текст, alt, ARIA, общие названия и nested interactive элементы.",
+      ru: "Проверьте имена ссылок, кнопок и элементов с role=link или role=button: текст, alt, ARIA, неясные названия и вложенные интерактивные элементы.",
       en: "Check accessible names for links, buttons, and role=link/button: text, alt, ARIA, generic names, and nested interactive elements.",
     },
     h1: {
@@ -1004,13 +1004,13 @@ export const cssDesignToolPages = [
       en: "Link and Button Accessible Name Analyzer",
     },
     lead: {
-      ru: "Получите bounded static inventory интерактивных элементов и найдите отсутствующие, общие или неоднозначные имена.",
-      en: "Get a bounded static inventory of interactive elements and find missing, generic, or ambiguous names.",
+      ru: "Получите список интерактивных элементов из исходного HTML и найдите отсутствующие, слишком общие или неоднозначные имена.",
+      en: "List interactive elements from source HTML and find missing, generic, or ambiguous names.",
     },
     quickFacts: [
-      { ru: "Links и buttons", en: "Links and buttons" },
-      { ru: "Text, alt и ARIA", en: "Text, alt, and ARIA" },
-      { ru: "Custom-role signals", en: "Custom-role signals" },
+      { ru: "Ссылки и кнопки", en: "Links and buttons" },
+      { ru: "Текст, alt и ARIA", en: "Text, alt, and ARIA" },
+      { ru: "Проверка явно заданных ролей", en: "Custom-role signals" },
     ],
     howToSteps: [
       { ru: "Введите публичный URL страницы.", en: "Enter a public page URL." },
@@ -1019,55 +1019,55 @@ export const cssDesignToolPages = [
         en: "Run the source-HTML analysis.",
       },
       {
-        ru: "Проверьте unnamed, generic, nested и custom-role findings.",
+        ru: "Проверьте элементы без имён, слишком общие названия, вложенность и явно заданные роли.",
         en: "Review unnamed, generic, nested, and custom-role findings.",
       },
     ],
     supportedFeatures: [
       {
-        ru: "Native a/button/input/area и explicit role=link/role=button.",
+        ru: "Элементы a, button, input, area и явно заданные role=link и role=button.",
         en: "Native a/button/input/area and explicit role=link/role=button.",
       },
       {
-        ru: "Имена из aria-label, aria-labelledby, text, img alt, input value и title.",
+        ru: "Имена из aria-label, aria-labelledby, текста, alt изображения, value поля input и title.",
         en: "Names from aria-label, aria-labelledby, text, img alt, input value, and title.",
       },
       {
-        ru: "Generic names, nested interactive, duplicate IDs, javascript: href и tabindex signals.",
+        ru: "Поиск общих имён, вложенных интерактивных элементов, повторяющихся ID, ссылок javascript: и признаков фокуса по tabindex.",
         en: "Generic names, nested interactive elements, duplicate IDs, javascript: href, and tabindex signals.",
       },
     ],
     limitations: [
       {
-        ru: "Event listeners и keyboard activation не исполняются.",
+        ru: "Обработчики событий и работа элементов с клавиатуры не проверяются.",
         en: "Event listeners and keyboard activation are not executed.",
       },
       {
-        ru: "Контекст соседнего текста и итоговый accessible-name computation браузера могут отличаться.",
+        ru: "Соседний текст может менять смысл имени, а браузер может вычислить его иначе, чем анализ исходного HTML.",
         en: "Nearby context and the browser's final accessible-name computation may differ.",
       },
     ],
     useCases: [
       {
-        ru: "Поиск icon-only buttons без aria-label.",
+        ru: "Поиск кнопок с одной иконкой без aria-label.",
         en: "Finding icon-only buttons without aria-label.",
       },
       {
-        ru: "Проверка ссылок «Подробнее» с разными destinations.",
+        ru: "Проверка ссылок «Подробнее», ведущих на разные страницы.",
         en: "Reviewing 'Read more' links with different destinations.",
       },
       {
-        ru: "Поиск div role=button без focus signal.",
+        ru: "Поиск div с role=button без признаков доступности для фокуса.",
         en: "Finding div role=button elements without a focus signal.",
       },
     ],
     technicalNotes: [
       {
-        ru: "Generic-name detection использует прозрачный ограниченный словарь и требует ручного контекста.",
+        ru: "Слишком общие имена определяются по ограниченному словарю; их смысл нужно проверить в контексте страницы.",
         en: "Generic-name detection uses a transparent limited dictionary and requires manual context review.",
       },
       {
-        ru: "tabindex=0 — только static signal; наличие Enter/Space handlers инструмент не доказывает.",
+        ru: "tabindex=0 — только признак в HTML. Он не подтверждает работу клавиш Enter и пробела.",
         en: "tabindex=0 is only a static signal; the tool does not prove Enter/Space handlers exist.",
       },
     ],
@@ -1087,16 +1087,16 @@ export const cssDesignToolPages = [
   toolPage({
     slug: "clip-path-generator",
     seoTitle: {
-      ru: "Генератор CSS clip-path с preview",
+      ru: "Генератор CSS clip-path с предпросмотром",
       en: "CSS clip-path Generator with Preview",
     },
     metaDescription: {
-      ru: "Соберите bounded clip-path для inset, circle, ellipse или четырёхточечного polygon прямо в браузере и скопируйте CSS declaration.",
-      en: "Build a bounded clip-path for inset, circle, ellipse, or a four-point polygon directly in the browser and copy the CSS declaration.",
+      ru: "Настройте clip-path для inset, circle, ellipse или многоугольника из четырёх точек прямо в браузере и скопируйте CSS-правило.",
+      en: "Configure a clip-path using inset, circle, ellipse, or a four-point polygon in the browser and copy the CSS declaration.",
     },
     h1: { ru: "Генератор CSS clip-path", en: "CSS clip-path Generator" },
     lead: {
-      ru: "Настройте простую shape mask без canvas, SVG export или runtime parsing полного CSS.",
+      ru: "Выберите форму обрезки элемента, задайте процентные значения и скопируйте clip-path. Экспорт в SVG и разбор произвольного CSS не поддерживаются.",
       en: "Configure a simple shape mask without canvas, SVG export, or runtime parsing of full CSS.",
     },
     quickFacts: [
@@ -1104,17 +1104,17 @@ export const cssDesignToolPages = [
         ru: "Inset/circle/ellipse/polygon",
         en: "Inset/circle/ellipse/polygon",
       },
-      { ru: "0–100% values", en: "0–100% values" },
-      { ru: "Локальный preview", en: "Local preview" },
+      { ru: "Значения от 0 до 100%", en: "0–100% values" },
+      { ru: "Предпросмотр в браузере", en: "Local preview" },
     ],
     howToSteps: [
-      { ru: "Выберите shape mode.", en: "Choose the shape mode." },
+      { ru: "Выберите форму обрезки.", en: "Choose the shape mode." },
       {
-        ru: "Введите bounded процентные значения.",
-        en: "Enter bounded percentage values.",
+        ru: "Введите процентные значения в допустимом диапазоне.",
+        en: "Enter percentages within the allowed range.",
       },
       {
-        ru: "Проверьте preview и скопируйте clip-path declaration.",
+        ru: "Проверьте предпросмотр и скопируйте CSS-правило clip-path.",
         en: "Check the preview and copy the clip-path declaration.",
       },
     ],
@@ -1128,41 +1128,41 @@ export const cssDesignToolPages = [
         en: "Validation for values in the 0–100% range.",
       },
       {
-        ru: "Вывод plain CSS без изображения или SVG export.",
+        ru: "Результат в виде CSS без экспорта изображений или SVG.",
         en: "Plain CSS output without image or SVG export.",
       },
     ],
     limitations: [
       {
-        ru: "Инструмент не является полноценным vector editor и не поддерживает произвольное число polygon points.",
+        ru: "Редактирование векторных контуров и произвольное число точек многоугольника не поддерживаются.",
         en: "The tool is not a full vector editor and does not support an arbitrary number of polygon points.",
       },
       {
-        ru: "Сложные path() values и browser-specific rendering differences не анализируются.",
+        ru: "Сложные значения path() и различия отображения между браузерами не анализируются.",
         en: "Complex path() values and browser-specific rendering differences are not analyzed.",
       },
     ],
     useCases: [
       {
-        ru: "Быстрая shape mask для карточки, hero image или decorative surface.",
+        ru: "Настройка формы обрезки карточки, главного изображения или декоративного блока.",
         en: "Quick shape mask for a card, hero image, or decorative surface.",
       },
       {
-        ru: "Проверка процента перед переносом в design token.",
+        ru: "Проверка процентных значений перед добавлением в дизайн-систему.",
         en: "Checking percentages before moving them into a design token.",
       },
       {
-        ru: "Прототипирование simple CSS-only visual effect.",
+        ru: "Подготовка простого визуального эффекта средствами CSS.",
         en: "Prototyping a simple CSS-only visual effect.",
       },
     ],
     technicalNotes: [
       {
-        ru: "Все значения валидируются как проценты и не выполняют пользовательский CSS.",
+        ru: "Все значения проверяются как проценты; произвольный пользовательский CSS не выполняется.",
         en: "All values are validated as percentages and user CSS is not executed.",
       },
       {
-        ru: "Preview применяет только сгенерированное clip-path value.",
+        ru: "Предпросмотр применяет только сгенерированное значение clip-path.",
         en: "The preview applies only the generated clip-path value.",
       },
     ],
@@ -1180,31 +1180,31 @@ export const cssDesignToolPages = [
   toolPage({
     slug: "css-filter-playground",
     seoTitle: {
-      ru: "CSS filter playground с copyable output",
+      ru: "Настройка CSS-фильтров с копированием кода",
       en: "CSS filter Playground with Copyable Output",
     },
     metaDescription: {
-      ru: "Настройте blur, brightness, contrast, grayscale, saturate и hue-rotate, проверьте preview и скопируйте bounded CSS filter declaration.",
-      en: "Tune blur, brightness, contrast, grayscale, saturate, and hue-rotate, preview the result, and copy a bounded CSS filter declaration.",
+      ru: "Настройте blur, brightness, contrast, grayscale, saturate и hue-rotate, проверьте предпросмотр и скопируйте CSS-правило filter.",
+      en: "Tune blur, brightness, contrast, grayscale, saturate, and hue-rotate, check the preview, and copy the CSS filter declaration.",
     },
-    h1: { ru: "CSS Filter Playground", en: "CSS Filter Playground" },
+    h1: { ru: "Настройка CSS-фильтров", en: "CSS Filter Playground" },
     lead: {
-      ru: "Соберите безопасную CSS filter declaration без загрузки изображений, canvas export или внешних библиотек.",
-      en: "Build a safe CSS filter declaration without image uploads, canvas export, or external libraries.",
+      ru: "Настройте шесть CSS-фильтров на примере и скопируйте правило filter. Загрузка собственных изображений и экспорт результата не поддерживаются.",
+      en: "Adjust six CSS filters on a sample and copy the filter declaration. Image uploads and image export are not supported.",
     },
     quickFacts: [
-      { ru: "6 filter functions", en: "6 filter functions" },
-      { ru: "Bounded ranges", en: "Bounded ranges" },
-      { ru: "Live preview", en: "Live preview" },
+      { ru: "6 функций фильтрации", en: "6 filter functions" },
+      { ru: "Ограниченные диапазоны", en: "Limited ranges" },
+      { ru: "Предпросмотр", en: "Live preview" },
     ],
     howToSteps: [
       {
-        ru: "Введите значения filter functions.",
+        ru: "Введите значения функций фильтрации.",
         en: "Enter filter-function values.",
       },
-      { ru: "Проверьте preview sample.", en: "Check the preview sample." },
+      { ru: "Оцените пример в предпросмотре.", en: "Check the preview sample." },
       {
-        ru: "Скопируйте готовую filter declaration.",
+        ru: "Скопируйте готовое CSS-правило filter.",
         en: "Copy the generated filter declaration.",
       },
     ],
@@ -1214,45 +1214,45 @@ export const cssDesignToolPages = [
         en: "blur, brightness, contrast, grayscale, saturate, and hue-rotate.",
       },
       {
-        ru: "Проверка bounded numeric ranges.",
-        en: "Validation of bounded numeric ranges.",
+        ru: "Проверка допустимых числовых диапазонов.",
+        en: "Validation against allowed numeric ranges.",
       },
       {
-        ru: "Plain CSS declaration output.",
+        ru: "Результат в виде CSS-правила.",
         en: "Plain CSS declaration output.",
       },
     ],
     limitations: [
       {
-        ru: "Инструмент не загружает изображения и не экспортирует raster result.",
+        ru: "Инструмент не загружает изображения и не экспортирует результат в графический файл.",
         en: "The tool does not upload images or export a raster result.",
       },
       {
-        ru: "Backdrop-filter и SVG filter graph не поддерживаются.",
+        ru: "Свойство backdrop-filter и цепочки SVG-фильтров не поддерживаются.",
         en: "Backdrop-filter and SVG filter graphs are not supported.",
       },
     ],
     useCases: [
       {
-        ru: "Прототип hover-state или disabled-state effect.",
+        ru: "Подбор эффекта при наведении или для неактивного элемента.",
         en: "Prototyping a hover-state or disabled-state effect.",
       },
       {
-        ru: "Подбор filter token для UI surface.",
-        en: "Choosing a filter token for a UI surface.",
+        ru: "Подбор фильтра для элемента интерфейса.",
+        en: "Choosing a filter for an interface element.",
       },
       {
-        ru: "Быстрая проверка numeric range перед CSS implementation.",
+        ru: "Проверка числовых значений перед добавлением в CSS.",
         en: "Quickly checking a numeric range before CSS implementation.",
       },
     ],
     technicalNotes: [
       {
-        ru: "Output состоит только из фиксированного набора filter functions.",
+        ru: "Результат содержит только фиксированный набор функций фильтрации.",
         en: "The output consists only of a fixed set of filter functions.",
       },
       {
-        ru: "Пользовательский raw CSS не выполняется.",
+        ru: "Произвольный пользовательский CSS не выполняется.",
         en: "User-provided raw CSS is not executed.",
       },
     ],
@@ -1270,22 +1270,22 @@ export const cssDesignToolPages = [
   toolPage({
     slug: "css-grid-generator",
     seoTitle: {
-      ru: "CSS Grid Generator для bounded layout",
-      en: "CSS Grid Generator for Bounded Layouts",
+      ru: "Генератор сетки CSS Grid",
+      en: "CSS Grid Layout Generator",
     },
     metaDescription: {
-      ru: "Соберите базовый CSS Grid container: columns, rows, gap и minmax column size с copyable CSS output прямо в браузере.",
+      ru: "Настройте контейнер CSS Grid: столбцы, строки, промежутки и минимальную ширину столбца minmax. Скопируйте готовый CSS из браузера.",
       en: "Build a basic CSS Grid container: columns, rows, gap, and minmax column size with copyable CSS output directly in the browser.",
     },
-    h1: { ru: "CSS Grid Generator", en: "CSS Grid Generator" },
+    h1: { ru: "Генератор CSS Grid", en: "CSS Grid Generator" },
     lead: {
-      ru: "Настройте простой grid container для layout prototype без drag-and-drop редактора и без анализа существующих stylesheet.",
-      en: "Configure a simple grid container for a layout prototype without a drag-and-drop editor or existing stylesheet analysis.",
+      ru: "Настройте столбцы, строки и промежутки базовой сетки CSS Grid. Перетаскивание элементов и анализ существующих файлов стилей не поддерживаются.",
+      en: "Set the columns, rows, and gaps of a basic CSS Grid layout. Drag-and-drop editing and existing stylesheet analysis are not supported.",
     },
     quickFacts: [
-      { ru: "1–12 columns", en: "1–12 columns" },
-      { ru: "1–8 rows", en: "1–8 rows" },
-      { ru: "minmax columns", en: "minmax columns" },
+      { ru: "1–12 столбцов", en: "1–12 columns" },
+      { ru: "1–8 строк", en: "1–8 rows" },
+      { ru: "Столбцы с minmax()", en: "minmax columns" },
     ],
     howToSteps: [
       {
@@ -1293,59 +1293,59 @@ export const cssDesignToolPages = [
         en: "Enter the number of columns and rows.",
       },
       {
-        ru: "Настройте gap и минимальную ширину колонки.",
+        ru: "Настройте промежутки gap и минимальную ширину столбца.",
         en: "Tune the gap and minimum column width.",
       },
       {
-        ru: "Скопируйте container CSS declaration block.",
+        ru: "Скопируйте блок CSS-правил контейнера.",
         en: "Copy the container CSS declaration block.",
       },
     ],
     supportedFeatures: [
       {
-        ru: "repeat() + minmax() columns.",
+        ru: "Столбцы с repeat() и minmax().",
         en: "repeat() + minmax() columns.",
       },
       {
-        ru: "Bounded rows and gap values.",
-        en: "Bounded rows and gap values.",
+        ru: "Проверка допустимого числа строк и размера промежутков.",
+        en: "Validation of row counts and gap sizes.",
       },
       {
-        ru: "Plain CSS block for container usage.",
+        ru: "Блок CSS-правил для контейнера.",
         en: "Plain CSS block for container usage.",
       },
     ],
     limitations: [
       {
-        ru: "Grid areas, named lines, subgrid и responsive breakpoints не генерируются.",
+        ru: "Области сетки, именованные линии, subgrid и правила для разных размеров экрана не генерируются.",
         en: "Grid areas, named lines, subgrid, and responsive breakpoints are not generated.",
       },
       {
-        ru: "Инструмент не анализирует DOM и не является visual layout builder.",
+        ru: "Инструмент не анализирует DOM и не позволяет визуально редактировать весь макет.",
         en: "The tool does not analyze the DOM and is not a visual layout builder.",
       },
     ],
     useCases: [
       {
-        ru: "Быстрый старт для cards grid или dashboard surface.",
+        ru: "Подготовка сетки карточек или блоков панели управления.",
         en: "Quick start for a cards grid or dashboard surface.",
       },
       {
-        ru: "Подбор gap/minmax values перед реализацией.",
+        ru: "Подбор значений gap и minmax() перед добавлением в стили.",
         en: "Choosing gap/minmax values before implementation.",
       },
       {
-        ru: "Документация базового layout token.",
+        ru: "Описание базовой сетки в дизайн-системе.",
         en: "Documenting a basic layout token.",
       },
     ],
     technicalNotes: [
       {
-        ru: "Columns ограничены 12, rows — 8, чтобы output оставался компактным.",
+        ru: "Поддерживается до 12 столбцов и 8 строк.",
         en: "Columns are limited to 12 and rows to 8 so the output stays compact.",
       },
       {
-        ru: "Инструмент генерирует только container declarations.",
+        ru: "Инструмент генерирует правила только для контейнера.",
         en: "The tool generates container declarations only.",
       },
     ],
@@ -1363,79 +1363,79 @@ export const cssDesignToolPages = [
   toolPage({
     slug: "flexbox-playground",
     seoTitle: {
-      ru: "Flexbox Playground для container CSS",
+      ru: "Настройка CSS-контейнера Flexbox",
       en: "Flexbox Playground for Container CSS",
     },
     metaDescription: {
-      ru: "Настройте flex-direction, justify-content, align-items, gap и wrap, затем скопируйте bounded CSS container declaration.",
-      en: "Configure flex-direction, justify-content, align-items, gap, and wrap, then copy a bounded CSS container declaration.",
+      ru: "Настройте flex-direction, justify-content, align-items, gap и перенос строк, затем скопируйте CSS-правила контейнера.",
+      en: "Configure flex-direction, justify-content, align-items, gap, and wrapping, then copy the container CSS.",
     },
-    h1: { ru: "Flexbox Playground", en: "Flexbox Playground" },
+    h1: { ru: "Настройка Flexbox", en: "Flexbox Playground" },
     lead: {
-      ru: "Соберите базовую flex container declaration без drag-and-drop layout builder и без исполнения произвольного CSS.",
-      en: "Build a basic flex container declaration without a drag-and-drop layout builder or arbitrary CSS execution.",
+      ru: "Настройте направление, выравнивание, промежутки и перенос элементов Flexbox. Генератор создаёт CSS контейнера без перетаскивания элементов и выполнения произвольного CSS.",
+      en: "Set the Flexbox direction, alignment, gaps, and wrapping. Generate container CSS without drag-and-drop editing or arbitrary CSS execution.",
     },
     quickFacts: [
-      { ru: "Direction/justify/align", en: "Direction/justify/align" },
-      { ru: "Gap + wrap", en: "Gap + wrap" },
-      { ru: "Plain CSS output", en: "Plain CSS output" },
+      { ru: "Направление и выравнивание", en: "Direction/justify/align" },
+      { ru: "Промежутки и перенос", en: "Gap + wrap" },
+      { ru: "Результат в CSS", en: "Plain CSS output" },
     ],
     howToSteps: [
       { ru: "Выберите flex-direction.", en: "Choose flex-direction." },
       {
-        ru: "Настройте justify-content, align-items, gap и wrap.",
+        ru: "Настройте justify-content, align-items, gap и перенос строк.",
         en: "Tune justify-content, align-items, gap, and wrap.",
       },
       {
-        ru: "Скопируйте CSS declaration block.",
+        ru: "Скопируйте блок CSS-правил.",
         en: "Copy the CSS declaration block.",
       },
     ],
     supportedFeatures: [
       {
-        ru: "Основные flex-direction values.",
+        ru: "Основные значения flex-direction.",
         en: "Core flex-direction values.",
       },
       {
-        ru: "Основные justify-content и align-items values.",
+        ru: "Основные значения justify-content и align-items.",
         en: "Core justify-content and align-items values.",
       },
       {
-        ru: "Bounded gap и flex-wrap toggle.",
-        en: "Bounded gap and flex-wrap toggle.",
+        ru: "Промежутки gap в допустимом диапазоне и переключение flex-wrap.",
+        en: "Gap within the allowed range and a flex-wrap toggle.",
       },
     ],
     limitations: [
       {
-        ru: "Инструмент не генерирует child item rules, order или flex-basis.",
+        ru: "Правила дочерних элементов, order и flex-basis не генерируются.",
         en: "The tool does not generate child item rules, order, or flex-basis.",
       },
       {
-        ru: "Он не симулирует реальные content sizes и wrapping edge cases.",
+        ru: "Предпросмотр не учитывает размеры вашего содержимого и все возможные случаи переноса.",
         en: "It does not simulate real content sizes or wrapping edge cases.",
       },
     ],
     useCases: [
       {
-        ru: "Базовая настройка toolbar, card row или navigation group.",
+        ru: "Базовая настройка панели инструментов, ряда карточек или группы ссылок навигации.",
         en: "Basic setup for a toolbar, card row, or navigation group.",
       },
       {
-        ru: "Сравнение alignment values перед внедрением.",
+        ru: "Сравнение вариантов выравнивания перед применением.",
         en: "Comparing alignment values before implementation.",
       },
       {
-        ru: "Фиксация container declaration для UI kit documentation.",
+        ru: "Подготовка CSS контейнера для документации библиотеки компонентов.",
         en: "Capturing a container declaration for UI kit documentation.",
       },
     ],
     technicalNotes: [
       {
-        ru: "Output ограничен container-level declarations.",
+        ru: "Результат содержит правила только для контейнера.",
         en: "The output is limited to container-level declarations.",
       },
       {
-        ru: "Gap ограничен 0–64 px для компактного и предсказуемого CSS.",
+        ru: "Размер промежутков gap ограничен диапазоном 0–64 px.",
         en: "Gap is limited to 0–64 px for compact, predictable CSS.",
       },
     ],

@@ -43,7 +43,7 @@ describe("tool registry", () => {
   it("publishes one bounded QR code workbench", () => {
     const tool = tools.find((item) => item.slug === "qr-code-generator");
     expect(tool?.state).toBe("ready");
-    expect(tool?.description?.en).toContain("reads");
+    expect(tool?.description?.en).toMatch(/\bread(?:s)? one QR code\b/u);
     expect(tools.find((item) => item.slug === "qr-code-decoder")?.state).toBe("internal");
   });
 
@@ -94,8 +94,8 @@ describe("tool registry", () => {
     if (!orphanPageFinder) throw new Error("orphan-page-finder is missing from the registry");
 
     expect(siteAudit.title.en).toBe("Bounded Site Audit");
-    expect(siteAudit.description.ru).toContain("без заявления о полном покрытии");
-    expect(siteAudit.description.en).toContain("no claim of complete site coverage");
+    expect(siteAudit.description.ru).toContain("Результат ограничен выборкой");
+    expect(siteAudit.description.en).toContain("results limited to the crawl sample");
     expect(orphanPageFinder.title.en).toBe("Unlinked Page Candidates");
   });
 

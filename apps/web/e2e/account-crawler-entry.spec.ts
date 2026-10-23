@@ -13,9 +13,9 @@ test.describe("bounded crawler public entry points", () => {
   });
 
   for (const scenario of [
-    { route: "/tools/whole-site-audit", heading: "Ограниченный аудит сайта", href: "/account" },
+    { route: "/tools/whole-site-audit", heading: "Технический аудит сайта", href: "/account" },
     { route: "/en/tools/duplicate-meta-checker", heading: "Duplicate Titles and Descriptions", href: "/en/account" },
-    { route: "/tools/orphan-page-finder", heading: "Кандидаты без внутренних ссылок", href: "/account" },
+    { route: "/tools/orphan-page-finder", heading: "Страницы без найденных внутренних ссылок", href: "/account" },
   ] as const) {
     test(`${scenario.route} opens the authenticated project flow without a fake URL form`, async ({ page }) => {
       await page.goto(scenario.route);

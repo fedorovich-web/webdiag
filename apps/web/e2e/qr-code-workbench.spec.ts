@@ -19,7 +19,7 @@ test.describe("browser-local QR code workbench", () => {
       if (body) requestBodies.push(body);
     });
     await page.goto("/en/tools/qr-code-generator");
-    await expect(page.getByRole("heading", { level: 1, name: "QR Code Workbench" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "QR Code Generator and Reader" })).toBeVisible();
     const payload = "<script>window.qrExecuted=true</script> https://example.com/path?q=1";
     await page.getByLabel("Text to encode").fill(payload);
     await page.getByRole("button", { name: "Generate QR code" }).click();
