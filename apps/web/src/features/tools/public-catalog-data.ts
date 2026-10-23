@@ -30,8 +30,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Single Page Technical Audit"
     },
     "description": {
-      "ru": "Выполняет ограниченный технический аудит одного публичного URL: HTTP, редиректы, HTML, метаданные, indexability, Open Graph, JSON-LD, security headers, robots.txt и sitemap.xml.",
-      "en": "Runs a bounded technical audit of one public URL: HTTP, redirects, HTML, metadata, indexability, Open Graph, JSON-LD, security headers, robots.txt, and sitemap.xml."
+      "ru": "Проверьте публичную страницу: HTTP, редиректы, метаданные, ограничения индексации, JSON-LD, заголовки безопасности, robots.txt и карту сайта.",
+      "en": "Audit one public URL for HTTP, redirects, metadata, indexability, JSON-LD, security headers, robots.txt, and sitemap.xml with a clear fix order."
     }
   },
   {
@@ -43,8 +43,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Bounded Site Audit"
     },
     "description": {
-      "ru": "Запускает из авторизованного проекта ограниченный обход одного origin: до 100 публичных HTML-страниц с учётом robots.txt, без JavaScript и без заявления о полном покрытии сайта.",
-      "en": "Runs an authenticated, project-bound crawl of one origin: up to 100 public HTML pages with robots.txt handling, no JavaScript execution, and no claim of complete site coverage."
+      "ru": "Проверьте до 100 публичных HTML-страниц одного сайта: статусы, метаданные, ссылки, robots.txt и карты сайта. Результат ограничен выборкой.",
+      "en": "Audit up to 100 public HTML pages on one site: HTTP statuses, metadata, links, robots.txt, and sitemaps, with results limited to the crawl sample."
     }
   },
   {
@@ -56,8 +56,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Meta Tags Checker"
     },
     "description": {
-      "ru": "Проверяет метаданные страницы как единый SEO-сигнал: title, description, robots, canonical, H1-сводку, Open Graph, Twitter/X и JSON-LD coverage.",
-      "en": "Checks page metadata as one SEO signal: title, description, robots, canonical, H1 summary, Open Graph, Twitter/X, and JSON-LD coverage."
+      "ru": "Проверьте title, description, robots, canonical, Open Graph, Twitter/X и наличие JSON-LD в исходном HTML одной страницы.",
+      "en": "Check title, description, robots, canonical, Open Graph, Twitter/X, and JSON-LD summary for one page."
     }
   },
   {
@@ -69,8 +69,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "SERP Snippet Preview"
     },
     "description": {
-      "ru": "Строит предпросмотр поискового сниппета по реальному HTML: display URL, title, description, источники fallback и предупреждения по качеству snippet.",
-      "en": "Builds a search snippet preview from real HTML: display URL, title, description, fallback sources, and snippet quality warnings."
+      "ru": "Посмотрите пример поискового результата по title и meta description страницы: заголовок, описание, адрес и предупреждения.",
+      "en": "Preview a search result using the page title and meta description, with warnings about missing or unsuitable metadata."
     }
   },
   {
@@ -82,8 +82,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Open Graph and Twitter/X Card Preview"
     },
     "description": {
-      "ru": "Проверяет rich preview для соцсетей и мессенджеров: Open Graph, Twitter/X Card, fallback title/description, image URL и недостающие поля.",
-      "en": "Checks rich previews for social networks and messengers: Open Graph, Twitter/X Card, fallback title/description, image URL, and missing fields."
+      "ru": "Проверьте карточку ссылки для соцсетей и мессенджеров: Open Graph, Twitter/X Card, заголовок, описание, изображение и URL.",
+      "en": "Check page rich previews for social networks and messengers: OG title, description, image, URL, and Twitter/X Card."
     }
   },
   {
@@ -95,8 +95,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Canonical Checker"
     },
     "description": {
-      "ru": "Проверяет canonical для одного URL: наличие link rel=canonical, абсолютный/относительный href, совпадение с финальным URL и noindex-сигналы.",
-      "en": "Checks canonical for a single URL: link rel=canonical presence, absolute/relative href, match with the final URL, and noindex signals."
+      "ru": "Проверьте link rel=canonical: наличие, совпадение с конечным URL, домен, noindex и число редиректов одной страницы.",
+      "en": "Check a page link rel=canonical: presence, match with the final URL, host, noindex, and redirects."
     }
   },
   {
@@ -108,8 +108,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Hreflang Checker"
     },
     "description": {
-      "ru": "Проверяет hreflang-разметку страницы: alternate-ссылки, x-default, self-reference, дубли языковых кодов и структурную корректность multilingual SEO.",
-      "en": "Checks page hreflang markup: alternate links, x-default, self-reference, duplicate language codes, and structural multilingual SEO consistency."
+      "ru": "Проверьте ссылки alternate hreflang, x-default, ссылку на текущую версию, повторы кодов и структуру языковых обозначений.",
+      "en": "Check alternate hreflang, x-default, self-reference, duplicate language codes, and structural international SEO issues."
     }
   },
   {
@@ -121,8 +121,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Robots.txt Tester"
     },
     "description": {
-      "ru": "Проверяет robots.txt для одного URL: доступность файла, разрешён ли путь для user-agent, matching rule и Sitemap directives.",
-      "en": "Checks robots.txt for a single URL: file availability, whether the path is allowed for a user-agent, matching rule, and Sitemap directives."
+      "ru": "Проверьте доступность robots.txt, разрешение обхода URL для выбранного user-agent, сработавшее правило и директивы Sitemap.",
+      "en": "Check whether robots.txt is available, whether a specific URL is allowed for a user-agent, and which Sitemap directives are declared."
     }
   },
   {
@@ -134,8 +134,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Robots.txt Generator"
     },
     "description": {
-      "ru": "Генерирует robots.txt из явных правил: user-agent, Allow/Disallow, Sitemap и Crawl-delay без обращения к сайту и без скрытых допущений.",
-      "en": "Generates robots.txt from explicit rules: user-agent, Allow/Disallow, Sitemap, and Crawl-delay without fetching the site or making hidden assumptions."
+      "ru": "Соберите robots.txt из правил User-agent, Allow, Disallow, Sitemap и Crawl-delay локально в браузере без запросов к сайту.",
+      "en": "Build robots.txt from explicit rules: User-agent, Allow, Disallow, Sitemap, and Crawl-delay without fetching the site."
     }
   },
   {
@@ -147,8 +147,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Sitemap.xml Validator"
     },
     "description": {
-      "ru": "Проверяет sitemap.xml или sitemap index: доступность, валидность XML, количество URL и наличие конкретной страницы.",
-      "en": "Checks a sitemap.xml or sitemap index: availability, XML validity, URL count, and whether a target page is listed."
+      "ru": "Проверьте доступность sitemap.xml, структуру XML, тип карты, число адресов и наличие выбранной страницы в файле.",
+      "en": "Check sitemap.xml availability, XML validity, sitemap type, URL count, and whether an important page is listed."
     }
   },
   {
@@ -160,8 +160,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Sitemap.xml Generator from URL List"
     },
     "description": {
-      "ru": "Генерирует sitemap.xml из списка URL с optional lastmod, changefreq и priority, экранирует XML и валидирует HTTP(S) адреса.",
-      "en": "Generates sitemap.xml from a URL list with optional lastmod, changefreq, and priority, escaping XML and validating HTTP(S) URLs."
+      "ru": "Создайте sitemap.xml из списка HTTP(S) URL. При необходимости добавьте lastmod, changefreq и priority без отправки адресов на сервер.",
+      "en": "Create sitemap.xml from an HTTP(S) URL list with optional lastmod, changefreq, and priority."
     }
   },
   {
@@ -173,8 +173,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Redirect Chain Checker"
     },
     "description": {
-      "ru": "Проверяет HTTP-статус, финальный URL и цепочку редиректов для одной страницы через безопасный WebDiag API.",
-      "en": "Checks the HTTP status, final URL, and redirect chain for a single page through the safe WebDiag API."
+      "ru": "Проверьте HTTP-статус, конечный URL, Content-Type, заголовки ответа и все переходы цепочки редиректов одного адреса.",
+      "en": "Check the HTTP status, final URL, content type, and redirect chain for a single page through the safe WebDiag API."
     }
   },
   {
@@ -186,8 +186,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Bulk HTTP Status Checker"
     },
     "description": {
-      "ru": "Проверяет HTTP-статусы и редиректы для списка до 50 URL через безопасный WebDiag API с отдельным результатом для каждого адреса.",
-      "en": "Checks HTTP statuses and redirects for up to 50 URLs through the safe WebDiag API with an isolated result for each address."
+      "ru": "Проверьте HTTP-статусы, конечные URL, число редиректов и отдельные ошибки для списка до 50 публичных адресов.",
+      "en": "Check HTTP statuses, final URLs, and per-address errors for up to 50 URLs through the SSRF-protected WebDiag backend."
     }
   },
   {
@@ -199,8 +199,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Broken Link Checker"
     },
     "description": {
-      "ru": "Проверяет ссылки одной страницы через bounded static HTML scan: внутренние и внешние HTTP(S) URL, 4xx/5xx, недоступные цели и редиректы без полного краулинга сайта.",
-      "en": "Checks links on one page through a bounded static HTML scan: internal and external HTTP(S) URLs, 4xx/5xx, unreachable targets, and redirects without full-site crawling."
+      "ru": "Проверьте найденные в HTML ссылки на HTTP-ошибки 4xx, 5xx и недоступные адреса в пределах лимита проверки.",
+      "en": "Find broken HTTP links in one page static HTML: 4xx, 5xx, unreachable URLs, and checked statuses with safe limits."
     }
   },
   {
@@ -212,8 +212,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Broken Image Checker"
     },
     "description": {
-      "ru": "Проверяет битые изображения одной страницы: img, srcset, picture/source и social images, HTTP-статусы, редиректы и non-image responses.",
-      "en": "Checks broken images on one page: img, srcset, picture/source, and social images, HTTP statuses, redirects, and non-image responses."
+      "ru": "Проверьте изображения из HTML и социальных метатегов на ошибки 4xx, 5xx, недоступность и неверный Content-Type.",
+      "en": "Check images from img, srcset, picture source, og:image, and twitter:image for 404, 5xx, unavailability, and wrong content-type."
     }
   },
   {
@@ -225,8 +225,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Image SEO Audit"
     },
     "description": {
-      "ru": "Проверяет SEO-сигналы изображений на странице: alt, изображения-ссылки, размеры, lazy-loading, responsive markup и social preview images.",
-      "en": "Checks page image SEO signals: alt text, linked images, dimensions, lazy-loading, responsive markup, and social preview images."
+      "ru": "Проверьте alt, изображения внутри ссылок, width/height, адаптивную разметку, отложенную загрузку и социальные изображения.",
+      "en": "Check alt text, linked images, dimensions, lazy-loading, responsive markup, and Open Graph and Twitter/X images."
     }
   },
   {
@@ -238,8 +238,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Heading Structure Checker"
     },
     "description": {
-      "ru": "Проверяет структуру заголовков H1–H6 в статическом HTML: количество H1, пропуски уровней, пустые заголовки и общий outline страницы без выделения H1 в отдельный слабый инструмент.",
-      "en": "Checks the H1–H6 heading structure in static HTML: H1 count, skipped levels, empty headings, and the full page outline without splitting H1 into a weak standalone tool."
+      "ru": "Проверьте иерархию H1–H6, число H1, пропуски уровней и пустые заголовки в исходном HTML одной страницы.",
+      "en": "Check a page H1–H6 outline: H1 count, skipped levels, empty headings, and semantic structure recommendations."
     }
   },
   {
@@ -251,8 +251,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Internal and External Link Analyzer"
     },
     "description": {
-      "ru": "Анализирует ссылочную структуру страницы: внутренние, внешние, якорные, mailto/tel ссылки, rel=nofollow/sponsored/ugc и target=_blank без noopener.",
-      "en": "Analyzes page link structure: internal, external, same-page, mailto/tel links, rel=nofollow/sponsored/ugc, and target=_blank without noopener."
+      "ru": "Проверьте внутренние и внешние ссылки, тексты, rel, target, якоря, mailto и tel в исходном HTML страницы.",
+      "en": "Inspect links in page HTML: internal and external addresses, nofollow, sponsored, UGC, target, anchors, mailto, and tel."
     }
   },
   {
@@ -264,8 +264,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Keyword and Phrase Frequency Analyzer"
     },
     "description": {
-      "ru": "Анализирует видимый текст страницы: частотность слов, биграмм и триграмм, плотность терминов и риск переспама как часть нормального content-аудита, а не как SEO-магия.",
-      "en": "Analyzes visible page text: word, bigram, and trigram frequency, term density, and overuse risk as a content-audit signal rather than SEO magic."
+      "ru": "Посчитайте частые слова, пары и тройки слов в тексте страницы, их долю и возможные избыточные повторы.",
+      "en": "Analyze visible page text: frequent words, bigrams, trigrams, term density, and possible overuse."
     }
   },
   {
@@ -277,8 +277,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Readability Analyzer"
     },
     "description": {
-      "ru": "Оценивает читабельность видимого текста по мультиязычным эвристикам: объём, предложения, абзацы, длинные фразы, время чтения и рекомендации по упрощению.",
-      "en": "Evaluates visible-text readability with multilingual heuristics: word count, sentences, paragraphs, long sentences, reading time, and simplification recommendations."
+      "ru": "Проверьте объём текста, предложения, абзацы, длинные фразы, примерное время чтения и ориентировочную оценку читабельности.",
+      "en": "Check text volume, sentences, paragraphs, long phrases, reading time, and a multilingual heuristic readability score."
     }
   },
   {
@@ -290,8 +290,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Duplicate Title and Description Checker"
     },
     "description": {
-      "ru": "Группирует одинаковые непустые title и description в выборке до 100 HTML-страниц одного ограниченного обхода проекта.",
-      "en": "Groups identical non-empty titles and descriptions within the sample of up to 100 HTML pages from one bounded project crawl."
+      "ru": "Найдите совпадающие непустые title и description в выборке до 100 HTML-страниц из одного аудита проекта.",
+      "en": "Find matching non-empty titles and descriptions in a sample of up to 100 HTML pages from a single project audit."
     }
   },
   {
@@ -303,8 +303,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Unlinked Page Candidates"
     },
     "description": {
-      "ru": "Показывает кандидатов из sitemap, на которые не найдены внутренние ссылки в выборке до 100 HTML-страниц; результат не доказывает, что страница является сиротой на всём сайте.",
-      "en": "Shows sitemap candidates with no internal links found in a sample of up to 100 HTML pages; the result does not prove that a page is orphaned across the complete site."
+      "ru": "Сравните адреса из карт сайта с внутренними ссылками в выборке до 100 HTML-страниц и получите список страниц для ручной проверки.",
+      "en": "Compare sitemap URLs with internal links in a sample of up to 100 HTML pages and get a list of pages for manual review."
     }
   },
   {
@@ -316,8 +316,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Page Indexability Checker"
     },
     "description": {
-      "ru": "Проверяет индексируемость страницы по статическим SEO-сигналам: HTTP status, robots.txt, meta robots, X-Robots-Tag, canonical и redirects.",
-      "en": "Checks page indexability using static SEO signals: HTTP status, robots.txt, meta robots, X-Robots-Tag, canonical, and redirects."
+      "ru": "Проверьте HTTP-статус, robots.txt, meta robots, X-Robots-Tag, canonical и редиректы на возможные ограничения индексации.",
+      "en": "Check HTTP status, robots.txt, meta robots, X-Robots-Tag, canonical, and redirects as one indexability audit."
     }
   },
   {
@@ -329,8 +329,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Query Parameter Analyzer"
     },
     "description": {
-      "ru": "Локально разбирает query-пары, повторы, пустые значения, tracking/pagination/sort/filter/search/session name-patterns и кандидат без известных tracking-параметров без изменения исходного URL.",
-      "en": "Locally inspects query pairs, repeats, empty values, tracking/pagination/sort/filter/search/session name patterns, and a candidate without known tracking parameters without changing the source URL."
+      "ru": "Разберите до 200 пар параметров URL локально: повторы, пустые значения и вероятные параметры аналитики, поиска, фильтров и сессии.",
+      "en": "Locally inspect query pairs, repeats, empty values, and tracking, pagination, sort, filter, search, and session name patterns without changing the source URL."
     }
   },
   {
@@ -342,8 +342,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Structured Data Validator"
     },
     "description": {
-      "ru": "Проверяет JSON-LD структурированные данные на странице: количество блоков, валидность JSON, найденные Schema.org типы, ошибки парсинга и практическую рекомендацию.",
-      "en": "Checks JSON-LD structured data on a page: block count, JSON validity, detected Schema.org types, parse errors, and a practical recommendation."
+      "ru": "Проверьте JSON-LD в HTML страницы: синтаксис JSON, объявленные типы Schema.org, число блоков и ошибки разбора.",
+      "en": "Check JSON-LD in page HTML: JSON syntax, declared Schema.org types, block counts, and parsing errors."
     }
   },
   {
@@ -355,8 +355,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Schema.org JSON-LD Generator"
     },
     "description": {
-      "ru": "Генерирует поддерживаемые шаблоны Schema.org JSON-LD для Organization, LocalBusiness, FAQPage и BreadcrumbList без AI-фантазирования.",
-      "en": "Generates supported Schema.org JSON-LD templates for Organization, LocalBusiness, FAQPage, and BreadcrumbList without AI fabrication."
+      "ru": "Соберите JSON-LD по шаблонам Organization, LocalBusiness, FAQPage и BreadcrumbList из введённых данных локально в браузере.",
+      "en": "Build Organization, LocalBusiness, FAQPage, and BreadcrumbList JSON-LD from your data locally in the browser."
     }
   },
   {
@@ -368,8 +368,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "FAQ Schema JSON-LD Generator"
     },
     "description": {
-      "ru": "Генерирует FAQPage JSON-LD из утверждённых вопросов и ответов без AI-фантазирования, rich-result обещаний и отправки данных на backend.",
-      "en": "Generates FAQPage JSON-LD from approved questions and answers without AI fabrication, rich-result promises, or backend submission."
+      "ru": "Создайте FAQPage JSON-LD по введённым вопросам и ответам страницы локально в браузере без отправки текста на сервер.",
+      "en": "Create FAQPage JSON-LD from your page’s questions and answers locally in the browser without uploading the text."
     }
   },
   {
@@ -381,8 +381,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Website Technology Detector"
     },
     "description": {
-      "ru": "Определяет технологии сайта по безопасному static HTML scan и HTTP-заголовкам: CMS, frontend-фреймворки, CDN, hosting, analytics и server headers.",
-      "en": "Detects website technologies through a safe static HTML scan and HTTP headers: CMS, frontend frameworks, CDN, hosting, analytics, and server headers."
+      "ru": "Определите CMS, веб-фреймворки, CDN, хостинг и аналитику по исходному HTML, путям ресурсов и HTTP-заголовкам.",
+      "en": "Detect CMS, frontend frameworks, CDN, hosting, analytics, and server headers through safe static HTML scan and HTTP headers."
     }
   },
   {
@@ -394,8 +394,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Favicon and Web App Icon Checker"
     },
     "description": {
-      "ru": "Проверяет favicon и web app icons: rel=icon, SVG/ICO fallback, apple-touch-icon, manifest и доступность объявленных иконок.",
-      "en": "Checks favicon and web app icons: rel=icon, SVG/ICO fallback, apple-touch-icon, manifest, and declared icon availability."
+      "ru": "Проверьте rel=icon, SVG, /favicon.ico, apple-touch-icon, ссылку на manifest и доступность иконок сайта.",
+      "en": "Check rel=icon, SVG favicon, /favicon.ico fallback, apple-touch-icon, manifest, and web app icon availability."
     }
   },
   {
@@ -407,8 +407,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "HTML Markup Validator"
     },
     "description": {
-      "ru": "Проверяет базовую HTML-разметку страницы: doctype, html/head/body, lang, title, viewport, дубли id, неожиданные закрывающие и незакрытые теги.",
-      "en": "Checks basic HTML markup structure for a page: doctype, html/head/body, lang, title, viewport, duplicate IDs, unexpected closing tags, and unclosed tags."
+      "ru": "Проверьте doctype, html/head/body, lang, title, viewport, повторяющиеся id и несогласованные открывающие и закрывающие теги.",
+      "en": "Check basic page HTML structure: doctype, html/head/body, lang, title, viewport, duplicate IDs, and unmatched tags."
     }
   },
   {
@@ -420,8 +420,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "SSL Certificate Checker"
     },
     "description": {
-      "ru": "Проверяет SSL-сертификат домена: срок действия, issuer, SAN, соответствие hostname и базовый статус продления.",
-      "en": "Checks a domain SSL certificate: validity window, issuer, SAN coverage, hostname match, and renewal status."
+      "ru": "Проверьте срок действия SSL-сертификата, издателя, SAN и соответствие доменному имени.",
+      "en": "Check SSL certificate validity dates, issuer, SAN coverage, and hostname match for a public host."
     }
   },
   {
@@ -433,8 +433,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "TLS Configuration Checker"
     },
     "description": {
-      "ru": "Проверяет TLS handshake: версию TLS, cipher suite, ALPN/HTTP2 signal и сертификат без заявления полного SSL Labs аудита.",
-      "en": "Checks a TLS handshake: TLS version, cipher suite, ALPN/HTTP2 signal, and certificate status without claiming a full SSL Labs audit."
+      "ru": "Проверьте согласованную версию TLS, набор шифров, протокол ALPN и основные сведения о сертификате.",
+      "en": "Check TLS version, cipher suite, ALPN/HTTP2 signal, and certificate health through a limited handshake."
     }
   },
   {
@@ -446,8 +446,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "PEM Certificate and CSR Viewer"
     },
     "description": {
-      "ru": "Локально разбирает цепочку PEM X.509-сертификатов, показывает subject, issuer, сроки, SAN, алгоритмы и SHA-256 fingerprint без сетевой проверки.",
-      "en": "Locally inspects a PEM X.509 certificate chain, showing subject, issuer, validity, SANs, algorithms, and SHA-256 fingerprints without network verification."
+      "ru": "Разберите PEM-цепочку X.509 в браузере: владелец, издатель, сроки, SAN, алгоритмы и отпечатки SHA-256 без отправки сертификатов на сервер.",
+      "en": "Inspect a PEM X.509 chain locally: subject, issuer, validity, SANs, algorithms, and SHA-256 fingerprints without uploading certificates."
     }
   },
   {
@@ -459,8 +459,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Security Headers Checker"
     },
     "description": {
-      "ru": "Проверяет основные HTTP-заголовки безопасности страницы: HSTS, CSP, nosniff, защиту от фрейминга, Referrer-Policy и Permissions-Policy.",
-      "en": "Checks core HTTP security headers for a page: HSTS, CSP, nosniff, frame protection, Referrer-Policy, and Permissions-Policy."
+      "ru": "Проверьте HSTS, CSP, nosniff, защиту от встраивания во фрейм, Referrer-Policy и Permissions-Policy в ответе страницы.",
+      "en": "Check HSTS, CSP, nosniff, frame protection, Referrer-Policy, and Permissions-Policy for a single page."
     }
   },
   {
@@ -472,8 +472,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Content Security Policy Analyzer"
     },
     "description": {
-      "ru": "Разбирает CSP response header, Report-Only и static meta policy: директивы, unsafe-inline, unsafe-eval, wildcard sources и отсутствие ключевых ограничений без fake security score.",
-      "en": "Parses CSP response headers, Report-Only, and static meta policies: directives, unsafe-inline, unsafe-eval, wildcard sources, and missing key restrictions without a fake security score."
+      "ru": "Разберите CSP из заголовков и HTML: директивы, Report-Only, unsafe-inline, unsafe-eval и слишком широкие источники.",
+      "en": "Parse CSP headers, Report-Only, and static meta policies: directives, unsafe-inline, unsafe-eval, wildcard sources, and key restrictions."
     }
   },
   {
@@ -485,8 +485,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "CORS Checker"
     },
     "description": {
-      "ru": "Проверяет CORS response headers для заданного Origin: ACAO, credentials, Vary: Origin и wildcard risks.",
-      "en": "Checks CORS response headers for a given Origin: ACAO, credentials, Vary: Origin, and wildcard risks."
+      "ru": "Проверьте Access-Control-Allow-Origin, разрешение учётных данных, Vary: Origin и сочетание wildcard с credentials.",
+      "en": "Check Access-Control-Allow-Origin, credentials, Vary: Origin, and wildcard risks for a given Origin."
     }
   },
   {
@@ -498,8 +498,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Server-Timing Analyzer"
     },
     "description": {
-      "ru": "Разбирает Server-Timing header одного HTTP-ответа: metrics, dur, desc и наличие backend timing signals без synthetic performance claims.",
-      "en": "Parses the Server-Timing header for one HTTP response: metrics, dur, desc, and backend timing signals without synthetic performance claims."
+      "ru": "Разберите метрики заголовка Server-Timing: имена, длительность dur и описания desc в одном HTTP-ответе.",
+      "en": "Inspect Server-Timing metrics, names, duration values, and descriptions from a single HTTP response."
     }
   },
   {
@@ -511,8 +511,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Cookie Policy Checker"
     },
     "description": {
-      "ru": "Проверяет Set-Cookie headers одного ответа: Secure, HttpOnly, SameSite, persistent cookies и атрибуты без browser session tracking.",
-      "en": "Checks Set-Cookie headers for one response: Secure, HttpOnly, SameSite, persistent cookies, and attributes without browser session tracking."
+      "ru": "Проверьте атрибуты Set-Cookie: Secure, HttpOnly, SameSite, Max-Age и Expires в одном ответе сервера.",
+      "en": "Check Set-Cookie attributes: Secure, HttpOnly, SameSite, persistent cookies, and baseline issues for one response."
     }
   },
   {
@@ -524,8 +524,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "HTTP Headers Analyzer"
     },
     "description": {
-      "ru": "Анализирует полный набор HTTP response headers: status, redirects, Server/X-Powered-By disclosure, cache/content metadata и raw header inventory.",
-      "en": "Analyzes the full HTTP response header set: status, redirects, Server/X-Powered-By disclosure, cache/content metadata, and raw header inventory."
+      "ru": "Проверьте заголовки ответа: HTTP-статус, редиректы, Server, X-Powered-By, кэширование и тип содержимого.",
+      "en": "Check page response headers: status, redirects, Server/X-Powered-By, cache, and content metadata."
     }
   },
   {
@@ -537,8 +537,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Brotli and Gzip Compression Checker"
     },
     "description": {
-      "ru": "Проверяет HTTP compression policy для ответа: gzip/Brotli/deflate signal, Vary: Accept-Encoding и compressible content type.",
-      "en": "Checks HTTP compression policy for a response: gzip/Brotli/deflate signal, Vary: Accept-Encoding, and compressible content type."
+      "ru": "Проверьте Content-Encoding, Vary: Accept-Encoding и наличие сжатия для текстовых ответов HTML, CSS, JS и JSON.",
+      "en": "Check Content-Encoding, Vary: Accept-Encoding, and compressible content type for HTML/CSS/JS/JSON responses."
     }
   },
   {
@@ -550,8 +550,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "HTTP/2 and HTTP/3 Checker"
     },
     "description": {
-      "ru": "Проверяет HTTP/2 через TLS ALPN и HTTP/3 advertisement через Alt-Svc без fake QUIC negotiation claims.",
-      "en": "Checks HTTP/2 through TLS ALPN and HTTP/3 advertisement through Alt-Svc without fake QUIC negotiation claims."
+      "ru": "Проверьте согласование HTTP/2 через ALPN и объявление HTTP/3 в Alt-Svc. QUIC-подключение не выполняется.",
+      "en": "Check HTTP/2 negotiation through ALPN and HTTP/3 advertisement in Alt-Svc. No QUIC connection is made."
     }
   },
   {
@@ -563,8 +563,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "DNS Lookup"
     },
     "description": {
-      "ru": "Проверяет A, AAAA, CNAME, MX, NS и TXT записи домена через bounded DNS lookup без обхода по URL.",
-      "en": "Checks A, AAAA, CNAME, MX, NS, and TXT records for a domain through a bounded DNS lookup without URL crawling."
+      "ru": "Проверьте DNS-записи домена A, AAAA, CNAME, MX, NS и TXT, их значения, TTL и ошибки отдельных запросов.",
+      "en": "Check A, AAAA, CNAME, MX, NS, and TXT records for a domain without URL crawling."
     }
   },
   {
@@ -576,8 +576,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "DNS Resolver Comparison"
     },
     "description": {
-      "ru": "Сравнивает один тип DNS-записи через четыре публичных recursive resolver: answer sets, частичные ошибки и backend latency без заявления о глобальном распространении DNS.",
-      "en": "Compares one DNS record type across four public recursive resolvers: answer sets, partial errors, and backend latency without claiming global DNS propagation."
+      "ru": "Сравните ответы Cloudflare, Google Public DNS, Quad9 и OpenDNS для одного типа DNS-записи.",
+      "en": "Compare answers from Cloudflare, Google Public DNS, Quad9, and OpenDNS for one DNS record type."
     }
   },
   {
@@ -589,8 +589,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "DNSSEC Checker"
     },
     "description": {
-      "ru": "Проверяет публикацию DS и DNSKEY записей домена как DNSSEC publication check без обещания полной validation-chain проверки.",
-      "en": "Checks DS and DNSKEY publication for a domain as a DNSSEC publication check without claiming full validation-chain proof."
+      "ru": "Проверьте публикацию DS и DNSKEY домена и алгоритмы ключей. Полная криптографическая проверка цепочки доверия не выполняется.",
+      "en": "Check published DS and DNSKEY records and key algorithms. Full cryptographic chain-of-trust validation is not performed."
     }
   },
   {
@@ -602,8 +602,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "SPF Checker"
     },
     "description": {
-      "ru": "Проверяет SPF TXT-запись домена, множественные SPF, final all policy, include/redirect и риск DNS-lookup лимита.",
-      "en": "Checks a domain SPF TXT record, duplicate SPF records, final all policy, include/redirect usage, and DNS lookup-limit risk."
+      "ru": "Проверьте SPF в TXT-записях: дубли, механизм all, include, redirect и риск превышения лимита DNS-запросов.",
+      "en": "Check SPF TXT, duplicate SPF records, final all policy, include/redirect, and DNS lookup-limit risk."
     }
   },
   {
@@ -615,8 +615,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "DKIM Checker"
     },
     "description": {
-      "ru": "Проверяет DKIM TXT запись по домену и selector, извлекает теги k=/p= и оценивает наличие публичного ключа без проверки фактической подписи писем.",
-      "en": "Checks a DKIM TXT record by domain and selector, extracts k=/p= tags, and evaluates public-key presence without validating real email signatures."
+      "ru": "Проверьте DKIM-запись по домену и селектору: наличие TXT, тип ключа и опубликованный открытый ключ.",
+      "en": "Check a domain’s DKIM TXT record using its selector: record count, key type, and published public key."
     }
   },
   {
@@ -628,8 +628,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "DMARC Checker"
     },
     "description": {
-      "ru": "Проверяет DMARC TXT запись _dmarc, policy p=/sp=, pct, rua/ruf и alignment-теги без обещания inbox deliverability.",
-      "en": "Checks the _dmarc TXT record, p=/sp= policy, pct, rua/ruf, and alignment tags without promising inbox deliverability."
+      "ru": "Проверьте TXT-запись DMARC: политики p и sp, долю pct, адреса rua/ruf и параметры adkim/aspf.",
+      "en": "Check a domain’s DMARC TXT record: p and sp policies, pct, rua/ruf reporting addresses, and alignment tags."
     }
   },
   {
@@ -641,8 +641,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "MX Record Checker"
     },
     "description": {
-      "ru": "Проверяет MX-записи домена, приоритеты, null MX и наличие A/AAAA адресов у почтовых хостов.",
-      "en": "Checks domain MX records, priorities, null MX, and A/AAAA address coverage for mail hosts."
+      "ru": "Проверьте MX-записи домена, их приоритеты, null MX и наличие записей A/AAAA у каждого почтового сервера.",
+      "en": "Check MX records, priorities, null MX, and A/AAAA address coverage for mail hosts."
     }
   },
   {
@@ -654,8 +654,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Domain RDAP Lookup"
     },
     "description": {
-      "ru": "Получает регистрационные данные домена через IANA RDAP bootstrap и registry RDAP: статусы, события, nameservers, registrar и abuse contact без legacy WHOIS scraping и claims о доступности.",
-      "en": "Retrieves domain registration data through IANA RDAP bootstrap and registry RDAP: statuses, events, nameservers, registrar, and abuse contact without legacy WHOIS scraping or availability claims."
+      "ru": "Получите данные реестра домена по RDAP: статусы, даты, DNS-серверы, регистратора и контакт для жалоб.",
+      "en": "Retrieve registry RDAP data through IANA bootstrap: statuses, events, nameservers, registrar, and abuse contact without WHOIS scraping."
     }
   },
   {
@@ -667,8 +667,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "IP RDAP Network Lookup"
     },
     "description": {
-      "ru": "Показывает registry allocation data для публичного IPv4/IPv6 через IANA RDAP bootstrap: диапазон, CIDR, network handle, status и abuse contact без геолокации или reputation claims.",
-      "en": "Shows registry allocation data for a public IPv4/IPv6 address through IANA RDAP bootstrap: range, CIDR, network handle, status, and abuse contact without geolocation or reputation claims."
+      "ru": "Проверьте сведения реестра о публичном IPv4/IPv6: диапазон, CIDR, идентификатор сети, статусы и контакт для жалоб.",
+      "en": "Check registry allocation data for a public IPv4/IPv6 address through IANA RDAP bootstrap: range, CIDR, handle, statuses, and abuse contact."
     }
   },
   {
@@ -680,8 +680,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Mixed Content Checker"
     },
     "description": {
-      "ru": "Ищет HTTP subresource candidates в HTTPS HTML: script, iframe, stylesheet, images, srcset и media без runtime browser DOM.",
-      "en": "Finds HTTP subresource candidates in HTTPS HTML: scripts, iframes, stylesheets, images, srcset, and media without runtime browser DOM."
+      "ru": "Найдите ссылки на ресурсы по HTTP в исходном HTML страницы HTTPS: скрипты, стили, изображения, фреймы и медиа.",
+      "en": "Find HTTP subresource candidates inside HTTPS HTML: scripts, iframes, stylesheets, images, media, and srcset."
     }
   },
   {
@@ -693,8 +693,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Core Web Vitals Checker"
     },
     "description": {
-      "ru": "Проверяет Core Web Vitals и PageSpeed через backend-интеграцию с Google PageSpeed API: mobile/desktop, lab и field data, оценки четырёх категорий Lighthouse и ограниченный список проверок для исправления.",
-      "en": "Checks Core Web Vitals and PageSpeed through a backend Google PageSpeed API integration: mobile/desktop, lab and field data, four Lighthouse category scores, and a bounded fix list."
+      "ru": "Проверьте Core Web Vitals, лабораторные измерения, доступные данные пользователей и четыре категории Lighthouse через Google PageSpeed.",
+      "en": "Check Core Web Vitals, lab and field data, four Lighthouse categories, and a fix order through the Google PageSpeed API."
     }
   },
   {
@@ -706,8 +706,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Page Weight Analyzer"
     },
     "description": {
-      "ru": "Анализирует статический вес страницы: HTML, найденные ресурсы, известный размер, тяжёлые assets и использование современных форматов изображений.",
-      "en": "Analyzes static page weight: HTML, discovered resources, known size, heavy assets, and modern image format usage."
+      "ru": "Проверьте размер HTML и найденных ресурсов, Content-Length, крупные файлы и использование JPEG, PNG, AVIF и WebP.",
+      "en": "Check static HTML page weight, discovered resources, Content-Length, heavy assets, and JPEG/PNG vs AVIF/WebP signals."
     }
   },
   {
@@ -719,8 +719,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Resource Waterfall Analyzer"
     },
     "description": {
-      "ru": "Показывает до 40 строк временной шкалы network-requests из Google PageSpeed Lighthouse: тип, начало, длительность и известный размер. Query и fragment удаляются; response bodies, headers, cookies и trace не сохраняются.",
-      "en": "Shows up to 40 network-requests timeline rows from Google PageSpeed Lighthouse: type, start, duration, and known size. Query strings and fragments are removed; response bodies, headers, cookies, and traces are not stored."
+      "ru": "Посмотрите до 40 сетевых запросов Google PageSpeed Lighthouse: тип, начало, длительность и известный размер.",
+      "en": "Inspect up to 40 Google PageSpeed Lighthouse network requests: type, start, duration, and known size without exposing a raw trace."
     }
   },
   {
@@ -732,8 +732,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Image Performance Checker"
     },
     "description": {
-      "ru": "Анализирует производительность изображений: форматы AVIF/WebP/JPEG/PNG/SVG, вес, responsive markup, width/height, lazy-loading и рекомендации по оптимизации.",
-      "en": "Analyzes image performance: AVIF/WebP/JPEG/PNG/SVG formats, weight, responsive markup, width/height, lazy-loading, and optimization recommendations."
+      "ru": "Проверьте форматы изображений, известные размеры, width/height, srcset, picture и loading в исходном HTML.",
+      "en": "Check AVIF/WebP/JPEG/PNG/SVG formats, image weight, responsive markup, width/height, lazy-loading, and optimization recommendations."
     }
   },
   {
@@ -745,8 +745,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Font Loading Analyzer"
     },
     "description": {
-      "ru": "Разбирает static HTML и bounded CSS: @font-face, font-display, источники и форматы, preload correlation, cache headers и Content-Length без browser runtime и fake performance score.",
-      "en": "Parses static HTML and bounded CSS: @font-face, font-display, sources and formats, preload correlation, cache headers, and Content-Length without browser runtime or a fake performance score."
+      "ru": "Проверьте @font-face, font-display, источники и форматы шрифтов, предзагрузку, размеры и заголовки ответов.",
+      "en": "Check static @font-face rules, font-display, font sources and formats, preload correlation, Content-Length, cache headers, and font response status."
     }
   },
   {
@@ -758,8 +758,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "HTTP Cache Policy Checker"
     },
     "description": {
-      "ru": "Проверяет HTTP-кэширование URL: Cache-Control, validators, Vary, static asset policy и рекомендации для CDN/browser cache.",
-      "en": "Checks HTTP caching for a URL: Cache-Control, validators, Vary, static asset policy, and CDN/browser cache recommendations."
+      "ru": "Проверьте Cache-Control, ETag, Last-Modified, Expires и Vary для кэша браузера и CDN.",
+      "en": "Check Cache-Control, ETag, Last-Modified, Expires, Vary, and browser/CDN cache recommendations."
     }
   },
   {
@@ -771,8 +771,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Render-Blocking Resources Checker"
     },
     "description": {
-      "ru": "Показывает до 20 строк точного audit render-blocking-resources из Google PageSpeed Lighthouse. Если provider не вернул этот audit, результат помечается недоступным без эвристической подмены.",
-      "en": "Shows up to 20 rows from the exact Google PageSpeed Lighthouse render-blocking-resources audit. If the provider omits the audit, the result is marked unavailable without a heuristic substitute."
+      "ru": "Посмотрите результат проверки render-blocking-resources в Google PageSpeed Lighthouse: до 20 ресурсов и оценку возможной экономии времени.",
+      "en": "Inspect the Google PageSpeed Lighthouse render-blocking-resources audit: up to 20 resources and estimated time savings."
     }
   },
   {
@@ -784,8 +784,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "JSON Formatter and Validator"
     },
     "description": {
-      "ru": "Проверяет синтаксис и превращает JSON в аккуратный читаемый вид.",
-      "en": "Checks syntax and turns JSON into a clean, readable format."
+      "ru": "Проверьте синтаксис JSON и отформатируйте корректные данные с отступом в 2 пробела. Обработка выполняется локально в браузере.",
+      "en": "Validate JSON syntax and format valid data with two-space indentation. Processing runs locally in your browser."
     }
   },
   {
@@ -797,8 +797,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "JSON Schema Validator"
     },
     "description": {
-      "ru": "Проверяет JSON instance по документированному bounded subset JSON Schema 2020-12: type, properties, required, arrays, числовые и строковые ограничения, combinators и локальные $ref без remote schema fetch.",
-      "en": "Validates a JSON instance against a documented bounded JSON Schema 2020-12 subset: types, properties, required fields, arrays, numeric and string constraints, combinators, and local $ref without remote schema fetching."
+      "ru": "Проверьте JSON по поддерживаемым правилам JSON Schema 2020-12: типы, поля, обязательные значения, массивы, комбинации условий и локальные $ref.",
+      "en": "Validate JSON against supported JSON Schema 2020-12 rules for types, properties, required fields, arrays, combinators, and local $ref."
     }
   },
   {
@@ -810,8 +810,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "JSONPath Query Lab"
     },
     "description": {
-      "ru": "Выполняет bounded JSONPath-запросы по локальному JSON: properties, indices, wildcards, recursive descent, unions, slices и простые filters без eval и script expressions.",
-      "en": "Runs bounded JSONPath queries against local JSON: properties, indices, wildcards, recursive descent, unions, slices, and simple filters without eval or script expressions."
+      "ru": "Проверяйте JSONPath-запросы по локальному JSON: выбор полей, индексы, подстановки, рекурсивный поиск, объединения, срезы и простые фильтры без eval.",
+      "en": "Test JSONPath queries against local JSON with properties, indices, wildcards, recursive descent, unions, slices, and simple filters without eval."
     }
   },
   {
@@ -823,8 +823,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "YAML ↔ JSON Converter"
     },
     "description": {
-      "ru": "Преобразует JSON и безопасный configuration subset YAML локально в браузере: mappings, sequences и scalars; anchors, aliases, custom tags, merge keys и block scalars отклоняются.",
-      "en": "Converts JSON and a safe YAML configuration subset locally in the browser: mappings, sequences, and scalars; anchors, aliases, custom tags, merge keys, and block scalars are rejected."
+      "ru": "Преобразуйте JSON и поддерживаемые конфигурации YAML локально. Якоря, псевдонимы, пользовательские теги, ключи слияния и блочные строки отклоняются.",
+      "en": "Convert JSON and supported YAML configurations locally in the browser. Anchors, aliases, custom tags, merge keys, and block scalars are rejected."
     }
   },
   {
@@ -836,8 +836,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "TOML ↔ JSON Converter"
     },
     "description": {
-      "ru": "Преобразует bounded TOML configuration subset и JSON локально в браузере: tables, array tables, dotted keys, arrays и inline tables с явными ограничениями TOML/JSON типов.",
-      "en": "Converts a bounded TOML configuration subset and JSON locally in the browser: tables, array tables, dotted keys, arrays, and inline tables with explicit TOML/JSON type limits."
+      "ru": "Преобразуйте TOML и JSON локально: поддерживаются таблицы, массивы таблиц, составные ключи, массивы и встроенные таблицы с ограничениями типов.",
+      "en": "Convert supported TOML configurations and JSON locally, including tables, array tables, dotted keys, arrays, and inline tables, with type limits."
     }
   },
   {
@@ -849,8 +849,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "XML Formatter and Validator"
     },
     "description": {
-      "ru": "Проверяет well-formed XML и форматирует структуру с сохранением mixed content. DTD, ENTITY, XSD и external entity resolution отключены; обработка выполняется локально.",
-      "en": "Checks well-formed XML and formats its structure while preserving mixed content. DTD, ENTITY, XSD, and external entity resolution are disabled; processing runs locally."
+      "ru": "Проверьте структуру XML и отформатируйте её с отступом 2 или 4 пробела. DTD, ENTITY, XSD и загрузка внешних сущностей не поддерживаются.",
+      "en": "Check well-formed XML and format its structure with two- or four-space indentation. DTD, ENTITY, XSD, and external entity resolution are disabled."
     }
   },
   {
@@ -862,8 +862,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "CSV Data Workbench"
     },
     "description": {
-      "ru": "Проверяет и преобразует CSV/JSON локально: delimiter detection, quoted и multiline fields, inconsistent rows, header diagnostics и spreadsheet-formula signals в одном workflow.",
-      "en": "Validates and converts CSV/JSON locally: delimiter detection, quoted and multiline fields, inconsistent rows, header diagnostics, and spreadsheet-formula signals in one workflow."
+      "ru": "Проверяйте и преобразуйте CSV и JSON локально: определение разделителя, поля в кавычках и с переносами строк, проверка столбцов, заголовков и значений, похожих на формулы.",
+      "en": "Validate and convert CSV/JSON locally with delimiter detection, quoted and multiline fields, inconsistent rows, headers, and formula-like signals."
     }
   },
   {
@@ -875,8 +875,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "SQL Formatter"
     },
     "description": {
-      "ru": "Форматирует SQL локально с bounded tokenizer: основные clauses, joins, списки, вложенные subqueries, строки, комментарии и quoted identifiers без выполнения запроса и без ложной проверки конкретной СУБД.",
-      "en": "Formats SQL locally with a bounded tokenizer: common clauses, joins, lists, nested subqueries, strings, comments, and quoted identifiers without executing the query or claiming database-specific validation."
+      "ru": "Отформатируйте SQL локально: секции запроса, объединения таблиц, списки, вложенные запросы, строки и комментарии. SQL не отправляется на сервер и не выполняется.",
+      "en": "Format SQL locally with readable clauses, joins, lists, nested subqueries, strings, and comments. Queries are neither uploaded nor executed."
     }
   },
   {
@@ -888,8 +888,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "GraphQL Formatter"
     },
     "description": {
-      "ru": "Форматирует GraphQL documents локально: operations, variables, arguments, directives, fragments, selection sets, comments и strings с проверкой lexical structure и delimiters без schema validation или выполнения.",
-      "en": "Formats GraphQL documents locally: operations, variables, arguments, directives, fragments, selection sets, comments, and strings with lexical and delimiter checks, but no schema validation or execution."
+      "ru": "Отформатируйте запросы, мутации, переменные, директивы и фрагменты GraphQL локально. Проверяются запись и парность скобок без проверки по схеме.",
+      "en": "Format GraphQL queries, mutations, variables, directives, and fragments locally. Checks cover lexical structure and balanced delimiters, not schema validity."
     }
   },
   {
@@ -901,8 +901,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Safe Regex Lab"
     },
     "description": {
-      "ru": "Тестирует JavaScript regular expressions в отдельном Web Worker с hard timeout, bounded input и match caps, показывает captures и эвристические ReDoS review signals без eval и без выполнения на сервере.",
-      "en": "Tests JavaScript regular expressions in a dedicated Web Worker with a hard timeout, bounded input, and match caps, showing captures and heuristic ReDoS review signals without eval or server-side execution."
+      "ru": "Проверьте регулярное выражение JavaScript в отдельном Web Worker с ограничением времени и числа совпадений, группами захвата и предупреждениями ReDoS. Выражение не выполняется на сервере.",
+      "en": "Test JavaScript regex in a dedicated Web Worker with a hard timeout, match caps, captures, and heuristic ReDoS signals. Patterns never run on the server."
     }
   },
   {
@@ -914,8 +914,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Cron Expression Workbench"
     },
     "description": {
-      "ru": "Собирает, разбирает и объясняет 5-польные Unix cron-выражения локально, проверяет ranges, lists и steps и показывает до 10 следующих запусков в UTC через bounded Web Worker без выполнения scheduler.",
-      "en": "Builds, parses, and explains five-field Unix cron expressions locally, validates ranges, lists, and steps, and previews up to 10 next UTC occurrences in a bounded Web Worker without running a scheduler."
+      "ru": "Соберите или проверьте cron-выражение Unix из пяти полей, прочитайте пояснение и посмотрите до 10 следующих запусков в UTC прямо в браузере.",
+      "en": "Build or validate a five-field Unix cron expression, read field explanations, and preview up to 10 next UTC occurrences in your browser."
     }
   },
   {
@@ -927,8 +927,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "JWT Inspection Lab"
     },
     "description": {
-      "ru": "Строго декодирует compact JWT/JWS локально, показывает header, payload и claims exp, nbf, iat, iss и aud, отмечает alg=none и временные риски без проверки подписи, сети, логирования или сохранения токена.",
-      "en": "Strictly decodes compact JWT/JWS locally, displays the header, payload, and exp, nbf, iat, iss, and aud claims, and flags alg=none and timing risks without signature verification, network access, logging, or token storage."
+      "ru": "Разберите JWT/JWS локально: просмотрите заголовок, содержимое, поля exp, nbf, iat, iss и aud и предупреждения безопасности без отправки токена на сервер.",
+      "en": "Strictly decode compact JWT/JWS locally, inspect header, payload, exp, nbf, iat, iss, and aud, and review security warnings without uploading the token."
     }
   },
   {
@@ -940,8 +940,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "URL Encoder and Decoder"
     },
     "description": {
-      "ru": "Кодирует текст для URL и восстанавливает исходное значение.",
-      "en": "Encodes text for URLs and restores the original value."
+      "ru": "Кодируйте и декодируйте текст для URL с помощью encodeURIComponent и decodeURIComponent прямо в браузере.",
+      "en": "Encode and decode text for URLs with encodeURIComponent and decodeURIComponent directly in your browser."
     }
   },
   {
@@ -953,8 +953,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "HTML Entities Encoder and Decoder"
     },
     "description": {
-      "ru": "Кодирует HTML-значимые символы и декодирует именованные и числовые HTML-сущности локально с ограничением размера ввода.",
-      "en": "Encodes HTML-significant characters and decodes named and numeric HTML entities locally with bounded input."
+      "ru": "Кодируйте HTML-значимые символы и декодируйте именованные, десятичные и шестнадцатеричные HTML-сущности локально в браузере.",
+      "en": "Encode HTML-significant characters and decode named, decimal, and hexadecimal HTML entities locally in your browser."
     }
   },
   {
@@ -966,8 +966,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Base64 Encoder and Decoder"
     },
     "description": {
-      "ru": "Преобразует UTF-8 текст в Base64 и обратно.",
-      "en": "Converts UTF-8 text to Base64 and back."
+      "ru": "Кодируйте UTF-8 текст в Base64 и декодируйте Base64 обратно в текст прямо в браузере.",
+      "en": "Encode UTF-8 text as Base64 and decode Base64 back to text directly in your browser."
     }
   },
   {
@@ -979,8 +979,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Text and Code Diff Checker"
     },
     "description": {
-      "ru": "Сравнивает два текста построчно локально, показывает добавления, удаления и замены и формирует ограниченный unified diff.",
-      "en": "Compares two texts line by line locally, reports additions, deletions, and replacements, and produces a bounded unified diff."
+      "ru": "Сравните два текста построчно, найдите добавления, удаления и замены и получите результат в формате unified diff локально в браузере.",
+      "en": "Compare two texts line by line, find additions, deletions, and replacements, and generate a unified diff locally in your browser."
     }
   },
   {
@@ -992,8 +992,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "SHA Hash Generator"
     },
     "description": {
-      "ru": "Создаёт SHA-256, SHA-384 или SHA-512 для введённого текста.",
-      "en": "Creates a SHA-256, SHA-384, or SHA-512 hash for entered text."
+      "ru": "Вычислите SHA-256, SHA-384 или SHA-512 для введённого текста через Web Crypto API прямо в браузере.",
+      "en": "Calculate SHA-256, SHA-384, or SHA-512 for entered text with the Web Crypto API directly in your browser."
     }
   },
   {
@@ -1005,8 +1005,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Color Converter"
     },
     "description": {
-      "ru": "Преобразует HEX-цвета локально: нормализует short/full HEX, показывает RGB и HSL CSS values, числовые каналы и preview без загрузки данных на backend.",
-      "en": "Converts HEX colors locally: normalizes short/full HEX, shows RGB and HSL CSS values, numeric channels, and a preview without uploading data to the backend."
+      "ru": "Преобразуйте HEX-цвет в RGB и HSL, проверьте каналы и скопируйте CSS-значения прямо в браузере без загрузки данных на сервер.",
+      "en": "Convert a HEX color to RGB and HSL, inspect channels, and copy CSS values directly in the browser without sending data to a server."
     }
   },
   {
@@ -1018,8 +1018,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Color Contrast Checker"
     },
     "description": {
-      "ru": "Сравнивает два HEX-цвета и показывает, достаточно ли контраста для текста.",
-      "en": "Compares two HEX colors and shows whether text contrast is sufficient."
+      "ru": "Рассчитайте контраст двух HEX-цветов и проверьте пороги WCAG для обычного и крупного текста прямо в браузере.",
+      "en": "Calculate the contrast ratio of two HEX colors and check WCAG thresholds for normal and large text directly in your browser."
     }
   },
   {
@@ -1031,8 +1031,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Image Color Palette Extractor"
     },
     "description": {
-      "ru": "Извлекает детерминированную палитру из уменьшенной выборки одного JPEG, PNG, WebP или AVIF локально в браузере и показывает HEX, RGB и долю выборки.",
-      "en": "Extracts a deterministic sampled palette from one JPEG, PNG, WebP, or AVIF locally in the browser and reports HEX, RGB, and sample share."
+      "ru": "Получите детерминированную палитру выборки с HEX, RGB и долей цвета из JPEG, PNG, WebP или AVIF локально в браузере.",
+      "en": "Get a deterministic sampled palette with HEX, RGB, and color share from a JPEG, PNG, WebP, or AVIF locally in your browser."
     }
   },
   {
@@ -1044,8 +1044,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "CSS Gradient Generator"
     },
     "description": {
-      "ru": "Собирает CSS-градиенты локально: linear/radial mode, угол или форма, две цветовые точки, позиции, live preview и копируемый CSS без скриптов, изображений и remote assets.",
-      "en": "Builds CSS gradients locally: linear/radial mode, angle or shape, two color stops, positions, live preview, and copyable CSS without scripts, images, or remote assets."
+      "ru": "Создайте линейный или радиальный CSS-градиент из двух HEX-цветов. Настройте угол и позиции цветовых точек прямо в браузере.",
+      "en": "Build linear and radial CSS gradients from two HEX colors, an angle, and stop positions directly in the browser without images or external libraries."
     }
   },
   {
@@ -1057,8 +1057,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Box Shadow Generator"
     },
     "description": {
-      "ru": "Генерирует box-shadow из явных числовых параметров: offset, blur, spread, HEX color и opacity, показывает preview и копируемую CSS declaration без сторонних библиотек.",
-      "en": "Generates box-shadow from explicit numeric parameters: offset, blur, spread, HEX color, and opacity, with a preview and copyable CSS declaration without third-party libraries."
+      "ru": "Настройте смещение, размытие, расширение, HEX-цвет и прозрачность тени box-shadow. Проверьте предпросмотр и скопируйте CSS.",
+      "en": "Tune offset, blur, spread, HEX color, and opacity for box-shadow, preview the result, and copy ready CSS directly in the browser."
     }
   },
   {
@@ -1070,8 +1070,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Border Radius Generator"
     },
     "description": {
-      "ru": "Генерирует border-radius для четырёх углов, проверяет допустимые px-значения, показывает preview формы и выдаёт короткую CSS declaration без canvas или runtime CSS parsing.",
-      "en": "Generates border-radius for four corners, validates px values, shows a shape preview, and emits a compact CSS declaration without canvas or runtime CSS parsing."
+      "ru": "Настройте border-radius для каждого угла, оцените форму в предпросмотре и скопируйте короткую запись CSS-правила.",
+      "en": "Set border-radius for each corner, inspect the shape in a preview, and copy a compact CSS declaration without canvas or external dependencies."
     }
   },
   {
@@ -1083,8 +1083,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Clip Path Generator"
     },
     "description": {
-      "ru": "Генерирует bounded CSS clip-path локально: inset, circle, ellipse и четырёхточечный polygon с проверкой процентных значений, preview и copyable CSS declaration.",
-      "en": "Generates bounded CSS clip-path locally: inset, circle, ellipse, and a four-point polygon with percentage validation, preview, and a copyable CSS declaration."
+      "ru": "Настройте clip-path для inset, circle, ellipse или многоугольника из четырёх точек прямо в браузере и скопируйте CSS-правило.",
+      "en": "Configure a clip-path using inset, circle, ellipse, or a four-point polygon in the browser and copy the CSS declaration."
     }
   },
   {
@@ -1096,8 +1096,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "CSS Filter Playground"
     },
     "description": {
-      "ru": "Генерирует CSS filter declaration локально: blur, brightness, contrast, grayscale, saturate и hue-rotate с bounded ranges, preview и copyable output.",
-      "en": "Generates CSS filter declarations locally: blur, brightness, contrast, grayscale, saturate, and hue-rotate with bounded ranges, preview, and copyable output."
+      "ru": "Настройте blur, brightness, contrast, grayscale, saturate и hue-rotate, проверьте предпросмотр и скопируйте CSS-правило filter.",
+      "en": "Tune blur, brightness, contrast, grayscale, saturate, and hue-rotate, check the preview, and copy the CSS filter declaration."
     }
   },
   {
@@ -1109,8 +1109,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "CSS Specificity Calculator"
     },
     "description": {
-      "ru": "Считает специфичность CSS selector list локально: ID, class/attribute/pseudo-class и type/pseudo-element buckets, :where() zeroing и bounded :is/:not/:has handling.",
-      "en": "Calculates CSS selector-list specificity locally: ID, class/attribute/pseudo-class, and type/pseudo-element buckets, :where() zeroing, and bounded :is/:not/:has handling."
+      "ru": "Рассчитайте специфичность CSS-селекторов по ID, классам и типам элементов с ограниченной поддержкой :where(), :is(), :not() и :has().",
+      "en": "Calculate CSS selector-list specificity by IDs, classes, and element types, with limited support for :where(), :is(), :not(), and :has()."
     }
   },
   {
@@ -1122,8 +1122,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "px ↔ rem Converter"
     },
     "description": {
-      "ru": "Быстро переводит значения из пикселей в rem и обратно.",
-      "en": "Quickly converts values between pixels and rem."
+      "ru": "Переводите значения между px и rem с выбранным базовым размером шрифта прямо в браузере.",
+      "en": "Convert values between px and rem using a selected root font size directly in your browser."
     }
   },
   {
@@ -1135,8 +1135,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Typography Scale Generator"
     },
     "description": {
-      "ru": "Генерирует типографическую шкалу локально из base px, ratio и диапазона шагов: px/rem значения, CSS custom properties и bounded token output.",
-      "en": "Generates a typography scale locally from base px, ratio, and step range: px/rem values, CSS custom properties, and bounded token output."
+      "ru": "Задайте базовый размер текста, коэффициент и диапазон шагов. Получите шкалу размеров в px, rem и пользовательские свойства CSS.",
+      "en": "Set a base text size, ratio, and step range to generate sizes in px and rem with CSS custom properties."
     }
   },
   {
@@ -1148,8 +1148,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "CSS Grid Generator"
     },
     "description": {
-      "ru": "Генерирует базовый CSS Grid container локально: repeat/minmax columns, rows, gap и bounded min column size без layout editor или stylesheet parsing.",
-      "en": "Generates a basic CSS Grid container locally: repeat/minmax columns, rows, gap, and bounded min column size without a layout editor or stylesheet parsing."
+      "ru": "Настройте контейнер CSS Grid: столбцы, строки, промежутки и минимальную ширину столбца minmax. Скопируйте готовый CSS из браузера.",
+      "en": "Build a basic CSS Grid container: columns, rows, gap, and minmax column size with copyable CSS output directly in the browser."
     }
   },
   {
@@ -1161,34 +1161,34 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Flexbox Playground"
     },
     "description": {
-      "ru": "Генерирует Flexbox container declaration локально: direction, justify-content, align-items, gap и wrap с bounded output без child item rules.",
-      "en": "Generates Flexbox container declarations locally: direction, justify-content, align-items, gap, and wrap with bounded output and no child item rules."
+      "ru": "Настройте flex-direction, justify-content, align-items, gap и перенос строк, затем скопируйте CSS-правила контейнера.",
+      "en": "Configure flex-direction, justify-content, align-items, gap, and wrapping, then copy the container CSS."
     }
   },
   {
     "slug": "image-optimizer",
     "category": "media-utilities",
-    "local": true,
+    "local": false,
     "title": {
       "ru": "Сжатие PNG, JPEG, WebP и AVIF",
       "en": "PNG, JPEG, WebP and AVIF Image Compressor"
     },
     "description": {
-      "ru": "Локально перекодирует одно изображение в браузере: AVIF/WebP/JPEG/PNG output, качество для lossy-форматов, сравнение исходного и итогового веса без загрузки файла на сервер.",
-      "en": "Locally re-encodes one image in the browser: AVIF/WebP/JPEG/PNG output, lossy quality control, and source/output byte comparison without uploading the file."
+      "ru": "Сжимайте изображения в AVIF, WebP, JPEG или PNG с выбранным качеством. WebP, JPEG и PNG обрабатываются в браузере. Для AVIF файл отправляется на сервер WebDiag без сохранения.",
+      "en": "Compress images as AVIF, WebP, JPEG, or PNG with selected quality. WebP, JPEG, and PNG are processed in the browser. AVIF uploads the file to the WebDiag server without storage."
     }
   },
   {
     "slug": "image-format-converter",
     "category": "media-utilities",
-    "local": true,
+    "local": false,
     "title": {
       "ru": "Конвертер PNG, JPEG, WebP и AVIF",
       "en": "PNG, JPEG, WebP and AVIF Converter"
     },
     "description": {
-      "ru": "Конвертирует одно растровое изображение в PNG, JPEG, WebP или AVIF через browser Canvas, если текущий браузер поддерживает выбранный декодер/энкодер.",
-      "en": "Converts one raster image to PNG, JPEG, WebP, or AVIF through browser Canvas when the current browser supports the selected decoder/encoder."
+      "ru": "Конвертируйте одно изображение в AVIF, WebP, JPEG или PNG с обработкой AVIF на сервере без сохранения файла.",
+      "en": "Convert one image to AVIF, WebP, JPEG, or PNG with AVIF processed on the server without storing your file."
     }
   },
   {
@@ -1200,8 +1200,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Image Resizer"
     },
     "description": {
-      "ru": "Меняет ширину и высоту одного изображения локально в браузере, сохраняет пропорции и выводит WebP/AVIF/JPEG/PNG без серверной загрузки.",
-      "en": "Resizes one image locally in the browser, preserves aspect ratio, and outputs WebP/AVIF/JPEG/PNG without server upload."
+      "ru": "Измените ширину и высоту изображения с сохранением пропорций или задайте точные размеры. Сохраните результат в формате, который поддерживает браузер.",
+      "en": "Resize an image while keeping its proportions or set an exact width and height. Save the result in an output format supported by your browser."
     }
   },
   {
@@ -1213,8 +1213,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Image Cropper"
     },
     "description": {
-      "ru": "Обрезает одно изображение по прямоугольной области локально в браузере и сохраняет результат в WebP/AVIF/JPEG/PNG при поддержке браузера.",
-      "en": "Crops one image by a rectangular area locally in the browser and saves WebP/AVIF/JPEG/PNG output when supported by the browser."
+      "ru": "Обрежьте одно изображение по X, Y, ширине и высоте и скачайте результат в AVIF, WebP, JPEG или PNG.",
+      "en": "Crop one image by X, Y, width, and height, then download the result as AVIF, WebP, JPEG, or PNG."
     }
   },
   {
@@ -1226,8 +1226,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Favicon Generator"
     },
     "description": {
-      "ru": "Создаёт пять PNG favicon и web app icon файлов из центральной квадратной области одного JPEG, PNG, WebP или AVIF локально в браузере.",
-      "en": "Creates five PNG favicon and web app icon files from the centered square crop of one JPEG, PNG, WebP, or AVIF locally in the browser."
+      "ru": "Создайте пять PNG-иконок для сайта и веб-приложения из JPEG, PNG, WebP или AVIF в браузере. Скачайте файлы отдельно или ZIP-архивом с разметкой.",
+      "en": "Create five PNG icons for a site or web app from a JPEG, PNG, WebP, or AVIF in your browser. Download individual files or a ZIP with markup."
     }
   },
   {
@@ -1239,8 +1239,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "QR Code Generator"
     },
     "description": {
-      "ru": "Создаёт QR-код из bounded text и читает один QR-код из локального JPEG, PNG, WebP или AVIF без загрузки файла на сервер.",
-      "en": "Generates a QR code from bounded text and reads one QR code from a local JPEG, PNG, WebP, or AVIF without uploading the file."
+      "ru": "Создавайте QR-коды из текста и читайте один QR-код из локального JPEG, PNG, WebP или AVIF без загрузки файла.",
+      "en": "Generate QR codes from text and read one QR code from a local JPEG, PNG, WebP, or AVIF without uploading the file."
     }
   },
   {
@@ -1252,8 +1252,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "UUID v4 Generator"
     },
     "description": {
-      "ru": "Создаёт новый UUID v4 одним нажатием.",
-      "en": "Creates a new UUID v4 in one click."
+      "ru": "Создайте случайный UUID версии 4 через криптографический генератор браузера. Один новый идентификатор за действие.",
+      "en": "Generate a random UUID version 4 with the browser cryptographic generator. One new identifier per action."
     }
   },
   {
@@ -1265,8 +1265,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "SVG Optimizer"
     },
     "description": {
-      "ru": "Оптимизирует безопасный SVG локально в браузере: удаляет комментарии, XML/DOCTYPE, metadata и лишние пробелы, блокируя active SVG content.",
-      "en": "Optimizes safe SVG locally in the browser: removes comments, XML/DOCTYPE, metadata, and redundant whitespace while blocking active SVG content."
+      "ru": "Удалите из SVG комментарии, метаданные, объявления XML, DOCTYPE и лишние пробелы. Обработка выполняется в браузере без отправки кода на сервер.",
+      "en": "Remove SVG comments, metadata, XML declarations, DOCTYPE, and redundant whitespace in your browser without sending the code to a server."
     }
   },
   {
@@ -1278,8 +1278,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Image Metadata Viewer and Remover"
     },
     "description": {
-      "ru": "Показывает EXIF, XMP, ICC, IPTC/JFIF и PNG/WebP/AVIF metadata signals и удаляет метаданные локальным Canvas re-encode без загрузки файла на сервер.",
-      "en": "Shows EXIF, XMP, ICC, IPTC/JFIF, and PNG/WebP/AVIF metadata signals and removes metadata with local Canvas re-encode without server upload."
+      "ru": "Проверьте наличие блоков EXIF, XMP, ICC, IPTC/JFIF и метаданных PNG, WebP или AVIF. Создайте копию изображения перекодированием в браузере.",
+      "en": "Detect EXIF, XMP, ICC, IPTC/JFIF, and PNG, WebP, or AVIF metadata blocks. Create a new image copy by re-encoding it in your browser."
     }
   },
   {
@@ -1291,8 +1291,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Responsive Image Srcset Generator"
     },
     "description": {
-      "ru": "Собирает проверенный srcset и экранированный img-фрагмент из 1–20 существующих URL и width descriptors; не создаёт и не загружает файлы.",
-      "en": "Builds a validated srcset and escaped img fragment from 1–20 existing URLs and width descriptors; it does not create or upload image files."
+      "ru": "Соберите srcset и разметку img из готовых адресов и ширины изображений. HTTPS и пути от корня сайта; файлы нужно подготовить заранее.",
+      "en": "Build srcset and img markup from existing HTTPS or site-relative image URLs and widths. The tool does not create image files."
     }
   },
   {
@@ -1304,8 +1304,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Image Aspect Ratio Calculator"
     },
     "description": {
-      "ru": "Сокращает соотношение сторон и рассчитывает недостающий размер.",
-      "en": "Reduces an aspect ratio and calculates the missing dimension."
+      "ru": "Сократите соотношение ширины и высоты и рассчитайте недостающий размер по заданной пропорции.",
+      "en": "Reduce a width-to-height ratio and calculate a missing dimension from a selected proportion."
     }
   },
   {
@@ -1317,8 +1317,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Image to Data URI Converter"
     },
     "description": {
-      "ru": "Создаёт точный Data URI для одного JPEG, PNG, WebP или AVIF до 1 МиБ и отдельный PNG placeholder до 24 px локально в браузере.",
-      "en": "Creates an exact Data URI for one JPEG, PNG, WebP, or AVIF up to 1 MiB and a separate PNG placeholder up to 24 px locally in the browser."
+      "ru": "Преобразуйте JPEG, PNG, WebP или AVIF до 1 МиБ в Data URI и создайте отдельную PNG-заглушку до 24 пикселей. Обработка выполняется в браузере.",
+      "en": "Convert a JPEG, PNG, WebP, or AVIF up to 1 MiB to a Data URI and create a separate PNG placeholder up to 24 pixels. Processing runs in your browser."
     }
   },
   {
@@ -1330,8 +1330,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Unix Timestamp Converter"
     },
     "description": {
-      "ru": "Преобразует Unix timestamp в дату ISO 8601 и обратно.",
-      "en": "Converts a Unix timestamp to an ISO 8601 date and back."
+      "ru": "Переведите время Unix в секундах в дату ISO 8601 в UTC или преобразуйте дату обратно в секунды прямо в браузере.",
+      "en": "Convert a Unix timestamp in seconds to UTC ISO 8601 and a date back to Unix seconds directly in your browser."
     }
   },
   {
@@ -1343,8 +1343,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "ULID Generator"
     },
     "description": {
-      "ru": "Создаёт новый сортируемый ULID одним нажатием.",
-      "en": "Creates a new sortable ULID in one click."
+      "ru": "Создайте стандартный 26-символьный ULID с временной и криптографически случайной частью прямо в браузере.",
+      "en": "Generate a standard 26-character ULID with time and cryptographically random components directly in your browser."
     }
   },
   {
@@ -1356,8 +1356,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Add Watermark to Image"
     },
     "description": {
-      "ru": "Добавляет текстовый водяной знак к одному изображению локально в браузере: позиция, прозрачность, размер текста и вывод AVIF/WebP/JPEG/PNG.",
-      "en": "Adds a text watermark to one image locally in the browser: position, opacity, text size, and AVIF/WebP/JPEG/PNG output."
+      "ru": "Добавьте текстовый водяной знак в браузере. Выберите позицию, прозрачность и размер текста, затем сохраните изображение в поддерживаемом формате.",
+      "en": "Add a text watermark in your browser. Choose its position, opacity, and text size, then save the image in a supported output format."
     }
   },
   {
@@ -1369,8 +1369,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Third-party Script Analyzer"
     },
     "description": {
-      "ru": "Строит bounded static HTML inventory script src: same-host и cross-host candidates, async/defer/module, parser-blocking signals, дубли, SRI и hostname-pattern groups без исполнения JavaScript.",
-      "en": "Builds a bounded static HTML script-src inventory: same-host and cross-host candidates, async/defer/module, parser-blocking signals, duplicates, SRI, and hostname-pattern groups without executing JavaScript."
+      "ru": "Проверьте скрипты исходного HTML: хосты, async, defer, module, повторы, integrity и возможные задержки разбора страницы.",
+      "en": "Check a static HTML script inventory: same-host and cross-host candidates, async, defer, module, parser-blocking signals, duplicates, and SRI."
     }
   },
   {
@@ -1382,8 +1382,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Resource Hints Analyzer"
     },
     "description": {
-      "ru": "Проверяет static HTML resource hints: preconnect, dns-prefetch, preload, prefetch, modulepreload и preinit, включая дубли, as, crossorigin и excessive preconnect signals без fake performance score.",
-      "en": "Checks static HTML resource hints: preconnect, dns-prefetch, preload, prefetch, modulepreload, and preinit, including duplicates, as, crossorigin, and excessive-preconnect signals without a fake performance score."
+      "ru": "Проверьте preconnect, dns-prefetch, preload, prefetch, modulepreload и preinit: повторы, as, crossorigin и число соединений.",
+      "en": "Check preconnect, dns-prefetch, preload, prefetch, modulepreload, and preinit: duplicates, as, crossorigin, and excessive-preconnect signals."
     }
   },
   {
@@ -1395,8 +1395,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "JavaScript Bundle Surface Analyzer"
     },
     "description": {
-      "ru": "Проверяет bounded static JavaScript delivery surface: уникальные script src, status/MIME, declared bytes, compression, cache, redirects и parser-blocking candidates без исполнения кода.",
-      "en": "Checks a bounded static JavaScript delivery surface: unique script src values, status/MIME, declared bytes, compression, cache, redirects, and parser-blocking candidates without executing code."
+      "ru": "Проверьте внешние JavaScript-файлы из HTML: статусы, MIME, Content-Length, сжатие, кэширование, редиректы и атрибуты загрузки.",
+      "en": "Check external JavaScript files found in HTML: HTTP status, MIME, Content-Length, compression, caching, redirects, and loading attributes."
     }
   },
   {
@@ -1408,8 +1408,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "CSS Delivery Analyzer"
     },
     "description": {
-      "ru": "Анализирует external и inline CSS: bounded fetch, decoded sample, @import, @font-face, MIME, compression, cache и duplicate links без unused-CSS и render-blocking claims.",
-      "en": "Analyzes external and inline CSS: bounded fetches, decoded samples, @import, @font-face, MIME, compression, cache, and duplicate links without unused-CSS or render-blocking claims."
+      "ru": "Проверьте внешние и встроенные стили: размер выборки CSS, @import, @font-face, MIME, сжатие, кэширование и повторные подключения.",
+      "en": "Check external and inline CSS: limited decoded samples, @import, @font-face, MIME, compression, cache, media, and duplicate stylesheet links."
     }
   },
   {
@@ -1421,8 +1421,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "URL Normalization Analyzer"
     },
     "description": {
-      "ru": "Локально строит детерминированную синтаксическую форму HTTP/HTTPS URL: регистр scheme/host, default port, IDNA, dot segments и percent-encoding, сохраняя routing-sensitive slash/query semantics.",
-      "en": "Locally builds a deterministic HTTP/HTTPS syntax form for scheme/host casing, default ports, IDNA, dot segments, and percent encoding while preserving routing-sensitive slash and query semantics."
+      "ru": "Разберите HTTP(S) URL локально: регистр протокола и хоста, порт, IDNA, сегменты пути, кодирование символов, фрагмент и слеши.",
+      "en": "Inspect HTTP/HTTPS URL syntax normalization: scheme and host casing, default ports, IDNA, dot segments, percent encoding, fragments, and routing-sensitive slash signals."
     }
   },
   {
@@ -1434,8 +1434,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Redirect Map Validator"
     },
     "description": {
-      "ru": "Проверяет до 25 явно заданных source→target правил: первый redirect hop, optional status, дубли, конфликты, self redirects, chains и cycles через SafeHttpFetcher без crawler и автопоиска правил.",
-      "en": "Validates up to 25 explicit source-to-target rules: first redirect hop, optional status, duplicates, conflicts, self redirects, chains, and cycles through SafeHttpFetcher without crawling or auto-discovering rules."
+      "ru": "Проверьте до 25 правил редиректов из CSV или TSV: первый переход, ожидаемый статус, повторы, конфликты, цепочки и циклы.",
+      "en": "Validate up to 25 explicit source-to-target rules: first redirect hop, optional status, duplicates, conflicts, self redirects, chains, and cycles through a safe fetcher."
     }
   },
   {
@@ -1447,8 +1447,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Landmark Structure Analyzer"
     },
     "description": {
-      "ru": "Проверяет bounded static HTML landmarks: main, navigation, banner, contentinfo, complementary, search, form и region, включая имена, дубли и структурные конфликты без fake WCAG claim.",
-      "en": "Checks bounded static HTML landmarks: main, navigation, banner, contentinfo, complementary, search, form, and region, including names, duplicates, and structural conflicts without a fake WCAG claim."
+      "ru": "Проверьте основные области страницы в исходном HTML: main, navigation, banner, contentinfo, complementary, search, form и region. Проверка не подтверждает соответствие WCAG.",
+      "en": "Inspect main, navigation, banner, contentinfo, complementary, search, form, and region landmarks in source HTML. This check does not establish WCAG conformance."
     }
   },
   {
@@ -1460,8 +1460,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Form Accessibility Analyzer"
     },
     "description": {
-      "ru": "Анализирует bounded static HTML forms: labels, aria-labelledby/describedby, placeholder-only controls, fieldset/legend, duplicate IDs и radio/checkbox grouping без исполнения формы.",
-      "en": "Analyzes bounded static HTML forms: labels, aria-labelledby/describedby, placeholder-only controls, fieldset/legend, duplicate IDs, and radio/checkbox grouping without executing the form."
+      "ru": "Проверьте подписи полей, aria-labelledby, aria-describedby, поля только с подсказкой, fieldset/legend и группировку переключателей и флажков в исходном HTML.",
+      "en": "Check labels, aria-labelledby, aria-describedby, placeholder-only controls, fieldset/legend, and radio/checkbox grouping in source HTML."
     }
   },
   {
@@ -1473,8 +1473,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Link and Button Accessible Name Analyzer"
     },
     "description": {
-      "ru": "Проверяет static HTML accessible names ссылок, кнопок и role=link/button: text, alt, ARIA, generic names, nested interactive и keyboard-focus signals без browser accessibility tree.",
-      "en": "Checks static HTML accessible names for links, buttons, and role=link/button: text, alt, ARIA, generic names, nested interactive elements, and keyboard-focus signals without a browser accessibility tree."
+      "ru": "Проверьте имена ссылок, кнопок и элементов с role=link или role=button: текст, alt, ARIA, неясные названия и вложенные интерактивные элементы.",
+      "en": "Check accessible names for links, buttons, and role=link/button: text, alt, ARIA, generic names, and nested interactive elements."
     }
   },
   {
@@ -1486,8 +1486,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Organization Schema JSON-LD Generator"
     },
     "description": {
-      "ru": "Генерирует Organization, Corporation, NGO или LocalBusiness JSON-LD из явно введённых name, URL, logo, address, sameAs и ContactPoint без placeholder-данных, AI и обещаний rich results.",
-      "en": "Generates Organization, Corporation, NGO, or LocalBusiness JSON-LD from explicit name, URL, logo, address, sameAs, and ContactPoint data without placeholders, AI, or rich-result promises."
+      "ru": "Создайте Organization, Corporation, NGO или LocalBusiness JSON-LD из данных организации: URL, логотипа, адреса, sameAs и контактов.",
+      "en": "Create Organization, Corporation, NGO, or LocalBusiness JSON-LD from verified URL, logo, address, sameAs, and ContactPoint data without AI or placeholder values."
     }
   },
   {
@@ -1499,8 +1499,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Breadcrumb Schema JSON-LD Generator"
     },
     "description": {
-      "ru": "Генерирует ordered BreadcrumbList JSON-LD из 2–20 явно заданных пунктов, валидирует HTTP(S) URL и разрешает отсутствие item только у последнего crumb без crawler или canonical-claims.",
-      "en": "Generates ordered BreadcrumbList JSON-LD from 2–20 explicit items, validates HTTP(S) URLs, and permits an omitted item only for the final crumb without crawling or canonical claims."
+      "ru": "Соберите BreadcrumbList JSON-LD из 2–20 пунктов навигации с HTTP(S) URL. Адрес можно пропустить только у последнего пункта.",
+      "en": "Build ordered BreadcrumbList JSON-LD from 2–20 items, validate HTTP(S) URLs, and optionally omit item only for the final current-page crumb."
     }
   },
   {
@@ -1512,8 +1512,8 @@ const PUBLIC_TOOLS_DEFINITIONS: readonly PublicToolItem[] = [
       "en": "Product Schema JSON-LD Generator"
     },
     "description": {
-      "ru": "Генерирует Product и optional Offer JSON-LD из проверенных name, image, SKU, brand, GTIN, price, currency, availability и condition без выдуманных ratings, reviews или availability.",
-      "en": "Generates Product and optional Offer JSON-LD from verified name, image, SKU, brand, GTIN, price, currency, availability, and condition without invented ratings, reviews, or availability."
+      "ru": "Создайте Product и при необходимости Offer JSON-LD: название, изображения, SKU, бренд, GTIN, цена, валюта и наличие из введённых данных.",
+      "en": "Create Product and optional Offer JSON-LD from your data: name, images, SKU, brand, GTIN, price, currency, availability, and condition."
     }
   }
 ];

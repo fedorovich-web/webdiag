@@ -4,23 +4,23 @@ export const mediaUtilityToolPages = [
   toolPage({
     slug: "image-optimizer",
     seoTitle: { ru: "Сжатие PNG, JPEG, WebP и AVIF онлайн", en: "PNG, JPEG, WebP & AVIF Image Compressor" },
-    metaDescription: { ru: "Сжимайте изображения в AVIF, WebP, JPEG или PNG с выбранным качеством. WebP, JPEG и PNG обрабатываются в браузере. Для AVIF файл отправляется в конвертер WebDiag без сохранения.", en: "Compress images as AVIF, WebP, JPEG, or PNG with selected quality. WebP, JPEG and PNG are processed in the browser. AVIF uses the WebDiag converter without storage." },
+    metaDescription: { ru: "Сжимайте изображения в AVIF, WebP, JPEG или PNG с выбранным качеством. WebP, JPEG и PNG обрабатываются в браузере. Для AVIF файл отправляется на сервер WebDiag без сохранения.", en: "Compress images as AVIF, WebP, JPEG, or PNG with selected quality. WebP, JPEG, and PNG are processed in the browser. AVIF uploads the file to the WebDiag server without storage." },
     h1: { ru: "Сжатие PNG, JPEG, WebP и AVIF", en: "PNG, JPEG, WebP & AVIF Image Compressor" },
-    lead: { ru: "Повторно закодируйте одно изображение с выбранным форматом и качеством, сравните итоговый размер и скачайте результат.", en: "Re-encode one image with a selected format and quality, compare the resulting size, and download the output." },
+    lead: { ru: "Выберите формат и качество изображения, сравните размер готового файла с исходным и скачайте результат.", en: "Choose an image format and quality, compare the file size with the original, and download the result." },
     quickFacts: [
       { ru: "Один файл", en: "One file" },
       { ru: "AVIF / WebP / JPEG / PNG", en: "AVIF / WebP / JPEG / PNG" },
-      { ru: "Canvas re-encode", en: "Canvas re-encode" },
+      { ru: "Выбор качества", en: "Adjustable quality" },
     ],
     howToSteps: [
       { ru: "Выберите изображение на устройстве.", en: "Choose an image from your device." },
       { ru: "Укажите формат и качество результата.", en: "Select the output format and quality." },
-      { ru: "Запустите обработку, сравните размер и скачайте файл.", en: "Run processing, compare sizes, and download the file." },
+      { ru: "Сожмите изображение, сравните размер и скачайте файл.", en: "Compress the image, compare file sizes, and download the result." },
     ],
     supportedFeatures: [
-      { ru: "Декодирование форматов, поддерживаемых текущим браузером.", en: "Decoding formats supported by the current browser." },
-      { ru: "Вывод AVIF, WebP, JPEG или PNG при поддержке браузера.", en: "AVIF, WebP, JPEG, or PNG output." },
-      { ru: "Настройка качества для форматов, где браузер её учитывает.", en: "Quality control for formats where the browser applies it." },
+      { ru: "Открытие изображений в форматах, которые поддерживает браузер.", en: "Open images in formats your browser can read." },
+      { ru: "Сохранение в AVIF, WebP, JPEG или PNG.", en: "Save as AVIF, WebP, JPEG, or PNG." },
+      { ru: "Настройка качества JPEG, WebP и AVIF.", en: "Adjust JPEG, WebP, and AVIF quality." },
     ],
     limitations: [
       { ru: "Пакетная обработка и сохранение метаданных не поддерживаются.", en: "Batch processing and metadata preservation are not supported." },
@@ -29,11 +29,11 @@ export const mediaUtilityToolPages = [
     useCases: [
       { ru: "Подготовка изображения для веб-страницы.", en: "Preparing an image for a webpage." },
       { ru: "Сравнение JPEG и WebP для одного исходника.", en: "Comparing JPEG and WebP for the same source." },
-      { ru: "Быстрое уменьшение веса изображения перед отправкой.", en: "Quickly reducing an image before sharing." },
+      { ru: "Сжатие изображения перед отправкой.", en: "Compressing an image before sharing." },
     ],
     technicalNotes: [
-      { ru: "Инструмент рисует изображение на Canvas и создаёт новый Blob.", en: "The tool draws the image to Canvas and creates a new Blob." },
-      { ru: "Повторное кодирование может изменить цветовой профиль, metadata и точное представление пикселей.", en: "Re-encoding can change color-profile data, metadata, and exact pixel representation." },
+      { ru: "JPEG, WebP и PNG создаются в браузере. Для AVIF файл отправляется на сервер WebDiag и обрабатывается без сохранения.", en: "JPEG, WebP, and PNG are created in your browser. AVIF uploads the file to the WebDiag server for processing without storage." },
+      { ru: "Повторное кодирование может изменить цветовой профиль, метаданные и отдельные пиксели изображения.", en: "Re-encoding can change the color profile, metadata, and individual pixels." },
     ],
     faq: [
       { question: { ru: "Как уменьшить файл и сохранить приемлемое качество?", en: "How can I reduce file size while keeping acceptable quality?" }, answer: { ru: "Выберите изображение, формат результата и качество, затем сравните полученный файл с оригиналом. Если появились заметные искажения, увеличьте качество. Уже сжатый файл может не стать меньше — проверьте итоговый размер перед скачиванием.", en: "Choose an image, output format, and quality, then compare the result with the original. Increase quality if visible artefacts appear. An already compressed file may not get smaller, so check the output size before downloading." } },
@@ -47,7 +47,7 @@ export const mediaUtilityToolPages = [
     seoTitle: { ru: "Конвертер PNG, JPEG, WebP и AVIF онлайн", en: "PNG, JPEG, WebP & AVIF Image Converter" },
     metaDescription: { ru: "Конвертируйте одно изображение в AVIF, WebP, JPEG или PNG с обработкой AVIF на сервере без сохранения файла.", en: "Convert one image to AVIF, WebP, JPEG, or PNG with AVIF processed on the server without storing your file." },
     h1: { ru: "Конвертер PNG, JPEG, WebP и AVIF", en: "PNG, JPEG, WebP & AVIF Image Converter" },
-    lead: { ru: "Выберите изображение, задайте один из современных выходных форматов и скачайте новый файл. AVIF кодируется сервером WebDiag, остальные форматы — браузером.", en: "Choose an image, select one modern output format, and download the result. AVIF is encoded by the WebDiag server; other formats use the browser." },
+    lead: { ru: "Выберите изображение и формат результата, затем скачайте новый файл. AVIF создаётся на сервере WebDiag, остальные форматы — в браузере.", en: "Choose an image and output format, then download the converted file. AVIF is created on the WebDiag server; other formats are created in your browser." },
     quickFacts: [
       { ru: "AVIF / WebP / JPEG / PNG", en: "AVIF / WebP / JPEG / PNG" },
       { ru: "Один файл", en: "One file" },
@@ -59,13 +59,13 @@ export const mediaUtilityToolPages = [
       { ru: "Запустите конвертацию и скачайте результат.", en: "Run conversion and download the result." },
     ],
     supportedFeatures: [
-      { ru: "Выход в image/avif, image/webp, image/jpeg или image/png при поддержке браузера.", en: "Output as image/avif, image/webp, image/jpeg, or image/png when supported by the browser." },
-      { ru: "Локальное декодирование и Canvas-конвертация.", en: "Local decoding and Canvas conversion." },
-      { ru: "Автоматическое расширение имени результата.", en: "Automatic output filename extension." },
+      { ru: "Преобразование в AVIF, WebP, JPEG или PNG.", en: "Convert to AVIF, WebP, JPEG, or PNG." },
+      { ru: "Обработка JPEG, WebP и PNG в браузере, AVIF — на сервере без сохранения файла.", en: "Process JPEG, WebP, and PNG in the browser, or AVIF on the server without storing the file." },
+      { ru: "Расширение готового файла соответствует выбранному формату.", en: "The downloaded file's extension matches the selected format." },
     ],
     limitations: [
-      { ru: "HEIC, SVG и GIF output не поддерживаются; AVIF output зависит от Canvas encoder текущего браузера.", en: "HEIC, SVG, and GIF output are not supported; AVIF output depends on the current browser Canvas encoder." },
-      { ru: "Анимация и исходные metadata не сохраняются.", en: "Animation and source metadata are not preserved." },
+      { ru: "Сохранение в HEIC, SVG и GIF не поддерживается. Для AVIF требуется соединение с сервером WebDiag.", en: "HEIC, SVG, and GIF output are not supported. AVIF requires a connection to the WebDiag server." },
+      { ru: "Анимация и исходные метаданные не сохраняются.", en: "Animation and source metadata are not preserved." },
     ],
     useCases: [
       { ru: "Преобразование PNG в WebP для веб-публикации.", en: "Converting PNG to WebP for web publishing." },
@@ -86,7 +86,7 @@ export const mediaUtilityToolPages = [
   toolPage({
     slug: "image-resizer",
     seoTitle: { ru: "Изменить размер изображения онлайн", en: "Resize an Image Online" },
-    metaDescription: { ru: "Измените ширину и высоту одного изображения с сохранением пропорций или по точным размерам. AVIF, WebP, JPEG и PNG output.", en: "Change one image's width and height while preserving proportions or using exact dimensions. AVIF, WebP, JPEG, and PNG output." },
+    metaDescription: { ru: "Измените ширину и высоту изображения с сохранением пропорций или задайте точные размеры. Сохраните результат в формате, который поддерживает браузер.", en: "Resize an image while keeping its proportions or set an exact width and height. Save the result in an output format supported by your browser." },
     h1: { ru: "Изменить размер изображения онлайн", en: "Resize an Image Online" },
     lead: { ru: "Задайте новую ширину и высоту, сохраните исходное соотношение сторон при необходимости и скачайте результат.", en: "Set a new width and height, preserve the source aspect ratio when needed, and download the result." },
     quickFacts: [
@@ -96,16 +96,16 @@ export const mediaUtilityToolPages = [
     ],
     howToSteps: [
       { ru: "Выберите изображение.", en: "Choose an image." },
-      { ru: "Введите новые размеры и настройте сохранение пропорций.", en: "Enter new dimensions and configure aspect-ratio preservation." },
+      { ru: "Введите новые размеры и выберите, сохранять ли пропорции.", en: "Enter the new dimensions and choose whether to keep the aspect ratio." },
       { ru: "Выберите формат, измените размер и скачайте файл.", en: "Select a format, resize, and download the file." },
     ],
     supportedFeatures: [
-      { ru: "Изменение ширины и высоты в целых пикселях.", en: "Integer-pixel width and height changes." },
+      { ru: "Ширина и высота задаются в целых пикселях.", en: "Set width and height in whole pixels." },
       { ru: "Автоматический расчёт второй стороны при сохранении пропорций.", en: "Automatic calculation of the second dimension when preserving proportions." },
-      { ru: "Выход AVIF, WebP, JPEG или PNG.", en: "AVIF, WebP, JPEG, or PNG output." },
+      { ru: "Сохранение в AVIF, WebP, JPEG или PNG при поддержке браузера.", en: "Save as AVIF, WebP, JPEG, or PNG when supported by your browser." },
     ],
     limitations: [
-      { ru: "Пакетный resize, presets и увеличение качества изображения не поддерживаются.", en: "Batch resizing, presets, and quality enhancement are not included." },
+      { ru: "Пакетное изменение размера, готовые наборы размеров и улучшение качества не поддерживаются.", en: "Batch resizing, preset dimensions, and quality enhancement are not supported." },
       { ru: "Очень большие размеры могут быть ограничены памятью и Canvas браузера.", en: "Very large dimensions may be limited by browser memory and Canvas limits." },
     ],
     useCases: [
@@ -114,7 +114,7 @@ export const mediaUtilityToolPages = [
       { ru: "Пересчёт высоты по заданной ширине.", en: "Calculating height from a target width." },
     ],
     technicalNotes: [
-      { ru: "Масштабирование выполняется через Canvas drawImage.", en: "Scaling is performed with Canvas drawImage." },
+      { ru: "Изображение масштабируется локально в браузере с помощью Canvas.", en: "The image is scaled locally in your browser using Canvas." },
       { ru: "Увеличение изображения создаёт больше пикселей, но не добавляет исходных деталей.", en: "Upscaling creates more pixels but cannot add original detail." },
     ],
     faq: [
@@ -143,10 +143,10 @@ export const mediaUtilityToolPages = [
     supportedFeatures: [
       { ru: "Целочисленные координаты и размеры.", en: "Integer coordinates and dimensions." },
       { ru: "Автоматическое ограничение области границами изображения.", en: "Automatic clamping to image boundaries." },
-      { ru: "Выход AVIF, WebP, JPEG или PNG.", en: "AVIF, WebP, JPEG, or PNG output." },
+      { ru: "Сохранение в AVIF, WebP, JPEG или PNG при поддержке браузера.", en: "Save as AVIF, WebP, JPEG, or PNG when supported by your browser." },
     ],
     limitations: [
-      { ru: "Нет визуального drag-selection, aspect presets и вращения.", en: "Visual drag selection, aspect presets, and rotation are not included." },
+      { ru: "Выделение мышью, готовые пропорции обрезки и вращение не поддерживаются.", en: "Dragging a selection, preset crop ratios, and rotation are not supported." },
       { ru: "Поддерживается только прямоугольная область.", en: "Only rectangular crops are supported." },
     ],
     useCases: [
@@ -156,7 +156,7 @@ export const mediaUtilityToolPages = [
     ],
     technicalNotes: [
       { ru: "Координата X отсчитывается слева, Y — сверху.", en: "X is measured from the left and Y from the top." },
-      { ru: "Если область выходит за изображение, размеры ограничиваются доступными пикселями.", en: "If the rectangle extends outside the image, dimensions are clamped to available pixels." },
+      { ru: "Если область выходит за изображение, она обрезается по его границам. Обработка выполняется в браузере.", en: "Areas that extend past the image are cropped to its boundaries. Processing runs in your browser." },
     ],
     faq: [
       { question: { ru: "Как указать область, которую нужно оставить?", en: "How do I specify the area to keep?" }, answer: { ru: "X и Y задают расстояние от левого верхнего угла изображения до начала области. Ширина и высота определяют размер сохраняемого фрагмента в пикселях. Укажите эти значения в форме и проверьте результат обрезки.", en: "X and Y give the distance from the image's top-left corner to the crop area's start. Width and height set the saved area's size in pixels. Enter these values and check the cropped result." } },
@@ -193,7 +193,7 @@ export const mediaUtilityToolPages = [
     useCases: [
       { ru: "Проверка отношения 1920×1080 или другого размера.", en: "Checking the ratio of 1920×1080 or another size." },
       { ru: "Расчёт высоты адаптивного блока по ширине.", en: "Calculating responsive block height from width." },
-      { ru: "Подготовка точных размеров для resize.", en: "Preparing exact dimensions for resizing." },
+      { ru: "Расчёт размеров перед масштабированием изображения.", en: "Calculating dimensions before resizing an image." },
     ],
     technicalNotes: [
       { ru: "Например, 1920:1080 сокращается до 16:9.", en: "For example, 1920:1080 reduces to 16:9." },
@@ -210,36 +210,36 @@ export const mediaUtilityToolPages = [
   toolPage({
     slug: "svg-optimizer",
     seoTitle: { ru: "Оптимизация SVG онлайн", en: "SVG Optimizer Online" },
-    metaDescription: { ru: "Оптимизируйте безопасный SVG локально в браузере: удаление комментариев, metadata, XML/DOCTYPE и лишних пробелов без серверной загрузки.", en: "Optimize safe SVG locally in the browser: remove comments, metadata, XML/DOCTYPE, and redundant whitespace without server upload." },
+    metaDescription: { ru: "Удалите из SVG комментарии, метаданные, объявления XML, DOCTYPE и лишние пробелы. Обработка выполняется в браузере без отправки кода на сервер.", en: "Remove SVG comments, metadata, XML declarations, DOCTYPE, and redundant whitespace in your browser without sending the code to a server." },
     h1: { ru: "Оптимизация SVG в браузере", en: "SVG Optimizer in the Browser" },
     lead: { ru: "Вставьте SVG или выберите файл, получите компактный результат и скачайте оптимизированный SVG.", en: "Paste SVG or choose a file, get compact output, and download the optimized SVG." },
     quickFacts: [
-      { ru: "SVG input", en: "SVG input" },
+      { ru: "Код или файл SVG", en: "SVG code or file" },
       { ru: "Без загрузки на сервер", en: "No server upload" },
-      { ru: "Active content blocked", en: "Active content blocked" },
+      { ru: "Блокировка активного содержимого", en: "Active content blocked" },
     ],
     howToSteps: [
       { ru: "Вставьте SVG-код или выберите .svg файл.", en: "Paste SVG code or choose an .svg file." },
-      { ru: "Запустите оптимизацию и проверьте экономию байтов.", en: "Run optimization and check byte savings." },
+      { ru: "Запустите оптимизацию и сравните размер кода.", en: "Run optimization and compare the code size." },
       { ru: "Скачайте оптимизированный SVG.", en: "Download the optimized SVG." },
     ],
     supportedFeatures: [
-      { ru: "Удаление XML declaration, doctype, comments и metadata.", en: "Removal of XML declaration, doctype, comments, and metadata." },
+      { ru: "Удаление объявления XML, DOCTYPE, комментариев и метаданных.", en: "Remove the XML declaration, DOCTYPE, comments, and metadata." },
       { ru: "Сжатие лишних пробелов между тегами.", en: "Whitespace compaction between tags." },
-      { ru: "Блокировка script, inline event handlers, javascript: и foreignObject.", en: "Blocking of script, inline event handlers, javascript:, and foreignObject." },
+      { ru: "Блокировка элементов script и foreignObject, обработчиков событий в атрибутах и адресов javascript:.", en: "Block script and foreignObject elements, inline event handlers, and javascript: URLs." },
     ],
     limitations: [
-      { ru: "Это safe browser optimizer, а не полный SVGO pipeline с плагинами.", en: "This is a safe browser optimizer, not a full SVGO plugin pipeline." },
+      { ru: "Доступна базовая очистка кода; плагины и расширенные преобразования SVGO не поддерживаются.", en: "Basic code cleanup is available; SVGO plugins and advanced transformations are not supported." },
       { ru: "Инструмент не выполняет и не рендерит SVG-код.", en: "The tool does not execute or render SVG code." },
     ],
     useCases: [
       { ru: "Очистка SVG-иконки перед публикацией.", en: "Cleaning an SVG icon before publishing." },
-      { ru: "Удаление editor metadata.", en: "Removing editor metadata." },
-      { ru: "Быстрая проверка безопасного SVG input.", en: "Quick safe SVG input check." },
+      { ru: "Удаление метаданных графического редактора.", en: "Removing graphics-editor metadata." },
+      { ru: "Проверка SVG на блокируемые элементы и обработчики событий.", en: "Checking SVG for blocked elements and event handlers." },
     ],
     technicalNotes: [
-      { ru: "Оптимизация выполняется строковыми преобразованиями без dangerouslySetInnerHTML.", en: "Optimization uses string transforms without dangerouslySetInnerHTML." },
-      { ru: "Активный SVG-контент намеренно блокируется.", en: "Active SVG content is intentionally blocked." },
+      { ru: "Код обрабатывается как текст и не вставляется в страницу как разметка.", en: "The code is processed as text and is not inserted into the page as markup." },
+      { ru: "SVG со скриптами и другим блокируемым активным содержимым отклоняется.", en: "SVG containing scripts or other blocked active content is rejected." },
     ],
     faq: [
       { question: { ru: "Что делает оптимизация SVG?", en: "What does SVG optimisation do?" }, answer: { ru: "Инструмент очищает вставленный код SVG в пределах поддерживаемых правил и показывает результат для копирования. Сравните внешний вид изображения после изменения, прежде чем заменять файл на сайте.", en: "The tool cleans pasted SVG code using its supported rules and shows the result for copying. Compare the image's appearance after the change before replacing the file on your site." } },
@@ -251,36 +251,36 @@ export const mediaUtilityToolPages = [
   toolPage({
     slug: "add-watermark-to-image",
     seoTitle: { ru: "Добавить водяной знак на изображение", en: "Add Watermark to an Image" },
-    metaDescription: { ru: "Добавьте текстовый водяной знак на изображение локально в браузере: позиция, прозрачность, размер и AVIF/WebP/JPEG/PNG output.", en: "Add a text watermark to an image locally in the browser: position, opacity, size, and AVIF/WebP/JPEG/PNG output." },
+    metaDescription: { ru: "Добавьте текстовый водяной знак в браузере. Выберите позицию, прозрачность и размер текста, затем сохраните изображение в поддерживаемом формате.", en: "Add a text watermark in your browser. Choose its position, opacity, and text size, then save the image in a supported output format." },
     h1: { ru: "Добавить водяной знак на изображение", en: "Add a Watermark to an Image" },
     lead: { ru: "Нанесите текстовый водяной знак на одно изображение и скачайте результат без отправки файла на сервер.", en: "Apply a text watermark to one image and download the result without uploading the file to a server." },
     quickFacts: [
-      { ru: "Текстовый watermark", en: "Text watermark" },
+      { ru: "Текстовый водяной знак", en: "Text watermark" },
       { ru: "Позиция и прозрачность", en: "Position and opacity" },
       { ru: "AVIF / WebP / JPEG / PNG", en: "AVIF / WebP / JPEG / PNG" },
     ],
     howToSteps: [
       { ru: "Выберите изображение.", en: "Choose an image." },
-      { ru: "Введите текст, позицию, прозрачность и размер.", en: "Enter text, position, opacity, and size." },
+      { ru: "Введите текст, выберите позицию, прозрачность и размер.", en: "Enter the text and choose its position, opacity, and size." },
       { ru: "Выберите формат результата и скачайте файл.", en: "Select output format and download the file." },
     ],
     supportedFeatures: [
       { ru: "Пять позиций: углы и центр.", en: "Five positions: corners and center." },
       { ru: "Настройка прозрачности и размера текста.", en: "Opacity and text-size controls." },
-      { ru: "Локальный Canvas output в modern raster formats.", en: "Local Canvas output in modern raster formats." },
+      { ru: "Сохранение в AVIF, WebP, JPEG или PNG при поддержке браузера.", en: "Save as AVIF, WebP, JPEG, or PNG when supported by your browser." },
     ],
     limitations: [
-      { ru: "Поддерживается только добавление текстового водяного знака, не удаление watermark.", en: "Only adding a text watermark is supported, not watermark removal." },
-      { ru: "Логотип-watermark, тайлинг и пакетная обработка не включены.", en: "Logo watermark, tiling, and batch processing are not included." },
+      { ru: "Инструмент добавляет текстовый водяной знак. Удаление водяных знаков не поддерживается.", en: "The tool adds text watermarks. Watermark removal is not supported." },
+      { ru: "Логотипы, повторение знака по всему изображению и пакетная обработка не поддерживаются.", en: "Logo watermarks, repeated watermarks, and batch processing are not supported." },
     ],
     useCases: [
       { ru: "Маркировка превью для клиента.", en: "Marking a preview for a client." },
       { ru: "Публикация демо-изображения с подписью.", en: "Publishing a demo image with a label." },
-      { ru: "Быстрое добавление copyright notice.", en: "Quickly adding a copyright notice." },
+      { ru: "Добавление уведомления об авторских правах.", en: "Adding a copyright notice." },
     ],
     technicalNotes: [
-      { ru: "Водяной знак отрисовывается через Canvas text API.", en: "The watermark is drawn through the Canvas text API." },
-      { ru: "Результат является новым raster-файлом и может потерять исходные metadata.", en: "The result is a new raster file and can lose source metadata." },
+      { ru: "Текст наносится на изображение в браузере с помощью Canvas.", en: "Text is drawn onto the image in your browser using Canvas." },
+      { ru: "Создаётся новый растровый файл; исходные метаданные могут не сохраниться.", en: "The result is a new raster image; source metadata may not be preserved." },
     ],
     faq: [
       { question: { ru: "Как добавить подпись на изображение?", en: "How do I add a caption or watermark to an image?" }, answer: { ru: "Выберите своё изображение, введите текст водяного знака и настройте доступные параметры размещения. Проверьте результат и скачайте новый файл. Исходное изображение на устройстве останется прежним.", en: "Choose your image, enter the watermark text, and adjust the available placement settings. Check the result and download the new file. The original on your device remains unchanged." } },
@@ -292,36 +292,36 @@ export const mediaUtilityToolPages = [
   toolPage({
     slug: "image-metadata-viewer",
     seoTitle: { ru: "Просмотр и удаление метаданных изображения", en: "Image Metadata Viewer and Remover" },
-    metaDescription: { ru: "Проверьте EXIF, XMP, ICC, IPTC/JFIF и PNG/WebP/AVIF metadata signals и удалите метаданные локальным перекодированием.", en: "Check EXIF, XMP, ICC, IPTC/JFIF, and PNG/WebP/AVIF metadata signals and remove metadata through local re-encoding." },
+    metaDescription: { ru: "Проверьте наличие блоков EXIF, XMP, ICC, IPTC/JFIF и метаданных PNG, WebP или AVIF. Создайте копию изображения перекодированием в браузере.", en: "Detect EXIF, XMP, ICC, IPTC/JFIF, and PNG, WebP, or AVIF metadata blocks. Create a new image copy by re-encoding it in your browser." },
     h1: { ru: "Просмотр и удаление метаданных изображения", en: "Image Metadata Viewer and Remover" },
-    lead: { ru: "Посмотрите metadata-сигналы в изображении и создайте новую копию через Canvas re-encode без исходных EXIF/XMP chunks.", en: "Inspect image metadata signals and create a new Canvas re-encoded copy without source EXIF/XMP chunks." },
+    lead: { ru: "Проверьте, какие блоки метаданных найдены в файле, и создайте копию изображения без переноса исходных блоков EXIF и XMP.", en: "Check which metadata blocks are present in the file and create a re-encoded copy without carrying over the source EXIF and XMP blocks." },
     quickFacts: [
       { ru: "EXIF / XMP / ICC", en: "EXIF / XMP / ICC" },
-      { ru: "Canvas re-encode", en: "Canvas re-encode" },
+      { ru: "Удаление перекодированием", en: "Remove by re-encoding" },
       { ru: "Локальная обработка", en: "Local processing" },
     ],
     howToSteps: [
       { ru: "Выберите JPEG, PNG, WebP или AVIF.", en: "Choose a JPEG, PNG, WebP, or AVIF file." },
-      { ru: "Проверьте обнаруженные metadata signals.", en: "Review detected metadata signals." },
-      { ru: "Выберите формат и создайте metadata-stripped копию.", en: "Select a format and create a metadata-stripped copy." },
+      { ru: "Посмотрите, какие блоки метаданных обнаружены.", en: "Review the detected metadata blocks." },
+      { ru: "Выберите формат и создайте новую копию перекодированием.", en: "Select a format and re-encode the image to create a new copy." },
     ],
     supportedFeatures: [
-      { ru: "Byte-level detection для EXIF, XMP, ICC, IPTC/JFIF и PNG text chunks.", en: "Byte-level detection for EXIF, XMP, ICC, IPTC/JFIF, and PNG text chunks." },
-      { ru: "Удаление метаданных через локальное raster re-encode.", en: "Metadata removal through local raster re-encoding." },
+      { ru: "Поиск блоков EXIF, XMP, ICC, IPTC/JFIF и текстовых блоков PNG по байтам файла.", en: "Detect EXIF, XMP, ICC, IPTC/JFIF, and PNG text blocks from the file's bytes." },
+      { ru: "Создание копии без исходных метаданных с помощью перекодирования в браузере.", en: "Create a copy without the source metadata by re-encoding in the browser." },
       { ru: "Вывод AVIF, WebP, JPEG или PNG при поддержке браузера.", en: "AVIF, WebP, JPEG, or PNG output when supported by the browser." },
     ],
     limitations: [
-      { ru: "Инструмент не показывает все поля EXIF по именам; он определяет наличие metadata chunks.", en: "The tool does not display every EXIF field by name; it detects metadata chunk presence." },
+      { ru: "Инструмент определяет наличие блоков метаданных, но не расшифровывает все поля EXIF.", en: "The tool detects metadata blocks but does not decode every EXIF field." },
       { ru: "Перекодирование может изменить размер, качество, цветовой профиль и формат файла.", en: "Re-encoding can change file size, quality, color profile, and format." },
     ],
     useCases: [
       { ru: "Проверка, есть ли EXIF/XMP перед публикацией.", en: "Checking whether EXIF/XMP exists before publishing." },
-      { ru: "Создание копии без исходных metadata.", en: "Creating a copy without source metadata." },
+      { ru: "Создание копии без исходных метаданных.", en: "Creating a copy without source metadata." },
       { ru: "Подготовка изображения к веб-публикации.", en: "Preparing an image for web publishing." },
     ],
     technicalNotes: [
-      { ru: "Metadata detection выполняется по сигнатурам байтов, а не через внешние сервисы.", en: "Metadata detection uses byte signatures, not external services." },
-      { ru: "Canvas output обычно не сохраняет исходные metadata chunks.", en: "Canvas output normally does not preserve source metadata chunks." },
+      { ru: "Поиск метаданных выполняется локально по сигнатурам байтов файла.", en: "Metadata is detected locally by examining byte signatures in the file." },
+      { ru: "Перекодирование через Canvas обычно не переносит исходные блоки метаданных. Результат стоит проверить перед публикацией.", en: "Canvas re-encoding normally omits the source metadata blocks. Check the result before publishing." },
     ],
     faq: [
       { question: { ru: "Покажет ли инструмент место, где сделана фотография?", en: "Will this tool show where a photo was taken?" }, answer: { ru: "Он показывает наличие служебных блоков данных в файле, но не расшифровывает каждое поле EXIF и GPS-координаты. По этому отчёту нельзя определить место съёмки или подтвердить отсутствие всех личных данных.", en: "It detects metadata blocks in the file but does not decode every EXIF field or GPS coordinates. This report cannot locate a photo or confirm the absence of all personal information." } },
@@ -332,10 +332,10 @@ export const mediaUtilityToolPages = [
   }),
   toolPage({
     slug: "favicon-generator",
-    seoTitle: { ru: "Генератор PNG favicon и web app icons", en: "PNG Favicon and Web App Icon Generator" },
-    metaDescription: { ru: "Создайте пять PNG favicon и web app icons из центральной квадратной области JPEG, PNG, WebP или AVIF локально в браузере.", en: "Create five PNG favicon and web app icons from the centered square crop of a JPEG, PNG, WebP, or AVIF locally in your browser." },
-    h1: { ru: "Генератор PNG favicon и web app icons", en: "PNG Favicon and Web App Icon Generator" },
-    lead: { ru: "Подготовьте пять PNG-файлов и точные HTML/manifest фрагменты без серверной загрузки исходного изображения.", en: "Prepare five PNG files and exact HTML/manifest snippets without uploading the source image to a server." },
+    seoTitle: { ru: "Генератор PNG-иконок для сайта и веб-приложения", en: "PNG Favicon and Web App Icon Generator" },
+    metaDescription: { ru: "Создайте пять PNG-иконок для сайта и веб-приложения из JPEG, PNG, WebP или AVIF в браузере. Скачайте файлы отдельно или ZIP-архивом с разметкой.", en: "Create five PNG icons for a site or web app from a JPEG, PNG, WebP, or AVIF in your browser. Download individual files or a ZIP with markup." },
+    h1: { ru: "Генератор PNG-иконок для сайта и веб-приложения", en: "PNG Favicon and Web App Icon Generator" },
+    lead: { ru: "Создайте пять PNG-иконок из центральной квадратной области изображения. Скачайте их отдельно или ZIP-архивом вместе с разметкой HTML и манифестом.", en: "Create five PNG icons from a centered square crop of your image. Download them individually or as a ZIP with HTML markup and a manifest." },
     quickFacts: [
       { ru: "5 PNG-файлов", en: "5 PNG files" },
       { ru: "32–512 px", en: "32–512 px" },
@@ -347,22 +347,22 @@ export const mediaUtilityToolPages = [
       { ru: "Создайте файлы, скачайте их и скопируйте фрагменты подключения.", en: "Generate and download the files, then copy the integration snippets." },
     ],
     supportedFeatures: [
-      { ru: "favicon-32x32.png и favicon-48x48.png для favicon.", en: "favicon-32x32.png and favicon-48x48.png for favicon." },
+      { ru: "Иконки сайта favicon-32x32.png и favicon-48x48.png.", en: "Site icons named favicon-32x32.png and favicon-48x48.png." },
       { ru: "PNG 180 × 180 для apple-touch-icon.", en: "180 × 180 PNG for apple-touch-icon." },
-      { ru: "PNG 192 × 192 и 512 × 512 и manifest icons fragment.", en: "192 × 192 and 512 × 512 PNG files plus a manifest icons fragment." },
+      { ru: "PNG 192 × 192 и 512 × 512 с описанием иконок в манифесте.", en: "192 × 192 and 512 × 512 PNG files with manifest icon entries." },
     ],
     limitations: [
-      { ru: "Инструмент не создаёт .ico, ZIP, SVG и maskable padding.", en: "The tool does not create .ico, ZIP, SVG, or maskable padding." },
+      { ru: "Инструмент не создаёт .ico и SVG и не добавляет отступы для иконок с маской (maskable).", en: "The tool does not create .ico or SVG files or add padding for maskable icons." },
       { ru: "Используется только центральная квадратная область; автоматическая установка на сайт не выполняется.", en: "Only a centered square crop is used; the generated assets are not installed on a site automatically." },
     ],
     useCases: [
-      { ru: "Подготовка базового набора PNG favicon.", en: "Preparing a basic PNG favicon set." },
+      { ru: "Подготовка набора PNG-иконок для сайта.", en: "Preparing a set of PNG site icons." },
       { ru: "Создание apple-touch-icon из квадратного логотипа.", en: "Creating an apple-touch-icon from a square logo." },
-      { ru: "Подготовка двух размеров web app icon для manifest.", en: "Preparing two web app icon sizes for a manifest." },
+      { ru: "Подготовка двух размеров иконок для манифеста веб-приложения.", en: "Preparing two web app icon sizes for a manifest." },
     ],
     technicalNotes: [
-      { ru: "Canvas drawImage применяет центральную квадратную обрезку и масштабирование.", en: "Canvas drawImage applies the centered square crop and scaling." },
-      { ru: "Каждый результат кодируется отдельно через Canvas PNG encoder браузера.", en: "Each result is encoded separately through the browser Canvas PNG encoder." },
+      { ru: "Изображение обрезается по центру до квадрата и масштабируется с помощью Canvas.", en: "Canvas crops the image to a centered square and resizes it for each icon." },
+      { ru: "Все PNG-файлы и ZIP-архив создаются в браузере без отправки исходного изображения на сервер.", en: "All PNG files and the ZIP archive are created in your browser without uploading the source image to a server." },
     ],
     faq: [
       { question: { ru: "Как подготовить изображение для иконки сайта?", en: "How should I prepare an image for a site icon?" }, answer: { ru: "Выберите изображение, которое остаётся узнаваемым в маленьком размере. Инструмент подготовит квадратные PNG-иконки из центральной области исходника. Проверьте, что важные детали не обрезались, и скачайте нужные размеры.", en: "Choose an image that remains recognisable at a small size. The tool creates square PNG icons from the centre of the source. Check that important details were not cropped out, then download the sizes you need." } },
@@ -376,10 +376,10 @@ export const mediaUtilityToolPages = [
   }),
   toolPage({
     slug: "qr-code-generator",
-    seoTitle: { ru: "Генератор и чтение QR-кодов", en: "QR Code Workbench" },
+    seoTitle: { ru: "Создание и чтение QR-кодов онлайн", en: "QR Code Generator and Reader" },
     metaDescription: { ru: "Создавайте QR-коды из текста и читайте один QR-код из локального JPEG, PNG, WebP или AVIF без загрузки файла.", en: "Generate QR codes from text and read one QR code from a local JPEG, PNG, WebP, or AVIF without uploading the file." },
-    h1: { ru: "Генератор и чтение QR-кодов", en: "QR Code Workbench" },
-    lead: { ru: "Создайте PNG с выбранным уровнем коррекции или прочитайте текст из локального изображения. Результат не открывается автоматически.", en: "Create a PNG with the selected error-correction level or read text from a local image. Decoded content is never opened automatically." },
+    h1: { ru: "Создание и чтение QR-кодов", en: "QR Code Generator and Reader" },
+    lead: { ru: "Создайте QR-код в формате PNG или прочитайте код из изображения на устройстве. Найденный текст показывается без автоматического перехода по ссылкам.", en: "Create a QR code as a PNG or read one from an image on your device. Decoded text is displayed without opening links automatically." },
     quickFacts: [
       { ru: "До 2 000 символов", en: "Up to 2,000 characters" },
       { ru: "PNG 256–512 px", en: "256–512 px PNG" },
@@ -391,22 +391,22 @@ export const mediaUtilityToolPages = [
       { ru: "Прочитайте результат и проверьте текст перед использованием.", en: "Read the result and inspect the text before using it." },
     ],
     supportedFeatures: [
-      { ru: "Уровни коррекции L, M, Q и H и quiet zone в четыре модуля.", en: "L, M, Q, and H error-correction levels with a four-module quiet zone." },
-      { ru: "UTF-8 text, PNG export и чтение одного QR-кода из raster image.", en: "UTF-8 text, PNG export, and reading one QR code from a raster image." },
+      { ru: "Уровни коррекции ошибок L, M, Q и H и свободное поле шириной в четыре модуля.", en: "L, M, Q, and H error-correction levels with a four-module quiet zone." },
+      { ru: "Кодирование текста UTF-8, сохранение PNG и чтение одного QR-кода из растрового изображения.", en: "Encode UTF-8 text, save a PNG, or read one QR code from a raster image." },
       { ru: "JPEG, PNG, WebP и AVIF при поддержке декодирования браузером.", en: "JPEG, PNG, WebP, and AVIF when the browser can decode the format." },
     ],
     limitations: [
-      { ru: "Камера, пакетное чтение, barcode formats и проверка безопасности URL не поддерживаются.", en: "Camera scanning, batch reading, barcode formats, and URL safety validation are not included." },
-      { ru: "Фактическая ёмкость зависит от текста и уровня коррекции; неподходящее содержимое возвращает ошибку.", en: "Actual capacity depends on content and error correction; content that does not fit returns an error." },
+      { ru: "Сканирование камерой, пакетное чтение, другие форматы штрихкодов и проверка безопасности ссылок не поддерживаются.", en: "Camera scanning, batch reading, other barcode formats, and link safety checks are not supported." },
+      { ru: "Объём текста, который поместится в код, зависит от символов и уровня коррекции. Если текст слишком длинный, появится ошибка.", en: "How much text fits depends on its characters and the error-correction level. Text that exceeds this capacity produces an error." },
     ],
     useCases: [
       { ru: "Передать короткий URL или текст между устройствами.", en: "Transfer a short URL or text between devices." },
-      { ru: "Подготовить QR PNG для ручной вставки в документ.", en: "Prepare a QR PNG for manual placement in a document." },
+      { ru: "Подготовить QR-код в PNG для вставки в документ.", en: "Prepare a QR code as a PNG for a document." },
       { ru: "Проверить содержимое QR-кода из локального скриншота.", en: "Inspect QR content from a local screenshot." },
     ],
     technicalNotes: [
-      { ru: "QR matrix создаётся локально и растеризуется в Canvas PNG с чёрными и белыми модулями.", en: "The QR matrix is generated locally and rasterized into a black-and-white Canvas PNG." },
-      { ru: "Изображение декодируется в RGBA pixels; найденный текст показывается только в read-only textarea.", en: "The image is decoded to RGBA pixels; found text is shown only in a read-only textarea." },
+      { ru: "QR-код создаётся локально в браузере и сохраняется как чёрно-белое PNG-изображение.", en: "The QR code is generated locally in your browser and saved as a black-and-white PNG." },
+      { ru: "При чтении анализируются пиксели изображения. Найденный текст выводится в поле только для чтения.", en: "Reading analyzes the image's pixels. Detected text is displayed in a read-only field." },
     ],
     faq: [
       { question: { ru: "Как создать QR-код для ссылки?", en: "How do I create a QR code for a link?" }, answer: { ru: "Вставьте полный адрес, создайте код и скачайте PNG. Перед публикацией считайте полученное изображение телефоном и проверьте адрес. Генератор кодирует введённый текст и не проверяет, работает ли ссылка.", en: "Paste the full address, generate the code, and download the PNG. Scan the result with a phone and verify the address before publishing. The generator encodes your text; it does not check whether the link works." } },
@@ -420,37 +420,37 @@ export const mediaUtilityToolPages = [
   }),
   toolPage({
     slug: "image-data-uri-converter",
-    seoTitle: { ru: "Data URI и PNG placeholder для изображения", en: "Image Data URI Workbench" },
-    metaDescription: { ru: "Создайте точный Data URI для JPEG, PNG, WebP или AVIF до 1 МиБ и отдельный PNG placeholder до 24 px локально в браузере.", en: "Create an exact Data URI for a JPEG, PNG, WebP, or AVIF up to 1 MiB and a separate PNG placeholder up to 24 px locally in your browser." },
-    h1: { ru: "Data URI и placeholder для изображения", en: "Image Data URI Workbench" },
-    lead: { ru: "Получите точное base64-представление исходного файла и отдельную миниатюрную PNG-заглушку без загрузки изображения на сервер.", en: "Get an exact base64 representation of the source file and a separate tiny PNG placeholder without uploading the image." },
+    seoTitle: { ru: "Data URI и PNG-заглушка для изображения", en: "Image to Data URI and PNG Placeholder" },
+    metaDescription: { ru: "Преобразуйте JPEG, PNG, WebP или AVIF до 1 МиБ в Data URI и создайте отдельную PNG-заглушку до 24 пикселей. Обработка выполняется в браузере.", en: "Convert a JPEG, PNG, WebP, or AVIF up to 1 MiB to a Data URI and create a separate PNG placeholder up to 24 pixels. Processing runs in your browser." },
+    h1: { ru: "Data URI и PNG-заглушка для изображения", en: "Image to Data URI and PNG Placeholder" },
+    lead: { ru: "Получите исходный файл в виде строки base64 и отдельную миниатюрную PNG-заглушку без отправки изображения на сервер.", en: "Get the source file as a base64 string and create a separate tiny PNG placeholder without uploading the image to a server." },
     quickFacts: [
       { ru: "До 1 МиБ", en: "Up to 1 MiB" },
-      { ru: "Placeholder до 24 px", en: "Placeholder up to 24 px" },
+      { ru: "Заглушка до 24 пикселей", en: "Placeholder up to 24 pixels" },
       { ru: "Локальная обработка", en: "Local processing" },
     ],
     howToSteps: [
       { ru: "Выберите один JPEG, PNG, WebP или AVIF.", en: "Choose one JPEG, PNG, WebP, or AVIF file." },
-      { ru: "Создайте точный Data URI исходника и миниатюрный PNG placeholder.", en: "Create the exact source Data URI and a tiny PNG placeholder." },
+      { ru: "Создайте Data URI исходного файла и миниатюрную PNG-заглушку.", en: "Create a Data URI of the source file and a tiny PNG placeholder." },
       { ru: "Скопируйте нужный Data URI или готовое CSS-свойство.", en: "Copy the required Data URI or the ready-to-use CSS declaration." },
     ],
     supportedFeatures: [
-      { ru: "Определение формата по сигнатуре байтов, а не по заявленному MIME type.", en: "Format detection from the byte signature rather than the declared MIME type." },
+      { ru: "Определение формата по сигнатуре байтов файла.", en: "Detect the format from the file's byte signature." },
       { ru: "Точное base64-кодирование всех байтов исходного файла.", en: "Exact base64 encoding of every source-file byte." },
-      { ru: "PNG placeholder с сохранением пропорций и стороной не более 24 px.", en: "An aspect-preserving PNG placeholder with no side larger than 24 px." },
+      { ru: "PNG-заглушка с сохранением пропорций и стороной не более 24 пикселей.", en: "A PNG placeholder that keeps the aspect ratio, with no side larger than 24 pixels." },
     ],
     limitations: [
-      { ru: "Data URI увеличивает текстовый размер и не оптимизирует исходное изображение.", en: "A Data URI increases text size and does not optimize the source image." },
-      { ru: "Placeholder не является BlurHash или рекомендацией по загрузке изображения.", en: "The placeholder is not BlurHash or an image-loading recommendation." },
+      { ru: "Строка Data URI занимает больше места, чем исходные байты файла. Преобразование не сжимает изображение.", en: "A Data URI string takes more space than the original file bytes. Conversion does not compress the image." },
+      { ru: "Заглушка создаётся в PNG, без BlurHash. Способ её загрузки и отображения на сайте нужно выбрать самостоятельно.", en: "The placeholder is a PNG, without BlurHash. You choose how to load and display it on your site." },
     ],
     useCases: [
       { ru: "Встраивание небольшого локального изображения в CSS или HTML.", en: "Embedding a small local image in CSS or HTML." },
-      { ru: "Подготовка отдельной миниатюрной заглушки для ручной интеграции.", en: "Preparing a separate tiny placeholder for manual integration." },
-      { ru: "Проверка фактического MIME type по содержимому файла.", en: "Checking the effective MIME type from file content." },
+      { ru: "Подготовка миниатюрной заглушки для изображения на сайте.", en: "Preparing a tiny placeholder for an image on a site." },
+      { ru: "Определение MIME-типа по содержимому файла.", en: "Identifying the MIME type from the file content." },
     ],
     technicalNotes: [
       { ru: "Исходный Data URI строится непосредственно из прочитанных байтов и показывается только как текст.", en: "The source Data URI is built directly from the read bytes and displayed only as text." },
-      { ru: "Placeholder декодируется и кодируется через Canvas API текущего браузера.", en: "The placeholder is decoded and encoded through the current browser's Canvas API." },
+      { ru: "Миниатюра создаётся из изображения с помощью Canvas в браузере.", en: "The thumbnail is created from the image using Canvas in your browser." },
     ],
     faq: [
       { question: { ru: "Для чего изображение преобразуют в Data URI?", en: "Why convert an image to a Data URI?" }, answer: { ru: "Так изображение можно включить прямо в HTML или CSS одной текстовой строкой без отдельной ссылки на файл. Это удобно для небольших ресурсов. Преобразование в строку не сжимает исходное изображение и может увеличить объём данных.", en: "It lets you embed an image directly in HTML or CSS as one text string instead of linking a separate file. This can be useful for small resources. Converting to text does not compress the image and can increase data size." } },
@@ -465,36 +465,36 @@ export const mediaUtilityToolPages = [
   toolPage({
     slug: "responsive-image-srcset-generator",
     seoTitle: { ru: "Генератор srcset для адаптивных изображений", en: "Responsive Image Srcset Generator" },
-    metaDescription: { ru: "Соберите srcset и экранированный img-фрагмент из существующих HTTPS или root-relative URL и фактической ширины файлов.", en: "Build a srcset and escaped img fragment from existing HTTPS or root-relative URLs and the files' actual intrinsic widths." },
+    metaDescription: { ru: "Соберите srcset и разметку img из готовых адресов и ширины изображений. HTTPS и пути от корня сайта; файлы нужно подготовить заранее.", en: "Build srcset and img markup from existing HTTPS or site-relative image URLs and widths. The tool does not create image files." },
     h1: { ru: "Генератор srcset для адаптивных изображений", en: "Responsive Image Srcset Generator" },
-    lead: { ru: "Упорядочьте до 20 существующих ресурсов по width descriptor и получите текст для безопасного ручного подключения.", en: "Order up to 20 existing resources by width descriptor and get text for safe manual integration." },
+    lead: { ru: "Укажите адреса и ширину до 20 готовых изображений. Получите srcset и разметку img для добавления на сайт.", en: "Enter addresses and widths for up to 20 existing images. Generate a srcset and img markup to add to your site." },
     quickFacts: [
       { ru: "1–20 URL", en: "1–20 URLs" },
-      { ru: "Width descriptors", en: "Width descriptors" },
-      { ru: "HTML escaping", en: "HTML escaping" },
+      { ru: "Ширина в пикселях", en: "Widths in pixels" },
+      { ru: "Экранирование HTML", en: "HTML escaping" },
     ],
     howToSteps: [
-      { ru: "Введите URL и фактическую ширину через разделитель |.", en: "Enter each URL and actual intrinsic width separated by |." },
-      { ru: "Укажите резервный src, sizes и осмысленный alt.", en: "Provide the fallback src, sizes value, and meaningful alt text." },
-      { ru: "Создайте и скопируйте srcset или экранированный img-фрагмент.", en: "Generate and copy the srcset or escaped img fragment." },
+      { ru: "Введите адрес и фактическую ширину каждого файла, разделив их знаком |.", en: "Enter each file's address and actual width, separated by |." },
+      { ru: "Укажите основной адрес src, значение sizes и описание изображения для alt.", en: "Enter a fallback src address, a sizes value, and alt text describing the image." },
+      { ru: "Создайте и скопируйте srcset или HTML-разметку img.", en: "Generate and copy the srcset or img markup." },
     ],
     supportedFeatures: [
-      { ru: "HTTPS и root-relative URL без credentials и fragments.", en: "HTTPS and root-relative URLs without credentials or fragments." },
-      { ru: "Уникальные width descriptors от 1 до 8192.", en: "Unique width descriptors from 1 through 8192." },
-      { ru: "Сортировка кандидатов и экранирование HTML attributes.", en: "Candidate sorting and HTML attribute escaping." },
+      { ru: "Адреса HTTPS и пути от корня сайта без логина, пароля и фрагмента после #.", en: "HTTPS URLs and paths relative to the site root, without embedded credentials or # fragments." },
+      { ru: "Уникальные значения ширины от 1 до 8192 пикселей.", en: "Unique widths from 1 to 8192 pixels." },
+      { ru: "Сортировка изображений по ширине и экранирование значений HTML-атрибутов.", en: "Sort images by width and escape HTML attribute values." },
     ],
     limitations: [
-      { ru: "Инструмент не создаёт, не загружает и не проверяет image-файлы или их размеры.", en: "The tool does not create image files, upload them, or verify their dimensions." },
-      { ru: "Нет picture art direction, DPR descriptors, CDN transforms и полного парсера media conditions.", en: "Picture art direction, DPR descriptors, CDN transforms, and full media-condition parsing are not included." },
+      { ru: "Инструмент не создаёт и не загружает изображения на сайт, не проверяет файлы и их размеры.", en: "The tool does not create image files, upload them, or verify their dimensions." },
+      { ru: "Выбор разных композиций через picture, дескрипторы плотности пикселей и преобразования CDN не поддерживаются. Синтаксис условий в sizes не проверяется.", en: "Art direction with picture, pixel-density descriptors, and CDN transformations are not supported. The syntax of conditions in sizes is not validated." },
     ],
     useCases: [
       { ru: "Подготовка srcset для заранее созданных WebP-файлов.", en: "Preparing a srcset for pre-generated WebP files." },
       { ru: "Сортировка набора изображений по фактической ширине.", en: "Sorting an image set by intrinsic width." },
-      { ru: "Безопасная вставка пользовательского alt в HTML-фрагмент.", en: "Safely placing user-supplied alt text in an HTML fragment." },
+      { ru: "Подготовка разметки img с описанием изображения в alt.", en: "Preparing img markup with an image description in alt." },
     ],
     technicalNotes: [
-      { ru: "URL с raw comma или whitespace блокируются, чтобы не менять грамматику srcset.", en: "URLs containing raw commas or whitespace are blocked so they cannot alter srcset grammar." },
-      { ru: "Результат показывается как текст и не исполняется в DOM.", en: "The result is rendered as text and is not executed in the DOM." },
+      { ru: "Адреса с неэкранированными запятыми или пробельными символами отклоняются: они могут нарушить синтаксис srcset.", en: "URLs with unescaped commas or whitespace are rejected because they can break srcset syntax." },
+      { ru: "Результат показывается как текст и не вставляется в страницу как разметка.", en: "The result is displayed as text and is not inserted into the page as markup." },
     ],
     faq: [
       { question: { ru: "Что нужно подготовить для адаптивного изображения?", en: "What should I prepare for a responsive image?" }, answer: { ru: "Создайте несколько файлов одного изображения с разной шириной. Укажите адрес и реальную ширину каждого файла в форме. Генератор соберёт разметку, по которой браузер сможет выбирать подходящий вариант.", en: "Create several files of the same image at different widths. Enter each file's address and actual width. The generator builds markup that lets a browser select an appropriate version." } },
