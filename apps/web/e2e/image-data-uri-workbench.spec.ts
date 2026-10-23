@@ -20,7 +20,7 @@ test.describe("browser-local image Data URI workbench", () => {
       if (body) requestBodies.push(body);
     });
     await page.goto("/en/tools/image-data-uri-converter");
-    await expect(page.getByRole("heading", { level: 1, name: "Image Data URI Workbench" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Image to Data URI and PNG Placeholder" })).toBeVisible();
     await page.getByLabel("JPEG, PNG, WebP, or AVIF up to 1 MiB").setInputFiles(path.join(process.cwd(), "public", "logo.webp"));
     await page.getByRole("button", { name: "Create Data URIs" }).click();
     await expect(page.getByLabel("Exact source Data URI")).toHaveValue(/^data:image\/webp;base64,/);
