@@ -417,7 +417,10 @@ def claim_run(
 ) -> AIWorkerClaimResponse:
     _no_store(response)
     _authorize_internal(authorization)
-    return AIWorkerClaimResponse(claim=ai.claim_pending())
+    try:
+        return AIWorkerClaimResponse(claim=ai.claim_pending())
+    except AIServiceError as error:
+        raise _error(error) from error
 
 
 @internal_router.post("/runs/{run_id}/renew", response_model=AIWorkerLeaseResponse)

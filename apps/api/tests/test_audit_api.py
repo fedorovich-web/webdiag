@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import sqlite3
 from collections.abc import Callable
 from contextlib import contextmanager
@@ -20,6 +21,24 @@ from webdiag_api.audit.storage import AuditStoreIntegrityError, SqliteAuditStore
 from webdiag_api.config import Settings
 from webdiag_api.main import app
 from webdiag_api.tools.performance import MissingPageSpeedApiKeyError, PageSpeedClient
+
+
+@pytest.mark.parametrize("table,id_column", [("audit_jobs", "job_id"), ("audit_runs", "run_id")])
+def test_audit_store_rejects_duplicate_keys_with_a_matching_digest(tmp_path, table, id_column):
+    database = tmp_path / "audits.sqlite3"
+    store = SqliteAuditStore(str(database))
+    snapshot = build_service(healthy_resource_response, store=store).start_single_url_audit(
+        "https://example.com/"
+    )
+    with sqlite3.connect(database) as connection:
+        payload = connection.execute(f"SELECT payload_json FROM {table}").fetchone()[0]
+        ambiguous = '{"' + id_column + '":"invalid",' + payload[1:]
+        connection.execute(
+            f"UPDATE {table} SET payload_json = ?, payload_sha256 = ?",
+            (ambiguous, hashlib.sha256(ambiguous.encode()).hexdigest()),
+        )
+    with pytest.raises(AuditStoreIntegrityError):
+        store.get_snapshot(snapshot.job.job_id)
 
 SAFE_IP = "93.184.216.34"
 Resolver = Callable[[str, int], list[str]]

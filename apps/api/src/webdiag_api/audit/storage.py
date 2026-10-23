@@ -12,6 +12,7 @@ from pydantic import ValidationError
 
 from webdiag_api.audit.models import AuditJob, AuditRun
 from webdiag_api.audit.redaction import public_audit_job, public_audit_run
+from webdiag_api.json_contract import decode_json_object
 
 if TYPE_CHECKING:
     from webdiag_api.audit.service import AuditSnapshot
@@ -141,8 +142,9 @@ class SqliteAuditStore:
     @staticmethod
     def _verify(payload: str, expected: str) -> None:
         actual = hashlib.sha256(payload.encode("utf-8")).hexdigest()
-        if not hmac.compare_digest(actual, expected):
+        if not expected.isascii() or not hmac.compare_digest(actual, expected):
             raise AuditStoreIntegrityError("persisted audit digest does not match")
+        decode_json_object(payload)
 
     @staticmethod
     def _upsert_job(

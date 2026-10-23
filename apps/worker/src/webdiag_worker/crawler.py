@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-import json
 import os
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
+
+from webdiag_worker.json_contract import decode_json_object
+from webdiag_worker.runtime_config import bounded_int_env
 
 MAX_RESPONSE_BYTES = 1_000_000
 
@@ -39,9 +41,8 @@ def run_one_crawl() -> bool:
         raise RuntimeError("WEBDIAG_CRAWLER_INTERNAL_TOKEN must contain at least 32 characters")
     if any(not 0x21 <= ord(character) <= 0x7E for character in token):
         raise RuntimeError("WEBDIAG_CRAWLER_INTERNAL_TOKEN must contain visible ASCII")
-    timeout = max(
-        60,
-        min(330, int(os.getenv("WEBDIAG_CRAWLER_WORKER_TIMEOUT_SECONDS", "270"))),
+    timeout = bounded_int_env(
+        "WEBDIAG_CRAWLER_WORKER_TIMEOUT_SECONDS", 270, minimum=60, maximum=330,
     )
     request = Request(
         f"{parsed.scheme}://{parsed.netloc}/v1/internal/crawl/run-one",
@@ -55,7 +56,7 @@ def run_one_crawl() -> bool:
         raise RuntimeError("Crawler API request failed") from error
     if len(raw) > MAX_RESPONSE_BYTES:
         raise RuntimeError("Crawler API response is too large")
-    payload = json.loads(raw.decode("utf-8"))
+    payload = decode_json_object(raw, error_message="Crawler API returned invalid JSON")
     if payload.get("contract_version") != "webdiag.crawl.worker.v1":
         raise RuntimeError("Crawler API returned an invalid contract")
     processed = payload.get("processed")

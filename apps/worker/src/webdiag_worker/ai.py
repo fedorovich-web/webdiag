@@ -11,6 +11,9 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
 
+from webdiag_worker.json_contract import decode_json_object
+from webdiag_worker.runtime_config import bounded_int_env
+
 MAX_RESPONSE_BYTES = 1_000_000
 
 
@@ -153,15 +156,11 @@ def _config() -> _WorkerConfig:
         raise RuntimeError(
             "WEBDIAG_AI_INTERNAL_TOKEN must contain at least 32 visible ASCII characters"
         )
-    raw_timeout = os.getenv("WEBDIAG_AI_WORKER_TIMEOUT_SECONDS", "120")
-    try:
-        timeout = int(raw_timeout)
-    except ValueError as error:
-        raise RuntimeError("WEBDIAG_AI_WORKER_TIMEOUT_SECONDS must be an integer") from error
+    timeout = bounded_int_env("WEBDIAG_AI_WORKER_TIMEOUT_SECONDS", 120, minimum=5, maximum=600)
     return _WorkerConfig(
         base_url=f"{parsed.scheme}://{parsed.netloc}",
         token=token,
-        timeout=max(5, min(600, timeout)),
+        timeout=timeout,
     )
 
 
@@ -192,13 +191,7 @@ def _request_json(
         raise RuntimeError("AI internal API request failed") from error
     if len(raw) > MAX_RESPONSE_BYTES:
         raise RuntimeError("AI internal API response is too large")
-    try:
-        parsed = json.loads(raw.decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError) as error:
-        raise RuntimeError("AI internal API returned invalid JSON") from error
-    if not isinstance(parsed, dict):
-        raise RuntimeError("AI internal API returned invalid JSON")
-    return parsed
+    return decode_json_object(raw, error_message="AI internal API returned invalid JSON")
 
 
 class _LeaseHeartbeat:
