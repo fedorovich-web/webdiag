@@ -1,4 +1,6 @@
 import asyncio
+import hashlib
+import sqlite3
 from pathlib import Path
 
 import httpx
@@ -11,9 +13,15 @@ from webdiag_api.accounts.service import AccountService
 from webdiag_api.accounts.storage import SqliteAccountStore
 from webdiag_api.ai.api import get_ai_service
 from webdiag_api.ai.catalog import AIToolCatalog, AIToolDefinition, AIToolState
-from webdiag_api.ai.service import AIService
+from webdiag_api.ai.models import AIRunCreateRequest
+from webdiag_api.ai.service import AIService, AIServiceError
 from webdiag_api.ai.storage import SqliteAIStore
+from webdiag_api.json_contract import decode_json_object
 from webdiag_api.main import app
+
+
+def test_persisted_json_preserves_valid_unicode_pairs():
+    assert decode_json_object('{"text":"\\ud83d\\ude00"}') == {"text": "😀"}
 
 
 def services(tmp_path: Path) -> tuple[AccountService, AIService, str, str, str]:
@@ -270,3 +278,106 @@ def test_run_and_ledger_lists_use_separate_opaque_cursors(ai_context) -> None:
         assert response.status_code == 422
         assert response.headers["cache-control"] == "no-store"
         assert response.json()["detail"]["code"] == "ai_invalid_cursor"
+
+
+@pytest.mark.parametrize(
+    ("output_json", "output_sha256"),
+    [
+        ('{"text":"tampered"}', hashlib.sha256(b'{"text":"trusted"}').hexdigest()),
+        ("{", hashlib.sha256(b"{").hexdigest()),
+        ("[]", hashlib.sha256(b"[]").hexdigest()),
+        (
+            '{"text":"first","text":"second"}',
+            hashlib.sha256(b'{"text":"first","text":"second"}').hexdigest(),
+        ),
+        ('{"value":NaN}', hashlib.sha256(b'{"value":NaN}').hexdigest()),
+        ('{"value":1e309}', hashlib.sha256(b'{"value":1e309}').hexdigest()),
+        (None, hashlib.sha256(b"{}").hexdigest()),
+        ("{}", "é" * 64),
+        ('{"text":"\\ud800"}', hashlib.sha256(b'{"text":"\\ud800"}').hexdigest()),
+    ],
+)
+def test_run_detail_rejects_corrupted_persisted_output(
+    tmp_path: Path,
+    output_json: str | None,
+    output_sha256: str,
+) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    account, ai, token, tool_id, user_id = services(tmp_path)
+    ai.grant_beta_credits(
+        user_id=user_id,
+        quantity=10,
+        reason="output integrity test",
+        correlation_id="output-integrity-grant",
+    )
+    run, _created = ai.create_run(
+        user_id=user_id,
+        request=AIRunCreateRequest(tool_id=tool_id, input={"content": "trusted"}),
+        idempotency_key="output-integrity-run",
+    )
+    with sqlite3.connect(database_path) as connection:
+        connection.execute(
+            """
+            UPDATE ai_runs
+            SET state = 'succeeded', output_json = ?, output_sha256 = ?
+            WHERE id = ?
+            """,
+            (output_json, output_sha256, run.id),
+        )
+    app.dependency_overrides[get_account_service] = lambda: account
+    app.dependency_overrides[get_ai_service] = lambda: ai
+
+    async def get_run() -> httpx.Response:
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app, raise_app_exceptions=False),
+            base_url="http://test",
+            cookies={SESSION_COOKIE_NAME: token},
+        ) as client:
+            return await client.get(f"/v1/account/ai/runs/{run.id}")
+
+    try:
+        response = asyncio.run(get_run())
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 500
+    assert response.headers["cache-control"] == "no-store"
+    assert response.json()["detail"] == {
+        "code": "ai_data_integrity_failed",
+        "message": "AI run data is unavailable.",
+    }
+
+
+@pytest.mark.parametrize("payload,matching_digest", [
+    ('{"content":"tampered"}', False),
+    ('{"content":"first","content":"second"}', True),
+    ('[]', True),
+])
+def test_corrupt_ai_input_cannot_acquire_a_worker_lease(tmp_path, payload, matching_digest):
+    _account, ai, _token, tool_id, user_id = services(tmp_path)
+    ai.grant_beta_credits(
+        user_id=user_id, quantity=10, reason="integrity", correlation_id="integrity-grant"
+    )
+    run, _ = ai.create_run(
+        user_id=user_id,
+        request=AIRunCreateRequest(tool_id=tool_id, input={"content": "trusted"}),
+        idempotency_key="corrupt-input",
+    )
+    database = tmp_path / "accounts.sqlite3"
+    with sqlite3.connect(database) as connection:
+        if matching_digest:
+            connection.execute(
+                "UPDATE ai_runs SET input_json = ?, input_sha256 = ? WHERE id = ?",
+                (payload, hashlib.sha256(payload.encode()).hexdigest(), run.id),
+            )
+        else:
+            connection.execute("UPDATE ai_runs SET input_json = ? WHERE id = ?", (payload, run.id))
+    with pytest.raises(AIServiceError) as unavailable:
+        ai.claim_pending()
+    assert unavailable.value.code == "ai_data_integrity_failed"
+    with sqlite3.connect(database) as connection:
+        assert connection.execute("SELECT COUNT(*) FROM ai_run_attempts").fetchone()[0] == 0
+        state = connection.execute(
+            "SELECT state FROM ai_runs WHERE id = ?", (run.id,)
+        ).fetchone()[0]
+        assert state == "pending"

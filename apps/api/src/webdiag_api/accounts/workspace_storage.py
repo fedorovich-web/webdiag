@@ -18,6 +18,7 @@ from webdiag_api.accounts.workspace_models import (
     SavedAuditPayload,
     SavedAuditSummary,
 )
+from webdiag_api.json_contract import decode_json_object
 
 MAX_PROJECTS_PER_ACCOUNT = 100
 MAX_AUDITS_PER_PROJECT = 100
@@ -91,9 +92,14 @@ class StoredAudit:
 
     def payload(self) -> SavedAuditPayload:
         actual = _payload_digest(self.payload_json)
-        if not self.payload_sha256 or not hmac.compare_digest(actual, self.payload_sha256):
+        if (
+            not self.payload_sha256
+            or not self.payload_sha256.isascii()
+            or not hmac.compare_digest(actual, self.payload_sha256)
+        ):
             raise WorkspaceStoreIntegrityError("persisted saved-audit digest does not match")
         try:
+            decode_json_object(self.payload_json)
             payload = SavedAuditPayload.model_validate_json(self.payload_json, strict=True)
         except (ValidationError, ValueError) as error:
             raise WorkspaceStoreIntegrityError(
