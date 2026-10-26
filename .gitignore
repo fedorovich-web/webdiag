@@ -32,3 +32,13 @@ Thumbs.db
 
 .webdiag/
 scripts/*.png
+account.env
+account.env.*
+!account.env.example
+!.env.production.ai.example
+docs/superpowers/
+docs/quality/
+docs/baseline-v0.1.2/
+docs/WEBDIAG_SENIOR_MASTER_PROMPT*.md
+docs/ai-suite-verification-2026-10-09.md
+docs/provider-repair-verification-2026-10-08.md

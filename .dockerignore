@@ -13,3 +13,7 @@ artifacts
 .env.*
 **/.env
 **/.env.*
+account.env
+account.env.*
+**/account.env
+**/account.env.*
