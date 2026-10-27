@@ -5,12 +5,17 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from html.parser import HTMLParser
 from typing import Annotated, Literal, cast
-from urllib.parse import urljoin, urlsplit
+from urllib.parse import urlsplit
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from webdiag_api.audit.fetcher import SafeFetchConfig, SafeFetchError, SafeHttpFetcher
+from webdiag_api.audit.html_resources import (
+    bounded_optional_text,
+    bounded_text,
+    resolve_http_reference,
+)
 from webdiag_api.security.url_policy import UrlPolicyError
 
 router = APIRouter(tags=["tools"])
@@ -444,7 +449,7 @@ def analyze_csp(
         requested_url=fetched.requested_url,
         final_url=fetched.final_url,
         status_code=fetched.status_code,
-        content_type=fetched.content_type,
+        content_type=bounded_optional_text(fetched.content_type, 300),
         enforced_policy_count=enforced_count,
         report_only_policy_count=report_only_count,
         meta_policy_count=meta_count,
@@ -499,7 +504,7 @@ def analyze_third_party_scripts(
     truncated = script_count > len(items) or len(host_counter) > len(host_groups)
     status_value = _document_analyzer_status(
         status_code=fetched.status_code,
-        content_type=fetched.content_type,
+        content_type=bounded_optional_text(fetched.content_type, 300),
         warning_count=cross_host_count + blocking_count + duplicate_count + issue_count,
     )
 
@@ -507,7 +512,7 @@ def analyze_third_party_scripts(
         requested_url=fetched.requested_url,
         final_url=fetched.final_url,
         status_code=fetched.status_code,
-        content_type=fetched.content_type,
+        content_type=bounded_optional_text(fetched.content_type, 300),
         script_count=script_count,
         inline_script_count=parser.inline_script_count if parser is not None else 0,
         external_script_count=parser.external_script_count if parser is not None else 0,
@@ -532,6 +537,7 @@ def analyze_third_party_scripts(
             cross_host_count=cross_host_count,
             blocking_count=blocking_count,
             duplicate_count=duplicate_count,
+            issue_count=issue_count,
         ),
     )
 
@@ -578,7 +584,7 @@ def analyze_resource_hints(
     )
     status_value = _document_analyzer_status(
         status_code=fetched.status_code,
-        content_type=fetched.content_type,
+        content_type=bounded_optional_text(fetched.content_type, 300),
         warning_count=warning_count,
     )
 
@@ -586,7 +592,7 @@ def analyze_resource_hints(
         requested_url=fetched.requested_url,
         final_url=fetched.final_url,
         status_code=fetched.status_code,
-        content_type=fetched.content_type,
+        content_type=bounded_optional_text(fetched.content_type, 300),
         hint_count=hint_count,
         preconnect_count=preconnect_count,
         dns_prefetch_count=rel_counts["dns-prefetch"],
@@ -915,12 +921,12 @@ def _script_item(
     if not raw_src:
         issues.append("empty script src")
     else:
-        candidate = urljoin(base_url, raw_src)
-        parsed = urlsplit(candidate)
-        if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        candidate = resolve_http_reference(raw_src, base_url)
+        if candidate is None:
             issues.append("script src is not a resolvable http/https URL")
         else:
-            resolved_url = candidate[:2_048]
+            parsed = urlsplit(candidate)
+            resolved_url = candidate
             hostname = parsed.hostname.lower()
             same_host = hostname == page_hostname
             classification = _classify_script_hostname(hostname)
@@ -928,7 +934,7 @@ def _script_item(
     return ScriptItemResponse(
         position=script.position,
         source_kind="external",
-        raw_src=raw_src[:2_048],
+        raw_src=bounded_text(raw_src, 2_048),
         resolved_url=resolved_url,
         hostname=hostname,
         same_host=same_host,
@@ -979,18 +985,20 @@ def _script_recommendation(
     cross_host_count: int,
     blocking_count: int,
     duplicate_count: int,
+    issue_count: int = 0,
 ) -> str:
     if value == "fail":
         return "The target did not return a successful HTML response for bounded script analysis."
-    if not cross_host_count and not blocking_count and not duplicate_count:
+    if not cross_host_count and not blocking_count and not duplicate_count and not issue_count:
         return (
             "No selected script delivery warnings were found in static HTML. Runtime-injected "
             "scripts, ownership, consent state, and network behavior were not inspected."
         )
     return (
         f"Static HTML contains {cross_host_count} cross-host script candidate(s), "
-        f"{blocking_count} parser-blocking candidate(s), and {duplicate_count} duplicate src "
-        "occurrence(s). Confirm necessity, loading strategy, and ownership manually."
+        f"{blocking_count} parser-blocking candidate(s), {duplicate_count} duplicate src "
+        f"occurrence(s), and {issue_count} script URL issue(s). "
+        "Confirm necessity, loading strategy, and ownership manually."
     )
 
 
@@ -1005,12 +1013,12 @@ def _resource_hint_item(
     if not raw_href:
         issues.append("empty hint href")
     else:
-        candidate = urljoin(base_url, raw_href)
-        parsed = urlsplit(candidate)
-        if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        candidate = resolve_http_reference(raw_href, base_url)
+        if candidate is None:
             issues.append("hint href is not a resolvable http/https URL")
         else:
-            resolved_url = candidate[:2_048]
+            parsed = urlsplit(candidate)
+            resolved_url = candidate
             hostname = parsed.hostname.lower()
             same_host = hostname == page_hostname
 
@@ -1026,7 +1034,7 @@ def _resource_hint_item(
     return ResourceHintItemResponse(
         position=hint.position,
         rel=hint.rel,
-        raw_href=raw_href[:2_048] if raw_href else None,
+        raw_href=bounded_text(raw_href, 2_048) if raw_href else None,
         resolved_url=resolved_url,
         hostname=hostname,
         same_host=same_host,

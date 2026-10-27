@@ -26,6 +26,19 @@ def test_public_https_url() -> None:
     assert result.port == 443
 
 
+@pytest.mark.parametrize("prefix", ["https://example.com/", "https://b\u00fccher.example/"])
+def test_rejects_urls_above_public_contract_length_after_normalization(prefix: str) -> None:
+    padding = 2_049 - len(prefix) if prefix.isascii() else 2_048 - len(prefix)
+    with pytest.raises(UrlPolicyError, match="URL exceeds the supported length"):
+        validate_url(prefix + "x" * padding)
+
+
+def test_accepts_url_at_public_contract_length() -> None:
+    prefix = "https://example.com/"
+    value = prefix + "x" * (2_048 - len(prefix))
+    assert validate_url(value).normalized == value
+
+
 @pytest.mark.parametrize(
     ("value", "expected"),
     [

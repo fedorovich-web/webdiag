@@ -13,6 +13,7 @@ from webdiag_api.audit.fetcher import SafeFetchConfig, SafeFetchError, SafeHttpF
 from webdiag_api.audit.html_metadata import parse_html_metadata
 from webdiag_api.audit.html_parser import TemplateAwareHTMLParser
 from webdiag_api.audit.html_resources import (
+    bounded_optional_text,
     bounded_text,
     document_base_url,
     resolve_html_reference,
@@ -628,7 +629,7 @@ def _inspect_image_candidate(
         source=candidate.source,
         format=image_format,
         status_code=fetched.status_code,
-        content_type=fetched.content_type,
+        content_type=bounded_optional_text(fetched.content_type, 240),
         content_length=content_length,
         width_attr=bounded_text(candidate.width, 40) if candidate.width else None,
         height_attr=bounded_text(candidate.height, 40) if candidate.height else None,
@@ -678,7 +679,7 @@ def _inspect_icon(fetcher: SafeHttpFetcher, icon: ParsedIcon) -> FaviconIconResp
         sizes=bounded_text(icon.sizes, 160) if icon.sizes else None,
         declared_type=bounded_text(icon.declared_type, 160) if icon.declared_type else None,
         status_code=fetched.status_code,
-        content_type=fetched.content_type,
+        content_type=bounded_optional_text(fetched.content_type, 240),
         content_length=length,
         format=icon_format,
         recommendation=_icon_recommendation(icon, icon_format, fetched.status_code),

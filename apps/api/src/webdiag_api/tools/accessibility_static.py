@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from webdiag_api.audit.fetcher import SafeFetchConfig, SafeFetchError, SafeHttpFetcher
+from webdiag_api.audit.html_resources import bounded_optional_text
 from webdiag_api.security.url_policy import UrlPolicyError
 
 router = APIRouter(tags=["tools"])
@@ -461,7 +462,7 @@ def analyze_landmark_structure(
         requested_url=fetched.requested_url,
         final_url=fetched.final_url,
         status_code=fetched.status_code,
-        content_type=fetched.content_type,
+        content_type=bounded_optional_text(fetched.content_type, 300),
         landmark_count=len(all_landmarks),
         named_landmark_count=sum(item.accessible_name is not None for item in all_landmarks),
         main_count=counts["main"],
@@ -616,7 +617,7 @@ def analyze_form_accessibility(
         requested_url=fetched.requested_url,
         final_url=fetched.final_url,
         status_code=fetched.status_code,
-        content_type=fetched.content_type,
+        content_type=bounded_optional_text(fetched.content_type, 300),
         form_count=len(all_forms),
         control_count=len(all_controls),
         labeled_control_count=sum(item.accessible_name is not None for item in all_controls),
@@ -693,7 +694,7 @@ def analyze_interactive_accessible_names(
         requested_url=fetched.requested_url,
         final_url=fetched.final_url,
         status_code=fetched.status_code,
-        content_type=fetched.content_type,
+        content_type=bounded_optional_text(fetched.content_type, 300),
         interactive_count=len(all_items),
         link_count=counts["link"],
         button_count=counts["button"],

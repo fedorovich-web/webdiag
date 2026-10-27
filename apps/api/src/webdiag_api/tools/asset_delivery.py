@@ -6,12 +6,17 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from html.parser import HTMLParser
 from typing import Annotated, Literal
-from urllib.parse import urljoin, urlsplit
+from urllib.parse import urlsplit
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from webdiag_api.audit.fetcher import SafeFetchConfig, SafeFetchError, SafeHttpFetcher
+from webdiag_api.audit.html_resources import (
+    bounded_optional_text,
+    bounded_text,
+    resolve_http_reference,
+)
 from webdiag_api.security.url_policy import UrlPolicyError
 
 router = APIRouter(tags=["tools"])
@@ -452,11 +457,27 @@ def _document_base_url(document: _AssetSurfaceParser, *, page_url: str) -> str:
     return _resolve_public_asset(document.base_href, base_url=page_url) or page_url
 
 
+def _document_reference_findings(
+    document: _AssetSurfaceParser, *, page_url: str
+) -> list[AssetFindingResponse]:
+    if document.base_href and _resolve_public_asset(document.base_href, base_url=page_url) is None:
+        return [AssetFindingResponse(
+            id="invalid-document-base",
+            title="Document base URL is invalid or unsupported",
+            severity="medium",
+            value=bounded_text(document.base_href, 500),
+            recommendation=(
+                "Correct the base href. Relative references were resolved against the document URL."
+            ),
+        )]
+    return []
+
+
 def _resolve_public_asset(raw_url: str, *, base_url: str) -> str | None:
-    resolved = urljoin(base_url, raw_url.strip())
-    parts = urlsplit(resolved)
-    if parts.scheme.lower() not in {"http", "https"} or not parts.hostname:
+    resolved = resolve_http_reference(raw_url, base_url)
+    if resolved is None:
         return None
+    parts = urlsplit(resolved)
     return parts._replace(fragment="").geturl()
 
 
@@ -598,7 +619,7 @@ def inspect_javascript_bundle_surface(
             requested_url=page.requested_url,
             final_url=page.final_url,
             status_code=page.status_code,
-            content_type=page.content_type,
+            content_type=bounded_optional_text(page.content_type, 300),
             discovered_script_count=0,
             unique_script_count=0,
             checked_script_count=0,
@@ -680,12 +701,18 @@ def inspect_javascript_bundle_surface(
                 parser_blocking_candidate=parser_blocking,
                 fetch_state=fetch_state,
                 status_code=fetched.status_code if fetched else None,
-                content_type=fetched.content_type if fetched else None,
+                content_type=bounded_optional_text(fetched.content_type, 300) if fetched else None,
                 declared_bytes=(
                     _header_int(fetched.headers, "content-length") if fetched else None
                 ),
-                content_encoding=_content_encoding(fetched.headers) if fetched else None,
-                cache_control=fetched.headers.get("cache-control") if fetched else None,
+                content_encoding=(
+                    bounded_optional_text(_content_encoding(fetched.headers), 120)
+                    if fetched else None
+                ),
+                cache_control=(
+                    bounded_optional_text(fetched.headers.get("cache-control"), 500)
+                    if fetched else None
+                ),
                 max_age_seconds=_cache_max_age(fetched.headers) if fetched else None,
                 immutable_cache=_immutable_cache(fetched.headers) if fetched else False,
                 redirect_count=len(fetched.redirect_chain) if fetched else 0,
@@ -726,7 +753,7 @@ def inspect_javascript_bundle_surface(
             )
         )
     )
-    findings: list[AssetFindingResponse] = []
+    findings = _document_reference_findings(document, page_url=page.final_url)
     if invalid_count:
         _add_finding(
             findings,
@@ -851,7 +878,7 @@ def inspect_javascript_bundle_surface(
         requested_url=page.requested_url,
         final_url=page.final_url,
         status_code=page.status_code,
-        content_type=page.content_type,
+        content_type=bounded_optional_text(page.content_type, 300),
         discovered_script_count=len(resolved_refs) + invalid_count,
         unique_script_count=len(unique_refs),
         checked_script_count=len(assets),
@@ -919,7 +946,7 @@ def inspect_css_delivery(
             requested_url=page.requested_url,
             final_url=page.final_url,
             status_code=page.status_code,
-            content_type=page.content_type,
+            content_type=bounded_optional_text(page.content_type, 300),
             stylesheet_link_count=0,
             unique_stylesheet_count=0,
             checked_stylesheet_count=0,
@@ -1002,15 +1029,21 @@ def inspect_css_delivery(
                 disabled=item.disabled,
                 fetch_state=fetch_state,
                 status_code=fetched.status_code if fetched else None,
-                content_type=fetched.content_type if fetched else None,
+                content_type=bounded_optional_text(fetched.content_type, 300) if fetched else None,
                 declared_bytes=(
                     _header_int(fetched.headers, "content-length") if fetched else None
                 ),
                 sampled_decoded_bytes=(
                     len(css_text.encode("utf-8")) if fetched is not None else None
                 ),
-                content_encoding=_content_encoding(fetched.headers) if fetched else None,
-                cache_control=fetched.headers.get("cache-control") if fetched else None,
+                content_encoding=(
+                    bounded_optional_text(_content_encoding(fetched.headers), 120)
+                    if fetched else None
+                ),
+                cache_control=(
+                    bounded_optional_text(fetched.headers.get("cache-control"), 500)
+                    if fetched else None
+                ),
                 max_age_seconds=_cache_max_age(fetched.headers) if fetched else None,
                 immutable_cache=_immutable_cache(fetched.headers) if fetched else False,
                 import_rule_count=_css_import_count(css_text),
@@ -1067,7 +1100,7 @@ def inspect_css_delivery(
         asset.font_face_rule_count for asset in stylesheets
     )
 
-    findings: list[AssetFindingResponse] = []
+    findings = _document_reference_findings(document, page_url=page.final_url)
     if invalid_count:
         _add_finding(
             findings,
@@ -1186,7 +1219,7 @@ def inspect_css_delivery(
         requested_url=page.requested_url,
         final_url=page.final_url,
         status_code=page.status_code,
-        content_type=page.content_type,
+        content_type=bounded_optional_text(page.content_type, 300),
         stylesheet_link_count=len(resolved_refs) + invalid_count,
         unique_stylesheet_count=len(unique_refs),
         checked_stylesheet_count=len(stylesheets),
@@ -1295,6 +1328,7 @@ def _parse_font_faces(
         display = properties.get("font-display")
         source_value = properties.get("src", "")
         face_sources: list[_FontSource] = []
+        invalid_source = False
         for source_part in _split_css_source_list(source_value):
             local_source_count += len(re.findall(r"\blocal\s*\(", source_part, flags=re.I))
             url_match = re.search(
@@ -1307,6 +1341,7 @@ def _parse_font_faces(
             raw_url = url_match.group(2).strip()
             resolved = _resolve_public_asset(raw_url, base_url=base_url)
             if resolved is None:
+                invalid_source = True
                 continue
             format_match = re.search(
                 r"format\(\s*(['\"]?)(.*?)\1\s*\)",
@@ -1319,6 +1354,8 @@ def _parse_font_faces(
             sources.append(source)
 
         issues: list[str] = []
+        if invalid_source:
+            issues.append("font src contains invalid or unsupported URLs")
         if not family:
             issues.append("font-family is missing")
         if not display:
@@ -1369,7 +1406,7 @@ def inspect_font_loading(
             requested_url=page.requested_url,
             final_url=page.final_url,
             status_code=page.status_code,
-            content_type=page.content_type,
+            content_type=bounded_optional_text(page.content_type, 300),
             stylesheet_count=0,
             checked_stylesheet_count=0,
             font_face_count=0,
@@ -1419,15 +1456,19 @@ def inspect_font_loading(
         face_position += len(faces)
 
     resolved_stylesheets: list[str] = []
+    invalid_stylesheet_count = 0
     seen_stylesheets: set[str] = set()
     for item in document.stylesheets:
         resolved = _resolve_public_asset(item.raw_href, base_url=document_base_url)
-        if resolved is None or resolved in seen_stylesheets:
+        if resolved is None:
+            invalid_stylesheet_count += 1
+            continue
+        if resolved in seen_stylesheets:
             continue
         seen_stylesheets.add(resolved)
         resolved_stylesheets.append(resolved)
 
-    stylesheet_failures = 0
+    stylesheet_failures = invalid_stylesheet_count
     checked_stylesheets = 0
     for stylesheet_url in resolved_stylesheets[:_MAX_FONT_STYLESHEETS]:
         fetch_state, fetched = _fetch_text_asset(
@@ -1487,7 +1528,7 @@ def inspect_font_loading(
         preload_items.append(
             FontPreloadResponse(
                 position=item.position,
-                raw_href=item.raw_href,
+                raw_href=bounded_text(item.raw_href, 2_048),
                 resolved_url=resolved,
                 type_value=item.type_value,
                 crossorigin_present=item.crossorigin_present,
@@ -1528,12 +1569,18 @@ def inspect_font_loading(
                 preloaded=source_url in preload_urls,
                 fetch_state=fetch_state,
                 status_code=fetched.status_code if fetched else None,
-                content_type=fetched.content_type if fetched else None,
+                content_type=bounded_optional_text(fetched.content_type, 300) if fetched else None,
                 declared_bytes=(
                     _header_int(fetched.headers, "content-length") if fetched else None
                 ),
-                content_encoding=_content_encoding(fetched.headers) if fetched else None,
-                cache_control=fetched.headers.get("cache-control") if fetched else None,
+                content_encoding=(
+                    bounded_optional_text(_content_encoding(fetched.headers), 120)
+                    if fetched else None
+                ),
+                cache_control=(
+                    bounded_optional_text(fetched.headers.get("cache-control"), 500)
+                    if fetched else None
+                ),
                 max_age_seconds=_cache_max_age(fetched.headers) if fetched else None,
                 immutable_cache=_immutable_cache(fetched.headers) if fetched else False,
                 redirect_count=len(fetched.redirect_chain) if fetched else 0,
@@ -1589,7 +1636,19 @@ def inspect_font_loading(
         )
     )
 
-    findings: list[AssetFindingResponse] = []
+    findings = _document_reference_findings(document, page_url=page.final_url)
+    invalid_source_face_count = sum(
+        "font src contains invalid or unsupported URLs" in face.issues for face in all_faces
+    )
+    if invalid_source_face_count:
+        _add_finding(
+            findings,
+            finding_id="invalid-font-sources",
+            title="Font faces with invalid or unsupported source URLs were found",
+            severity="medium",
+            value=str(invalid_source_face_count),
+            recommendation="Correct unsupported font URLs; their delivery could not be inspected.",
+        )
     if stylesheet_failures:
         _add_finding(
             findings,
@@ -1737,7 +1796,7 @@ def inspect_font_loading(
         requested_url=page.requested_url,
         final_url=page.final_url,
         status_code=page.status_code,
-        content_type=page.content_type,
+        content_type=bounded_optional_text(page.content_type, 300),
         stylesheet_count=len(resolved_stylesheets),
         checked_stylesheet_count=checked_stylesheets,
         font_face_count=len(all_faces),

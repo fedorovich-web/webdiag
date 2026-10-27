@@ -7,12 +7,17 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from html.parser import HTMLParser
 from typing import Annotated, Literal
-from urllib.parse import urljoin, urlsplit
+from urllib.parse import urlsplit
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from webdiag_api.audit.fetcher import SafeFetchConfig, SafeFetchError, SafeHttpFetcher
+from webdiag_api.audit.html_resources import (
+    bounded_optional_text,
+    bounded_text,
+    resolve_http_reference,
+)
 from webdiag_api.security.url_policy import UrlPolicyError, validate_resolved_addresses
 
 router = APIRouter(tags=["tools"])
@@ -322,6 +327,7 @@ class MixedContentHTMLParser(HTMLParser):
         super().__init__(convert_charrefs=True)
         self.base_url = base_url
         self.candidates: list[MixedContentCandidate] = []
+        self.skipped_reference_count = 0
 
     def handle_starttag(
         self,
@@ -352,8 +358,12 @@ class MixedContentHTMLParser(HTMLParser):
     def _add(self, value: str | None, source: str, *, active: bool) -> None:
         if not value:
             return
-        absolute = urljoin(self.base_url, value.strip())
-        if urlsplit(absolute).scheme in {"http", "https"}:
+        if value.strip().startswith(("data:", "blob:", "javascript:", "#")):
+            return
+        absolute = resolve_http_reference(value, self.base_url)
+        if absolute is None:
+            self.skipped_reference_count += 1
+        else:
             self.candidates.append(
                 MixedContentCandidate(url=absolute, source=source, active=active)
             )
@@ -524,9 +534,9 @@ def inspect_http_compression(
         requested_url=fetched.requested_url,
         final_url=fetched.final_url,
         status_code=fetched.status_code,
-        content_type=content_type,
-        content_encoding=content_encoding,
-        vary=vary,
+        content_type=bounded_optional_text(content_type, 300),
+        content_encoding=bounded_optional_text(content_encoding, 120),
+        vary=bounded_optional_text(vary, 300),
         content_length=content_length,
         compressed=compressed,
         compressible_candidate=compressible_candidate,
@@ -549,7 +559,7 @@ def inspect_http_headers(
 ) -> HttpHeadersAnalyzerResponse:
     fetched = _fetch_or_raise(fetcher, payload.url)
     headers = tuple(
-        HeaderItemResponse(name=name, value=value)
+        HeaderItemResponse(name=bounded_text(name, 120), value=bounded_text(value, 1_000))
         for name, value in sorted(fetched.headers.items())[:120]
     )
     status_value = _headers_status(fetched.status_code, fetched.headers)
@@ -561,11 +571,11 @@ def inspect_http_headers(
         redirect_count=len(fetched.redirect_chain),
         server_header_present="server" in fetched.headers,
         powered_by_header_present="x-powered-by" in fetched.headers,
-        cache_control=fetched.headers.get("cache-control"),
-        content_type=fetched.headers.get("content-type"),
+        cache_control=bounded_optional_text(fetched.headers.get("cache-control"), 500),
+        content_type=bounded_optional_text(fetched.headers.get("content-type"), 300),
         content_length=_parse_content_length(fetched.headers.get("content-length")),
-        content_encoding=fetched.headers.get("content-encoding"),
-        vary=fetched.headers.get("vary"),
+        content_encoding=bounded_optional_text(fetched.headers.get("content-encoding"), 120),
+        vary=bounded_optional_text(fetched.headers.get("vary"), 300),
         headers=headers,
         status=status_value,
         recommendation=_headers_recommendation(status_value, fetched.headers),
@@ -608,7 +618,7 @@ def inspect_http_protocol(
         negotiated_protocol=negotiated_protocol,
         http2_supported=http2_supported,
         http3_advertised=http3_advertised,
-        alt_svc=alt_svc,
+        alt_svc=bounded_optional_text(alt_svc, 500),
         redirect_count=len(fetched.redirect_chain),
         status=status_value,
         recommendation=_http_protocol_recommendation(
@@ -648,10 +658,16 @@ def inspect_cors(
         final_url=fetched.final_url,
         tested_origin=payload.origin,
         status_code=fetched.status_code,
-        allow_origin=allow_origin,
-        allow_methods=fetched.headers.get("access-control-allow-methods"),
-        allow_headers=fetched.headers.get("access-control-allow-headers"),
-        expose_headers=fetched.headers.get("access-control-expose-headers"),
+        allow_origin=bounded_optional_text(allow_origin, 500),
+        allow_methods=bounded_optional_text(
+            fetched.headers.get("access-control-allow-methods"), 500
+        ),
+        allow_headers=bounded_optional_text(
+            fetched.headers.get("access-control-allow-headers"), 500
+        ),
+        expose_headers=bounded_optional_text(
+            fetched.headers.get("access-control-expose-headers"), 500
+        ),
         allow_credentials=allow_credentials,
         vary_origin=vary_origin,
         allows_tested_origin=allows_tested_origin,
@@ -684,7 +700,7 @@ def inspect_server_timing(
         requested_url=fetched.requested_url,
         final_url=fetched.final_url,
         status_code=fetched.status_code,
-        raw_header=raw_header,
+        raw_header=bounded_optional_text(raw_header, 2_000),
         server_timing_present=raw_header is not None,
         metric_count=len(metrics),
         metrics=metrics,
@@ -739,7 +755,9 @@ def inspect_mixed_content(
     fetched = _fetch_or_raise(fetcher, payload.url, read_body=True)
     parsed = urlsplit(fetched.final_url)
     page_scheme = parsed.scheme if parsed.scheme in {"http", "https"} else "http"
-    candidates = _mixed_content_candidates(fetched.body_text, fetched.final_url)
+    candidates, skipped_reference_count = _mixed_content_candidates(
+        fetched.body_text, fetched.final_url
+    )
     mixed = tuple(candidate for candidate in candidates if urlsplit(candidate.url).scheme == "http")
     active_count = sum(candidate.active for candidate in mixed)
     passive_count = len(mixed) - active_count
@@ -749,6 +767,19 @@ def inspect_mixed_content(
         active_count=active_count,
         passive_count=passive_count,
     )
+    if skipped_reference_count and status_value == "pass":
+        status_value = "warning"
+    recommendation = _mixed_content_recommendation(
+        status_value,
+        page_scheme=page_scheme,
+        active_count=active_count,
+        passive_count=passive_count,
+    )
+    if skipped_reference_count:
+        recommendation = (
+            f"Skipped {skipped_reference_count} invalid or unsupported resource reference(s). "
+            "The static scan is incomplete. " + recommendation
+        )
     return MixedContentResponse(
         requested_url=fetched.requested_url,
         final_url=fetched.final_url,
@@ -761,12 +792,7 @@ def inspect_mixed_content(
         sample_items=tuple(_mixed_content_item(candidate) for candidate in mixed[:50]),
         redirect_count=len(fetched.redirect_chain),
         status=status_value,
-        recommendation=_mixed_content_recommendation(
-            status_value,
-            page_scheme=page_scheme,
-            active_count=active_count,
-            passive_count=passive_count,
-        ),
+        recommendation=recommendation,
     )
 
 
@@ -1257,7 +1283,7 @@ def _parse_set_cookie(raw_cookie: str, *, https_page: bool) -> CookieItemRespons
         name=name[:160],
         secure=secure,
         http_only=http_only,
-        same_site=same_site,
+        same_site=bounded_optional_text(same_site, 40),
         domain=str(domain_value)[:300] if isinstance(domain_value, str) else None,
         path=str(path_value)[:300] if isinstance(path_value, str) else None,
         persistent=persistent,
@@ -1306,7 +1332,9 @@ def _srcset_urls(value: str | None) -> list[str]:
     return urls
 
 
-def _mixed_content_candidates(body_text: str, final_url: str) -> list[MixedContentCandidate]:
+def _mixed_content_candidates(
+    body_text: str, final_url: str
+) -> tuple[list[MixedContentCandidate], int]:
     parser = MixedContentHTMLParser(final_url)
     parser.feed(body_text[:600_000])
     seen: set[tuple[str, str]] = set()
@@ -1316,7 +1344,7 @@ def _mixed_content_candidates(body_text: str, final_url: str) -> list[MixedConte
         if key not in seen:
             seen.add(key)
             output.append(candidate)
-    return output
+    return output, parser.skipped_reference_count
 
 
 def _mixed_content_item(candidate: MixedContentCandidate) -> MixedContentItemResponse:

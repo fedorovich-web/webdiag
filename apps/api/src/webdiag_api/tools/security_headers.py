@@ -5,9 +5,10 @@ from typing import Annotated, Literal
 from urllib.parse import urlsplit
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from webdiag_api.audit.fetcher import SafeFetchConfig, SafeFetchError, SafeHttpFetcher
+from webdiag_api.audit.html_resources import bounded_text
 from webdiag_api.security.url_policy import UrlPolicyError
 
 router = APIRouter(prefix="/v1/tools/security-headers", tags=["tools"])
@@ -30,6 +31,11 @@ class SecurityHeaderCheckResponse(BaseModel):
     status: Literal["pass", "warning", "fail"]
     severity: Literal["info", "medium", "high"]
     recommendation: str = Field(min_length=1, max_length=500)
+
+    @field_validator("value", mode="before")
+    @classmethod
+    def bound_header_excerpt(cls, value: str | None) -> str | None:
+        return bounded_text(value, 2_048) if isinstance(value, str) else value
 
 
 class SecurityHeadersResponse(BaseModel):
