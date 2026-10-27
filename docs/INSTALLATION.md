@@ -1,6 +1,6 @@
 # Установка и запуск WebDiag
 
-Эта инструкция относится к исходному архиву `webdiag.zip`. Текущая версия указана в корневом `package.json`.
+Инструкция относится к checkout репозитория или архиву исходников. Текущая версия указана в корневом `package.json`.
 
 ## 1. Нужно ли выполнять `npm init`
 
@@ -79,7 +79,7 @@ cp .env.example .env
 PUBLIC_RELEASE=false
 ```
 
-Публичный режим намеренно блокируется release gate.
+Для публичной сборки используется `PUBLIC_RELEASE=true`; release gate проверяет готовность обычного реестра. Локальное окружение по умолчанию остаётся закрытым для индексации.
 
 ## 5. Установка JavaScript-зависимостей
 
@@ -251,14 +251,20 @@ http://localhost:15672
 
 ### Закрытая AI-бета
 
-Backend содержит строгие контракты 15 AI-инструментов и Vercel AI Gateway adapter, но
-все инструменты остаются `internal`, не имеют цены в кредитах и недоступны
-пользователю. Тринадцать text/vision-analysis contracts закреплены за
-`openai/gpt-6-luna`; генерация и редактирование изображений используют
-отдельные `openai/gpt-image-2` и Image API path. Реальная provider
-evaluation, проверка списанной стоимости и утверждение фиксированной цены не
-выполнялись. Пока в каталоге нет ни одного `ready` tool, worker-команду
-`run_pending_ai` планировать нельзя.
+Backend содержит 15 строгих AI-контрактов; production-каталог активирует 14,
+исключая `ai_faq_studio`. Обычный development-каталог остаётся внутренним.
+Production-каталог выбирается при `WEBDIAG_AI_RUNTIME_ENABLED=true`; выполнение
+также требует настроенного worker и соответствующего провайдера.
+Текст и изображения имеют отдельный выбор адаптера:
+`WEBDIAG_AI_TEXT_PROVIDER` и `WEBDIAG_AI_IMAGE_PROVIDER` принимают `vercel` или
+`cloudflare`. Модели и кредитные цены определены в `ai/catalog.py`; runtime
+проверяет соответствие политики провайдера сохранённому контракту задачи.
+
+Scheduler может обрабатывать AI через внутренний HTTP-контракт без RabbitMQ.
+Альтернативный overlay `docker-compose.production.ai.yml` добавляет Dramatiq
+worker и RabbitMQ, отключая AI-loop scheduler. Используйте только один выбранный
+способ обработки. Настройка credentials и успешные тесты не подтверждают живую
+генерацию, качество результата или списанную стоимость.
 
 API и worker используют отдельный секрет длиной не менее 32 видимых ASCII-символов:
 
@@ -267,8 +273,8 @@ WEBDIAG_AI_INTERNAL_TOKEN
 WEBDIAG_AI_API_INTERNAL_URL
 ```
 
-В production core AI runtime выключен и этот секрет не требуется. При явном
-подключении `docker-compose.production.ai.yml` он обязателен и не может
+В production core AI runtime по умолчанию выключен. При его включении или явном
+подключении `docker-compose.production.ai.yml` секрет обязателен и не может
 совпадать с monitoring, crawler или safety secret. Секреты не добавляются в
 репозиторий и не передаются frontend.
 
@@ -738,8 +744,9 @@ node scripts/run-python.mjs -m webdiag_api.recovery restore --backup-dir recover
 возвращает `0` при успехе, `2` при ожидаемой ошибке recovery и `1` при
 неожиданном внутреннем сбое. Он не печатает traceback или содержимое баз.
 
-Production S3 recovery: непроверено. Реальный backup/restore из production S3
-не выполнялся, и этот CLI не заменяет отдельную проверку объектного хранилища.
+Этот CLI восстанавливает SQLite, но не AI-файлы. Для локального volume или S3
+нужны отдельная резервная копия и проверка восстановления объектов; успешная
+проверка SQLite не подтверждает восстановление файлов.
 
 ## 9. Проверки перед продолжением разработки
 
@@ -777,7 +784,7 @@ npm run lint:python
 npm run verify:local
 ```
 
-`verify:local` включает production build, полный Playwright browser gate, утверждённые screenshot comparisons и Python-проверки. Он автоматически использует `.venv`, но не включает Docker Compose smoke. Visual baselines находятся в `apps/web/e2e/visual.spec.ts-snapshots` и должны обновляться только после ручного просмотра осознанного изменения интерфейса.
+`verify:local` включает production build, полный Playwright browser gate и Python-проверки. Он автоматически использует `.venv`, но не включает Docker Compose smoke. Браузерные тесты сохраняют screenshots для ручного просмотра; автоматических screenshot baselines в текущем checkout нет.
 
 ## 10. Production preview frontend
 
