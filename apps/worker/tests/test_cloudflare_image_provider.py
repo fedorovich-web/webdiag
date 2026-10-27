@@ -160,6 +160,29 @@ def test_timeout_never_retries(tmp_path):
     assert len(sent) == 1
 
 
+def test_revoked_reservation_after_paid_generation_is_unknown_without_retry(tmp_path):
+    sent = []
+    p, _ = provider(
+        tmp_path,
+        lambda r: sent.append(r) or httpx.Response(
+            200,
+            json={
+                "success": True,
+                "result": {"image": base64.b64encode(image_bytes()).decode()},
+            },
+        ),
+    )
+    marker = tmp_path / RESERVATION.object_key
+    marker.parent.mkdir(parents=True)
+    marker.write_bytes(b"")
+
+    with pytest.raises(ProviderOutcomeUnknownError):
+        p.execute(p.prepare(request()))
+
+    assert len(sent) == 1
+    assert marker.read_bytes() == b""
+
+
 @pytest.mark.parametrize(
     "body",
     [

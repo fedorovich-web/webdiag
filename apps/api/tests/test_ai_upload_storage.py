@@ -265,3 +265,40 @@ def test_upload_deletion_state_transitions_are_owned_and_idempotent(tmp_path: Pa
     deleted = store.get_upload(upload_id=upload.id)
     assert deleted.deletion_state == "deleted"
     assert deleted.deleted_at is not None
+
+
+def test_deleting_pending_run_queues_its_bound_upload_for_cleanup(tmp_path: Path) -> None:
+    database_path = tmp_path / "accounts.sqlite3"
+    owner_id = _create_user(database_path, "pending-owner@example.com")
+    other_id = _create_user(database_path, "pending-other@example.com")
+    clock = FakeClock()
+    store = SqliteAIStore(str(database_path), upload_ttl_seconds=10, clock_ns=clock)
+    store.grant_credits(
+        user_id=owner_id, quantity=2, reason="test", correlation_id="grant-pending-delete"
+    )
+    upload = _create_upload(store, user_id=owner_id, upload_id="pending-bound-upload")
+    unrelated = _create_upload(store, user_id=owner_id, upload_id="unrelated-upload")
+    run, _ = _create_run(
+        store, user_id=owner_id, upload_id=upload.id, idempotency_key="pending-delete"
+    )
+
+    assert store.delete_run_for_user(user_id=other_id, run_id=run.id) is None
+    assert store.get_upload(upload_id=upload.id).deletion_state == "available"
+    deleted = store.delete_run_for_user(user_id=owner_id, run_id=run.id)
+
+    assert deleted.state == "deleted"
+    assert [item.id for item in store.list_uploads_pending_deletion(limit=10)] == [upload.id]
+    assert store.get_upload(upload_id=unrelated.id).deletion_state == "available"
+    account = store.get_credit_account(user_id=owner_id)
+    assert (account.available, account.reserved) == (2, 0)
+    assert store.delete_run_for_user(user_id=owner_id, run_id=run.id) == deleted
+    ledger = store.list_ledger(user_id=owner_id, limit=10)
+    assert [entry.operation_type for entry in ledger].count("release") == 1
+    assert store.claim_pending(now=1) is None
+
+    clock.value = upload.expires_at
+    assert {item.id for item in store.list_uploads_pending_deletion(limit=10)} == {
+        upload.id, unrelated.id
+    }
+    assert store.mark_upload_deleted(upload_id=upload.id)
+    assert store.get_upload(upload_id=upload.id).deletion_state == "deleted"

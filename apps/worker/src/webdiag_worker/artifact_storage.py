@@ -13,12 +13,17 @@ from urllib.parse import urlsplit
 
 import boto3
 from botocore.config import Config
+from botocore.exceptions import ClientError
 
 MAX_ARTIFACT_BYTES = 4 * 1024 * 1024
 _PREFIX_PATTERN = re.compile(r"[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*")
 
 
 class ArtifactStorageError(RuntimeError):
+    pass
+
+
+class ArtifactReservationUnavailableError(ArtifactStorageError):
     pass
 
 
@@ -115,7 +120,12 @@ class LocalArtifactStorage:
                 temporary.write(data)
                 temporary.flush()
                 os.fsync(temporary.fileno())
-            os.replace(temporary_path, target)
+            try:
+                os.link(temporary_path, target)
+            except FileExistsError as error:
+                raise ArtifactReservationUnavailableError(
+                    "artifact reservation is no longer writable"
+                ) from error
         finally:
             if temporary_path is not None:
                 temporary_path.unlink(missing_ok=True)
@@ -130,6 +140,8 @@ class LocalArtifactStorage:
             data = artifact.read(max_bytes + 1)
         if len(data) > max_bytes:
             raise ArtifactTooLargeError("artifact exceeds read limit")
+        if not data:
+            raise ArtifactStorageError("artifact is unavailable")
         return data
 
     def delete(self, *, object_key: str) -> None:
@@ -169,14 +181,24 @@ class S3ArtifactStorage:
     ) -> StoredArtifact:
         _validate_put(artifact_id=artifact_id, data=data, media_type=media_type)
         _validate_object_key(object_key, self._prefix)
-        self._client.put_object(
-            ACL="private",
-            Body=data,
-            Bucket=self._bucket,
-            ContentLength=len(data),
-            ContentType=media_type,
-            Key=object_key,
-        )
+        try:
+            self._client.put_object(
+                ACL="private",
+                Body=data,
+                Bucket=self._bucket,
+                ContentLength=len(data),
+                ContentType=media_type,
+                Key=object_key,
+                IfNoneMatch="*",
+            )
+        except ClientError as error:
+            if error.response.get("Error", {}).get("Code") in {
+                "PreconditionFailed", "ConditionalRequestConflict",
+            }:
+                raise ArtifactReservationUnavailableError(
+                    "artifact reservation is no longer writable"
+                ) from error
+            raise
         return _stored_artifact(object_key=object_key, data=data, media_type=media_type)
 
     def read(self, *, object_key: str, max_bytes: int) -> bytes:
@@ -190,7 +212,10 @@ class S3ArtifactStorage:
             content_length = response.get("ContentLength")
             if isinstance(content_length, int) and content_length > max_bytes:
                 raise ArtifactTooLargeError("artifact exceeds read limit")
-            return _read_bounded(body, max_bytes=max_bytes)
+            data = _read_bounded(body, max_bytes=max_bytes)
+            if not data:
+                raise ArtifactStorageError("artifact is unavailable")
+            return data
         finally:
             body.close()
 

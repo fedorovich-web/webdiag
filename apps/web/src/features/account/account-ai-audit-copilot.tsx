@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { accountErrorMessage } from "./account-messages";
 import { createAuditActionPlan, getAIRun } from "./account-ai-client";
@@ -21,6 +21,7 @@ export function AccountAIAuditCopilot({ locale, projectId, auditId }: AccountAIA
   const [pollAttempt, setPollAttempt] = useState(0);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
+  const prepared = useRef<{ fingerprint: string; key: string } | null>(null);
 
   useEffect(() => {
     if (!run || isAIRunTerminal(run.state) || !shouldPollAIRun(run.state, pollAttempt)) return;
@@ -30,6 +31,7 @@ export function AccountAIAuditCopilot({ locale, projectId, auditId }: AccountAIA
         .then((detail) => {
           if (!active) return;
           setRun(detail.run);
+          if (isAIRunTerminal(detail.run.state) && detail.run.state !== "provider_unknown") prepared.current = null;
           setPollAttempt((attempt) => attempt + 1);
         })
         .catch((caught) => {
@@ -49,11 +51,17 @@ export function AccountAIAuditCopilot({ locale, projectId, auditId }: AccountAIA
     setError("");
     setPollAttempt(0);
     try {
+      const input = { locale, projectId, auditId };
+      const fingerprint = JSON.stringify(input);
+      if (prepared.current?.fingerprint !== fingerprint) {
+        prepared.current = { fingerprint, key: newAIIdempotencyKey() };
+      }
       const detail = await createAuditActionPlan(
-        { locale, projectId, auditId },
-        newAIIdempotencyKey(),
+        input,
+        prepared.current.key,
       );
       setRun(detail.run);
+      if (isAIRunTerminal(detail.run.state) && detail.run.state !== "provider_unknown") prepared.current = null;
     } catch (caught) {
       setError(accountErrorMessage(locale, caught));
     } finally {

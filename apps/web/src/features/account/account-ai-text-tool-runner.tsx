@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { accountErrorMessage } from "./account-messages";
 import { createAIRun, getAIRun } from "./account-ai-client";
@@ -101,6 +101,7 @@ export function AccountAITextToolRunner({ locale, toolId, creditPrice, onClose, 
   const [attempt, setAttempt] = useState(0);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
+  const prepared = useRef<{ fingerprint: string; key: string } | null>(null);
 
   useEffect(() => {
     if (!run || isAIRunTerminal(run.state) || !shouldPollAIRun(run.state, attempt)) return;
@@ -109,6 +110,7 @@ export function AccountAITextToolRunner({ locale, toolId, creditPrice, onClose, 
       getAIRun(run.id).then((detail) => {
         if (!active) return;
         setRun(detail.run);
+        if (isAIRunTerminal(detail.run.state) && detail.run.state !== "provider_unknown") prepared.current = null;
         setAttempt((current) => current + 1);
         if (detail.run.state === "succeeded") {
           onSuccess?.();
@@ -129,8 +131,14 @@ export function AccountAITextToolRunner({ locale, toolId, creditPrice, onClose, 
     setRun(null);
     setAttempt(0);
     try {
-      const detail = await createAIRun(toolId, buildInput(locale, toolId, values), newAIIdempotencyKey());
+      const input = buildInput(locale, toolId, values);
+      const fingerprint = JSON.stringify({ toolId, input });
+      if (prepared.current?.fingerprint !== fingerprint) {
+        prepared.current = { fingerprint, key: newAIIdempotencyKey() };
+      }
+      const detail = await createAIRun(toolId, input, prepared.current.key);
       setRun(detail.run);
+      if (isAIRunTerminal(detail.run.state) && detail.run.state !== "provider_unknown") prepared.current = null;
       if (detail.run.state === "succeeded") {
         onSuccess?.();
       }

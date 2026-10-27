@@ -51,18 +51,19 @@ def test_local_storage_put_is_atomic_private_and_digest_checked(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    replacements: list[tuple[Path, Path]] = []
-    real_replace = os.replace
+    publications: list[tuple[Path, Path]] = []
+    real_link = os.link
 
-    def record_replace(source: str | os.PathLike[str], target: str | os.PathLike[str]) -> None:
+    def record_publication(source: str | os.PathLike[str], target: str | os.PathLike[str]) -> None:
         source_path = Path(source)
         target_path = Path(target)
         assert source_path.exists()
+        assert source_path.read_bytes() == b"private"
         assert not target_path.exists()
-        replacements.append((source_path, target_path))
-        real_replace(source_path, target_path)
+        publications.append((source_path, target_path))
+        real_link(source_path, target_path)
 
-    monkeypatch.setattr(os, "replace", record_replace)
+    monkeypatch.setattr(os, "link", record_publication)
     storage = LocalArtifactStorage(tmp_path)
 
     stored = storage.put(artifact_id="not-used-in-key", data=b"private", media_type="image/png")
@@ -72,8 +73,8 @@ def test_local_storage_put_is_atomic_private_and_digest_checked(
     assert stored.byte_size == 7
     assert stored.sha256 == hashlib.sha256(b"private").hexdigest()
     assert storage.read(object_key=stored.object_key, max_bytes=7) == b"private"
-    assert len(replacements) == 1
-    assert replacements[0][0].parent == replacements[0][1].parent
+    assert len(publications) == 1
+    assert publications[0][0].parent == publications[0][1].parent
     assert not list(tmp_path.rglob("*.tmp"))
 
 
@@ -113,6 +114,7 @@ def test_s3_storage_put_is_private_and_uses_exact_content_length() -> None:
             "ContentLength": 5,
             "ContentType": "image/webp",
             "Key": stored.object_key,
+            "IfNoneMatch": "*",
         }
     ]
     assert stored.sha256 == hashlib.sha256(b"image").hexdigest()

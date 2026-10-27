@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import type { Locale } from "@webdiag/tool-registry";
 import { CheckCircle2, AlertCircle, Sparkles, X, ExternalLink } from "lucide-react";
@@ -38,6 +38,7 @@ export function AccountAIAuditPlanRunner({ locale, creditPrice, onClose, onSucce
   const [attempt, setAttempt] = useState<number>(0);
   const [pending, setPending] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
+  const prepared = useRef<{ fingerprint: string; key: string } | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -96,6 +97,7 @@ export function AccountAIAuditPlanRunner({ locale, creditPrice, onClose, onSucce
         .then((detail) => {
           if (!active) return;
           setRun(detail.run);
+          if (isAIRunTerminal(detail.run.state) && detail.run.state !== "provider_unknown") prepared.current = null;
           setAttempt((curr) => curr + 1);
           if (detail.run.state === "succeeded") {
             onSuccess?.();
@@ -133,16 +135,18 @@ export function AccountAIAuditPlanRunner({ locale, creditPrice, onClose, onSucce
     setAttempt(0);
 
     try {
+      const input = { locale, project_id: effectiveProjectId, audit_id: effectiveAuditId };
+      const fingerprint = JSON.stringify(input);
+      if (prepared.current?.fingerprint !== fingerprint) {
+        prepared.current = { fingerprint, key: newAIIdempotencyKey() };
+      }
       const detail = await createAIRun(
         "ai_audit_action_plan",
-        {
-          locale,
-          project_id: effectiveProjectId,
-          audit_id: effectiveAuditId,
-        },
-        newAIIdempotencyKey()
+        input,
+        prepared.current.key,
       );
       setRun(detail.run);
+      if (isAIRunTerminal(detail.run.state) && detail.run.state !== "provider_unknown") prepared.current = null;
       if (detail.run.state === "succeeded") {
         onSuccess?.();
       }

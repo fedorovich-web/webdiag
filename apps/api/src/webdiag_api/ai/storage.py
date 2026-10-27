@@ -119,6 +119,7 @@ class StoredAIRun:
     created_at: int
     updated_at: int
     deleted_at: int | None
+    request_sha256: str | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -405,6 +406,17 @@ class SqliteAIStore:
                     """
                 )
                 connection.execute("BEGIN IMMEDIATE")
+                run_columns = {
+                    str(row[1])
+                    for row in connection.execute("PRAGMA table_info(ai_runs)").fetchall()
+                }
+                if "request_sha256" not in run_columns:
+                    connection.execute(
+                        """
+                        ALTER TABLE ai_runs ADD COLUMN request_sha256 TEXT
+                        CHECK(request_sha256 IS NULL OR length(request_sha256) = 64)
+                        """
+                    )
                 columns = {
                     str(row[1])
                     for row in connection.execute("PRAGMA table_info(ai_run_attempts)").fetchall()
@@ -907,6 +919,7 @@ class SqliteAIStore:
         input_json: str,
         input_sha256: str,
         source_upload_id: str | None = None,
+        request_sha256: str | None = None,
     ) -> tuple[StoredAIRun, bool]:
         self.ensure_schema()
         with self._connect() as connection:
@@ -917,7 +930,13 @@ class SqliteAIStore:
             ).fetchone()
             if existing is not None:
                 run = self._run(existing)
-                if run.tool_id != tool_id or run.input_sha256 != input_sha256:
+                # Legacy rows cannot recover the original public request from a resolved snapshot.
+                same_input = (
+                    hmac.compare_digest(run.request_sha256, request_sha256)
+                    if run.request_sha256 is not None and request_sha256 is not None
+                    else hmac.compare_digest(run.input_sha256, input_sha256)
+                )
+                if run.tool_id != tool_id or not same_input:
                     connection.execute("ROLLBACK")
                     raise AIIdempotencyConflictError
                 bound_upload = connection.execute(
@@ -956,8 +975,9 @@ class SqliteAIStore:
                 """
                 INSERT INTO ai_runs(
                     id, user_id, tool_id, contract_version, model_policy, credit_price,
-                    idempotency_key, input_json, input_sha256, state, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
+                    idempotency_key, input_json, input_sha256, request_sha256,
+                    state, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
                 """,
                 (
                     run_id,
@@ -969,6 +989,7 @@ class SqliteAIStore:
                     idempotency_key,
                     input_json,
                     input_sha256,
+                    request_sha256,
                     now,
                     now,
                 ),
@@ -1010,6 +1031,17 @@ class SqliteAIStore:
             row = connection.execute("SELECT * FROM ai_runs WHERE id = ?", (run_id,)).fetchone()
             connection.execute("COMMIT")
         return self._run(row), True
+
+    def get_run_for_idempotency_key(
+        self, *, user_id: str, idempotency_key: str
+    ) -> StoredAIRun | None:
+        self.ensure_schema()
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM ai_runs WHERE user_id = ? AND idempotency_key = ?",
+                (user_id, idempotency_key),
+            ).fetchone()
+        return self._run(row) if row is not None else None
 
     def get_run_for_user(self, *, user_id: str, run_id: str) -> StoredAIRun | None:
         self.ensure_schema()
@@ -1114,6 +1146,13 @@ class SqliteAIStore:
                 WHERE id = ? AND user_id = ?
                 """,
                 (now, now, run_id, user_id),
+            )
+            connection.execute(
+                """
+                UPDATE ai_uploads SET deletion_state = 'pending'
+                WHERE bound_run_id = ? AND user_id = ? AND deletion_state = 'available'
+                """,
+                (run_id, user_id),
             )
             connection.execute(
                 """
@@ -1969,6 +2008,9 @@ class SqliteAIStore:
             created_at=int(row["created_at"]),
             updated_at=int(row["updated_at"]),
             deleted_at=int(row["deleted_at"]) if row["deleted_at"] is not None else None,
+            request_sha256=(
+                str(row["request_sha256"]) if row["request_sha256"] is not None else None
+            ),
         )
 
     @staticmethod
