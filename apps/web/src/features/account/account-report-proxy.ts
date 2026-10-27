@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { readBoundedBody, RequestBodyError } from "../../lib/request-body";
+import { isAccountWriteAllowed } from "./account-origin";
 import {
   AccountProxyConfigurationError,
   resolveAccountApiBaseUrl,
@@ -44,6 +46,9 @@ export async function proxyAccountReportJson(
     readonly authenticated?: boolean;
   },
 ) {
+  if (options.method !== "GET" && !isAccountWriteAllowed(request)) {
+    return error("account_cross_origin", "Cross-origin request rejected.", 403);
+  }
   let apiBase: string;
   try {
     apiBase = resolveAccountApiBaseUrl();
@@ -54,9 +59,13 @@ export async function proxyAccountReportJson(
 
   let body: string | undefined;
   if (options.body) {
-    body = await request.text();
-    if (new TextEncoder().encode(body).byteLength > MAX_BODY_BYTES) {
-      return error("account_request_too_large", "Request body is too large.", 413);
+    try {
+      body = new TextDecoder().decode(await readBoundedBody(request, MAX_BODY_BYTES));
+    } catch (caught) {
+      if (caught instanceof RequestBodyError) {
+        return error(caught.status === 413 ? "account_request_too_large" : "account_request_body_invalid", caught.message, caught.status);
+      }
+      return error("account_request_body_invalid", "Invalid request body.", 400);
     }
   }
 
@@ -119,10 +128,7 @@ export async function proxyReportHtml(
       cache: "no-store",
       signal: controller.signal,
     });
-    const bytes = new Uint8Array(await upstream.arrayBuffer());
-    if (bytes.byteLength > MAX_HTML_BYTES) {
-      return error("account_report_too_large", "Report artifact is too large.", 502);
-    }
+    const bytes = await readBoundedBody(upstream, MAX_HTML_BYTES);
     return new NextResponse(bytes, {
       status: upstream.status,
       headers: {
@@ -140,7 +146,11 @@ export async function proxyReportHtml(
       },
     });
   } catch (caught) {
-    const timedOut = caught instanceof Error && caught.name === "AbortError";
+    if (caught instanceof RequestBodyError && caught.status === 413) {
+      return error("account_report_too_large", "Report artifact is too large.", 502);
+    }
+    const timedOut = (caught instanceof RequestBodyError && caught.status === 408)
+      || (caught instanceof Error && caught.name === "AbortError");
     return error(
       timedOut ? "account_api_timeout" : "account_api_unavailable",
       timedOut ? "Account API request timed out." : "Account API is unavailable.",

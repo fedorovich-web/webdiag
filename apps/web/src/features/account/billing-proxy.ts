@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { readBoundedBody, RequestBodyError } from "../../lib/request-body";
 import {
   resolveAccountApiBaseUrl,
   resolveRequestSessionCookie,
@@ -54,30 +55,7 @@ export async function proxyBilling(
   try {
     let body: Uint8Array | undefined;
     if (action !== "status") {
-      if (Number(request.headers.get("content-length")) > MAX_BODY)
-        return error("billing_request_too_large", "Request is too large.", 413);
-      const reader = request.body?.getReader();
-      const chunks: Uint8Array[] = [];
-      let length = 0;
-      if (reader) {
-        try {
-          for (;;) {
-            const chunk = await reader.read();
-            if (chunk.done) break;
-            length += chunk.value.byteLength;
-            if (length > MAX_BODY)
-              return error(
-                "billing_request_too_large",
-                "Request is too large.",
-                413,
-              );
-            chunks.push(chunk.value);
-          }
-        } finally {
-          await reader.cancel();
-        }
-      }
-      body = Buffer.concat(chunks);
+      body = await readBoundedBody(request, MAX_BODY);
     }
     const upstream = await fetch(
       `${resolveAccountApiBaseUrl()}/v1/billing/${action}`,
@@ -139,7 +117,12 @@ export async function proxyBilling(
       }
     }
     return response;
-  } catch {
+  } catch (caught) {
+    if (caught instanceof RequestBodyError) {
+      return caught.status === 413
+        ? error("billing_request_too_large", "Request is too large.", 413)
+        : error("billing_request_timeout", "Request body timed out.", 408);
+    }
     return error(
       "billing_upstream_error",
       "Payment service is unavailable.",

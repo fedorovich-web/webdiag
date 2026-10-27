@@ -1,3 +1,4 @@
+import { readToolJsonBody } from "../../lib/tool-request-body";
 import type { NextRequest } from "next/server";
 import { isToolErrorPayload, parsePageUrlInput } from "./client-delivery-tool-contract";
 import type { AccessibilityStaticResponse } from "./accessibility-static-tool-contract";
@@ -22,7 +23,7 @@ interface ProxyOptions {
 
 export function createAccessibilityStaticProxy(options: ProxyOptions) {
   return async function POST(request: NextRequest) {
-    const payload: unknown = await request.json().catch(() => null);
+    const payload: unknown = await readToolJsonBody(request);
     if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
       return json({ detail: { code: "tool_bad_request", message: "Request body must be a JSON object." } }, 400);
     }

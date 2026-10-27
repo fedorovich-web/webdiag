@@ -1,3 +1,4 @@
+import { readToolJsonBody } from "../../lib/tool-request-body";
 import type { NextRequest } from "next/server";
 import {
   isToolErrorPayload,
@@ -65,7 +66,7 @@ function sanitizePayload(options: ProxyOptions, payload: unknown): Record<string
 
 export function createNetworkIntelligenceProxy(options: ProxyOptions) {
   return async function POST(request: NextRequest) {
-    const payload: unknown = await request.json().catch(() => null);
+    const payload: unknown = await readToolJsonBody(request);
     const sanitized = sanitizePayload(options, payload);
     if (!sanitized) {
       return json(
