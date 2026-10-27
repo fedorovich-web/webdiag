@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from urllib.parse import SplitResult, urlsplit
 
 ALLOWED_SCHEMES = frozenset({"http", "https"})
+MAX_URL_LENGTH = 2_048
 BLOCKED_HOST_SUFFIXES = (".localhost", ".local", ".internal", ".home.arpa")
 
 class UrlPolicyError(ValueError):
@@ -54,7 +55,7 @@ def _has_valid_dns_labels(hostname: str) -> bool:
     )
 
 
-def _canonicalize_hostname(
+def canonicalize_hostname(
     hostname: str,
 ) -> tuple[str, ipaddress.IPv4Address | ipaddress.IPv6Address | None]:
     try:
@@ -74,6 +75,8 @@ def validate_url(raw: str) -> ValidatedUrl:
     value = raw.strip()
     if not value:
         raise UrlPolicyError("URL is required.")
+    if len(value) > MAX_URL_LENGTH:
+        raise UrlPolicyError("URL exceeds the supported length.")
     try:
         parsed: SplitResult = urlsplit(value)
     except ValueError as exc:
@@ -84,7 +87,7 @@ def validate_url(raw: str) -> ValidatedUrl:
     if parsed.username is not None or parsed.password is not None:
         raise UrlPolicyError("Credentials in URLs are not allowed.")
     raw_hostname = (parsed.hostname or "").rstrip(".")
-    hostname, address = _canonicalize_hostname(raw_hostname)
+    hostname, address = canonicalize_hostname(raw_hostname)
     if not hostname:
         raise UrlPolicyError("Hostname is required.")
     if hostname == "localhost" or hostname.endswith(BLOCKED_HOST_SUFFIXES):
@@ -102,6 +105,8 @@ def validate_url(raw: str) -> ValidatedUrl:
     authority_hostname = f"[{hostname}]" if isinstance(address, ipaddress.IPv6Address) else hostname
     netloc = authority_hostname if port == default_port else f"{authority_hostname}:{port}"
     normalized = parsed._replace(scheme=scheme, netloc=netloc).geturl()
+    if len(normalized) > MAX_URL_LENGTH:
+        raise UrlPolicyError("URL exceeds the supported length.")
     return ValidatedUrl(
         original=raw,
         normalized=normalized,

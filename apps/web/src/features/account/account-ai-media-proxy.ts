@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { readBoundedBody, RequestBodyError } from "../../lib/request-body";
 import {
   AccountProxyConfigurationError,
   resolveAccountApiBaseUrl,
@@ -8,6 +9,7 @@ import { canonicalAIResourceId } from "./account-ai-restored-contract";
 import { isAccountWriteAllowed } from "./account-origin";
 
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
+const MAX_JSON_BYTES = 16_384;
 const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
 function error(code: string, message: string, status: number): Response {
   return Response.json(
@@ -101,7 +103,9 @@ async function forward(request: NextRequest, path: string, upload: boolean): Pro
       signal: controller.signal,
     });
     if (upload || !upstream.ok) {
-      const payload: unknown = await upstream.json().catch(() => null);
+      const bytes = await readBoundedBody(upstream, MAX_JSON_BYTES);
+      let payload: unknown = null;
+      try { payload = JSON.parse(new TextDecoder().decode(bytes)); } catch { /* Preserve the invalid-JSON response contract. */ }
       return Response.json(payload, {
         status: upstream.status,
         headers: { "cache-control": "no-store" },
@@ -125,7 +129,11 @@ async function forward(request: NextRequest, path: string, upload: boolean): Pro
       },
     });
   } catch (caught) {
-    const timedOut = controller.signal.aborted || (caught instanceof Error && caught.name === "AbortError");
+    if (caught instanceof RequestBodyError && caught.status === 413) {
+      return error("account_api_invalid_response", "Invalid private image response.", 502);
+    }
+    const timedOut = controller.signal.aborted || (caught instanceof Error && caught.name === "AbortError")
+      || (caught instanceof RequestBodyError && caught.status === 408);
     return error(
       timedOut ? "account_api_timeout" : "account_api_unavailable",
       timedOut ? "Private image request timed out." : "Private image request failed.",

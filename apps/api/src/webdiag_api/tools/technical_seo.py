@@ -17,6 +17,11 @@ from webdiag_api.audit.fetcher import (
     SafeHttpFetcher,
 )
 from webdiag_api.audit.html_metadata import parse_html_metadata, x_robots_has_directive
+from webdiag_api.audit.html_resources import (
+    bounded_optional_text,
+    bounded_text,
+    resolve_http_reference,
+)
 from webdiag_api.audit.robots import analyze_robots_txt
 from webdiag_api.security.url_policy import UrlPolicyError
 
@@ -234,10 +239,10 @@ class _ResponseCollector:
         self._seen.add(key)
         self.items.append(
             TechnologySignalResponse(
-                name=name,
+                name=bounded_text(name, 120),
                 category=category,
                 confidence=confidence,
-                evidence=evidence[:240],
+                evidence=bounded_text(evidence, 240),
             )
         )
 
@@ -261,9 +266,7 @@ def inspect_indexability(
     metadata = parse_html_metadata(fetched.body_text)
     x_robots = fetched.headers.get("x-robots-tag", "")
     robots_status, robots_allowed = _robots_permission(fetcher, fetched.final_url)
-    resolved_canonical_url = (
-        urljoin(fetched.final_url, metadata.canonical_url) if metadata.canonical_url else None
-    )
+    resolved_canonical_url = resolve_http_reference(metadata.canonical_url, fetched.final_url)
     canonical_matches_final = (
         _normalize_url(resolved_canonical_url) == _normalize_url(fetched.final_url)
         if resolved_canonical_url
@@ -291,7 +294,9 @@ def inspect_indexability(
         meta_robots_nofollow=metadata.has_nofollow,
         x_robots_tag_noindex=x_robots_has_directive(x_robots, "noindex"),
         x_robots_tag_nofollow=x_robots_has_directive(x_robots, "nofollow"),
-        canonical_url=metadata.canonical_url,
+        canonical_url=(
+            bounded_text(metadata.canonical_url, 2_048) if metadata.canonical_url else None
+        ),
         resolved_canonical_url=resolved_canonical_url,
         canonical_matches_final_url=canonical_matches_final,
         indexable_candidate=indexable_candidate,
@@ -307,9 +312,11 @@ def inspect_hreflang(
 ) -> HreflangResponse:
     fetched = _fetch_html_or_raise(fetcher, payload.url)
     parsed = _parse_technical_html(fetched.body_text)
-    alternates = tuple(
+    alternate_results = tuple(
         _hreflang_response(link, base_url=fetched.final_url) for link in parsed.hreflang_links
     )
+    alternates = tuple(item for item in alternate_results if item is not None)
+    skipped_count = len(alternate_results) - len(alternates)
     language_counts: dict[str, int] = {}
     for item in alternates:
         key = item.hreflang.lower()
@@ -325,14 +332,17 @@ def inspect_hreflang(
         final_url=fetched.final_url,
         status_code=fetched.status_code,
         html_lang=parsed.html_lang,
-        total_alternates=len(alternates),
+        total_alternates=len(alternate_results),
         valid_alternate_count=valid_count,
-        invalid_alternate_count=len(alternates) - valid_count,
+        invalid_alternate_count=len(alternate_results) - valid_count,
         duplicate_hreflang_count=duplicate_count,
         has_x_default=has_x_default,
         has_self_reference=self_reference,
         alternates=alternates,
-        recommendation=_hreflang_recommendation(
+        recommendation=(
+            f"Skipped {skipped_count} invalid or unsupported hreflang URL(s). "
+            if skipped_count else ""
+        ) + _hreflang_recommendation(
             alternates=alternates,
             duplicate_count=duplicate_count,
             has_x_default=has_x_default,
@@ -356,8 +366,8 @@ def inspect_technology(
         status_code=fetched.status_code,
         detected_count=len(technologies),
         technologies=technologies,
-        server_header=fetched.headers.get("server"),
-        powered_by_header=fetched.headers.get("x-powered-by"),
+        server_header=bounded_optional_text(fetched.headers.get("server"), 240),
+        powered_by_header=bounded_optional_text(fetched.headers.get("x-powered-by"), 240),
         generator_meta=parsed.generator,
         recommendation=_technology_recommendation(technologies),
     )
@@ -474,6 +484,9 @@ def _indexability_signals(
     if not canonical_present:
         canonical_status = "warning"
         canonical_message = "Canonical link is missing."
+    elif canonical_matches_final is None:
+        canonical_status = "warning"
+        canonical_message = "Canonical URL is invalid or unsupported and could not be compared."
     elif canonical_matches_final is False:
         canonical_status = "warning"
         canonical_message = "Canonical points to a different URL."
@@ -504,8 +517,12 @@ def _indexability_recommendation(signals: list[IndexabilitySignalResponse]) -> s
     return "The static HTML indexability signals look suitable for an indexable page."
 
 
-def _hreflang_response(link: HreflangLink, *, base_url: str) -> HreflangAlternateResponse:
-    resolved = urljoin(base_url, link.href)
+def _hreflang_response(
+    link: HreflangLink, *, base_url: str
+) -> HreflangAlternateResponse | None:
+    resolved = resolve_http_reference(link.href, base_url)
+    if resolved is None:
+        return None
     hreflang = link.hreflang.strip()
     return HreflangAlternateResponse(
         hreflang=hreflang,

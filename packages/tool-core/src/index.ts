@@ -261,16 +261,33 @@ export function optimizeSvgText(value: string): SvgOptimizationResult {
     throw new TypeError("SVG contains active content and cannot be optimized safely in this browser tool.");
   }
 
-  const optimized = source
-    .replace(/<\?xml[\s\S]*?\?>/gi, "")
-    .replace(/<!DOCTYPE[\s\S]*?>/gi, "")
-    .replace(/<!--[\s\S]*?-->/g, "")
-    .replace(/<metadata\b[\s\S]*?<\/metadata>/gi, "")
-    .replace(/\s(?:version|data-name)=("[^"]*"|'[^']*')/gi, "")
-    .replace(/\s+/g, " ")
-    .replace(/>\s+</g, "><")
-    .replace(/\s*=\s*/g, "=")
-    .trim();
+  // Tokenize before removing editor markup: CDATA, text, and attribute values
+  // can contain the same characters as markup and must remain byte-for-byte intact.
+  const tokens = source.match(/<!\[CDATA\[[\s\S]*?\]\]>|<!--[\s\S]*?-->|<(?:"[^"]*"|'[^']*'|[^'">])*?>|[^<]+|</g) ?? [];
+  const preserveWhitespace: boolean[] = [];
+  let metadataDepth = 0;
+  const optimized = tokens.map((token) => {
+    if (token.startsWith("<![CDATA[")) return metadataDepth ? "" : token;
+    if (/^<!--|^<\?xml\b|^<!DOCTYPE\b/i.test(token)) return "";
+    if (!token.startsWith("<")) {
+      if (metadataDepth || (!preserveWhitespace.at(-1) && /^\s+$/.test(token))) return "";
+      return token;
+    }
+    const closing = /^<\//.test(token);
+    const selfClosing = /\/\s*>$/.test(token);
+    const name = /^<\/?([^\s/>]+)/.exec(token)?.[1]?.toLowerCase();
+    if (name === "metadata" && !closing && !selfClosing) metadataDepth += 1;
+    const inMetadata = metadataDepth > 0 || name === "metadata";
+    if (name === "metadata" && closing) metadataDepth = Math.max(0, metadataDepth - 1);
+    if (closing) preserveWhitespace.pop();
+    else if (!selfClosing) {
+      preserveWhitespace.push(Boolean(preserveWhitespace.at(-1)) || name === "text" || name === "tspan" || name === "textpath" || /\bxml:space\s*=\s*(["'])preserve\1/.test(token));
+    }
+    if (inMetadata) return "";
+    // Only normalize unquoted tag syntax, never attribute contents.
+    return token.replace(/(\s+)([^\s=/>]+)(\s*=\s*)("[^"]*"|'[^']*')/g, (_match, _space, attribute: string, _equals, value: string) =>
+      /^(?:version|data-name)$/i.test(attribute) ? "" : ` ${attribute}=${value}`);
+  }).join("").trim();
 
   const sourceBytes = new TextEncoder().encode(source).byteLength;
   const outputBytes = new TextEncoder().encode(optimized).byteLength;

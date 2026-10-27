@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from urllib.parse import urlsplit, urlunsplit
 from xml.etree import ElementTree
 
+from webdiag_api.audit.html_resources import bounded_text
+
 
 @dataclass(frozen=True, slots=True)
 class SitemapXmlSummary:
@@ -41,7 +43,10 @@ def parse_sitemap_xml(
 
     try:
         root = ElementTree.fromstring(body_text.encode("utf-8"))
-    except ElementTree.ParseError as exc:
+        kind = root.tag.rsplit("}", maxsplit=1)[-1]
+        if kind not in {"urlset", "sitemapindex"}:
+            raise ValueError("Sitemap root must be urlset or sitemapindex.")
+    except (ElementTree.ParseError, ValueError) as exc:
         return SitemapXmlSummary(
             sitemap_url=sitemap_url,
             status_code=status_code,
@@ -53,17 +58,36 @@ def parse_sitemap_xml(
             parse_error=str(exc),
         )
 
-    loc_urls = tuple(_loc_text for _loc_text in _iter_loc_text(root) if _loc_text)
+    loc_urls: list[str] = []
+    normalized_locs: list[str] = []
+    invalid_location_count = 0
+    first_location_error: str | None = None
+    for loc in _iter_loc_text(root):
+        if not loc:
+            continue
+        try:
+            normalized = _normalize_sitemap_location(loc)
+        except ValueError as exc:
+            invalid_location_count += 1
+            if first_location_error is None:
+                first_location_error = bounded_text(str(exc), 300)
+            continue
+        loc_urls.append(loc)
+        normalized_locs.append(normalized)
+
     normalized_target = _normalize_url_for_comparison(target_url)
+    target_found = normalized_target in normalized_locs
     return SitemapXmlSummary(
         sitemap_url=sitemap_url,
         status_code=status_code,
         available=True,
-        valid_xml=True,
+        valid_xml=invalid_location_count == 0,
         url_count=len(loc_urls),
-        loc_urls=loc_urls,
-        contains_target=any(
-            _normalize_url_for_comparison(loc_url) == normalized_target for loc_url in loc_urls
+        loc_urls=tuple(loc_urls),
+        contains_target=target_found if target_found or not invalid_location_count else None,
+        parse_error=(
+            f"Skipped {invalid_location_count} invalid sitemap location(s). {first_location_error}"
+            if invalid_location_count else None
         ),
     )
 
@@ -74,6 +98,18 @@ def _iter_loc_text(root: ElementTree.Element) -> list[str]:
         if element.tag.rsplit("}", maxsplit=1)[-1] == "loc" and element.text:
             values.append(element.text.strip())
     return values
+
+
+def _normalize_sitemap_location(raw_url: str) -> str:
+    if len(raw_url) > 2_048:
+        raise ValueError("Sitemap location exceeds the supported URL length.")
+    parsed = urlsplit(raw_url)
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        raise ValueError("Sitemap location must be an absolute HTTP or HTTPS URL.")
+    # Accessing port validates malformed/non-numeric and out-of-range values.
+    if parsed.port is not None and parsed.port == 0:
+        raise ValueError("Sitemap location port is invalid.")
+    return _normalize_url_for_comparison(raw_url)
 
 
 def _normalize_url_for_comparison(raw_url: str) -> str:

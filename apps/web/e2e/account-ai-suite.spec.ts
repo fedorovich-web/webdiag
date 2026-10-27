@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { AI_TOOL_IDS } from "../src/features/account/account-ai-contract";
 import { ACTIVE_AI_CATALOG_TOOLS, isActiveAIToolId } from "../src/features/tools/ai-tools-data";
-import { session, emptyOverview } from "./account-fixtures";
+import { session, emptyOverview, firstProject } from "./account-fixtures";
 
 const runId = "11111111-1111-4111-8111-111111111111";
 const artifactId = "22222222-2222-4222-8222-222222222222";
@@ -51,6 +51,75 @@ test.beforeEach(async ({ page }) => {
     }),
   );
 });
+
+for (const runner of ["text", "audit", "copilot"] as const) {
+  test(`${runner} manual retry after response loss reuses the reservation key`, async ({ page }) => {
+    const requests: { key: string; input: unknown }[] = [];
+    const reservations = new Set<string>();
+    await page.route("**/api/account/ai/runs", async (route) => {
+      if (route.request().method() !== "POST") return route.fallback();
+      const key = route.request().headers()["idempotency-key"]!;
+      expect(key).toMatch(/^[0-9a-f-]{36}$/);
+      requests.push({ key, input: route.request().postDataJSON() });
+      reservations.add(key);
+      // Model an accepted run whose response was lost before reaching the browser.
+      await route.abort("failed");
+    });
+
+    const firstAuditId = "33333333-3333-4333-8333-333333333333";
+    const nextAuditId = "44444444-4444-4444-8444-444444444444";
+    if (runner === "copilot") {
+      await page.route("**/api/account/projects", (route) => route.fulfill({ json: {
+        contract_version: "webdiag.account.project_list.v1", projects: [firstProject],
+      } }));
+      await page.route(`**/api/account/projects/${firstProject.id}/audits/*?locale=en`, (route) => {
+        const auditId = new URL(route.request().url()).pathname.split("/").at(-1)!;
+        return route.fulfill({ json: {
+          contract_version: "webdiag.account.saved_audit_detail.v1",
+          project: firstProject,
+          audit: { id: auditId, project_id: firstProject.id, status: "succeeded", score: 88,
+            check_count: 0, issue_count: 0, completed_at: "2026-07-31T12:00:00Z", created_at: "2026-07-31T12:00:00Z" },
+          payload: { contract_version: "webdiag.account.saved_audit_payload.v1", target_origin: firstProject.origin,
+            status: "succeeded", score: 88, checks: [], issues: [], completed_at: "2026-07-31T12:00:00Z" },
+        } });
+      });
+      await page.goto(`/en/account/projects/${firstProject.id}/audits/${firstAuditId}`);
+    } else {
+      await page.goto(`/en/account/ai?tool=${runner === "text" ? "ai_content_brief" : "ai_audit_action_plan"}`);
+      const dialog = page.getByRole("dialog");
+      if (runner === "text") {
+        await dialog.getByLabel("Audience", { exact: true }).fill("Editors");
+        await dialog.getByLabel("Objective", { exact: true }).fill("Clarify the page");
+        await dialog.getByLabel("Confirmed facts (one per line)", { exact: true }).fill("A confirmed fact with enough content.");
+      } else {
+        await dialog.getByLabel("Project ID (UUID):", { exact: true }).fill(firstProject.id);
+        await dialog.getByLabel("Audit ID (UUID):", { exact: true }).fill(firstAuditId);
+      }
+    }
+    const container = runner === "copilot" ? page.locator(".wd-ai-copilot-card") : page.getByRole("dialog");
+    const submit = container.getByRole("button", { name: runner === "copilot" ? /Run AI plan/ : runner === "text" ? /Run tool/ : /Generate action plan/ });
+    await submit.click();
+    await expect(container.getByRole("alert")).toBeVisible();
+    await expect(submit).toBeEnabled();
+    expect(requests).toHaveLength(1);
+    await submit.click();
+    await expect.poll(() => requests.length).toBe(2);
+    await expect(submit).toBeEnabled();
+    expect(requests[1]!.key).toBe(requests[0]!.key);
+    expect(requests[1]!.input).toEqual(requests[0]!.input);
+    expect(reservations.size).toBe(1);
+
+    if (runner === "text") await container.getByLabel("Audience", { exact: true }).fill("Different audience");
+    else if (runner === "audit") await container.getByLabel("Audit ID (UUID):", { exact: true }).fill(nextAuditId);
+    else await page.goto(`/en/account/projects/${firstProject.id}/audits/${nextAuditId}`);
+    await submit.click();
+    await expect.poll(() => requests.length).toBe(3);
+    await expect(submit).toBeEnabled();
+    expect(requests[2]!.key).not.toBe(requests[0]!.key);
+    expect(requests[2]!.input).not.toEqual(requests[0]!.input);
+    expect(reservations.size).toBe(2);
+  });
+}
 
 for (const locale of ["ru", "en"] as const) {
   test(`${locale} empty audit explains that no paid AI action plan is needed`, async ({ page }) => {

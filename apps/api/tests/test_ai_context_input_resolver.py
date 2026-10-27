@@ -417,3 +417,69 @@ def test_overlong_snapshot_metadata_is_bounded_and_marked_in_provider_evidence(
     assert title.endswith("[truncated]")
     assert len(page["h1"]) == 500
     assert page["h1"].endswith("[truncated]")
+
+
+@pytest.mark.parametrize("source_after_acceptance", ["changed", "unavailable"])
+def test_context_run_retry_replays_before_resolving_source(tmp_path, source_after_acceptance):
+    from webdiag_api.ai.service import AIServiceError
+
+    workspace, owner_id, _project = _workspace(tmp_path)
+    url = "https://example.com/landing"
+    fetcher = _FakeFetcher({url: "<h1>Original</h1>Original server evidence for this task."})
+    store = SqliteAIStore(str(tmp_path / "context-resolver.sqlite3"))
+    service = AIService(
+        store,
+        catalog=AIToolCatalog(
+            (
+                AIToolDefinition(
+                    id="ai_content_optimizer",
+                    contract_version="v1",
+                    state=AIToolState.READY,
+                    credit_price=1,
+                    model_policy="openai/gpt-6-luna",
+                ),
+            )
+        ),
+        input_resolver=AIInputResolver(workspace, fetcher=fetcher),
+        input_max_bytes=100_000,
+    )
+    service.grant_beta_credits(
+        user_id=owner_id, quantity=10, reason="test", correlation_id="retry-test"
+    )
+    request = AIRunCreateRequest(
+        tool_id="ai_content_optimizer",
+        input={
+            "locale": "en",
+            "page_url": url,
+            "target_query": None,
+            "objective": None,
+            "factual_constraints": [],
+        },
+    )
+    first, created = service.create_run(
+        user_id=owner_id,
+        request=request,
+        idempotency_key="snapshot-retry-key",
+    )
+    assert created is True
+    if source_after_acceptance == "changed":
+        fetcher.pages[url] = "<h1>Changed</h1>New server evidence after the request was accepted."
+    else:
+        fetcher.pages.clear()
+    replay, created = service.create_run(
+        user_id=owner_id,
+        request=request,
+        idempotency_key="snapshot-retry-key",
+    )
+    assert created is False
+    assert replay.id == first.id
+    assert len(fetcher.calls) == 1
+    assert store.get_credit_account(user_id=owner_id).available == 9
+    assert store.get_credit_account(user_id=owner_id).reserved == 1
+    changed = request.model_copy(
+        update={"input": {**request.input, "objective": "Rewrite heading"}}
+    )
+    with pytest.raises(AIServiceError) as caught:
+        service.create_run(user_id=owner_id, request=changed, idempotency_key="snapshot-retry-key")
+    assert (caught.value.status_code, caught.value.code) == (409, "ai_idempotency_conflict")
+    assert len(fetcher.calls) == 1

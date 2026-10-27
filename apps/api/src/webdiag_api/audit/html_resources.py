@@ -3,6 +3,7 @@ from __future__ import annotations
 from urllib.parse import urljoin, urlsplit
 
 from webdiag_api.audit.html_metadata import HtmlMetadata
+from webdiag_api.security.url_policy import canonicalize_hostname
 
 ASCII_WHITESPACE = "\t\n\f\r "
 
@@ -12,6 +13,10 @@ def bounded_text(value: str, limit: int) -> str:
         return value
     marker = "… [truncated]"
     return value[: limit - len(marker)] + marker
+
+
+def bounded_optional_text(value: str | None, limit: int) -> str | None:
+    return bounded_text(value, limit) if value is not None else None
 
 
 def resolve_html_reference(value: str, base_url: str) -> str:
@@ -37,6 +42,13 @@ def resolve_http_reference(value: str | None, base_url: str) -> str | None:
             or parsed.username is not None
             or parsed.password is not None
             or port == 0
+        ):
+            return None
+        hostname = parsed.hostname
+        canonical_hostname, _address = canonicalize_hostname(hostname.rstrip("."))
+        if (
+            len(hostname) > 253
+            or len(resolved) + len(canonical_hostname) - len(hostname) > 2_048
         ):
             return None
     except ValueError:

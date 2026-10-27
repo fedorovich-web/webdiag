@@ -144,6 +144,7 @@ def test_worker_s3_storage_writes_private_object() -> None:
             "ContentLength": 5,
             "ContentType": "image/webp",
             "Key": stored.object_key,
+            "IfNoneMatch": "*",
         }
     ]
 

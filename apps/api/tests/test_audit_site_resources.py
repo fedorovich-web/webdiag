@@ -1,9 +1,7 @@
 import httpx
-import pytest
 
 from webdiag_api.audit.fetcher import SafeHttpFetcher
 from webdiag_api.audit.site_resources import collect_site_resources
-from webdiag_api.security.url_policy import UrlPolicyError
 
 SAFE_IP = "93.184.216.34"
 
@@ -132,7 +130,7 @@ def test_collect_site_resources_resolves_relative_sitemap_declared_in_robots_txt
     assert report.sitemap.sitemap_url == "https://example.com/feeds/sitemap.xml"
 
 
-def test_collect_site_resources_does_not_convert_policy_failure_to_missing_resource() -> None:
+def test_collect_site_resources_reports_policy_failure_without_aborting_audit() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return streaming_response(
             302,
@@ -146,9 +144,14 @@ def test_collect_site_resources_does_not_convert_policy_failure_to_missing_resou
         transport=httpx.MockTransport(handler),
     )
 
-    with pytest.raises(UrlPolicyError):
-        collect_site_resources(
-            fetcher=fetcher,
-            target_url="https://example.com/final",
-            final_url="https://example.com/final",
-        )
+    report = collect_site_resources(
+        fetcher=fetcher,
+        target_url="https://example.com/final",
+        final_url="https://example.com/final",
+    )
+    assert report.robots.available is False
+    assert report.robots.status_code is None
+    assert report.robots.fetch_error
+    assert report.sitemap.available is False
+    assert report.sitemap.status_code is None
+    assert report.sitemap.fetch_error

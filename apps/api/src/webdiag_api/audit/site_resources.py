@@ -6,6 +6,7 @@ from urllib.parse import urljoin, urlsplit, urlunsplit
 from webdiag_api.audit.fetcher import SafeFetchError, SafeHttpFetcher
 from webdiag_api.audit.robots import RobotsTxtSummary, analyze_robots_txt
 from webdiag_api.audit.sitemap import SitemapXmlSummary, parse_sitemap_xml
+from webdiag_api.security.url_policy import UrlPolicyError
 
 
 @dataclass(frozen=True, slots=True)
@@ -73,7 +74,7 @@ def collect_site_resources(
 def _try_fetch(*, fetcher: SafeHttpFetcher, url: str) -> SiteResourceFetch:
     try:
         fetched = fetcher.fetch(url)
-    except SafeFetchError as exc:
+    except (SafeFetchError, UrlPolicyError) as exc:
         return SiteResourceFetch(
             url=url,
             status_code=None,

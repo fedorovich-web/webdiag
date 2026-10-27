@@ -28,8 +28,9 @@ and the API readiness healthcheck.
 The production healthcheck uses `/ready`, which fails closed when either configured
 SQLite path is not read-write reachable; the cheaper `/health` endpoint remains a
 process liveness check. Readiness does not replace a recovery-bundle integrity
-verification or a real backup/restore drill. The core neither requires nor receives
-RabbitMQ, OpenRouter, S3, or AI secrets.
+verification or a real backup/restore drill. The core does not require RabbitMQ. AI is disabled by default; explicitly
+enabling the scheduler AI loop requires the configured provider, internal tokens
+and shared private artifact storage.
 
 The optional AI topology has a separate fail-closed preflight:
 
@@ -38,8 +39,8 @@ npm run verify:production-ai-compose -- --env-file <path-outside-repository>
 ```
 
 It adds `docker-compose.production.ai.yml` and verifies RabbitMQ, the AI worker,
-private S3 parity, OpenRouter placement, distinct AI secrets, and the same bounded
-public-registration policy as the core topology. Passing this
+shared local artifact storage, Vercel/Cloudflare provider placement, distinct AI
+secrets, and the same bounded public-registration policy as the core topology. Passing this
 preflight does not activate any AI tool and does not replace the provider,
 billed-cost, storage recovery, manual image, or fixed-credit approval gates.
 
@@ -48,4 +49,9 @@ remain outside the repository. Neither preflight certifies a domain,
 TLS/reverse proxy, real secrets, S3 recovery, provider cost, payment, release,
 or deployment.
 
-The current package is an internal development scaffold, not a public release.
+`WEBDIAG_AI_RUNTIME_ENABLED=true` selects the separate AI catalog from
+`ai/catalog.py`: 14 ready tools, excluding FAQ generation. With the runtime
+disabled the catalog remains internal.
+`PUBLIC_RELEASE` controls ordinary public routes and indexing; it does not itself
+select the AI catalog or enable its runtime. Provider configuration and activation
+are separate from release-registry validation.

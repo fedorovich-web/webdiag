@@ -166,12 +166,16 @@ def test_long_metadata_is_bounded_without_merging_different_values(field, limit)
     assert groups[0].value.endswith("… [truncated]")
 
 
-def test_malformed_sitemap_entry_after_matching_root_preserves_valid_pages() -> None:
+@pytest.mark.parametrize(
+    "malformed_loc", ["https://[broken", "https://example.com:bad/", "x" * 2049],
+    ids=["bracket", "port", "oversized"],
+)
+def test_malformed_sitemap_entry_after_matching_root_preserves_valid_pages(malformed_loc) -> None:
     fixtures = responses()
     fixtures[f"{ORIGIN}/sitemap.xml"] = fetched(
         f"{ORIGIN}/sitemap.xml",
         f"<urlset><url><loc>{ORIGIN}/</loc></url>"
-        "<url><loc>https://[broken</loc></url>"
+        f"<url><loc>{malformed_loc}</loc></url>"
         f"<url><loc>{ORIGIN}/valid</loc></url></urlset>",
         content_type="application/xml",
     )
@@ -182,6 +186,28 @@ def test_malformed_sitemap_entry_after_matching_root_preserves_valid_pages() -> 
     assert [page.url for page in result.pages] == [f"{ORIGIN}/", f"{ORIGIN}/valid"]
     assert result.sitemap_complete is False
     assert result.orphan_urls == ()
+
+
+def test_partial_sitemap_index_preserves_valid_children_without_complete_claim() -> None:
+    fixtures = responses()
+    fixtures[f"{ORIGIN}/sitemap.xml"] = fetched(
+        f"{ORIGIN}/sitemap.xml",
+        "<sitemapindex><sitemap><loc>https://[broken</loc></sitemap>"
+        f"<sitemap><loc>{ORIGIN}/valid.xml</loc></sitemap></sitemapindex>",
+        content_type="application/xml",
+    )
+    fixtures[f"{ORIGIN}/valid.xml"] = fetched(
+        f"{ORIGIN}/valid.xml",
+        f"<urlset><url><loc>{ORIGIN}/valid</loc></url></urlset>",
+        content_type="application/xml",
+    )
+    fixtures[f"{ORIGIN}/valid"] = fetched(f"{ORIGIN}/valid", "<title>Valid</title>")
+    fetcher = FixtureFetcher(fixtures)
+    result = crawl_origin(ORIGIN, fetcher=fetcher, config=CrawlConfig())
+    assert [page.url for page in result.pages] == [f"{ORIGIN}/", f"{ORIGIN}/valid"]
+    assert result.sitemap_complete is False
+    assert result.orphan_urls == ()
+    assert f"{ORIGIN}/valid.xml" in [url for url, _origin in fetcher.requests]
 
 
 def test_duplicate_issue_counts_all_groups_when_result_samples_are_bounded() -> None:

@@ -229,6 +229,21 @@ class AIService:
                     "ai_invalid_tool_input",
                     "Invalid AI tool input.",
                 ) from error
+        public_input = json.dumps(
+            input_value, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+        ).encode("utf-8")
+        if len(public_input) > self._input_max_bytes:
+            raise AIServiceError(413, "ai_input_too_large", "AI input is too large.")
+        request_sha256 = hashlib.sha256(public_input).hexdigest()
+        existing = self._store.get_run_for_idempotency_key(user_id=user_id, idempotency_key=key)
+        if existing is not None and existing.request_sha256 is not None:
+            if existing.tool_id != definition.id or not hmac.compare_digest(
+                existing.request_sha256, request_sha256
+            ):
+                raise AIServiceError(
+                    409, "ai_idempotency_conflict", "Idempotency key was already used."
+                )
+            return self._public_run(existing), False
         if definition.id == "ai_audit_action_plan" or definition.id in CONTEXT_SNAPSHOT_TOOL_IDS:
             if self._input_resolver is None:
                 raise AIServiceError(
@@ -285,6 +300,7 @@ class AIService:
                 input_json=input_json,
                 input_sha256=hashlib.sha256(encoded).hexdigest(),
                 source_upload_id=source_upload_id,
+                request_sha256=request_sha256,
             )
         except AIInsufficientCreditsError as error:
             raise AIServiceError(402, "ai_insufficient_credits", "Insufficient credits.") from error
@@ -631,7 +647,7 @@ class AIService:
         failed = 0
         for reservation in reservations:
             try:
-                artifact_storage.delete(object_key=reservation.object_key)
+                artifact_storage.revoke_reserved(object_key=reservation.object_key)
             except Exception:
                 failed += 1
                 continue

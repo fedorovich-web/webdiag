@@ -2,7 +2,7 @@ export class RequestBodyError extends Error {
   constructor(readonly status: number, message: string) { super(message); }
 }
 
-export async function readBoundedBody(request: Request, maximum: number): Promise<Uint8Array> {
+export async function readBoundedBody(request: Pick<Request, "headers" | "body">, maximum: number): Promise<Uint8Array<ArrayBuffer>> {
   if (Number(request.headers.get("content-length")) > maximum) throw new RequestBodyError(413, "Request body is too large.");
   const reader = request.body?.getReader();
   if (!reader) return new Uint8Array();

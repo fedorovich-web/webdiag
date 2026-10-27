@@ -452,10 +452,15 @@ def _load_sitemap(
         except ValueError:
             complete = False
             continue
-        if not summary.available or not summary.valid_xml:
+        if not summary.available:
             if not is_optional:
                 complete = False
             continue
+        if not summary.valid_xml:
+            if summary.loc_urls or not is_optional:
+                complete = False
+            if not summary.loc_urls:
+                continue
         try:
             root = ElementTree.fromstring(response.body_text.encode("utf-8"))
         except ElementTree.ParseError:

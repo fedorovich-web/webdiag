@@ -339,7 +339,7 @@ def test_response_stream_is_bounded_before_decoding(tmp_path):
     assert not (tmp_path / RESERVATION.object_key).exists()
 
 
-@pytest.mark.parametrize("failure", ["write", "integrity"])
+@pytest.mark.parametrize("failure", ["write", "integrity", "reservation"])
 def test_private_storage_failure_after_paid_generation_is_unknown(
     tmp_path, monkeypatch, failure
 ):
@@ -349,13 +349,20 @@ def test_private_storage_failure_after_paid_generation_is_unknown(
         lambda request: sent.append(request) or httpx.Response(200, json=_response()),
     )
     original = storage.put_reserved
+    if failure == "reservation":
+        marker = tmp_path / RESERVATION.object_key
+        marker.parent.mkdir(parents=True)
+        marker.write_bytes(b"")
 
     def put_reserved(**kwargs):
         if failure == "write":
             raise OSError("disk unavailable")
-        return replace(original(**kwargs), sha256="0" * 64)
+        stored = original(**kwargs)
+        return replace(stored, sha256="0" * 64) if failure == "integrity" else stored
 
     monkeypatch.setattr(storage, "put_reserved", put_reserved)
     with pytest.raises(ProviderOutcomeUnknownError):
         provider.execute(provider.prepare(_request()))
     assert len(sent) == 1
+    if failure == "reservation":
+        assert marker.read_bytes() == b""

@@ -463,12 +463,12 @@ def test_resolved_url_policy_failure_returns_stored_failed_job() -> None:
     assert fetched.json()["run"]["status"] == "failed"
 
 
-def test_site_resource_policy_failure_fails_audit_instead_of_reporting_missing() -> None:
+def test_site_resource_policy_failure_preserves_audit_with_unknown_resource_checks() -> None:
     seen_paths: list[str] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
         seen_paths.append(request.url.path)
-        if request.url.path == "/robots.txt":
+        if request.url.path in {"/robots.txt", "/sitemap.xml"}:
             return streaming_response(
                 302,
                 headers={"location": "http://127.0.0.1/robots.txt"},
@@ -487,15 +487,28 @@ def test_site_resource_policy_failure_fails_audit_instead_of_reporting_missing()
         response = asyncio.run(
             request("POST", "/v1/audits", json={"url": "https://example.com/"})
         )
-        detail = response.json()["detail"]
-        fetched = asyncio.run(request("GET", f"/v1/audits/{detail['job_id']}"))
+        payload = response.json()
+        fetched = asyncio.run(request("GET", f"/v1/audits/{payload['job']['job_id']}"))
     finally:
         clear_overrides()
 
-    assert seen_paths == ["/", "/robots.txt"]
-    assert response.status_code == 502
-    assert fetched.json()["job"]["status"] == "failed"
-    assert fetched.json()["run"]["status"] == "failed"
+    assert seen_paths == ["/", "/robots.txt", "/sitemap.xml"]
+    assert response.status_code == 201
+    assert fetched.json()["job"]["status"] == "succeeded"
+    assert fetched.json()["run"]["status"] == "succeeded"
+    checks = {check["check_id"]: check for check in payload["run"]["checks"]}
+    for check_id in ("crawlability.robots_txt", "crawlability.sitemap_xml"):
+        check = checks[check_id]
+        assert check["status"] == "skipped"
+        assert check["issue_ids"] == []
+        assert check["evidence"][0]["value"] == "unavailable:fetch_error"
+    assert checks["crawlability.robots_txt"]["evidence"][0]["metadata"]["allows_target"] is None
+    assert checks["crawlability.sitemap_xml"]["evidence"][0]["metadata"]["available"] is False
+    assert not any(
+        issue["issue_id"] == "crawlability.sitemap_xml.missing"
+        for issue in payload["run"]["issues"]
+    )
+    assert any(check["status"] == "passed" for check in payload["run"]["checks"])
 
 
 def test_unexpected_execution_failure_still_persists_failed_state(monkeypatch) -> None:

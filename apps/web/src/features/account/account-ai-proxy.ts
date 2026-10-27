@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { readBoundedBody, RequestBodyError } from "../../lib/request-body";
+import { isAccountWriteAllowed } from "./account-origin";
 import {
   AccountProxyConfigurationError,
   resolveAccountApiBaseUrl,
@@ -58,6 +60,9 @@ export async function proxyAccountAI(
   request: NextRequest,
   options: AccountAIProxyOptions,
 ): Promise<Response> {
+  if (options.method !== "GET" && !isAccountWriteAllowed(request)) {
+    return error("account_cross_origin", "Cross-origin request rejected.", 403);
+  }
   const idempotencyKey = options.requireIdempotencyKey
     ? selectAIIdempotencyKey(request.headers.get("idempotency-key"))
     : null;
@@ -72,9 +77,13 @@ export async function proxyAccountAI(
 
   let body: string | undefined;
   if (options.body) {
-    body = await request.text();
-    if (new TextEncoder().encode(body).byteLength > MAX_BODY_BYTES) {
-      return error("account_request_too_large", "Request body is too large.", 413);
+    try {
+      body = new TextDecoder().decode(await readBoundedBody(request, MAX_BODY_BYTES));
+    } catch (caught) {
+      if (caught instanceof RequestBodyError) {
+        return error(caught.status === 413 ? "account_request_too_large" : "account_request_body_invalid", caught.message, caught.status);
+      }
+      return error("account_request_body_invalid", "Invalid request body.", 400);
     }
   }
 

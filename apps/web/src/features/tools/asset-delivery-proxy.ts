@@ -1,3 +1,4 @@
+import { readToolJsonBody } from "../../lib/tool-request-body";
 import type { NextRequest } from "next/server";
 import { isToolErrorPayload, parsePageUrlInput } from "./client-delivery-tool-contract";
 import type { AssetDeliveryToolResponse } from "./asset-delivery-tool-contract";
@@ -22,7 +23,7 @@ interface AssetDeliveryProxyOptions {
 
 export function createAssetDeliveryProxy(options: AssetDeliveryProxyOptions) {
   return async function POST(request: NextRequest) {
-    const payload: unknown = await request.json().catch(() => null);
+    const payload: unknown = await readToolJsonBody(request);
     if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
       return toJsonResponse(
         {

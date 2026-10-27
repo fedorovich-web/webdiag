@@ -5,7 +5,14 @@ import sqlite3
 from pathlib import Path
 
 import httpx
+import pytest
 from PIL import Image
+from webdiag_worker.artifact_storage import (
+    ArtifactStorageError as WorkerArtifactStorageError,
+)
+from webdiag_worker.artifact_storage import (
+    LocalArtifactStorage as WorkerLocalArtifactStorage,
+)
 
 from webdiag_api.accounts.api import SESSION_COOKIE_NAME, get_account_service
 from webdiag_api.accounts.models import RegisterRequest
@@ -17,12 +24,12 @@ from webdiag_api.ai.api import (
     get_ai_service,
     get_optional_ai_artifact_storage,
 )
-from webdiag_api.ai.artifact_storage import LocalArtifactStorage
+from webdiag_api.ai.artifact_storage import ArtifactStorageError, LocalArtifactStorage
 from webdiag_api.ai.catalog import AIToolCatalog, AIToolDefinition, AIToolState
 from webdiag_api.ai.images import normalize_image
 from webdiag_api.ai.models import AIRunCreateRequest, AIWorkerArtifact
 from webdiag_api.ai.service import AIService
-from webdiag_api.ai.storage import SqliteAIStore
+from webdiag_api.ai.storage import AILeaseLostError, SqliteAIStore
 from webdiag_api.config import settings
 from webdiag_api.main import app
 
@@ -401,7 +408,7 @@ def test_image_claim_reserves_exact_object_before_write_and_failed_run_is_reconc
     )
 
     assert service.cleanup_artifacts(artifact_storage=storage, limit=1) == (1, 0)
-    assert not (tmp_path / "objects" / reservation.object_key).exists()
+    assert (tmp_path / "objects" / reservation.object_key).read_bytes() == b""
     with sqlite3.connect(tmp_path / "generated.sqlite3") as connection:
         state = connection.execute(
             "SELECT deletion_state FROM ai_artifact_reservations WHERE run_id = ?",
@@ -471,6 +478,56 @@ def test_expired_submitted_image_claim_releases_reserved_object(tmp_path: Path) 
     assert reservation.deletion_state == "pending"
     account = store.get_credit_account(user_id=owner.response.user.id)
     assert (account.available, account.reserved) == (10, 0)
+
+
+@pytest.mark.parametrize("writer_type", (LocalArtifactStorage, WorkerLocalArtifactStorage))
+@pytest.mark.parametrize("already_written", (False, True))
+def test_expired_image_cleanup_fences_late_writer(
+    tmp_path: Path, writer_type, already_written: bool
+) -> None:
+    _account, service, storage, owner, _other = _context(tmp_path)
+    run, _ = service.create_run(
+        user_id=owner.response.user.id,
+        request=AIRunCreateRequest(
+            tool_id="ai_image_studio",
+            input={
+                "locale": "en", "prompt": "Synthetic stale image cleanup regression.",
+                "aspect_ratio": "1:1", "quality": "medium", "background": "opaque",
+            },
+        ),
+        idempotency_key="image-late-write-regression",
+    )
+    store = SqliteAIStore(str(tmp_path / "generated.sqlite3"), lease_seconds=60)
+    claim = store.claim_pending(now=100)
+    store.mark_submitted(run_id=run.id, lease_token=claim.lease_token, now=101)
+    reservation = claim.artifact_reservation
+    writer = writer_type(tmp_path / "objects")
+    write_options = {
+        "artifact_id": reservation.artifact_id,
+        "object_key": reservation.object_key,
+        "data": _png(), "media_type": "image/png",
+    }
+    if already_written:
+        writer.put_reserved(**write_options)
+    assert store.claim_pending(now=160) is None
+    assert service.cleanup_artifacts(artifact_storage=storage, limit=1) == (1, 0)
+
+    with pytest.raises((ArtifactStorageError, WorkerArtifactStorageError)):
+        writer.put_reserved(**write_options)
+
+    with pytest.raises(AILeaseLostError):
+        store.fail_run(
+            run_id=run.id, lease_token=claim.lease_token,
+            error_code="ai_provider_outcome_unknown", provider_unknown=True, now=161,
+        )
+    assert (tmp_path / "objects" / reservation.object_key).read_bytes() == b""
+    assert service.cleanup_artifacts(artifact_storage=storage, limit=1) == (0, 0)
+    assert store.get_run(run_id=run.id).state == "provider_unknown"
+    account = store.get_credit_account(user_id=owner.response.user.id)
+    assert (account.available, account.reserved) == (10, 0)
+    ledger = store.list_ledger(user_id=owner.response.user.id, limit=10)
+    assert [entry.operation_type for entry in ledger].count("release") == 1
+    assert not any(entry.operation_type == "capture" for entry in ledger)
 
 
 def test_image_edit_binds_one_owned_normalized_upload(tmp_path: Path) -> None:

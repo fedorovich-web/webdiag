@@ -7,13 +7,18 @@ from collections import Counter
 from datetime import UTC, datetime
 from html.parser import HTMLParser
 from typing import Annotated, Any, Literal, Protocol
-from urllib.parse import urljoin, urlsplit, urlunsplit
+from urllib.parse import urlsplit, urlunsplit
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from webdiag_api.audit.fetcher import SafeFetchConfig, SafeFetchError, SafeHttpFetcher
+from webdiag_api.audit.html_resources import (
+    bounded_optional_text,
+    bounded_text,
+    resolve_http_reference,
+)
 from webdiag_api.audit.redaction import public_url
 from webdiag_api.security.url_policy import UrlPolicyError, validate_url
 
@@ -118,6 +123,11 @@ class CachePolicyCheckResponse(BaseModel):
     severity: Severity
     value: str | None = Field(default=None, max_length=2_048)
     recommendation: str = Field(min_length=1, max_length=500)
+
+    @field_validator("value", mode="before")
+    @classmethod
+    def bound_header_excerpt(cls, value: str | None) -> str | None:
+        return bounded_text(value, 2_048) if isinstance(value, str) else value
 
 
 class CachePolicyResponse(BaseModel):
@@ -415,7 +425,7 @@ def inspect_cache_policy(
         requested_url=fetched.requested_url,
         final_url=fetched.final_url,
         status_code=fetched.status_code,
-        content_type=fetched.content_type,
+        content_type=bounded_optional_text(fetched.content_type, 240),
         is_static_asset=is_static_asset,
         cache_control=fetched.headers.get("cache-control"),
         etag=fetched.headers.get("etag"),
@@ -446,7 +456,9 @@ def inspect_page_weight(
             detail={"code": "tool_fetch_failed", "message": str(exc)},
         ) from exc
 
-    resources = _discover_resources(fetched.body_text, base_url=fetched.final_url)
+    resources, skipped_reference_count = _discover_resources(
+        fetched.body_text, base_url=fetched.final_url
+    )
     inspected: list[PageResourceResponse] = []
     for resource_url in resources[:40]:
         inspected.append(_inspect_resource(fetcher, resource_url))
@@ -474,7 +486,7 @@ def inspect_page_weight(
         final_url=fetched.final_url,
         status_code=fetched.status_code,
         html_bytes=len(fetched.body_text.encode("utf-8")),
-        discovered_resource_count=len(resources),
+        discovered_resource_count=len(resources) + skipped_reference_count,
         checked_resource_count=len(inspected),
         total_known_bytes=known_bytes,
         unknown_size_count=unknown_size_count,
@@ -489,6 +501,7 @@ def inspect_page_weight(
             legacy_image_count=legacy_image_count,
             discovered_resource_count=len(resources),
             checked_resource_count=len(inspected),
+            skipped_reference_count=skipped_reference_count,
         ),
     )
 
@@ -1151,6 +1164,8 @@ class ResourceHTMLParser(HTMLParser):
         super().__init__(convert_charrefs=True)
         self.base_url = base_url
         self.urls: list[str] = []
+        self.skipped_reference_count = 0
+        self._seen_urls: set[str] = set()
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         values = {name.lower(): value for name, value in attrs if value}
@@ -1180,15 +1195,18 @@ class ResourceHTMLParser(HTMLParser):
     def _add(self, value: str | None) -> None:
         if not value or value.startswith(("data:", "blob:", "javascript:", "#")):
             return
-        absolute = urljoin(self.base_url, value)
-        if urlsplit(absolute).scheme in {"http", "https"} and absolute not in self.urls:
+        absolute = resolve_http_reference(value, self.base_url)
+        if absolute is None:
+            self.skipped_reference_count += 1
+        elif absolute not in self._seen_urls:
+            self._seen_urls.add(absolute)
             self.urls.append(absolute)
 
 
-def _discover_resources(html: str, *, base_url: str) -> list[str]:
+def _discover_resources(html: str, *, base_url: str) -> tuple[list[str], int]:
     parser = ResourceHTMLParser(base_url=base_url)
     parser.feed(html)
-    return parser.urls
+    return parser.urls, parser.skipped_reference_count
 
 
 def _inspect_resource(fetcher: SafeHttpFetcher, url: str) -> PageResourceResponse:
@@ -1218,7 +1236,7 @@ def _inspect_resource(fetcher: SafeHttpFetcher, url: str) -> PageResourceRespons
         url=fetched.final_url,
         type=resource_type,
         status_code=fetched.status_code,
-        content_type=fetched.content_type,
+        content_type=bounded_optional_text(fetched.content_type, 240),
         content_length=content_length,
         modern_image_format=modern_image,
         recommendation=_resource_recommendation(resource_type, modern_image, content_length),
@@ -1330,8 +1348,14 @@ def _page_weight_recommendation(
     legacy_image_count: int,
     discovered_resource_count: int,
     checked_resource_count: int,
+    skipped_reference_count: int = 0,
 ) -> str:
     notes: list[str] = []
+    if skipped_reference_count:
+        notes.append(
+            f"Skipped {skipped_reference_count} invalid or unsupported resource reference(s); "
+            "their transfer sizes are unknown."
+        )
     if checked_resource_count < discovered_resource_count:
         notes.append(
             

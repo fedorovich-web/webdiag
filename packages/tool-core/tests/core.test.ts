@@ -111,6 +111,13 @@ describe("image metadata and SVG utility helpers", () => {
     expect(result.removedBytes).toBeGreaterThan(0);
   });
 
+  it("preserves SVG text, inter-tspan spaces, and quoted attribute values", () => {
+    const source = '<svg aria-label="A = B"><text xml:space="preserve">A  B = C<tspan>D</tspan> <tspan>E</tspan></text></svg>';
+    expect(optimizeSvgText(source).optimized).toBe(source);
+    const cdata = '<svg><text><![CDATA[A  = B <!-- literal -->]]></text></svg>';
+    expect(optimizeSvgText(cdata).optimized).toBe(cdata);
+  });
+
   it("rejects active SVG content instead of producing unsafe output", () => {
     expect(() => optimizeSvgText('<svg><script>alert(1)</script></svg>')).toThrow(/active content/i);
     expect(() => optimizeSvgText('<svg onload="alert(1)"></svg>')).toThrow(/active content/i);

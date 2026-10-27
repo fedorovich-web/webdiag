@@ -88,6 +88,25 @@ A deployment is not accepted until all of these are checked on the real domain:
 - API service is healthy through `/ready`;
 - no API port or API hostname is reachable publicly.
 
+## Coordinated image-writer rollout
+
+Deploy the API and every AI-producing worker from the same revision. When
+replacing the Compose API and `monitoring_scheduler` services, confirm that all
+old producer processes have terminated before accepting the new deployment.
+An old writer can overwrite a cancelled reservation because it does not use
+the new create-only storage operation. Check the new API's `/ready` response
+and the new scheduler's health after replacement; a running replacement
+container alone does not prove that the old producer has exited.
+
+Cancelled image reservations retain private zero-byte objects at their exact
+reserved keys. These contain no image payload and prevent late writers from
+recreating deleted images. Do not remove these markers with bucket lifecycle
+rules or filesystem cleanup. S3-compatible storage must enforce atomic
+`If-None-Match: *` writes; never fall back to unconditional writes when a
+backend rejects that condition. A failed storage write after provider
+generation remains an unknown provider outcome and must not trigger another
+generation attempt.
+
 ## Backup and restore
 
 `account_data` is a Docker named volume, so Dokploy Volume Backups can be used

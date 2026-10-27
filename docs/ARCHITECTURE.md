@@ -1,24 +1,73 @@
-# Architecture snapshot
+# Архитектура WebDiag
 
-- npm monorepo for the Next.js application and shared TypeScript packages.
-- FastAPI service in a separate Python package.
-- Dramatiq worker package prepared for RabbitMQ.
-- The registry is the source of truth for declared tool definitions; public selectors expose only ready entries with verified implementations.
-- Browser-only tool logic lives in `packages/tool-core` and is covered by unit tests.
-- RU routes have no locale prefix; EN routes use `/en`.
-- Public UI is light-first and supports only explicit `light` and `dark` preferences. Operating-system color preferences are intentionally ignored.
-- The theme bootstrap reads `webdiag-theme` before hydration, defaults to light, and applies a stored dark choice before first paint.
-- RU/EN navigation preserves the equivalent pathname, query string, and hash. On narrow viewports it moves into the native mobile menu.
-- Home, catalog, and tool explanations are server-rendered. Interactive code is limited to actual tool workspaces, search/filtering, theme, locale, and mobile navigation.
-- A typed editorial layer in `apps/web/src/content` supplies independent RU/EN SEO titles, leads, instructions, supported behavior, limitations, use cases, technical notes, FAQs, and related-tool links for every ready tool.
-- Operational registry fields and long-form product content remain separate. Contract tests block unknown slugs, internal content records, and related links to unpublished tools.
-- Localized metadata is generated centrally in `apps/web/src/lib/seo.ts`; visible JSON-LD is rendered as WebSite, ItemList, or BreadcrumbList according to page type.
-- The sitemap exposes RU, EN, and `x-default` alternates when public release is enabled. Internal mode remains `noindex` and disallows crawling.
-- Production verification checks all 32 rendered HTML pages for one H1, title, description, canonical, reciprocal language alternates, social metadata, valid JSON-LD, and unpublished-registry leakage.
-- Public catalog client assets receive a minimal projection and are separately checked for internal fields and definitions.
-- All current public routes remain statically prerendered.
-- A12.0 adds an account-owned AI foundation without enabling a public AI tool: the 15 catalog entries remain `internal` until their provider, evaluation, cost, and fixed-credit gates pass.
-- The FastAPI service is the only writer to AI runs and the append-only credit ledger in the account SQLite database. This SQLite topology supports one API writer; horizontal API replicas require a future PostgreSQL storage adapter.
-- AI workers use a dedicated bearer-protected internal HTTP contract. Run attempts use renewable hashed lease tokens, and a stale worker cannot complete, fail, or charge a run.
-- The AI worker contains a bounded Dramatiq actor and a real OpenRouter adapter, but every AI catalog entry remains internal. The default production core disables the AI runtime and omits RabbitMQ, provider, and artifact-storage credentials; the optional AI overlay is allowed only after the external evaluation, cost, storage, and manual image gates pass.
-- Credits are non-expiring integers. Run creation and reservation, completion and capture, or failure and release occur in the same SQLite transaction.
+## Приложения и контракты
+
+| Модуль | Ответственность |
+| --- | --- |
+| `apps/web` | Next.js: публичные RU/EN страницы, кабинет, браузерные инструменты и серверные API-прокси. |
+| `apps/api` | FastAPI: диагностика HTTP/HTML/DNS/TLS, аккаунты, проекты, отчёты, мониторинг, обход, AI и кредитный ledger. |
+| `apps/worker` | Scheduler мониторинга и обхода, обработка AI-задач через внутренний HTTP-контракт; отдельный Dramatiq entry point для RabbitMQ. |
+| `packages/tool-core` | Общие типы и вычисления браузерных утилит. |
+| `packages/tool-registry` | Категории и определения обычных инструментов; API содержит проверяемую копию реестра для Python runtime. |
+
+Браузер обращается к Next.js API. Прокси передаёт запрос во внутренний FastAPI,
+ограничивает вход и ответ и не раскрывает служебные credentials. Владелец проекта,
+аудита, отчёта, AI-запуска или файла проверяется в API и запросах к хранилищу.
+Диагностика получает ограниченный HTML без выполнения JavaScript; сетевые ошибки
+и недоступные источники сохраняются отдельно от успешных проверок.
+
+## Каталог и интерфейс
+
+Обычный реестр содержит 115 готовых инструментов и 10 внутренних определений
+с явной заменой `supersededBy`. Публичная проекция исключает внутренние записи
+и служебные поля. Отдельный production AI-каталог содержит 14 активных инструментов;
+`ai_faq_studio` в него не включён. Общее количество в интерфейсе вычисляется из
+готовых обычных и активных AI-определений, а не из всех записей исходного JSON.
+
+Русские маршруты не имеют префикса, английские используют `/en`. Публичные
+страницы и объяснения инструментов предварительно рендерятся; кабинет и API
+используют динамические маршруты. Метаданные и JSON-LD формируются централизованно.
+`PUBLIC_RELEASE=false` закрывает индексацию; `true` включает sitemap и release gate.
+Локализация сохраняет соответствующий путь, query и hash. Мобильная навигация
+использует native dialog. Светлая тема — исходная; явно сохранённая тёмная тема
+применяется до hydration.
+
+## Данные и фоновые задачи
+
+Аккаунты, проекты, мониторинг, обход, отчёты, платежи и AI используют SQLite
+в account database; публичная история аудитов хранится в отдельной audit database.
+Схема и её совместимые обновления инициализируются storage-модулями. PostgreSQL
+и Valkey из development Compose не являются текущим хранилищем этих модулей.
+Production рассчитан на один API writer с постоянными volumes. Горизонтальное
+масштабирование требует отдельного решения для хранения и admission control.
+
+AI-запуск и резерв кредитов, успешное завершение и списание, ошибка и возврат
+резерва выполняются транзакционно. Повторы распознаются по ключу идемпотентности
+и хешу проверенного публичного ввода до повторной загрузки снимка страницы.
+Хеш самого снимка хранится отдельно для проверки целостности provider input.
+Старые записи без публичного хеша сохраняют прежнее строгое сравнение снимка;
+миграция добавляет nullable поле и не изменяет существующие данные.
+Внутренние workers получают временные leases; устаревший lease не может завершить
+или списать задачу. Исход неизвестного обращения к провайдеру сохраняется явно
+и не служит разрешением на автоматический повтор платной генерации.
+
+API проверяет входные данные и разрешает принадлежащие проекту снимки страниц.
+Worker использует явно выбранные адаптеры Vercel AI Gateway или Cloudflare
+для текста и изображений. Результаты проверяются по контракту инструмента;
+доступность провайдера и качество живого ответа не доказываются локальным тестом.
+Исходные и сгенерированные изображения имеют отдельный lifecycle и приватное
+хранилище; текущее production Compose использует общий локальный volume.
+
+## Развёртывание и восстановление
+
+`docker-compose.dokploy.yml` задаёт web, API и scheduler без публикации портов
+на хост. Web соединяется с API по приватной сети. AI runtime по умолчанию
+выключен и включается явной конфигурацией. Альтернативный AI overlay добавляет
+RabbitMQ и отдельный worker, отключая обработку AI в scheduler.
+
+`/health` проверяет процесс; `/ready` проверяет доступность настроенных SQLite
+путей. Recovery CLI создаёт online backup двух баз, manifest с размерами и SHA-256,
+проверяет SQLite integrity и готовит восстановление в новый каталог. Переключение
+production на восстановленные базы и проверка файлового хранилища выполняются
+отдельно. Команды приведены в [инструкции установки](INSTALLATION.md),
+проверки — в [VERIFICATION.md](VERIFICATION.md).
