@@ -262,7 +262,7 @@ export function ToolCatalog({
             <small className="wd-tools-search-hint">{copy.hint}</small>
           </div>
           <div className="wd-tools-hero-art" aria-hidden="true">
-            <img src="/design/hero/tools.webp" alt="" width="900" height="900" loading="lazy" decoding="async" />
+            <img src="/design/hero/tools.webp" alt="" width="900" height="900" fetchPriority="high" decoding="async" />
           </div>
         </div>
       </section>
