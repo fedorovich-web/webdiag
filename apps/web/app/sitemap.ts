@@ -30,6 +30,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ["/tools", "/en/tools", 0.9, 0.8],
     ["/knowledge", "/en/knowledge", 0.7, 0.6],
     ["/contacts", "/en/contacts", 0.5, 0.45],
+    ["/about", "/en/about", 0.6, 0.5],
     ["/privacy", "/en/privacy", 0.35, 0.3],
   ] as const;
 
