@@ -4,7 +4,7 @@
 **Project:** WebDiag (`fedorovich-web/webdiag`)  
 **Repository Branch:** `main` (all commits applied directly to main as requested)  
 **Initial Baseline Commit:** `f72096a`  
-**Current Head Commit:** `30dd5ff`  
+**Current Head Commit:** `576824b`  
 **Audit Standard:** Senior+ Production Engineering (Deterministic behavior, minimal complexity, strict typing, validated inputs, bounded concurrency, zero connection/fd leaks, zero dead weight)  
 
 ---
@@ -36,7 +36,7 @@ Across this comprehensive technical audit and remediation run, the entire codeba
 
 ## 2. Remediated Findings (Changelog by Commit on `main`)
 
-Ten atomic commits were tested and committed sequentially directly to `main`:
+Eleven code remediations and optimization commits were tested and committed sequentially directly to `main`:
 
 ### Commit 1: `eb98934` — `fix(web): prevent topbar action overflow on desktop viewports`
 - **Category:** `[HTML/CSS]` / `[BUG]`
@@ -130,6 +130,17 @@ Ten atomic commits were tested and committed sequentially directly to `main`:
 - **Fix:** Replaced `loading="lazy"` with `fetchPriority="high"` on both above-the-fold hero image elements.
 - **Verification:** `npm run typecheck` → 0 errors; `npm run test:web` → 167 files, 823 passed; `npm run build` → 279 static pages prerendered.
 
+### Commit 11: `576824b` — `perf(web): set fetchPriority high on privacy, contacts, and 404 hero images for LCP`
+- **Category:** `[HTML/CSS]` / `[PERF]`
+- **Files:**
+  - `apps/web/src/features/contact/contact-page.tsx`
+  - `apps/web/src/features/not-found/not-found-page.tsx`
+  - `apps/web/app/(ru)/privacy/page.tsx`
+  - `apps/web/app/(en)/en/privacy/page.tsx`
+- **Issue:** Above-the-fold hero images on the contact page (`/design/hero/contacts.webp`), 404 page (`/design/hero/404.webp`), and privacy policy pages (`/design/hero/privacy.webp` in RU and EN) lacked browser fetch prioritization (`fetchPriority="high"`), and some used `loading="lazy"`, which penalized initial render timing and CWV metrics on direct entry.
+- **Fix:** Added `fetchPriority="high"` and removed lazy loading on all above-the-fold hero images.
+- **Verification:** `npm run typecheck` → 0 errors; `npm run test:web` → 167 files, 823 passed; `npm run build` → 279 static pages prerendered.
+
 ---
 
 ## 3. Senior+ Production Engineering Standards Review
@@ -144,7 +155,7 @@ Ten atomic commits were tested and committed sequentially directly to `main`:
 4. **CSS Architecture & Maintainability:**
    - Eliminated brittle selector cascades and redundant media queries in `account.css`.
 5. **Core Web Vitals & LCP:**
-   - Eager decoding with `fetchPriority="high"` applied to all above-the-fold hero graphics across monitoring, tools catalog, and all 115 tool pages.
+   - Eager decoding with `fetchPriority="high"` applied to all above-the-fold hero graphics across monitoring, tools catalog, all 115 tool pages, contacts, 404, and privacy policies.
 
 ---
 
@@ -152,6 +163,7 @@ Ten atomic commits were tested and committed sequentially directly to `main`:
 
 - **Branch:** `main`
 - **Working Tree:** Clean (all changes committed directly to `main`)
-- **Total Commits on `main` Ahead of Origin:** 10 commits
+- **Total Commits on `main` Ahead of Origin:** 12 commits
 - **Full Suite Status:** 100% Green (Vitest 823, Pytest 1191, Playwright 396, Knip 0, Typecheck 0 errors, Build 279 static pages prerendered)
+
 
