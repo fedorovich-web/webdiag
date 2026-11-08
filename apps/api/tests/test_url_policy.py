@@ -106,5 +106,26 @@ def test_resolved_private_address_is_blocked() -> None:
     with pytest.raises(UrlPolicyError):
         validate_resolved_addresses(["10.0.0.1"])
 
+
+@pytest.mark.parametrize(
+    "address",
+    [
+        "10.0.0.1",
+        "100.64.0.1",
+        "100.127.255.254",
+        "169.254.1.1",
+        "192.0.2.1",
+        "198.18.0.1",
+        "198.51.100.1",
+        "203.0.113.1",
+        "224.0.0.1",
+    ],
+)
+def test_resolved_non_global_and_cgnat_addresses_are_blocked(address: str) -> None:
+    with pytest.raises(UrlPolicyError):
+        validate_resolved_addresses([address])
+
+
 def test_resolved_public_address_is_allowed() -> None:
     validate_resolved_addresses(["93.184.216.34"])
+

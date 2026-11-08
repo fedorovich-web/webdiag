@@ -22,6 +22,7 @@ class ValidatedUrl:
 
 def _is_blocked_ip(value: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
     return any((
+        not value.is_global,
         value.is_private,
         value.is_loopback,
         value.is_link_local,
