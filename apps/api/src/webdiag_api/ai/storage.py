@@ -207,6 +207,14 @@ class ProviderEvaluationSample:
     provider_cost_nano_usd: int | None
 
 
+class _ClosableConnection(sqlite3.Connection):
+    def __exit__(self, exc_type: object, exc_val: object, exc_tb: object) -> bool | None:
+        try:
+            return super().__exit__(exc_type, exc_val, exc_tb)
+        finally:
+            self.close()
+
+
 class SqliteAIStore:
     def __init__(
         self,
@@ -243,7 +251,9 @@ class SqliteAIStore:
 
     def _connect(self) -> sqlite3.Connection:
         self._path.parent.mkdir(parents=True, exist_ok=True)
-        connection = sqlite3.connect(self._path, timeout=10, isolation_level=None)
+        connection = sqlite3.connect(
+            self._path, timeout=10, isolation_level=None, factory=_ClosableConnection
+        )
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
         connection.execute("PRAGMA journal_mode = WAL")
@@ -252,7 +262,9 @@ class SqliteAIStore:
 
     def _connect_read_only(self) -> sqlite3.Connection:
         database_uri = f"{self._path.resolve().as_uri()}?mode=ro&immutable=1"
-        connection = sqlite3.connect(database_uri, uri=True, timeout=10)
+        connection = sqlite3.connect(
+            database_uri, uri=True, timeout=10, factory=_ClosableConnection
+        )
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA query_only = ON")
         connection.execute("PRAGMA busy_timeout = 10000")

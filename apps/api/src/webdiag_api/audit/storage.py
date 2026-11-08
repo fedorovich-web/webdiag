@@ -27,6 +27,14 @@ def _payload(model: AuditJob | AuditRun) -> tuple[str, str]:
     return payload, hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
+class _ClosableConnection(sqlite3.Connection):
+    def __exit__(self, exc_type: object, exc_val: object, exc_tb: object) -> bool | None:
+        try:
+            return super().__exit__(exc_type, exc_val, exc_tb)
+        finally:
+            self.close()
+
+
 class SqliteAuditStore:
     def __init__(self, database_path: str, *, history_limit: int = 1_000) -> None:
         if not 1 <= history_limit <= 100_000:
@@ -38,7 +46,9 @@ class SqliteAuditStore:
 
     def _connect(self) -> sqlite3.Connection:
         self._path.parent.mkdir(parents=True, exist_ok=True)
-        connection = sqlite3.connect(self._path, timeout=10, isolation_level=None)
+        connection = sqlite3.connect(
+            self._path, timeout=10, isolation_level=None, factory=_ClosableConnection
+        )
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
         connection.execute("PRAGMA journal_mode = WAL")
