@@ -29,6 +29,7 @@ Branch: `main` (clean working tree, all commits applied directly to main)
 9. `9dcca5d test(web): eliminate unused mock argument and type cleanly in yandex-flow test`
 10. `30dd5ff perf(web): prioritize above-the-fold tool catalog and tool page hero images for LCP`
 11. `576824b perf(web): set fetchPriority high on privacy, contacts, and 404 hero images for LCP`
+12. `70bc35b style(web): adopt modern 100dvh dynamic viewport units for mobile viewports`
 
 ## All Senior+ Standards Met
 - No connection or file descriptor leaks across any SQLite storage module.

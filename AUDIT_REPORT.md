@@ -4,7 +4,7 @@
 **Project:** WebDiag (`fedorovich-web/webdiag`)  
 **Repository Branch:** `main` (all commits applied directly to main as requested)  
 **Initial Baseline Commit:** `f72096a`  
-**Current Head Commit:** `576824b`  
+**Current Head Commit:** `70bc35b`  
 **Audit Standard:** Senior+ Production Engineering (Deterministic behavior, minimal complexity, strict typing, validated inputs, bounded concurrency, zero connection/fd leaks, zero dead weight)  
 
 ---
@@ -36,7 +36,7 @@ Across this comprehensive technical audit and remediation run, the entire codeba
 
 ## 2. Remediated Findings (Changelog by Commit on `main`)
 
-Eleven code remediations and optimization commits were tested and committed sequentially directly to `main`:
+Twelve code remediations and optimization commits were tested and committed sequentially directly to `main`:
 
 ### Commit 1: `eb98934` — `fix(web): prevent topbar action overflow on desktop viewports`
 - **Category:** `[HTML/CSS]` / `[BUG]`
@@ -141,6 +141,17 @@ Eleven code remediations and optimization commits were tested and committed sequ
 - **Fix:** Added `fetchPriority="high"` and removed lazy loading on all above-the-fold hero images.
 - **Verification:** `npm run typecheck` → 0 errors; `npm run test:web` → 167 files, 823 passed; `npm run build` → 279 static pages prerendered.
 
+### Commit 12: `70bc35b` — `style(web): adopt modern 100dvh dynamic viewport units for mobile viewports`
+- **Category:** `[HTML/CSS]` / `[UX/MOBILE]`
+- **Files:**
+  - `apps/web/app/globals.css`
+  - `apps/web/app/auth-page.css`
+  - `apps/web/app/not-found-page.css`
+  - `apps/web/app/account.css`
+- **Issue:** Viewport height rules using legacy `100vh` on mobile browsers (Safari on iOS, Chrome on Android) cause jumping layouts and clipped actions when dynamic URL address bars expand or collapse during scroll.
+- **Fix:** Implemented modern CSS Values Level 4 `100dvh` (Dynamic Viewport Height) with progressive `100vh` fallback across global body, auth layout, 404 shell, and account workspace layouts.
+- **Verification:** `npm run test:workspace` → 81 passed; `npm run test:web` → 167 files, 823 passed; `npm run build` → 279 static pages prerendered.
+
 ---
 
 ## 3. Senior+ Production Engineering Standards Review
@@ -154,6 +165,7 @@ Eleven code remediations and optimization commits were tested and committed sequ
    - SSRF policy validates every resolved IP address using `not value.is_global`, rejecting RFC 6598 CGNAT (`100.64.0.0/10`), documentation IPs, and internal loopbacks.
 4. **CSS Architecture & Maintainability:**
    - Eliminated brittle selector cascades and redundant media queries in `account.css`.
+   - Modernized dynamic viewport units to `100dvh` for mobile browsers.
 5. **Core Web Vitals & LCP:**
    - Eager decoding with `fetchPriority="high"` applied to all above-the-fold hero graphics across monitoring, tools catalog, all 115 tool pages, contacts, 404, and privacy policies.
 
@@ -163,7 +175,8 @@ Eleven code remediations and optimization commits were tested and committed sequ
 
 - **Branch:** `main`
 - **Working Tree:** Clean (all changes committed directly to `main`)
-- **Total Commits on `main` Ahead of Origin:** 12 commits
+- **Total Commits on `main` Ahead of Origin:** 14 commits
 - **Full Suite Status:** 100% Green (Vitest 823, Pytest 1191, Playwright 396, Knip 0, Typecheck 0 errors, Build 279 static pages prerendered)
+
 
 
