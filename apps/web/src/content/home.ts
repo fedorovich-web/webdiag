@@ -21,8 +21,8 @@ export const homeContent: HomeContent = {
   primaryAction: { ru: "Проверить сайт", en: "Check website" },
   secondaryAction: { ru: "Посмотреть пример отчёта", en: "View sample report" },
   heroNote: {
-    ru: "Быстрая проверка URL без сложной настройки. Ниже — пример подробного отчёта с приоритетами и рекомендациями.",
-    en: "Run a quick URL check without complex setup. Below you can see a detailed report example with priorities and recommendations.",
+    ru: "Быстрая проверка без регистрации за 15 секунд. Ниже — пример подробного отчёта с приоритетами и рекомендациями.",
+    en: "Quick check without registration in 15 seconds. Below is an example of a detailed report with priorities and recommendations.",
   },
   trustFacts: [
     { ru: `${PUBLIC_CATALOG_TOOL_COUNT} инструментов для SEO и диагностики`, en: `${PUBLIC_CATALOG_TOOL_COUNT} tools for SEO and diagnostics` },
@@ -254,6 +254,26 @@ export const homeContent: HomeContent = {
     {
       question: { ru: "WebDiag заменяет SEO-специалиста?", en: "Does WebDiag replace an SEO specialist?" },
       answer: { ru: "Нет. WebDiag ускоряет техническую диагностику, группирует проблемы и помогает расставить приоритеты. Семантика, стратегия, контент и итоговые решения остаются задачей специалиста или команды.", en: "No. WebDiag speeds up technical diagnostics, groups issues and helps prioritize work. Search strategy, semantics, content and final decisions remain with the specialist or team." },
+    },
+    {
+      question: {
+        ru: "Безопасна ли проверка для работы сайта?",
+        en: "Is the audit safe for website performance?",
+      },
+      answer: {
+        ru: "Да, абсолютно безопасна. WebDiag выполняет только безопасные GET/HEAD-запросы, строго соблюдает директивы robots.txt и ограничивает частоту обращений, чтобы не создавать нагрузки на ваш сервер.",
+        en: "Yes, completely safe. WebDiag only sends safe read-only GET/HEAD requests, strictly adheres to robots.txt rules, and throttles request concurrency to prevent server load.",
+      },
+    },
+    {
+      question: {
+        ru: "Сколько времени занимает аудит?",
+        en: "How long does the audit take?",
+      },
+      answer: {
+        ru: "Экспресс-проверка отдельной страницы занимает 10–15 секунд. Комплексный аудит проекта в личном кабинете выполняется в фоновом режиме с сохранением подробного отчёта.",
+        en: "A single-page check takes 10–15 seconds. Full project audits in the account workspace run in the background with persistent, actionable reports.",
+      },
     },
   ],
 
