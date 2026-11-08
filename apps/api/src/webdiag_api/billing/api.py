@@ -4,6 +4,7 @@ import json
 import logging
 from typing import Annotated
 
+import anyio
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, status
 
 from webdiag_api.accounts.api import SESSION_COOKIE_NAME, AccountServiceDependency
@@ -142,7 +143,7 @@ async def lava_webhook(
             status_code=400, detail={"code": "invalid_json", "message": "Expected an object."}
         )
     try:
-        return service.handle_webhook_event(body_dict)
+        return await anyio.to_thread.run_sync(service.handle_webhook_event, body_dict)
     except BillingServiceError as error:
         raise HTTPException(
             status_code=error.status_code, detail={"code": error.code, "message": error.message}
