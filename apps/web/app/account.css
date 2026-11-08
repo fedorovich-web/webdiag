@@ -6775,7 +6775,8 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
     grid-template-columns: 150px minmax(150px, 1fr) auto;
   }
   .wd-account-topbar-search { display: none; }
-  .wd-account-topbar-user div { display: none; }
+  .wd-account-topbar-project > svg { left: 9px; }
+  .wd-account-topbar-user-copy { display: none; }
 }
 @media (max-width: 900px) {
   body:has(.wd-account-workspace-page) .wd-site-header {
@@ -7600,19 +7601,6 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   text-decoration: none;
 }
 
-@media (max-width: 980px) {
-  .wd-account-topbar-inner {
-    grid-template-columns: 150px minmax(150px, 1fr) auto;
-  }
-
-  .wd-account-topbar-project > svg {
-    left: 9px;
-  }
-
-  .wd-account-topbar-user-copy {
-    display: none;
-  }
-}
 
 @media (max-width: 900px) {
   .wd-workspace-help {
@@ -7647,11 +7635,6 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
   align-items: initial;
 }
 
-@media (max-width: 980px) and (min-width: 901px) {
-  .wd-account-topbar-user .wd-account-user-menu {
-    display: grid;
-  }
-}
 
 
 @media (min-width: 981px) {
