@@ -2,6 +2,7 @@
   position: relative;
   isolation: isolate;
   min-height: calc(100vh - 66px);
+  min-height: calc(100dvh - 66px);
   display: grid;
   place-items: center;
   overflow: hidden;

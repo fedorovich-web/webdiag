@@ -1,5 +1,6 @@
 .wd-not-found {
   min-height: calc(100vh - 66px);
+  min-height: calc(100dvh - 66px);
   overflow: clip;
   background:
     radial-gradient(circle at 77% 27%, rgb(34 211 238 / .09), transparent 24rem),
