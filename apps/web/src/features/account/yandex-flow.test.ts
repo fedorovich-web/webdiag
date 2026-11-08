@@ -26,7 +26,7 @@ it("does not trust an arbitrary forwarded OAuth host", async () => {
 
 it("uses one backend exchange and preserves the server session lifetime", async () => {
   vi.stubEnv("WEBDIAG_API_INTERNAL_URL", "http://api:8000");
-  const fetcher = vi.fn(async (..._args: unknown[]) => new Response("{}", { headers: {
+  const fetcher = vi.fn().mockImplementation(async () => new Response("{}", { headers: {
     "set-cookie": "webdiag_session=session-token; Max-Age=3600; Path=/; HttpOnly; Secure; SameSite=Lax",
   }}));
   vi.stubGlobal("fetch", fetcher);
