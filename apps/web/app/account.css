@@ -7656,7 +7656,7 @@ body:has(.wd-account-workspace-page) .wd-workspace-sidebar > .wd-button {
 
 @media (min-width: 981px) {
   .wd-account-topbar-inner {
-    grid-template-columns: 220px 180px minmax(0, 1fr) 280px;
+    grid-template-columns: 220px 180px minmax(0, 1fr) auto;
     gap: 18px;
   }
 
