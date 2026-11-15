@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import test from "node:test";
@@ -9,6 +11,28 @@ const workflowsDir = path.join(rootDir, ".github", "workflows");
 const ciWorkflow = await readFile(path.join(workflowsDir, "ci.yml"), "utf8");
 const apiProject = await readFile(path.join(rootDir, "apps", "api", "pyproject.toml"), "utf8");
 const workerProject = await readFile(path.join(rootDir, "apps", "worker", "pyproject.toml"), "utf8");
+
+test("web image smoke distinguishes a site-wide robots ban from private routes", () => {
+  const webSmokeStep = ciWorkflow.match(
+    /- name: Smoke production web image[\s\S]*?(?=\n      - name:|$)/,
+  )?.[0];
+  const rootBanCommand = webSmokeStep?.match(/if (grep[^\n]+) <<<"\$robots"; then/)?.[1];
+  assert.ok(rootBanCommand, "web image smoke must reject a site-wide robots ban");
+  const gitBash = "C:/Program Files/Git/bin/bash.exe";
+  const bash = process.platform === "win32" && existsSync(gitBash) ? gitBash : "bash";
+  for (const [robots, expectedStatus] of [
+    ["User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /account\nDisallow: /en/login\n", 1],
+    ["User-agent: *\nDisallow: /\n", 0],
+    ["User-agent: *\nAllow: /\nDisallow: /account/\nDisallow: /\n", 0],
+  ]) {
+    const result = spawnSync(bash, ["-c", `robots="$(cat)"; ${rootBanCommand} <<<"$robots"`], {
+      input: robots,
+      encoding: "utf8",
+    });
+    assert.ifError(result.error);
+    assert.equal(result.status, expectedStatus, `wrong root-ban result for ${JSON.stringify(robots)}: ${result.stderr}`);
+  }
+});
 
 test("pins every external GitHub Action to an immutable commit SHA", async () => {
   const files = (await readdir(workflowsDir, { withFileTypes: true }))
