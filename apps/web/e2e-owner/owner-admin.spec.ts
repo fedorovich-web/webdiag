@@ -169,3 +169,18 @@ test("a newly registered customer keeps the existing account flow", async ({ pag
   await expect(page.getByLabel("User menu")).toBeVisible();
   expect((await page.request.get("/api/admin/access")).status()).toBe(403);
 });
+
+test("returning from the public homepage reuses the active account session", async ({ page }) => {
+  await signIn(page.request, "client@example.test");
+  await page.goto("/account");
+  await expect(page.getByLabel("Меню пользователя")).toBeVisible();
+
+  await page.goto("/");
+  await page.locator(".wd-header-login").click();
+  await expect(page).toHaveURL(/\/account$/);
+  await expect(page.getByLabel("Меню пользователя")).toBeVisible();
+
+  await page.goto("/en/login?return_to=%2Fen%2Faccount%2Fsettings");
+  await expect(page).toHaveURL(/\/en\/account\/settings$/);
+  await expect(page.getByRole("heading", { name: "Account settings", exact: true })).toBeVisible();
+});
