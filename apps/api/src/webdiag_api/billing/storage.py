@@ -73,6 +73,10 @@ class SqliteBillingStore:
                     );
                     CREATE INDEX IF NOT EXISTS billing_invoices_owner
                         ON billing_invoices(user_id, created_at);
+                    CREATE TABLE IF NOT EXISTS billing_payment_confirmations (
+                        invoice_id TEXT PRIMARY KEY REFERENCES billing_invoices(id),
+                        paid_at INTEGER NOT NULL
+                    );
                     CREATE TABLE IF NOT EXISTS billing_plan_periods (
                         invoice_id TEXT PRIMARY KEY REFERENCES billing_invoices(id),
                         user_id TEXT NOT NULL REFERENCES account_users(id),
@@ -187,6 +191,10 @@ class SqliteBillingStore:
                 )
             connection.execute(
                 "UPDATE billing_invoices SET state = 'paid' WHERE id = ?", (invoice.id,)
+            )
+            connection.execute(
+                "INSERT INTO billing_payment_confirmations (invoice_id, paid_at) VALUES (?, ?)",
+                (invoice.id, int(time.time())),
             )
             connection.execute("COMMIT")
         return Invoice(

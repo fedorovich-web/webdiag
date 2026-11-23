@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { ADMIN_HEADERS } from "./features/admin/admin-routing";
 
 const MAIN_DOMAIN = "webdiag.ru";
 const APP_SUBDOMAIN = "app.webdiag.ru";
@@ -33,6 +34,23 @@ export function middleware(request: NextRequest) {
     "";
   const hostname = (host.split(":")[0] ?? "").toLowerCase().trim();
   const { pathname, search } = request.nextUrl;
+
+  const ownerPage = /^\/(?:en\/)?admin(?:\/|$)/u.test(pathname);
+  const ownerApi = /^\/api\/admin(?:\/|$)/u.test(pathname);
+  if (ownerPage || ownerApi) {
+    const local = /^(?:localhost|127\.0\.0\.1)(?::\d+)?$/iu.test(host) || /^\[::1\](?::\d+)?$/u.test(host);
+    if (hostname === APP_SUBDOMAIN || local) {
+      const response = NextResponse.next();
+      for (const [name, value] of Object.entries(ADMIN_HEADERS)) response.headers.set(name, value);
+      return response;
+    }
+    if (ownerPage && isMainDomainHost(hostname)) {
+      return NextResponse.redirect(`https://${APP_SUBDOMAIN}${pathname}${search}`, {
+        status: 307, headers: ADMIN_HEADERS,
+      });
+    }
+    return new NextResponse(null, { status: 404, headers: ADMIN_HEADERS });
+  }
 
   if (
     pathname.startsWith("/_next") ||

@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { ADMIN_HEADERS } from "./src/features/admin/admin-routing";
 import { publicReportSecurityHeaders } from "./src/lib/public-report-security";
 import {
   overrideSecurityHeaders,
@@ -24,6 +25,10 @@ const nextConfig: NextConfig = {
     return [
       { source: "/:path*", headers: [...globalSecurityHeaders] },
       { source: "/reports/share/:path*", headers: [...sharedReportHeaders] },
+      ...["/admin/:path*", "/en/admin/:path*", "/api/admin/:path*"].map((source) => ({
+        source,
+        headers: Object.entries(ADMIN_HEADERS).map(([key, value]) => ({ key, value })),
+      })),
     ];
   },
 };

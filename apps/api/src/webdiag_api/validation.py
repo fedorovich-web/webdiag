@@ -11,6 +11,7 @@ async def api_validation_exception_handler(
     error: RequestValidationError,
 ) -> Response:
     contracts = (
+        ("/v1/admin/", "admin_invalid_request", "Invalid dashboard request."),
         ("/v1/account/", "account_invalid_request", "Invalid account request."),
         (
             "/v1/internal/ai/",

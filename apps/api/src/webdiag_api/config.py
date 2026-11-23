@@ -66,6 +66,7 @@ class Settings(BaseSettings):
     environment: str = "development"
     public_release: bool = False
     account_database_path: str = ".webdiag/accounts.sqlite3"
+    owner_account_id: str = ""
     audit_database_path: str = ".webdiag/audits.sqlite3"
     audit_history_limit: int = Field(default=1_000, ge=1, le=100_000)
     audit_public_request_limit: int = Field(default=60, ge=1, le=10_000)

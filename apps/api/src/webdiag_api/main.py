@@ -1,3 +1,6 @@
+from contextlib import asynccontextmanager
+
+import anyio
 from fastapi import FastAPI, Response, status
 from fastapi.exceptions import RequestValidationError
 
@@ -14,6 +17,8 @@ from webdiag_api.accounts.report_api import (
     public_router as report_public_router,
 )
 from webdiag_api.accounts.workspace_api import router as workspace_router
+from webdiag_api.admin_api import AdminResponseMiddleware, prepare_admin
+from webdiag_api.admin_api import router as admin_router
 from webdiag_api.ai.api import internal_router as ai_internal_router
 from webdiag_api.ai.api import router as ai_router
 from webdiag_api.audit.api import router as audit_router
@@ -45,7 +50,14 @@ from webdiag_api.tools.technical_seo import router as technical_seo_tool_router
 from webdiag_api.tools.url_management import router as url_management_tool_router
 from webdiag_api.validation import api_validation_exception_handler
 
-app = FastAPI(title="WebDiag API", version=__version__)
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    await anyio.to_thread.run_sync(prepare_admin)
+    yield
+
+
+app = FastAPI(title="WebDiag API", version=__version__, lifespan=lifespan)
 app.add_middleware(
     RequestBodyLimitMiddleware,
     http_request_body_max_bytes=settings.http_request_body_max_bytes,
@@ -53,8 +65,10 @@ app.add_middleware(
     ai_text_request_body_max_bytes=settings.ai_text_request_body_max_bytes,
     ai_image_upload_body_max_bytes=settings.ai_image_upload_body_max_bytes,
 )
+app.add_middleware(AdminResponseMiddleware)
 app.add_exception_handler(RequestValidationError, api_validation_exception_handler)
 app.include_router(account_router)
+app.include_router(admin_router)
 app.include_router(overview_router)
 app.include_router(billing_router)
 app.include_router(ai_router)

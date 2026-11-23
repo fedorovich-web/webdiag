@@ -11,13 +11,14 @@
     "typecheck": "tsc --noEmit",
     "prebuild": "node ../../scripts/verify-release.mjs",
     "postbuild": "node ../../scripts/prepare-standalone.mjs",
-    "test:browser": "playwright test"
+    "test:browser": "playwright test",
+    "test:browser:owner": "playwright test --config playwright.owner.config.ts"
   },
   "dependencies": {
     "@webdiag/tool-core": "1.0.0-beta.0",
     "@webdiag/tool-registry": "1.0.0-beta.0",
     "lucide-react": "^0.468.0",
-    "next": "16.4.2",
+    "next": "16.4.6",
     "nodemailer": "10.2.1",
     "qr": "0.6.0",
     "react": "19.2.8",
@@ -32,7 +33,7 @@
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "eslint": "9.35.0",
-    "eslint-config-next": "16.4.2",
+    "eslint-config-next": "16.4.6",
     "typescript": "5.9.3",
     "vitest": "4.1.12"
   }

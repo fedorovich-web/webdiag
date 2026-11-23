@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import type { AccountSessionResponse } from "./account-contract";
 import { AccountClientError } from "./account-client";
@@ -17,10 +17,12 @@ export function AccountSettings({
   locale,
   session,
   onUnauthenticated,
+  ownerDashboardLink,
 }: {
   readonly locale: Locale;
   readonly session: AccountSessionResponse;
   readonly onUnauthenticated: () => void;
+  readonly ownerDashboardLink?: ReactNode;
 }) {
   const ru = locale === "ru";
   const [sessionCount, setSessionCount] = useState<number | null>(null);
@@ -155,8 +157,8 @@ export function AccountSettings({
           <h1>{ru ? "Настройки аккаунта" : "Account settings"}</h1>
           <p>{ru ? "Проверьте данные профиля, смените пароль или завершите другие активные сессии." : "Review your profile, change your password, or end other active sessions."}</p>
         </div>
+        {ownerDashboardLink}
       </header>
-
       <div className="wd-account-settings-grid">
         <section className="wd-account-card" aria-labelledby="account-identity-title">
           <span className="eyebrow">{ru ? "Профиль" : "Profile"}</span>

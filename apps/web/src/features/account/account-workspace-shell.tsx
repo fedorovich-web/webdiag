@@ -39,6 +39,7 @@ interface AccountWorkspaceShellProps {
   readonly section: AccountWorkspaceSection;
   readonly currentProjectId?: string;
   readonly currentAuditId?: string;
+  readonly ownerDashboardLink?: ReactNode;
   readonly children?: ReactNode;
 }
 
@@ -175,6 +176,7 @@ export function AccountWorkspaceShell({
   section,
   currentProjectId,
   currentAuditId,
+  ownerDashboardLink,
   children,
 }: AccountWorkspaceShellProps) {
   const ru = locale === "ru";
@@ -552,6 +554,7 @@ export function AccountWorkspaceShell({
               locale={locale}
               session={session}
               onUnauthenticated={handleUnauthenticated}
+              ownerDashboardLink={ownerDashboardLink}
             />
           ) : null)}
         </section>

@@ -369,7 +369,8 @@ def test_sqlite_audit_store_survives_restart_and_bounds_history(tmp_path) -> Non
         assert connection.execute("SELECT COUNT(*) FROM audit_runs").fetchone()[0] == 2
 
 
-def test_default_audit_database_configuration_is_file_backed() -> None:
+def test_default_audit_database_configuration_is_file_backed(monkeypatch) -> None:
+    monkeypatch.delenv("WEBDIAG_AUDIT_DATABASE_PATH", raising=False)
     configured = Settings()
     assert configured.audit_database_path == ".webdiag/audits.sqlite3"
     assert configured.audit_history_limit == 1_000
