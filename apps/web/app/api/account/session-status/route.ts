@@ -18,5 +18,5 @@ export async function GET(request: NextRequest) {
     return new Response(null, { status: 403, headers });
   }
   const status = await accountSessionStatus(resolveRequestSessionCookie(request));
-  return new Response(null, { status, headers });
+  return Response.json({ authenticated: status === 204 }, { status: status === 503 ? 503 : 200, headers });
 }

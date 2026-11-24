@@ -27,7 +27,8 @@ export function SiteHeaderAccountActions({ locale, mobileLinks }: { locale: Loca
           redirect: "error",
           signal: AbortSignal.any([controller.signal, AbortSignal.timeout(2_500)]),
         });
-        if (!controller.signal.aborted) setSignedIn(response.status === 204);
+        const payload: { authenticated?: boolean } | null = response.ok ? await response.json() : null;
+        if (!controller.signal.aborted) setSignedIn(payload?.authenticated === true);
       } catch {
         if (!controller.signal.aborted) setSignedIn(false);
       }

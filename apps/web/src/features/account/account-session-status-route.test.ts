@@ -12,8 +12,8 @@ describe("public header session status", () => {
     const response = await GET(new NextRequest(endpoint, {
       headers: { origin: "https://webdiag.ru", cookie: "webdiag_session=test-token; preference=dark" },
     }));
-    expect(response.status).toBe(204);
-    expect(await response.text()).toBe("");
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ authenticated: true });
     expect(response.headers.get("access-control-allow-origin")).toBe("https://webdiag.ru");
     expect(response.headers.get("access-control-allow-credentials")).toBe("true");
     expect(response.headers.get("cache-control")).toBe("private, no-store");
@@ -28,7 +28,8 @@ describe("public header session status", () => {
     const upstream = vi.fn();
     vi.stubGlobal("fetch", upstream);
     const response = await GET(new NextRequest(endpoint, { headers: { origin: "https://webdiag.ru" } }));
-    expect(response.status).toBe(401);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ authenticated: false });
     expect(response.headers.get("access-control-allow-origin")).toBe("https://webdiag.ru");
     expect(upstream).not.toHaveBeenCalled();
   });
