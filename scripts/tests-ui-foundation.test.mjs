@@ -178,11 +178,13 @@ test("SEO layer includes social metadata, structured data, and localized sitemap
 
 test("mobile navigation keeps localized language controls without a theme switch", async () => {
   const header = await read("apps/web/src/components/site-header.tsx");
+  const accountActions = await read("apps/web/src/components/site-header-account-actions.tsx");
   const mobile = await read("apps/web/src/components/mobile-navigation.tsx");
-  assert.match(header, /<MobileNavigation locale=\{locale\}>/);
+  assert.match(header, /<SiteHeaderAccountActions locale=\{locale\} mobileLinks=/);
+  assert.match(accountActions, /<MobileNavigation locale=\{locale\} signedIn=\{signedIn\}>/);
   assert.match(mobile, /className="mobile-menu wd-mobile-navigation"/);
   assert.match(mobile, /language-switcher-mobile/);
-  assert.doesNotMatch(`${header}\n${mobile}`, /ThemeSwitcher|theme-switch/);
+  assert.doesNotMatch(`${header}\n${accountActions}\n${mobile}`, /ThemeSwitcher|theme-switch/);
 });
 
 test("random generators wait for an explicit client action", async () => {
