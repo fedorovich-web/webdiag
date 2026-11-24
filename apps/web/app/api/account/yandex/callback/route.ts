@@ -42,6 +42,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         oauthCookie(response, OAUTH_LINK, data.link_token);
         return response;
       }
+      if (upstream.status === 403 && detail?.code === "account_access_blocked") return fail("account_access_blocked");
       return fail(upstream.status === 503 ? "yandex_not_configured" : "yandex_exchange_failed");
     }
     const sessionCookie = selectAccountSetCookie(upstream.headers.get("set-cookie"));

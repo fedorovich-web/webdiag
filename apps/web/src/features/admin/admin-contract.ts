@@ -3,12 +3,22 @@ export type Days = "7" | "30" | "90";
 export type Currency = "RUB" | "USD";
 type PaidPlan = "pro" | "team";
 type PaymentState = "pending" | "paid";
+type ClientStatus = "active" | "blocked";
+
+export type ClientModerationAction = "block" | "unblock" | "revoke-sessions";
+
+export interface ClientModerationResult {
+  id: string;
+  status: ClientStatus;
+  revoked_session_count: number;
+}
 
 export interface Client {
   id: string;
   email: string;
   created_at: number;
-  status: "registered";
+  status: ClientStatus;
+  manageable: boolean;
   plan: "starter" | PaidPlan;
   expires_at: number | null;
   available_credits: number;

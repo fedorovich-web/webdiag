@@ -101,6 +101,52 @@ test("owner browser, BFF and API share only the live session and isolate roles",
   }
 });
 
+test("the owner blocks, restores and ends browser sessions from the client list", async ({ page, browser }) => {
+  const member = await browser.newContext({ baseURL: "http://127.0.0.1:4183" });
+  try {
+    await signIn(member.request, "client@example.test");
+    await signIn(page.request, "owner@example.test");
+    await page.goto("/en/admin");
+    await page.getByRole("button", { name: "Clients", exact: true }).click();
+    const search = page.getByRole("searchbox", { name: "Search by email" });
+    await search.fill("client@example.test");
+    await search.press("Enter");
+    const account = page.getByRole("row").filter({ has: page.getByRole("rowheader", { name: "client@example.test" }) });
+    const confirmation = page.getByRole("dialog");
+
+    await account.getByRole("button", { name: "Block", exact: true }).click();
+    await expect(confirmation).toContainText("client@example.test");
+    await confirmation.getByRole("button", { name: "Cancel" }).click();
+    await expect(account.getByText("Active", { exact: true })).toBeVisible();
+    expect((await member.request.get("/api/account/me")).status()).toBe(200);
+
+    await account.getByRole("button", { name: "Block", exact: true }).click();
+    await confirmation.getByRole("button", { name: "Block", exact: true }).click();
+    await expect(account.getByText("Blocked", { exact: true })).toBeVisible();
+    expect((await member.request.get("/api/account/me")).status()).toBe(401);
+    const blockedLogin = await member.request.post("/api/account/login", {
+      data: { email: "client@example.test", password: PASSWORD },
+    });
+    expect(blockedLogin.status()).toBe(403);
+    expect((await blockedLogin.json()).detail.code).toBe("account_access_blocked");
+
+    await account.getByRole("button", { name: "Unblock", exact: true }).click();
+    await confirmation.getByRole("button", { name: "Unblock", exact: true }).click();
+    await expect(account.getByText("Active", { exact: true })).toBeVisible();
+    expect((await member.request.get("/api/account/me")).status()).toBe(401);
+    await signIn(member.request, "client@example.test");
+
+    await account.getByRole("button", { name: "End sessions", exact: true }).click();
+    await confirmation.getByRole("button", { name: "End sessions", exact: true }).click();
+    await expect(page.getByRole("status")).toHaveText("Sessions ended: 1.");
+    expect((await member.request.get("/api/account/me")).status()).toBe(401);
+    await expect(account.getByText("Active", { exact: true })).toBeVisible();
+    await signIn(member.request, "client@example.test");
+  } finally {
+    await member.close();
+  }
+});
+
 test("mobile uses the real data, keeps loading and error distinct, and retries", async ({ page }, info) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ colorScheme: "dark" });
@@ -176,7 +222,7 @@ test("returning from the public homepage reuses the active account session", asy
   await expect(page.getByLabel("Меню пользователя")).toBeVisible();
 
   await page.goto("/");
-  await page.locator(".wd-header-login").click();
+  await page.locator(".wd-header-cta").filter({ hasText: "В кабинет" }).click();
   await expect(page).toHaveURL(/\/account$/);
   await expect(page.getByLabel("Меню пользователя")).toBeVisible();
 

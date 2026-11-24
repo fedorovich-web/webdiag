@@ -208,6 +208,42 @@ button.wd-owner-metric {
   border-bottom: 0;
 }
 
+.wd-owner-client-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .4rem;
+}
+
+.wd-owner-client-actions .wd-button {
+  min-height: 2.25rem;
+  padding: .35rem .65rem;
+  font-size: .85rem;
+}
+
+.wd-owner-confirm {
+  box-sizing: border-box;
+  width: min(27rem, calc(100% - 2rem));
+  min-height: 0;
+  color: var(--text);
+}
+
+.wd-owner-confirm::backdrop {
+  background: rgb(0 0 0 / 48%);
+}
+
+.wd-owner-confirm p {
+  overflow-wrap: anywhere;
+}
+
+.wd-owner-confirm .wd-owner-client-actions {
+  justify-content: flex-end;
+}
+
+.wd-owner-moderation-notice {
+  margin: 0 0 .75rem;
+}
+
 .wd-owner-breakdown {
   display: grid;
   gap: .45rem;

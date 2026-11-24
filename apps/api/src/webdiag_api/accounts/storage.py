@@ -4,10 +4,30 @@ import sqlite3
 import threading
 import time
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 from webdiag_api.accounts.models import AccountUser, utc_datetime
+
+AccountAccessStatus = Literal["active", "blocked"]
+AccountModerationAction = Literal["block", "unblock", "revoke-sessions"]
+
+
+class AccountAccessBlocked(ValueError):
+    pass
+
+
+class AccountModerationError(ValueError):
+    pass
+
+
+@dataclass(frozen=True, slots=True)
+class AccountModerationResult:
+    id: str
+    status: AccountAccessStatus
+    revoked_session_count: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -111,9 +131,103 @@ class SqliteAccountStore:
                         user_id TEXT PRIMARY KEY REFERENCES account_users(id),
                         sent_at INTEGER NOT NULL
                     );
+                    CREATE TABLE IF NOT EXISTS account_access_blocks (
+                        user_id TEXT PRIMARY KEY NOT NULL REFERENCES account_users(id)
+                            ON DELETE CASCADE
+                    );
+                    CREATE TABLE IF NOT EXISTS account_moderation_events (
+                        id INTEGER PRIMARY KEY,
+                        actor_user_id TEXT NOT NULL,
+                        target_user_id TEXT NOT NULL,
+                        action TEXT NOT NULL CHECK(action IN (
+                            'block', 'unblock', 'revoke-sessions'
+                        )),
+                        previous_status TEXT NOT NULL CHECK(previous_status IN (
+                            'active', 'blocked'
+                        )),
+                        status TEXT NOT NULL CHECK(status IN ('active', 'blocked')),
+                        revoked_session_count INTEGER NOT NULL CHECK(revoked_session_count >= 0),
+                        created_at INTEGER NOT NULL
+                    );
                     """
                 )
             self._schema_ready = True
+
+    @staticmethod
+    def _is_blocked(connection: sqlite3.Connection, user_id: str) -> bool:
+        return (
+            connection.execute(
+                "SELECT 1 FROM account_access_blocks WHERE user_id = ?", (user_id,)
+            ).fetchone()
+            is not None
+        )
+
+    def moderate_account(
+        self,
+        *,
+        owner_id: str | None,
+        token_hash: str,
+        user_id: str,
+        action: AccountModerationAction,
+        clock: Callable[[], int],
+    ) -> AccountModerationResult:
+        self.ensure_schema()
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            now = clock()
+            actor = self._active_session_user(connection, token_hash, now)
+            if actor is None:
+                raise AccountModerationError("account_unauthenticated")
+            if actor.id != owner_id:
+                raise AccountModerationError("admin_forbidden")
+            if actor.id == user_id:
+                raise AccountModerationError("admin_owner_protected")
+            if (
+                connection.execute(
+                    "SELECT 1 FROM account_users WHERE id = ?", (user_id,)
+                ).fetchone()
+                is None
+            ):
+                raise AccountModerationError("admin_client_not_found")
+
+            previous_status: AccountAccessStatus = (
+                "blocked" if self._is_blocked(connection, user_id) else "active"
+            )
+            status = previous_status
+            revoked = 0
+            if action == "block":
+                status = "blocked"
+                connection.execute(
+                    "INSERT INTO account_access_blocks(user_id) VALUES (?) "
+                    "ON CONFLICT(user_id) DO NOTHING",
+                    (user_id,),
+                )
+                connection.execute("DELETE FROM account_oauth_links WHERE user_id = ?", (user_id,))
+            elif action == "unblock":
+                status = "active"
+                connection.execute(
+                    "DELETE FROM account_access_blocks WHERE user_id = ?", (user_id,)
+                )
+            if action in ("block", "revoke-sessions"):
+                revoked = connection.execute(
+                    "DELETE FROM account_sessions WHERE user_id = ? AND expires_at > ?",
+                    (user_id, now),
+                ).rowcount
+                connection.execute(
+                    "DELETE FROM account_sessions WHERE user_id = ? AND expires_at <= ?",
+                    (user_id, now),
+                )
+            connection.execute(
+                """
+                INSERT INTO account_moderation_events(
+                    actor_user_id, target_user_id, action, previous_status, status,
+                    revoked_session_count, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (actor.id, user_id, action, previous_status, status, revoked, now),
+            )
+            connection.execute("COMMIT")
+        return AccountModerationResult(user_id, status, revoked)
 
     def resolve_yandex_user(
         self,
@@ -133,12 +247,16 @@ class SqliteAccountStore:
                 (subject,),
             ).fetchone()
             if row is not None:
+                if self._is_blocked(connection, row["id"]):
+                    raise AccountAccessBlocked
                 connection.execute("COMMIT")
                 return self._stored_user(row), False
             row = connection.execute(
                 "SELECT * FROM account_users WHERE email = ?", (email,)
             ).fetchone()
             if row is not None:
+                if self._is_blocked(connection, row["id"]):
+                    raise AccountAccessBlocked
                 raise ValueError("account_link_required")
             is_new = row is None
             if is_new:
@@ -173,6 +291,8 @@ class SqliteAccountStore:
         self.ensure_schema()
         with self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
+            if self._is_blocked(connection, user_id):
+                raise AccountAccessBlocked
             connection.execute(
                 "DELETE FROM account_oauth_links WHERE expires_at <= ? OR user_id = ?",
                 (int(time.time()), user_id),
@@ -192,7 +312,8 @@ class SqliteAccountStore:
             row = connection.execute(
                 "SELECT l.*, u.email FROM account_oauth_links l "
                 "JOIN account_users u ON u.id = l.user_id "
-                "WHERE token_hash = ? AND expires_at > ?",
+                "WHERE token_hash = ? AND expires_at > ? "
+                "AND NOT EXISTS (SELECT 1 FROM account_access_blocks b WHERE b.user_id = u.id)",
                 (token_hash, now),
             ).fetchone()
             if row is None:
@@ -226,8 +347,10 @@ class SqliteAccountStore:
         with self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
             row = connection.execute(
-                "SELECT * FROM account_oauth_links WHERE token_hash = ? AND expires_at > ? "
-                "AND recovery_expires_at > ? AND recovery_attempts < 5",
+                "SELECT l.* FROM account_oauth_links l WHERE token_hash = ? AND expires_at > ? "
+                "AND recovery_expires_at > ? AND recovery_attempts < 5 "
+                "AND NOT EXISTS ("
+                "SELECT 1 FROM account_access_blocks b WHERE b.user_id = l.user_id)",
                 (token_hash, now, now),
             ).fetchone()
             if row is None:
@@ -318,6 +441,8 @@ class SqliteAccountStore:
         created_at = time.time_ns()
         with self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
+            if self._is_blocked(connection, user_id):
+                raise AccountAccessBlocked
             connection.execute("DELETE FROM account_sessions WHERE expires_at <= ?", (now,))
             connection.execute(
                 """
@@ -342,26 +467,37 @@ class SqliteAccountStore:
             connection.execute("COMMIT")
 
     def get_user_id_for_session(self, *, token_hash: str, now: int | None = None) -> str | None:
+        user = self.get_user_for_session(token_hash=token_hash, now=now)
+        return user.id if user else None
+
+    @staticmethod
+    def _active_session_user(
+        connection: sqlite3.Connection, token_hash: str, now: int
+    ) -> StoredUser | None:
+        row = connection.execute(
+            """
+            SELECT u.*
+            FROM account_sessions s JOIN account_users u ON u.id = s.user_id
+            WHERE s.token_hash = ? AND s.expires_at > ?
+              AND NOT EXISTS (SELECT 1 FROM account_access_blocks b WHERE b.user_id = u.id)
+            """,
+            (token_hash, now),
+        ).fetchone()
+        return SqliteAccountStore._stored_user(row)
+
+    def get_user_for_session(self, *, token_hash: str, now: int | None = None) -> StoredUser | None:
         self.ensure_schema()
         current_time = int(time.time()) if now is None else now
         with self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
-            row = connection.execute(
-                """
-                SELECT user_id, expires_at
-                FROM account_sessions
-                WHERE token_hash = ?
-                """,
-                (token_hash,),
-            ).fetchone()
-            if row is not None and int(row["expires_at"]) <= current_time:
+            user = self._active_session_user(connection, token_hash, current_time)
+            if user is None:
                 connection.execute(
-                    "DELETE FROM account_sessions WHERE token_hash = ?",
-                    (token_hash,),
+                    "DELETE FROM account_sessions WHERE token_hash = ? AND expires_at <= ?",
+                    (token_hash, current_time),
                 )
-                row = None
             connection.execute("COMMIT")
-        return str(row["user_id"]) if row else None
+        return user
 
     def delete_session(self, *, token_hash: str) -> None:
         self.ensure_schema()
@@ -381,6 +517,8 @@ class SqliteAccountStore:
         self.ensure_schema()
         with self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
+            if self._is_blocked(connection, user_id):
+                raise AccountAccessBlocked
             if replacement_password_hash is None:
                 current = connection.execute(
                     """
@@ -439,16 +577,13 @@ class SqliteAccountStore:
                 "DELETE FROM account_sessions WHERE expires_at <= ?",
                 (current_time,),
             )
-            session = connection.execute(
-                "SELECT user_id FROM account_sessions WHERE token_hash = ?",
-                (current_token_hash,),
-            ).fetchone()
-            if session is None:
+            user = self._active_session_user(connection, current_token_hash, current_time)
+            if user is None:
                 connection.execute("COMMIT")
                 return None
             row = connection.execute(
                 "SELECT COUNT(*) FROM account_sessions WHERE user_id = ?",
-                (str(session["user_id"]),),
+                (user.id,),
             ).fetchone()
             connection.execute("COMMIT")
         return int(row[0]) if row is not None else 0
@@ -467,11 +602,8 @@ class SqliteAccountStore:
                 "DELETE FROM account_sessions WHERE expires_at <= ?",
                 (current_time,),
             )
-            session = connection.execute(
-                "SELECT user_id FROM account_sessions WHERE token_hash = ?",
-                (current_token_hash,),
-            ).fetchone()
-            if session is None:
+            user = self._active_session_user(connection, current_token_hash, current_time)
+            if user is None:
                 connection.execute("COMMIT")
                 return None
             cursor = connection.execute(
@@ -479,7 +611,7 @@ class SqliteAccountStore:
                 DELETE FROM account_sessions
                 WHERE user_id = ? AND token_hash <> ?
                 """,
-                (str(session["user_id"]), current_token_hash),
+                (user.id, current_token_hash),
             )
             connection.execute("COMMIT")
         return max(0, cursor.rowcount)
@@ -492,10 +624,17 @@ class SqliteAccountStore:
         password_hash: str,
         token_hash: str,
         expires_at: int,
+        current_token_hash: str | None = None,
     ) -> bool:
         self.ensure_schema()
         with self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
+            if self._is_blocked(connection, user_id):
+                return False
+            if current_token_hash is not None:
+                user = self._active_session_user(connection, current_token_hash, int(time.time()))
+                if user is None or user.id != user_id:
+                    return False
             cursor = connection.execute(
                 """
                 UPDATE account_users SET password_hash = ?

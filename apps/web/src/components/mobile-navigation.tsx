@@ -5,11 +5,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import type { Locale } from "@webdiag/tool-registry";
-import { loginPath, registerPath } from "../lib/routes";
+import { accountPath, loginPath, registerPath } from "../lib/routes";
 import { LanguageSwitcher } from "./language-switcher";
 import { SiteBrand } from "./site-brand";
 
-export function MobileNavigation({ locale, children }: { locale: Locale; children: ReactNode }) {
+export function MobileNavigation({ locale, signedIn, children }: { locale: Locale; signedIn: boolean; children: ReactNode }) {
   const pathname = usePathname();
   const id = useId();
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -108,10 +108,18 @@ export function MobileNavigation({ locale, children }: { locale: Locale; childre
         <div className="wd-mobile-navigation-footer">
           <LanguageSwitcher locale={locale} className="language-switcher-mobile" />
           <div className="wd-mobile-navigation-account">
-            <Link href={loginPath(locale)} prefetch={false}>{ru ? "Войти" : "Sign in"}</Link>
-            <Link className="wd-mobile-navigation-register" href={registerPath(locale)} prefetch={false}>
-              {ru ? "Создать аккаунт" : "Create account"}
-            </Link>
+            {signedIn ? (
+              <Link className="wd-mobile-navigation-register" href={accountPath(locale)} prefetch={false}>
+                {ru ? "В кабинет" : "My account"}
+              </Link>
+            ) : (
+              <>
+                <Link href={loginPath(locale)} prefetch={false}>{ru ? "Войти" : "Sign in"}</Link>
+                <Link className="wd-mobile-navigation-register" href={registerPath(locale)} prefetch={false}>
+                  {ru ? "Создать аккаунт" : "Create account"}
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </dialog>

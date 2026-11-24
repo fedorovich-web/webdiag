@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useState, type FormEvent } from "react";
 import type { Locale } from "@webdiag/tool-registry";
 import { loginAccount, registerAccount } from "./account-client";
-import { accountErrorMessage } from "./account-messages";
+import { accountErrorMessage, accountErrorMessageByCode } from "./account-messages";
 import { loginPath, registerPath } from "../../lib/routes";
 import { accountReturnPath } from "./account-navigation";
 
@@ -27,6 +27,7 @@ export function AccountAuthForm({ locale, mode, returnTo, oauthError }: AccountA
   const [error, setError] = useState(() => {
     if (!oauthError) return "";
     if (needsYandexProof) return ru ? "Подтвердите владение email аккаунта кодом из письма." : "Confirm ownership of the account email with an email code.";
+    if (oauthError === "account_access_blocked") return accountErrorMessageByCode(locale, oauthError) ?? "";
     if (oauthError === "yandex_access_denied") return ru ? "Вы отменили вход через Яндекс ID." : "Yandex ID sign-in was cancelled.";
     return ru ? "Не удалось войти через Яндекс ID. Начните вход ещё раз или используйте email и пароль." : "Could not sign in with Yandex ID. Try again or use your email and password.";
   });

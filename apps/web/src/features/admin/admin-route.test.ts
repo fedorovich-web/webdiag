@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { GET } from "../../../app/api/admin/[section]/route";
+import { POST } from "../../../app/api/admin/clients/[userId]/[action]/route";
 import { middleware } from "../../middleware";
 import { accountReturnPath } from "../account/account-navigation";
 
@@ -50,5 +51,48 @@ describe("owner dashboard routes", () => {
     expect((await GET(request, { params: Promise.resolve({ section: "browse" }) })).status).toBe(404);
     expect((await GET(request, { params: Promise.resolve({ section: "overview" }) })).status).toBe(401);
     expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("rejects guest, missing origin, cross-origin and invalid moderation requests", async () => {
+    const fetch = vi.fn();
+    vi.stubGlobal("fetch", fetch);
+    const userId = "6d8bb30c-2cf4-4700-bad0-38943d2acf00";
+    const params = (action = "block") => ({ params: Promise.resolve({ userId, action }) });
+    const url = "https://app.webdiag.ru/api/admin/clients/" + userId + "/block";
+    const request = (headers: Record<string, string>) => new NextRequest(url, { method: "POST", headers });
+    const cookie = "webdiag_session=example";
+    const origin = "https://app.webdiag.ru";
+    expect((await POST(request({ origin }), params())).status).toBe(401);
+    expect((await POST(request({ cookie }), params())).status).toBe(403);
+    expect((await POST(request({ cookie, origin: "https://webdiag.ru" }), params())).status).toBe(403);
+    expect((await POST(request({ cookie, origin, "sec-fetch-site": "cross-site" }), params())).status).toBe(403);
+    expect((await POST(request({ cookie, origin }), params("delete"))).status).toBe(404);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("forwards a typed moderation operation privately and returns only the result fields", async () => {
+    const userId = "6d8bb30c-2cf4-4700-bad0-38943d2acf00";
+    const fetch = vi.fn().mockResolvedValue(Response.json({
+      id: userId, status: "blocked", revoked_session_count: 2, private: "ignored",
+    }));
+    vi.stubGlobal("fetch", fetch);
+    const request = new NextRequest(`https://app.webdiag.ru/api/admin/clients/${userId}/block?ignore=1`, {
+      method: "POST",
+      headers: {
+        cookie: "unrelated=secret; webdiag_session=example",
+        authorization: "Bearer ignored",
+        origin: "https://app.webdiag.ru",
+      },
+    });
+    const response = await POST(request, { params: Promise.resolve({ userId, action: "block" }) });
+    expect(fetch).toHaveBeenCalledOnce();
+    expect(fetch).toHaveBeenCalledWith(expect.stringMatching(`/v1/admin/clients/${userId}/block$`), expect.objectContaining({
+      method: "POST",
+      headers: { accept: "application/json", cookie: "webdiag_session=example", "x-webdiag-admin-action": "1" },
+      cache: "no-store",
+      redirect: "error",
+    }));
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+    expect(await response.json()).toEqual({ id: userId, status: "blocked", revoked_session_count: 2 });
   });
 });

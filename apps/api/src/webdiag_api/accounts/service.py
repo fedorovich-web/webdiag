@@ -26,7 +26,7 @@ from webdiag_api.accounts.security import (
     validate_password,
     verify_password,
 )
-from webdiag_api.accounts.storage import StoredUser
+from webdiag_api.accounts.storage import AccountAccessBlocked, StoredUser
 
 
 class AccountStore(Protocol):
@@ -36,8 +36,6 @@ class AccountStore(Protocol):
     def create_user(self, *, email: str, display_name: str, password_hash: str) -> StoredUser: ...
 
     def get_user_by_email(self, email: str) -> StoredUser | None: ...
-
-    def get_user_by_id(self, user_id: str) -> StoredUser | None: ...
 
     def resolve_yandex_user(
         self,
@@ -76,7 +74,9 @@ class AccountStore(Protocol):
         active_session_limit: int,
     ) -> bool: ...
 
-    def get_user_id_for_session(self, *, token_hash: str, now: int | None = None) -> str | None: ...
+    def get_user_for_session(
+        self, *, token_hash: str, now: int | None = None
+    ) -> StoredUser | None: ...
 
     def delete_session(self, *, token_hash: str) -> None: ...
 
@@ -99,6 +99,7 @@ class AccountStore(Protocol):
         password_hash: str,
         token_hash: str,
         expires_at: int,
+        current_token_hash: str | None = None,
     ) -> bool: ...
 
     def get_login_retry_after(self, *, identity_hash: str, now: int) -> int | None: ...
@@ -227,6 +228,8 @@ class AccountService:
                 display_name=normalized_display,
                 password_hash=hash_password(secrets.token_urlsafe(32), self._scrypt_parameters),
             )
+        except AccountAccessBlocked as error:
+            raise self._access_blocked_error() from error
         except ValueError as error:
             if str(error) != "account_link_required":
                 raise AccountServiceError(
@@ -234,9 +237,12 @@ class AccountService:
                 ) from error
             user = self._store.get_user_by_email(normalized_email)
             token = secrets.token_urlsafe(32)
-            self._store.create_oauth_link(
-                token_hash=hash_session_token(token), subject=subject, user_id=user.id
-            )
+            try:
+                self._store.create_oauth_link(
+                    token_hash=hash_session_token(token), subject=subject, user_id=user.id
+                )
+            except AccountAccessBlocked as blocked:
+                raise self._access_blocked_error() from blocked
             raise OAuthAccountLinkRequired(token) from error
         return self._create_session(user), is_new
 
@@ -354,7 +360,7 @@ class AccountService:
         token: str | None,
         request: PasswordChangeRequest,
     ) -> AuthenticatedSession:
-        user, _ = self._resolve_session(token)
+        user, current_token_hash = self._resolve_session(token)
         identity_hash = hash_login_identity(user.email)
         now = int(time.time())
         retry_after = self._store.get_login_retry_after(
@@ -405,6 +411,7 @@ class AccountService:
             password_hash=hash_password(new_password, self._scrypt_parameters),
             token_hash=secret.token_hash,
             expires_at=now + self._session_ttl_seconds,
+            current_token_hash=current_token_hash,
         )
         if not replaced:
             raise AccountServiceError(
@@ -429,10 +436,7 @@ class AccountService:
 
     def _resolve_session(self, token: str | None) -> tuple[StoredUser, str]:
         token_hash = self._session_token_hash(token)
-        user_id = self._store.get_user_id_for_session(token_hash=token_hash)
-        if user_id is None:
-            raise self._unauthenticated_error()
-        user = self._store.get_user_by_id(user_id)
+        user = self._store.get_user_for_session(token_hash=token_hash)
         if user is None:
             raise self._unauthenticated_error()
         return user, token_hash
@@ -455,6 +459,10 @@ class AccountService:
         if token and len(token) <= 256:
             self._store.delete_session(token_hash=hash_session_token(token))
 
+    @staticmethod
+    def _access_blocked_error() -> AccountServiceError:
+        return AccountServiceError(403, "account_access_blocked", "Account access is blocked.")
+
     def _create_session(
         self,
         user: StoredUser,
@@ -462,14 +470,17 @@ class AccountService:
         replacement_password_hash: str | None = None,
     ) -> AuthenticatedSession:
         secret = create_session_secret()
-        created = self._store.create_session_if_password_hash(
-            token_hash=secret.token_hash,
-            user_id=user.id,
-            expected_password_hash=user.password_hash,
-            replacement_password_hash=replacement_password_hash,
-            expires_at=int(time.time()) + self._session_ttl_seconds,
-            active_session_limit=self._active_session_limit,
-        )
+        try:
+            created = self._store.create_session_if_password_hash(
+                token_hash=secret.token_hash,
+                user_id=user.id,
+                expected_password_hash=user.password_hash,
+                replacement_password_hash=replacement_password_hash,
+                expires_at=int(time.time()) + self._session_ttl_seconds,
+                active_session_limit=self._active_session_limit,
+            )
+        except AccountAccessBlocked as error:
+            raise self._access_blocked_error() from error
         if not created:
             raise AccountServiceError(
                 409,

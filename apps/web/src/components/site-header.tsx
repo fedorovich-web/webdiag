@@ -13,9 +13,9 @@ import {
 import type { Locale } from "@webdiag/tool-registry";
 import { LanguageSwitcher } from "./language-switcher";
 import { SiteBrand } from "./site-brand";
-import { MobileNavigation } from "./mobile-navigation";
+import { SiteHeaderAccountActions } from "./site-header-account-actions";
 import { ToolsMenuShell } from "./tools-menu-shell";
-import { loginPath, toolsPath } from "../lib/routes";
+import { toolsPath } from "../lib/routes";
 import { PUBLIC_CATALOG_TOOL_COUNT } from "../features/tools/public-catalog-data";
 
 interface SiteHeaderProps {
@@ -107,10 +107,6 @@ function NavigationLinks({ locale, compact = false }: { locale: Locale; compact?
 }
 
 export function SiteHeader({ locale }: SiteHeaderProps) {
-  const createAccount = locale === "ru" ? "Создать аккаунт" : "Create account";
-  const login = locale === "ru" ? "Войти" : "Sign in";
-  const registerHref = locale === "ru" ? "/register" : "/en/register";
-
   return (
     <header className="wd-site-header">
       <div className="shell wd-header-inner">
@@ -120,11 +116,7 @@ export function SiteHeader({ locale }: SiteHeaderProps) {
         <div className="wd-header-actions header-actions">
           <div id="account-workspace-menu-slot" className="wd-account-menu-slot" />
           <LanguageSwitcher locale={locale} className="language-switcher-desktop" />
-          <Link className="wd-header-login" href={loginPath(locale)} prefetch={false}>{login}</Link>
-          <Link className="wd-header-cta" href={registerHref} prefetch={false}>{createAccount}</Link>
-          <MobileNavigation locale={locale}>
-            <NavigationLinks locale={locale} compact />
-          </MobileNavigation>
+          <SiteHeaderAccountActions locale={locale} mobileLinks={<NavigationLinks locale={locale} compact />} />
         </div>
       </div>
     </header>

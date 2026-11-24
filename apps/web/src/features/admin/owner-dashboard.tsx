@@ -3,7 +3,7 @@
 
 import { ArrowUpRight, BarChart3, CreditCard, LayoutDashboard, Users } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import type { Client, ClientFilters, Currency, Days, ListPage, Overview, Payment, PaymentFilters, Usage } from "./admin-contract";
+import type { Client, ClientFilters, ClientModerationAction, ClientModerationResult, Currency, Days, ListPage, Overview, Payment, PaymentFilters, Usage } from "./admin-contract";
 import { adminLoginPath } from "./admin-routing";
 
 const PERIODS = ["7", "30", "90"] as const;
@@ -25,6 +25,61 @@ type LoadResult = { key: string } & ({ payload: Payload } | { status: number });
 const DEFAULT_CLIENTS: ClientFilters = { days: "", segment: "", email: "" };
 const DEFAULT_PAYMENTS: PaymentFilters = { days: "", date_basis: "created", state: "", currency: "", kind: "" };
 const PLANS = { pro: "Pro", team: "Team", starter: "Starter" };
+
+const MODERATION_TEXT = {
+  block: {
+    label: ["Заблокировать", "Block"],
+    prompt: ["Доступ к аккаунту будет закрыт, все сессии завершатся.", "Access will be blocked and all sessions will end."],
+  },
+  unblock: {
+    label: ["Разблокировать", "Unblock"],
+    prompt: ["Клиент сможет войти в аккаунт заново.", "The client will be able to sign in again."],
+  },
+  "revoke-sessions": {
+    label: ["Завершить сессии", "End sessions"],
+    prompt: ["Все сессии завершатся. Клиент сможет войти заново.", "All sessions will end. The client can sign in again."],
+  },
+} as const;
+
+type ModerationTarget = { client: Client; action: ClientModerationAction };
+
+function ConfirmModeration({ target, busy, onClose, onConfirm, t }: {
+  target: ModerationTarget;
+  busy: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  t: Translate;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const dialog = ref.current;
+    dialog?.showModal();
+    return () => dialog?.close();
+  }, []);
+  const { label, prompt } = MODERATION_TEXT[target.action];
+  const title = t(label[0], label[1]);
+  return <dialog
+    ref={ref}
+    className="wd-owner-panel wd-owner-confirm"
+    aria-labelledby="wd-owner-confirm-title"
+    aria-describedby="wd-owner-confirm-copy"
+    onCancel={(event) => {
+      event.preventDefault();
+      if (!busy) onClose();
+    }}
+  >
+    <h2 id="wd-owner-confirm-title">{title}</h2>
+    <p id="wd-owner-confirm-copy"><strong>{target.client.email}</strong><br />{t(prompt[0], prompt[1])}</p>
+    <div className="wd-owner-client-actions">
+      <button type="button" className="wd-button wd-button-secondary" onClick={onClose} disabled={busy}>
+        {t("Отмена", "Cancel")}
+      </button>
+      <button type="button" className="wd-button wd-button-primary" onClick={onConfirm} disabled={busy}>
+        {busy ? t("Сохраняем…", "Saving…") : title}
+      </button>
+    </div>
+  </dialog>;
+}
 
 function Select<Value extends string>({ label, value, options, onChange }: {
   label: string;
@@ -122,6 +177,9 @@ export function OwnerDashboard({ locale }: { locale: "ru" | "en" }) {
   const [emailDraft, setEmailDraft] = useState("");
   const [result, setResult] = useState<LoadResult>();
   const [requestVersion, setRequestVersion] = useState(0);
+  const [moderation, setModeration] = useState<ModerationTarget>();
+  const [moderating, setModerating] = useState(false);
+  const [moderationNotice, setModerationNotice] = useState<{ message: string; error?: true }>();
   const dataRef = useRef<HTMLDivElement>(null);
   const t: Translate = (ru, en) => locale === "ru" ? ru : en;
   const number = new Intl.NumberFormat(locale);
@@ -202,6 +260,49 @@ export function OwnerDashboard({ locale }: { locale: "ru" | "en" }) {
   function setClientFilters(filters: Partial<ClientFilters>) {
     setClients((current) => ({ ...current, ...filters }));
     goToPage(1);
+  }
+
+  function confirmModeration(client: Client, action: ClientModerationAction) {
+    setModerationNotice(undefined);
+    setModeration({ client, action });
+  }
+
+  async function submitModeration() {
+    if (!moderation || moderating) return;
+    const { client, action } = moderation;
+    setModerating(true);
+    try {
+      const response = await fetch(`/api/admin/clients/${client.id}/${action}`, {
+        method: "POST", credentials: "same-origin", cache: "no-store",
+      });
+      if (!response.ok) throw new Error("Moderation request failed");
+      const update: ClientModerationResult = await response.json();
+      setResult((previous) => {
+        if (!previous || !("payload" in previous) || previous.payload.section !== "clients") return previous;
+        const { data } = previous.payload;
+        return {
+          ...previous,
+          payload: {
+            section: "clients",
+            data: { ...data, items: data.items.map((row) => row.id === update.id ? { ...row, status: update.status } : row) },
+          },
+        };
+      });
+      const sessions = number.format(update.revoked_session_count);
+      const message = action === "unblock" ? t("Доступ восстановлен.", "Access restored.")
+        : action === "block" ? t(`Аккаунт заблокирован. Завершено сессий: ${sessions}.`, `Account blocked. Sessions ended: ${sessions}.`)
+          : t(`Завершено сессий: ${sessions}.`, `Sessions ended: ${sessions}.`);
+      setModerationNotice({ message });
+    } catch {
+      setModerationNotice({
+        error: true,
+        message: t("Не удалось подтвердить изменение. Список клиентов обновляется.", "The change could not be confirmed. The client list is refreshing."),
+      });
+      requestFreshData();
+    } finally {
+      setModerating(false);
+      setModeration(undefined);
+    }
   }
 
   function openPayments(filters: Partial<PaymentFilters>) {
@@ -314,15 +415,37 @@ export function OwnerDashboard({ locale }: { locale: "ru" | "en" }) {
       <p className="wd-owner-note">{t("Данные на", "As of")} {date(payload.data.as_of)} UTC</p>
     </>}
 
+    {section === "clients" && moderationNotice && <p
+      className="wd-owner-panel wd-owner-notice wd-owner-moderation-notice"
+      role={moderationNotice.error ? "alert" : "status"}
+    >{moderationNotice.message}</p>}
+
     {payload?.section === "clients" && <>
       <DataTable t={t} title={t("Клиенты", "Clients")}
-        columns={["Email", t("Регистрация", "Registered"), t("Статус", "Status"), t("План", "Plan"), t("Окончание доступа", "Access ends"), t("Доступные кредиты", "Available credits")]}
+        columns={["Email", t("Регистрация", "Registered"), t("Статус", "Status"), t("План", "Plan"),
+          t("Окончание доступа", "Access ends"), t("Доступные кредиты", "Available credits"), t("Действия", "Actions")]}
         rows={payload.data.items.map((row) => ({ id: row.id, cells: [
-          row.email, date(row.created_at), t("Зарегистрирован", "Registered"),
+          row.email, date(row.created_at),
+          <span key="status" className={`status-badge ${row.status === "blocked" ? "is-danger" : "is-success"}`}>
+            {row.status === "blocked" ? t("Заблокирован", "Blocked") : t("Активен", "Active")}
+          </span>,
           PLANS[row.plan], date(row.expires_at), number.format(row.available_credits),
+          row.manageable ? <div key="actions" className="wd-owner-client-actions">
+            <button type="button" className="wd-button wd-button-secondary"
+              onClick={() => confirmModeration(row, row.status === "blocked" ? "unblock" : "block")}>
+              {row.status === "blocked" ? t(...MODERATION_TEXT.unblock.label) : t(...MODERATION_TEXT.block.label)}
+            </button>
+            {row.status === "active" && <button type="button" className="wd-button wd-button-secondary"
+              onClick={() => confirmModeration(row, "revoke-sessions")}>
+              {t(...MODERATION_TEXT["revoke-sessions"].label)}
+            </button>}
+          </div> : t("Владелец", "Owner"),
         ] }))} />
       <p className="wd-owner-note">{t("Даты в UTC. В WebDiag нет единого статуса подтверждения email.", "Dates in UTC. WebDiag has no account-wide email verification status.")}</p>
     </>}
+
+    {moderation && <ConfirmModeration target={moderation} busy={moderating} t={t}
+      onClose={() => setModeration(undefined)} onConfirm={() => void submitModeration()} />}
 
     {payload?.section === "payments" && <>
       <DataTable t={t} title={t("Платежи", "Payments")}

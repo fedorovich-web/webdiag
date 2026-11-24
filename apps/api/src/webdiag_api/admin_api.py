@@ -11,10 +11,17 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import UUID4, BaseModel
 
 from webdiag_api.accounts.api import SessionCookie
 from webdiag_api.accounts.security import hash_session_token
+from webdiag_api.accounts.storage import (
+    AccountAccessStatus,
+    AccountModerationAction,
+    AccountModerationError,
+    AccountModerationResult,
+    SqliteAccountStore,
+)
 from webdiag_api.admin_storage import AdminReader, initialize_admin_schema, read_snapshot
 from webdiag_api.config import settings
 from webdiag_api.security.request_limits import ASGIApp, Receive, Send
@@ -81,7 +88,8 @@ class Client(BaseModel):
     id: str
     email: str
     created_at: int
-    status: Literal["registered"]
+    status: AccountAccessStatus
+    manageable: bool
     plan: Literal["starter", "pro", "team"]
     expires_at: int | None
     available_credits: int
@@ -107,6 +115,12 @@ class PageInfo(BaseModel):
 
 class Clients(PageInfo):
     items: list[Client]
+
+
+class ModeratedClient(BaseModel):
+    id: str
+    status: AccountAccessStatus
+    revoked_session_count: int
 
 
 class Payments(PageInfo):
@@ -224,7 +238,47 @@ def clients(
         email = "\x00"
     if len(email) > 254 or re.search(r"[\x00-\x1f\x7f]", email):
         raise owner_error(422, "admin_invalid_query", "Invalid email search.")
-    return owner.clients(page=page, email=email, segment=segment, days=int(days) if days else None)
+    return owner.clients(
+        page=page,
+        email=email,
+        segment=segment,
+        days=int(days) if days else None,
+        owner_id=configured_owner() or "",
+    )
+
+
+@router.post("/clients/{user_id}/{action}", response_model=ModeratedClient)
+def moderate_client(
+    user_id: UUID4,
+    action: AccountModerationAction,
+    webdiag_session: SessionCookie = None,
+    x_webdiag_admin_action: Annotated[str | None, Header()] = None,
+    sec_fetch_site: Annotated[str | None, Header()] = None,
+) -> AccountModerationResult:
+    if x_webdiag_admin_action != "1" or sec_fetch_site == "cross-site":
+        raise owner_error(403, "admin_cross_origin", "Cross-origin request rejected.")
+    if not webdiag_session or len(webdiag_session) > 256:
+        raise owner_error(401, "account_unauthenticated", "Sign in to continue.")
+    try:
+        return SqliteAccountStore(settings.account_database_path).moderate_account(
+            owner_id=configured_owner(),
+            token_hash=hash_session_token(webdiag_session),
+            user_id=str(user_id),
+            action=action,
+            clock=unix_time,
+        )
+    except AccountModerationError as error:
+        code = str(error)
+        status, message = {
+            "account_unauthenticated": (401, "Sign in to continue."),
+            "admin_forbidden": (403, "Owner access is required."),
+            "admin_owner_protected": (409, "The owner account is protected."),
+            "admin_client_not_found": (404, "Client account not found."),
+        }[code]
+        raise owner_error(status, code, message) from None
+    except (OSError, sqlite3.Error) as error:
+        logger.warning("Owner account management unavailable (%s)", type(error).__name__)
+        raise owner_error(503, "admin_unavailable", "Account management is unavailable.") from None
 
 
 @router.get("/payments", response_model=Payments)

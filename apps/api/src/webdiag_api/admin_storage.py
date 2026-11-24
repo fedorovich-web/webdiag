@@ -72,6 +72,7 @@ class AdminReader:
             SELECT u.id
             FROM account_sessions s JOIN account_users u ON u.id = s.user_id
             WHERE s.token_hash = ? AND s.expires_at > ?
+              AND NOT EXISTS (SELECT 1 FROM account_access_blocks b WHERE b.user_id = u.id)
             """,
             (token_hash, self.now),
         ).fetchone()
@@ -136,7 +137,9 @@ class AdminReader:
             "usage": self.usage(days),
         }
 
-    def clients(self, *, page: int, email: str, segment: str, days: int | None) -> dict:
+    def clients(
+        self, *, page: int, email: str, segment: str, days: int | None, owner_id: str
+    ) -> dict:
         now = self.now
         criteria = ["instr(u.email, :email) > 0"] if email else []
         params = {
@@ -146,6 +149,7 @@ class AdminReader:
             "start": now - days * DAY if days else None,
             "offset": (page - 1) * PAGE_SIZE,
             "limit": PAGE_SIZE + 1,
+            "owner_id": owner_id,
         }
         if days:
             criteria.append("u.created_at >= :start AND u.created_at < :now")
@@ -168,12 +172,15 @@ class AdminReader:
                 SELECT u.id, u.email, u.created_at FROM account_users u
                 {where} {candidate_order}
             ), {plan_ctes}
-            SELECT u.id, u.email, u.created_at, 'registered' AS status,
+            SELECT u.id, u.email, u.created_at,
+                   CASE WHEN b.user_id IS NULL THEN 'active' ELSE 'blocked' END AS status,
+                   (u.id <> :owner_id) AS manageable,
                    COALESCE(p.plan_id, 'starter') AS plan, p.expires_at,
                    COALESCE(c.available, 0) AS available_credits
             FROM candidates u
             LEFT JOIN plans p ON p.user_id = u.id
             LEFT JOIN credit_accounts c ON c.user_id = u.id
+            LEFT JOIN account_access_blocks b ON b.user_id = u.id
             {plan_filter}
             {result_order}
             """,

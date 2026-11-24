@@ -5,7 +5,13 @@ from uuid import uuid4
 import pytest
 from fastapi.testclient import TestClient
 
-from webdiag_api.accounts.security import hash_session_token
+from webdiag_api.accounts.models import LoginRequest, PasswordChangeRequest
+from webdiag_api.accounts.security import ScryptParameters, hash_password, hash_session_token
+from webdiag_api.accounts.service import (
+    AccountService,
+    AccountServiceError,
+    OAuthAccountLinkRequired,
+)
 from webdiag_api.accounts.storage import SqliteAccountStore
 from webdiag_api.ai.storage import SqliteAIStore
 from webdiag_api.audit.storage import SqliteAuditStore
@@ -56,6 +62,192 @@ def request(http, section, token="owner", **kwargs):
     response = http.get(f"{PREFIX}/{section}", headers=headers, **kwargs)
     assert response.headers["cache-control"] == "private, no-store"
     return response
+
+
+def moderate(http, user=CLIENT, action="block", token="owner", *, csrf=True):
+    headers = {"cookie": f"webdiag_session={token}"} if token else {}
+    if csrf:
+        headers["x-webdiag-admin-action"] = "1"
+    response = http.post(f"{PREFIX}/clients/{user}/{action}", headers=headers)
+    assert response.headers["cache-control"] == "private, no-store"
+    return response
+
+
+def test_owner_client_management_authorizes_each_write(admin):
+    http, db, _ = admin
+    assert moderate(http, token=None).status_code == 401
+    assert moderate(http, token="expired").status_code == 401
+    assert moderate(http, token="client").status_code == 403
+    assert moderate(http, csrf=False).status_code == 403
+    for action in ("block", "unblock", "revoke-sessions"):
+        assert moderate(http, user=OWNER, action=action).status_code == 409
+    assert moderate(http, user=str(uuid4())).status_code == 404
+    assert moderate(http, action="invalid").status_code == 422
+    assert moderate(http, user="invalid").status_code == 422
+    clients = {row["id"]: row for row in request(http, "clients").json()["items"]}
+    assert clients[OWNER]["manageable"] is False
+    assert clients[CLIENT]["manageable"] is True
+    assert clients[CLIENT]["status"] == "active"
+    assert db.execute("SELECT COUNT(*) FROM account_moderation_events").fetchone()[0] == 0
+
+
+def test_owner_client_management_revokes_and_audits_without_deleting_account(admin):
+    http, db, path = admin
+    store = SqliteAccountStore(path)
+    assert moderate(http).json() == {
+        "id": CLIENT,
+        "status": "blocked",
+        "revoked_session_count": 1,
+    }
+    assert request(http, "access", "client").status_code == 401
+    assert request(http, "access").status_code == 200
+    assert store.get_user_by_id(CLIENT).email == "client%tag@example.test"
+    clients = {row["id"]: row for row in request(http, "clients").json()["items"]}
+    assert clients[CLIENT]["status"] == "blocked"
+    assert moderate(http, action="unblock").json() == {
+        "id": CLIENT,
+        "status": "active",
+        "revoked_session_count": 0,
+    }
+    assert request(http, "access", "client").status_code == 401
+    store.create_session(
+        token_hash=hash_session_token("fresh"),
+        user_id=CLIENT,
+        expires_at=NOW + 100,
+        active_session_limit=10,
+    )
+    assert moderate(http, action="revoke-sessions").json() == {
+        "id": CLIENT,
+        "status": "active",
+        "revoked_session_count": 1,
+    }
+    assert request(http, "access", "fresh").status_code == 401
+    assert [
+        tuple(row)
+        for row in db.execute(
+            """
+            SELECT actor_user_id, target_user_id, action, previous_status, status,
+                   revoked_session_count, created_at
+            FROM account_moderation_events ORDER BY id
+            """
+        )
+    ] == [
+        (OWNER, CLIENT, "block", "active", "blocked", 1, NOW),
+        (OWNER, CLIENT, "unblock", "blocked", "active", 0, NOW),
+        (OWNER, CLIENT, "revoke-sessions", "active", "active", 1, NOW),
+    ]
+
+
+def test_owner_client_management_rolls_back_if_audit_fails(admin):
+    http, db, _ = admin
+    db.execute("""
+        CREATE TRIGGER fail_moderation_audit BEFORE INSERT ON account_moderation_events
+        BEGIN SELECT RAISE(ABORT, 'test failure'); END
+    """)
+    assert moderate(http).status_code == 503
+    assert request(http, "access", "client").status_code == 403
+    clients = {row["id"]: row for row in request(http, "clients").json()["items"]}
+    assert clients[CLIENT]["status"] == "active"
+
+
+def test_modern_schema_preserves_legacy_accounts_sessions_and_oauth(admin):
+    http, db, path = admin
+    db.execute("DROP TABLE account_access_blocks")
+    db.execute("DROP TABLE account_moderation_events")
+    db.execute("INSERT INTO account_oauth_identities VALUES ('yandex', 'legacy', ?)", (CLIENT,))
+    SqliteAccountStore(path).ensure_schema()
+    clients = {row["id"]: row for row in request(http, "clients").json()["items"]}
+    assert clients[CLIENT]["status"] == "active"
+    assert request(http, "access", "client").status_code == 403
+    assert db.execute("SELECT user_id FROM account_oauth_identities").fetchone()[0] == CLIENT
+
+
+def moderation_auth(path, db):
+    store = SqliteAccountStore(path)
+    scrypt = ScryptParameters(n=2**12, p=1)
+    password = "correct horse battery"
+    db.execute(
+        "UPDATE account_users SET password_hash = ? WHERE id = ?",
+        (hash_password(password, scrypt), CLIENT),
+    )
+    return (
+        store,
+        AccountService(
+            store,
+            session_ttl_seconds=1800,
+            active_session_limit=10,
+            scrypt_parameters=scrypt,
+        ),
+        LoginRequest(email="client%tag@example.test", password=password),
+    )
+
+
+def test_blocked_password_and_linked_yandex_cannot_issue_or_reuse_sessions(admin):
+    http, db, path = admin
+    store, accounts, credentials = moderation_auth(path, db)
+    password_session = accounts.login(credentials)
+    with pytest.raises(OAuthAccountLinkRequired) as required:
+        accounts.authenticate_yandex_user(
+            subject="unlinked-client",
+            email=credentials.email,
+            display_name="Client",
+        )
+    token = required.value.token
+    _, code = accounts.prepare_yandex_recovery(token)
+    yandex_profile = {
+        "subject": "linked-client",
+        "email": "yandex-client@example.test",
+        "display_name": "Yandex",
+    }
+    yandex_session, created = accounts.authenticate_yandex_user(**yandex_profile)
+    assert created
+    yandex_id = yandex_session.response.user.id
+
+    assert moderate(http).status_code == 200
+    assert moderate(http, user=yandex_id).status_code == 200
+    for token_to_check in (password_session.token, yandex_session.token):
+        with pytest.raises(AccountServiceError) as revoked:
+            accounts.get_session(token_to_check)
+        assert revoked.value.code == "account_unauthenticated"
+    with pytest.raises(AccountServiceError) as password_blocked:
+        accounts.login(credentials)
+    assert password_blocked.value.code == "account_access_blocked"
+    with pytest.raises(AccountServiceError) as yandex_blocked:
+        accounts.authenticate_yandex_user(**yandex_profile)
+    assert yandex_blocked.value.code == "account_access_blocked"
+    with pytest.raises(AccountServiceError) as recovery:
+        accounts.recover_yandex_session(token=token, code=code)
+    assert recovery.value.code == "account_oauth_recovery_invalid"
+    assert store.get_user_by_id(CLIENT).email == credentials.email
+
+    assert moderate(http, action="unblock").status_code == 200
+    assert moderate(http, user=yandex_id, action="unblock").status_code == 200
+    assert accounts.login(credentials).response.user.id == CLIENT
+    assert accounts.authenticate_yandex_user(**yandex_profile)[0].response.user.id == yandex_id
+    assert db.execute("SELECT COUNT(*) FROM account_oauth_links").fetchone()[0] == 0
+
+
+def test_revoking_sessions_during_password_rotation_cannot_restore_access(admin, monkeypatch):
+    http, db, path = admin
+    store, accounts, credentials = moderation_auth(path, db)
+    session = accounts.login(credentials)
+    rotate = store.rotate_password_and_session
+
+    def revoke_then_rotate(**kwargs):
+        assert moderate(http, action="revoke-sessions").status_code == 200
+        return rotate(**kwargs)
+
+    monkeypatch.setattr(store, "rotate_password_and_session", revoke_then_rotate)
+    with pytest.raises(AccountServiceError) as interrupted:
+        accounts.change_password(
+            session.token,
+            PasswordChangeRequest(
+                current_password=credentials.password,
+                new_password="another very strong password",
+            ),
+        )
+    assert interrupted.value.code == "account_credentials_changed"
+    assert accounts.login(credentials).response.user.id == CLIENT
 
 
 def test_owner_access_and_revocation(admin, monkeypatch):

@@ -513,6 +513,8 @@ def test_storage_is_foundation_only_hashes_tokens_and_caps_sessions(tmp_path: Pa
         "account_oauth_identities",
         "account_oauth_links",
         "account_oauth_mail_limits",
+        "account_access_blocks",
+        "account_moderation_events",
     }
     assert password_hash != raw_password
     assert raw_password not in database_path.read_bytes().decode("latin-1", errors="ignore")

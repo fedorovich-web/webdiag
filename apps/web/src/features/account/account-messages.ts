@@ -26,6 +26,7 @@ const ruMessages: Readonly<Record<string, string>> = {
   account_weak_password: "Используйте пароль длиной от 6 символов без части email.",
   account_email_exists: "Аккаунт с такой почтой уже существует.",
   account_invalid_credentials: "Неверная почта или пароль.",
+  account_access_blocked: "Доступ к аккаунту заблокирован.",
   account_invalid_current_password: "Текущий пароль указан неверно.",
   account_password_unchanged: "Новый пароль должен отличаться от текущего.",
   account_credentials_changed: "Учётные данные уже изменились. Войдите снова.",
@@ -77,6 +78,7 @@ const enMessages: Readonly<Record<string, string>> = {
   account_weak_password: "Use a password of at least 6 characters without the email local part.",
   account_email_exists: "An account with this email already exists.",
   account_invalid_credentials: "Invalid email or password.",
+  account_access_blocked: "Account access is blocked.",
   account_invalid_current_password: "The current password is incorrect.",
   account_password_unchanged: "The new password must differ from the current password.",
   account_credentials_changed: "Credentials have already changed. Sign in again.",
@@ -108,6 +110,10 @@ export function accountErrorMessage(locale: Locale, error: unknown): string {
     ? "Не удалось выполнить запрос. Повторите попытку."
     : "The request failed. Try again.";
   if (!(error instanceof AccountClientError)) return fallback;
+  return accountErrorMessageByCode(locale, error.code) ?? fallback;
+}
+
+export function accountErrorMessageByCode(locale: Locale, code: string): string | undefined {
   const messages = locale === "ru" ? ruMessages : enMessages;
-  return messages[error.code] ?? fallback;
+  return messages[code];
 }
